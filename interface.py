@@ -91,6 +91,7 @@ class PYSCF:
         from pyscf import fci
 
         rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra, ket, self.ncas, nelecas)
+        rdm1, rdm2, rdm3 = fci.rdm.reorder_dm123(rdm1, rdm2, rdm3)
 
         return rdm1, rdm2, rdm3
 
