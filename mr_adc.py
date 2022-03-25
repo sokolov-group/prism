@@ -93,8 +93,7 @@ class MRADC:
                 if self.ncvs < 1 or self.ncvs > self.ncore:
                     raise Exception("Method type %s requires setting the ncvs parameter as a positive integer that is smaller than ncore" % self.method_type)
 
-                self.ncvs_so = 2 * self.ncvs
-                self.nval_so = self.ncore_so - self.ncvs_so
+                self.nval = self.ncore - self.ncvs
 
             else:
                 raise Exception("Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type)
@@ -110,10 +109,14 @@ class MRADC:
 
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
-        print ("Happy hour")
-        exit()
-        mr_adc_rdms.compute_es_rdms(self)
+        dyall_hamiltonian(self)
 
+        ### DEBUG EXIT
+        # exit()
+        return "ee", "spec_factors"
+        ### DEBUG EXIT
+
+        mr_adc_rdms.compute_es_rdms(self)
 
         # Run MR-ADC computation
         ee, spec_factors = mr_adc_compute.kernel(self)
@@ -123,4 +126,45 @@ class MRADC:
 
         return ee, spec_factors
 
+
+def dyall_hamiltonian(mr_adc):
+    """Zeroth Order Dyall Hamiltonian: Debug Implementation"""
+
+    # Testing Dyall Hamiltonian expected value
+    print ("\n>>> Testing Spin-Adapted Dyall Hamiltonian:")
+
+    # Variables needed
+    h_aa = mr_adc.h1e[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    rdm_ca = mr_adc.rdm.ca
+    v_aaaa = mr_adc.v2e.aaaa
+    v_caca = mr_adc.v2e.caca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    mo_c = mr_adc.mo[:, :mr_adc.ncore].copy()
+    mo_a = mr_adc.mo[:, mr_adc.ncore:mr_adc.nocc].copy()
+    v_acca = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_a, mo_c, mo_c, mo_a)
+
+    # Calculating E_fc
+    ## Calculating h_cc term
+    h_cc = 2.0 * mr_adc.h1e[:mr_adc.ncore, :mr_adc.ncore].copy()
+
+    ## Calculating v_cccc term
+    v_cccc = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
+
+    # Calculating temp_E_fc
+    temp_E_fc  = np.einsum('ii', h_cc, optimize = True)
+    temp_E_fc += 2.0 * np.einsum('ijij', v_cccc, optimize = True)
+    temp_E_fc -= np.einsum('jiij', v_cccc, optimize = True)
+
+    # Calculating H_act
+    temp  = np.einsum('xy,xy', h_aa, rdm_ca, optimize = mr_adc.interface.einsum_type)
+
+    temp += 2.0 * np.einsum('ixiy,xy', v_caca, rdm_ca, optimize = mr_adc.interface.einsum_type)
+    temp -= np.einsum('xiiy,xy', v_acca, rdm_ca, optimize = mr_adc.interface.einsum_type)
+
+    temp += 0.416666666667 * np.einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = mr_adc.interface.einsum_type)
+    temp += 0.0833333333333 * np.einsum('xyzw,yxzw', v_aaaa, rdm_ccaa, optimize = mr_adc.interface.einsum_type)
+    temp -= 0.0833333333333 * np.einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = mr_adc.interface.einsum_type)
+    temp += 0.0833333333333 * np.einsum('yxzw,yxzw', v_aaaa, rdm_ccaa, optimize = mr_adc.interface.einsum_type)
+
+    print ("\n Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
 
