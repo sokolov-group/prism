@@ -1,5 +1,6 @@
 import sys
 import time
+from tkinter import W
 import numpy as np
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_rdms as mr_adc_rdms
@@ -109,12 +110,12 @@ class MRADC:
 
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
-        dyall_hamiltonian(self)
 
-        ### DEBUG EXIT
-        # exit()
+        ### DEBUG
+        # dyall_hamiltonian(self)
+        calculate_V_ccea(self)
         return "ee", "spec_factors"
-        ### DEBUG EXIT
+        ### DEBUG
 
         mr_adc_rdms.compute_es_rdms(self)
 
@@ -131,7 +132,11 @@ def dyall_hamiltonian(mr_adc):
     """Zeroth Order Dyall Hamiltonian: Debug Implementation"""
 
     # Testing Dyall Hamiltonian expected value
-    print ("\n>>> Testing Spin-Adapted Dyall Hamiltonian:")
+    print ("Calculating the Spin-Adapted Dyall Hamiltonian...")
+
+    # Einsum
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
 
     # Variables needed
     h_aa = mr_adc.h1e[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
@@ -151,20 +156,43 @@ def dyall_hamiltonian(mr_adc):
     v_cccc = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
 
     # Calculating temp_E_fc
-    temp_E_fc  = np.einsum('ii', h_cc, optimize = True)
-    temp_E_fc += 2.0 * np.einsum('ijij', v_cccc, optimize = True)
-    temp_E_fc -= np.einsum('jiij', v_cccc, optimize = True)
+    temp_E_fc  = einsum('ii', h_cc, optimize = True)
+    temp_E_fc += 2.0 * einsum('ijij', v_cccc, optimize = True)
+    temp_E_fc -= einsum('jiij', v_cccc, optimize = True)
 
     # Calculating H_act
-    temp  = np.einsum('xy,xy', h_aa, rdm_ca, optimize = mr_adc.interface.einsum_type)
+    temp  = einsum('xy,xy', h_aa, rdm_ca, optimize = einsum_type)
 
-    temp += 2.0 * np.einsum('ixiy,xy', v_caca, rdm_ca, optimize = mr_adc.interface.einsum_type)
-    temp -= np.einsum('xiiy,xy', v_acca, rdm_ca, optimize = mr_adc.interface.einsum_type)
+    temp += 2.0 * einsum('ixiy,xy', v_caca, rdm_ca, optimize = einsum_type)
+    temp -= einsum('xiiy,xy', v_acca, rdm_ca, optimize = einsum_type)
 
-    temp += 0.416666666667 * np.einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = mr_adc.interface.einsum_type)
-    temp += 0.0833333333333 * np.einsum('xyzw,yxzw', v_aaaa, rdm_ccaa, optimize = mr_adc.interface.einsum_type)
-    temp -= 0.0833333333333 * np.einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = mr_adc.interface.einsum_type)
-    temp += 0.0833333333333 * np.einsum('yxzw,yxzw', v_aaaa, rdm_ccaa, optimize = mr_adc.interface.einsum_type)
+    temp += 0.416666666667 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    temp += 0.0833333333333 * einsum('xyzw,yxzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    temp -= 0.0833333333333 * einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    temp += 0.0833333333333 * einsum('yxzw,yxzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
-    print ("\n Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
+    # temp += 0.25 * einsum('xyzw,xywz', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    # temp += 0.25 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    # temp -= 0.0833333333333 * einsum('yxzw,xywz', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    # temp += 0.0833333333333 * einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
+    print ("Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
+
+def calculate_V_ccea(mr_adc):
+    """Calculating a_i^\dag a_j^\dag a_x a_a V"""
+    import prism.mr_adc_intermediates as mr_adc_intermediates
+
+    # Einsum
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Vp1 term
+    rdm_ca = mr_adc.rdm.ca
+    v_ccea = mr_adc.v2e.ccea
+
+    Vp1  = einsum('IJAX->IJXA', v_ccea, optimize = einsum_type).copy()
+    Vp1 -= 0.5 * einsum('IJAy,yX->IJXA', v_ccea, rdm_ca, optimize = einsum_type)
+
+    print (">>> Vp1 alpha-beta-beta-alpha norm: {:}".format(np.linalg.norm(Vp1)))
+
+    K_ac = mr_adc_intermediates.compute_K_ac(mr_adc)
