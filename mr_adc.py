@@ -114,6 +114,10 @@ class MRADC:
         ### DEBUG
         # dyall_hamiltonian(self)
         calculate_V_ccea(self)
+
+        import prism.mr_adc_amplitudes as mr_adc_amplitudes
+        mr_adc_amplitudes.compute_t1_p1(self)
+
         return "ee", "spec_factors"
         ### DEBUG
 
@@ -134,7 +138,7 @@ def dyall_hamiltonian(mr_adc):
     # Testing Dyall Hamiltonian expected value
     print ("Calculating the Spin-Adapted Dyall Hamiltonian...")
 
-    # Einsum
+    # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
 
@@ -171,17 +175,10 @@ def dyall_hamiltonian(mr_adc):
     temp -= 0.0833333333333 * einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
     temp += 0.0833333333333 * einsum('yxzw,yxzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
-    # temp += 0.25 * einsum('xyzw,xywz', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    # temp += 0.25 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    # temp -= 0.0833333333333 * einsum('yxzw,xywz', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    # temp += 0.0833333333333 * einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-
     print ("Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
 
 def calculate_V_ccea(mr_adc):
     """Calculating a_i^\dag a_j^\dag a_x a_a V"""
-    import prism.mr_adc_intermediates as mr_adc_intermediates
-
     # Einsum
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -190,9 +187,8 @@ def calculate_V_ccea(mr_adc):
     rdm_ca = mr_adc.rdm.ca
     v_ccea = mr_adc.v2e.ccea
 
-    Vp1  = einsum('IJAX->IJXA', v_ccea, optimize = einsum_type).copy()
-    Vp1 -= 0.5 * einsum('IJAy,yX->IJXA', v_ccea, rdm_ca, optimize = einsum_type)
+    Vp1  = einsum('IJAX->IJAX', v_ccea, optimize = einsum_type).copy()
+    Vp1 -= 0.5 * einsum('IJAy,yX->IJAX', v_ccea, rdm_ca, optimize = einsum_type)
 
-    print (">>> Vp1 alpha-beta-beta-alpha norm: {:}".format(np.linalg.norm(Vp1)))
-
-    K_ac = mr_adc_intermediates.compute_K_ac(mr_adc)
+    print ("\n>>> SA Vp1 alpha-beta-beta-alpha norm: {:}".format(np.linalg.norm(Vp1)))
+    print ("\n>>> SA Vp1.shape: {:}".format(Vp1.shape))
