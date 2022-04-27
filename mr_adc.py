@@ -57,6 +57,7 @@ class MRADC:
         self.h1 = lambda:None # Information about h1 excitation manifold
         self.h_orth = lambda:None # Information about orthonormalized excitation manifold
         self.S12 = lambda:None # Matrices for orthogonalization of excitation spaces
+        self.debug_mode = False # Debug printing statements
 
         # Parameters for the CVS implementation
         self.ncvs = None
@@ -112,12 +113,12 @@ class MRADC:
         mr_adc_rdms.compute_gs_rdms(self)
 
         ### DEBUG
-        # dyall_hamiltonian(self)
-        calculate_V_ccea(self)
+        if self.debug_mode:
+            dyall_hamiltonian(self)
 
-        import prism.mr_adc_amplitudes as mr_adc_amplitudes
-        mr_adc_amplitudes.compute_t1_p1(self)
-        mr_adc_amplitudes.compute_t1_m1(self)
+            import prism.mr_adc_amplitudes as mr_adc_amplitudes
+            mr_adc_amplitudes.compute_t1_p1(self)
+            mr_adc_amplitudes.compute_t1_m1(self)
 
         return "ee", "spec_factors"
         ### DEBUG
@@ -171,25 +172,9 @@ def dyall_hamiltonian(mr_adc):
     temp += 2.0 * einsum('ixiy,xy', v_caca, rdm_ca, optimize = einsum_type)
     temp -= einsum('xiiy,xy', v_acca, rdm_ca, optimize = einsum_type)
 
-    temp += 0.416666666667 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += 0.0833333333333 * einsum('xyzw,yxzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp -= 0.0833333333333 * einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += 0.0833333333333 * einsum('yxzw,yxzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    temp += 0.416666666667 * einsum('xyzw,xywz', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    temp += 0.0833333333333 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    temp -= 0.0833333333333 * einsum('yxzw,xywz', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    temp += 0.0833333333333 * einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
-    print ("Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
-
-def calculate_V_ccea(mr_adc):
-    """Calculating a_i^\dag a_j^\dag a_x a_a V"""
-    # Einsum
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Vp1 term
-    rdm_ca = mr_adc.rdm.ca
-    v_ccea = mr_adc.v2e.ccea
-
-    Vp1  = einsum('IJAX->IJAX', v_ccea, optimize = einsum_type).copy()
-    Vp1 -= 0.5 * einsum('IJAy,yX->IJAX', v_ccea, rdm_ca, optimize = einsum_type)
-
-    # print ("\n>>> SA Vp1 alpha-beta-beta-alpha norm: {:}".format(np.linalg.norm(Vp1)))
-    # print ("\n>>> SA Vp1.shape: {:}".format(Vp1.shape))
+    print ("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
