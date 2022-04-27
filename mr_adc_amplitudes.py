@@ -40,7 +40,7 @@ def compute_t1_p1(mr_adc):
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
 
-    # Computing K_{ac}
+    # Computing K_ac
     K_ac = mr_adc_intermediates.compute_K_ac(mr_adc)
 
     # Orthogonalization and overlap truncation only in the active space
@@ -51,7 +51,6 @@ def compute_t1_p1(mr_adc):
     SKS = np.einsum("xm,xn->mn", S_p1_12_inv_act, SKS)
 
     evals, evecs = np.linalg.eigh(SKS)
-    print ("\n>> SKS evals: \n{:}".format(evals))
 
     # Compute r.h.s. of the equation
     Vp1  = einsum('IJAX->IJAX', v_ccea, optimize = einsum_type).copy()
@@ -80,3 +79,57 @@ def compute_t1_p1(mr_adc):
     e_p1 -= 0.25 * einsum('ijax,ijay,xy', t1_ccea, v_ccea, rdm_ca, optimize = einsum_type)
 
     return e_p1, t_p1
+
+def compute_t1_m1(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    rdm_ca = mr_adc.rdm.ca
+    v_caee = mr_adc.v2e.caee
+
+    e_core = mr_adc.mo_energy.c
+    e_extern = mr_adc.mo_energy.e
+
+    ncore = mr_adc.ncore
+    nextern = mr_adc.nextern
+
+    # Computing K_ca
+    K_ca = mr_adc_intermediates.compute_K_ca(mr_adc)
+
+    # Orthogonalization and overlap truncation only in the active space
+    S_m1_12_inv_act = mr_adc_overlap.compute_S12_m1(mr_adc, ignore_print = False)
+
+    # Compute (S_12 K S_12)_{i a mu, j b nu}
+    SKS = np.einsum("xy,yn->xn", K_ca, S_m1_12_inv_act)
+    SKS = np.einsum("xm,xn->mn", S_m1_12_inv_act, SKS)
+
+    evals, evecs = np.linalg.eigh(SKS)
+
+    # Compute r.h.s. of the equation
+    Vm1  = 0.5 * einsum('IyAB,Xy->IXAB', v_caee, rdm_ca, optimize = einsum_type)
+    Vm1 *= -1.0
+
+    S_12_Vm1 = np.einsum("IXAB,Xm->ImAB", Vm1, S_m1_12_inv_act)
+
+    # Multiply r.h.s. by U (e_a - e_i + e_mu)^-1 U^dag
+    S_12_Vm1 = np.einsum("mp,ImAB->IpAB", evecs, S_12_Vm1)
+
+    # Compute denominators
+    d_ab = (e_extern[:,None] + e_extern).reshape(-1)
+    d_ix = (e_core[:,None] - evals).reshape(-1)
+    d_abix = (d_ab[:,None] - d_ix).reshape(nextern, nextern, ncore, evals.shape[0])
+    d_abix = d_abix**(-1)
+
+    S_12_Vm1 = np.einsum("ABIp,IpAB->IpAB", d_abix, S_12_Vm1)
+    S_12_Vm1 = np.einsum("mp,IpAB->ImAB", evecs, S_12_Vm1)
+
+    tm1 = np.einsum("ImAB,Xm->IXAB", S_12_Vm1, S_m1_12_inv_act).copy()
+
+    t1_caee = tm1.copy()
+    e_m1  = 0.25 * einsum('ixab,iyab,yx', t1_caee, v_caee, rdm_ca, optimize = einsum_type)
+
+    return e_m1, tm1
+

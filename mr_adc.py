@@ -117,6 +117,7 @@ class MRADC:
 
         import prism.mr_adc_amplitudes as mr_adc_amplitudes
         mr_adc_amplitudes.compute_t1_p1(self)
+        mr_adc_amplitudes.compute_t1_m1(self)
 
         return "ee", "spec_factors"
         ### DEBUG
@@ -190,5 +191,5 @@ def calculate_V_ccea(mr_adc):
     Vp1  = einsum('IJAX->IJAX', v_ccea, optimize = einsum_type).copy()
     Vp1 -= 0.5 * einsum('IJAy,yX->IJAX', v_ccea, rdm_ca, optimize = einsum_type)
 
-    print ("\n>>> SA Vp1 alpha-beta-beta-alpha norm: {:}".format(np.linalg.norm(Vp1)))
-    print ("\n>>> SA Vp1.shape: {:}".format(Vp1.shape))
+    # print ("\n>>> SA Vp1 alpha-beta-beta-alpha norm: {:}".format(np.linalg.norm(Vp1)))
+    # print ("\n>>> SA Vp1.shape: {:}".format(Vp1.shape))
