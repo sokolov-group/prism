@@ -93,7 +93,7 @@ class PYSCF:
         rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra, ket, self.ncas, nelecas)
         rdm1, rdm2, rdm3 = fci.rdm.reorder_dm123(rdm1, rdm2, rdm3)
 
-        rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 1, 3))
+        rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 3, 1))
 
         return rdm1, rdm2, rdm3
 

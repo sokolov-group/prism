@@ -55,6 +55,9 @@ def compute_t1_p1(mr_adc):
     # Compute r.h.s. of the equation
     Vp1  = einsum('IJAX->IJAX', v_ccea, optimize = einsum_type).copy()
     Vp1 -= 0.5 * einsum('IJAy,yX->IJAX', v_ccea, rdm_ca, optimize = einsum_type)
+    if mr_adc.debug_mode:
+        print (">>> SA Vp1 norm: {:}".format(np.linalg.norm(Vp1)))
+
     Vp1 *= -1.0
 
     S_12_Vp1 = np.einsum("IJAX,Xm->IJAm", Vp1, S_p1_12_inv_act)
@@ -73,10 +76,14 @@ def compute_t1_p1(mr_adc):
     S_12_Vp1 = np.einsum("mp,IJAp->IJAm", evecs, S_12_Vp1)
 
     t_p1 = np.einsum("IJAm,Xm->IJAX", S_12_Vp1, S_p1_12_inv_act).copy()
+    if mr_adc.debug_mode:
+        print (">>> SA tp1 norm: {:}".format(np.linalg.norm(t_p1)))
 
     t1_ccea = t_p1.copy()
     e_p1  = 0.5 * einsum('ijax,ijax', t1_ccea, v_ccea, optimize = einsum_type)
     e_p1 -= 0.25 * einsum('ijax,ijay,xy', t1_ccea, v_ccea, rdm_ca, optimize = einsum_type)
+    if mr_adc.debug_mode:
+        print (">>> SA e_p1 norm: {:}".format(e_p1))
 
     return e_p1, t_p1
 
@@ -110,6 +117,9 @@ def compute_t1_m1(mr_adc):
 
     # Compute r.h.s. of the equation
     Vm1  = 0.5 * einsum('IyAB,Xy->IXAB', v_caee, rdm_ca, optimize = einsum_type)
+    if mr_adc.debug_mode:
+        print (">>> SA Vm1 norm: {:}".format(np.linalg.norm(Vm1)))
+
     Vm1 *= -1.0
 
     S_12_Vm1 = np.einsum("IXAB,Xm->ImAB", Vm1, S_m1_12_inv_act)
@@ -126,10 +136,14 @@ def compute_t1_m1(mr_adc):
     S_12_Vm1 = np.einsum("ABIp,IpAB->IpAB", d_abix, S_12_Vm1)
     S_12_Vm1 = np.einsum("mp,IpAB->ImAB", evecs, S_12_Vm1)
 
-    tm1 = np.einsum("ImAB,Xm->IXAB", S_12_Vm1, S_m1_12_inv_act).copy()
+    t_m1 = np.einsum("ImAB,Xm->IXAB", S_12_Vm1, S_m1_12_inv_act).copy()
+    if mr_adc.debug_mode:
+        print (">>> SA tm1 norm: {:}".format(np.linalg.norm(t_m1)))
 
-    t1_caee = tm1.copy()
+    t1_caee = t_m1.copy()
     e_m1  = 0.25 * einsum('ixab,iyab,yx', t1_caee, v_caee, rdm_ca, optimize = einsum_type)
+    if mr_adc.debug_mode:
+        print (">>> SA e_m1 norm: {:}".format(e_m1))
 
-    return e_m1, tm1
+    return e_m1, t_m1
 

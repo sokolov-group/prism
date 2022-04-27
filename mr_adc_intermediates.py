@@ -24,14 +24,14 @@ def compute_K_ac(mr_adc):
     K_ac -= einsum('XiiY->XY', v_acca, optimize = einsum_type).copy()
     K_ac += 2.0 * einsum('iXiY->XY', v_caca, optimize = einsum_type).copy()
     # K_ac -= 0.5 * einsum('Yz,zX->XY', h_aa, rdm_ca, optimize = einsum_type)
-    # K_ac += 0.5 * einsum('Yiiz,zX->XY', v_acca, rdm_ca, optimize = einsum_type)
-    # K_ac -= einsum('iYiz,zX->XY', v_caca, rdm_ca, optimize = einsum_type)
     K_ac += einsum('XzYw,zw->XY', v_aaaa, rdm_ca, optimize = einsum_type)
+    # K_ac += 0.5 * einsum('Yiiz,zX->XY', v_acca, rdm_ca, optimize = einsum_type)
+    K_ac -= 0.0833333333333 * einsum('Yzwu,wuXz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_ac -= 0.416666666667 * einsum('Yzwu,wuzX->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    # K_ac -= einsum('iYiz,zX->XY', v_caca, rdm_ca, optimize = einsum_type)
     K_ac -= 0.5 * einsum('zXYw,zw->XY', v_aaaa, rdm_ca, optimize = einsum_type)
-    K_ac -= 0.0833333333333 * einsum('Yzwu,uwXz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_ac -= 0.416666666667  * einsum('Yzwu,wuXz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_ac -= 0.0833333333333 * einsum('zYwu,uwXz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_ac += 0.0833333333333 * einsum('zYwu,wuXz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_ac -= 0.0833333333333 * einsum('zYwu,wuXz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_ac += 0.0833333333333 * einsum('zYwu,wuzX->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
     return K_ac
 
@@ -56,10 +56,10 @@ def compute_K_ca(mr_adc):
 
     K_ca =- 0.5 * einsum('Yz,Xz->XY', h_aa, rdm_ca, optimize = einsum_type)
     K_ca += 0.5 * einsum('Yiiz,Xz->XY', v_acca, rdm_ca, optimize = einsum_type)
-    K_ca -= 0.416666666667  * einsum('Yzwu,Xzwu->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_ca -= 0.0833333333333 * einsum('Yzwu,zXwu->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_ca -= 0.416666666667 * einsum('Yzwu,Xzuw->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_ca -= 0.0833333333333 * einsum('Yzwu,Xzwu->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
     K_ca -= einsum('iYiz,Xz->XY', v_caca, rdm_ca, optimize = einsum_type)
-    K_ca += 0.0833333333333 * einsum('zYwu,Xzwu->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_ca -= 0.0833333333333 * einsum('zYwu,zXwu->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_ca += 0.0833333333333 * einsum('zYwu,Xzuw->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_ca -= 0.0833333333333 * einsum('zYwu,Xzwu->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
     return K_ca
