@@ -117,6 +117,7 @@ class MRADC:
             dyall_hamiltonian(self)
 
             import prism.mr_adc_amplitudes as mr_adc_amplitudes
+            mr_adc_amplitudes.compute_t1_0(self)
             mr_adc_amplitudes.compute_t1_p1(self)
             mr_adc_amplitudes.compute_t1_m1(self)
 
