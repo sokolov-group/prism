@@ -24,6 +24,40 @@ import prism.mr_adc_overlap as mr_adc_overlap
 #     return (t1_ce, t1_ca, t1_ae, t1_caea, t1_caaa, t1_aaea, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee,
 #             t2_ce, t2_ca, t2_ae, t2_caea, t2_caaa, t2_aaea, t2_ccee, t2_ccea, t2_caee, t2_ccaa, t2_aaee, t2_aa)
 
+def compute_t1_0(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    e_core = mr_adc.mo_energy.c
+    e_extern = mr_adc.mo_energy.e
+
+    ncore = mr_adc.ncore
+    nextern = mr_adc.nextern
+
+    v_ccee = mr_adc.v2e.ccee
+
+    d_ij = e_core[:,None] + e_core
+    d_ab = e_extern[:,None] + e_extern
+    D2 = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
+    D2 = D2.reshape((ncore, ncore, nextern, nextern))
+
+    V1  = einsum('IJAB->IJAB', v_ccee, optimize = einsum_type).copy()
+    V1 *= -1.0
+
+    t1_0 = (V1/D2).copy()
+    if mr_adc.debug_mode:
+        print (">>> SA t0 norm: {:}".format(np.linalg.norm(t1_0)))
+
+    t1_ccee = t1_0.copy()
+    e_0  = 0.25 * einsum('ijab,ijab', t1_ccee, v_ccee, optimize = einsum_type)
+    if mr_adc.debug_mode:
+        print (">>> SA e_0 norm: {:}".format(e_0))
+
+    return e_0, t1_0
+
 def compute_t1_p1(mr_adc):
 
     # Einsum definition from kernel
