@@ -13,7 +13,7 @@ def compute_gs_rdms(mr_adc):
 
     # Compute ground-state RDMs
     if mr_adc.ncas != 0:
-        mr_adc.rdm.ca, mr_adc.rdm.ccaa, mr_adc.rdm.cccaaa = mr_adc.interface.compute_rdm123(mr_adc.wfn_casscf, mr_adc.wfn_casscf, mr_adc.nelecas)
+        mr_adc.rdm.ca, mr_adc.rdm.ccaa, mr_adc.rdm.cccaaa, mr_adc.rdm.ccccaaaa = mr_adc.interface.compute_rdm1234(mr_adc.wfn_casscf, mr_adc.wfn_casscf, mr_adc.nelecas)
     else:
         mr_adc.rdm.ca = np.zeros((mr_adc.ncas, mr_adc.ncas))
         mr_adc.rdm.ccaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
@@ -22,131 +22,131 @@ def compute_gs_rdms(mr_adc):
     print ("Time for computing ground-state RDMs:                          %f sec\n" % (time.time() - start_time))
 
 
-def compute_es_rdms_so(mr_adc):
-
-    start_time = time.time()
-
-    wfn_casci = None
-    e_cas_ci = None
-
-    print ("Computing excited-state CASCI wavefunctions...\n")
-    sys.stdout.flush()
-
-    # Compute CASCI wavefunctions for excited states in the active space
-    if mr_adc.method_type == "ip":
-
-        mr_adc.nelecasci = (mr_adc.nelecas[0] - 1, mr_adc.nelecas[1])
-
-        if (0 <= mr_adc.nelecasci[0] <= mr_adc.ncas and 0 <= mr_adc.nelecasci[1] <= mr_adc.ncas):
-            e_cas_ci, wfn_casci = mr_adc.interface.compute_casci_ip_ea(mr_adc.ncasci, mr_adc.method_type)
-        else:
-            mr_adc.nelecasci = None
-
-    elif mr_adc.method_type == "ea":
-
-        mr_adc.nelecasci = (mr_adc.nelecas[0] + 1, mr_adc.nelecas[1])
-
-        if (0 <= mr_adc.nelecasci[0] <= mr_adc.ncas and 0 <= mr_adc.nelecasci[1] <= mr_adc.ncas):
-            e_cas_ci, wfn_casci = mr_adc.interface.compute_casci_ip_ea(mr_adc.ncasci, mr_adc.method_type)
-        else:
-            mr_adc.nelecasci = None
-
-    elif mr_adc.method_type == "ee":
-
-        mr_adc.nelecasci = (mr_adc.nelecas[0], mr_adc.nelecas[1])
-        
-        if (mr_adc.nelecasci[0] != 0 or mr_adc.nelecasci[1] != 0) and (mr_adc.nelecasci[0] != mr_adc.ncas or mr_adc.nelecasci[1] != mr_adc.ncas): 
-            e_cas_ci, wfn_casci = mr_adc.interface.compute_casci_ee(mr_adc.ncasci)
-        else:
-            mr_adc.nelecasci = None
-
-    elif mr_adc.method_type in ("cvs-ip", "cvs-ee"):
-
-        mr_adc.nelecasci = None
-
-    else:
-        raise Exception("MR-ADC is not implemented for %s" % mr_adc.method_type)
-
-    if mr_adc.nelecasci is not None:
-        mr_adc.ncasci = len(e_cas_ci)
-        mr_adc.wfn_casci = wfn_casci
-        mr_adc.e_cas_ci = e_cas_ci
-    else:
-        if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
-            print ("Requested method type %s does not require running a CASCI calculation..." % mr_adc.method_type)
-        else:
-            print ("WARNING: active orbitals are either empty of completely filled...")
-        print ("Skipping the CASCI calculation...")
-        mr_adc.ncasci = 0
-        mr_adc.wfn_casci = None
-        mr_adc.e_cas_ci = None
-
-    print ("\nFinal number of excited CASCI states: %d\n" % mr_adc.ncasci)
-
-    if mr_adc.ncasci > 0:
-
-        # Compute transition RDMs between the ground (reference) state and target CASCI states
-        print ("Computing transition RDMs between reference and target CASCI states...\n")
-        sys.stdout.flush()
-
-        if mr_adc.method_type == "ip":
-            # Compute CASCI states with higher MS
-            Sp_wfn_casci = []
-            Sp_wfn_ne = None
-            for wfn in wfn_casci:
-                Sp_wfn, Sp_wfn_ne = mr_adc.interface.apply_S_plus(wfn, mr_adc.ncas, mr_adc.nelecasci)
-                Sp_wfn_casci.append(Sp_wfn)
-
-            mr_adc.rdm.ct = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so))
-            mr_adc.rdm.ct[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_ct_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-            mr_adc.rdm.ct[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_ct_so(mr_adc.interface, Sp_wfn_casci, Sp_wfn_ne).copy()
-
-            mr_adc.rdm.ccat = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so))
-            mr_adc.rdm.ccat[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_ccat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-            mr_adc.rdm.ccat[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_ccat_so(mr_adc.interface, Sp_wfn_casci, Sp_wfn_ne).copy()
-
-            if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-                mr_adc.rdm.cccaat = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so))
-                mr_adc.rdm.cccaat[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_cccaat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-                mr_adc.rdm.cccaat[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_cccaat_so(mr_adc.interface, Sp_wfn_casci, Sp_wfn_ne).copy()
-
-        elif mr_adc.method_type == "ea":
-            # Compute CASCI states with lower MS
-            Sm_wfn_casci = []
-            Sm_wfn_ne = None
-            for wfn in wfn_casci:
-                Sm_wfn, Sm_wfn_ne = mr_adc.interface.apply_S_minus(wfn, mr_adc.ncas, mr_adc.nelecasci)
-                Sm_wfn_casci.append(Sm_wfn)
-
-            mr_adc.rdm.tc = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so))
-            mr_adc.rdm.tc[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_tc_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-            mr_adc.rdm.tc[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_tc_so(mr_adc.interface, Sm_wfn_casci, Sm_wfn_ne).copy()
-
-            mr_adc.rdm.tcca = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so))
-            mr_adc.rdm.tcca[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_tcca_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-            mr_adc.rdm.tcca[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_tcca_so(mr_adc.interface, Sm_wfn_casci, Sm_wfn_ne).copy()
-
-            if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-                mr_adc.rdm.tcccaa = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so))
-                mr_adc.rdm.tcccaa[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_tcccaa_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-                mr_adc.rdm.tcccaa[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_tcccaa_so(mr_adc.interface, Sm_wfn_casci, Sm_wfn_ne).copy()
-
-        elif mr_adc.method_type == "ee":
-            mr_adc.rdm.tca = mr_adc_rdms.compute_rdm_tca_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-            mr_adc.rdm.tccaa = mr_adc_rdms.compute_rdm_tccaa_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-
-            if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-                mr_adc.rdm.tcccaaa = mr_adc_rdms.compute_rdm_tcccaaa_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
-
-        print ("Computing transition RDMs between target CASCI states...\n")
-        sys.stdout.flush()
-
-        # Compute transition RDMs between two target CASCI states
-        mr_adc.rdm.tcat = mr_adc_rdms.compute_rdm_tcat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci)
-        mr_adc.rdm.tccaat = mr_adc_rdms.compute_rdm_tccaat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci)
-
-    print ("Time for computing excited-state RDMs:                          %f sec\n" % (time.time() - start_time))
-
+#def compute_es_rdms_so(mr_adc):
+#
+#    start_time = time.time()
+#
+#    wfn_casci = None
+#    e_cas_ci = None
+#
+#    print ("Computing excited-state CASCI wavefunctions...\n")
+#    sys.stdout.flush()
+#
+#    # Compute CASCI wavefunctions for excited states in the active space
+#    if mr_adc.method_type == "ip":
+#
+#        mr_adc.nelecasci = (mr_adc.nelecas[0] - 1, mr_adc.nelecas[1])
+#
+#        if (0 <= mr_adc.nelecasci[0] <= mr_adc.ncas and 0 <= mr_adc.nelecasci[1] <= mr_adc.ncas):
+#            e_cas_ci, wfn_casci = mr_adc.interface.compute_casci_ip_ea(mr_adc.ncasci, mr_adc.method_type)
+#        else:
+#            mr_adc.nelecasci = None
+#
+#    elif mr_adc.method_type == "ea":
+#
+#        mr_adc.nelecasci = (mr_adc.nelecas[0] + 1, mr_adc.nelecas[1])
+#
+#        if (0 <= mr_adc.nelecasci[0] <= mr_adc.ncas and 0 <= mr_adc.nelecasci[1] <= mr_adc.ncas):
+#            e_cas_ci, wfn_casci = mr_adc.interface.compute_casci_ip_ea(mr_adc.ncasci, mr_adc.method_type)
+#        else:
+#            mr_adc.nelecasci = None
+#
+#    elif mr_adc.method_type == "ee":
+#
+#        mr_adc.nelecasci = (mr_adc.nelecas[0], mr_adc.nelecas[1])
+#        
+#        if (mr_adc.nelecasci[0] != 0 or mr_adc.nelecasci[1] != 0) and (mr_adc.nelecasci[0] != mr_adc.ncas or mr_adc.nelecasci[1] != mr_adc.ncas): 
+#            e_cas_ci, wfn_casci = mr_adc.interface.compute_casci_ee(mr_adc.ncasci)
+#        else:
+#            mr_adc.nelecasci = None
+#
+#    elif mr_adc.method_type in ("cvs-ip", "cvs-ee"):
+#
+#        mr_adc.nelecasci = None
+#
+#    else:
+#        raise Exception("MR-ADC is not implemented for %s" % mr_adc.method_type)
+#
+#    if mr_adc.nelecasci is not None:
+#        mr_adc.ncasci = len(e_cas_ci)
+#        mr_adc.wfn_casci = wfn_casci
+#        mr_adc.e_cas_ci = e_cas_ci
+#    else:
+#        if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
+#            print ("Requested method type %s does not require running a CASCI calculation..." % mr_adc.method_type)
+#        else:
+#            print ("WARNING: active orbitals are either empty of completely filled...")
+#        print ("Skipping the CASCI calculation...")
+#        mr_adc.ncasci = 0
+#        mr_adc.wfn_casci = None
+#        mr_adc.e_cas_ci = None
+#
+#    print ("\nFinal number of excited CASCI states: %d\n" % mr_adc.ncasci)
+#
+#    if mr_adc.ncasci > 0:
+#
+#        # Compute transition RDMs between the ground (reference) state and target CASCI states
+#        print ("Computing transition RDMs between reference and target CASCI states...\n")
+#        sys.stdout.flush()
+#
+#        if mr_adc.method_type == "ip":
+#            # Compute CASCI states with higher MS
+#            Sp_wfn_casci = []
+#            Sp_wfn_ne = None
+#            for wfn in wfn_casci:
+#                Sp_wfn, Sp_wfn_ne = mr_adc.interface.apply_S_plus(wfn, mr_adc.ncas, mr_adc.nelecasci)
+#                Sp_wfn_casci.append(Sp_wfn)
+#
+#            mr_adc.rdm.ct = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so))
+#            mr_adc.rdm.ct[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_ct_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#            mr_adc.rdm.ct[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_ct_so(mr_adc.interface, Sp_wfn_casci, Sp_wfn_ne).copy()
+#
+#            mr_adc.rdm.ccat = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so))
+#            mr_adc.rdm.ccat[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_ccat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#            mr_adc.rdm.ccat[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_ccat_so(mr_adc.interface, Sp_wfn_casci, Sp_wfn_ne).copy()
+#
+#            if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+#                mr_adc.rdm.cccaat = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so))
+#                mr_adc.rdm.cccaat[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_cccaat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#                mr_adc.rdm.cccaat[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_cccaat_so(mr_adc.interface, Sp_wfn_casci, Sp_wfn_ne).copy()
+#
+#        elif mr_adc.method_type == "ea":
+#            # Compute CASCI states with lower MS
+#            Sm_wfn_casci = []
+#            Sm_wfn_ne = None
+#            for wfn in wfn_casci:
+#                Sm_wfn, Sm_wfn_ne = mr_adc.interface.apply_S_minus(wfn, mr_adc.ncas, mr_adc.nelecasci)
+#                Sm_wfn_casci.append(Sm_wfn)
+#
+#            mr_adc.rdm.tc = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so))
+#            mr_adc.rdm.tc[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_tc_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#            mr_adc.rdm.tc[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_tc_so(mr_adc.interface, Sm_wfn_casci, Sm_wfn_ne).copy()
+#
+#            mr_adc.rdm.tcca = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so))
+#            mr_adc.rdm.tcca[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_tcca_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#            mr_adc.rdm.tcca[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_tcca_so(mr_adc.interface, Sm_wfn_casci, Sm_wfn_ne).copy()
+#
+#            if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+#                mr_adc.rdm.tcccaa = np.zeros((2 * mr_adc.ncasci, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so, mr_adc.ncas_so))
+#                mr_adc.rdm.tcccaa[:mr_adc.ncasci] = mr_adc_rdms.compute_rdm_tcccaa_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#                mr_adc.rdm.tcccaa[mr_adc.ncasci:] = mr_adc_rdms.compute_rdm_tcccaa_so(mr_adc.interface, Sm_wfn_casci, Sm_wfn_ne).copy()
+#
+#        elif mr_adc.method_type == "ee":
+#            mr_adc.rdm.tca = mr_adc_rdms.compute_rdm_tca_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#            mr_adc.rdm.tccaa = mr_adc_rdms.compute_rdm_tccaa_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#
+#            if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+#                mr_adc.rdm.tcccaaa = mr_adc_rdms.compute_rdm_tcccaaa_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
+#
+#        print ("Computing transition RDMs between target CASCI states...\n")
+#        sys.stdout.flush()
+#
+#        # Compute transition RDMs between two target CASCI states
+#        mr_adc.rdm.tcat = mr_adc_rdms.compute_rdm_tcat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci)
+#        mr_adc.rdm.tccaat = mr_adc_rdms.compute_rdm_tccaat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci)
+#
+#    print ("Time for computing excited-state RDMs:                          %f sec\n" % (time.time() - start_time))
+#
 #def compute_rdm_ca_so(interface, bra = None, ket = None, nelecas = None):
 #
 #    ncas = interface.ncas

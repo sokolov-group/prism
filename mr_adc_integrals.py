@@ -61,19 +61,23 @@ def transform_integrals_2e_incore(mr_adc):
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.caea = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_e, mo_a)
+            mr_adc.v2e.caae = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_a, mo_e)
             mr_adc.v2e.caaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_a, mo_a)
-            mr_adc.v2e.aaea = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_e, mo_a)
+            mr_adc.v2e.aaae = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_a, mo_e)
             mr_adc.v2e.caca = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_c, mo_a)
+            mr_adc.v2e.caac = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_a, mo_c)
 
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.ccee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_e, mo_e)
             mr_adc.v2e.ccea = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_e, mo_a)
+            mr_adc.v2e.ccae = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_a, mo_e)
             mr_adc.v2e.caee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_e, mo_e)
             mr_adc.v2e.ccaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_a, mo_a)
             mr_adc.v2e.aaee = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_e, mo_e)
             mr_adc.v2e.ccca = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_a)
             mr_adc.v2e.ccce = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_e)
             mr_adc.v2e.cace = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_c, mo_e)
+            mr_adc.v2e.caec = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_e, mo_c)
             mr_adc.v2e.ceaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_a, mo_a)
             mr_adc.v2e.cece = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_c, mo_e)
             mr_adc.v2e.ceee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_e, mo_e)
@@ -88,69 +92,16 @@ def transform_integrals_2e_incore(mr_adc):
             if (mr_adc.method == "mr-adc(2)-x" and mr_adc.method_type == "ea"):
                 mr_adc.v2e.eeee = transform_2e_phys_incore(mr_adc.interface, mo_e, mo_e, mo_e, mo_e)
 
-    elif mr_adc.method_type == "ee":
-        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc.v2e.caea = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_e, mo_a)
-            mr_adc.v2e.caaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_a, mo_a)
-            mr_adc.v2e.aaea = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_e, mo_a)
-            mr_adc.v2e.caca = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_c, mo_a)
-            mr_adc.v2e.ccee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_e, mo_e)
-            mr_adc.v2e.aaee = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_e, mo_e)
-            mr_adc.v2e.caee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_e, mo_e)
-            mr_adc.v2e.cace = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_c, mo_e)
-            mr_adc.v2e.cece = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_c, mo_e)
-            mr_adc.v2e.aeae = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_a, mo_e)
-            mr_adc.v2e.ceae = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_a, mo_e)
-            mr_adc.v2e.ccea = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_e, mo_a)
-            mr_adc.v2e.ceaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_a, mo_a)
-            mr_adc.v2e.ccaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_a, mo_a)
-
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"): 
-            mr_adc.v2e.ccca = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_a)
-            mr_adc.v2e.ccce = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_e)
-            mr_adc.v2e.ceee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_e, mo_e)
-            mr_adc.v2e.aeee = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_e, mo_e)
-
-            if mr_adc.method == "mr-adc(2)-x":
-                mr_adc.v2e.cccc = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
-                mr_adc.v2e.eeee = transform_2e_phys_incore(mr_adc.interface, mo_e, mo_e, mo_e, mo_e)
-
-    elif mr_adc.method_type == "cvs-ee":
-        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc.v2e.caea = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_e, mo_a)
-            mr_adc.v2e.caaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_a, mo_a)
-            mr_adc.v2e.aaea = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_e, mo_a)
-            mr_adc.v2e.caca = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_c, mo_a)
-            mr_adc.v2e.ccee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_e, mo_e)
-            mr_adc.v2e.aaee = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_e, mo_e)
-            mr_adc.v2e.caee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_e, mo_e)
-            mr_adc.v2e.cace = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_c, mo_e)
-            mr_adc.v2e.cece = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_c, mo_e)
-            mr_adc.v2e.aeae = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_a, mo_e)
-            mr_adc.v2e.ceae = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_a, mo_e)
-            mr_adc.v2e.ccea = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_e, mo_a)
-            mr_adc.v2e.ceaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_a, mo_a)
-            mr_adc.v2e.ccaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_a, mo_a)
-
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"): 
-            mr_adc.v2e.ccca = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_a)
-            mr_adc.v2e.ccce = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_e)
-            mr_adc.v2e.ceee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_e, mo_e)
-            mr_adc.v2e.aeee = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_e, mo_e)
-
-            if mr_adc.method == "mr-adc(2)-x":
-                mr_adc.v2e.cccc = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
-                mr_adc.v2e.eeee = transform_2e_phys_incore(mr_adc.interface, mo_e, mo_e, mo_e, mo_e)
-
+    # TODO: Check if needed in SA code
     # Effective one-electron integrals
-    gcgc = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo, mo_c)
-    gccg = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo_c, mo)
-    mr_adc.h1eff = mr_adc.h1e + 2.0 * np.einsum('prqr->pq', gcgc) - np.einsum('prrq->pq', gccg)
-    mr_adc.h1eff_act = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    # gcgc = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo, mo_c)
+    # gccg = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo_c, mo)
+    # mr_adc.h1eff = mr_adc.h1e + 2.0 * np.einsum('prqr->pq', gcgc) - np.einsum('prrq->pq', gccg)
+    # mr_adc.h1eff_act = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
 
     # Store diagonal elements of the generalized Fock operator in spin-orbital basis
     mr_adc.mo_energy.c = mr_adc.interface.mo_energy[:mr_adc.ncore]
-    mr_adc.mo_energy.e = mr_adc.interface.mo_energy[(mr_adc.ncore + mr_adc.ncas):]
+    mr_adc.mo_energy.e = mr_adc.interface.mo_energy[mr_adc.nocc:]
 
     print ("Time for transforming integrals:                  %f sec\n" % (time.time() - start_time))
 

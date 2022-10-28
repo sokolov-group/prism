@@ -93,9 +93,23 @@ class PYSCF:
         rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra, ket, self.ncas, nelecas)
         rdm1, rdm2, rdm3 = fci.rdm.reorder_dm123(rdm1, rdm2, rdm3)
 
-        rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 3, 1))
+        rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 1, 3))               # rdm2[p,q,r,s] = \langle p^\dagger q^\dagger s r\rangle
+        rdm3 = np.ascontiguousarray(rdm3.transpose(0, 2, 4, 1, 3, 5))         # rdm3[p,q,r,s,t,u] = \langle p^\dagger q^\dagger r^\dagger u t s\rangle
 
         return rdm1, rdm2, rdm3
+
+    def compute_rdm1234(self, bra, ket, nelecas):
+
+        from pyscf import fci
+
+        rdm1, rdm2, rdm3, rdm4 = fci.rdm.make_dm1234('FCI4pdm_kern_sf', bra, ket, self.ncas, nelecas)
+        rdm1, rdm2, rdm3, rdm4 = fci.rdm.reorder_dm1234(rdm1, rdm2, rdm3, rdm4)
+
+        rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 1, 3))               # rdm2[p,q,r,s] = \langle p^\dagger q^\dagger s r\rangle
+        rdm3 = np.ascontiguousarray(rdm3.transpose(0, 2, 4, 1, 3, 5))         # rdm3[p,q,r,s,t,u] = \langle p^\dagger q^\dagger r^\dagger u t s\rangle
+        rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))   # rdm3[p,q,r,s,t,u,v,w] = \langle p^\dagger q^\dagger r^\dagger w v u t\rangle
+
+        return rdm1, rdm2, rdm3, rdm4
 
 #
 #    def compute_casci_ip_ea(self, ncasci, method_type):

@@ -1,10 +1,9 @@
 import sys
 import time
-from tkinter import W
 import numpy as np
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_rdms as mr_adc_rdms
-#import prism.mr_adc_compute as mr_adc_compute
+import prism.mr_adc_compute as mr_adc_compute
 
 class MRADC:
     def __init__(self, interface):
@@ -32,32 +31,34 @@ class MRADC:
         self.nextern = interface.nextern
         self.nocc = self.ncas + self.ncore
         self.nelecas = interface.nelecas
-        self.e_casscf = interface.e_casscf # Total CASSCF energy
-        self.e_cas = interface.e_cas # Active-space CASSCF energy
-        self.wfn_casscf = interface.wfn_casscf # Ground-state CASSCF wavefunction
-#        self.mo_energy = interface.mo_energy # Diagonal elements of the generalized Fock operator
+        self.e_casscf = interface.e_casscf      # Total CASSCF energy
+        self.e_cas = interface.e_cas            # Active-space CASSCF energy
+        self.wfn_casscf = interface.wfn_casscf  # Ground-state CASSCF wavefunction
 
         # MR-ADC specific variables
-        self.method = "mr-adc(2)" # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
-        self.method_type = "ip" # Possible method types: ee, ip, ea
-#        self.max_t_order = 1 # Maximum order of t amplitudes to compute
-        self.ncasci = 6 # Number of CASCI roots requested
-        self.nroots = 6 # Number of MR-ADC roots requested
-        self.max_space = 100 # Maximum size of the Davidson trial space
-        self.max_cycle = 50 # Maximum number of iterations in the Davidson procedure
-        self.tol_davidson = 1e-5 # Tolerance for the residual in the Davidson procedure
+        self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
+        self.method_type = "ip"         # Possible method types: ee, ip, ea
+        # self.max_t_order = 1          # Maximum order of t amplitudes to compute
+        self.ncasci = 6                 # Number of CASCI roots requested
+        self.nroots = 6                 # Number of MR-ADC roots requested
+        self.max_space = 100            # Maximum size of the Davidson trial space
+        self.max_cycle = 50             # Maximum number of iterations in the Davidson procedure
+        self.tol_davidson = 1e-5        # Tolerance for the residual in the Davidson procedure
         self.s_thresh_singles = 1e-5
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
-        self.s_damping_strength = None # If set to a positive value defines the range (log scale) of overlap matrix eigenvalues damped by a sigmoid function
-        self.e_cas_ci = None # Active-space energies of CASCI states
-        self.wfn_casci = None # Active-space wavefunctions of CASCI states
-        self.nelecasci = None # Active-space number of electrons of CASCI states
-        self.h0 = lambda:None # Information about h0 excitation manifold
-        self.h1 = lambda:None # Information about h1 excitation manifold
-        self.h_orth = lambda:None # Information about orthonormalized excitation manifold
-        self.S12 = lambda:None # Matrices for orthogonalization of excitation spaces
-        self.debug_mode = False # Debug printing statements
+
+        self.s_damping_strength = None  # If set to a positive value defines the range (log scale) of overlap matrix
+                                        # eigenvalues damped by a sigmoid function
+
+        self.e_cas_ci = None            # Active-space energies of CASCI states
+        self.wfn_casci = None           # Active-space wavefunctions of CASCI states
+        self.nelecasci = None           # Active-space number of electrons of CASCI states
+        self.h0 = lambda:None           # Information about h0 excitation manifold
+        self.h1 = lambda:None           # Information about h1 excitation manifold
+        self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
+        self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
+        self.debug_mode = False         # Debug printing statements
 
         # Parameters for the CVS implementation
         self.ncvs = None
@@ -70,7 +71,6 @@ class MRADC:
         self.v2e = lambda:None
         self.mo_energy = lambda:None
         self.rdm = lambda:None
-
 
     def kernel(self):
 
@@ -113,18 +113,26 @@ class MRADC:
         mr_adc_rdms.compute_gs_rdms(self)
 
         ### DEBUG
-        if self.debug_mode:
-            dyall_hamiltonian(self)
+        # if self.debug_mode:
+        #     dyall_hamiltonian(self)
 
-            import prism.mr_adc_amplitudes as mr_adc_amplitudes
-            mr_adc_amplitudes.compute_t1_0(self)
-            mr_adc_amplitudes.compute_t1_p1(self)
-            mr_adc_amplitudes.compute_t1_m1(self)
+        #     import prism.mr_adc_amplitudes as mr_adc_amplitudes
+        #     mr_adc_amplitudes.compute_t1_0(self)
+        #     mr_adc_amplitudes.compute_t1_p1(self)
+        #     mr_adc_amplitudes.compute_t1_m1(self)
+        #     mr_adc_amplitudes.compute_t1_p2(self)
+        #     mr_adc_amplitudes.compute_t1_m2(self)
+        #     mr_adc_amplitudes.compute_t1_0p(self)
+        #     mr_adc_amplitudes.compute_t1_p1p(self)
+        #     mr_adc_amplitudes.compute_t1_0p_sanity_check(self)
+        #     mr_adc_amplitudes.compute_t1_p1p_sanity_check(self)
+        #     mr_adc_amplitudes.compute_t1_m1p_sanity_check(self)
 
-        return "ee", "spec_factors"
+        # return "ee", "spec_factors"
         ### DEBUG
 
-        mr_adc_rdms.compute_es_rdms(self)
+        # TODO: Compute CASCI wavefunctions for excited states in the active space
+        # mr_adc_rdms.compute_es_rdms(self)
 
         # Run MR-ADC computation
         ee, spec_factors = mr_adc_compute.kernel(self)
@@ -136,7 +144,7 @@ class MRADC:
 
 
 def dyall_hamiltonian(mr_adc):
-    """Zeroth Order Dyall Hamiltonian: Debug Implementation"""
+    """Zeroth Order Dyall Hamiltonian"""
 
     # Testing Dyall Hamiltonian expected value
     print ("Calculating the Spin-Adapted Dyall Hamiltonian...")
@@ -170,12 +178,9 @@ def dyall_hamiltonian(mr_adc):
     # Calculating H_act
     temp  = einsum('xy,xy', h_aa, rdm_ca, optimize = einsum_type)
 
-    temp += 2.0 * einsum('ixiy,xy', v_caca, rdm_ca, optimize = einsum_type)
-    temp -= einsum('xiiy,xy', v_acca, rdm_ca, optimize = einsum_type)
+    temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
-    temp += 0.416666666667 * einsum('xyzw,xywz', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += 0.0833333333333 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp -= 0.0833333333333 * einsum('yxzw,xywz', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += 0.0833333333333 * einsum('yxzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    temp -= einsum('xiiy,xy', v_acca, rdm_ca, optimize = einsum_type)
+    temp += 2 * einsum('ixiy,xy', v_caca, rdm_ca, optimize = einsum_type)
 
     print ("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
