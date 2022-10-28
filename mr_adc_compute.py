@@ -1,12 +1,8 @@
 import sys
 import time
 import numpy as np
-import prism_beta.mr_adc_amplitudes as mr_adc_amplitudes
-import prism_beta.mr_adc_ip as mr_adc_ip
-import prism_beta.mr_adc_ea as mr_adc_ea
-import prism_beta.mr_adc_ee as mr_adc_ee
-import prism_beta.mr_adc_cvs_ip as mr_adc_cvs_ip
-import prism_beta.mr_adc_cvs_ee as mr_adc_cvs_ee
+import prism.mr_adc_amplitudes as mr_adc_amplitudes
+# import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
 from functools import reduce
 
 def kernel(mr_adc):
@@ -17,7 +13,7 @@ def kernel(mr_adc):
 
     # Print general information
     print ("Method:                                           %s-%s" % (mr_adc.method_type, mr_adc.method))
-    print ("Maximum order of T amplitudes:                    %d" % (mr_adc.max_t_order))
+    # print ("Maximum order of T amplitudes:                    %d" % (mr_adc.max_t_order))
     print ("Number of MR-ADC roots requested:                 %d" % mr_adc.nroots)
     print ("Ground-state active-space energy:           %20.12f" % mr_adc.e_cas)
     print ("Nuclear repulsion energy:                   %20.12f" % mr_adc.enuc)
@@ -31,50 +27,40 @@ def kernel(mr_adc):
         print ("Number of CVS orbitals:                           %d" % mr_adc.ncvs)
         print ("Number of valence (non-CVS) orbitals:             %d" % (mr_adc.ncore - mr_adc.ncvs))
 
-    # Print info about CASCI states
     if mr_adc.s_damping_strength is None:
         print ("Overlap truncation parameter (singles):           %e" % mr_adc.s_thresh_singles)
     else:
         print ("Overlap damping width:                            %f" % mr_adc.s_damping_strength)
         print ("Overlap truncation parameter (singles):           %e" % (mr_adc.s_thresh_singles * 10**(- mr_adc.s_damping_strength / 2)))
 
+    # Print info about CASCI states
     print ("Overlap truncation parameter (doubles):           %e" % mr_adc.s_thresh_doubles)
     print ("Number of CASCI states:                           %d\n" % mr_adc.ncasci)
 
     if mr_adc.ncasci > 0:
         print ("CASCI excitation energies (eV):                   %s\n" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
-
-    # Print info about imaginary time evolution
-    if not mr_adc.exact_semiinternals:
-        print ("Parameters for imaginary time evolution:")
-        print ("Maximum length of propagation:                    %f" % mr_adc.tmax)
-        print ("Initial time step:                                %f" % mr_adc.delta_t)
-        print ("Integration tolerance:                            %e\n" % mr_adc.tol_it)
     sys.stdout.flush()
 
     # Compute amplitudes
-    t_amp = mr_adc_amplitudes.compute_amplitudes(mr_adc, mr_adc.exact_semiinternals)
+    t_amp = mr_adc_amplitudes.compute_amplitudes(mr_adc)
 
+    ## DEBUG
+    exit()
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
     if mr_adc.method_type == "ip":
-
         mr_adc = mr_adc_ip.compute_excitation_manifolds(mr_adc)
 
     elif mr_adc.method_type == "ea":
-
         mr_adc = mr_adc_ea.compute_excitation_manifolds(mr_adc)
 
     elif mr_adc.method_type == "ee":
-
         mr_adc = mr_adc_ee.compute_excitation_manifolds(mr_adc)
 
     elif mr_adc.method_type == "cvs-ip":
-
         mr_adc = mr_adc_cvs_ip.compute_excitation_manifolds(mr_adc)
 
     elif mr_adc.method_type == "cvs-ee":
-
         mr_adc = mr_adc_cvs_ee.compute_excitation_manifolds(mr_adc)
 
     # Setup Davidson algorithm parameters
