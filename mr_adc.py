@@ -137,9 +137,6 @@ class MRADC:
         # Run MR-ADC computation
         ee, spec_factors = mr_adc_compute.kernel(self)
 
-        if self.disk:
-            self.clean_up_disk()
-
         return ee, spec_factors
 
 
@@ -154,14 +151,12 @@ def dyall_hamiltonian(mr_adc):
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables needed
-    h_aa = mr_adc.h1e[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
     rdm_ca = mr_adc.rdm.ca
     v_aaaa = mr_adc.v2e.aaaa
-    v_caca = mr_adc.v2e.caca
     rdm_ccaa = mr_adc.rdm.ccaa
     mo_c = mr_adc.mo[:, :mr_adc.ncore].copy()
     mo_a = mr_adc.mo[:, mr_adc.ncore:mr_adc.nocc].copy()
-    v_acca = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_a, mo_c, mo_c, mo_a)
 
     # Calculating E_fc
     ## Calculating h_cc term
@@ -177,10 +172,6 @@ def dyall_hamiltonian(mr_adc):
 
     # Calculating H_act
     temp  = einsum('xy,xy', h_aa, rdm_ca, optimize = einsum_type)
-
     temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-
-    temp -= einsum('xiiy,xy', v_acca, rdm_ca, optimize = einsum_type)
-    temp += 2 * einsum('ixiy,xy', v_caca, rdm_ca, optimize = einsum_type)
 
     print ("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))

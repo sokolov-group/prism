@@ -92,12 +92,11 @@ def transform_integrals_2e_incore(mr_adc):
             if (mr_adc.method == "mr-adc(2)-x" and mr_adc.method_type == "ea"):
                 mr_adc.v2e.eeee = transform_2e_phys_incore(mr_adc.interface, mo_e, mo_e, mo_e, mo_e)
 
-    # TODO: Check if needed in SA code
     # Effective one-electron integrals
-    # gcgc = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo, mo_c)
-    # gccg = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo_c, mo)
-    # mr_adc.h1eff = mr_adc.h1e + 2.0 * np.einsum('prqr->pq', gcgc) - np.einsum('prrq->pq', gccg)
-    # mr_adc.h1eff_act = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    gcgc = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo, mo_c)
+    gccg = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo_c, mo)
+    mr_adc.h1eff = mr_adc.h1e + 2.0 * np.einsum('prqr->pq', gcgc) - np.einsum('prrq->pq', gccg)
+    mr_adc.h1eff_act = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
 
     # Store diagonal elements of the generalized Fock operator in spin-orbital basis
     mr_adc.mo_energy.c = mr_adc.interface.mo_energy[:mr_adc.ncore]

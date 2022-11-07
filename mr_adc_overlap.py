@@ -124,95 +124,6 @@ def compute_S12_m2(mr_adc, ignore_print = True):
 
     return S_m2_12_inv
 
-def compute_S12_0p_gno_projector(mr_adc, ignore_print = True, s_thresh = None):
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Variables from kernel
-    ncas = mr_adc.ncas
-    rdm_ca = mr_adc.rdm.ca
-    rdm_ccaa = mr_adc.rdm.ccaa
-
-    # S_0p_caac  = 1/6 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    # S_0p_caac += 1/3 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    # print (">>> SA S_0p_caac norm: {:}".format(np.linalg.norm(S_0p_caac)))
-    # print (">> SA S_0p_caac:\n{:}".format(S_0p_caac))
-
-    # Spin-summed version
-    S_0p_caac =- 1/6 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    S_0p_caac += 1/6 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    S_0p_caac += 1/3 * einsum('XWYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    S_0p_caac += 1/6 * einsum('XWZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    S_0p_caac += 1/2 * einsum('WY,XZ->XYZW', np.identity(ncas), rdm_ca, optimize = einsum_type)
-    if mr_adc.debug_mode:
-        print (">>> SA S_0p_caac norm: {:}".format(np.linalg.norm(S_0p_caac)))
-        print (">> SA S_0p_caac:\n{:}".format(S_0p_caac))
-        print ("\n>>> SA S_0p spin-summed norm: {:}".format(np.linalg.norm(S_0p_caac)))
-
-    # Compute overlap matrix in the basis of core Fermi vacuum operators
-    dim = 1 + ncas**2
-    S_0p = np.zeros((dim, dim))
-
-    S_0p[0,0] = 1.0
-
-    S_0p[0,1:] = 1/2 * rdm_ca.reshape(-1).copy()
-    # S_0p[1:,0] = 1/2 * rdm_ca.T.reshape(-1).copy()
-    # S_0p[0,1:] = rdm_ca.reshape(-1).copy()
-    S_0p[1:,0] = rdm_ca.T.reshape(-1).copy()
-    S_0p[1:,1:] = S_0p_caac.reshape(ncas**2, ncas**2).copy()
-    if mr_adc.debug_mode:
-        print ("\n>>> SA S_0p is symmetric: {:}".format(np.allclose(S_0p, S_0p.T, rtol=1e-08, atol=1e-08)))
-        print ("\n>> SA S_0p[1:,0]:\n{:}".format(S_0p[1:,0]))
-        print ("\n>> SA S_0p[1:,1:]:\n{:}".format(S_0p[1:,1:]))
-
-    # Compute projector to the GNO operator basis
-    Y = np.identity(S_0p.shape[0])
-    Y[0,1:] = - 1/2 * rdm_ca.reshape(-1).copy()
-    # Y[0,1:] = - rdm_ca.reshape(-1).copy()
-    # if mr_adc.debug_mode:
-    #     print ("\n>> SA Y:\n{:}".format(Y[0,1:]))
-
-    St = reduce(np.dot, (Y.T, S_0p, Y))
-    # if mr_adc.debug_mode:
-    #     print ("\n>> SA St:\n{:}".format(St[1::,1::]))
-
-    if s_thresh is None:
-        if mr_adc.s_damping_strength is None:
-            s_thresh = mr_adc.s_thresh_singles
-        else:
-            s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
-
-    S_eval, S_evec = np.linalg.eigh(St)
-    S_ind_nonzero = np.where(S_eval > s_thresh)[0]
-
-    S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
-    # if mr_adc.debug_mode:
-    #     print ("\n>> SA S_inv_eval:\n{:}".format(S_inv_eval))
-
-    # Damping
-    if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
-        S_inv_eval *= damping_prefactor
-
-    S_evec = S_evec[:, S_ind_nonzero]
-
-    S_0p_12_inv = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
-    # if mr_adc.debug_mode:
-    #     print ("\n>>> SA Y shape: {:}".format(Y.shape))
-    #     print ("\n>>> SA S_evec shape: {:}".format(S_evec.shape))
-    #     print ("\n>>> SA np.diag(S_inv_eval) shape: {:}".format(np.diag(S_inv_eval).shape))
-    #     print ("\n>>> SA S_0p_12_inv shape: {:}".format(S_0p_12_inv.shape))
-        # print ("\n>> SA S_0p_12_inv:\n{:}".format(S_0p_12_inv))
-
-    if not ignore_print:
-        print ("Dimension of the [0'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
-        if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [0'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
-
-    return S_0p_12_inv
-
 def compute_S12_p1p(mr_adc, ignore_print = True, half_transform = False, s_thresh = None, conv_order = False):
 
     # Einsum definition from kernel
@@ -314,7 +225,7 @@ def compute_S12_p1p(mr_adc, ignore_print = True, half_transform = False, s_thres
 
     return S_p1p_12_inv_act
 
-def compute_S12_p1p_sanity_check(mr_adc, ignore_print = True, half_transform = False, s_thresh = None, conv_order = False):
+def compute_S12_p1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -330,13 +241,7 @@ def compute_S12_p1p_sanity_check(mr_adc, ignore_print = True, half_transform = F
     n_x = ncas * 2
     n_xzw = ncas * 2 * ncas * 2 * (ncas * 2 - 1) // 2
     dim_act = n_x + n_xzw
-    aa_ind = np.tril_indices(ncas * 2, k=-1)
-
-    if s_thresh is None:
-        if mr_adc.s_damping_strength is None:
-            s_thresh = mr_adc.s_thresh_singles
-        else:
-            s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+    xy_ind = np.tril_indices(ncas * 2, k=-1)
 
     S_act = np.zeros((dim_act, dim_act))
 
@@ -461,17 +366,35 @@ def compute_S12_p1p_sanity_check(mr_adc, ignore_print = True, half_transform = F
     S22[1::2,::2,::2,1::2,::2,::2] = S22_baa_baa.copy()
     S22[::2,1::2,1::2,::2,1::2,1::2] = S22_baa_baa.copy()
 
-    S12 = S12[:,:,aa_ind[0],aa_ind[1]]
-    S22 = S22[:,:,:,:,aa_ind[0],aa_ind[1]]
-    S22 = S22[:,aa_ind[0],aa_ind[1]]
+    S12 = S12[:,:,xy_ind[0],xy_ind[1]]
+    S22 = S22[:,:,:,:,xy_ind[0],xy_ind[1]]
+    S22 = S22[:,xy_ind[0],xy_ind[1]]
 
     S_act[:n_x,:n_x] = S11.copy()
     S_act[:n_x,n_x:] = S12.reshape(n_x, n_xzw)
     S_act[n_x:,:n_x] = S12.reshape(n_x, n_xzw).T
     S_act[n_x:,n_x:] = S22.reshape(n_xzw, n_xzw)
 
-    S_eval, S_evec = np.linalg.eigh(S_act)
+    # Compute projector to the GNO operator basis
+    Y = np.identity(S_act.shape[0])
 
+    rdm_ca_so = np.zeros((ncas * 2, ncas * 2))
+    rdm_ca_so[::2,::2] = 0.5 * rdm_ca
+    rdm_ca_so[1::2,1::2] = 0.5 * rdm_ca
+
+    Y_ten = -np.einsum("uw,vx->uvxw", np.identity(ncas * 2), rdm_ca_so)
+    Y_ten += np.einsum("ux,vw->uvxw", np.identity(ncas * 2), rdm_ca_so)
+
+    Y[:n_x,n_x:] = Y_ten[:,:,xy_ind[0],xy_ind[1]].reshape(n_x, n_xzw)
+
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
+    else:
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+
+    St = reduce(np.dot, (Y.T, S_act, Y))
+
+    S_eval, S_evec = np.linalg.eigh(St)
     S_ind_nonzero = np.where(S_eval > s_thresh)[0]
 
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
@@ -482,19 +405,16 @@ def compute_S12_p1p_sanity_check(mr_adc, ignore_print = True, half_transform = F
 
     S_evec = S_evec[:, S_ind_nonzero]
 
-    if half_transform:
-        S_p1p_12_inv_act = np.dot(S_evec, np.diag(S_inv_eval))
-    else:
-        S_p1p_12_inv_act = reduce(np.dot, (S_evec, np.diag(S_inv_eval), S_evec.T))
+    S_p1p_12_inv_act = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
     if not ignore_print:
-        print ("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
+        print ("Dimension of the [+1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
+            print ("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1p_12_inv_act
 
-def compute_S12_m1p_sanity_check(mr_adc, ignore_print = True, half_transform = False, s_thresh = None, conv_order = False):
+def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -609,52 +529,46 @@ def compute_S12_m1p_sanity_check(mr_adc, ignore_print = True, half_transform = F
     S_act[n_x:,:n_x] = S12.reshape(n_x, n_xzw).T
     S_act[n_x:,n_x:] = S22.reshape(n_xzw, n_xzw)
 
-    S_eval, S_evec = np.linalg.eigh(S_act)
+    # Compute projector to the GNO operator basis
+    Y = np.identity(S_act.shape[0])
 
-    if s_thresh is None:
-        if mr_adc.s_damping_strength is None:
-            s_thresh = mr_adc.s_thresh_singles
-        else:
-            s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+    rdm_ca_so = np.zeros((ncas * 2, ncas * 2))
+    rdm_ca_so[::2,::2] = 0.5 * rdm_ca
+    rdm_ca_so[1::2,1::2] = 0.5 * rdm_ca
 
-    # S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+    Y_ten = -np.einsum("uv,wx->uvwx", np.identity(ncas * 2), rdm_ca_so)
+    Y_ten += np.einsum("uw,vx->uvwx", np.identity(ncas * 2), rdm_ca_so)
 
-    # S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
+    Y[:n_x,n_x:] = Y_ten[:,xy_ind[0],xy_ind[1]].reshape(n_x, n_xzw)
 
-    # if mr_adc.s_damping_strength is not None:
-    #     damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
-    #     S_inv_eval *= damping_prefactor
-
-    # S_evec = S_evec[:, S_ind_nonzero]
-
-    s_cut = 0
-    s_trace = np.sum(S_eval)
-
-    s_thresh = mr_adc.s_thresh_singles
-    for p in range(S_eval.shape[0]):
-        s_sum = np.sum(S_eval[:p])
-        if (s_sum / s_trace > s_thresh):
-            s_cut = p - 1
-            break
-
-    S_inv_eval = 1.0/np.sqrt(S_eval[s_cut:])
-    S_evec = S_evec[:, s_cut:]
-
-    if half_transform:
-        S_m1p_12_inv_act = np.dot(S_evec, np.diag(S_inv_eval))
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
     else:
-        S_m1p_12_inv_act = reduce(np.dot, (S_evec, np.diag(S_inv_eval), S_evec.T))
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+
+    St = reduce(np.dot, (Y.T, S_act, Y))
+
+    S_eval, S_evec = np.linalg.eigh(St)
+    S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+
+    S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
+
+    if mr_adc.s_damping_strength is not None:
+        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
+        S_inv_eval *= damping_prefactor
+
+    S_evec = S_evec[:, S_ind_nonzero]
+
+    S_m1p_12_inv_act = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
     if not ignore_print:
-        # print ("Dimension of the [-1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
-        # if len(S_ind_nonzero) > 0:
-        #     print ("Smallest eigenvalue of the [-1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
-        print ("Dimension of the [-1'] orthonormalized subspace:  %d" % S_eval[s_cut:].shape[0])
-        print ("Smallest eigenvalue of the [-1'] overlap metric:  %e" % np.amin(S_eval[s_cut:]))
+        print ("Dimension of the [-1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        if len(S_ind_nonzero) > 0:
+            print ("Smallest eigenvalue of the [-1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m1p_12_inv_act
 
-def compute_S12_0p_sanity_check(mr_adc, ignore_print = True, s_thresh = None):
+def compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -702,19 +616,33 @@ def compute_S12_0p_sanity_check(mr_adc, ignore_print = True, s_thresh = None):
     S_0p[1:,0] = S12.T.reshape(-1).copy()
     S_0p[1:,1:] = S22.reshape(ncas * 2 * ncas * 2, ncas * 2 * ncas * 2).copy()
 
-    if s_thresh is None:
-        if mr_adc.s_damping_strength is None:
-            s_thresh = mr_adc.s_thresh_singles
-        else:
-            s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+    # Compute projector to the GNO operator basis
+    Y = np.identity(S_0p.shape[0])
+    Y_ten = np.zeros((ncas * 2, ncas * 2))
+
+    Y_ten[::2,::2] = 0.5 * rdm_ca.copy()
+    Y_ten[1::2,1::2] = 0.5 * rdm_ca.copy()
+
+    Y[0,1:] =- Y_ten.reshape(-1).copy()
+
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
+    else:
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
 
     S_eval, S_evec = np.linalg.eigh(S_0p)
+
     S_ind_nonzero = np.where(S_eval > s_thresh)[0]
 
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
+
+    if mr_adc.s_damping_strength is not None:
+        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
+        S_inv_eval *= damping_prefactor
+
     S_evec = S_evec[:, S_ind_nonzero]
 
-    S_0p_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
+    S_0p_12_inv = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
     if not ignore_print:
         print ("Dimension of the [0'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
@@ -725,8 +653,6 @@ def compute_S12_0p_sanity_check(mr_adc, ignore_print = True, s_thresh = None):
 
 # This function calculates logarithmic sigmoid damping prefactors for overlap eigenvalues in the range (damping_max, damping_min)
 def compute_damping(s_evals, damping_center, damping_strength):
-
-    # assert(damping_max > damping_min and damping_min > 0.0)
 
     def sigmoid(x, shift, scale):
         x = np.log10(x)
