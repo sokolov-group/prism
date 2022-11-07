@@ -13,7 +13,6 @@ def kernel(mr_adc):
 
     # Print general information
     print ("Method:                                           %s-%s" % (mr_adc.method_type, mr_adc.method))
-    # print ("Maximum order of T amplitudes:                    %d" % (mr_adc.max_t_order))
     print ("Number of MR-ADC roots requested:                 %d" % mr_adc.nroots)
     print ("Ground-state active-space energy:           %20.12f" % mr_adc.e_cas)
     print ("Nuclear repulsion energy:                   %20.12f" % mr_adc.enuc)
@@ -45,7 +44,7 @@ def kernel(mr_adc):
     t_amp = mr_adc_amplitudes.compute_amplitudes(mr_adc)
 
     ## DEBUG
-    exit()
+    return 'ee', 'spec_factors'
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
     if mr_adc.method_type == "ip":
@@ -169,17 +168,10 @@ def setup_davidson(mr_adc, t_amp):
         precond = mr_adc_ee.compute_preconditioner(mr_adc, t_amp, M_00)
 
     # Apply Core-Valence Separation Approximation (CVS)
-    if mr_adc.ncvs is not None:
-        if mr_adc.method_type == "ip":
-            precond = mr_adc_ip.compute_preconditioner_cvs_projector(mr_adc, precond)
-        elif mr_adc.method_type == "ee":
-            precond = mr_adc_ee.compute_preconditioner_cvs_projector(mr_adc, precond)
-        elif mr_adc.method_type == "cvs-ip":
-            precond = mr_adc_cvs_ip.compute_preconditioner(mr_adc, t_amp, M_00)
-        elif mr_adc.method_type == "cvs-ee":
-            precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc, t_amp, M_00)
-        else:
-            raise Exception("CVS projector is only implemented for IP-MR-ADC and EE-MR-ADC")
+    elif mr_adc.method_type == "cvs-ip":
+        precond = mr_adc_cvs_ip.compute_preconditioner(mr_adc, t_amp, M_00)
+    elif mr_adc.method_type == "cvs-ee":
+        precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc, t_amp, M_00)
 
     # Compute guess vectors
     x0 = compute_guess_vectors(mr_adc, precond)

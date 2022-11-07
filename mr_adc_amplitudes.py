@@ -122,6 +122,18 @@ def compute_t1_amplitudes(mr_adc):
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr
+
+    if mr_adc.debug_mode:
+        print (">>> SA e_0p:  {:}".format(e_0p))
+        print (">>> SA e_p1p: {:}".format(e_p1p))
+        print (">>> SA e_m1p: {:}".format(e_m1p))
+        print (">>> SA e_0:   {:}".format(e_0))
+        print (">>> SA e_p1:  {:}".format(e_p1))
+        print (">>> SA e_m1:  {:}".format(e_m1))
+        print (">>> SA e_p2:  {:}".format(e_p2))
+        print (">>> SA e_m2:  {:}".format(e_m2))
+        print (">>> SA e_corr: {:}".format(e_corr))
+
     print ("CASSCF reference energy:                     %20.12f" % mr_adc.e_casscf)
     print ("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
     print ("Total PC-NEVPT2 energy:                      %20.12f\n" % e_tot)
@@ -129,6 +141,47 @@ def compute_t1_amplitudes(mr_adc):
     t1_amp = (t1_ce, t1_ca, t1_ae, t1_caea, t1_caae, t1_caaa, t1_aaea, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee)
 
     return t1_amp
+
+def compute_t2_amplitudes(mr_adc, t1_amp):
+
+    t2_ce, t2_ca, t2_ae = (None,) * 3
+    t2_caea, t2_caaa, t2_aaea = (None,) * 3
+    t2_ccee, t2_ccea, t2_caee, t2_ccaa, t2_aaee = (None,) * 5
+    t2_aa = None
+
+    ncore = mr_adc.ncore
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+
+    ###########################
+    # Second-order amplitudes #
+    ###########################
+    # Approximate second-order amplitudes
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+
+        if ncore > 0 and nextern > 0:
+            print ("Computing T[0']^(2) amplitudes...")
+            sys.stdout.flush()
+            t2_ce = compute_t2_0p_singles(mr_adc, t1_amp)
+            print ("Norm of T[0']^(2):                         %20.12f\n" % np.linalg.norm(t2_ce))
+            sys.stdout.flush()
+        else:
+            t2_ce = np.zeros((ncore, nextern))
+
+        t2_caea = np.zeros((ncore, ncas, nextern, ncas))
+        t2_aa = np.zeros((ncas, ncas))
+        t2_ca = np.zeros((ncore, ncas))
+        t2_ae = np.zeros((ncas, nextern))
+
+        t2_caaa = np.zeros((ncore, ncas, ncas, ncas))
+        t2_aaea = np.zeros((ncas, ncas, nextern, ncas))
+        t2_ccee = np.zeros((ncore, ncore, nextern, nextern))
+        t2_ccea = np.zeros((ncore, ncore, nextern, ncas))
+        t2_caee = np.zeros((ncore, ncas, nextern, nextern))
+        t2_ccaa = np.zeros((ncore, ncore, ncas, ncas))
+        t2_aaee = np.zeros((ncas, ncas, nextern, nextern))
+
+    return t2_ce, t2_ca, t2_ae, t2_caea, t2_caaa, t2_aaea, t2_ccee, t2_ccea, t2_caee, t2_ccaa, t2_aaee, t2_aa
 
 def compute_t1_0(mr_adc):
 
@@ -170,7 +223,6 @@ def compute_t1_p1(mr_adc):
 
     # Variables from kernel
     rdm_ca = mr_adc.rdm.ca
-    v_ccea = mr_adc.v2e.ccea
     v_ccae = mr_adc.v2e.ccae
 
     ncore = mr_adc.ncore
@@ -195,7 +247,7 @@ def compute_t1_p1(mr_adc):
     Vp1  = einsum('JIXA->IJAX', v_ccae, optimize = einsum_type).copy()
     Vp1 -= 1/2 * einsum('JIxA,Xx->IJAX', v_ccae, rdm_ca, optimize = einsum_type)
 
-    S_12_Vp1 = np.einsum("IJAX,Xm->IJAm", - Vp1, S_p1_12_inv_act)
+    S_12_Vp1 = np.einsum("IJAX,Xm->IJAm", - 1.0 * Vp1, S_p1_12_inv_act)
 
     # Multiply r.h.s. by U (e_a - e_i + e_mu)^-1 U^dag
     S_12_Vp1 = np.einsum("mp,IJAm->IJAp", evecs, S_12_Vp1)
@@ -213,9 +265,9 @@ def compute_t1_p1(mr_adc):
     t1_ccea = np.einsum("IJAm,Xm->IJAX", S_12_Vp1, S_p1_12_inv_act).copy()
 
     e_p1  = 4 * einsum('ijax,jixa', t1_ccea, v_ccae, optimize = einsum_type)
-    e_p1 -= 2 * einsum('ijax,jiax', t1_ccea, v_ccea, optimize = einsum_type)
+    e_p1 -= 2 * einsum('ijax,ijxa', t1_ccea, v_ccae, optimize = einsum_type)
     e_p1 -= 2 * einsum('ijax,jiya,xy', t1_ccea, v_ccae, rdm_ca, optimize = einsum_type)
-    e_p1 += einsum('ijax,jiay,xy', t1_ccea, v_ccea, rdm_ca, optimize = einsum_type)
+    e_p1 += einsum('ijax,ijya,xy', t1_ccea, v_ccae, rdm_ca, optimize = einsum_type)
 
     return e_p1, t1_ccea
 
@@ -250,7 +302,7 @@ def compute_t1_m1(mr_adc):
     # Compute r.h.s. of the equation
     Vm1  = 1/2 * einsum('IxAB,Xx->IXAB', v_caee, rdm_ca, optimize = einsum_type)
 
-    S_12_Vm1 = np.einsum("IXAB,Xm->ImAB", - Vm1, S_m1_12_inv_act)
+    S_12_Vm1 = np.einsum("IXAB,Xm->ImAB", - 1.0 * Vm1, S_m1_12_inv_act)
 
     # Multiply r.h.s. by U (e_a - e_i + e_mu)^-1 U^dag
     S_12_Vm1 = np.einsum("mp,ImAB->IpAB", evecs, S_12_Vm1)
@@ -310,7 +362,7 @@ def compute_t1_p2(mr_adc):
 
     Vp2 = Vp2.reshape(ncore, ncore, ncas**2)
 
-    S_12_Vp2 = np.einsum("IJX,Xm->IJm", - Vp2, S_p2_12_inv_act)
+    S_12_Vp2 = np.einsum("IJX,Xm->IJm", - 1.0 * Vp2, S_p2_12_inv_act)
 
     # Multiply r.h.s. by U D^-1 U^dag
     S_12_Vp2 = np.einsum("mp,IJm->IJp", evecs, S_12_Vp2)
@@ -370,7 +422,7 @@ def compute_t1_m2(mr_adc):
 
     Vm2 = Vm2.reshape(ncas**2, nextern, nextern)
 
-    S_12_Vm2 = np.einsum("XAB,Xm->mAB", - Vm2, S_m2_12_inv_act)
+    S_12_Vm2 = np.einsum("XAB,Xm->mAB", - 1.0 * Vm2, S_m2_12_inv_act)
 
     # Multiply r.h.s. by U (e_a - e_i + e_mu)^-1 U^dag
     S_12_Vm2 = np.einsum("mp,mAB->pAB", evecs, S_12_Vm2)
@@ -530,7 +582,7 @@ def compute_t1_p1p_sanity_check(mr_adc):
     dim_act = n_x + n_xzw
     aa_ind = np.tril_indices(ncas * 2, k=-1)
 
-    S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_sanity_check(mr_adc, ignore_print = False, half_transform = True)
+    S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_sanity_check_gno_projector(mr_adc, ignore_print = False)
 
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
 
@@ -658,7 +710,7 @@ def compute_t1_p1p_sanity_check(mr_adc):
     V[:,:n_x] = V1.copy()
     V[:,n_x:] = V2.copy()
 
-    S_12_V = np.einsum("iP,Pm->im", - V, S_p1p_12_inv_act)
+    S_12_V = np.einsum("iP,Pm->im", - 1.0 * V, S_p1p_12_inv_act)
 
     # Multiply r.h.s. by U (- e_i + e_mu)^-1 U^dag
     S_12_V = np.einsum("mp,im->ip", evecs, S_12_V)
@@ -744,7 +796,7 @@ def compute_t1_m1p_sanity_check(mr_adc):
     dim_act = n_x + n_xzw
     aa_ind = np.tril_indices(ncas * 2, k=-1)
 
-    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_sanity_check(mr_adc, ignore_print = False, half_transform = True)
+    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = False)
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
 
@@ -831,7 +883,7 @@ def compute_t1_m1p_sanity_check(mr_adc):
     V[:n_x,:] = V1.copy()
     V[n_x:,:] = V2.copy()
 
-    S_12_V = np.einsum("Pa,Pm->ma", - V, S_m1p_12_inv_act)
+    S_12_V = np.einsum("Pa,Pm->ma", - 1.0 * V, S_m1p_12_inv_act)
 
     # Multiply r.h.s. by U (e_mu + e_a)^-1 U^dag
     S_12_V = np.einsum("mp,ma->pa", evecs, S_12_V)
@@ -903,7 +955,7 @@ def compute_t1_0p_sanity_check(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     # Orthogonalization and overlap truncation only in the active space
-    S_0p_12_inv_act = mr_adc_overlap.compute_S12_0p_sanity_check(mr_adc, ignore_print = False)
+    S_0p_12_inv_act = mr_adc_overlap.compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = False)
 
     # Compute (S_12 K S_12)_{i a mu, j b nu}
     SKS = np.einsum("xywz,zwn->xyn", K_caca, S_0p_12_inv_act[1:,:].reshape(ncas * 2, ncas * 2, -1))
@@ -1013,6 +1065,76 @@ def compute_t1_0p_sanity_check(mr_adc):
     e_0p -= 2 * einsum('ixay,ijja,xy', t1_caea, v_ccce, rdm_ca, optimize = einsum_type)
 
     return e_0p, t1_ce, t1_caea, t1_caae
+
+def compute_t2_0p_singles(mr_adc, t1_amp):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    rdm_cccaaa = mr_adc.rdm.cccaaa
+
+    e_core = mr_adc.mo_energy.c
+    e_extern = mr_adc.mo_energy.e
+
+    ncore = mr_adc.ncore
+    ncas = mr_adc.ncas
+    nocc = mr_adc.nocc
+    nextern = mr_adc.nextern
+
+    n_tia = ncore * nextern
+
+    # Compute r.h.s. of the equation
+    # One-electron integrals
+    h_ca = mr_adc.h1e[:ncore,ncore:nocc].copy()
+    h_ce = mr_adc.h1e[:ncore,nocc:].copy()
+    h_ae = mr_adc.h1e[ncore:nocc,nocc:].copy()
+    h_aa = mr_adc.h1e_act
+
+    # Two-electron integrals
+    #TODO: Check if all integrals were calculate before
+    v_aaaa = mr_adc.v2e.aaaa
+    v_caaa = mr_adc.v2e.caaa
+    v_ccee = mr_adc.v2e.ccee
+    v_caea = mr_adc.v2e.caea
+    v_ccea = mr_adc.v2e.ccea
+    v_caee = mr_adc.v2e.caee
+    v_aaea = mr_adc.v2e.aaea
+    v_ccca = mr_adc.v2e.ccca
+    v_ccce = mr_adc.v2e.ccce
+    v_aaee = mr_adc.v2e.aaee
+    v_cace = mr_adc.v2e.cace
+    v_caca = mr_adc.v2e.caca
+    v_ceaa = mr_adc.v2e.ceaa
+    #TODO: Check if transposes are required
+    v_aace = v_ceaa.transpose(2,3,0,1).copy()
+    v_ccae = -v_ccea.transpose(0,1,3,2).copy()
+    v_caae = -v_caea.transpose(0,1,3,2).copy()
+
+    v_ceae = mr_adc.v2e.ceae
+    v_cece = mr_adc.v2e.cece
+    v_ceee = mr_adc.v2e.ceee
+    v_aeae = mr_adc.v2e.aeae
+    v_aaae = -v_aaea.transpose(0,1,3,2).copy()
+    v_aeee = mr_adc.v2e.aeee
+
+    # Amplitudes
+    t1_ce, t1_ca, t1_ae, t1_caea, t1_caaa, t1_aaea, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee = t1_amp
+
+    t1_caae = -t1_caea.transpose(0,1,3,2).copy()
+    t1_aaae = -t1_aaea.transpose(0,1,3,2).copy()
+    t1_ccae = -t1_ccea.transpose(0,1,3,2).copy()
+
+    # Compute denominators
+    d_ai = (e_extern[:,None] - e_core)
+    d_ai = d_ai**(-1)
+
+    t_ia = np.einsum("ai,ia->ia", d_ai, - 1.0 * V1)
+
+    return t_ia
 
 ### Under Development
 def compute_t1_0p(mr_adc):
