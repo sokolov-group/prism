@@ -3,7 +3,7 @@ import time
 import numpy as np
 import prism.mr_adc_overlap as mr_adc_overlap
 import prism.mr_adc_rdms as mr_adc_rdms
-import prism.mr_adc_efficient_4rdm as mr_adc_efficient_4rdm
+# import prism.mr_adc_efficient_4rdm as mr_adc_efficient_4rdm
 #TODO: Check for redundant imports
 
 def compute_excitation_manifolds(mr_adc):

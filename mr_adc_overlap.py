@@ -68,11 +68,11 @@ def compute_S12_p2(mr_adc, ignore_print = True):
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
-    S_p2  = 1/3 * einsum('WZXY->ZWYX', rdm_ccaa, optimize = einsum_type).copy()
-    S_p2 += 1/6 * einsum('WZYX->ZWYX', rdm_ccaa, optimize = einsum_type).copy()
+    S_p2  = 1/3 * einsum('XYWZ->ZWYX', rdm_ccaa, optimize = einsum_type).copy()
+    S_p2 += 1/6 * einsum('XYZW->ZWYX', rdm_ccaa, optimize = einsum_type).copy()
     S_p2 += einsum('WX,YZ->ZWYX', np.identity(ncas), np.identity(ncas), optimize = einsum_type)
     S_p2 -= 1/2 * einsum('WX,YZ->ZWYX', np.identity(ncas), rdm_ca, optimize = einsum_type)
-    S_p2 -= 1/2 * einsum('YZ,WX->ZWYX', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S_p2 -= 1/2 * einsum('YZ,XW->ZWYX', np.identity(ncas), rdm_ca, optimize = einsum_type)
 
     S_p2 = S_p2.reshape(ncas**2, ncas**2)
 
@@ -103,8 +103,8 @@ def compute_S12_m2(mr_adc, ignore_print = True):
     ncas = mr_adc.ncas
     rdm_ccaa = mr_adc.rdm.ccaa
 
-    S_m2  = 1/6 * einsum('WZXY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    S_m2 += 1/3 * einsum('WZYX->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S_m2  = 1/6 * einsum('XYWZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S_m2 += 1/3 * einsum('XYZW->XYZW', rdm_ccaa, optimize = einsum_type).copy()
 
     S_m2 = S_m2.reshape(ncas**2, ncas**2)
 
@@ -149,35 +149,35 @@ def compute_S12_p1p(mr_adc, ignore_print = True, half_transform = False, s_thres
 
     S_act = np.zeros((dim_act, dim_act))
 
-    S11  = 2 * einsum('xy->xy', np.identity(ncas), optimize = einsum_type).copy()
-    S11 -= einsum('yx->xy', rdm_ca, optimize = einsum_type).copy()
+    S11  = 2 * einsum('XY->XY', np.identity(ncas), optimize = einsum_type).copy()
+    S11 -= einsum('YX->XY', rdm_ca, optimize = einsum_type).copy()
     # if mr_adc.debug_mode:
     #     print (">>> SA S11 norm: {:}".format(np.linalg.norm(S11)))
     #     print (">>> SA S11 trace: {:}".format(np.einsum('ii', S11)))
     #     with open('SA_S11.out', 'w') as outfile:
     #         outfile.write(repr(S11))
 
-    S12 =- einsum('wyzx->xzwy', rdm_ccaa, optimize = einsum_type).copy()
-    S12 -= einsum('wx,yz->xzwy', np.identity(ncas), rdm_ca, optimize = einsum_type)
-    S12 += 2 * einsum('xy,wz->xzwy', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S12 =- einsum('WYZX->XZWY', rdm_ccaa, optimize = einsum_type).copy()
+    S12 -= einsum('WX,YZ->XZWY', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S12 += 2 * einsum('XY,WZ->XZWY', np.identity(ncas), rdm_ca, optimize = einsum_type)
     # if mr_adc.debug_mode:
     #     print (">>> SA S12 norm: {:}".format(np.linalg.norm(S12)))
     #     print (">>> SA S12 trace: {:}".format(np.einsum('iiii', S12)))
     #     with open('SA_S12.out', 'w') as outfile:
     #         outfile.write(repr(S12))
 
-    S22  = 1/3 * einsum('uwyvxz->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22 -= 2/3 * einsum('uwyvzx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22 += 1/3 * einsum('uwyxvz->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22 += 1/3 * einsum('uwyxzv->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22 += 1/3 * einsum('uwyzvx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22 += 1/3 * einsum('uwyzxv->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22 -= einsum('vw,uyzx->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22 -= einsum('vy,uwxz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22 -= einsum('wx,uyvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22 += 2 * einsum('xy,uwvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22 += 2 * einsum('vw,xy,uz->uvxzwy', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
-    S22 -= einsum('vy,wx,uz->uvxzwy', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22  = 1/3 * einsum('UWYVXZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 -= 2/3 * einsum('UWYVZX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 += 1/3 * einsum('UWYXVZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 += 1/3 * einsum('UWYXZV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 += 1/3 * einsum('UWYZVX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 += 1/3 * einsum('UWYZXV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 -= einsum('VW,UYZX->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22 -= einsum('VY,UWXZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22 -= einsum('WX,UYVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22 += 2 * einsum('XY,UWVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22 += 2 * einsum('VW,XY,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22 -= einsum('VY,WX,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
 
     S_act[:n_x,:n_x] = S11.copy()
     S_act[:n_x,n_x:] = S12.reshape(n_x, n_zwy)
@@ -247,26 +247,26 @@ def compute_S12_p1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
     S11 = np.zeros((ncas * 2, ncas * 2))
 
-    S11_a_a  = einsum('xy->xy', np.identity(ncas), optimize = einsum_type).copy()
-    S11_a_a -= 1/2 * einsum('xy->xy', rdm_ca, optimize = einsum_type).copy()
+    S11_a_a  = einsum('XY->XY', np.identity(ncas), optimize = einsum_type).copy()
+    S11_a_a -= 1/2 * einsum('YX->XY', rdm_ca, optimize = einsum_type).copy()
 
     S11[::2,::2] = S11_a_a.copy()
     S11[1::2,1::2] = S11_a_a.copy()
 
     S12 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
 
-    S12_a_aaa  = 1/6 * einsum('wyxz->xzwy', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_aaa -= 1/6 * einsum('wyzx->xzwy', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_aaa -= 1/2 * einsum('wx,yz->xzwy', np.identity(ncas), rdm_ca, optimize = einsum_type)
-    S12_a_aaa += 1/2 * einsum('xy,wz->xzwy', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S12_a_aaa  = 1/6 * einsum('WYXZ->XZWY', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_aaa -= 1/6 * einsum('WYZX->XZWY', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_aaa -= 1/2 * einsum('WX,YZ->XZWY', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S12_a_aaa += 1/2 * einsum('XY,WZ->XZWY', np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    S12_a_bba =- 1/6 * einsum('wyxz->xzwy', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_bba -= 1/3 * einsum('wyzx->xzwy', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_bba += 1/2 * einsum('xy,wz->xzwy', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S12_a_bba =- 1/6 * einsum('WYXZ->XZWY', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_bba -= 1/3 * einsum('WYZX->XZWY', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_bba += 1/2 * einsum('XY,WZ->XZWY', np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    S12_a_bab  = 1/3 * einsum('wyxz->xzwy', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_bab += 1/6 * einsum('wyzx->xzwy', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_bab -= 1/2 * einsum('wx,yz->xzwy', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S12_a_bab  = 1/3 * einsum('WYXZ->XZWY', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_bab += 1/6 * einsum('WYZX->XZWY', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_bab -= 1/2 * einsum('WX,YZ->XZWY', np.identity(ncas), rdm_ca, optimize = einsum_type)
 
     S12[::2,::2,::2,::2] = S12_a_aaa.copy()
     S12[1::2,1::2,1::2,1::2] = S12_a_aaa.copy()
@@ -279,62 +279,62 @@ def compute_S12_p1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
     S22 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2))
 
-    S22_aaa_aaa =- 1/12 * einsum('uwyvzx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_aaa -= 1/12 * einsum('uwyxvz->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_aaa -= 1/12 * einsum('uwyzxv->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_aaa += 1/6 * einsum('vw,uyxz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa -= 1/6 * einsum('vw,uyzx->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa -= 1/6 * einsum('vy,uwxz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa += 1/6 * einsum('vy,uwzx->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa -= 1/6 * einsum('wx,uyvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa += 1/6 * einsum('wx,uyzv->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa += 1/6 * einsum('xy,uwvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa -= 1/6 * einsum('xy,uwzv->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa += 1/2 * einsum('vw,xy,uz->uvxzwy', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
-    S22_aaa_aaa -= 1/2 * einsum('vy,wx,uz->uvxzwy', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_aaa_aaa =- 1/12 * einsum('UWYVZX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa -= 1/12 * einsum('UWYXVZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa -= 1/12 * einsum('UWYZXV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa += 1/6 * einsum('VW,UYXZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/6 * einsum('VW,UYZX->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/6 * einsum('VY,UWXZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa += 1/6 * einsum('VY,UWZX->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/6 * einsum('WX,UYVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa += 1/6 * einsum('WX,UYZV->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa += 1/6 * einsum('XY,UWVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/6 * einsum('XY,UWZV->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa += 1/2 * einsum('VW,XY,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_aaa_aaa -= 1/2 * einsum('VY,WX,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    S22_aaa_bba =- 1/12 * einsum('uwyvzx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_bba += 1/12 * einsum('uwyxvz->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_bba += 1/6 * einsum('uwyxzv->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_bba += 1/12 * einsum('uwyzxv->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_bba -= 1/3 * einsum('vy,uwxz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_bba -= 1/6 * einsum('vy,uwzx->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_bba += 1/3 * einsum('xy,uwvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_bba += 1/6 * einsum('xy,uwzv->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_bba =- 1/12 * einsum('UWYVZX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_bba += 1/12 * einsum('UWYXVZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_bba += 1/6 * einsum('UWYXZV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_bba += 1/12 * einsum('UWYZXV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_bba -= 1/3 * einsum('VY,UWXZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_bba -= 1/6 * einsum('VY,UWZX->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_bba += 1/3 * einsum('XY,UWVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_bba += 1/6 * einsum('XY,UWZV->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
 
-    S22_aab_aab =- 1/12 * einsum('uwyvzx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aab_aab += 1/12 * einsum('uwyxvz->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aab_aab += 1/6 * einsum('uwyzvx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aab_aab += 1/12 * einsum('uwyzxv->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aab_aab -= 1/6 * einsum('vw,uyxz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aab_aab -= 1/3 * einsum('vw,uyzx->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aab_aab += 1/6 * einsum('xy,uwvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aab_aab -= 1/6 * einsum('xy,uwzv->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aab_aab += 1/2 * einsum('vw,xy,uz->uvxzwy', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_aab_aab =- 1/12 * einsum('UWYVZX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aab_aab += 1/12 * einsum('UWYXVZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aab_aab += 1/6 * einsum('UWYZVX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aab_aab += 1/12 * einsum('UWYZXV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aab_aab -= 1/6 * einsum('VW,UYXZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aab_aab -= 1/3 * einsum('VW,UYZX->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aab_aab += 1/6 * einsum('XY,UWVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aab_aab -= 1/6 * einsum('XY,UWZV->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aab_aab += 1/2 * einsum('VW,XY,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    S22_bba_aaa  = 1/6 * einsum('uwyvxz->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_bba_aaa -= 1/12 * einsum('uwyvzx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_bba_aaa += 1/12 * einsum('uwyxvz->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_bba_aaa += 1/12 * einsum('uwyzxv->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_bba_aaa -= 1/3 * einsum('wx,uyvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_bba_aaa -= 1/6 * einsum('wx,uyzv->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_bba_aaa += 1/3 * einsum('xy,uwvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_bba_aaa += 1/6 * einsum('xy,uwzv->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa  = 1/12 * einsum('UWYVZX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_baa_baa += 1/12 * einsum('UWYXVZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_baa_baa += 1/6 * einsum('UWYZVX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_baa_baa -= 1/12 * einsum('UWYZXV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_baa_baa -= 1/6 * einsum('VW,UYXZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa -= 1/3 * einsum('VW,UYZX->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa += 1/6 * einsum('VY,UWXZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa += 1/3 * einsum('VY,UWZX->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa += 1/6 * einsum('WX,UYVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa += 1/3 * einsum('WX,UYZV->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa -= 1/6 * einsum('XY,UWVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa -= 1/3 * einsum('XY,UWZV->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa += 1/2 * einsum('VW,XY,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_baa_baa -= 1/2 * einsum('VY,WX,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    S22_baa_baa  = 1/12 * einsum('uwyvzx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_baa_baa += 1/12 * einsum('uwyxvz->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_baa_baa += 1/6 * einsum('uwyzvx->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_baa_baa -= 1/12 * einsum('uwyzxv->uvxzwy', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_baa_baa -= 1/6 * einsum('vw,uyxz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa -= 1/3 * einsum('vw,uyzx->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa += 1/6 * einsum('vy,uwxz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa += 1/3 * einsum('vy,uwzx->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa += 1/6 * einsum('wx,uyvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa += 1/3 * einsum('wx,uyzv->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa -= 1/6 * einsum('xy,uwvz->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa -= 1/3 * einsum('xy,uwzv->uvxzwy', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa += 1/2 * einsum('vw,xy,uz->uvxzwy', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
-    S22_baa_baa -= 1/2 * einsum('vy,wx,uz->uvxzwy', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_bba_aaa  = 1/6 * einsum('UWYVXZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_bba_aaa -= 1/12 * einsum('UWYVZX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_bba_aaa += 1/12 * einsum('UWYXVZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_bba_aaa += 1/12 * einsum('UWYZXV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_bba_aaa -= 1/3 * einsum('WX,UYVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_bba_aaa -= 1/6 * einsum('WX,UYZV->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_bba_aaa += 1/3 * einsum('XY,UWVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_bba_aaa += 1/6 * einsum('XY,UWZV->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
 
     S22[::2,::2,::2,::2,::2,::2] = S22_aaa_aaa.copy()
     S22[1::2,1::2,1::2,1::2,1::2,1::2] = S22_aaa_aaa.copy()
@@ -413,6 +413,144 @@ def compute_S12_p1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
             print ("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1p_12_inv_act
+
+def compute_S12_p1p_singles(mr_adc, ignore_print = True):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    rdm_ca = mr_adc.rdm.ca
+
+    ncas = mr_adc.ncas
+
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
+    else:
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+
+    S11  = 2 * einsum('XY->XY', np.identity(ncas), optimize = einsum_type).copy()
+    S11 -= einsum('YX->XY', rdm_ca, optimize = einsum_type).copy()
+
+    S_eval, S_evec = np.linalg.eigh(S11)
+
+    S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+
+    S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
+
+    if mr_adc.s_damping_strength is not None:
+        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
+        S_inv_eval *= damping_prefactor
+
+    S_evec = S_evec[:, S_ind_nonzero]
+
+    S_p1p_inv_act = np.dot(S_evec, np.diag(S_inv_eval))
+
+    if not ignore_print:
+        print ("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
+        if len(S_ind_nonzero) > 0:
+            print ("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
+
+    return S_p1p_inv_act
+
+def compute_S12_p1p_singles_sanity_check_gno_projector(mr_adc, ignore_print = True):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    rdm_ca = mr_adc.rdm.ca
+
+    ncas = mr_adc.ncas
+
+    S11 = np.zeros((ncas * 2, ncas * 2))
+
+    S11_a_a  = einsum('XY->XY', np.identity(ncas), optimize = einsum_type).copy()
+    S11_a_a -= 1/2 * einsum('YX->XY', rdm_ca, optimize = einsum_type).copy()
+
+    S11[::2,::2] = S11_a_a.copy()
+    S11[1::2,1::2] = S11_a_a.copy()
+
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
+    else:
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+
+    S_eval, S_evec = np.linalg.eigh(S11)
+    S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+
+    S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
+
+    if mr_adc.s_damping_strength is not None:
+        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
+        S_inv_eval *= damping_prefactor
+
+    S_evec = S_evec[:, S_ind_nonzero]
+
+    S_p1p_12_inv_act = reduce(np.dot, (S_evec, np.diag(S_inv_eval)))
+
+    if not ignore_print:
+        print ("Dimension of the [+1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        if len(S_ind_nonzero) > 0:
+            print ("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+
+    return S_p1p_12_inv_act
+
+def compute_S12_p1p_definition(mr_adc, ignore_print = True):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    rdm_cccaaa = mr_adc.rdm.cccaaa
+
+    ncas = mr_adc.ncas
+
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
+    else:
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+
+    S22  = 1/3 * einsum('UWYVXZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 -= 2/3 * einsum('UWYVZX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 += 1/3 * einsum('UWYXVZ->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 += 1/3 * einsum('UWYXZV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 += 1/3 * einsum('UWYZVX->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 += 1/3 * einsum('UWYZXV->UVXZWY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22 -= einsum('VW,UYZX->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22 -= einsum('VY,UWXZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22 -= einsum('WX,UYVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22 += 2 * einsum('XY,UWVZ->UVXZWY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22 += 2 * einsum('VW,XY,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22 -= einsum('VY,WX,UZ->UVXZWY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+
+    S_act = S22.reshape(ncas**3, ncas**3)
+
+    S_eval, S_evec = np.linalg.eigh(S_act)
+
+    S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+
+    S_inv_eval = 1.0/S_eval[S_ind_nonzero]
+
+    if mr_adc.s_damping_strength is not None:
+        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
+        S_inv_eval *= damping_prefactor
+
+    S_evec = S_evec[:, S_ind_nonzero]
+
+    S_p1p_inv_act = np.dot(S_evec, np.diag(S_inv_eval))
+
+    if not ignore_print:
+        print ("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
+        if len(S_ind_nonzero) > 0:
+            print ("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
+
+    return S_p1p_inv_act
 
 def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
@@ -586,22 +724,23 @@ def compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     S_0p[0,0] = 1.0
 
     S12 = np.zeros((ncas * 2, ncas * 2))
-    S12_a_a  = 1/2 * einsum('xy->xy', rdm_ca, optimize = einsum_type).copy()
+
+    S12_a_a  = 1/2 * einsum('XY->XY', rdm_ca, optimize = einsum_type).copy()
     S12[::2,::2] = S12_a_a.copy()
     S12[1::2,1::2] = S12_a_a.copy()
 
     S22 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
 
-    S22_aa_aa =- 1/6 * einsum('wyxz->xywz', rdm_ccaa, optimize = einsum_type).copy()
-    S22_aa_aa += 1/6 * einsum('wyzx->xywz', rdm_ccaa, optimize = einsum_type).copy()
-    S22_aa_aa += 1/2 * einsum('yz,wx->xywz', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_aa_aa =- 1/6 * einsum('XZWY->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+    S22_aa_aa += 1/6 * einsum('XZYW->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+    S22_aa_aa += 1/2 * einsum('YZ,XW->XYWZ', np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    S22_ab_ab =- 1/3 * einsum('wyxz->xywz', rdm_ccaa, optimize = einsum_type).copy()
-    S22_ab_ab -= 1/6 * einsum('wyzx->xywz', rdm_ccaa, optimize = einsum_type).copy()
-    S22_ab_ab += 1/2 * einsum('yz,wx->xywz', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_ab_ab =- 1/3 * einsum('XZWY->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+    S22_ab_ab -= 1/6 * einsum('XZYW->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+    S22_ab_ab += 1/2 * einsum('YZ,XW->XYWZ', np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    S22_aa_bb  = 1/6 * einsum('wyxz->xywz', rdm_ccaa, optimize = einsum_type).copy()
-    S22_aa_bb += 1/3 * einsum('wyzx->xywz', rdm_ccaa, optimize = einsum_type).copy()
+    S22_aa_bb  = 1/6 * einsum('XZWY->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+    S22_aa_bb += 1/3 * einsum('XZYW->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
 
     S22[::2,::2,::2,::2] = S22_aa_aa.copy()
     S22[1::2,1::2,1::2,1::2] = S22_aa_aa.copy()
