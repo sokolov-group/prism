@@ -80,10 +80,13 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.caec = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_e, mo_c)
             mr_adc.v2e.ceaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_a, mo_a)
             mr_adc.v2e.cece = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_c, mo_e)
+            mr_adc.v2e.ceec = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_e, mo_c)
             mr_adc.v2e.ceee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_e, mo_e)
             mr_adc.v2e.aeee = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_e, mo_e)
             mr_adc.v2e.ceae = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_a, mo_e)
+            mr_adc.v2e.ceea = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_e, mo_e, mo_a)
             mr_adc.v2e.aeae = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_a, mo_e)
+            mr_adc.v2e.aeea = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_e, mo_a)
 
             # Need for mr-adc(2)-x
             if mr_adc.method == "mr-adc(2)-x":

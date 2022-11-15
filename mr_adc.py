@@ -117,16 +117,21 @@ class MRADC:
         #     dyall_hamiltonian(self)
 
         #     import prism.mr_adc_amplitudes as mr_adc_amplitudes
-        #     mr_adc_amplitudes.compute_t1_0(self)
-        #     mr_adc_amplitudes.compute_t1_p1(self)
-        #     mr_adc_amplitudes.compute_t1_m1(self)
-        #     mr_adc_amplitudes.compute_t1_p2(self)
-        #     mr_adc_amplitudes.compute_t1_m2(self)
+        #     e_0, t1_ccee = mr_adc_amplitudes.compute_t1_0(self)
+        #     e_p1, t1_ccea = mr_adc_amplitudes.compute_t1_p1(self)
+        #     e_m1, t1_caee = mr_adc_amplitudes.compute_t1_m1(self)
+        #     e_p2, t1_ccaa = mr_adc_amplitudes.compute_t1_p2(self)
+        #     e_m2, t1_aaee = mr_adc_amplitudes.compute_t1_m2(self)
         #     mr_adc_amplitudes.compute_t1_0p(self)
         #     mr_adc_amplitudes.compute_t1_p1p(self)
-        #     mr_adc_amplitudes.compute_t1_0p_sanity_check(self)
-        #     mr_adc_amplitudes.compute_t1_p1p_sanity_check(self)
-        #     mr_adc_amplitudes.compute_t1_m1p_sanity_check(self)
+        #     e_0p, t1_ce, t1_caea, t1_caae = mr_adc_amplitudes.compute_t1_0p_sanity_check(self)
+        #     e_p1p, t1_ca, t1_caaa = mr_adc_amplitudes.compute_t1_p1p_sanity_check(self)
+        #     e_m1p, t1_ae, t1_aaea, t1_aaae = mr_adc_amplitudes.compute_t1_m1p_sanity_check(self)
+        #     mr_adc_amplitudes.compute_t1_p1p_singles_sanity_check(self)
+        #     mr_adc_amplitudes.compute_t1_p1p_singles(self)
+
+        #     t1_amp = (t1_ce, t1_ca, t1_ae, t1_caea, t1_caae, t1_caaa, t1_aaea, t1_aaae, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee)
+        #     mr_adc_amplitudes.compute_t2_0p_singles(self, t1_amp)
 
         # return "ee", "spec_factors"
         ### DEBUG
