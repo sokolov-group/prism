@@ -1849,6 +1849,7 @@ def compute_K_m1p_sanity_check(mr_adc):
     K22_baa_baa += 1/12 * einsum('VZ,Yxyz,UXxzWy->XUVYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
     K22_baa_baa += 1/12 * einsum('VZ,Yxyz,UXxzyW->XUVYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
 
+
     K22[::2,::2,::2,::2,::2,::2] = K22_aaa_aaa.copy()
     K22[1::2,1::2,1::2,1::2,1::2,1::2] = K22_aaa_aaa.copy()
 
