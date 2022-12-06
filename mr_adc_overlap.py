@@ -570,6 +570,11 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     dim_act = n_x + n_xzw
     xy_ind = np.tril_indices(ncas * 2, k=-1)
 
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
+    else:
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+
     S_act = np.zeros((dim_act, dim_act))
 
     S11 = np.zeros((ncas * 2, ncas * 2))
@@ -587,14 +592,17 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     S12_a_abb  = 1/6 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
     S12_a_abb += 1/3 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
 
+    S12_a_bab =- 1/3 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_bab -= 1/6 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+
     S12[::2,::2,::2,::2] = S12_a_aaa.copy()
     S12[1::2,1::2,1::2,1::2] = S12_a_aaa.copy()
 
     S12[::2,::2,1::2,1::2] = S12_a_abb.copy()
     S12[1::2,1::2,::2,::2] = S12_a_abb.copy()
 
-    S12[::2,1::2,::2,1::2] = - S12_a_abb.transpose(0,2,1,3).copy()
-    S12[1::2,::2,1::2,::2] = - S12_a_abb.transpose(0,2,1,3).copy()
+    S12[::2,1::2,::2,1::2] = S12_a_bab.copy()
+    S12[1::2,::2,1::2,::2] = S12_a_bab.copy()
 
     S22 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2))
 
@@ -668,8 +676,6 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     S_act[n_x:,n_x:] = S22.reshape(n_xzw, n_xzw)
 
     # Compute projector to the GNO operator basis
-    Y = np.identity(S_act.shape[0])
-
     rdm_ca_so = np.zeros((ncas * 2, ncas * 2))
     rdm_ca_so[::2,::2] = 0.5 * rdm_ca
     rdm_ca_so[1::2,1::2] = 0.5 * rdm_ca
@@ -677,12 +683,8 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     Y_ten = -np.einsum("uv,wx->uvwx", np.identity(ncas * 2), rdm_ca_so)
     Y_ten += np.einsum("uw,vx->uvwx", np.identity(ncas * 2), rdm_ca_so)
 
+    Y = np.identity(S_act.shape[0])
     Y[:n_x,n_x:] = Y_ten[:,xy_ind[0],xy_ind[1]].reshape(n_x, n_xzw)
-
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
 
     St = reduce(np.dot, (Y.T, S_act, Y))
 
@@ -706,6 +708,155 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
     return S_m1p_12_inv_act
 
+def compute_S12_m1p_sanity_check(mr_adc, ignore_print = True):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    rdm_cccaaa = mr_adc.rdm.cccaaa
+
+    ncas = mr_adc.ncas
+
+    n_x = ncas * 2
+    n_xzw = ncas * 2 * ncas * 2 * (ncas * 2 - 1) // 2
+    dim_act = n_x + n_xzw
+    xy_ind = np.tril_indices(ncas * 2, k=-1)
+
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
+    else:
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+
+    S_act = np.zeros((dim_act, dim_act))
+
+    S11 = np.zeros((ncas * 2, ncas * 2))
+
+    S11_a_a  = 1/2 * einsum('XY->XY', rdm_ca, optimize = einsum_type).copy()
+
+    S11[::2,::2] = S11_a_a.copy()
+    S11[1::2,1::2] = S11_a_a.copy()
+
+    S12 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
+
+    S12_a_aaa =- 1/6 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_aaa += 1/6 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+
+    S12_a_abb  = 1/6 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_abb += 1/3 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+
+    S12_a_bab =- 1/3 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S12_a_bab -= 1/6 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+
+    S12[::2,::2,::2,::2] = S12_a_aaa.copy()
+    S12[1::2,1::2,1::2,1::2] = S12_a_aaa.copy()
+
+    S12[::2,::2,1::2,1::2] = S12_a_abb.copy()
+    S12[1::2,1::2,::2,::2] = S12_a_abb.copy()
+
+    S12[::2,1::2,::2,1::2] = S12_a_bab.copy()
+    S12[1::2,::2,1::2,::2] = S12_a_bab.copy()
+
+    S22 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2))
+
+    S22_aaa_aaa  = 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa += 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa += 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa -= 1/6 * einsum('VW,UXYZ->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa += 1/6 * einsum('VW,UXZY->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+
+    S22_aaa_abb  = 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_abb -= 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_abb -= 1/6 * einsum('UWXYZV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_abb -= 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+
+    S22_aab_aab =- 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aab_aab += 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aab_aab -= 1/6 * einsum('UWXZVY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aab_aab -= 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aab_aab -= 1/6 * einsum('VW,UXYZ->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aab_aab += 1/6 * einsum('VW,UXZY->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+
+    S22_abb_aaa =- 1/6 * einsum('UWXVYZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_abb_aaa += 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_abb_aaa -= 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_abb_aaa -= 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+
+    S22_baa_baa  = 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_baa_baa -= 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_baa_baa -= 1/6 * einsum('UWXZVY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_baa_baa -= 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_baa_baa += 1/6 * einsum('VW,UXYZ->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_baa_baa += 1/3 * einsum('VW,UXZY->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+
+    S22[::2,::2,::2,::2,::2,::2] = S22_aaa_aaa.copy()
+    S22[1::2,1::2,1::2,1::2,1::2,1::2] = S22_aaa_aaa.copy()
+
+    S22[::2,::2,::2,::2,1::2,1::2] = S22_aaa_abb.copy()
+    S22[1::2,1::2,1::2,1::2,::2,::2] = S22_aaa_abb.copy()
+
+    S22[::2,::2,::2,1::2,::2,1::2] = - S22_aaa_abb.transpose(0,1,2,4,3,5).copy()
+    S22[1::2,1::2,1::2,::2,1::2,::2] = - S22_aaa_abb.transpose(0,1,2,4,3,5).copy()
+
+    S22[1::2,::2,::2,1::2,::2,::2] = S22_baa_baa.copy()
+    S22[::2,1::2,1::2,::2,1::2,1::2] = S22_baa_baa.copy()
+
+    S22[1::2,::2,::2,::2,1::2,::2] = - S22_baa_baa.transpose(0,1,2,4,3,5).copy()
+    S22[::2,1::2,1::2,1::2,::2,1::2] = - S22_baa_baa.transpose(0,1,2,4,3,5).copy()
+
+    S22[::2,1::2,::2,1::2,::2,::2] = - S22_baa_baa.transpose(1,0,2,3,4,5).copy()
+    S22[1::2,::2,1::2,::2,1::2,1::2] = - S22_baa_baa.transpose(1,0,2,3,4,5).copy()
+
+    S22[::2,1::2,::2,::2,1::2,::2] = S22_baa_baa.transpose(1,0,2,4,3,5).copy()
+    S22[1::2,::2,1::2,1::2,::2,1::2] = S22_baa_baa.transpose(1,0,2,4,3,5).copy()
+
+    S22[::2,1::2,1::2,::2,::2,::2] = S22_abb_aaa.copy()
+    S22[1::2,::2,::2,1::2,1::2,1::2] = S22_abb_aaa.copy()
+
+    S22[1::2,::2,1::2,::2,::2,::2] = - S22_abb_aaa.transpose(1,0,2,3,4,5).copy()
+    S22[::2,1::2,::2,1::2,1::2,1::2] = - S22_abb_aaa.transpose(1,0,2,3,4,5).copy()
+
+    S22[::2,::2,1::2,::2,::2,1::2] = S22_aab_aab.copy()
+    S22[1::2,1::2,::2,1::2,1::2,::2] = S22_aab_aab.copy()
+
+    S12 = S12[:,xy_ind[0],xy_ind[1]]
+    S22 = S22[:,:,:,xy_ind[0],xy_ind[1]]
+    S22 = S22[xy_ind[0],xy_ind[1]]
+
+    S_act[:n_x,:n_x] = S11.copy()
+    S_act[:n_x,n_x:] = S12.reshape(n_x, n_xzw)
+    S_act[n_x:,:n_x] = S12.reshape(n_x, n_xzw).T
+    S_act[n_x:,n_x:] = S22.reshape(n_xzw, n_xzw)
+
+    S_eval, S_evec = np.linalg.eigh(S_act)
+
+    s_cut = 0
+    s_trace = np.sum(S_eval)
+    s_thresh = mr_adc.s_thresh_singles
+    for p in range(S_eval.shape[0]):
+        s_sum = np.sum(S_eval[:p])
+        if (s_sum / s_trace > s_thresh):
+            s_cut = p - 1
+            break
+    S_inv_eval = 1.0/np.sqrt(S_eval[s_cut:])
+
+    if mr_adc.s_damping_strength is not None:
+        damping_prefactor = compute_damping(S_eval[s_cut:], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
+        S_inv_eval *= damping_prefactor
+
+    S_evec = S_evec[:, s_cut:]
+
+    S_m1p_12_inv_act = reduce(np.dot, (S_evec, np.diag(S_inv_eval)))
+
+    if not ignore_print:
+        print ("Dimension of the [-1'] orthonormalized subspace:  %d" % S_eval[s_cut:].shape[0])
+        print ("Smallest eigenvalue of the [-1'] overlap metric:  %e" % np.amin(S_eval[s_cut:]))
+
+    return S_m1p_12_inv_act
+
 def compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
     # Einsum definition from kernel
@@ -718,6 +869,11 @@ def compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     rdm_ccaa = mr_adc.rdm.ccaa
 
     dim = 1 + ncas * 2 * ncas * 2
+
+    if mr_adc.s_damping_strength is None:
+        s_thresh = mr_adc.s_thresh_singles
+    else:
+        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
 
     S_0p = np.zeros((dim, dim))
 
@@ -756,21 +912,16 @@ def compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     S_0p[1:,1:] = S22.reshape(ncas * 2 * ncas * 2, ncas * 2 * ncas * 2).copy()
 
     # Compute projector to the GNO operator basis
+    rdm_ca_so = np.zeros((ncas * 2, ncas * 2))
+    rdm_ca_so[::2,::2] = 0.5 * rdm_ca
+    rdm_ca_so[1::2,1::2] = 0.5 * rdm_ca
+
     Y = np.identity(S_0p.shape[0])
-    Y_ten = np.zeros((ncas * 2, ncas * 2))
+    Y[0,1:] =- rdm_ca_so.reshape(-1).copy()
 
-    Y_ten[::2,::2] = 0.5 * rdm_ca.copy()
-    Y_ten[1::2,1::2] = 0.5 * rdm_ca.copy()
+    St = reduce(np.dot, (Y.T, S_0p, Y))
 
-    Y[0,1:] =- Y_ten.reshape(-1).copy()
-
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
-
-    S_eval, S_evec = np.linalg.eigh(S_0p)
-
+    S_eval, S_evec = np.linalg.eigh(St)
     S_ind_nonzero = np.where(S_eval > s_thresh)[0]
 
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
