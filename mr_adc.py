@@ -8,7 +8,7 @@ import prism.mr_adc_compute as mr_adc_compute
 class MRADC:
     def __init__(self, interface):
 
-        print ("Initializing MR-ADC...\n")
+        print("Initializing MR-ADC...\n")
         sys.stdout.flush()
 
         if (interface.reference != "casscf"):
@@ -64,13 +64,14 @@ class MRADC:
         self.ncvs = None
         self.nval = None
 
-        # Integrals (spin-orbital)
-        self.h1eff = None
-        self.h1eff_act = None
-        self.dip_mom = None
-        self.v2e = lambda:None
+        # Integrals
         self.mo_energy = lambda:None
+        self.h1eff = lambda:None
+        self.v2e = lambda:None
         self.rdm = lambda:None
+        self.t1 = lambda:None
+        self.t2 = lambda:None
+        self.dip_mom = None
 
     def kernel(self):
 
@@ -112,30 +113,6 @@ class MRADC:
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
 
-        ### DEBUG
-        # if self.debug_mode:
-        #     dyall_hamiltonian(self)
-
-        #     import prism.mr_adc_amplitudes as mr_adc_amplitudes
-        #     e_0, t1_ccee = mr_adc_amplitudes.compute_t1_0(self)
-        #     e_p1, t1_ccea = mr_adc_amplitudes.compute_t1_p1(self)
-        #     e_m1, t1_caee = mr_adc_amplitudes.compute_t1_m1(self)
-        #     e_p2, t1_ccaa = mr_adc_amplitudes.compute_t1_p2(self)
-        #     e_m2, t1_aaee = mr_adc_amplitudes.compute_t1_m2(self)
-        #     mr_adc_amplitudes.compute_t1_0p(self)
-        #     mr_adc_amplitudes.compute_t1_p1p(self)
-        #     e_0p, t1_ce, t1_caea, t1_caae = mr_adc_amplitudes.compute_t1_0p_sanity_check(self)
-        #     e_p1p, t1_ca, t1_caaa = mr_adc_amplitudes.compute_t1_p1p_sanity_check(self)
-        #     e_m1p, t1_ae, t1_aaea, t1_aaae = mr_adc_amplitudes.compute_t1_m1p_sanity_check(self)
-        #     mr_adc_amplitudes.compute_t1_p1p_singles_sanity_check(self)
-        #     mr_adc_amplitudes.compute_t1_p1p_singles(self)
-
-        #     t1_amp = (t1_ce, t1_ca, t1_ae, t1_caea, t1_caae, t1_caaa, t1_aaea, t1_aaae, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee)
-        #     mr_adc_amplitudes.compute_t2_0p_singles(self, t1_amp)
-
-        # return "ee", "spec_factors"
-        ### DEBUG
-
         # TODO: Compute CASCI wavefunctions for excited states in the active space
         # mr_adc_rdms.compute_es_rdms(self)
 
@@ -149,7 +126,7 @@ def dyall_hamiltonian(mr_adc):
     """Zeroth Order Dyall Hamiltonian"""
 
     # Testing Dyall Hamiltonian expected value
-    print ("Calculating the Spin-Adapted Dyall Hamiltonian...")
+    print("Calculating the Spin-Adapted Dyall Hamiltonian...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -161,7 +138,6 @@ def dyall_hamiltonian(mr_adc):
     v_aaaa = mr_adc.v2e.aaaa
     rdm_ccaa = mr_adc.rdm.ccaa
     mo_c = mr_adc.mo[:, :mr_adc.ncore].copy()
-    mo_a = mr_adc.mo[:, mr_adc.ncore:mr_adc.nocc].copy()
 
     # Calculating E_fc
     ## Calculating h_cc term
@@ -179,4 +155,4 @@ def dyall_hamiltonian(mr_adc):
     temp  = einsum('xy,xy', h_aa, rdm_ca, optimize = einsum_type)
     temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
-    print ("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
+    print("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))

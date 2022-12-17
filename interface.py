@@ -7,7 +7,7 @@ class PYSCF:
 
         print_header()
 
-        print ("\nImporting Pyscf objects...\n")
+        print("\nImporting Pyscf objects...\n")
         sys.stdout.flush()
 
         self.type = "pyscf"
@@ -118,9 +118,9 @@ class PYSCF:
 #        from pyscf import fci
 #
 #        if method_type == "ip": 
-#            print ("Running CASCI computation for %d IP roots...\n" % ncasci)
+#            print("Running CASCI computation for %d IP roots...\n" % ncasci)
 #        elif method_type == "ea": 
-#            print ("Running CASCI computation for %d EA roots...\n" % ncasci)
+#            print("Running CASCI computation for %d EA roots...\n" % ncasci)
 #        else:
 #            raise Exception ("This function should be used only for IP or EA")
 #
@@ -144,7 +144,7 @@ class PYSCF:
 #        # Increase the number of requested CASCI states to make sure we don't break spatial symmetry
 #        ncasci_extra = max(int(1.8 * ncasci), 10)
 #        if self.enforce_degeneracy:
-#            print ("Adding %d CASCI states to enforce degeneracy...\n" % ncasci_extra)
+#            print("Adding %d CASCI states to enforce degeneracy...\n" % ncasci_extra)
 #            mc_casci.fcisolver.nroots = ncasci + ncasci_extra
 #        else:
 #            mc_casci.fcisolver.nroots = ncasci
@@ -162,18 +162,18 @@ class PYSCF:
 #        for root in range(len(e_cas_ci)):
 #            spin_sq = fci.spin_op.spin_square0(wfn_casci[root], mc_casci.ncas, (nalpha, nbeta))[0]
 #            if np.around([spin_sq], decimals=2) == spin_sq_thresh:
-#                print ("Keeping CASCI state %d with S^2 = %f" % (root, spin_sq))
+#                print("Keeping CASCI state %d with S^2 = %f" % (root, spin_sq))
 #                e_cas_roots_spinstate.append(e_cas_ci[root])
 #                psi_roots_spinstate.append(wfn_casci[root])
 #            else:
-#                print ("Discarding CASCI state %d with S^2 = %f" % (root, spin_sq))
+#                print("Discarding CASCI state %d with S^2 = %f" % (root, spin_sq))
 #        e_cas_ci = np.array(e_cas_roots_spinstate)
 #        wfn_casci = psi_roots_spinstate
 #
 #        # Check if the number of states in CASCI is smaller than requested
 #        if len(e_cas_ci) < ncasci:
 #            ncasci = len(e_cas_ci)
-#            print ("\nWARNING: The number of CASCI states is smaller than requested... Reducing the number of states to ", ncasci)
+#            print("\nWARNING: The number of CASCI states is smaller than requested... Reducing the number of states to ", ncasci)
 #
 #        # Make sure that we do not break spatial symmetry
 #        if self.enforce_degeneracy:
@@ -186,15 +186,15 @@ class PYSCF:
 #                    ncasci += 1
 #
 #            if (ncasci > ncasci_old):
-#                print ("\nIncreased the number of CASCI states by %d to enforce degeneracy" % (ncasci - ncasci_old))
+#                print("\nIncreased the number of CASCI states by %d to enforce degeneracy" % (ncasci - ncasci_old))
 #
 #            e_cas_ci = e_cas_ci[:ncasci]
 #            wfn_casci = wfn_casci[:ncasci]
 #
 #        if self.select_casci is not None:
-#            print ("\nSelecting CASCI states using the user-provided list...")
-#            print ("List:")
-#            print (str(self.select_casci))
+#            print("\nSelecting CASCI states using the user-provided list...")
+#            print("List:")
+#            print(str(self.select_casci))
 #            selected_e_cas_ci = [e_cas_ci[i] for i in self.select_casci]
 #            selected_wfn_casci = [wfn_casci[i] for i in self.select_casci]
 #            e_cas_ci = selected_e_cas_ci
@@ -221,7 +221,7 @@ class PYSCF:
 #        # Increase the number of CASCI states by 1 to account for the ground state
 #        ncasci += 1
 #
-#        print ("Running CASCI computation for %d EE roots...\n" % ncasci)
+#        print("Running CASCI computation for %d EE roots...\n" % ncasci)
 #
 #        # Set up CASCI computation for EE in alpha
 #        nalpha, nbeta = self.nelecas
@@ -240,7 +240,7 @@ class PYSCF:
 #        ncasci_extra = max(int(1.5 * ncasci), 10)
 #
 #        if self.enforce_degeneracy:
-#            print ("Adding %d CASCI states to enforce degeneracy...\n" % ncasci_extra)
+#            print("Adding %d CASCI states to enforce degeneracy...\n" % ncasci_extra)
 #            mc_casci.fcisolver.nroots = ncasci + ncasci_extra
 #        else:
 #            mc_casci.fcisolver.nroots = ncasci
@@ -260,11 +260,11 @@ class PYSCF:
 #            spin_sq = fci.spin_op.spin_square0(wfn_casci[root], mc_casci.ncas, (nalpha, nbeta))[0]
 #
 #            if np.around([spin_sq], decimals=2) <= self.spin_sq_thresh:
-#                print ("Keeping CASCI state %d with S^2 = %f" % (root, spin_sq))
+#                print("Keeping CASCI state %d with S^2 = %f" % (root, spin_sq))
 #                e_cas_roots_spinstate.append(e_cas_ci[root])
 #                psi_roots_spinstate.append(wfn_casci[root])
 #            else:
-#                print ("Discarding CASCI state %d with S^2 = %f" % (root, spin_sq))
+#                print("Discarding CASCI state %d with S^2 = %f" % (root, spin_sq))
 #
 #        e_cas_ci = np.array(e_cas_roots_spinstate)
 #        wfn_casci = psi_roots_spinstate
@@ -272,7 +272,7 @@ class PYSCF:
 #        # Check if the number of states in CASCI is smaller than requested
 #        if len(e_cas_ci) < ncasci:
 #            ncasci = len(e_cas_ci)
-#            print ("\nWARNING: The number of CASCI states is smaller than requested... Reducing the number of states to ", ncasci)
+#            print("\nWARNING: The number of CASCI states is smaller than requested... Reducing the number of states to ", ncasci)
 #
 #        # Make sure that we do not break spatial symmetry
 #        if self.enforce_degeneracy:
@@ -285,16 +285,16 @@ class PYSCF:
 #                    ncasci += 1
 #
 #            if (ncasci > ncasci_old):
-#                print ("\nIncreased the number of CASCI states by %d to enforce degeneracy" % (ncasci - ncasci_old))
+#                print("\nIncreased the number of CASCI states by %d to enforce degeneracy" % (ncasci - ncasci_old))
 #
 #            e_cas_ci = e_cas_ci[:ncasci]
 #            wfn_casci = wfn_casci[:ncasci]
 #        
 #        # Allow user to manually keep requested CASCI states
 #        if self.select_casci is not None:
-#            print ("\nSelecting CASCI states using the user-provided list...")
-#            print ("List:")
-#            print (str(self.select_casci))
+#            print("\nSelecting CASCI states using the user-provided list...")
+#            print("List:")
+#            print(str(self.select_casci))
 #            selected_e_cas_ci = [e_cas_ci[i] for i in self.select_casci]
 #            selected_wfn_casci = [wfn_casci[i] for i in self.select_casci]
 #            e_cas_ci = selected_e_cas_ci

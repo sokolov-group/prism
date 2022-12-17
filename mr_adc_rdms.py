@@ -6,7 +6,7 @@ def compute_gs_rdms(mr_adc):
 
     start_time = time.time()
 
-    print ("Computing ground-state RDMs...")
+    print("Computing ground-state RDMs...")
     sys.stdout.flush()
 
     # TODO: for open-shells, this needs to perform state-averaging 
@@ -19,7 +19,7 @@ def compute_gs_rdms(mr_adc):
         mr_adc.rdm.ccaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
         mr_adc.rdm.cccaaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
 
-    print ("Time for computing ground-state RDMs:                          %f sec\n" % (time.time() - start_time))
+    print("Time for computing ground-state RDMs:                          %f sec\n" % (time.time() - start_time))
 
 
 #def compute_es_rdms_so(mr_adc):
@@ -29,7 +29,7 @@ def compute_gs_rdms(mr_adc):
 #    wfn_casci = None
 #    e_cas_ci = None
 #
-#    print ("Computing excited-state CASCI wavefunctions...\n")
+#    print("Computing excited-state CASCI wavefunctions...\n")
 #    sys.stdout.flush()
 #
 #    # Compute CASCI wavefunctions for excited states in the active space
@@ -73,20 +73,20 @@ def compute_gs_rdms(mr_adc):
 #        mr_adc.e_cas_ci = e_cas_ci
 #    else:
 #        if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
-#            print ("Requested method type %s does not require running a CASCI calculation..." % mr_adc.method_type)
+#            print("Requested method type %s does not require running a CASCI calculation..." % mr_adc.method_type)
 #        else:
-#            print ("WARNING: active orbitals are either empty of completely filled...")
-#        print ("Skipping the CASCI calculation...")
+#            print("WARNING: active orbitals are either empty of completely filled...")
+#        print("Skipping the CASCI calculation...")
 #        mr_adc.ncasci = 0
 #        mr_adc.wfn_casci = None
 #        mr_adc.e_cas_ci = None
 #
-#    print ("\nFinal number of excited CASCI states: %d\n" % mr_adc.ncasci)
+#    print("\nFinal number of excited CASCI states: %d\n" % mr_adc.ncasci)
 #
 #    if mr_adc.ncasci > 0:
 #
 #        # Compute transition RDMs between the ground (reference) state and target CASCI states
-#        print ("Computing transition RDMs between reference and target CASCI states...\n")
+#        print("Computing transition RDMs between reference and target CASCI states...\n")
 #        sys.stdout.flush()
 #
 #        if mr_adc.method_type == "ip":
@@ -138,14 +138,14 @@ def compute_gs_rdms(mr_adc):
 #            if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
 #                mr_adc.rdm.tcccaaa = mr_adc_rdms.compute_rdm_tcccaaa_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci).copy()
 #
-#        print ("Computing transition RDMs between target CASCI states...\n")
+#        print("Computing transition RDMs between target CASCI states...\n")
 #        sys.stdout.flush()
 #
 #        # Compute transition RDMs between two target CASCI states
 #        mr_adc.rdm.tcat = mr_adc_rdms.compute_rdm_tcat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci)
 #        mr_adc.rdm.tccaat = mr_adc_rdms.compute_rdm_tccaat_so(mr_adc.interface, wfn_casci, mr_adc.nelecasci)
 #
-#    print ("Time for computing excited-state RDMs:                          %f sec\n" % (time.time() - start_time))
+#    print("Time for computing excited-state RDMs:                          %f sec\n" % (time.time() - start_time))
 #
 #def compute_rdm_ca_so(interface, bra = None, ket = None, nelecas = None):
 #
@@ -1104,9 +1104,9 @@ def compute_gs_rdms(mr_adc):
 #            wfns, wfn_ne = interface.apply_aaa(ket, ncas, nelecas, wfn_str_ket)
 #            wfns_I, wfn_I = interface.apply_aaa(bra, ncas, nelecas, wfn_str_bra)
 #            if wfns is None and wfns_I is not None:
-#                print (wfn_str_ket, wfn_str_bra, wfns_I.shape)
+#                print(wfn_str_ket, wfn_str_bra, wfns_I.shape)
 #            if wfns_I is None and wfns is not None:
-#                print (wfn_str_bra, wfn_str_ket, wfns.shape)
+#                print(wfn_str_bra, wfn_str_ket, wfns.shape)
 #            if wfns is not None and wfns_I is not None:
 #                wfns = wfns.reshape(ncas**3, -1)
 #                wfns_I = wfns_I.reshape(ncas**3, -1)
@@ -1126,9 +1126,9 @@ def compute_gs_rdms(mr_adc):
 #            wfns, wfn_ne = interface.apply_aaa(ket, ncas, nelecas, wfn_str_ket)
 #            wfns_I, wfn_I = interface.apply_aaa(bra, ncas, nelecas, wfn_str_bra)
 #            if wfns is None and wfns_I is not None:
-#                print (wfn_str_ket, wfn_str_bra, wfns_I.shape)
+#                print(wfn_str_ket, wfn_str_bra, wfns_I.shape)
 #            if wfns_I is None and wfns is not None:
-#                print (wfn_str_bra, wfn_str_ket, wfns.shape)
+#                print(wfn_str_bra, wfn_str_ket, wfns.shape)
 #            if wfns is not None and wfns_I is not None:
 #                wfns = wfns.reshape(ncas**3, -1)
 #                wfns_I = wfns_I.reshape(ncas**3, -1)
@@ -1183,9 +1183,9 @@ def compute_gs_rdms(mr_adc):
 #            wfns, wfn_ne = interface.apply_aaaa(ket, ncas, nelecas, wfn_str_ket)
 #            wfns_I, wfn_I = interface.apply_aaaa(bra, ncas, nelecas, wfn_str_bra)
 #            if wfns is None and wfns_I is not None:
-#                print (wfn_str_ket, wfn_str_bra, wfns_I.shape)
+#                print(wfn_str_ket, wfn_str_bra, wfns_I.shape)
 #            if wfns_I is None and wfns is not None:
-#                print (wfn_str_bra, wfn_str_ket, wfns.shape)
+#                print(wfn_str_bra, wfn_str_ket, wfns.shape)
 #            if wfns is not None and wfns_I is not None:
 #                wfns = wfns.reshape(ncas**4, -1)
 #                wfns_I = wfns_I.reshape(ncas**4, -1)
