@@ -8,7 +8,7 @@ def transform_integrals_1e(mr_adc):
 
     start_time = time.time()
 
-    print ("Transforming 1e integrals to MO basis...")
+    print("Transforming 1e integrals to MO basis...")
     sys.stdout.flush()
 
     mo = mr_adc.mo
@@ -24,7 +24,7 @@ def transform_integrals_1e(mr_adc):
         for i in range(3):
             mr_adc.dip_mom[i] = reduce(np.dot, (mo.T, mr_adc.interface.dip_mom_ao[i], mo))
 
-    print ("Time for transforming 1e integrals:                  %f sec\n" % (time.time() - start_time))
+    print("Time for transforming 1e integrals:                  %f sec\n" % (time.time() - start_time))
 
 
 # Two-electron integral transformation in Physicists' notation
@@ -46,14 +46,17 @@ def transform_integrals_2e_incore(mr_adc):
 
     start_time = time.time()
 
-    print ("Transforming 2e integrals to MO basis (in-core)...\n")
+    print("Transforming 2e integrals to MO basis (in-core)...\n")
     sys.stdout.flush()
 
-    mo = mr_adc.mo
+    ncvs = mr_adc.ncvs
+    ncore = mr_adc.ncore
+    nocc = mr_adc.nocc
 
-    mo_c = mo[:, :mr_adc.ncore].copy()
-    mo_a = mo[:, mr_adc.ncore:mr_adc.nocc].copy()
-    mo_e = mo[:, mr_adc.nocc:].copy()
+    mo = mr_adc.mo
+    mo_c = mo[:, :ncore].copy()
+    mo_a = mo[:, ncore:nocc].copy()
+    mo_e = mo[:, nocc:].copy()
 
     mr_adc.v2e.aaaa = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_a, mo_a)
 
@@ -66,6 +69,18 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.aaae = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_a, mo_e)
             mr_adc.v2e.caca = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_c, mo_a)
             mr_adc.v2e.caac = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_a, mo_c)
+
+            #TODO: Check if all integrals here are needed
+            if mr_adc.method_type == "cvs-ip":
+                mr_adc.v2e.xaea = np.ascontiguousarray(mr_adc.v2e.caea[:mr_adc.ncvs,:,:,:])
+                mr_adc.v2e.xaae = np.ascontiguousarray(mr_adc.v2e.caae[:mr_adc.ncvs,:,:,:])
+                mr_adc.v2e.xaaa = np.ascontiguousarray(mr_adc.v2e.caaa[:mr_adc.ncvs,:,:,:])
+                mr_adc.v2e.xaca = np.ascontiguousarray(mr_adc.v2e.caca[:mr_adc.ncvs,:,:,:])
+                mr_adc.v2e.caxa = np.ascontiguousarray(mr_adc.v2e.caca[:,:,:mr_adc.ncvs,:])
+                mr_adc.v2e.xaxa = np.ascontiguousarray(mr_adc.v2e.caca[:mr_adc.ncvs,:,:mr_adc.ncvs,:])
+                mr_adc.v2e.xaac = np.ascontiguousarray(mr_adc.v2e.caac[:mr_adc.ncvs,:,:,:])
+                mr_adc.v2e.caax = np.ascontiguousarray(mr_adc.v2e.caac[:,:,:,:mr_adc.ncvs])
+                mr_adc.v2e.xaax = np.ascontiguousarray(mr_adc.v2e.caac[:mr_adc.ncvs,:,:,:mr_adc.ncvs])
 
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.ccee = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_e, mo_e)
@@ -88,7 +103,50 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.aeae = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_a, mo_e)
             mr_adc.v2e.aeea = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_e, mo_e, mo_a)
 
-            # Need for mr-adc(2)-x
+            #TODO: Check if all integrals here are needed
+            if mr_adc.method_type == "cvs-ip":
+                mr_adc.v2e.xcee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs,:,:,:])
+                # mr_adc.v2e.cxee = np.ascontiguousarray(mr_adc.v2e.ccee[:,:ncvs,:,:])
+                # mr_adc.v2e.xxee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xcea = np.ascontiguousarray(mr_adc.v2e.ccea[:ncvs,:,:,:])
+                mr_adc.v2e.cxea = np.ascontiguousarray(mr_adc.v2e.ccea[:,:ncvs,:,:])
+                mr_adc.v2e.xxea = np.ascontiguousarray(mr_adc.v2e.ccea[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xcae = np.ascontiguousarray(mr_adc.v2e.ccae[:ncvs,:,:,:])
+                mr_adc.v2e.cxae = np.ascontiguousarray(mr_adc.v2e.ccae[:,:ncvs,:,:])
+                # mr_adc.v2e.xxae = np.ascontiguousarray(mr_adc.v2e.ccae[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xcaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:ncvs,:,:,:])
+                # mr_adc.v2e.cxaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:,:ncvs,:,:])
+                # mr_adc.v2e.xxaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xaee = np.ascontiguousarray(mr_adc.v2e.caee[:ncvs,:,:,:])
+                mr_adc.v2e.xeee = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs,:,:,:])
+                mr_adc.v2e.xeaa = np.ascontiguousarray(mr_adc.v2e.ceaa[:ncvs,:,:,:])
+                mr_adc.v2e.xeae = np.ascontiguousarray(mr_adc.v2e.ceae[:ncvs,:,:,:])
+                mr_adc.v2e.xeea = np.ascontiguousarray(mr_adc.v2e.ceea[:ncvs,:,:,:])
+                # mr_adc.v2e.xace = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs,:,:,:])
+                # mr_adc.v2e.caxe = np.ascontiguousarray(mr_adc.v2e.cace[:,:,:ncvs,:])
+                mr_adc.v2e.xaxe = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs,:,:ncvs,:])
+                # mr_adc.v2e.xaec = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs,:,:,:])
+                # mr_adc.v2e.caex = np.ascontiguousarray(mr_adc.v2e.caec[:,:,:,:ncvs])
+                mr_adc.v2e.xaex = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs,:,:,:ncvs])
+                mr_adc.v2e.xece = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs,:,:,:])
+                mr_adc.v2e.cexe = np.ascontiguousarray(mr_adc.v2e.cece[:,:,:ncvs,:])
+                mr_adc.v2e.xexe = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs,:,:ncvs,:])
+                mr_adc.v2e.xeec = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs,:,:,:])
+                mr_adc.v2e.ceex = np.ascontiguousarray(mr_adc.v2e.ceec[:,:,:,:ncvs])
+                mr_adc.v2e.xeex = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs,:,:,:ncvs])
+                # mr_adc.v2e.xcca = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs,:,:,:])
+                # mr_adc.v2e.cxca = np.ascontiguousarray(mr_adc.v2e.ccca[:,:ncvs,:,:])
+                # mr_adc.v2e.ccxa = np.ascontiguousarray(mr_adc.v2e.ccca[:,:,:ncvs,:])
+                # mr_adc.v2e.xxca = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xcxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs,:,:ncvs,:])
+                mr_adc.v2e.cxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:,:ncvs,:ncvs,:])
+                # mr_adc.v2e.xcce = np.ascontiguousarray(mr_adc.v2e.ccce[:ncvs,:,:,:])
+                # mr_adc.v2e.cxce = np.ascontiguousarray(mr_adc.v2e.ccce[:,:ncvs,:,:])
+                # mr_adc.v2e.ccxe = np.ascontiguousarray(mr_adc.v2e.ccce[:,:,:ncvs,:])
+                # mr_adc.v2e.xxce = np.ascontiguousarray(mr_adc.v2e.ccce[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xcxe = np.ascontiguousarray(mr_adc.v2e.ccce[:ncvs,:,:ncvs,:])
+                mr_adc.v2e.cxxe = np.ascontiguousarray(mr_adc.v2e.ccce[:,:ncvs,:ncvs,:])
+
             if mr_adc.method == "mr-adc(2)-x":
                 mr_adc.v2e.cccc = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
 
@@ -98,13 +156,25 @@ def transform_integrals_2e_incore(mr_adc):
     # Effective one-electron integrals
     gcgc = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo, mo_c)
     gccg = transform_2e_phys_incore(mr_adc.interface, mo, mo_c, mo_c, mo)
-    mr_adc.h1eff = mr_adc.h1e + 2.0 * np.einsum('prqr->pq', gcgc) - np.einsum('prrq->pq', gccg)
-    mr_adc.h1eff_act = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h1eff = mr_adc.h1e + 2.0 * np.einsum('prqr->pq', gcgc) - np.einsum('prrq->pq', gccg)
+
+    mr_adc.h1eff.ca = np.ascontiguousarray(h1eff[:ncore, ncore:nocc])
+    mr_adc.h1eff.ce = np.ascontiguousarray(h1eff[:ncore, nocc:])
+    mr_adc.h1eff.aa = np.ascontiguousarray(h1eff[ncore:nocc, ncore:nocc])
+    mr_adc.h1eff.ae = np.ascontiguousarray(h1eff[ncore:nocc, nocc:])
+
+    #TODO: Check if all integrals here are needed
+    if mr_adc.method_type == "cvs-ip":
+        mr_adc.h1eff.xa = np.ascontiguousarray(mr_adc.h1eff.ca[:ncvs,:])
+        mr_adc.h1eff.xe = np.ascontiguousarray(mr_adc.h1eff.ce[:ncvs,:])
 
     # Store diagonal elements of the generalized Fock operator in spin-orbital basis
     mr_adc.mo_energy.c = mr_adc.interface.mo_energy[:mr_adc.ncore]
     mr_adc.mo_energy.e = mr_adc.interface.mo_energy[mr_adc.nocc:]
 
-    print ("Time for transforming integrals:                  %f sec\n" % (time.time() - start_time))
+    if mr_adc.method_type == "cvs-ip":
+        mr_adc.mo_energy.x = mr_adc.interface.mo_energy[:ncvs]
+
+    print("Time for transforming integrals:                  %f sec\n" % (time.time() - start_time))
 
 

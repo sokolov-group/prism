@@ -24,9 +24,9 @@ def compute_S12_p1(mr_adc, ignore_print = True):
     S_p1_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
     if not ignore_print:
-        print ("Dimension of the [+1] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [+1] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [+1] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [+1] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1_12_inv
 
@@ -51,9 +51,9 @@ def compute_S12_m1(mr_adc, ignore_print = True):
     S_m1_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
     if not ignore_print:
-        print ("Dimension of the [-1] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [-1] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [-1] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [-1] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m1_12_inv
 
@@ -87,9 +87,9 @@ def compute_S12_p2(mr_adc, ignore_print = True):
     S_p2_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
     if not ignore_print:
-        print ("Dimension of the [+2] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [+2] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [+2] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [+2] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p2_12_inv
 
@@ -118,9 +118,9 @@ def compute_S12_m2(mr_adc, ignore_print = True):
     S_m2_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
     if not ignore_print:
-        print ("Dimension of the [-2] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [-2] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [-2] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [-2] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m2_12_inv
 
@@ -152,8 +152,8 @@ def compute_S12_p1p(mr_adc, ignore_print = True, half_transform = False, s_thres
     S11  = 2 * einsum('XY->XY', np.identity(ncas), optimize = einsum_type).copy()
     S11 -= einsum('YX->XY', rdm_ca, optimize = einsum_type).copy()
     # if mr_adc.debug_mode:
-    #     print (">>> SA S11 norm: {:}".format(np.linalg.norm(S11)))
-    #     print (">>> SA S11 trace: {:}".format(np.einsum('ii', S11)))
+    #     print(">>> SA S11 norm: {:}".format(np.linalg.norm(S11)))
+    #     print(">>> SA S11 trace: {:}".format(np.einsum('ii', S11)))
     #     with open('SA_S11.out', 'w') as outfile:
     #         outfile.write(repr(S11))
 
@@ -161,8 +161,8 @@ def compute_S12_p1p(mr_adc, ignore_print = True, half_transform = False, s_thres
     S12 -= einsum('WX,YZ->XZWY', np.identity(ncas), rdm_ca, optimize = einsum_type)
     S12 += 2 * einsum('XY,WZ->XZWY', np.identity(ncas), rdm_ca, optimize = einsum_type)
     # if mr_adc.debug_mode:
-    #     print (">>> SA S12 norm: {:}".format(np.linalg.norm(S12)))
-    #     print (">>> SA S12 trace: {:}".format(np.einsum('iiii', S12)))
+    #     print(">>> SA S12 norm: {:}".format(np.linalg.norm(S12)))
+    #     print(">>> SA S12 trace: {:}".format(np.einsum('iiii', S12)))
     #     with open('SA_S12.out', 'w') as outfile:
     #         outfile.write(repr(S12))
 
@@ -191,9 +191,9 @@ def compute_S12_p1p(mr_adc, ignore_print = True, half_transform = False, s_thres
     # print(">>> SA S22 is Hermitian?: {:}".format(np.allclose(S22.reshape(ncas**3, ncas**3), np.asmatrix(S22.reshape(ncas**3, ncas**3)).H, rtol=1e-05, atol=1e-08)))
     # print(">>> SA S_act is Hermitian?: {:}".format(np.allclose(S_act, np.asmatrix(S_act).H, rtol=1e-05, atol=1e-08)))
 
-    # print (">>> SA S11 norm: {:}".format(np.linalg.norm(S11)))
-    # print (">>> SA S12 norm: {:}".format(np.linalg.norm(S12)))
-    # print (">>> SA S22 norm: {:}".format(np.linalg.norm(S22)))
+    # print(">>> SA S11 norm: {:}".format(np.linalg.norm(S11)))
+    # print(">>> SA S12 norm: {:}".format(np.linalg.norm(S12)))
+    # print(">>> SA S22 norm: {:}".format(np.linalg.norm(S22)))
 
     S_eval, S_evec = np.linalg.eigh(S_act)
 
@@ -219,9 +219,9 @@ def compute_S12_p1p(mr_adc, ignore_print = True, half_transform = False, s_thres
         S_p1p_12_inv_act = reduce(np.dot, (S_evec, np.diag(S_inv_eval), S_evec.T))
 
     if not ignore_print:
-        print ("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
+        print("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1p_12_inv_act
 
@@ -408,9 +408,9 @@ def compute_S12_p1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     S_p1p_12_inv_act = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
     if not ignore_print:
-        print ("Dimension of the [+1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [+1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1p_12_inv_act
 
@@ -448,9 +448,9 @@ def compute_S12_p1p_singles(mr_adc, ignore_print = True):
     S_p1p_inv_act = np.dot(S_evec, np.diag(S_inv_eval))
 
     if not ignore_print:
-        print ("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
+        print("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1p_inv_act
 
@@ -492,9 +492,9 @@ def compute_S12_p1p_singles_sanity_check_gno_projector(mr_adc, ignore_print = Tr
     S_p1p_12_inv_act = reduce(np.dot, (S_evec, np.diag(S_inv_eval)))
 
     if not ignore_print:
-        print ("Dimension of the [+1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [+1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1p_12_inv_act
 
@@ -546,9 +546,9 @@ def compute_S12_p1p_definition(mr_adc, ignore_print = True):
     S_p1p_inv_act = np.dot(S_evec, np.diag(S_inv_eval))
 
     if not ignore_print:
-        print ("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
+        print("Dimension of the [+1'] orthonormalized subspace:  %d" % (S_inv_eval.shape[0]))
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [+1'] overlap metric:  %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1p_inv_act
 
@@ -689,6 +689,7 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     St = reduce(np.dot, (Y.T, S_act, Y))
 
     S_eval, S_evec = np.linalg.eigh(St)
+
     S_ind_nonzero = np.where(S_eval > s_thresh)[0]
 
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
@@ -702,160 +703,67 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     S_m1p_12_inv_act = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
     if not ignore_print:
-        print ("Dimension of the [-1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [-1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [-1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [-1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m1p_12_inv_act
 
-def compute_S12_m1p_sanity_check(mr_adc, ignore_print = True):
+def compute_S12_0p_projector(mr_adc, ignore_print = True):
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
+    ncas = mr_adc.ncas
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
-    rdm_cccaaa = mr_adc.rdm.cccaaa
 
-    ncas = mr_adc.ncas
+    nelecas = sum(mr_adc.nelecas)
 
-    n_x = ncas * 2
-    n_xzw = ncas * 2 * ncas * 2 * (ncas * 2 - 1) // 2
-    dim_act = n_x + n_xzw
-    xy_ind = np.tril_indices(ncas * 2, k=-1)
+    if nelecas == 0:
+        nelecas = 1
+
+    # dim = 1 + (ncas * 2) * (ncas * 2)
+    dim = 1 + ncas * ncas
 
     if mr_adc.s_damping_strength is None:
         s_thresh = mr_adc.s_thresh_singles
     else:
         s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
 
-    S_act = np.zeros((dim_act, dim_act))
+    rdm_caca  = einsum('WYZX->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    rdm_caca += einsum('YZ,XW->XYZW', np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    S11 = np.zeros((ncas * 2, ncas * 2))
+    # Compute projector to remove linear dependencies
+    Q  = np.einsum("xw,yz->xywz", np.identity(ncas), np.identity(ncas)).copy()
+    Q -= np.einsum("xy,uuzw->xywz", np.identity(ncas), rdm_caca) / (nelecas ** 2)
 
-    S11_a_a  = 1/2 * einsum('XY->XY', rdm_ca, optimize = einsum_type).copy()
+    Q = Q.reshape(ncas**2, ncas**2).copy()
 
-    S11[::2,::2] = S11_a_a.copy()
-    S11[1::2,1::2] = S11_a_a.copy()
+    S22 = rdm_caca.reshape(ncas**2, ncas**2).copy()
+    S22 = np.dot(S22, Q)
 
-    S12 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
+    S_eval, S_evec = np.linalg.eigh(S22)
+    S_ind_nonzero = np.where(S_eval > s_thresh)[0]
 
-    S12_a_aaa =- 1/6 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_aaa += 1/6 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
-    S12_a_abb  = 1/6 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_abb += 1/3 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S_evec = S_evec[:, S_ind_nonzero]
 
-    S12_a_bab =- 1/3 * einsum('WXYZ->XYZW', rdm_ccaa, optimize = einsum_type).copy()
-    S12_a_bab -= 1/6 * einsum('WXZY->XYZW', rdm_ccaa, optimize = einsum_type).copy()
+    S22_12_inv = reduce(np.dot, (Q, S_evec, np.diag(S_inv_eval)))
 
-    S12[::2,::2,::2,::2] = S12_a_aaa.copy()
-    S12[1::2,1::2,1::2,1::2] = S12_a_aaa.copy()
-
-    S12[::2,::2,1::2,1::2] = S12_a_abb.copy()
-    S12[1::2,1::2,::2,::2] = S12_a_abb.copy()
-
-    S12[::2,1::2,::2,1::2] = S12_a_bab.copy()
-    S12[1::2,::2,1::2,::2] = S12_a_bab.copy()
-
-    S22 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2))
-
-    S22_aaa_aaa  = 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_aaa += 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_aaa += 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_aaa -= 1/6 * einsum('VW,UXYZ->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aaa_aaa += 1/6 * einsum('VW,UXZY->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-
-    S22_aaa_abb  = 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_abb -= 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_abb -= 1/6 * einsum('UWXYZV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aaa_abb -= 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-
-    S22_aab_aab =- 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aab_aab += 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aab_aab -= 1/6 * einsum('UWXZVY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aab_aab -= 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_aab_aab -= 1/6 * einsum('VW,UXYZ->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_aab_aab += 1/6 * einsum('VW,UXZY->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-
-    S22_abb_aaa =- 1/6 * einsum('UWXVYZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_abb_aaa += 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_abb_aaa -= 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_abb_aaa -= 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-
-    S22_baa_baa  = 1/12 * einsum('UWXVZY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_baa_baa -= 1/12 * einsum('UWXYVZ->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_baa_baa -= 1/6 * einsum('UWXZVY->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_baa_baa -= 1/12 * einsum('UWXZYV->XUVYZW', rdm_cccaaa, optimize = einsum_type).copy()
-    S22_baa_baa += 1/6 * einsum('VW,UXYZ->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-    S22_baa_baa += 1/3 * einsum('VW,UXZY->XUVYZW', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
-
-    S22[::2,::2,::2,::2,::2,::2] = S22_aaa_aaa.copy()
-    S22[1::2,1::2,1::2,1::2,1::2,1::2] = S22_aaa_aaa.copy()
-
-    S22[::2,::2,::2,::2,1::2,1::2] = S22_aaa_abb.copy()
-    S22[1::2,1::2,1::2,1::2,::2,::2] = S22_aaa_abb.copy()
-
-    S22[::2,::2,::2,1::2,::2,1::2] = - S22_aaa_abb.transpose(0,1,2,4,3,5).copy()
-    S22[1::2,1::2,1::2,::2,1::2,::2] = - S22_aaa_abb.transpose(0,1,2,4,3,5).copy()
-
-    S22[1::2,::2,::2,1::2,::2,::2] = S22_baa_baa.copy()
-    S22[::2,1::2,1::2,::2,1::2,1::2] = S22_baa_baa.copy()
-
-    S22[1::2,::2,::2,::2,1::2,::2] = - S22_baa_baa.transpose(0,1,2,4,3,5).copy()
-    S22[::2,1::2,1::2,1::2,::2,1::2] = - S22_baa_baa.transpose(0,1,2,4,3,5).copy()
-
-    S22[::2,1::2,::2,1::2,::2,::2] = - S22_baa_baa.transpose(1,0,2,3,4,5).copy()
-    S22[1::2,::2,1::2,::2,1::2,1::2] = - S22_baa_baa.transpose(1,0,2,3,4,5).copy()
-
-    S22[::2,1::2,::2,::2,1::2,::2] = S22_baa_baa.transpose(1,0,2,4,3,5).copy()
-    S22[1::2,::2,1::2,1::2,::2,1::2] = S22_baa_baa.transpose(1,0,2,4,3,5).copy()
-
-    S22[::2,1::2,1::2,::2,::2,::2] = S22_abb_aaa.copy()
-    S22[1::2,::2,::2,1::2,1::2,1::2] = S22_abb_aaa.copy()
-
-    S22[1::2,::2,1::2,::2,::2,::2] = - S22_abb_aaa.transpose(1,0,2,3,4,5).copy()
-    S22[::2,1::2,::2,1::2,1::2,1::2] = - S22_abb_aaa.transpose(1,0,2,3,4,5).copy()
-
-    S22[::2,::2,1::2,::2,::2,1::2] = S22_aab_aab.copy()
-    S22[1::2,1::2,::2,1::2,1::2,::2] = S22_aab_aab.copy()
-
-    S12 = S12[:,xy_ind[0],xy_ind[1]]
-    S22 = S22[:,:,:,xy_ind[0],xy_ind[1]]
-    S22 = S22[xy_ind[0],xy_ind[1]]
-
-    S_act[:n_x,:n_x] = S11.copy()
-    S_act[:n_x,n_x:] = S12.reshape(n_x, n_xzw)
-    S_act[n_x:,:n_x] = S12.reshape(n_x, n_xzw).T
-    S_act[n_x:,n_x:] = S22.reshape(n_xzw, n_xzw)
-
-    S_eval, S_evec = np.linalg.eigh(S_act)
-
-    s_cut = 0
-    s_trace = np.sum(S_eval)
-    s_thresh = mr_adc.s_thresh_singles
-    for p in range(S_eval.shape[0]):
-        s_sum = np.sum(S_eval[:p])
-        if (s_sum / s_trace > s_thresh):
-            s_cut = p - 1
-            break
-    S_inv_eval = 1.0/np.sqrt(S_eval[s_cut:])
-
-    if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[s_cut:], mr_adc.s_thresh_singles, mr_adc.s_damping_strength)
-        S_inv_eval *= damping_prefactor
-
-    S_evec = S_evec[:, s_cut:]
-
-    S_m1p_12_inv_act = reduce(np.dot, (S_evec, np.diag(S_inv_eval)))
+    S_0p_12_inv = np.zeros((dim, 1 + S22_12_inv.shape[1]))
+    S_0p_12_inv[0,0] = 1.0
+    S_0p_12_inv[1:,1:] = S22_12_inv.copy()
 
     if not ignore_print:
-        print ("Dimension of the [-1'] orthonormalized subspace:  %d" % S_eval[s_cut:].shape[0])
-        print ("Smallest eigenvalue of the [-1'] overlap metric:  %e" % np.amin(S_eval[s_cut:]))
+        print("Dimension of the [0'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        if len(S_ind_nonzero) > 0:
+            print("Smallest eigenvalue of the [0'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
-    return S_m1p_12_inv_act
+    return S_0p_12_inv
 
 def compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = True):
 
@@ -935,9 +843,9 @@ def compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = True):
     S_0p_12_inv = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
     if not ignore_print:
-        print ("Dimension of the [0'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [0'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print ("Smallest eigenvalue of the [0'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [0'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_0p_12_inv
 

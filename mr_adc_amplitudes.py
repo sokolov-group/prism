@@ -11,28 +11,17 @@ def compute_amplitudes(mr_adc):
 
     # First-order amplitudes
     # TODO: Implement Spin-Adapted Semi-internals
-    t1_amp = compute_t1_amplitudes(mr_adc)
+    compute_t1_amplitudes(mr_adc)
 
     # Second-order amplitudes
     # TODO: Implement T2 amplitudes
-    t2_amp = compute_t2_amplitudes(mr_adc, t1_amp)
+    compute_t2_amplitudes(mr_adc)
 
-    t1_ce, t1_ca, t1_ae, t1_caea, t1_caae, t1_caaa, t1_aaea, t1_aaae, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee = t1_amp
-    t2_ce, t2_ca, t2_ae, t2_caea, t2_caaa, t2_aaea, t2_ccee, t2_ccea, t2_caee, t2_ccaa, t2_aaee, t2_aa = t2_amp
-
-    print ("Time for computing amplitudes:                    %f sec\n" % (time.time() - start_time))
-
-    return (t1_ce, t1_ca, t1_ae, t1_caea, t1_caae, t1_caaa, t1_aaea, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee,
-            t2_ce, t2_ca, t2_ae, t2_caea, t2_caea, t2_caaa, t2_aaea, t2_ccee, t2_ccea, t2_caee, t2_ccaa, t2_aaee, t2_aa)
+    print("Time for computing amplitudes:                    %f sec\n" % (time.time() - start_time))
 
 def compute_t1_amplitudes(mr_adc):
 
-    t1_ce, t1_ca, t1_ae = (None,) * 3
-    t1_caea, t1_caaa, t1_aaea, t1_aaae = (None,) * 4
-    t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee = (None,) * 5
-
-    e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8
-
+    ncvs = mr_adc.ncvs
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
@@ -42,111 +31,130 @@ def compute_t1_amplitudes(mr_adc):
     ##########################
     if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
         if mr_adc.ncore > 0 and mr_adc.nextern > 0 and mr_adc.ncas > 0:
-            print ("Computing T[0']^(1) amplitudes...")
+            # TODO: Implementation of spin-adapted t1_0p
+            print("Computing T[0']^(1) amplitudes...")
             sys.stdout.flush()
-            # TODO: Implementation of spin-adapted amplited t1_0p
-            e_0p, t1_ce, t1_caea, t1_caae = compute_t1_0p_sanity_check(mr_adc)
-            print ("Norm of T[0']^(1):                          %20.12f" % (np.linalg.norm(t1_ce) + np.linalg.norm(t1_caea)))
-            print ("Correlation energy [0']:                    %20.12f\n" % e_0p)
+            e_0p, mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae = compute_t1_0p_sanity_check(mr_adc)
+
+            print("Norm of T[0']^(1):                          %20.12f" % (np.linalg.norm(mr_adc.t1.ce) +
+                                                                           np.linalg.norm(mr_adc.t1.caea)))
+            print("Correlation energy [0']:                    %20.12f\n" % e_0p)
         else:
-            t1_ce = np.zeros((ncore, nextern))
-            t1_caea = np.zeros((ncore, ncas, nextern, ncas))
+            mr_adc.t1.ce = np.zeros((ncore, nextern))
+            mr_adc.t1.caea = np.zeros((ncore, ncas, nextern, ncas))
 
         if mr_adc.ncore > 0 and mr_adc.ncas > 0:
-            print ("Computing T[+1']^(1) amplitudes...")
+            # TODO: Implementation of spin-adapted t1_p1p
+            print("Computing T[+1']^(1) amplitudes...")
             sys.stdout.flush()
-            # TODO: Implementation of spin-adapted amplited t1_p1p
-            e_p1p, t1_ca, t1_caaa = compute_t1_p1p_sanity_check(mr_adc)
-            print ("Norm of T[+1']^(1):                         %20.12f" % (np.linalg.norm(t1_ca) + np.linalg.norm(t1_caaa)))
-            print ("Correlation energy [+1']:                   %20.12f\n" % e_p1p)
+            e_p1p, mr_adc.t1.ca, mr_adc.t1.caaa = compute_t1_p1p_sanity_check(mr_adc)
+
+            print("Norm of T[+1']^(1):                         %20.12f" % (np.linalg.norm(mr_adc.t1.ca) +
+                                                                           np.linalg.norm(mr_adc.t1.caaa)))
+            print("Correlation energy [+1']:                   %20.12f\n" % e_p1p)
         else:
-            t1_ca = np.zeros((ncore, ncas))
-            t1_caaa = np.zeros((ncore, ncas, ncas, ncas))
+            mr_adc.t1.ca = np.zeros((ncore, ncas))
+            mr_adc.t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
 
         if mr_adc.nextern > 0 and mr_adc.ncas > 0:
-            print ("Computing T[-1']^(1) amplitudes...")
+            # TODO: Implementation of spin-adapted t1_m1p
+            print("Computing T[-1']^(1) amplitudes...")
             sys.stdout.flush()
-            # TODO: Implementation of spin-adapted amplited t1_m1p
-            e_m1p, t1_ae, t1_aaea, t1_aaae = compute_t1_m1p_sanity_check(mr_adc)
-            print ("Norm of T[-1']^(1):                         %20.12f" % (np.linalg.norm(t1_ae) + np.linalg.norm(t1_aaea)))
-            print ("Correlation energy [-1']:                   %20.12f\n" % e_m1p)
+            e_m1p, mr_adc.t1.ae, mr_adc.t1.aaea, mr_adc.t1.aaae = compute_t1_m1p_sanity_check(mr_adc)
+            print("Norm of T[-1']^(1):                         %20.12f" % (np.linalg.norm(mr_adc.t1.ae) +
+                                                                           np.linalg.norm(mr_adc.t1.aaea)))
+            print("Correlation energy [-1']:                   %20.12f\n" % e_m1p)
         else:
-            t1_ae = np.zeros((ncas, nextern))
-            t1_aaea = np.zeros((ncas, ncas, nextern, ncas))
-            t1_aaae = np.zeros((ncas, ncas, ncas, nextern))
+            mr_adc.t1.ae = np.zeros((ncas, nextern))
+            mr_adc.t1.aaea = np.zeros((ncas, ncas, nextern, ncas))
+            mr_adc.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
 
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x") or (mr_adc.method == "mr-adc(1)" and mr_adc.method_type in ("ee", "cvs-ee")):
+        #TODO: Check if all amplitudes are needed
+        if mr_adc.method_type in ("cvs-ip"):
+            mr_adc.t1.xe = np.ascontiguousarray(mr_adc.t1.ce[:ncvs,:])
+            mr_adc.t1.xaea = np.ascontiguousarray(mr_adc.t1.caea[:ncvs,:,:,:])
+            mr_adc.t1.xaae = np.ascontiguousarray(mr_adc.t1.caae[:ncvs,:,:,:])
+            mr_adc.t1.xa = np.ascontiguousarray(mr_adc.t1.ca[:ncvs,:])
+            mr_adc.t1.xaaa = np.ascontiguousarray(mr_adc.t1.caaa[:ncvs,:,:,:])
+
+    if ((mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x")) or
+        (mr_adc.method == "mr-adc(1)" and mr_adc.method_type in ("ee", "cvs-ee"))):
+
         if mr_adc.ncore > 0 and mr_adc.nextern > 0:
-            print ("Computing T[0]^(1) amplitudes...")
+            print("Computing T[0]^(1) amplitudes...")
             sys.stdout.flush()
-            e_0, t1_ccee = compute_t1_0(mr_adc)
-            print ("Norm of T[0]^(1):                           %20.12f" % np.linalg.norm(t1_ccee))
-            print ("Correlation energy [0]:                     %20.12f\n" % e_0)
+            e_0, mr_adc.t1.ccee = compute_t1_0(mr_adc)
+            print("Norm of T[0]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.ccee))
+            print("Correlation energy [0]:                     %20.12f\n" % e_0)
         else:
-            t1_ccee = np.zeros((ncore, ncore, nextern, nextern))
+            mr_adc.t1.ccee = np.zeros((ncore, ncore, nextern, nextern))
 
         if mr_adc.ncore > 0 and mr_adc.nextern > 0 and mr_adc.ncas > 0:
-            print ("Computing T[+1]^(1) amplitudes...")
+            print("Computing T[+1]^(1) amplitudes...")
             sys.stdout.flush()
-            e_p1, t1_ccea = compute_t1_p1(mr_adc)
-            print ("Norm of T[+1]^(1):                          %20.12f" % np.linalg.norm(t1_ccea))
-            print ("Correlation energy [+1]:                    %20.12f\n" % e_p1)
+            e_p1, mr_adc.t1.ccea = compute_t1_p1(mr_adc)
+            print("Norm of T[+1]^(1):                          %20.12f" % np.linalg.norm(mr_adc.t1.ccea))
+            print("Correlation energy [+1]:                    %20.12f\n" % e_p1)
 
-            print ("Computing T[-1]^(1) amplitudes...")
+            print("Computing T[-1]^(1) amplitudes...")
             sys.stdout.flush()
-            e_m1, t1_caee = compute_t1_m1(mr_adc)
-            print ("Norm of T[-1]^(1):                          %20.12f" % np.linalg.norm(t1_caee))
-            print ("Correlation energy [-1]:                    %20.12f\n" % e_m1)
+            e_m1, mr_adc.t1.caee = compute_t1_m1(mr_adc)
+            print("Norm of T[-1]^(1):                          %20.12f" % np.linalg.norm(mr_adc.t1.caee))
+            print("Correlation energy [-1]:                    %20.12f\n" % e_m1)
         else:
-            t1_ccea = np.zeros((ncore, ncore, nextern, ncas))
-            t1_caee = np.zeros((ncore, ncas, nextern, nextern))
+            mr_adc.t1.ccea = np.zeros((ncore, ncore, nextern, ncas))
+            mr_adc.t1.caee = np.zeros((ncore, ncas, nextern, nextern))
 
         if mr_adc.ncore > 0 and mr_adc.ncas > 0:
-            print ("Computing T[+2]^(1) amplitudes...")
+            print("Computing T[+2]^(1) amplitudes...")
             sys.stdout.flush()
-            e_p2, t1_ccaa = compute_t1_p2(mr_adc)
-            print ("Norm of T[+2]^(1):                          %20.12f" % np.linalg.norm(t1_ccaa))
-            print ("Correlation energy [+2]:                    %20.12f\n" % e_p2)
+            e_p2, mr_adc.t1.ccaa = compute_t1_p2(mr_adc)
+            print("Norm of T[+2]^(1):                          %20.12f" % np.linalg.norm(mr_adc.t1.ccaa))
+            print("Correlation energy [+2]:                    %20.12f\n" % e_p2)
         else:
-            t1_ccaa = np.zeros((ncore, ncore, ncas, ncas))
+            mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
         if mr_adc.nextern > 0 and mr_adc.ncas > 0:
-            print ("Computing T[-2]^(1) amplitudes...")
+            print("Computing T[-2]^(1) amplitudes...")
             sys.stdout.flush()
-            e_m2, t1_aaee = compute_t1_m2(mr_adc)
-            print ("Norm of T[-2]^(1):                          %20.12f" % np.linalg.norm(t1_aaee))
-            print ("Correlation energy [-2]:                    %20.12f\n" % e_m2)
+            e_m2, mr_adc.t1.aaee = compute_t1_m2(mr_adc)
+            print("Norm of T[-2]^(1):                          %20.12f" % np.linalg.norm(mr_adc.t1.aaee))
+            print("Correlation energy [-2]:                    %20.12f\n" % e_m2)
         else:
-            t1_aaee = np.zeros((ncas, ncas, nextern, nextern))
+            mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
+
+        #TODO: Check if all amplitudes are needed
+        if mr_adc.method_type in ("cvs-ip"):
+            mr_adc.t1.xcee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs,:,:,:])
+            # mr_adc.t1.cxee = np.ascontiguousarray(mr_adc.t1.ccee[:,:ncvs,:,:])
+            # mr_adc.t1.xxee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs,:ncvs,:,:])
+            mr_adc.t1.xcea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,:,:,:])
+            mr_adc.t1.cxea = np.ascontiguousarray(mr_adc.t1.ccea[:,:ncvs,:,:])
+            # mr_adc.t1.xxea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,:ncvs,:,:])
+            mr_adc.t1.xaee = np.ascontiguousarray(mr_adc.t1.caee[:ncvs,:,:,:])
+            mr_adc.t1.xcaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,:,:,:])
+            # mr_adc.t1.cxaa = np.ascontiguousarray(mr_adc.t1.ccaa[:,:ncvs,:,:])
+            # mr_adc.t1.xxaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,:ncvs,:,:])
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr
 
     # if mr_adc.debug_mode:
-    #     print (">>> SA e_0p:  {:}".format(e_0p))
-    #     print (">>> SA e_p1p: {:}".format(e_p1p))
-    #     print (">>> SA e_m1p: {:}".format(e_m1p))
-    #     print (">>> SA e_0:   {:}".format(e_0))
-    #     print (">>> SA e_p1:  {:}".format(e_p1))
-    #     print (">>> SA e_m1:  {:}".format(e_m1))
-    #     print (">>> SA e_p2:  {:}".format(e_p2))
-    #     print (">>> SA e_m2:  {:}".format(e_m2))
-    #     print (">>> SA e_corr: {:}".format(e_corr))
+    #     print(">>> SA e_0p:  {:}".format(e_0p))
+    #     print(">>> SA e_p1p: {:}".format(e_p1p))
+    #     print(">>> SA e_m1p: {:}".format(e_m1p))
+    #     print(">>> SA e_0:   {:}".format(e_0))
+    #     print(">>> SA e_p1:  {:}".format(e_p1))
+    #     print(">>> SA e_m1:  {:}".format(e_m1))
+    #     print(">>> SA e_p2:  {:}".format(e_p2))
+    #     print(">>> SA e_m2:  {:}".format(e_m2))
+    #     print(">>> SA e_corr: {:}".format(e_corr))
 
-    print ("CASSCF reference energy:                     %20.12f" % mr_adc.e_casscf)
-    print ("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
-    print ("Total PC-NEVPT2 energy:                      %20.12f\n" % e_tot)
+    print("CASSCF reference energy:                     %20.12f" % mr_adc.e_casscf)
+    print("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
+    print("Total PC-NEVPT2 energy:                      %20.12f\n" % e_tot)
 
-    t1_amp = (t1_ce, t1_ca, t1_ae, t1_caea, t1_caae, t1_caaa, t1_aaea, t1_aaae, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee)
-
-    return t1_amp
-
-def compute_t2_amplitudes(mr_adc, t1_amp):
-
-    t2_ce, t2_ca, t2_ae = (None,) * 3
-    t2_caea, t2_caaa, t2_aaea = (None,) * 3
-    t2_ccee, t2_ccea, t2_caee, t2_ccaa, t2_aaee = (None,) * 5
-    t2_aa = None
+def compute_t2_amplitudes(mr_adc):
 
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
@@ -159,42 +167,42 @@ def compute_t2_amplitudes(mr_adc, t1_amp):
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
         if ncore > 0 and nextern > 0:
-            print ("Computing T[0']^(2) amplitudes...")
+            print("Computing T[0']^(2) amplitudes...")
             sys.stdout.flush()
-            # t2_ce = compute_t2_0p_singles(mr_adc, t1_amp)
-            # print ("Norm of T[0']^(2):                         %20.12f\n" % np.linalg.norm(t2_ce))
-            # sys.stdout.flush()
+            mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)
+            print("Norm of T[0']^(2):                         %20.12f\n" % np.linalg.norm(mr_adc.t2.ce))
+            sys.stdout.flush()
 
             #DEBUG t1_so
-            t1_ce_so = np.load("t1_ce_so.npy")
-            t1_ca_so = np.load("t1_ca_so.npy")
-            t1_ae_so = np.load("t1_ae_so.npy")
-            t1_caea_so = np.load("t1_caea_so.npy")
-            t1_caaa_so = np.load("t1_caaa_so.npy")
-            t1_aaea_so = np.load("t1_aaea_so.npy")
-            t1_ccee_so = np.load("t1_ccee_so.npy")
-            t1_ccea_so = np.load("t1_ccea_so.npy")
-            t1_caee_so = np.load("t1_caee_so.npy")
-            t1_ccaa_so = np.load("t1_ccaa_so.npy")
-            t1_aaee_so = np.load("t1_aaee_so.npy")
+            # t1_ce_so = np.load("t1_ce_so.npy")
+            # t1_ca_so = np.load("t1_ca_so.npy")
+            # t1_ae_so = np.load("t1_ae_so.npy")
+            # t1_caea_so = np.load("t1_caea_so.npy")
+            # t1_caaa_so = np.load("t1_caaa_so.npy")
+            # t1_aaea_so = np.load("t1_aaea_so.npy")
+            # t1_ccee_so = np.load("t1_ccee_so.npy")
+            # t1_ccea_so = np.load("t1_ccea_so.npy")
+            # t1_caee_so = np.load("t1_caee_so.npy")
+            # t1_ccaa_so = np.load("t1_ccaa_so.npy")
+            # t1_aaee_so = np.load("t1_aaee_so.npy")
 
-            t1_ce_so = t1_ce_so[::2,::2]
-            t1_ca_so = t1_ca_so[::2,::2]
-            t1_ae_so = t1_ae_so[::2,::2]
+            # t1_ce_so = t1_ce_so[::2,::2]
+            # t1_ca_so = t1_ca_so[::2,::2]
+            # t1_ae_so = t1_ae_so[::2,::2]
 
-            t1_caae_so = - t1_caea_so[::2,1::2,1::2,::2].transpose(0,1,3,2)
-            t1_caea_so = t1_caea_so[::2,1::2,::2,1::2]
+            # t1_caae_so = - t1_caea_so[::2,1::2,1::2,::2].transpose(0,1,3,2)
+            # t1_caea_so = t1_caea_so[::2,1::2,::2,1::2]
 
-            t1_caaa_so = t1_caaa_so[::2,1::2,::2,1::2]
+            # t1_caaa_so = t1_caaa_so[::2,1::2,::2,1::2]
 
-            t1_aaae_so = - t1_aaea_so[::2,1::2,1::2,::2].transpose(0,1,3,2)
-            t1_aaea_so = t1_aaea_so[::2,1::2,::2,1::2]
+            # t1_aaae_so = - t1_aaea_so[::2,1::2,1::2,::2].transpose(0,1,3,2)
+            # t1_aaea_so = t1_aaea_so[::2,1::2,::2,1::2]
 
-            t1_ccee_so = t1_ccee_so[::2,1::2,::2,1::2]
-            t1_ccea_so = t1_ccea_so[::2,1::2,::2,1::2]
-            t1_caee_so = t1_caee_so[::2,1::2,::2,1::2]
-            t1_ccaa_so = t1_ccaa_so[::2,1::2,::2,1::2]
-            t1_aaee_so = t1_aaee_so[::2,1::2,::2,1::2]
+            # t1_ccee_so = t1_ccee_so[::2,1::2,::2,1::2]
+            # t1_ccea_so = t1_ccea_so[::2,1::2,::2,1::2]
+            # t1_caee_so = t1_caee_so[::2,1::2,::2,1::2]
+            # t1_ccaa_so = t1_ccaa_so[::2,1::2,::2,1::2]
+            # t1_aaee_so = t1_aaee_so[::2,1::2,::2,1::2]
 
             # t1_ce, t1_ca, t1_ae, t1_caea, t1_caae, t1_caaa, t1_aaea, t1_aaae, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee = t1_amp
 
@@ -207,7 +215,6 @@ def compute_t2_amplitudes(mr_adc, t1_amp):
             # with open('SA_t1_ae.out', 'w') as outfile:
             #     outfile.write(repr(t1_ae))
 
-
             # print(">>> SO-SA t1_caae diff: {:}".format(np.sum(t1_caae_so - t1_caae)))
             # print(">>> SO-SA t1_caea diff: {:}".format(np.sum(t1_caea_so - t1_caea)))
             # print(">>> SO-SA t1_caaa diff: {:}".format(np.sum(t1_caaa_so - t1_caaa)))
@@ -218,28 +225,23 @@ def compute_t2_amplitudes(mr_adc, t1_amp):
             # print(">>> SO-SA t1_caee diff: {:}".format(np.sum(t1_caee_so - t1_caee)))
             # print(">>> SO-SA t1_ccaa diff: {:}".format(np.sum(t1_ccaa_so - t1_ccaa)))
             # print(">>> SO-SA t1_aaee diff: {:}".format(np.sum(t1_aaee_so - t1_aaee)))
-
-            t1_amp = (t1_ce_so, t1_ca_so, t1_ae_so, t1_caea_so, t1_caae_so, t1_caaa_so, t1_aaea_so, t1_aaae_so, t1_ccee_so, t1_ccea_so, t1_caee_so, t1_ccaa_so, t1_aaee_so)
-            t2_ce = compute_t2_0p_singles(mr_adc, t1_amp)
             # DEBUG
 
         else:
-            t2_ce = np.zeros((ncore, nextern))
+            mr_adc.t2.ce = np.zeros((ncore, nextern))
 
-        t2_caea = np.zeros((ncore, ncas, nextern, ncas))
-        t2_aa = np.zeros((ncas, ncas))
-        t2_ca = np.zeros((ncore, ncas))
-        t2_ae = np.zeros((ncas, nextern))
+        mr_adc.t2.caea = np.zeros((ncore, ncas, nextern, ncas))
+        mr_adc.t2.aa = np.zeros((ncas, ncas))
+        mr_adc.t2.ca = np.zeros((ncore, ncas))
+        mr_adc.t2.ae = np.zeros((ncas, nextern))
 
-        t2_caaa = np.zeros((ncore, ncas, ncas, ncas))
-        t2_aaea = np.zeros((ncas, ncas, nextern, ncas))
-        t2_ccee = np.zeros((ncore, ncore, nextern, nextern))
-        t2_ccea = np.zeros((ncore, ncore, nextern, ncas))
-        t2_caee = np.zeros((ncore, ncas, nextern, nextern))
-        t2_ccaa = np.zeros((ncore, ncore, ncas, ncas))
-        t2_aaee = np.zeros((ncas, ncas, nextern, nextern))
-
-    return t2_ce, t2_ca, t2_ae, t2_caea, t2_caaa, t2_aaea, t2_ccee, t2_ccea, t2_caee, t2_ccaa, t2_aaee, t2_aa
+        mr_adc.t2.caaa = np.zeros((ncore, ncas, ncas, ncas))
+        mr_adc.t2.aaea = np.zeros((ncas, ncas, nextern, ncas))
+        mr_adc.t2.ccee = np.zeros((ncore, ncore, nextern, nextern))
+        mr_adc.t2.ccea = np.zeros((ncore, ncore, nextern, ncas))
+        mr_adc.t2.caee = np.zeros((ncore, ncas, nextern, nextern))
+        mr_adc.t2.ccaa = np.zeros((ncore, ncore, ncas, ncas))
+        mr_adc.t2.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
 def compute_t1_0(mr_adc):
 
@@ -262,15 +264,16 @@ def compute_t1_0(mr_adc):
     D2 = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
     D2 = D2.reshape((ncore, ncore, nextern, nextern))
 
-    V1  = 1/4 * einsum('IJAB->IJAB', v_ccee, optimize = einsum_type).copy()
+    V1  = einsum('IJAB->IJAB', v_ccee, optimize = einsum_type).copy()
+    V1 *= -1.0
 
-    t1_0 = - (V1/D2).copy()
+    t1_0 = (V1/D2).copy()
 
     t1_ccee = t1_0.copy()
-    e_0  = 4 * einsum('ijab,ijab', t1_ccee, v_ccee, optimize = einsum_type)
-    e_0 -= 2 * einsum('ijab,jiab', t1_ccee, v_ccee, optimize = einsum_type)
-    e_0 -= 2 * einsum('jiab,ijab', t1_ccee, v_ccee, optimize = einsum_type)
-    e_0 += 4 * einsum('jiab,jiab', t1_ccee, v_ccee, optimize = einsum_type)
+    e_0  = einsum('ijab,ijab', t1_ccee, v_ccee, optimize = einsum_type)
+    e_0 -= 1/2 * einsum('ijab,jiab', t1_ccee, v_ccee, optimize = einsum_type)
+    e_0 -= 1/2 * einsum('jiab,ijab', t1_ccee, v_ccee, optimize = einsum_type)
+    e_0 += einsum('jiab,jiab', t1_ccee, v_ccee, optimize = einsum_type)
 
     return e_0, t1_0
 
@@ -532,81 +535,70 @@ def compute_t1_p1p_sanity_check(mr_adc):
     evals, evecs = np.linalg.eigh(SKS)
 
     # Compute r.h.s. of the equation
-    h_ca = mr_adc.h1eff[:ncore,ncore:nocc].copy()
+    h_ca = mr_adc.h1eff.ca
     v_caaa = mr_adc.v2e.caaa
-    v_ccca = mr_adc.v2e.ccca
 
     V = np.zeros((ncore * 2, dim_act))
 
     V1 = np.zeros((ncore * 2, ncas * 2))
 
-    V1_a_a =- einsum('IX->IX', h_ca, optimize = einsum_type).copy()
-    V1_a_a += 1/2 * einsum('Ix,xX->IX', h_ca, rdm_ca, optimize = einsum_type)
-    V1_a_a -= einsum('IxXy,yx->IX', v_caaa, rdm_ca, optimize = einsum_type)
-    V1_a_a += 1/2 * einsum('IxyX,yx->IX', v_caaa, rdm_ca, optimize = einsum_type)
-    V1_a_a += 1/2 * einsum('Ixyz,yzXx->IX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V1_a_a  = einsum('IX->IX', h_ca, optimize = einsum_type).copy()
+    V1_a_a -= 1/2 * einsum('Ix,xX->IX', h_ca, rdm_ca, optimize = einsum_type)
+    V1_a_a += einsum('IxXy,yx->IX', v_caaa, rdm_ca, optimize = einsum_type)
+    V1_a_a -= 1/2 * einsum('IxyX,yx->IX', v_caaa, rdm_ca, optimize = einsum_type)
+    V1_a_a -= 1/2 * einsum('Ixyz,Xxyz->IX', v_caaa, rdm_ccaa, optimize = einsum_type)
 
     V1[::2,::2] = V1_a_a.copy()
     V1[1::2,1::2] = V1_a_a.copy()
+    V1 *= -1.0
 
     V2 = np.zeros((ncore * 2, ncas * 2, ncas * 2, ncas * 2))
+    V2_aa_aa =- 1/2 * einsum('IW,ZX->IZWX', h_ca, rdm_ca, optimize = einsum_type)
+    V2_aa_aa += 1/2 * einsum('IX,ZW->IZWX', h_ca, rdm_ca, optimize = einsum_type)
+    V2_aa_aa -= 1/6 * einsum('Ix,WXZx->IZWX', h_ca, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('Ix,WXxZ->IZWX', h_ca, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa -= 1/2 * einsum('IxWX,Zx->IZWX', v_caaa, rdm_ca, optimize = einsum_type)
+    V2_aa_aa -= 1/2 * einsum('IxWy,XxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa += 1/2 * einsum('IxXW,Zx->IZWX', v_caaa, rdm_ca, optimize = einsum_type)
+    V2_aa_aa += 1/2 * einsum('IxXy,WxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('IxyW,XxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa -= 1/6 * einsum('IxyW,XxyZ->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa -= 1/6 * einsum('IxyX,WxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('IxyX,WxyZ->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa -= 1/6 * einsum('Ixyz,ZyzWXx->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('Ixyz,ZyzXWx->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
 
-    V2_aa_aa =- einsum('IV,UX->IUXV', h_ca, np.identity(ncas), optimize = einsum_type)
-    V2_aa_aa += 1/2 * einsum('IV,UX->IUXV', h_ca, rdm_ca, optimize = einsum_type)
-    V2_aa_aa -= 1/2 * einsum('IX,UV->IUXV', h_ca, rdm_ca, optimize = einsum_type)
-    V2_aa_aa += 1/6 * einsum('Ix,UxVX->IUXV', h_ca, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa -= 1/6 * einsum('Ix,UxXV->IUXV', h_ca, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa += 1/2 * einsum('IxVX,Ux->IUXV', v_caaa, rdm_ca, optimize = einsum_type)
-    V2_aa_aa += 1/2 * einsum('IxVy,UyXx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa -= 1/2 * einsum('IxXV,Ux->IUXV', v_caaa, rdm_ca, optimize = einsum_type)
-    V2_aa_aa -= 1/2 * einsum('IxXy,UyVx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa -= 1/6 * einsum('IxyV,UyXx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa += 1/6 * einsum('IxyV,UyxX->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa += 1/6 * einsum('IxyX,UyVx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa -= 1/6 * einsum('IxyX,UyxV->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa += 1/6 * einsum('Ixyz,UyzVXx->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_aa_aa -= 1/6 * einsum('Ixyz,UyzXVx->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_aa_aa += 1/2 * einsum('Ix,UX,xV->IUXV', h_ca, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    V2_aa_aa -= einsum('UX,IxVy,yx->IUXV', np.identity(ncas), v_caaa, rdm_ca, optimize = einsum_type)
-    V2_aa_aa += 1/2 * einsum('UX,IxyV,yx->IUXV', np.identity(ncas), v_caaa, rdm_ca, optimize = einsum_type)
-    V2_aa_aa += 1/2 * einsum('UX,Ixyz,yzVx->IUXV', np.identity(ncas), v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab =- 1/2 * einsum('IW,ZX->IZWX', h_ca, rdm_ca, optimize = einsum_type)
+    V2_ab_ab += 1/6 * einsum('Ix,WXZx->IZWX', h_ca, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab += 1/3 * einsum('Ix,WXxZ->IZWX', h_ca, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab -= 1/2 * einsum('IxWX,Zx->IZWX', v_caaa, rdm_ca, optimize = einsum_type)
+    V2_ab_ab -= 1/2 * einsum('IxWy,XxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab += 1/3 * einsum('IxyW,XxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab += 1/6 * einsum('IxyW,XxyZ->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab += 1/6 * einsum('IxyX,WxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab += 1/3 * einsum('IxyX,WxyZ->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab += 1/12 * einsum('Ixyz,ZyzWXx->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab -= 1/12 * einsum('Ixyz,ZyzWxX->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab += 1/4 * einsum('Ixyz,ZyzXWx->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab -= 1/12 * einsum('Ixyz,ZyzXxW->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab -= 1/12 * einsum('Ixyz,ZyzxWX->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab -= 1/12 * einsum('Ixyz,ZyzxXW->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
 
-    V2_ab_ab =- 1/2 * einsum('IX,UV->IUXV', h_ca, rdm_ca, optimize = einsum_type)
-    V2_ab_ab += 1/3 * einsum('Ix,UxVX->IUXV', h_ca, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab += 1/6 * einsum('Ix,UxXV->IUXV', h_ca, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab -= 1/2 * einsum('IxXV,Ux->IUXV', v_caaa, rdm_ca, optimize = einsum_type)
-    V2_ab_ab -= 1/2 * einsum('IxXy,UyVx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab += 1/6 * einsum('IxyV,UyXx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab += 1/3 * einsum('IxyV,UyxX->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab += 1/3 * einsum('IxyX,UyVx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab += 1/6 * einsum('IxyX,UyxV->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab += 1/4 * einsum('Ixyz,UyzVXx->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab -= 1/12 * einsum('Ixyz,UyzVxX->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab += 1/12 * einsum('Ixyz,UyzXVx->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab -= 1/12 * einsum('Ixyz,UyzXxV->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab -= 1/12 * einsum('Ixyz,UyzxVX->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab -= 1/12 * einsum('Ixyz,UyzxXV->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-
-    V2_ab_ba =- einsum('IV,UX->IUXV', h_ca, np.identity(ncas), optimize = einsum_type)
-    V2_ab_ba += 1/2 * einsum('IV,UX->IUXV', h_ca, rdm_ca, optimize = einsum_type)
-    V2_ab_ba -= 1/6 * einsum('Ix,UxVX->IUXV', h_ca, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba -= 1/3 * einsum('Ix,UxXV->IUXV', h_ca, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba += 1/2 * einsum('IxVX,Ux->IUXV', v_caaa, rdm_ca, optimize = einsum_type)
-    V2_ab_ba += 1/2 * einsum('IxVy,UyXx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba -= 1/3 * einsum('IxyV,UyXx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba -= 1/6 * einsum('IxyV,UyxX->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba -= 1/6 * einsum('IxyX,UyVx->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba -= 1/3 * einsum('IxyX,UyxV->IUXV', v_caaa, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba -= 1/12 * einsum('Ixyz,UyzVXx->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba += 1/12 * einsum('Ixyz,UyzVxX->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba -= 1/4 * einsum('Ixyz,UyzXVx->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba += 1/12 * einsum('Ixyz,UyzXxV->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba += 1/12 * einsum('Ixyz,UyzxVX->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba += 1/12 * einsum('Ixyz,UyzxXV->IUXV', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba += 1/2 * einsum('Ix,UX,xV->IUXV', h_ca, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    V2_ab_ba -= einsum('UX,IxVy,yx->IUXV', np.identity(ncas), v_caaa, rdm_ca, optimize = einsum_type)
-    V2_ab_ba += 1/2 * einsum('UX,IxyV,yx->IUXV', np.identity(ncas), v_caaa, rdm_ca, optimize = einsum_type)
-    V2_ab_ba += 1/2 * einsum('UX,Ixyz,yzVx->IUXV', np.identity(ncas), v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba  = 1/2 * einsum('IX,ZW->IZWX', h_ca, rdm_ca, optimize = einsum_type)
+    V2_ab_ba -= 1/3 * einsum('Ix,WXZx->IZWX', h_ca, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba -= 1/6 * einsum('Ix,WXxZ->IZWX', h_ca, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/2 * einsum('IxXW,Zx->IZWX', v_caaa, rdm_ca, optimize = einsum_type)
+    V2_ab_ba += 1/2 * einsum('IxXy,WxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba -= 1/6 * einsum('IxyW,XxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba -= 1/3 * einsum('IxyW,XxyZ->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba -= 1/3 * einsum('IxyX,WxZy->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba -= 1/6 * einsum('IxyX,WxyZ->IZWX', v_caaa, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba -= 1/4 * einsum('Ixyz,ZyzWXx->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba += 1/12 * einsum('Ixyz,ZyzWxX->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('Ixyz,ZyzXWx->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba += 1/12 * einsum('Ixyz,ZyzXxW->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba += 1/12 * einsum('Ixyz,ZyzxWX->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba += 1/12 * einsum('Ixyz,ZyzxXW->IZWX', v_caaa, rdm_cccaaa, optimize = einsum_type)
 
     V2[::2,::2,::2,::2,] = V2_aa_aa.copy()
     V2[1::2,1::2,1::2,1::2] = V2_aa_aa.copy()
@@ -616,12 +608,14 @@ def compute_t1_p1p_sanity_check(mr_adc):
 
     V2[::2,1::2,1::2,::2] = V2_ab_ba.copy()
     V2[1::2,::2,::2,1::2] = V2_ab_ba.copy()
+    V2 *= -1.0
+
     V2 = V2[:,:,aa_ind[0],aa_ind[1]].reshape(ncore * 2, -1).copy()
 
     V[:,:n_x] = V1.copy()
     V[:,n_x:] = V2.copy()
 
-    S_12_V = np.einsum("iP,Pm->im", - 1.0 * V, S_p1p_12_inv_act)
+    S_12_V = np.einsum("iP,Pm->im", V, S_p1p_12_inv_act)
 
     # Multiply r.h.s. by U (- e_i + e_mu)^-1 U^dag
     S_12_V = np.einsum("mp,im->ip", evecs, S_12_V)
@@ -648,16 +642,6 @@ def compute_t1_p1p_sanity_check(mr_adc):
 
     t1_ca = t1_ca[::2,::2].copy()
     t1_caaa = t1_caaa[::2,1::2,::2,1::2].copy()
-    # if mr_adc.debug_mode:
-    #     print (">>> SA t1_ca norm: {:}".format(np.linalg.norm(t1_ca)))
-    #     with open('SA_t1_ca.out', 'w') as outfile:
-    #         outfile.write(repr(t1_ca))
-
-    #     with open('SA_evals.out', 'w') as outfile:
-    #         outfile.write(repr(evals))
-
-    #     with open('SA_S_p1p_12_inv_act.out', 'w') as outfile:
-    #         outfile.write(repr(S_p1p_12_inv_act))
 
     e_p1p  = 2 * einsum('ix,ix', h_ca, t1_ca, optimize = einsum_type)
     e_p1p += 2 * einsum('ix,izxy,yz', h_ca, t1_caaa, rdm_ca, optimize = einsum_type)
@@ -709,59 +693,55 @@ def compute_t1_m1p_sanity_check(mr_adc):
     K_m1p = mr_adc_intermediates.compute_K_m1p_sanity_check(mr_adc)
 
     # Orthogonalization and overlap truncation only in the active space
-    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_sanity_check(mr_adc, ignore_print = False)
-    # S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = False)
+    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = False)
 
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
 
     # Compute r.h.s. of the equation
-    h_ae = mr_adc.h1eff[ncore:nocc,nocc:].copy()
+    h_ae = mr_adc.h1eff.ae
     v_aaae = mr_adc.v2e.aaae
 
     V = np.zeros((dim_act, nextern * 2))
 
     V1 = np.zeros((ncas * 2, nextern * 2))
 
-    V1_a_a =- 1/2 * einsum('xA,Xx->XA', h_ae, rdm_ca, optimize = einsum_type)
-    V1_a_a -= 1/2 * einsum('xyzA,Xzyx->XA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V1_a_a  = 1/2 * einsum('xA,Xx->XA', h_ae, rdm_ca, optimize = einsum_type)
+    V1_a_a += 1/2 * einsum('xyzA,Xzyx->XA', v_aaae, rdm_ccaa, optimize = einsum_type)
 
     V1[::2,::2] = V1_a_a.copy()
     V1[1::2,1::2] = V1_a_a.copy()
+    V1 *= -1.0
 
     V2 = np.zeros((ncas * 2, ncas * 2, ncas * 2, nextern * 2))
-    V2_aa_aa  = 1/6 * einsum('xA,UXVx->XUVA', h_ae, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa -= 1/6 * einsum('xA,UXxV->XUVA', h_ae, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa -= 1/6 * einsum('xyVA,UXyx->XUVA', v_aaae, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa += 1/6 * einsum('xyVA,UXxy->XUVA', v_aaae, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa += 1/6 * einsum('xyzA,UXzVyx->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_aa_aa -= 1/6 * einsum('xyzA,UXzyVx->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_aa_aa -= 1/2 * einsum('xA,UV,Xx->XUVA', h_ae, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    V2_aa_aa -= 1/2 * einsum('UV,xyzA,Xzyx->XUVA', np.identity(ncas), v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa =- 1/6 * einsum('xA,XYZx->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('xA,XYxZ->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('xyZA,XYyx->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa -= 1/6 * einsum('xyZA,XYxy->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa -= 1/6 * einsum('xyzA,XYzZyx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('xyzA,XYzyZx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
 
-    V2_ab_ab =- 1/6 * einsum('xA,UXVx->XUVA', h_ae, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab -= 1/3 * einsum('xA,UXxV->XUVA', h_ae, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab -= 1/3 * einsum('xyVA,UXyx->XUVA', v_aaae, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab -= 1/6 * einsum('xyVA,UXxy->XUVA', v_aaae, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ab -= 1/12 * einsum('xyzA,UXzVyx->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab += 1/12 * einsum('xyzA,UXzVxy->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab -= 1/4 * einsum('xyzA,UXzyVx->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab += 1/12 * einsum('xyzA,UXzyxV->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab += 1/12 * einsum('xyzA,UXzxVy->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ab += 1/12 * einsum('xyzA,UXzxyV->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab =- 1/3 * einsum('xA,XYZx->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab -= 1/6 * einsum('xA,XYxZ->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab -= 1/6 * einsum('xyZA,XYyx->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab -= 1/3 * einsum('xyZA,XYxy->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ab -= 1/4 * einsum('xyzA,XYzZyx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab += 1/12 * einsum('xyzA,XYzZxy->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab -= 1/12 * einsum('xyzA,XYzyZx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab += 1/12 * einsum('xyzA,XYzyxZ->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab += 1/12 * einsum('xyzA,XYzxZy->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ab += 1/12 * einsum('xyzA,XYzxyZ->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
 
-    V2_ab_ba  = 1/3 * einsum('xA,UXVx->XUVA', h_ae, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba += 1/6 * einsum('xA,UXxV->XUVA', h_ae, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba += 1/6 * einsum('xyVA,UXyx->XUVA', v_aaae, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba += 1/3 * einsum('xyVA,UXxy->XUVA', v_aaae, rdm_ccaa, optimize = einsum_type)
-    V2_ab_ba += 1/4 * einsum('xyzA,UXzVyx->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba -= 1/12 * einsum('xyzA,UXzVxy->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba += 1/12 * einsum('xyzA,UXzyVx->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba -= 1/12 * einsum('xyzA,UXzyxV->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba -= 1/12 * einsum('xyzA,UXzxVy->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba -= 1/12 * einsum('xyzA,UXzxyV->XUVA', v_aaae, rdm_cccaaa, optimize = einsum_type)
-    V2_ab_ba -= 1/2 * einsum('xA,UV,Xx->XUVA', h_ae, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    V2_ab_ba -= 1/2 * einsum('UV,xyzA,Xzyx->XUVA', np.identity(ncas), v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba  = 1/6 * einsum('xA,XYZx->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/3 * einsum('xA,XYxZ->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/3 * einsum('xyZA,XYyx->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/6 * einsum('xyZA,XYxy->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/12 * einsum('xyzA,XYzZyx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('xyzA,XYzZxy->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba += 1/4 * einsum('xyzA,XYzyZx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('xyzA,XYzyxZ->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('xyzA,XYzxZy->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('xyzA,XYzxyZ->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
 
     V2[::2,::2,::2,::2] = V2_aa_aa.copy()
     V2[1::2,1::2,1::2,1::2] = V2_aa_aa.copy()
@@ -771,11 +751,12 @@ def compute_t1_m1p_sanity_check(mr_adc):
 
     V2[::2,1::2,1::2,::2] = V2_ab_ba.copy()
     V2[1::2,::2,::2,1::2] = V2_ab_ba.copy()
+    V2 *= -1.0
 
     V2 = V2[aa_ind[0],aa_ind[1]].reshape(-1, nextern * 2).copy()
 
-    V[:n_x,:] = - 1.0 * V1.copy()
-    V[n_x:,:] = - 1.0 * V2.copy()
+    V[:n_x,:] = V1.copy()
+    V[n_x:,:] = V2.copy()
 
     S_12_V = np.einsum("Pa,Pm->ma", V, S_m1p_12_inv_act)
 
@@ -833,7 +814,7 @@ def compute_t1_0p_sanity_check(mr_adc):
     nocc = mr_adc.nocc
     nextern = mr_adc.nextern
 
-    h_ce = mr_adc.h1eff[:ncore,nocc:]
+    h_ce = mr_adc.h1eff.ce
     v_caea = mr_adc.v2e.caea
     v_caae = mr_adc.v2e.caae
 
@@ -859,9 +840,9 @@ def compute_t1_0p_sanity_check(mr_adc):
     V0p = np.zeros((ncore * 2, nextern * 2, ncas * 2 * ncas * 2 + 1))
 
     V1 = np.zeros((ncore * 2, nextern * 2))
-    V1_a_a  = einsum('IA->IA', h_ce, optimize = einsum_type).copy()
-    V1_a_a += einsum('IyAx,xy->IA', v_caea, rdm_ca, optimize = einsum_type)
-    V1_a_a -= 1/2 * einsum('IyxA,xy->IA', v_caae, rdm_ca, optimize = einsum_type)
+    V1_a_a =- einsum('IA->IA', h_ce, optimize = einsum_type).copy()
+    V1_a_a -= einsum('IxAy,yx->IA', v_caea, rdm_ca, optimize = einsum_type)
+    V1_a_a += 1/2 * einsum('IxyA,yx->IA', v_caae, rdm_ca, optimize = einsum_type)
 
     V1[::2,::2] = V1_a_a.copy()
     V1[1::2,1::2] = V1_a_a.copy()
@@ -946,7 +927,7 @@ def compute_t1_0p_sanity_check(mr_adc):
 
     return e_0p, t1_ce, t1_caea, t1_caae
 
-def compute_t2_0p_singles(mr_adc, t1_amp):
+def compute_t2_0p_singles(mr_adc):
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -960,19 +941,14 @@ def compute_t2_0p_singles(mr_adc, t1_amp):
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
 
-    ncore = mr_adc.ncore
-    nocc = mr_adc.nocc
-    nextern = mr_adc.nextern
-
     # Compute r.h.s. of the equation
     # One-electron integrals
-    h_ca = mr_adc.h1eff[:ncore,ncore:nocc].copy()
-    h_ce = mr_adc.h1eff[:ncore,nocc:].copy()
-    h_ae = mr_adc.h1eff[ncore:nocc,nocc:].copy()
-    h_aa = mr_adc.h1eff_act
+    h_ca = mr_adc.h1eff.ca
+    h_ce = mr_adc.h1eff.ce
+    h_aa = mr_adc.h1eff.aa
+    h_ae = mr_adc.h1eff.ae
 
     # Two-electron integrals
-    #TODO: Check if all integrals were calculate before
     v_aaaa = mr_adc.v2e.aaaa
     v_caaa = mr_adc.v2e.caaa
     v_ccee = mr_adc.v2e.ccee
@@ -999,7 +975,18 @@ def compute_t2_0p_singles(mr_adc, t1_amp):
     v_aeee = mr_adc.v2e.aeee
 
     # Amplitudes
-    t1_ce, t1_ca, t1_ae, t1_caea, t1_caae, t1_caaa, t1_aaea, t1_aaae, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee = t1_amp
+    t1_ce = mr_adc.t1.ce
+    t1_ca = mr_adc.t1.ca
+    t1_ae = mr_adc.t1.ae
+    t1_caea = mr_adc.t1.caea
+    t1_caae = mr_adc.t1.caae
+    t1_caaa = mr_adc.t1.caaa
+    t1_aaea = mr_adc.t1.aaea
+    t1_ccee = mr_adc.t1.ccee
+    t1_ccea = mr_adc.t1.ccea
+    t1_caee = mr_adc.t1.caee
+    t1_ccaa = mr_adc.t1.ccaa
+    t1_aaee = mr_adc.t1.aaee
 
     V1  = einsum('xA,Ix->IA', h_ae, t1_ca, optimize = einsum_type)
     V1 -= einsum('Ix,xA->IA', h_ca, t1_ae, optimize = einsum_type)
@@ -1721,11 +1708,13 @@ def compute_t2_0p_singles(mr_adc, t1_amp):
     V1 += 1/24 * einsum('xyzw,uvax,IsaA,yuvszw->IA', v_aaaa, t1_aaea, t1_caee, rdm_cccaaa, optimize = einsum_type)
     V1 += 1/24 * einsum('xyzw,uvax,IsaA,yuvswz->IA', v_aaaa, t1_aaea, t1_caee, rdm_cccaaa, optimize = einsum_type)
 
+    V1 *= - 1.0
+
     # Compute denominators
     d_ai = (e_extern[:,None] - e_core)
     d_ai = d_ai**(-1)
 
-    t2_ce = np.einsum("ai,ia->ia", d_ai, - 1.0 * V1)
+    t2_ce = np.einsum("ai,ia->ia", d_ai, V1)
 
     return t2_ce
 
@@ -2044,10 +2033,10 @@ def compute_t1_p1p(mr_adc):
     V2 += 1/12 * einsum('UX,yIzw,zwVy->IUXV', np.identity(ncas), v_acaa, rdm_ccaa, optimize = einsum_type)
     V2 -= 1/3 * einsum('UX,yIzw,zwyV->IUXV', np.identity(ncas), v_acaa, rdm_ccaa, optimize = einsum_type)
 
-    V[:,:n_x] = V1.copy()
-    V[:,n_x:] = V2.reshape(ncore, n_zwx).copy()
+    V[:,:n_x] = - 1.0 * V1.copy()
+    V[:,n_x:] = - 1.0 * V2.reshape(ncore, n_zwx).copy()
 
-    S_12_V = np.einsum("iP,Pm->im", - V, S_p1p_12_inv_act)
+    S_12_V = np.einsum("iP,Pm->im", V, S_p1p_12_inv_act)
 
     # Multiply r.h.s. by U (- e_i + e_mu)^-1 U^dag
     S_12_V = np.einsum("mp,im->ip", evecs, S_12_V)
@@ -2186,7 +2175,7 @@ def compute_t1_p1p_singles(mr_adc):
 
     t1_ca = np.einsum("Pm,im->iP", S_p1p_12_inv_act, S_12_V)
     # if mr_adc.debug_mode:
-    #     print (">>> SA t1_ca (singles only) norm: {:}".format(np.linalg.norm(t1_ca)))
+    #     print(">>> SA t1_ca (singles only) norm: {:}".format(np.linalg.norm(t1_ca)))
     #     with open('SA_t1_ca_singles.out', 'w') as outfile:
     #         outfile.write(repr(t1_ca))
 
@@ -2264,7 +2253,7 @@ def compute_t1_p1p_singles_sanity_check(mr_adc):
 
     t1_ca = t1_ca[::2,::2].copy()
     # if mr_adc.debug_mode:
-    #     print (">>> SA->SO t1_ca norm: {:}".format(np.linalg.norm(t1_ca)))
+    #     print(">>> SA->SO t1_ca norm: {:}".format(np.linalg.norm(t1_ca)))
     #     with open('SA_SO_t1_ca.out', 'w') as outfile:
     #         outfile.write(repr(t1_ca))
 

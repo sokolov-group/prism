@@ -10,7 +10,7 @@ def compute_K_ac(mr_adc):
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h_aa = mr_adc.h1eff.aa
     v_aaaa = mr_adc.v2e.aaaa
 
     # Computing K_ac
@@ -32,7 +32,7 @@ def compute_K_ca(mr_adc):
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h_aa = mr_adc.h1eff.aa
     v_aaaa = mr_adc.v2e.aaaa
 
     # Computing K_ca
@@ -53,7 +53,7 @@ def compute_K_aacc(mr_adc):
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h_aa = mr_adc.h1eff.aa
     v_aaaa = mr_adc.v2e.aaaa
 
     # Computing K_aacc
@@ -115,7 +115,7 @@ def compute_K_ccaa(mr_adc):
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h_aa = mr_adc.h1eff.aa
     v_aaaa = mr_adc.v2e.aaaa
 
     # Computing K_ccaa
@@ -154,7 +154,7 @@ def compute_K_p1p_sanity_check(mr_adc):
     rdm_cccaaa = mr_adc.rdm.cccaaa
     rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h_aa = mr_adc.h1eff.aa
     v_aaaa = mr_adc.v2e.aaaa
 
     n_x = ncas * 2
@@ -1250,7 +1250,7 @@ def compute_K_m1p_sanity_check(mr_adc):
     rdm_cccaaa = mr_adc.rdm.cccaaa
     rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h_aa = mr_adc.h1eff.aa
     v_aaaa = mr_adc.v2e.aaaa
 
     n_x = ncas * 2
@@ -1906,7 +1906,7 @@ def compute_K_caca_sanity_check(mr_adc):
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    h_aa = mr_adc.h1eff.aa
     v_aaaa = mr_adc.v2e.aaaa
 
     K_caca = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
@@ -2329,8 +2329,8 @@ def compute_K_caca(mr_adc):
     # K_caca += 1/24 * einsum('uZvs,WXusvY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
     # K_caca -= 1/24 * einsum('uZvs,WXuvYs->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
     # if mr_adc.debug_mode:
-    #     print ("\n>>> SA K_caca norm: {:}".format(np.linalg.norm(K_caca)))
-    #     print ("\n>> SA K_caca:\n{:}".format(K_caca))
+    #     print("\n>>> SA K_caca norm: {:}".format(np.linalg.norm(K_caca)))
+    #     print("\n>> SA K_caca:\n{:}".format(K_caca))
 
     # Spin-summed
     K_caca  = 1/2 * einsum('WY,XZ->XYWZ', h_aa, rdm_ca, optimize = einsum_type)
@@ -2399,7 +2399,7 @@ def compute_K_caca(mr_adc):
     K_caca -= 1/6 * einsum('WY,uZvs,uXsv->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
     K_caca -= 1/3 * einsum('WY,uZvs,uXvs->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
     if mr_adc.debug_mode:
-        print ("\n>>> SA K_caca norm: {:}".format(np.linalg.norm(K_caca)))
-        print ("\n>> SA K_caca:\n{:}".format(K_caca))
+        print("\n>>> SA K_caca norm: {:}".format(np.linalg.norm(K_caca)))
+        print("\n>> SA K_caca:\n{:}".format(K_caca))
 
     return K_caca
