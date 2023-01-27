@@ -150,14 +150,15 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "cvs-ip":
         # Compute h0-h0 block of the effective Hamiltonian matrix
         M_00 = mr_adc_cvs_ip.compute_M_00(mr_adc)
-        M_00_SO = np.load('SO_M00.npy')
-        M_00_SO = M_00_SO[::2,::2]
-        print(">>> SO-SA M_00 diff: {:}".format(np.sum(M_00 - M_00_SO)))
+        # M_00_SO = np.load('SO_M00.npy')
+        # M_00_SO = M_00_SO[::2,::2]
+        # print(">>> SO-SA M_00 diff: {:}".format(np.sum(M_00 - M_00_SO)))
 
         #TODO: Implement compute_M_01
         # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        # if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
         #     M_01 = mr_adc_cvs_ip.compute_M_01(mr_adc)
+            M_01 = mr_adc_cvs_ip.compute_M_01_sanity_check(mr_adc)
 
     elif mr_adc.method_type == "cvs-ee":
         # Compute h0-h0 block of the effective Hamiltonian matrix
