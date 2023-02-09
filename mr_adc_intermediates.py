@@ -140,6 +140,684 @@ def compute_K_ccaa(mr_adc):
 
     return K_ccaa
 
+def compute_K_caca(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    ncas = mr_adc.ncas
+
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    rdm_cccaaa = mr_adc.rdm.cccaaa
+
+    h_aa = mr_adc.h1eff.aa
+    v_aaaa = mr_adc.v2e.aaaa
+
+    K_caca_dim = ncas * ncas
+    K_caca = np.zeros((K_caca_dim * 2, K_caca_dim * 2))
+
+    K_caca_aa_aa  = 1/2 * einsum('WY,XZ->XYZW', h_aa, rdm_ca, optimize = einsum_type)
+    K_caca_aa_aa += 1/6 * einsum('Wx,XxYZ->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa -= 1/6 * einsum('Wx,XxZY->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa += 1/6 * einsum('Zx,WXYx->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa -= 1/6 * einsum('Zx,WXxY->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa += 1/2 * einsum('WxYy,XyZx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa -= 1/6 * einsum('WxyY,XyZx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa += 1/6 * einsum('WxyY,XyxZ->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa += 1/6 * einsum('Wxyz,XyzYZx->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_aa -= 1/6 * einsum('Wxyz,XyzZYx->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_aa += 1/6 * einsum('YZxy,WXxy->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa -= 1/6 * einsum('YZxy,WXyx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa += 1/6 * einsum('Zxyz,WXxYyz->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_aa -= 1/6 * einsum('Zxyz,WXxyYz->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_aa -= 1/2 * einsum('Zx,WY,Xx->XYZW', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K_caca_aa_aa -= 1/2 * einsum('WY,Zxyz,Xxyz->XYZW', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_aa = K_caca_aa_aa.reshape(K_caca_dim, K_caca_dim)
+
+    K_caca_aa_bb  = 1/3 * einsum('Wx,XxYZ->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/6 * einsum('Wx,XxZY->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/6 * einsum('Zx,WXYx->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/3 * einsum('Zx,WXxY->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/6 * einsum('WxyY,XyZx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/3 * einsum('WxyY,XyxZ->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/4 * einsum('Wxyz,XyzYZx->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzYxZ->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Wxyz,XyzZYx->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzZxY->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxYZ->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxZY->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/6 * einsum('YZxy,WXxy->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/3 * einsum('YZxy,WXyx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Zxyz,WXxYyz->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxYzy->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/4 * einsum('Zxyz,WXxyYz->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxyzY->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzYy->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzyY->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb = K_caca_aa_bb.reshape(K_caca_dim, K_caca_dim)
+
+    K_caca[:K_caca_dim,:K_caca_dim] = K_caca_aa_aa
+    K_caca[K_caca_dim:,K_caca_dim:] = K_caca_aa_aa
+
+    K_caca[:K_caca_dim,K_caca_dim:] = K_caca_aa_bb
+    K_caca[K_caca_dim:,:K_caca_dim] = K_caca_aa_bb.T
+
+    return K_caca
+
+def compute_K_caca_sanity_check(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    ncas = mr_adc.ncas
+
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    rdm_cccaaa = mr_adc.rdm.cccaaa
+
+    h_aa = mr_adc.h1eff.aa
+    v_aaaa = mr_adc.v2e.aaaa
+
+    K_caca = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
+
+    K_caca_ab_ba  = 1/2 * einsum('WY,XZ->XYWZ', h_aa, rdm_ca, optimize = einsum_type)
+    K_caca_ab_ba -= 1/6 * einsum('Wx,XxYZ->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/3 * einsum('Wx,XxZY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/3 * einsum('Zx,WXYx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/6 * einsum('Zx,WXxY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/2 * einsum('WxYy,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/3 * einsum('WxyY,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/6 * einsum('WxyY,XyxZ->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/12 * einsum('Wxyz,XyzYZx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzYxZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/4 * einsum('Wxyz,XyzZYx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzZxY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzxYZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzxZY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/3 * einsum('YZxy,WXxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/6 * einsum('YZxy,WXyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/4 * einsum('Zxyz,WXxYyz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxYzy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba += 1/12 * einsum('Zxyz,WXxyYz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxyzY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxzYy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxzyY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_ab_ba -= 1/2 * einsum('Zx,WY,Xx->XYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K_caca_ab_ba -= 1/2 * einsum('WY,Zxyz,Xxyz->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+
+    K_caca_aa_bb  = 1/3 * einsum('Wx,XxYZ->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/6 * einsum('Wx,XxZY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/6 * einsum('Zx,WXYx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/3 * einsum('Zx,WXxY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/6 * einsum('WxyY,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/3 * einsum('WxyY,XyxZ->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/4 * einsum('Wxyz,XyzYZx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzYxZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Wxyz,XyzZYx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzZxY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxYZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxZY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/6 * einsum('YZxy,WXxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/3 * einsum('YZxy,WXyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/12 * einsum('Zxyz,WXxYyz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxYzy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb -= 1/4 * einsum('Zxyz,WXxyYz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxyzY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzYy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzyY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+
+    K_caca[::2,1::2,1::2,::2] = K_caca_ab_ba.copy()
+    K_caca[1::2,::2,::2,1::2] = K_caca_ab_ba.copy()
+
+    K_caca[::2,::2,1::2,1::2] = K_caca_aa_bb.copy()
+    K_caca[1::2,1::2,::2,::2] = K_caca_aa_bb.copy()
+
+    K_caca[::2,::2,::2,::2]  = K_caca_ab_ba.copy()
+    K_caca[::2,::2,::2,::2] += K_caca_aa_bb.copy()
+    K_caca[1::2,1::2,1::2,1::2] = K_caca[::2,::2,::2,::2].copy()
+
+    return K_caca
+
+def compute_K_p1p(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    ncas = mr_adc.ncas
+
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    rdm_cccaaa = mr_adc.rdm.cccaaa
+    rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
+
+    h_aa = mr_adc.h1eff.aa
+    v_aaaa = mr_adc.v2e.aaaa
+
+    # Computing K11
+    # K11 block: < Psi_0 | a_X [\hat{H}_{act}, a^{\dag}_Z] | Psi_0>
+    K11_a_a  = einsum('XZ->XZ', h_aa, optimize = einsum_type).copy()
+    # K11_a_a -= 1/2 * einsum('Zx,xX->XZ', h_aa, rdm_ca, optimize = einsum_type)
+    K11_a_a += einsum('XxZy,xy->XZ', v_aaaa, rdm_ca, optimize = einsum_type)
+    K11_a_a -= 1/2 * einsum('XxyZ,xy->XZ', v_aaaa, rdm_ca, optimize = einsum_type)
+    K11_a_a -= 1/2 * einsum('Zxyz,yzXx->XZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+
+    # K12 block: < Psi_0 | a_X [\hat{H}_{act}, a^{\dag}_Z a^{\dag}_W a_Y] | Psi_0>
+    K12_a_bba =- 1/3 * einsum('Wx,XYZx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/6 * einsum('Wx,XYxZ->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba += 1/2 * einsum('XZ,WY->XYWZ', h_aa, rdm_ca, optimize = einsum_type)
+    K12_a_bba += 1/6 * einsum('Yx,WZXx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba += 1/3 * einsum('Yx,WZxX->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/6 * einsum('Zx,WxXY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/3 * einsum('Zx,WxYX->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba += 1/2 * einsum('WZxX,xY->XYWZ', v_aaaa, rdm_ca, optimize = einsum_type)
+    K12_a_bba -= 1/6 * einsum('WZxy,XYxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/3 * einsum('WZxy,XYyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/6 * einsum('WxyX,YxZy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/3 * einsum('WxyX,YxyZ->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/4 * einsum('Wxyz,ZyzXYx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Wxyz,ZyzXxY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba -= 1/12 * einsum('Wxyz,ZyzYXx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Wxyz,ZyzYxX->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Wxyz,ZyzxXY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Wxyz,ZyzxYX->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/6 * einsum('XYxy,WZxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba += 1/3 * einsum('XYxy,WZyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba += 1/2 * einsum('XxZy,WxYy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/3 * einsum('XxyZ,WxYy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/6 * einsum('XxyZ,WxyY->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Yxyz,WZxXyz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba -= 1/12 * einsum('Yxyz,WZxXzy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/4 * einsum('Yxyz,WZxyXz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba -= 1/12 * einsum('Yxyz,WZxyzX->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba -= 1/12 * einsum('Yxyz,WZxzXy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba -= 1/12 * einsum('Yxyz,WZxzyX->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba -= 1/12 * einsum('Zxyz,WyzXYx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Zxyz,WyzXxY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba -= 1/4 * einsum('Zxyz,WyzYXx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Zxyz,WyzYxX->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Zxyz,WyzxXY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/12 * einsum('Zxyz,WyzxYX->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K12_a_bba += 1/2 * einsum('Wx,XZ,xY->XYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K12_a_bba -= 1/2 * einsum('Yx,XZ,Wx->XYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K12_a_bba += 1/2 * einsum('XZ,Wxyz,Yxyz->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K12_a_bba -= 1/2 * einsum('XZ,Yxyz,Wxyz->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+
+    K12_a_aaa = np.ascontiguousarray(K12_a_bba - K12_a_bba.transpose(0,1,3,2))
+
+    # K22 block: < Psi_0 | a^{\dag}_U a_V a_X [\hat{H}_{act}, a^{\dag}_Z a^{\dag}_W a_Y] | Psi_0>
+    K22_abb_abb =- 1/6 * einsum('VW,UZXY->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('VW,UZYX->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VZ,UWXY->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('VZ,UWYX->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('WX,UZVY->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('WX,UZYV->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('Wx,UZxVYX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('Wx,UZxXVY->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('Wx,UZxYVX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('Wx,UZxYXV->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('XZ,UWVY->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('XZ,UWYV->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('Yx,UWZVxX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('Yx,UWZXVx->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('Yx,UWZxVX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('Yx,UWZxXV->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('Zx,UWxVYX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('Zx,UWxXVY->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('Zx,UWxYVX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('Zx,UWxYXV->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/2 * einsum('VXWZ,UY->UVXYWZ', v_aaaa, rdm_ca, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('VXWx,UZYx->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VXWx,UZxY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/2 * einsum('VXZW,UY->UVXYWZ', v_aaaa, rdm_ca, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('VXZx,UWYx->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VXZx,UWxY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('VXxW,UZYx->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VXxW,UZxY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('VXxZ,UWYx->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VXxZ,UWxY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/24 * einsum('VYxy,UWZXxy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/24 * einsum('VYxy,UWZXyx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/24 * einsum('VYxy,UWZxXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/24 * einsum('VYxy,UWZxyX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/8 * einsum('VYxy,UWZyXx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/8 * einsum('VYxy,UWZyxX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VxWZ,UxXY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('VxWZ,UxYX->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VxWy,UZxXyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VxWy,UZxYXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VxWy,UZxYyX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VxWy,UZxyXY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VxWy,UZxyYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VxZW,UxXY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('VxZW,UxYX->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VxZy,UWxXyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VxZy,UWxYXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VxZy,UWxYyX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VxZy,UWxyXY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VxZy,UWxyYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VxyW,UZxXyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VxyW,UZxYXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VxyW,UZxYyX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VxyW,UZxyYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VxyZ,UWxXyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VxyZ,UWxYXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VxyZ,UWxYyX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VxyZ,UWxyYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('WZXx,UxVY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('WZXx,UxYV->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('WZxX,UxVY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('WZxX,UxYV->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/24 * einsum('WZxy,UxyVXY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/24 * einsum('WZxy,UxyVYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/24 * einsum('WZxy,UxyXVY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/24 * einsum('WZxy,UxyXYV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/8 * einsum('WZxy,UxyYVX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/8 * einsum('WZxy,UxyYXV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('WxXy,UZyVxY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('WxXy,UZyYVx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('WxXy,UZyYxV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('WxXy,UZyxVY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('WxXy,UZyxYV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('WxyX,UZyVxY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('WxyX,UZyYVx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('WxyX,UZyYxV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('WxyX,UZyxYV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/20 * einsum('Wxyz,UZyzVXYx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/10 * einsum('Wxyz,UZyzVXxY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/40 * einsum('Wxyz,UZyzVYXx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 7/120 * einsum('Wxyz,UZyzVYxX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/60 * einsum('Wxyz,UZyzVxYX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/60 * einsum('Wxyz,UZyzXVYx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('Wxyz,UZyzXVxY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/8 * einsum('Wxyz,UZyzXYVx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/24 * einsum('Wxyz,UZyzXYxV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 7/30 * einsum('Wxyz,UZyzXxVY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 3/20 * einsum('Wxyz,UZyzYxVX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/10 * einsum('Wxyz,UZyzYxXV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/30 * einsum('Wxyz,UZyzxVXY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/60 * einsum('Wxyz,UZyzxVYX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 13/60 * einsum('Wxyz,UZyzxXVY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/60 * einsum('Wxyz,UZyzxXYV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 7/40 * einsum('Wxyz,UZyzxYVX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 3/40 * einsum('Wxyz,UZyzxYXV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/24 * einsum('XYxy,UWZVxy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/24 * einsum('XYxy,UWZVyx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/24 * einsum('XYxy,UWZxVy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/24 * einsum('XYxy,UWZxyV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/8 * einsum('XYxy,UWZyVx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/8 * einsum('XYxy,UWZyxV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('XxZy,UWxVyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('XxZy,UWxYVy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('XxZy,UWxYyV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('XxZy,UWxyVY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('XxZy,UWxyYV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('XxyZ,UWxVyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('XxyZ,UWxYVy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('XxyZ,UWxYyV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('XxyZ,UWxyYV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 3/40 * einsum('Yxyz,UWZxVXyz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 3/40 * einsum('Yxyz,UWZxVXzy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/40 * einsum('Yxyz,UWZxVyXz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('Yxyz,UWZxVyzX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 3/40 * einsum('Yxyz,UWZxVzXy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 7/60 * einsum('Yxyz,UWZxVzyX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/20 * einsum('Yxyz,UWZxXVyz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/60 * einsum('Yxyz,UWZxXVzy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/60 * einsum('Yxyz,UWZxXyVz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('Yxyz,UWZxXzVy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/30 * einsum('Yxyz,UWZxXzyV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/40 * einsum('Yxyz,UWZxyVzX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/10 * einsum('Yxyz,UWZxyXVz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 7/40 * einsum('Yxyz,UWZxyzVX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/24 * einsum('Yxyz,UWZxzVyX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 3/20 * einsum('Yxyz,UWZxzXVy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/60 * einsum('Yxyz,UWZxzXyV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 19/120 * einsum('Yxyz,UWZxzyVX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/60 * einsum('Yxyz,UWZxzyXV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/20 * einsum('Zxyz,UWyzVXYx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/10 * einsum('Zxyz,UWyzVXxY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/40 * einsum('Zxyz,UWyzVYXx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 7/120 * einsum('Zxyz,UWyzVYxX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/60 * einsum('Zxyz,UWyzVxYX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/60 * einsum('Zxyz,UWyzXVYx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('Zxyz,UWyzXVxY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/8 * einsum('Zxyz,UWyzXYVx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/24 * einsum('Zxyz,UWyzXYxV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 7/30 * einsum('Zxyz,UWyzXxVY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 3/20 * einsum('Zxyz,UWyzYxVX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/10 * einsum('Zxyz,UWyzYxXV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/30 * einsum('Zxyz,UWyzxVXY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/60 * einsum('Zxyz,UWyzxVYX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 13/60 * einsum('Zxyz,UWyzxXVY->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/60 * einsum('Zxyz,UWyzxXYV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 7/40 * einsum('Zxyz,UWyzxYVX->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb -= 3/40 * einsum('Zxyz,UWyzxYXV->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_abb_abb += 1/2 * einsum('VW,XZ,UY->UVXYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_abb_abb -= 1/2 * einsum('VZ,WX,UY->UVXYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_abb_abb -= 1/2 * einsum('WX,VZ,UY->UVXYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('Wx,VZ,UxXY->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('Wx,VZ,UxYX->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('Wx,XZ,UxVY->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('Wx,XZ,UxYV->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/2 * einsum('XZ,VW,UY->UVXYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('Yx,VW,UZXx->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('Yx,VW,UZxX->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('Yx,VZ,UWXx->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('Yx,VZ,UWxX->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('Yx,WX,UZVx->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('Yx,WX,UZxV->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('Yx,XZ,UWVx->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('Yx,XZ,UWxV->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('Zx,VW,UxXY->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('Zx,VW,UxYX->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('Zx,WX,UxVY->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('Zx,WX,UxYV->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VW,XYxy,UZxy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('VW,XYxy,UZyx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/2 * einsum('VW,XxZy,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('VW,XxyZ,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VW,XxyZ,UxyY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VW,Yxyz,UZxXyz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VW,Yxyz,UZxXzy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/4 * einsum('VW,Yxyz,UZxyXz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VW,Yxyz,UZxyzX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VW,Yxyz,UZxzXy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VW,Yxyz,UZxzyX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VW,Zxyz,UyzXYx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VW,Zxyz,UyzXxY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/4 * einsum('VW,Zxyz,UyzYXx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VW,Zxyz,UyzYxX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VW,Zxyz,UyzxXY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VW,Zxyz,UyzxYX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/2 * einsum('VZ,WxXy,UyYx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('VZ,WxyX,UyYx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('VZ,WxyX,UyxY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VZ,Wxyz,UyzXYx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VZ,Wxyz,UyzXxY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/4 * einsum('VZ,Wxyz,UyzYXx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VZ,Wxyz,UyzYxX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VZ,Wxyz,UyzxXY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VZ,Wxyz,UyzxYX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('VZ,XYxy,UWxy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('VZ,XYxy,UWyx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('VZ,Yxyz,UWxXyz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VZ,Yxyz,UWxXzy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/4 * einsum('VZ,Yxyz,UWxyXz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VZ,Yxyz,UWxyzX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VZ,Yxyz,UWxzXy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('VZ,Yxyz,UWxzyX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('WX,VYxy,UZxy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('WX,VYxy,UZyx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/2 * einsum('WX,VxZy,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('WX,VxyZ,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('WX,VxyZ,UxyY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('WX,Yxyz,UZxVyz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('WX,Yxyz,UZxVzy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/4 * einsum('WX,Yxyz,UZxyVz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('WX,Yxyz,UZxyzV->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('WX,Yxyz,UZxzVy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('WX,Yxyz,UZxzyV->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('WX,Zxyz,UyzVYx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('WX,Zxyz,UyzVxY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/4 * einsum('WX,Zxyz,UyzYVx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('WX,Zxyz,UyzYxV->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('WX,Zxyz,UyzxVY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('WX,Zxyz,UyzxYV->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/6 * einsum('XZ,VYxy,UWxy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/3 * einsum('XZ,VYxy,UWyx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/2 * einsum('XZ,VxWy,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/3 * einsum('XZ,VxyW,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/6 * einsum('XZ,VxyW,UxyY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('XZ,Wxyz,UyzVYx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('XZ,Wxyz,UyzVxY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/4 * einsum('XZ,Wxyz,UyzYVx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('XZ,Wxyz,UyzYxV->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('XZ,Wxyz,UyzxVY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('XZ,Wxyz,UyzxYV->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/12 * einsum('XZ,Yxyz,UWxVyz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('XZ,Yxyz,UWxVzy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb += 1/4 * einsum('XZ,Yxyz,UWxyVz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('XZ,Yxyz,UWxyzV->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('XZ,Yxyz,UWxzVy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/12 * einsum('XZ,Yxyz,UWxzyV->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_abb_abb -= 1/2 * einsum('Yx,VW,XZ,Ux->UVXYWZ', h_aa, np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_abb_abb += 1/2 * einsum('Yx,VZ,WX,Ux->UVXYWZ', h_aa, np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_abb_abb -= 1/2 * einsum('Yxyz,VW,XZ,Uxyz->UVXYWZ', v_aaaa, np.identity(ncas), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_abb_abb += 1/2 * einsum('Yxyz,VZ,WX,Uxyz->UVXYWZ', v_aaaa, np.identity(ncas), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+
+    K22_bba_bba =- 1/6 * einsum('VW,UZXY->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/3 * einsum('VW,UZYX->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('Wx,UZxVXY->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('Wx,UZxVYX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('Wx,UZxXVY->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('Wx,UZxYXV->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('XZ,UWVY->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('XZ,UWYV->UVXYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('Yx,UWZVxX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('Yx,UWZXVx->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('Yx,UWZxVX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('Yx,UWZxXV->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('Zx,UWxVYX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('Zx,UWxXVY->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('Zx,UWxYVX->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('Zx,UWxYXV->UVXYWZ', h_aa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/2 * einsum('VXWZ,UY->UVXYWZ', v_aaaa, rdm_ca, optimize = einsum_type)
+    K22_bba_bba -= 1/3 * einsum('VXWx,UZYx->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('VXWx,UZxY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('VXxZ,UWYx->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('VXxZ,UWxY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/24 * einsum('VYxy,UWZXxy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/24 * einsum('VYxy,UWZXyx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/24 * einsum('VYxy,UWZxXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/8 * einsum('VYxy,UWZxyX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/24 * einsum('VYxy,UWZyXx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/8 * einsum('VYxy,UWZyxX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('VxWZ,UxXY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/3 * einsum('VxWZ,UxYX->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('VxWy,UZxXyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('VxWy,UZxYXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('VxWy,UZxYyX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('VxWy,UZxyXY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('VxWy,UZxyYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('VxyW,UZxXyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('VxyW,UZxYXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('VxyW,UZxyXY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('VxyW,UZxyYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('VxyZ,UWxXyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('VxyZ,UWxYXy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('VxyZ,UWxYyX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('VxyZ,UWxyYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('WZxX,UxVY->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('WZxX,UxYV->UVXYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/24 * einsum('WZxy,UxyVXY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/8 * einsum('WZxy,UxyVYX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/24 * einsum('WZxy,UxyXVY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/24 * einsum('WZxy,UxyXYV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/8 * einsum('WZxy,UxyYVX->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/24 * einsum('WZxy,UxyYXV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('WxyX,UZyVxY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('WxyX,UZyYVx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('WxyX,UZyYxV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('WxyX,UZyxYV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/30 * einsum('Wxyz,VXYxUyZz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('Wxyz,VXYxUyzZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/60 * einsum('Wxyz,VXYxUzZy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/60 * einsum('Wxyz,VXYxUzyZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/40 * einsum('Wxyz,VXYxZUyz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 7/120 * einsum('Wxyz,VXYxZUzy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/20 * einsum('Wxyz,VXYxZyUz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/15 * einsum('Wxyz,VXYxZyzU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 3/20 * einsum('Wxyz,VXYxZzUy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/8 * einsum('Wxyz,VXYxyUZz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 3/40 * einsum('Wxyz,VXYxyUzZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/10 * einsum('Wxyz,VXYxyZUz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('Wxyz,VXYxyzUZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/60 * einsum('Wxyz,VXYxyzZU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/24 * einsum('Wxyz,VXYxzUZy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 3/40 * einsum('Wxyz,VXYxzUyZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 3/20 * einsum('Wxyz,VXYxzZUy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 7/30 * einsum('Wxyz,VXYxzyUZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/20 * einsum('Wxyz,VXYxzyZU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/24 * einsum('XYxy,UWZVxy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/8 * einsum('XYxy,UWZVyx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/24 * einsum('XYxy,UWZxVy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/24 * einsum('XYxy,UWZxyV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/8 * einsum('XYxy,UWZyVx->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/24 * einsum('XYxy,UWZyxV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('XxZy,UWxVYy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('XxZy,UWxYVy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('XxyZ,UWxVYy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('XxyZ,UWxVyY->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('XxyZ,UWxYVy->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('XxyZ,UWxyYV->UVXYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/60 * einsum('Yxyz,VXyzUWZx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('Yxyz,VXyzUWxZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/30 * einsum('Yxyz,VXyzUxWZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/60 * einsum('Yxyz,VXyzUxZW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/20 * einsum('Yxyz,VXyzWUZx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/10 * einsum('Yxyz,VXyzWUxZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 13/60 * einsum('Yxyz,VXyzWxUZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/60 * einsum('Yxyz,VXyzWxZU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/40 * einsum('Yxyz,VXyzZUWx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 7/120 * einsum('Yxyz,VXyzZUxW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/8 * einsum('Yxyz,VXyzZWUx->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/24 * einsum('Yxyz,VXyzZWxU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 7/40 * einsum('Yxyz,VXyzZxUW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 3/40 * einsum('Yxyz,VXyzZxWU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/60 * einsum('Yxyz,VXyzxUZW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 7/30 * einsum('Yxyz,VXyzxWUZ->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 3/20 * einsum('Yxyz,VXyzxZUW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/10 * einsum('Yxyz,VXyzxZWU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/20 * einsum('Zxyz,VXYxUWyz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/60 * einsum('Zxyz,VXYxUWzy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/40 * einsum('Zxyz,VXYxUyzW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/24 * einsum('Zxyz,VXYxUzyW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 3/40 * einsum('Zxyz,VXYxWUyz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 3/40 * einsum('Zxyz,VXYxWUzy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/10 * einsum('Zxyz,VXYxWyUz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 3/20 * einsum('Zxyz,VXYxWzUy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/60 * einsum('Zxyz,VXYxWzyU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/40 * einsum('Zxyz,VXYxyUWz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('Zxyz,VXYxyUzW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/60 * einsum('Zxyz,VXYxyWUz->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 19/120 * einsum('Zxyz,VXYxyzUW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/60 * einsum('Zxyz,VXYxyzWU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 3/40 * einsum('Zxyz,VXYxzUWy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 7/60 * einsum('Zxyz,VXYxzUyW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('Zxyz,VXYxzWUy->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/30 * einsum('Zxyz,VXYxzWyU->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba -= 7/40 * einsum('Zxyz,VXYxzyUW->UVXYWZ', v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+    K22_bba_bba += 1/2 * einsum('VW,XZ,UY->UVXYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('Wx,XZ,UxVY->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('Wx,XZ,UxYV->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/2 * einsum('XZ,VW,UY->UVXYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('Yx,VW,UZXx->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/3 * einsum('Yx,VW,UZxX->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('Yx,XZ,UWVx->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('Yx,XZ,UWxV->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('Zx,VW,UxXY->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/3 * einsum('Zx,VW,UxYX->UVXYWZ', h_aa, np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('VW,XYxy,UZxy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/3 * einsum('VW,XYxy,UZyx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/2 * einsum('VW,XxZy,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/3 * einsum('VW,XxyZ,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('VW,XxyZ,UxyY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('VW,Yxyz,UZxXyz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('VW,Yxyz,UZxXzy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/4 * einsum('VW,Yxyz,UZxyXz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('VW,Yxyz,UZxyzX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('VW,Yxyz,UZxzXy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('VW,Yxyz,UZxzyX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/12 * einsum('VW,Zxyz,UyzXYx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('VW,Zxyz,UyzXxY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/4 * einsum('VW,Zxyz,UyzYXx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('VW,Zxyz,UyzYxX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('VW,Zxyz,UyzxXY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/12 * einsum('VW,Zxyz,UyzxYX->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('XZ,VYxy,UWxy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('XZ,VYxy,UWyx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/2 * einsum('XZ,VxWy,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('XZ,VxyW,UxYy->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('XZ,VxyW,UxyY->UVXYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('XZ,Wxyz,UyzVYx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('XZ,Wxyz,UyzYVx->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/6 * einsum('XZ,Yxyz,UWxVyz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba += 1/6 * einsum('XZ,Yxyz,UWxyVz->UVXYWZ', np.identity(ncas), v_aaaa, rdm_cccaaa, optimize = einsum_type)
+    K22_bba_bba -= 1/2 * einsum('Yx,VW,XZ,Ux->UVXYWZ', h_aa, np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    K22_bba_bba -= 1/2 * einsum('Yxyz,VW,XZ,Uxyz->UVXYWZ', v_aaaa, np.identity(ncas), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+
+    K22_bba_bab =- K22_bba_bba.transpose(0,1,2,3,5,4)
+    K22_bab_bba =- K22_bba_bba.transpose(0,2,1,3,4,5)
+    K22_bab_bab =  K22_bba_bba.transpose(0,2,1,3,5,4)
+
+    K22_aaa_aaa = (K22_bba_bba - K22_abb_abb + K22_bab_bba + K22_bba_bab + K22_bab_bab)
+
+    K22_aaa_bba = (K22_bba_bba - K22_abb_abb + K22_bab_bba)
+    K22_bba_aaa = (K22_bba_bba - K22_abb_abb + K22_bba_bab)
+
+    K22_aaa_bab =- K22_aaa_bba.transpose(0,1,2,3,5,4)
+
+    # Reshape tensors to matrix form
+    dim_X = ncas
+    dim_YWZ = ncas * ncas * ncas
+    dim_tril_YWZ = ncas * ncas * (ncas - 1) // 2
+
+    dim_act = dim_X + dim_tril_YWZ + dim_YWZ
+
+    tril_ind = np.tril_indices(ncas, k=-1)
+
+    K12_a_aaa = K12_a_aaa[:,:,tril_ind[0],tril_ind[1]]
+
+    K22_aaa_aaa = K22_aaa_aaa[:,:,:,:,tril_ind[0],tril_ind[1]]
+    K22_aaa_aaa = K22_aaa_aaa[:,tril_ind[0],tril_ind[1]]
+
+    K22_aaa_bab = K22_aaa_bab[:,tril_ind[0],tril_ind[1]]
+    K22_aaa_bba = K22_aaa_bba[:,tril_ind[0],tril_ind[1]]
+
+    K22_bba_aaa = K22_bba_aaa[:,:,:,:,tril_ind[0],tril_ind[1]]
+
+    K12_a_aaa = K12_a_aaa.reshape(dim_X, dim_tril_YWZ)
+    K12_a_bba = K12_a_bba.reshape(dim_X, dim_YWZ)
+
+    K22_aaa_aaa = K22_aaa_aaa.reshape(dim_tril_YWZ, dim_tril_YWZ)
+    K22_aaa_bba = K22_aaa_bba.reshape(dim_tril_YWZ, dim_YWZ)
+
+    K22_bba_aaa = K22_bba_aaa.reshape(dim_YWZ, dim_tril_YWZ)
+    K22_bba_bba = K22_bba_bba.reshape(dim_YWZ, dim_YWZ)
+
+    # Build K_p1p matrix
+    K_a_i = 0
+    K_a_f = dim_X
+    K_aaa_i = K_a_f
+    K_aaa_f = K_aaa_i + dim_tril_YWZ
+    K_bba_i = K_aaa_f
+    K_bba_f = K_bba_i + dim_YWZ
+
+    K_p1p = np.zeros((dim_act, dim_act))
+
+    K_p1p[K_a_i:K_a_f, K_a_i:K_a_f] = K11_a_a
+
+    K_p1p[K_a_i:K_a_f, K_aaa_i:K_aaa_f] = K12_a_aaa
+    K_p1p[K_a_i:K_a_f, K_bba_i:K_bba_f] = K12_a_bba
+
+    K_p1p[K_aaa_i:K_aaa_f, K_a_i:K_a_f] = K12_a_aaa.T
+    K_p1p[K_bba_i:K_bba_f, K_a_i:K_a_f] = K12_a_bba.T
+
+    K_p1p[K_aaa_i:K_aaa_f, K_aaa_i:K_aaa_f] = K22_aaa_aaa
+    K_p1p[K_aaa_i:K_aaa_f, K_bba_i:K_bba_f] = K22_aaa_bba
+
+    K_p1p[K_bba_i:K_bba_f, K_aaa_i:K_aaa_f] = K22_bba_aaa
+    K_p1p[K_bba_i:K_bba_f, K_bba_i:K_bba_f] = K22_bba_bba
+
+    return K_p1p
+
 def compute_K_p1p_sanity_check(mr_adc):
 
     # Einsum definition from kernel
@@ -642,8 +1320,8 @@ def compute_K_p1p_sanity_check(mr_adc):
     K22[::2,::2,1::2,::2,::2,1::2] = K22_aab_aab.copy()
     K22[1::2,1::2,::2,1::2,1::2,::2] = K22_aab_aab.copy()
 
-    K22[1::2,::2,::2,1::2,::2,::2] = K22_baa_baa.copy()
-    K22[::2,1::2,1::2,::2,1::2,1::2] = K22_baa_baa.copy()
+    # K22[1::2,::2,::2,1::2,::2,::2] = K22_baa_baa.copy()
+    # K22[::2,1::2,1::2,::2,1::2,1::2] = K22_baa_baa.copy()
 
     K22[::2,1::2,::2,::2,1::2,::2] = K22_aab_aab.transpose(0,2,1,3,5,4).copy()
     K22[1::2,::2,1::2,1::2,::2,1::2] = K22[::2,1::2,::2,::2,1::2,::2].copy()
@@ -674,6 +1352,67 @@ def compute_K_p1p_sanity_check(mr_adc):
     K22[::2,::2,::2,::2,::2,::2] += K22[1::2,1::2,::2,1::2,::2,1::2].copy()
     K22[::2,::2,::2,::2,::2,::2] += K22[1::2,::2,1::2,1::2,::2,1::2].copy()
     K22[1::2,1::2,1::2,1::2,1::2,1::2] = K22[::2,::2,::2,::2,::2,::2].copy()
+
+    ###
+    # # K22[::2,::2,1::2,::2,::2,1::2] = K22_aab_aab.copy()
+    # K22[1::2,1::2,::2,1::2,1::2,::2] = K22_aab_aab.copy()
+
+    # # K22[1::2,::2,::2,1::2,::2,::2] = K22_baa_baa.copy()
+    # # K22[::2,1::2,1::2,::2,1::2,1::2] = K22_baa_baa.copy()
+
+    # # K22[::2,1::2,::2,::2,1::2,::2] = K22_aab_aab.transpose(0,2,1,3,5,4).copy()
+    # K22[1::2,::2,1::2,1::2,::2,1::2] = K22_aab_aab.transpose(0,2,1,3,5,4).copy()
+
+    # # K22[::2,1::2,::2,::2,::2,1::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+    # K22[1::2,::2,1::2,1::2,1::2,::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+
+    # # K22[::2,::2,1::2,::2,1::2,::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+    # K22[1::2,1::2,::2,1::2,::2,1::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+
+    # K22[::2,::2,::2,1::2,1::2,::2]  = K22_aab_aab.copy()
+    # K22[::2,::2,::2,1::2,1::2,::2] -= K22_baa_baa.copy()
+    # K22[::2,::2,::2,1::2,1::2,::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+
+    # # K22[1::2,1::2,1::2,::2,::2,1::2]  = K22_aab_aab.copy()
+    # # K22[1::2,1::2,1::2,::2,::2,1::2] -= K22_baa_baa.copy()
+    # # K22[1::2,1::2,1::2,::2,::2,1::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+
+    # K22[1::2,1::2,::2,::2,::2,::2]  = K22_aab_aab.copy()
+    # K22[1::2,1::2,::2,::2,::2,::2] -= K22_baa_baa.copy()
+    # K22[1::2,1::2,::2,::2,::2,::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+
+    # # K22[::2,::2,1::2,1::2,1::2,1::2]  = K22_aab_aab.copy()
+    # # K22[::2,::2,1::2,1::2,1::2,1::2] -= K22_baa_baa.copy()
+    # # K22[::2,::2,1::2,1::2,1::2,1::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+
+    # K22[1::2,::2,1::2,::2,::2,::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+    # K22[1::2,::2,1::2,::2,::2,::2] -= K22_baa_baa.copy()
+    # K22[1::2,::2,1::2,::2,::2,::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
+
+    # # K22[::2,1::2,::2,1::2,1::2,1::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+    # # K22[::2,1::2,::2,1::2,1::2,1::2] -= K22_baa_baa.copy()
+    # # K22[::2,1::2,::2,1::2,1::2,1::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
+
+    # K22[::2,::2,::2,1::2,::2,1::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+    # K22[::2,::2,::2,1::2,::2,1::2] -= K22_baa_baa.copy()
+    # K22[::2,::2,::2,1::2,::2,1::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
+
+    # # K22[1::2,1::2,1::2,::2,1::2,::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+    # # K22[1::2,1::2,1::2,::2,1::2,::2] -= K22_baa_baa.copy()
+    # # K22[1::2,1::2,1::2,::2,1::2,::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
+
+    # K22[::2,::2,::2,::2,::2,::2]  = K22_aab_aab.copy()
+    # K22[::2,::2,::2,::2,::2,::2] -= K22_baa_baa.copy()
+    # K22[::2,::2,::2,::2,::2,::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+    # K22[::2,::2,::2,::2,::2,::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+    # K22[::2,::2,::2,::2,::2,::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
+
+    # # K22[1::2,1::2,1::2,1::2,1::2,1::2]  = K22_aab_aab.copy()
+    # # K22[1::2,1::2,1::2,1::2,1::2,1::2] -= K22_baa_baa.copy()
+    # # K22[1::2,1::2,1::2,1::2,1::2,1::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+    # # K22[1::2,1::2,1::2,1::2,1::2,1::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+    # # K22[1::2,1::2,1::2,1::2,1::2,1::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
+    ###
 
     K12 = K12[:,:,aa_ind[0],aa_ind[1]]
     K22 = K22[:,:,:,:,aa_ind[0],aa_ind[1]]
@@ -1038,160 +1777,8 @@ def compute_K_m1p_sanity_check(mr_adc):
 
     return K_m1p
 
-def compute_K_caca_sanity_check(mr_adc):
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Variables from kernel
-    ncas = mr_adc.ncas
-
-    rdm_ca = mr_adc.rdm.ca
-    rdm_ccaa = mr_adc.rdm.ccaa
-    rdm_cccaaa = mr_adc.rdm.cccaaa
-
-    h_aa = mr_adc.h1eff.aa
-    v_aaaa = mr_adc.v2e.aaaa
-
-    K_caca = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
-
-    K_caca_ab_ba  = 1/2 * einsum('WY,XZ->XYWZ', h_aa, rdm_ca, optimize = einsum_type)
-    K_caca_ab_ba -= 1/6 * einsum('Wx,XxYZ->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/3 * einsum('Wx,XxZY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/3 * einsum('Zx,WXYx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/6 * einsum('Zx,WXxY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/2 * einsum('WxYy,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/3 * einsum('WxyY,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/6 * einsum('WxyY,XyxZ->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Wxyz,XyzYZx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzYxZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/4 * einsum('Wxyz,XyzZYx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzZxY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzxYZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzxZY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/3 * einsum('YZxy,WXxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/6 * einsum('YZxy,WXyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/4 * einsum('Zxyz,WXxYyz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxYzy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Zxyz,WXxyYz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxyzY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxzYy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxzyY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/2 * einsum('Zx,WY,Xx->XYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    K_caca_ab_ba -= 1/2 * einsum('WY,Zxyz,Xxyz->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
-
-    K_caca_aa_bb  = 1/3 * einsum('Wx,XxYZ->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/6 * einsum('Wx,XxZY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/6 * einsum('Zx,WXYx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/3 * einsum('Zx,WXxY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/6 * einsum('WxyY,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/3 * einsum('WxyY,XyxZ->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/4 * einsum('Wxyz,XyzYZx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzYxZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Wxyz,XyzZYx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzZxY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxYZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxZY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/6 * einsum('YZxy,WXxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/3 * einsum('YZxy,WXyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Zxyz,WXxYyz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxYzy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/4 * einsum('Zxyz,WXxyYz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxyzY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzYy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzyY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-
-    K_caca[::2,1::2,1::2,::2] = K_caca_ab_ba.copy()
-    K_caca[1::2,::2,::2,1::2] = K_caca_ab_ba.copy()
-
-    K_caca[::2,::2,1::2,1::2] = K_caca_aa_bb.copy()
-    K_caca[1::2,1::2,::2,::2] = K_caca_aa_bb.copy()
-
-    K_caca[::2,::2,::2,::2]  = K_caca_ab_ba.copy()
-    K_caca[::2,::2,::2,::2] += K_caca_aa_bb.copy()
-    K_caca[1::2,1::2,1::2,1::2] = K_caca[::2,::2,::2,::2].copy()
-
-    return K_caca
-
 ## Under Development
-def compute_K_caca_test(mr_adc):
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Variables from kernel
-    ncas = mr_adc.ncas
-
-    rdm_ca = mr_adc.rdm.ca
-    rdm_ccaa = mr_adc.rdm.ccaa
-    rdm_cccaaa = mr_adc.rdm.cccaaa
-
-    h_aa = mr_adc.h1eff.aa
-    v_aaaa = mr_adc.v2e.aaaa
-
-    K_caca = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
-
-    K_caca_ab_ba  = 1/2 * einsum('WY,XZ->XYWZ', h_aa, rdm_ca, optimize = einsum_type)
-    K_caca_ab_ba -= 1/6 * einsum('Wx,XxYZ->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/3 * einsum('Wx,XxZY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/3 * einsum('Zx,WXYx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/6 * einsum('Zx,WXxY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/2 * einsum('WxYy,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/3 * einsum('WxyY,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/6 * einsum('WxyY,XyxZ->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Wxyz,XyzYZx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzYxZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/4 * einsum('Wxyz,XyzZYx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzZxY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzxYZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Wxyz,XyzxZY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/3 * einsum('YZxy,WXxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/6 * einsum('YZxy,WXyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/4 * einsum('Zxyz,WXxYyz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxYzy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba += 1/12 * einsum('Zxyz,WXxyYz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxyzY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxzYy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/12 * einsum('Zxyz,WXxzyY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_ab_ba -= 1/2 * einsum('Zx,WY,Xx->XYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    K_caca_ab_ba -= 1/2 * einsum('WY,Zxyz,Xxyz->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
-
-    K_caca_aa_bb  = 1/3 * einsum('Wx,XxYZ->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/6 * einsum('Wx,XxZY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/6 * einsum('Zx,WXYx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/3 * einsum('Zx,WXxY->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/6 * einsum('WxyY,XyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/3 * einsum('WxyY,XyxZ->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/4 * einsum('Wxyz,XyzYZx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzYxZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Wxyz,XyzZYx->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzZxY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxYZ->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxZY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/6 * einsum('YZxy,WXxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/3 * einsum('YZxy,WXyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Zxyz,WXxYyz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxYzy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/4 * einsum('Zxyz,WXxyYz->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxyzY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzYy->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzyY->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-
-    # K_caca[::2,1::2,1::2,::2] = K_caca_ab_ba.copy()
-    # K_caca[1::2,::2,::2,1::2] = K_caca_ab_ba.copy()
-
-    K_caca[::2,::2,1::2,1::2] = K_caca_aa_bb.copy()
-    K_caca[1::2,1::2,::2,::2] = K_caca_aa_bb.copy()
-
-    K_caca[::2,::2,::2,::2]  = K_caca_ab_ba.copy()
-    K_caca[::2,::2,::2,::2] += K_caca_aa_bb.copy()
-    K_caca[1::2,1::2,1::2,1::2] = K_caca[::2,::2,::2,::2].copy()
-
-    return K_caca
-
-def compute_K_p1p_test(mr_adc):
+def compute_K_p1p_sanity_check_v2(mr_adc):
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -1223,7 +1810,6 @@ def compute_K_p1p_test(mr_adc):
     K11_a_a -= 1/2 * einsum('Yxyz,yzXx->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
     K11[::2,::2] = K11_a_a.copy()
-    K11[1::2,1::2] = K11_a_a.copy()
 
     # Computing K12
     K12 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2))
@@ -1269,14 +1855,11 @@ def compute_K_p1p_test(mr_adc):
     K12_a_bba -= 1/2 * einsum('XY,Zxyz,Wxyz->XZWY', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
 
     K12[::2,1::2,1::2,::2] = K12_a_bba.copy()
-    K12[1::2,::2,::2,1::2] = K12[::2,1::2,1::2,::2].copy()
 
     K12[::2,1::2,::2,1::2] -= K12_a_bba.transpose(0,1,3,2).copy()
-    K12[1::2,::2,1::2,::2]  = K12[::2,1::2,::2,1::2].copy()
 
     K12[::2,::2,::2,::2]  = K12_a_bba.copy()
     K12[::2,::2,::2,::2] += K12[::2,1::2,::2,1::2].copy()
-    K12[1::2,1::2,1::2,1::2] = K12[::2,::2,::2,::2].copy()
 
     # Computing K22
     K22 = np.zeros((ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2, ncas * 2))
@@ -1690,41 +2273,35 @@ def compute_K_p1p_test(mr_adc):
     K22_baa_baa -= 1/2 * einsum('Zxyz,VW,XY,Uxyz->UVXZWY', v_aaaa, np.identity(ncas), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
     K22_baa_baa += 1/2 * einsum('Zxyz,VY,WX,Uxyz->UVXZWY', v_aaaa, np.identity(ncas), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
 
-    K22[::2,::2,1::2,::2,::2,1::2] = K22_aab_aab.copy()
     K22[1::2,1::2,::2,1::2,1::2,::2] = K22_aab_aab.copy()
 
-    # decoupled # K22[1::2,::2,::2,1::2,::2,::2] = K22_baa_baa.copy()
-    # decoupled # K22[::2,1::2,1::2,::2,1::2,1::2] = K22_baa_baa.copy()
+    K22[1::2,::2,1::2,1::2,::2,1::2] = K22_aab_aab.transpose(0,2,1,3,5,4).copy()
 
-    K22[::2,1::2,::2,::2,1::2,::2] = K22_aab_aab.transpose(0,2,1,3,5,4).copy()
-    K22[1::2,::2,1::2,1::2,::2,1::2] = K22[::2,1::2,::2,::2,1::2,::2].copy()
+    K22[1::2,::2,1::2,1::2,1::2,::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
 
-    K22[::2,1::2,::2,::2,::2,1::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
-    K22[1::2,::2,1::2,1::2,1::2,::2] = K22[::2,1::2,::2,::2,::2,1::2].copy()
-
-    K22[::2,::2,1::2,::2,1::2,::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
-    K22[1::2,1::2,::2,1::2,::2,1::2] = K22[::2,::2,1::2,::2,1::2,::2].copy()
+    K22[1::2,1::2,::2,1::2,::2,1::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
 
     K22[::2,::2,::2,1::2,1::2,::2]  = K22_aab_aab.copy()
     K22[::2,::2,::2,1::2,1::2,::2] -= K22_baa_baa.copy()
     K22[::2,::2,::2,1::2,1::2,::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
-    K22[1::2,1::2,1::2,::2,::2,1::2] = K22[::2,::2,::2,1::2,1::2,::2].copy()
 
     K22[1::2,1::2,::2,::2,::2,::2]  = K22_aab_aab.copy()
     K22[1::2,1::2,::2,::2,::2,::2] -= K22_baa_baa.copy()
     K22[1::2,1::2,::2,::2,::2,::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
-    K22[::2,::2,1::2,1::2,1::2,1::2] = K22[1::2,1::2,::2,::2,::2,::2].copy()
 
-    K22[1::2,::2,1::2,::2,::2,::2] -= K22[1::2,1::2,::2,::2,::2,::2].transpose(0,2,1,3,4,5).copy()
-    K22[::2,1::2,::2,1::2,1::2,1::2] = K22[1::2,::2,1::2,::2,::2,::2].copy()
+    K22[1::2,::2,1::2,::2,::2,::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+    K22[1::2,::2,1::2,::2,::2,::2] -= K22_baa_baa.copy()
+    K22[1::2,::2,1::2,::2,::2,::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
 
-    K22[::2,::2,::2,1::2,::2,1::2] -= K22[::2,::2,::2,1::2,1::2,::2].transpose(0,1,2,3,5,4).copy()
-    K22[1::2,1::2,1::2,::2,1::2,::2] = K22[::2,::2,::2,1::2,::2,1::2].copy()
+    K22[::2,::2,::2,1::2,::2,1::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+    K22[::2,::2,::2,1::2,::2,1::2] -= K22_baa_baa.copy()
+    K22[::2,::2,::2,1::2,::2,1::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
 
-    K22[::2,::2,::2,::2,::2,::2]  = K22[::2,::2,::2,1::2,1::2,::2].copy()
-    K22[::2,::2,::2,::2,::2,::2] += K22[1::2,1::2,::2,1::2,::2,1::2].copy()
-    K22[::2,::2,::2,::2,::2,::2] += K22[1::2,::2,1::2,1::2,::2,1::2].copy()
-    K22[1::2,1::2,1::2,1::2,1::2,1::2] = K22[::2,::2,::2,::2,::2,::2].copy()
+    K22[::2,::2,::2,::2,::2,::2]  = K22_aab_aab.copy()
+    K22[::2,::2,::2,::2,::2,::2] -= K22_baa_baa.copy()
+    K22[::2,::2,::2,::2,::2,::2] -= K22_aab_aab.transpose(0,2,1,3,4,5).copy()
+    K22[::2,::2,::2,::2,::2,::2] -= K22_aab_aab.transpose(0,1,2,3,5,4).copy()
+    K22[::2,::2,::2,::2,::2,::2] += K22_aab_aab.transpose(0,2,1,3,5,4).copy()
 
     K12 = K12[:,:,aa_ind[0],aa_ind[1]]
     K22 = K22[:,:,:,:,aa_ind[0],aa_ind[1]]
@@ -1738,72 +2315,4 @@ def compute_K_p1p_test(mr_adc):
     K_p1p[n_x:,n_x:] = K22.reshape(n_xzw, n_xzw).copy()
 
     return K_p1p
-
-
-def compute_K_caca(mr_adc):
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Variables from kernel
-    ncas = mr_adc.ncas
-
-    rdm_ca = mr_adc.rdm.ca
-    rdm_ccaa = mr_adc.rdm.ccaa
-    rdm_cccaaa = mr_adc.rdm.cccaaa
-
-    h_aa = mr_adc.h1eff.aa
-    v_aaaa = mr_adc.v2e.aaaa
-
-    K_caca_dim = ncas * ncas
-    K_caca = np.zeros((K_caca_dim * 2, K_caca_dim * 2))
-
-    K_caca_aa_aa  = 1/2 * einsum('WY,XZ->XYZW', h_aa, rdm_ca, optimize = einsum_type)
-    K_caca_aa_aa += 1/6 * einsum('Wx,XxYZ->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa -= 1/6 * einsum('Wx,XxZY->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa += 1/6 * einsum('Zx,WXYx->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa -= 1/6 * einsum('Zx,WXxY->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa += 1/2 * einsum('WxYy,XyZx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa -= 1/6 * einsum('WxyY,XyZx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa += 1/6 * einsum('WxyY,XyxZ->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa += 1/6 * einsum('Wxyz,XyzYZx->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_aa -= 1/6 * einsum('Wxyz,XyzZYx->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_aa += 1/6 * einsum('YZxy,WXxy->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa -= 1/6 * einsum('YZxy,WXyx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa += 1/6 * einsum('Zxyz,WXxYyz->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_aa -= 1/6 * einsum('Zxyz,WXxyYz->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_aa -= 1/2 * einsum('Zx,WY,Xx->XYZW', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    K_caca_aa_aa -= 1/2 * einsum('WY,Zxyz,Xxyz->XYZW', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_aa = K_caca_aa_aa.reshape(K_caca_dim, K_caca_dim)
-
-    K_caca_aa_bb  = 1/3 * einsum('Wx,XxYZ->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/6 * einsum('Wx,XxZY->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/6 * einsum('Zx,WXYx->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/3 * einsum('Zx,WXxY->XYZW', h_aa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/6 * einsum('WxyY,XyZx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/3 * einsum('WxyY,XyxZ->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/4 * einsum('Wxyz,XyzYZx->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzYxZ->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Wxyz,XyzZYx->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzZxY->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxYZ->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Wxyz,XyzxZY->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/6 * einsum('YZxy,WXxy->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/3 * einsum('YZxy,WXyx->XYZW', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/12 * einsum('Zxyz,WXxYyz->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxYzy->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb -= 1/4 * einsum('Zxyz,WXxyYz->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxyzY->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzYy->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb += 1/12 * einsum('Zxyz,WXxzyY->XYZW', v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    K_caca_aa_bb = K_caca_aa_bb.reshape(K_caca_dim, K_caca_dim)
-
-    K_caca[:K_caca_dim,:K_caca_dim] = K_caca_aa_aa
-    K_caca[K_caca_dim:,K_caca_dim:] = K_caca_aa_aa
-
-    K_caca[:K_caca_dim,K_caca_dim:] = K_caca_aa_bb
-    K_caca[K_caca_dim:,:K_caca_dim] = K_caca_aa_bb.T
-
-    return K_caca
 
