@@ -61,8 +61,9 @@ def compute_t1_amplitudes(mr_adc):
             print("Computing T[-1']^(1) amplitudes...")
             sys.stdout.flush()
             e_m1p, mr_adc.t1.ae, mr_adc.t1.aaea, mr_adc.t1.aaae = compute_t1_m1p_sanity_check(mr_adc)
+            e_m1p, mr_adc.t1.ae, mr_adc.t1.aaae = compute_t1_m1p(mr_adc)
             print("Norm of T[-1']^(1):                         %20.12f" % (np.linalg.norm(mr_adc.t1.ae) +
-                                                                           np.linalg.norm(mr_adc.t1.aaea)))
+                                                                           np.linalg.norm(mr_adc.t1.aaae)))
             print("Correlation energy [-1']:                   %20.12f\n" % e_m1p)
         else:
             mr_adc.t1.ae = np.zeros((ncas, nextern))
@@ -223,8 +224,8 @@ def compute_t2_amplitudes(mr_adc):
 
             # t1_caaa_so = t1_caaa_so[::2,1::2,::2,1::2]
 
-            # t1_aaae_so = - t1_aaea_so[::2,1::2,1::2,::2].transpose(0,1,3,2)
-            t1_aaea_so = t1_aaea_so[::2,1::2,::2,1::2]
+            t1_aaae_so = - t1_aaea_so[::2,1::2,1::2,::2].transpose(0,1,3,2)
+            # t1_aaea_so = t1_aaea_so[::2,1::2,::2,1::2]
 
             # t1_ccee_so = t1_ccee_so[::2,1::2,::2,1::2]
             # t1_ccea_so = t1_ccea_so[::2,1::2,::2,1::2]
@@ -239,8 +240,8 @@ def compute_t2_amplitudes(mr_adc):
             # print(">>> SO-SA t1_caae diff: {:}".format(np.sum(t1_caae_so - mr_adc.t1.caae)))
             # print(">>> SO-SA t1_caea diff: {:}".format(np.sum(t1_caea_so - mr_adc.t1.caea)))
             # print(">>> SO-SA t1_caaa diff: {:}".format(np.sum(t1_caaa_so - mr_adc.t1.caaa)))
-            # print(">>> SO-SA t1_aaae diff: {:}".format(np.sum(t1_aaae_so - mr_adc.t1.aaae)))
-            print(">>> SO-SA t1_aaea diff: {:}".format(np.sum(t1_aaea_so - mr_adc.t1.aaea)))
+            print(">>> SO-SA t1_aaae diff: {:}".format(np.sum(t1_aaae_so - mr_adc.t1.aaae)))
+            # print(">>> SO-SA t1_aaea diff: {:}".format(np.sum(t1_aaea_so - mr_adc.t1.aaea)))
             # print(">>> SO-SA t1_ccee diff: {:}".format(np.sum(t1_ccee_so - mr_adc.t1.ccee)))
             # print(">>> SO-SA t1_ccea diff: {:}".format(np.sum(t1_ccea_so - mr_adc.t1.ccea)))
             # print(">>> SO-SA t1_caee diff: {:}".format(np.sum(t1_caee_so - mr_adc.t1.caee)))
@@ -742,19 +743,17 @@ def compute_t1_p1p(mr_adc):
     d_ip = d_ip**(-1)
 
     # Compute T[+1'] amplitudes
-    S_12_V_p1p = np.einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act)
-    S_12_V_p1p = np.einsum("mp,im->ip", evecs, S_12_V_p1p)
+    S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
+    S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
     S_12_V_p1p *= d_ip
-    S_12_V_p1p = np.einsum("mp,ip->im", evecs, S_12_V_p1p)
+    S_12_V_p1p = einsum("mp,ip->im", evecs, S_12_V_p1p, optimize = einsum_type)
 
     ## Compute T[+1'] t1_ca and t1_caaa tensors
-    t_p1p = np.einsum("Pm,im->iP", S_p1p_12_inv_act, S_12_V_p1p)
+    t_p1p = einsum("Pm,im->iP", S_p1p_12_inv_act, S_12_V_p1p, optimize = einsum_type)
 
     ## Build T[+1'] tensors
-    t1_ca = t_p1p[:,V_a_i:V_a_f].copy()
-
-    t1_caaa = np.zeros((ncore, ncas, ncas, ncas))
-    t1_caaa = t_p1p[:,V_bba_i:V_bba_f].reshape(ncore, ncas, ncas, ncas).copy()
+    t1_ca = t_p1p[:, V_a_i:V_a_f].copy()
+    t1_caaa = t_p1p[:,V_bba_i: V_bba_f].reshape(ncore, ncas, ncas, ncas).copy()
 
     ## Transpose indices to the conventional order
     t1_caaa = t1_caaa.transpose(0,1,3,2).copy()
@@ -782,6 +781,122 @@ def compute_t1_p1p(mr_adc):
     e_p1p += 1/6 * einsum('ixyz,iwuv,yzwvux', t1_caaa, v_caaa, rdm_cccaaa, optimize = einsum_type)
 
     return e_p1p, t1_ca, t1_caaa
+
+def compute_t1_m1p(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    nextern = mr_adc.nextern
+    ncas = mr_adc.ncas
+
+    e_extern = mr_adc.mo_energy.e
+
+    h_ae = mr_adc.h1eff.ae
+    v_aaae = mr_adc.v2e.aaae
+
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    rdm_cccaaa = mr_adc.rdm.cccaaa
+
+    # Compute K_m1p matrix
+    K_m1p = mr_adc_intermediates.compute_K_m1p(mr_adc)
+
+    # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
+    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gno_projector(mr_adc, ignore_print = False)
+
+    # Compute K^{-1} matrix
+    SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
+    evals, evecs = np.linalg.eigh(SKS)
+
+    # Compute R.H.S. of the equation
+    ## V1 block: - < Psi_0 | a^{\dag}_X a_A V | Psi_0>
+    V1_a_a  = 1/2 * einsum('xA,Xx->XA', h_ae, rdm_ca, optimize = einsum_type)
+    V1_a_a += 1/2 * einsum('xyzA,Xzyx->XA', v_aaae, rdm_ccaa, optimize = einsum_type)
+
+    ## V2 block: - < Psi_0 | a^{\dag}_X a^{\dag}_Y a_Z a_A V | Psi_0>
+    V2_aa_aa =- 1/6 * einsum('xA,XYZx->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('xA,XYxZ->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('xyZA,XYyx->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa -= 1/6 * einsum('xyZA,XYxy->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_aa_aa -= 1/6 * einsum('xyzA,XYzZyx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_aa_aa += 1/6 * einsum('xyzA,XYzyZx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+
+    V2_ab_ba  = 1/6 * einsum('xA,XYZx->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/3 * einsum('xA,XYxZ->XYZA', h_ae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/3 * einsum('xyZA,XYyx->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/6 * einsum('xyZA,XYxy->XYZA', v_aaae, rdm_ccaa, optimize = einsum_type)
+    V2_ab_ba += 1/12 * einsum('xyzA,XYzZyx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('xyzA,XYzZxy->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba += 1/4 * einsum('xyzA,XYzyZx->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('xyzA,XYzyxZ->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('xyzA,XYzxZy->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+    V2_ab_ba -= 1/12 * einsum('xyzA,XYzxyZ->XYZA', v_aaae, rdm_cccaaa, optimize = einsum_type)
+
+    ## Reshape tensors to matrix form
+    tril_ind = np.tril_indices(ncas, k=-1)
+
+    V2_aa_aa = V2_aa_aa[tril_ind[0],tril_ind[1]]
+
+    V2_aa_aa = V2_aa_aa.reshape(-1, nextern)
+    V2_ab_ba = V2_ab_ba.reshape(-1, nextern)
+
+    ## Build V matrix
+    dim_X = ncas
+    dim_YWZ = ncas * ncas * ncas
+    dim_tril_YWZ = ncas * ncas * (ncas - 1) // 2
+
+    dim_act = dim_X + dim_tril_YWZ + dim_YWZ
+
+    V_a_i = 0
+    V_a_f = dim_X
+    V_aaa_i = V_a_f
+    V_aaa_f = V_aaa_i + dim_tril_YWZ
+    V_abb_i = V_aaa_f
+    V_abb_f = V_abb_i + dim_YWZ
+
+    V_m1p = np.zeros((dim_act, nextern))
+
+    V_m1p[V_a_i:V_a_f, :] = V1_a_a.copy()
+    V_m1p[V_aaa_i:V_aaa_f, :] = V2_aa_aa.copy()
+    V_m1p[V_abb_i:V_abb_f, :] = V2_ab_ba.copy()
+    V_m1p *= - 1.0
+
+    ## Compute denominators
+    d_pa = (evals[:,None] + e_extern)
+    d_pa = d_pa**(-1)
+
+    # Compute T[-1'] amplitudes
+    S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
+    S_12_V_m1p = einsum("mp,ma->pa", evecs, S_12_V_m1p, optimize = einsum_type)
+    S_12_V_m1p *= d_pa
+    S_12_V_m1p = einsum("mp,pa->ma", evecs, S_12_V_m1p, optimize = einsum_type)
+
+    ## Compute T[-1'] t1_ae and t1_aaea tensors
+    t_m1p = einsum("Pm,ma->Pa", S_m1p_12_inv_act, S_12_V_m1p, optimize = einsum_type)
+
+    ## Build T[-1'] tensors
+    t1_ae = t_m1p[V_a_i:V_a_f, :].copy()
+    t1_aaae = t_m1p[V_abb_i:V_abb_f, :].reshape(ncas, ncas, ncas, nextern).copy()
+
+    ## Transpose indices to the conventional order
+    t1_aaae = t1_aaae.transpose(1,0,2,3).copy()
+
+    # Compute electronic correlation energy for T[-1']
+    e_m1p  = einsum('xa,ya,xy', h_ae, t1_ae, rdm_ca, optimize = einsum_type)
+    e_m1p += einsum('xa,yzwa,xwzy', h_ae, t1_aaae, rdm_ccaa, optimize = einsum_type)
+    e_m1p += einsum('xyza,wuza,xywu', t1_aaae, v_aaae, rdm_ccaa, optimize = einsum_type)
+    e_m1p += 5/6 * einsum('xyza,wuva,zuwxyv', t1_aaae, v_aaae, rdm_cccaaa, optimize = einsum_type)
+    e_m1p -= 1/6 * einsum('xyza,wuva,zuwxvy', t1_aaae, v_aaae, rdm_cccaaa, optimize = einsum_type)
+    e_m1p -= 1/6 * einsum('xyza,wuva,zuwyxv', t1_aaae, v_aaae, rdm_cccaaa, optimize = einsum_type)
+    e_m1p -= 1/6 * einsum('xyza,wuva,zuwyvx', t1_aaae, v_aaae, rdm_cccaaa, optimize = einsum_type)
+    e_m1p -= 1/6 * einsum('xyza,wuva,zuwvxy', t1_aaae, v_aaae, rdm_cccaaa, optimize = einsum_type)
+    e_m1p -= 1/6 * einsum('xyza,wuva,zuwvyx', t1_aaae, v_aaae, rdm_cccaaa, optimize = einsum_type)
+    e_m1p += einsum('xa,yzwa,xwzy', t1_ae, v_aaae, rdm_ccaa, optimize = einsum_type)
+
+    return e_m1p, t1_ae, t1_aaae
 
 def compute_t2_0p_singles(mr_adc):
 
@@ -1764,7 +1879,7 @@ def compute_t1_m1p_sanity_check(mr_adc):
     dim_act = n_x + n_xzw
     aa_ind = np.tril_indices(ncas * 2, k=-1)
 
-    # Computing K_m1p
+    # Compute K_m1p matrix
     K_m1p = mr_adc_intermediates.compute_K_m1p_sanity_check(mr_adc)
 
     # Orthogonalization and overlap truncation only in the active space
