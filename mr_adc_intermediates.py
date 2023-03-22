@@ -7,9 +7,13 @@ def compute_K_ac(mr_adc):
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
+    ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
+
+    ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
@@ -28,9 +32,13 @@ def compute_K_ca(mr_adc):
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
+    ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
+
+    ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
@@ -49,9 +57,13 @@ def compute_K_aacc(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
+
+    ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
@@ -115,9 +127,13 @@ def compute_K_ccaa(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
+
+    ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
 
+    ## Reduced density matrices
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
@@ -153,9 +169,13 @@ def compute_K_caca(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
+
+    ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
@@ -200,25 +220,25 @@ def compute_K_caca(mr_adc):
     K_caca_aa_bb -= 1/12 * einsum('Zxyz,XyzxYW->XYWZ', v_aaaa, rdm_cccaaa, optimize = einsum_type)
 
     ## Reshape tensors to matrix form
-    dim_ZW = ncas * ncas
-    dim_K = 2 * dim_ZW
+    dim_wz = ncas * ncas
+    dim_caca = 2 * dim_wz
 
-    K_caca = np.zeros((dim_K, dim_K))
+    K_caca = np.zeros((dim_caca, dim_caca))
 
     # Building K_caca matrix
-    K_aa_i = 0
-    K_aa_f = K_aa_i + dim_ZW
-    K_bb_i = K_aa_f
-    K_bb_f = K_bb_i + dim_ZW
+    s_aa = 0
+    f_aa = s_aa + dim_wz
+    s_bb = f_aa
+    f_bb = s_bb + dim_wz
 
-    K_caca_aa_aa = K_caca_aa_aa.reshape(dim_ZW, dim_ZW)
-    K_caca_aa_bb = K_caca_aa_bb.reshape(dim_ZW, dim_ZW)
+    K_caca_aa_aa = K_caca_aa_aa.reshape(dim_wz, dim_wz)
+    K_caca_aa_bb = K_caca_aa_bb.reshape(dim_wz, dim_wz)
 
-    K_caca[K_aa_i:K_aa_f, K_aa_i:K_aa_f] = K_caca_aa_aa
-    K_caca[K_bb_i:K_bb_f, K_bb_i:K_bb_f] = K_caca_aa_aa
+    K_caca[s_aa:f_aa, s_aa:f_aa] = K_caca_aa_aa
+    K_caca[s_bb:f_bb, s_bb:f_bb] = K_caca_aa_aa
 
-    K_caca[K_aa_i:K_aa_f, K_bb_i:K_bb_f] = K_caca_aa_bb
-    K_caca[K_bb_i:K_bb_f, K_aa_i:K_aa_f] = K_caca_aa_bb
+    K_caca[s_aa:f_aa, s_bb:f_bb] = K_caca_aa_bb
+    K_caca[s_bb:f_bb, s_aa:f_aa] = K_caca_aa_bb
 
     return K_caca
 
@@ -231,9 +251,13 @@ def compute_K_p1p(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
+
+    ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
@@ -645,54 +669,54 @@ def compute_K_p1p(mr_adc):
     K22_bba_aaa = np.ascontiguousarray(K22_aaa_aaa - K22_bba_bba.transpose(0,2,1,3,5,4) + K22_bba_bba.transpose(0,2,1,3,4,5))
 
     # Reshape tensors to matrix form
-    dim_X = ncas
-    dim_YWZ = ncas * ncas * ncas
-    dim_tril_YWZ = ncas * ncas * (ncas - 1) // 2
+    dim_x = ncas
+    dim_wzy = ncas * ncas * ncas
+    dim_tril_wzy = ncas * ncas * (ncas - 1) // 2
 
-    dim_act = dim_X + dim_tril_YWZ + dim_YWZ
+    dim_act = dim_x + dim_wzy + dim_tril_wzy
 
     tril_ind = np.tril_indices(ncas, k=-1)
 
-    K12_a_aaa = K12_a_aaa[:,:,tril_ind[0],tril_ind[1]]
+    K12_a_aaa = K12_a_aaa[:, :, tril_ind[0], tril_ind[1]]
 
-    K22_aaa_aaa = K22_aaa_aaa[:,:,:,:,tril_ind[0],tril_ind[1]]
-    K22_aaa_aaa = K22_aaa_aaa[:,tril_ind[0],tril_ind[1]]
+    K22_aaa_aaa = K22_aaa_aaa[:, :, :, :, tril_ind[0], tril_ind[1]]
+    K22_aaa_aaa = K22_aaa_aaa[:, tril_ind[0], tril_ind[1]]
 
-    K22_aaa_bba = K22_aaa_bba[:,tril_ind[0],tril_ind[1]]
-    K22_bba_aaa = K22_bba_aaa[:,:,:,:,tril_ind[0],tril_ind[1]]
+    K22_aaa_bba = K22_aaa_bba[:, tril_ind[0], tril_ind[1]]
+    K22_bba_aaa = K22_bba_aaa[:, :, :, :, tril_ind[0], tril_ind[1]]
 
-    K12_a_aaa = K12_a_aaa.reshape(dim_X, dim_tril_YWZ)
-    K12_a_bba = K12_a_bba.reshape(dim_X, dim_YWZ)
+    K12_a_aaa = K12_a_aaa.reshape(dim_x, dim_tril_wzy)
+    K12_a_bba = K12_a_bba.reshape(dim_x, dim_wzy)
 
-    K22_aaa_aaa = K22_aaa_aaa.reshape(dim_tril_YWZ, dim_tril_YWZ)
-    K22_aaa_bba = K22_aaa_bba.reshape(dim_tril_YWZ, dim_YWZ)
+    K22_aaa_aaa = K22_aaa_aaa.reshape(dim_tril_wzy, dim_tril_wzy)
+    K22_aaa_bba = K22_aaa_bba.reshape(dim_tril_wzy, dim_wzy)
 
-    K22_bba_aaa = K22_bba_aaa.reshape(dim_YWZ, dim_tril_YWZ)
-    K22_bba_bba = K22_bba_bba.reshape(dim_YWZ, dim_YWZ)
+    K22_bba_aaa = K22_bba_aaa.reshape(dim_wzy, dim_tril_wzy)
+    K22_bba_bba = K22_bba_bba.reshape(dim_wzy, dim_wzy)
 
     # Build K_p1p matrix
-    K_a_i = 0
-    K_a_f = dim_X
-    K_aaa_i = K_a_f
-    K_aaa_f = K_aaa_i + dim_tril_YWZ
-    K_bba_i = K_aaa_f
-    K_bba_f = K_bba_i + dim_YWZ
+    s_a = 0
+    f_a = dim_x
+    s_aaa = f_a
+    f_aaa = s_aaa + dim_tril_wzy
+    s_bba = f_aaa
+    f_bba = s_bba + dim_wzy
 
     K_p1p = np.zeros((dim_act, dim_act))
 
-    K_p1p[K_a_i:K_a_f, K_a_i:K_a_f] = K11_a_a
+    K_p1p[s_a:f_a, s_a:f_a] = K11_a_a
 
-    K_p1p[K_a_i:K_a_f, K_aaa_i:K_aaa_f] = K12_a_aaa
-    K_p1p[K_a_i:K_a_f, K_bba_i:K_bba_f] = K12_a_bba
+    K_p1p[s_a:f_a, s_aaa:f_aaa] = K12_a_aaa
+    K_p1p[s_a:f_a, s_bba:f_bba] = K12_a_bba
 
-    K_p1p[K_aaa_i:K_aaa_f, K_a_i:K_a_f] = K12_a_aaa.T
-    K_p1p[K_bba_i:K_bba_f, K_a_i:K_a_f] = K12_a_bba.T
+    K_p1p[s_aaa:f_aaa, s_a:f_a] = K12_a_aaa.T
+    K_p1p[s_bba:f_bba, s_a:f_a] = K12_a_bba.T
 
-    K_p1p[K_aaa_i:K_aaa_f, K_aaa_i:K_aaa_f] = K22_aaa_aaa
-    K_p1p[K_aaa_i:K_aaa_f, K_bba_i:K_bba_f] = K22_aaa_bba
+    K_p1p[s_aaa:f_aaa, s_aaa:f_aaa] = K22_aaa_aaa
+    K_p1p[s_aaa:f_aaa, s_bba:f_bba] = K22_aaa_bba
 
-    K_p1p[K_bba_i:K_bba_f, K_aaa_i:K_aaa_f] = K22_bba_aaa
-    K_p1p[K_bba_i:K_bba_f, K_bba_i:K_bba_f] = K22_bba_bba
+    K_p1p[s_bba:f_bba, s_aaa:f_aaa] = K22_bba_aaa
+    K_p1p[s_bba:f_bba, s_bba:f_bba] = K22_bba_bba
 
     return K_p1p
 
@@ -705,9 +729,13 @@ def compute_K_m1p(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
+
+    ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
@@ -972,54 +1000,54 @@ def compute_K_m1p(mr_adc):
     K22_abb_aaa = np.ascontiguousarray(K22_aaa_aaa - K22_abb_abb.transpose(1,0,2,4,3,5) + K22_abb_abb.transpose(1,0,2,3,4,5))
 
     # Reshape tensors to matrix form
-    dim_X = ncas
-    dim_YWZ = ncas * ncas * ncas
-    dim_tril_YWZ = ncas * ncas * (ncas - 1) // 2
+    dim_x = ncas
+    dim_wzy = ncas * ncas * ncas
+    dim_tril_wzy = ncas * ncas * (ncas - 1) // 2
 
-    dim_act = dim_X + dim_tril_YWZ + dim_YWZ
+    dim_act = dim_x + dim_wzy + dim_tril_wzy
 
     tril_ind = np.tril_indices(ncas, k=-1)
 
-    K12_a_aaa = K12_a_aaa[:,tril_ind[0],tril_ind[1]]
+    K12_a_aaa = K12_a_aaa[:, tril_ind[0], tril_ind[1]]
 
-    K22_aaa_aaa = K22_aaa_aaa[:,:,:,tril_ind[0],tril_ind[1]]
-    K22_aaa_aaa = K22_aaa_aaa[tril_ind[0],tril_ind[1]]
+    K22_aaa_aaa = K22_aaa_aaa[:, :, :, tril_ind[0], tril_ind[1]]
+    K22_aaa_aaa = K22_aaa_aaa[tril_ind[0], tril_ind[1]]
 
-    K22_aaa_abb = K22_aaa_abb[tril_ind[0],tril_ind[1]]
-    K22_abb_aaa = K22_abb_aaa[:,:,:,tril_ind[0],tril_ind[1]]
+    K22_aaa_abb = K22_aaa_abb[tril_ind[0], tril_ind[1]]
+    K22_abb_aaa = K22_abb_aaa[:, :, :, tril_ind[0], tril_ind[1]]
 
-    K12_a_aaa = K12_a_aaa.reshape(dim_X, dim_tril_YWZ)
-    K12_a_abb = K12_a_abb.reshape(dim_X, dim_YWZ)
+    K12_a_aaa = K12_a_aaa.reshape(dim_x, dim_tril_wzy)
+    K12_a_abb = K12_a_abb.reshape(dim_x, dim_wzy)
 
-    K22_aaa_aaa = K22_aaa_aaa.reshape(dim_tril_YWZ, dim_tril_YWZ)
-    K22_aaa_abb = K22_aaa_abb.reshape(dim_tril_YWZ, dim_YWZ)
+    K22_aaa_aaa = K22_aaa_aaa.reshape(dim_tril_wzy, dim_tril_wzy)
+    K22_aaa_abb = K22_aaa_abb.reshape(dim_tril_wzy, dim_wzy)
 
-    K22_abb_aaa = K22_abb_aaa.reshape(dim_YWZ, dim_tril_YWZ)
-    K22_abb_abb = K22_abb_abb.reshape(dim_YWZ, dim_YWZ)
+    K22_abb_aaa = K22_abb_aaa.reshape(dim_wzy, dim_tril_wzy)
+    K22_abb_abb = K22_abb_abb.reshape(dim_wzy, dim_wzy)
 
     # Build K_m1p matrix
-    K_a_i = 0
-    K_a_f = dim_X
-    K_aaa_i = K_a_f
-    K_aaa_f = K_aaa_i + dim_tril_YWZ
-    K_abb_i = K_aaa_f
-    K_abb_f = K_abb_i + dim_YWZ
+    s_a = 0
+    f_a = dim_x
+    s_aaa = f_a
+    f_aaa = s_aaa + dim_tril_wzy
+    s_abb = f_aaa
+    f_abb = s_abb + dim_wzy
 
     K_m1p = np.zeros((dim_act, dim_act))
 
-    K_m1p[K_a_i:K_a_f, K_a_i:K_a_f] = K11_a_a
+    K_m1p[s_a:f_a, s_a:f_a] = K11_a_a
 
-    K_m1p[K_a_i:K_a_f, K_aaa_i:K_aaa_f] = K12_a_aaa
-    K_m1p[K_a_i:K_a_f, K_abb_i:K_abb_f] = K12_a_abb
+    K_m1p[s_a:f_a, s_aaa:f_aaa] = K12_a_aaa
+    K_m1p[s_a:f_a, s_abb:f_abb] = K12_a_abb
 
-    K_m1p[K_aaa_i:K_aaa_f, K_a_i:K_a_f] = K12_a_aaa.T
-    K_m1p[K_abb_i:K_abb_f, K_a_i:K_a_f] = K12_a_abb.T
+    K_m1p[s_aaa:f_aaa, s_a:f_a] = K12_a_aaa.T
+    K_m1p[s_abb:f_abb, s_a:f_a] = K12_a_abb.T
 
-    K_m1p[K_aaa_i:K_aaa_f, K_aaa_i:K_aaa_f] = K22_aaa_aaa
-    K_m1p[K_aaa_i:K_aaa_f, K_abb_i:K_abb_f] = K22_aaa_abb
+    K_m1p[s_aaa:f_aaa, s_aaa:f_aaa] = K22_aaa_aaa
+    K_m1p[s_aaa:f_aaa, s_abb:f_abb] = K22_aaa_abb
 
-    K_m1p[K_abb_i:K_abb_f, K_aaa_i:K_aaa_f] = K22_abb_aaa
-    K_m1p[K_abb_i:K_abb_f, K_abb_i:K_abb_f] = K22_abb_abb
+    K_m1p[s_abb:f_abb, s_aaa:f_aaa] = K22_abb_aaa
+    K_m1p[s_abb:f_abb, s_abb:f_abb] = K22_abb_abb
 
     return K_m1p
 
@@ -2061,5 +2089,3 @@ def compute_K_m1p_sanity_check(mr_adc):
     K_m1p[n_x:,n_x:] = K22.reshape(n_xzw, n_xzw).copy()
 
     return K_m1p
-
-## Under Development
