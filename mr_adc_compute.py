@@ -62,44 +62,10 @@ def kernel(mr_adc):
     # Setup Davidson algorithm parameters
     apply_M, precond, x0 = setup_davidson(mr_adc)
 
-    ## DEBUG
-    return 'ee', 'spec_factors'
-
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
-    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond, nroots = mr_adc.nroots, verbose = 6, max_space = mr_adc.max_space, max_cycle = mr_adc.max_cycle, tol_residual = mr_adc.tol_davidson)
-
-    if mr_adc.cvs_mom and (mr_adc.method_type == "ip") and (mr_adc.ncvs is not None):
-
-        print("\nApplying MOM approach to Davidson iteractions...\n")
-
-        mr_adc.ncvs = None
-        apply_M , precond, x0 = setup_davidson(mr_adc)
-
-        def cvs_pick(cvs_npick, U):
-            len_cvs_npick = len(cvs_npick)
-            nroots = len_cvs_npick
-            dim_guess = np.array(U).shape[1]
-            guess = np.zeros((len_cvs_npick, dim_guess))
-            for idx_guess, npick in enumerate(cvs_npick):
-                U = np.array(U)
-                guess[idx_guess,:] = U[npick,:]
-            return guess, nroots
-
-        if mr_adc.cvs_npick:
-            guess, nroots = cvs_pick(mr_adc.cvs_npick, U)
-        else:
-            guess = U
-            nroots = mr_adc.nroots
-
-        def eig_close_to_init_guess(w, v, nroots, envs):
-            x0 = mr_adc.interface.gen_x0(envs['v'], envs['xs'])
-            s = np.dot(np.asarray(guess).conj(), np.asarray(x0).T)
-            snorm = np.einsum('pi,pi->i', s.conj(), s)
-            idx = np.argsort(-snorm)[:nroots]
-            w, v, idx = mr_adc.interface.eigs_cmplx2real(w, v, idx, real_eigenvectors = True)
-            return w, v, idx
-
-        conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], guess, precond, pick=eig_close_to_init_guess, nroots = nroots, verbose = 6, max_space = mr_adc.max_space, max_cycle = mr_adc.max_cycle, tol_residual = mr_adc.tol_davidson)
+    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond, nroots = mr_adc.nroots,
+                                           verbose = 6, max_space = mr_adc.max_space, max_cycle = mr_adc.max_cycle,
+                                           tol_residual = mr_adc.tol_davidson)
 
     print("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
     print(E.reshape(-1, 1))
@@ -109,7 +75,8 @@ def kernel(mr_adc):
     sys.stdout.flush()
 
     # Compute transition moments and spectroscopic factors
-    spec_intensity = compute_trans_properties(mr_adc, E, U)
+    # spec_intensity = compute_trans_properties(mr_adc, E, U)
+    spec_intensity = 'spec_intensity'
 
     print("\nTotal time:                                       %f sec" % (time.time() - start_time))
 
@@ -150,22 +117,18 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "cvs-ip":
         # Compute h0-h0 block of the effective Hamiltonian matrix
         M_00 = mr_adc_cvs_ip.compute_M_00(mr_adc)
-        # M_00_SO = np.load('SO_M00.npy')
-        # M_00_SO = M_00_SO[::2,::2]
-        # print(">>> SO-SA M_00 diff: {:}".format(np.sum(M_00 - M_00_SO)))
 
         #TODO: Implement compute_M_01
         # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-        #     M_01 = mr_adc_cvs_ip.compute_M_01(mr_adc)
-            M_01 = mr_adc_cvs_ip.compute_M_01_sanity_check(mr_adc)
+            M_01 = mr_adc_cvs_ip.compute_M_01(mr_adc)
 
     elif mr_adc.method_type == "cvs-ee":
         # Compute h0-h0 block of the effective Hamiltonian matrix
         M_00 = mr_adc_cvs_ee.compute_M_00(mr_adc)
 
     #DEBUG
-    return 'apply_M', 'precond', 'x0'
+    # return 'apply_M', 'precond', 'x0'
 
     # Compute diagonal of the M matrix
     if mr_adc.method_type == "ip":
