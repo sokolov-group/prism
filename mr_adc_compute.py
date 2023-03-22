@@ -82,14 +82,11 @@ def kernel(mr_adc):
 
     return E_ev, spec_intensity
 
-
 def setup_davidson(mr_adc):
 
-    M_00 = None
-    M_01 = None
-    M_11 = None
     precond = None
 
+    # Compute M matrix sectors to be stored
     if mr_adc.method_type == "ip":
         # Compute h0-h0 block of the effective Hamiltonian matrix
         M_00 = mr_adc_ip.compute_M_00(mr_adc)
@@ -116,19 +113,15 @@ def setup_davidson(mr_adc):
 
     elif mr_adc.method_type == "cvs-ip":
         # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00 = mr_adc_cvs_ip.compute_M_00(mr_adc)
+        mr_adc_cvs_ip.compute_M_00(mr_adc)
 
-        #TODO: Implement compute_M_01
         # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            M_01 = mr_adc_cvs_ip.compute_M_01(mr_adc)
+            mr_adc_cvs_ip.compute_M_01(mr_adc)
 
     elif mr_adc.method_type == "cvs-ee":
         # Compute h0-h0 block of the effective Hamiltonian matrix
         M_00 = mr_adc_cvs_ee.compute_M_00(mr_adc)
-
-    #DEBUG
-    # return 'apply_M', 'precond', 'x0'
 
     # Compute diagonal of the M matrix
     if mr_adc.method_type == "ip":
@@ -140,7 +133,7 @@ def setup_davidson(mr_adc):
 
     # Apply Core-Valence Separation Approximation (CVS)
     elif mr_adc.method_type == "cvs-ip":
-        precond = mr_adc_cvs_ip.compute_preconditioner(mr_adc, M_00)
+        precond = mr_adc_cvs_ip.compute_preconditioner(mr_adc)
     elif mr_adc.method_type == "cvs-ee":
         precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc, M_00)
 
@@ -156,12 +149,11 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "ee":
         apply_M = mr_adc_ee.define_effective_hamiltonian(mr_adc, M_00, M_01)
     elif mr_adc.method_type == "cvs-ip":
-        apply_M = mr_adc_cvs_ip.define_effective_hamiltonian(mr_adc, M_00, M_01)
+        apply_M = mr_adc_cvs_ip.define_effective_hamiltonian(mr_adc)
     elif mr_adc.method_type == "cvs-ee":
         apply_M = mr_adc_cvs_ee.define_effective_hamiltonian(mr_adc, M_00)
 
     return apply_M, precond, x0
-
 
 def compute_guess_vectors(mr_adc, precond, ascending = True):
 
@@ -220,6 +212,7 @@ def compute_trans_properties(mr_adc, E, U):
         print("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
         print(osc_strength.reshape(-1, 1))
 
+    #TODO: Change to external functions
     if mr_adc.print_level > 5:
         analyze_trans_properties(mr_adc, T)
         analyze_spec_factor(mr_adc, T)
@@ -250,7 +243,6 @@ def analyze_trans_properties(mr_adc, T):
                 print("%.3f HF MO #%d" % (hf_ovlp_sorted[hf_p], hf_ovlp_ind[hf_p] + 1))
 
     print("\n")
-
 
 def analyze_spec_factor(mr_adc, T):
 
@@ -295,3 +287,40 @@ def analyze_spec_factor(mr_adc, T):
             print(" %3.d (%s)               %10.8f" % (index_mo, spin, spec_Contribution[c]))
 
     print("\n")
+
+def dyall_hamiltonian(mr_adc):
+    """Zeroth Order Dyall Hamiltonian"""
+
+    from prism.mr_adc_integrals import mr_adc_integrals
+
+    # Testing Dyall Hamiltonian expected value
+    print("Calculating the Spin-Adapted Dyall Hamiltonian...")
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables needed
+    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
+    rdm_ca = mr_adc.rdm.ca
+    v_aaaa = mr_adc.v2e.aaaa
+    rdm_ccaa = mr_adc.rdm.ccaa
+    mo_c = mr_adc.mo[:, :mr_adc.ncore].copy()
+
+    # Calculating E_fc
+    ## Calculating h_cc term
+    h_cc = 2.0 * mr_adc.h1e[:mr_adc.ncore, :mr_adc.ncore].copy()
+
+    ## Calculating v_cccc term
+    v_cccc = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
+
+    # Calculating temp_E_fc
+    temp_E_fc  = einsum('ii', h_cc, optimize = True)
+    temp_E_fc += 2.0 * einsum('ijij', v_cccc, optimize = True)
+    temp_E_fc -= einsum('jiij', v_cccc, optimize = True)
+
+    # Calculating H_act
+    temp  = einsum('xy,xy', h_aa, rdm_ca, optimize = einsum_type)
+    temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
+
+    print("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))

@@ -25,9 +25,7 @@ def compute_t1_amplitudes(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
-    ##########################
-    # First-order amplitudes #
-    ##########################
+    # First-order amplitudes
     if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
         if ncore > 0 and nextern > 0 and ncas > 0:
             print("Computing T[0']^(1) amplitudes...")
@@ -67,7 +65,6 @@ def compute_t1_amplitudes(mr_adc):
             mr_adc.t1.aaea = np.zeros((ncas, ncas, nextern, ncas))
             mr_adc.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
 
-        #TODO: Check if all amplitudes are needed
         if mr_adc.method_type in ("cvs-ip"):
             mr_adc.t1.xe = np.ascontiguousarray(mr_adc.t1.ce[:ncvs,:])
             mr_adc.t1.xaea = np.ascontiguousarray(mr_adc.t1.caea[:ncvs,:,:,:])
@@ -75,7 +72,7 @@ def compute_t1_amplitudes(mr_adc):
             mr_adc.t1.xa = np.ascontiguousarray(mr_adc.t1.ca[:ncvs,:])
             mr_adc.t1.xaaa = np.ascontiguousarray(mr_adc.t1.caaa[:ncvs,:,:,:])
 
-            if nval != 0:
+            if nval > 0:
                 mr_adc.t1.ve = np.ascontiguousarray(mr_adc.t1.ce[ncvs:,:])
                 mr_adc.t1.vaea = np.ascontiguousarray(mr_adc.t1.caea[ncvs:,:,:,:])
                 mr_adc.t1.vaae = np.ascontiguousarray(mr_adc.t1.caae[ncvs:,:,:,:])
@@ -128,51 +125,15 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
-        #TODO: Check if all amplitudes are needed
         if mr_adc.method_type in ("cvs-ip"):
             mr_adc.t1.xcee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs,:,:,:])
-            # mr_adc.t1.cxee = np.ascontiguousarray(mr_adc.t1.ccee[:,:ncvs,:,:])
-            # mr_adc.t1.xxee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs,:ncvs,:,:])
             mr_adc.t1.xcea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,:,:,:])
             mr_adc.t1.cxea = np.ascontiguousarray(mr_adc.t1.ccea[:,:ncvs,:,:])
-            # mr_adc.t1.xxea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,:ncvs,:,:])
             mr_adc.t1.xaee = np.ascontiguousarray(mr_adc.t1.caee[:ncvs,:,:,:])
             mr_adc.t1.xcaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,:,:,:])
-            # mr_adc.t1.cxaa = np.ascontiguousarray(mr_adc.t1.ccaa[:,:ncvs,:,:])
-            # mr_adc.t1.xxaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,:ncvs,:,:])
-
-            # if nval != 0:
-                # mr_adc.t1.vcee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:,:,:,:])
-                # mr_adc.t1.cvee = np.ascontiguousarray(mr_adc.t1.ccee[:,ncvs:,:,:])
-                # mr_adc.t1.vvee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:,ncvs:,:,:])
-                # mr_adc.t1.vcea = np.ascontiguousarray(mr_adc.t1.ccea[ncvs:,:,:,:])
-                # mr_adc.t1.cvea = np.ascontiguousarray(mr_adc.t1.ccea[:,ncvs:,:,:])
-                # mr_adc.t1.vvea = np.ascontiguousarray(mr_adc.t1.ccea[ncvs:,ncvs:,:,:])
-                # mr_adc.t1.vaee = np.ascontiguousarray(mr_adc.t1.caee[ncvs:,:,:,:])
-                # mr_adc.t1.vcaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:,:,:,:])
-                # mr_adc.t1.cvaa = np.ascontiguousarray(mr_adc.t1.ccaa[:,ncvs:,:,:])
-                # mr_adc.t1.vvaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:,ncvs:,:,:])
-
-                # mr_adc.t1.vxee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:,:ncvs,:,:])
-                # mr_adc.t1.xvee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs,ncvs:,:,:])
-                # mr_adc.t1.vxea = np.ascontiguousarray(mr_adc.t1.ccea[ncvs:,:ncvs,:,:])
-                # mr_adc.t1.xvea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,ncvs:,:,:])
-                # mr_adc.t1.vxaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:,:ncvs,:,:])
-                # mr_adc.t1.xvaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,ncvs:,:,:])
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr
-
-    # if mr_adc.debug_mode:
-    #     print(">>> SA e_0p:  {:}".format(e_0p))
-    #     print(">>> SA e_p1p: {:}".format(e_p1p))
-    #     print(">>> SA e_m1p: {:}".format(e_m1p))
-    #     print(">>> SA e_0:   {:}".format(e_0))
-    #     print(">>> SA e_p1:  {:}".format(e_p1))
-    #     print(">>> SA e_m1:  {:}".format(e_m1))
-    #     print(">>> SA e_p2:  {:}".format(e_p2))
-    #     print(">>> SA e_m2:  {:}".format(e_m2))
-    #     print(">>> SA e_corr: {:}".format(e_corr))
 
     print("CASSCF reference energy:                     %20.12f" % mr_adc.e_casscf)
     print("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
@@ -184,9 +145,6 @@ def compute_t2_amplitudes(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
-    ###########################
-    # Second-order amplitudes #
-    ###########################
     # Approximate second-order amplitudes
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
@@ -196,57 +154,6 @@ def compute_t2_amplitudes(mr_adc):
             mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)
             print("Norm of T[0']^(2):                         %20.12f\n" % np.linalg.norm(mr_adc.t2.ce))
             sys.stdout.flush()
-
-            #DEBUG t1_so
-            # t1_ce_so = np.load("t1_ce_so.npy")
-            # t2_ce_so = np.load("t2_ce_so.npy")
-            # t1_ca_so = np.load("t1_ca_so.npy")
-            # t1_ae_so = np.load("t1_ae_so.npy")
-            # t1_caea_so = np.load("t1_caea_so.npy")
-            # t1_caaa_so = np.load("t1_caaa_so.npy")
-            # t1_aaea_so = np.load("t1_aaea_so.npy")
-            # t1_ccee_so = np.load("t1_ccee_so.npy")
-            # t1_ccea_so = np.load("t1_ccea_so.npy")
-            # t1_caee_so = np.load("t1_caee_so.npy")
-            # t1_ccaa_so = np.load("t1_ccaa_so.npy")
-            # t1_aaee_so = np.load("t1_aaee_so.npy")
-
-            # t1_ce_so = t1_ce_so[::2,::2]
-            # t2_ce_so = t2_ce_so[::2,::2]
-            # t1_ca_so = t1_ca_so[::2,::2]
-            # t1_ae_so = t1_ae_so[::2,::2]
-
-            # t1_caae_so = - t1_caea_so[::2,1::2,1::2,::2].transpose(0,1,3,2)
-            # t1_caea_so = t1_caea_so[::2,1::2,::2,1::2]
-
-            # t1_caaa_so = t1_caaa_so[::2,1::2,::2,1::2]
-
-            # t1_aaae_so = - t1_aaea_so[::2,1::2,1::2,::2].transpose(0,1,3,2)
-            # t1_aaea_so = t1_aaea_so[::2,1::2,::2,1::2]
-
-            # t1_ccee_so = t1_ccee_so[::2,1::2,::2,1::2]
-            # t1_ccea_so = t1_ccea_so[::2,1::2,::2,1::2]
-            # t1_caee_so = t1_caee_so[::2,1::2,::2,1::2]
-            # t1_ccaa_so = t1_ccaa_so[::2,1::2,::2,1::2]
-            # t1_aaee_so = t1_aaee_so[::2,1::2,::2,1::2]
-
-            # print(">>> SO-SA t1_ce diff: {:}".format(np.sum(t1_ce_so - mr_adc.t1.ce)))
-            # print(">>> SO-SA t1_ca diff: {:}".format(np.sum(t1_ca_so - mr_adc.t1.ca)))
-            # print(">>> SO-SA t1_ae diff: {:}".format(np.sum(t1_ae_so - mr_adc.t1.ae)))
-
-            # print(">>> SO-SA t1_caae diff: {:}".format(np.sum(t1_caae_so - mr_adc.t1.caae)))
-            # print(">>> SO-SA t1_caea diff: {:}".format(np.sum(t1_caea_so - mr_adc.t1.caea)))
-            # print(">>> SO-SA t1_caaa diff: {:}".format(np.sum(t1_caaa_so - mr_adc.t1.caaa)))
-            # print(">>> SO-SA t1_aaae diff: {:}".format(np.sum(t1_aaae_so - mr_adc.t1.aaae)))
-            # print(">>> SO-SA t1_aaea diff: {:}".format(np.sum(t1_aaea_so - mr_adc.t1.aaea)))
-            # print(">>> SO-SA t1_ccee diff: {:}".format(np.sum(t1_ccee_so - mr_adc.t1.ccee)))
-            # print(">>> SO-SA t1_ccea diff: {:}".format(np.sum(t1_ccea_so - mr_adc.t1.ccea)))
-            # print(">>> SO-SA t1_caee diff: {:}".format(np.sum(t1_caee_so - mr_adc.t1.caee)))
-            # print(">>> SO-SA t1_ccaa diff: {:}".format(np.sum(t1_ccaa_so - mr_adc.t1.ccaa)))
-            # print(">>> SO-SA t1_aaee diff: {:}".format(np.sum(t1_aaee_so - mr_adc.t1.aaee)))
-
-            # print(">>> SO-SA t2_ce diff: {:}".format(np.sum(t2_ce_so - mr_adc.t2.ce)))
-            # DEBUG
 
         else:
             mr_adc.t2.ce = np.zeros((ncore, nextern))
@@ -274,10 +181,12 @@ def compute_t1_0(mr_adc):
     ncore = mr_adc.ncore
     nextern = mr_adc.nextern
 
+    ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
 
-    v_ccee = mr_adc.v2e.ccee
+    ## Two-electron integrals
+    v_ccee =  mr_adc.v2e.ccee
 
     # Compute denominators
     d_ij = e_core[:,None] + e_core
@@ -311,17 +220,24 @@ def compute_t1_p1(mr_adc):
     ncore = mr_adc.ncore
     nextern = mr_adc.nextern
 
+    ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
 
-    v_ccae = mr_adc.v2e.ccae
+    ## Two-electron integrals
+    v_ccae =  mr_adc.v2e.ccae
+
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
 
     # Compute K_ac matrix
     K_ac = mr_adc_intermediates.compute_K_ac(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1_12_inv_act = mr_adc_overlap.compute_S12_p1(mr_adc, ignore_print = False)
+    S_p1_12_inv_act = mr_adc_overlap.compute_S12_p1(mr_adc)
+
+    if hasattr(mr_adc.S12, "cca"):
+        mr_adc.S12.cca = S_p1_12_inv_act.copy()
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1_12_inv_act.T, K_ac, S_p1_12_inv_act))
@@ -368,17 +284,24 @@ def compute_t1_m1(mr_adc):
     ncore = mr_adc.ncore
     nextern = mr_adc.nextern
 
+    ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
 
-    v_caee = mr_adc.v2e.caee
+    ## Two-electron integrals
+    v_caee =  mr_adc.v2e.caee
+
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
 
     # Compute K_ca matrix
     K_ca = mr_adc_intermediates.compute_K_ca(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1_12_inv_act = mr_adc_overlap.compute_S12_m1(mr_adc, ignore_print = False)
+    S_m1_12_inv_act = mr_adc_overlap.compute_S12_m1(mr_adc)
+
+    if hasattr(mr_adc.S12, "cae"):
+        mr_adc.S12.cae = S_m1_12_inv_act.copy()
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1_12_inv_act.T, K_ca, S_m1_12_inv_act))
@@ -422,10 +345,13 @@ def compute_t1_p2(mr_adc):
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
 
+    ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
 
-    v_ccaa = mr_adc.v2e.ccaa
+    ## Two-electron integrals
+    v_ccaa =  mr_adc.v2e.ccaa
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
@@ -433,7 +359,7 @@ def compute_t1_p2(mr_adc):
     K_aacc = mr_adc_intermediates.compute_K_aacc(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p2_12_inv_act = mr_adc_overlap.compute_S12_p2(mr_adc, ignore_print = False)
+    S_p2_12_inv_act = mr_adc_overlap.compute_S12_p2(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p2_12_inv_act.T, K_aacc, S_p2_12_inv_act))
@@ -484,17 +410,20 @@ def compute_t1_m2(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
+    ## Molecular Orbitals Energies
     e_extern = mr_adc.mo_energy.e
 
-    v_aaee = mr_adc.v2e.aaee
+    ## Two-electron integrals
+    v_aaee =  mr_adc.v2e.aaee
 
+    ## Reduced density matrices
     rdm_ccaa = mr_adc.rdm.ccaa
 
     # Compute K_ccaa matrix
     K_ccaa = mr_adc_intermediates.compute_K_ccaa(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m2_12_inv_act = mr_adc_overlap.compute_S12_m2(mr_adc, ignore_print = False)
+    S_m2_12_inv_act = mr_adc_overlap.compute_S12_m2(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m2_12_inv_act.T, K_ccaa, S_m2_12_inv_act))
@@ -539,13 +468,18 @@ def compute_t1_0p(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
+    ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
 
+    ## One-electron integrals
     h_ce = mr_adc.h1eff.ce
-    v_caea = mr_adc.v2e.caea
-    v_caae = mr_adc.v2e.caae
 
+    ## Two-electron integrals
+    v_caae = mr_adc.v2e.caae
+    v_caea = mr_adc.v2e.caea
+
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
@@ -553,7 +487,7 @@ def compute_t1_0p(mr_adc):
     K_caca = mr_adc_intermediates.compute_K_caca(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_0p_12_inv_act = mr_adc_overlap.compute_S12_0p_gno_projector(mr_adc, ignore_print = False)
+    S_0p_12_inv_act = mr_adc_overlap.compute_S12_0p_gno_projector(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_0p_12_inv_act[1:,:].T, K_caca, S_0p_12_inv_act[1:,:]))
@@ -647,11 +581,16 @@ def compute_t1_p1p(mr_adc):
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
 
+    ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
 
+    ## One-electron integrals
     h_ca = mr_adc.h1eff.ca
+
+    ## Two-electron integrals
     v_caaa = mr_adc.v2e.caaa
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
@@ -660,7 +599,7 @@ def compute_t1_p1p(mr_adc):
     K_p1p = mr_adc_intermediates.compute_K_p1p(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_gno_projector(mr_adc, ignore_print = False)
+    S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_gno_projector(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
@@ -786,14 +725,19 @@ def compute_t1_m1p(mr_adc):
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
-    nextern = mr_adc.nextern
     ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
 
+    ## Molecular Orbitals Energies
     e_extern = mr_adc.mo_energy.e
 
+    ## One-electron integrals
     h_ae = mr_adc.h1eff.ae
+
+    ## Two-electron integrals
     v_aaae = mr_adc.v2e.aaae
 
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
@@ -802,7 +746,7 @@ def compute_t1_m1p(mr_adc):
     K_m1p = mr_adc_intermediates.compute_K_m1p(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gno_projector(mr_adc, ignore_print = False)
+    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gno_projector(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
@@ -835,7 +779,7 @@ def compute_t1_m1p(mr_adc):
     ## Reshape tensors to matrix form
     tril_ind = np.tril_indices(ncas, k=-1)
 
-    V2_aa_aa = V2_aa_aa[tril_ind[0],tril_ind[1]]
+    V2_aa_aa = V2_aa_aa[tril_ind[0], tril_ind[1]]
 
     V2_aa_aa = V2_aa_aa.reshape(-1, nextern)
     V2_ab_ba = V2_ab_ba.reshape(-1, nextern)
@@ -908,63 +852,67 @@ def compute_t2_0p_singles(mr_adc):
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
+    ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
 
-    # One-electron integrals
+    ## One-electron integrals
     h_ca = mr_adc.h1eff.ca
     h_ce = mr_adc.h1eff.ce
     h_aa = mr_adc.h1eff.aa
     h_ae = mr_adc.h1eff.ae
 
-    # Two-electron integrals
+    ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
+
     v_caaa = mr_adc.v2e.caaa
-    v_ccee = mr_adc.v2e.ccee
-    v_caea = mr_adc.v2e.caea
     v_caae = mr_adc.v2e.caae
-    v_ccae = mr_adc.v2e.ccae
-    v_caee = mr_adc.v2e.caee
-    v_aaae = mr_adc.v2e.aaae
-    v_ccca = mr_adc.v2e.ccca
-    v_ccce = mr_adc.v2e.ccce
-    v_cace = mr_adc.v2e.cace
-    v_caec = mr_adc.v2e.caec
+    v_caea = mr_adc.v2e.caea
     v_caca = mr_adc.v2e.caca
     v_caac = mr_adc.v2e.caac
-    v_ceaa = mr_adc.v2e.ceaa
+    v_aaae = mr_adc.v2e.aaae
 
-    v_ceae = mr_adc.v2e.ceae
-    v_ceea = mr_adc.v2e.ceea
-    v_cece = mr_adc.v2e.cece
-    v_ceec = mr_adc.v2e.ceec
-    v_ceee = mr_adc.v2e.ceee
-    v_aeae = mr_adc.v2e.aeae
-    v_aeea = mr_adc.v2e.aeea
-    v_aeee = mr_adc.v2e.aeee
+    v_ccee =  mr_adc.v2e.ccee
+    v_ccae =  mr_adc.v2e.ccae
+    v_caee =  mr_adc.v2e.caee
+    v_ccca =  mr_adc.v2e.ccca
+    v_ccce =  mr_adc.v2e.ccce
+    v_cace =  mr_adc.v2e.cace
+    v_caec =  mr_adc.v2e.caec
+    v_ceaa =  mr_adc.v2e.ceaa
+    v_cece =  mr_adc.v2e.cece
+    v_ceec =  mr_adc.v2e.ceec
+    v_ceee =  mr_adc.v2e.ceee
+    v_aeee =  mr_adc.v2e.aeee
+    v_ceae =  mr_adc.v2e.ceae
+    v_ceea =  mr_adc.v2e.ceea
+    v_aeae =  mr_adc.v2e.aeae
+    v_aeea =  mr_adc.v2e.aeea
 
-    # Amplitudes
+    ## Amplitudes
     t1_ce = mr_adc.t1.ce
-    t1_ca = mr_adc.t1.ca
-    t1_ae = mr_adc.t1.ae
     t1_caea = mr_adc.t1.caea
     t1_caae = mr_adc.t1.caae
+
+    t1_ca = mr_adc.t1.ca
     t1_caaa = mr_adc.t1.caaa
+
+    t1_ae   = mr_adc.t1.ae
     t1_aaea = mr_adc.t1.aaea
-    t1_aaae = mr_adc.t1.aaae
+
     t1_ccee = mr_adc.t1.ccee
     t1_ccea = mr_adc.t1.ccea
-    t1_caee = mr_adc.t1.caee
     t1_ccaa = mr_adc.t1.ccaa
+    t1_caee = mr_adc.t1.caee
     t1_aaee = mr_adc.t1.aaee
 
-    # Reduced density matrices
+    ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
     # Compute R.H.S. of the equation
-    ## V1 block: - < Psi_0 | a^{\dag}_I a_A [V + H^{(1)}, T - T^\dag] | Psi_0>
+    ## V1 block: - < Psi_0 | a^{\dag}_I a_A [V + H^{(1)}, T - T^\dag] | Psi_0 >
     V1  = einsum('xA,Ix->IA', h_ae, t1_ca, optimize = einsum_type)
     V1 -= einsum('Ix,xA->IA', h_ca, t1_ae, optimize = einsum_type)
     V1 += 2 * einsum('ix,IiAx->IA', h_ca, t1_ccea, optimize = einsum_type)
@@ -1721,7 +1669,7 @@ def compute_t1_p1p_sanity_check(mr_adc):
     K_p1p = mr_adc_intermediates.compute_K_p1p_sanity_check(mr_adc)
 
     # Orthogonalization and overlap truncation only in the active space
-    S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_sanity_check_gno_projector(mr_adc, ignore_print = False)
+    S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_sanity_check_gno_projector(mr_adc)
 
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
@@ -1887,7 +1835,7 @@ def compute_t1_m1p_sanity_check(mr_adc):
     K_m1p = mr_adc_intermediates.compute_K_m1p_sanity_check(mr_adc)
 
     # Orthogonalization and overlap truncation only in the active space
-    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_sanity_check_gno_projector(mr_adc, ignore_print = False)
+    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_sanity_check_gno_projector(mr_adc)
 
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
@@ -2015,7 +1963,7 @@ def compute_t1_0p_sanity_check(mr_adc):
     K_caca = mr_adc_intermediates.compute_K_caca_sanity_check(mr_adc)
 
     # Orthogonalization and overlap truncation only in the active space
-    S_0p_12_inv_act = mr_adc_overlap.compute_S12_0p_sanity_check_gno_projector(mr_adc, ignore_print = False)
+    S_0p_12_inv_act = mr_adc_overlap.compute_S12_0p_sanity_check_gno_projector(mr_adc)
 
     # Compute (S_12 K S_12)_{i a mu, j b nu}
     SKS = np.einsum("xywz,zwn->xyn", K_caca, S_0p_12_inv_act[1:,:].reshape(ncas * 2, ncas * 2, -1))
@@ -2119,5 +2067,3 @@ def compute_t1_0p_sanity_check(mr_adc):
     print(">>> SA (sanity) e_0p: {:}".format(e_0p))
 
     return e_0p, t1_ce, t1_caea, t1_caae
-
-### Under Development

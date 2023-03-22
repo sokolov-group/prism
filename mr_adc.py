@@ -58,7 +58,6 @@ class MRADC:
         self.h1 = lambda:None           # Information about h1 excitation manifold
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
-        self.debug_mode = False         # Debug printing statements
 
         # Parameters for the CVS implementation
         self.ncvs = None
@@ -72,6 +71,10 @@ class MRADC:
         self.t1 = lambda:None
         self.t2 = lambda:None
         self.dip_mom = None
+
+        # Matrix blocks
+        self.M_00 = None
+        self.M_01 = lambda:None
 
     def kernel(self):
 
@@ -120,39 +123,3 @@ class MRADC:
         ee, spec_factors = mr_adc_compute.kernel(self)
 
         return ee, spec_factors
-
-
-def dyall_hamiltonian(mr_adc):
-    """Zeroth Order Dyall Hamiltonian"""
-
-    # Testing Dyall Hamiltonian expected value
-    print("Calculating the Spin-Adapted Dyall Hamiltonian...")
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Variables needed
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
-    rdm_ca = mr_adc.rdm.ca
-    v_aaaa = mr_adc.v2e.aaaa
-    rdm_ccaa = mr_adc.rdm.ccaa
-    mo_c = mr_adc.mo[:, :mr_adc.ncore].copy()
-
-    # Calculating E_fc
-    ## Calculating h_cc term
-    h_cc = 2.0 * mr_adc.h1e[:mr_adc.ncore, :mr_adc.ncore].copy()
-
-    ## Calculating v_cccc term
-    v_cccc = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
-
-    # Calculating temp_E_fc
-    temp_E_fc  = einsum('ii', h_cc, optimize = True)
-    temp_E_fc += 2.0 * einsum('ijij', v_cccc, optimize = True)
-    temp_E_fc -= einsum('jiij', v_cccc, optimize = True)
-
-    # Calculating H_act
-    temp  = einsum('xy,xy', h_aa, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-
-    print("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
