@@ -29,9 +29,9 @@ def compute_S12_p1(mr_adc, ignore_print = False):
     S_p1_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
     if (not ignore_print) or (mr_adc.print_level > 4):
-        print("Dimension of the [+1] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [+1] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print("Smallest eigenvalue of the [+1] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [+1] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1_12_inv
 
@@ -60,9 +60,9 @@ def compute_S12_m1(mr_adc, ignore_print = False):
     S_m1_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
     if (not ignore_print) or (mr_adc.print_level > 4):
-        print("Dimension of the [-1] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [-1] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print("Smallest eigenvalue of the [-1] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [-1] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m1_12_inv
 
@@ -98,9 +98,9 @@ def compute_S12_p2(mr_adc):
 
     S_p2_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
-    print("Dimension of the [+2] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+    print("Dimension of the [+2] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [+2] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+        print("Smallest eigenvalue of the [+2] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p2_12_inv
 
@@ -130,9 +130,9 @@ def compute_S12_m2(mr_adc):
 
     S_m2_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
-    print("Dimension of the [-2] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+    print("Dimension of the [-2] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [-2] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+        print("Smallest eigenvalue of the [-2] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m2_12_inv
 
@@ -241,9 +241,9 @@ def compute_S12_0p_projector(mr_adc):
     S_0p_12_inv[1:,1:] = S22_12_inv.copy()
 
     if mr_adc.print_level > 4:
-        print("Dimension of the [0'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+        print("Dimension of the [0'] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
         if len(S_ind_nonzero) > 0:
-            print("Smallest eigenvalue of the [0'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+            print("Smallest eigenvalue of the [0'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_0p_12_inv
 
@@ -333,9 +333,9 @@ def compute_S12_0p_gno_projector(mr_adc):
 
     S_0p_12_inv = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
-    print("Dimension of the [0'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+    print("Dimension of the [0'] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [0'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+        print("Smallest eigenvalue of the [0'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_0p_12_inv
 
@@ -705,16 +705,16 @@ def compute_S12_0p_sanity_check_gno_projector(mr_adc):
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
     if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
+        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
         S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
 
     S_0p_12_inv = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
-    print("Dimension of the [0'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+    print("Dimension of the [0'] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [0'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+        print("Smallest eigenvalue of the [0'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_0p_12_inv
 
@@ -862,7 +862,7 @@ def compute_S12_p1p_sanity_check_gno_projector(mr_adc):
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
     if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
+        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
         S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
@@ -1001,16 +1001,16 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc):
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
     if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
+        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
         S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
 
     S_m1p_12_inv_act = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
-    print("Dimension of the [-1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+    print("Dimension of the [-1'] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [-1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+        print("Smallest eigenvalue of the [-1'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m1p_12_inv_act
 

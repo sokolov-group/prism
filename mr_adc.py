@@ -1,6 +1,4 @@
 import sys
-import time
-import numpy as np
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_rdms as mr_adc_rdms
 import prism.mr_adc_compute as mr_adc_compute

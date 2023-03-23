@@ -15,7 +15,7 @@ def compute_amplitudes(mr_adc):
     # Second-order amplitudes
     compute_t2_amplitudes(mr_adc)
 
-    print("Time for computing amplitudes:                    %f sec\n" % (time.time() - start_time))
+    print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
 
 def compute_t1_amplitudes(mr_adc):
 
@@ -32,9 +32,9 @@ def compute_t1_amplitudes(mr_adc):
             sys.stdout.flush()
             e_0p, mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae = compute_t1_0p(mr_adc)
 
-            print("Norm of T[0']^(1):                          %20.12f" % (np.linalg.norm(mr_adc.t1.ce) +
+            print("Norm of T[0']^(1):                           %20.12f" % (np.linalg.norm(mr_adc.t1.ce) +
                                                                            np.linalg.norm(mr_adc.t1.caea)))
-            print("Correlation energy [0']:                    %20.12f\n" % e_0p)
+            print("Correlation energy [0']:                     %20.12f\n" % e_0p)
         else:
             mr_adc.t1.ce = np.zeros((ncore, nextern))
             mr_adc.t1.caea = np.zeros((ncore, ncas, nextern, ncas))
@@ -44,9 +44,9 @@ def compute_t1_amplitudes(mr_adc):
             sys.stdout.flush()
             e_p1p, mr_adc.t1.ca, mr_adc.t1.caaa = compute_t1_p1p(mr_adc)
 
-            print("Norm of T[+1']^(1):                         %20.12f" % (np.linalg.norm(mr_adc.t1.ca) +
+            print("Norm of T[+1']^(1):                          %20.12f" % (np.linalg.norm(mr_adc.t1.ca) +
                                                                            np.linalg.norm(mr_adc.t1.caaa)))
-            print("Correlation energy [+1']:                   %20.12f\n" % e_p1p)
+            print("Correlation energy [+1']:                    %20.12f\n" % e_p1p)
         else:
             mr_adc.t1.ca = np.zeros((ncore, ncas))
             mr_adc.t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
@@ -57,9 +57,9 @@ def compute_t1_amplitudes(mr_adc):
             #TODO: Check if both t2 amplitudes are needed
             e_m1p, mr_adc.t1.ae, mr_adc.t1.aaae, mr_adc.t1.aaea = compute_t1_m1p(mr_adc)
 
-            print("Norm of T[-1']^(1):                         %20.12f" % (np.linalg.norm(mr_adc.t1.ae) +
+            print("Norm of T[-1']^(1):                          %20.12f" % (np.linalg.norm(mr_adc.t1.ae) +
                                                                            np.linalg.norm(mr_adc.t1.aaae)))
-            print("Correlation energy [-1']:                   %20.12f\n" % e_m1p)
+            print("Correlation energy [-1']:                    %20.12f\n" % e_m1p)
         else:
             mr_adc.t1.ae = np.zeros((ncas, nextern))
             mr_adc.t1.aaea = np.zeros((ncas, ncas, nextern, ncas))
@@ -86,8 +86,8 @@ def compute_t1_amplitudes(mr_adc):
             print("Computing T[0]^(1) amplitudes...")
             sys.stdout.flush()
             e_0, mr_adc.t1.ccee = compute_t1_0(mr_adc)
-            print("Norm of T[0]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.ccee))
-            print("Correlation energy [0]:                     %20.12f\n" % e_0)
+            print("Norm of T[0]^(1):                            %20.12f" % np.linalg.norm(mr_adc.t1.ccee))
+            print("Correlation energy [0]:                      %20.12f\n" % e_0)
         else:
             mr_adc.t1.ccee = np.zeros((ncore, ncore, nextern, nextern))
 
@@ -95,14 +95,14 @@ def compute_t1_amplitudes(mr_adc):
             print("Computing T[+1]^(1) amplitudes...")
             sys.stdout.flush()
             e_p1, mr_adc.t1.ccea = compute_t1_p1(mr_adc)
-            print("Norm of T[+1]^(1):                          %20.12f" % np.linalg.norm(mr_adc.t1.ccea))
-            print("Correlation energy [+1]:                    %20.12f\n" % e_p1)
+            print("Norm of T[+1]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.ccea))
+            print("Correlation energy [+1]:                     %20.12f\n" % e_p1)
 
             print("Computing T[-1]^(1) amplitudes...")
             sys.stdout.flush()
             e_m1, mr_adc.t1.caee = compute_t1_m1(mr_adc)
-            print("Norm of T[-1]^(1):                          %20.12f" % np.linalg.norm(mr_adc.t1.caee))
-            print("Correlation energy [-1]:                    %20.12f\n" % e_m1)
+            print("Norm of T[-1]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.caee))
+            print("Correlation energy [-1]:                     %20.12f\n" % e_m1)
         else:
             mr_adc.t1.ccea = np.zeros((ncore, ncore, nextern, ncas))
             mr_adc.t1.caee = np.zeros((ncore, ncas, nextern, nextern))
@@ -111,8 +111,8 @@ def compute_t1_amplitudes(mr_adc):
             print("Computing T[+2]^(1) amplitudes...")
             sys.stdout.flush()
             e_p2, mr_adc.t1.ccaa = compute_t1_p2(mr_adc)
-            print("Norm of T[+2]^(1):                          %20.12f" % np.linalg.norm(mr_adc.t1.ccaa))
-            print("Correlation energy [+2]:                    %20.12f\n" % e_p2)
+            print("Norm of T[+2]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.ccaa))
+            print("Correlation energy [+2]:                     %20.12f\n" % e_p2)
         else:
             mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
@@ -120,8 +120,8 @@ def compute_t1_amplitudes(mr_adc):
             print("Computing T[-2]^(1) amplitudes...")
             sys.stdout.flush()
             e_m2, mr_adc.t1.aaee = compute_t1_m2(mr_adc)
-            print("Norm of T[-2]^(1):                          %20.12f" % np.linalg.norm(mr_adc.t1.aaee))
-            print("Correlation energy [-2]:                    %20.12f\n" % e_m2)
+            print("Norm of T[-2]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.aaee))
+            print("Correlation energy [-2]:                     %20.12f\n" % e_m2)
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
@@ -152,7 +152,7 @@ def compute_t2_amplitudes(mr_adc):
             print("Computing T[0']^(2) amplitudes...")
             sys.stdout.flush()
             mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)
-            print("Norm of T[0']^(2):                         %20.12f\n" % np.linalg.norm(mr_adc.t2.ce))
+            print("Norm of T[0']^(2):                           %20.12f\n" % np.linalg.norm(mr_adc.t2.ce))
             sys.stdout.flush()
 
         else:

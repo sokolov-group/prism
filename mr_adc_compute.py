@@ -12,32 +12,32 @@ def kernel(mr_adc):
     print("Computing MR-ADC excitation energies...\n")
 
     # Print general information
-    print("Method:                                           %s-%s" % (mr_adc.method_type, mr_adc.method))
-    print("Number of MR-ADC roots requested:                 %d" % mr_adc.nroots)
-    print("Ground-state active-space energy:           %20.12f" % mr_adc.e_cas)
-    print("Nuclear repulsion energy:                   %20.12f" % mr_adc.enuc)
-    print("Number of basis functions:                        %d" % mr_adc.nmo)
-    print("Number of core orbitals:                          %d" % mr_adc.ncore)
-    print("Number of active orbitals:                        %d" % mr_adc.ncas)
-    print("Number of external orbitals:                      %d" % mr_adc.nextern)
-    print("Number of electrons:                              %d" % mr_adc.nelec)
-    print("Number of active electrons:                       %s" % str(mr_adc.nelecas))
+    print("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
+    print("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
+    print("Ground-state active-space energy:            %20.12f" % mr_adc.e_cas)
+    print("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
+    print("Number of basis functions:                         %d" % mr_adc.nmo)
+    print("Number of core orbitals:                           %d" % mr_adc.ncore)
+    print("Number of active orbitals:                         %d" % mr_adc.ncas)
+    print("Number of external orbitals:                       %d" % mr_adc.nextern)
+    print("Number of electrons:                               %d" % mr_adc.nelec)
+    print("Number of active electrons:                        %s" % str(mr_adc.nelecas))
     if mr_adc.ncvs is not None:
-        print("Number of CVS orbitals:                           %d" % mr_adc.ncvs)
-        print("Number of valence (non-CVS) orbitals:             %d" % (mr_adc.ncore - mr_adc.ncvs))
+        print("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
+        print("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
     if mr_adc.s_damping_strength is None:
-        print("Overlap truncation parameter (singles):           %e" % mr_adc.s_thresh_singles)
+        print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
     else:
-        print("Overlap damping width:                            %f" % mr_adc.s_damping_strength)
-        print("Overlap truncation parameter (singles):           %e" % (mr_adc.s_thresh_singles * 10**(- mr_adc.s_damping_strength / 2)))
+        print("Overlap damping width:                             %f" % mr_adc.s_damping_strength)
+        print("Overlap truncation parameter (singles):            %e" % (mr_adc.s_thresh_singles * 10**(- mr_adc.s_damping_strength / 2)))
 
     # Print info about CASCI states
-    print("Overlap truncation parameter (doubles):           %e" % mr_adc.s_thresh_doubles)
-    print("Number of CASCI states:                           %d\n" % mr_adc.ncasci)
+    print("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
+    print("Number of CASCI states:                            %d\n" % mr_adc.ncasci)
 
     if mr_adc.ncasci > 0:
-        print("CASCI excitation energies (eV):                   %s\n" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
+        print("CASCI excitation energies (eV):                    %s\n" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
     sys.stdout.flush()
 
     # Compute amplitudes
@@ -63,8 +63,11 @@ def kernel(mr_adc):
     apply_M, precond, x0 = setup_davidson(mr_adc)
 
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
-    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond, nroots = mr_adc.nroots,
-                                           verbose = 6, max_space = mr_adc.max_space, max_cycle = mr_adc.max_cycle,
+    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
+                                           nroots = mr_adc.nroots,
+                                           verbose = 6,
+                                           max_space = mr_adc.max_space,
+                                           max_cycle = mr_adc.max_cycle,
                                            tol_residual = mr_adc.tol_davidson)
 
     print("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))

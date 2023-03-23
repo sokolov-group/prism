@@ -23,7 +23,7 @@ def transform_integrals_1e(mr_adc):
         for i in range(3):
             mr_adc.dip_mom[i] = reduce(np.dot, (mo.T, mr_adc.interface.dip_mom_ao[i], mo))
 
-    print("Time for transforming 1e integrals:                  %f sec\n" % (time.time() - start_time))
+    print("Time for transforming 1e integrals:                %f sec\n" % (time.time() - start_time))
 
 def transform_2e_phys_incore(interface, mo_1, mo_2, mo_3, mo_4):
     'Two-electron integral transformation in Physicists notation'
@@ -43,7 +43,7 @@ def transform_integrals_2e_incore(mr_adc):
 
     start_time = time.time()
 
-    print("Transforming 2e integrals to MO basis (in-core)...\n")
+    print("Transforming 2e integrals to MO basis (in-core)...")
     sys.stdout.flush()
 
     ncvs = mr_adc.ncvs
@@ -155,6 +155,6 @@ def transform_integrals_2e_incore(mr_adc):
         if nval > 0:
             mr_adc.mo_energy.v = mr_adc.interface.mo_energy[ncvs:ncore]
 
-    print("Time for transforming integrals:                  %f sec\n" % (time.time() - start_time))
+    print("Time for transforming integrals:                   %f sec\n" % (time.time() - start_time))
 
 
