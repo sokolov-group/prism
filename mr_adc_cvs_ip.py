@@ -1221,16 +1221,16 @@ def compute_M_01(mr_adc):
     v_xaxa = mr_adc.v2e.xaxa
     v_xaax = mr_adc.v2e.xaax
 
-    v_vaaa = mr_adc.v2e.vaaa
-    v_vaae = mr_adc.v2e.vaae
-    v_vaea = mr_adc.v2e.vaea
-
     v_xaxe = mr_adc.v2e.xaxe
     v_xaex = mr_adc.v2e.xaex
     v_xxxa = mr_adc.v2e.xxxa
     v_xxxe = mr_adc.v2e.xxxe
 
     if nval > 0:
+        v_vaaa = mr_adc.v2e.vaaa
+        v_vaae = mr_adc.v2e.vaae
+        v_vaea = mr_adc.v2e.vaea
+
         v_vxxa = mr_adc.v2e.vxxa
         v_xvxa = mr_adc.v2e.xvxa
 
