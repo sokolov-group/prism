@@ -1174,7 +1174,7 @@ def compute_M_00(mr_adc):
 
     mr_adc.M_00 = M_00.copy()
 
-    print("Time for computing M(h0-h0) block:                %f sec\n" % (time.time() - start_time))
+    print("Time for computing M(h0-h0) block:                 %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
 def compute_M_01(mr_adc):
@@ -1666,7 +1666,7 @@ def compute_M_01(mr_adc):
 
         mr_adc.M_01.c_cva = M_c_cva
 
-    print("Time for computing M(h0-h1) blocks:               %f sec\n" % (time.time() - start_time))
+    print("Time for computing M(h0-h1) blocks:                %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
 def define_effective_hamiltonian(mr_adc):
@@ -2025,7 +2025,7 @@ def compute_preconditioner(mr_adc):
     # Multiply by -1.0, since we are solving for -M C = -S C E
     precond *= (-1.0)
 
-    print ("Time for computing preconditioner:                %f sec\n" % (time.time() - start_time))
+    print ("Time for computing preconditioner:                 %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
     return precond

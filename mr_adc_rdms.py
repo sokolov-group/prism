@@ -18,4 +18,4 @@ def compute_gs_rdms(mr_adc):
         mr_adc.rdm.ccaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
         mr_adc.rdm.cccaaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
 
-    print("Time for computing ground-state RDMs:                          %f sec\n" % (time.time() - start_time))
+    print("Time for computing ground-state RDMs:              %f sec\n" % (time.time() - start_time))
