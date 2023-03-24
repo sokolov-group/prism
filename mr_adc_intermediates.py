@@ -19,9 +19,10 @@ def compute_K_ac(mr_adc):
 
     # Compute K_ac: < Psi_0 | a_X [H_{act}, a^{\dag}_Y] | Psi_0 >
     K_ac  = einsum('XY->XY', h_aa, optimize = einsum_type).copy()
+    K_ac -= 1/2 * einsum('Yx,Xx->XY', h_aa, rdm_ca, optimize = einsum_type)
     K_ac += einsum('XxYy,xy->XY', v_aaaa, rdm_ca, optimize = einsum_type)
     K_ac -= 1/2 * einsum('XxyY,xy->XY', v_aaaa, rdm_ca, optimize = einsum_type)
-    K_ac -= 1/2 * einsum('Yxyz,yzXx->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
+    K_ac -= 1/2 * einsum('Yxyz,Xxyz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
     return K_ac
 
@@ -264,13 +265,14 @@ def compute_K_p1p(mr_adc):
     rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
     # Computing K11
-    # K11 block: < Psi_0 | a_X [H_{act}, a^{\dag}_Y] | Psi_0>
+    # K11 block: < Psi_0 | a_X [H_{act}, a^{\dag}_Y] | Psi_0 >
     K11_a_a  = einsum('XY->XY', h_aa, optimize = einsum_type).copy()
+    K11_a_a -= 1/2 * einsum('Yx,xX->XY', h_aa, rdm_ca, optimize = einsum_type)
     K11_a_a += einsum('XxYy,xy->XY', v_aaaa, rdm_ca, optimize = einsum_type)
     K11_a_a -= 1/2 * einsum('XxyY,xy->XY', v_aaaa, rdm_ca, optimize = einsum_type)
     K11_a_a -= 1/2 * einsum('Yxyz,Xxyz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
-    # K12 block: < Psi_0 | a_X [H_{act}, a^{\dag}_Y a^{\dag}_Z a_W] | Psi_0>
+    # K12 block: < Psi_0 | a_X [H_{act}, a^{\dag}_Y a^{\dag}_Z a_W] | Psi_0 >
     K12_a_bba  = 1/3 * einsum('Wx,XxYZ->XWZY', h_aa, rdm_ccaa, optimize = einsum_type)
     K12_a_bba += 1/6 * einsum('Wx,XxZY->XWZY', h_aa, rdm_ccaa, optimize = einsum_type)
     K12_a_bba += 1/2 * einsum('XY,ZW->XWZY', h_aa, rdm_ca, optimize = einsum_type)
@@ -742,11 +744,11 @@ def compute_K_m1p(mr_adc):
     rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
     # Computing K11
-    # K11 block: < Psi_0 | a^{\dag}_X [H_{act}, a_Y] | Psi_0>
+    # K11 block: < Psi_0 | a^{\dag}_X [H_{act}, a_Y] | Psi_0 >
     K11_a_a =- 1/2 * einsum('Yx,Xx->XY', h_aa, rdm_ca, optimize = einsum_type)
     K11_a_a -= 1/2 * einsum('Yxyz,Xxyz->XY', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
-    # K12 block: < Psi_0 | a^{\dag}_X [H_{act}, a^{\dag}_Y a_Z a_W] | Psi_0>
+    # K12 block: < Psi_0 | a^{\dag}_X [H_{act}, a^{\dag}_Y a_Z a_W] | Psi_0 >
     K12_a_abb =- 1/6 * einsum('Wx,XYZx->XWZY', h_aa, rdm_ccaa, optimize = einsum_type)
     K12_a_abb -= 1/3 * einsum('Wx,XYxZ->XWZY', h_aa, rdm_ccaa, optimize = einsum_type)
     K12_a_abb += 1/3 * einsum('Yx,WZXx->XWZY', h_aa, rdm_ccaa, optimize = einsum_type)
@@ -776,7 +778,7 @@ def compute_K_m1p(mr_adc):
 
     K12_a_aaa = np.ascontiguousarray(K12_a_abb - K12_a_abb.transpose(0,2,1,3))
 
-    # K22 block: < Psi_0 | a^{\dag}_U a^{\dag}_V a_X [H_{act}, a^{\dag}_Y a_Z a_W] | Psi_0>
+    # K22 block: < Psi_0 | a^{\dag}_U a^{\dag}_V a_X [H_{act}, a^{\dag}_Y a_Z a_W] | Psi_0 >
     K22_aaa_aaa  = 1/12 * einsum('Wx,UVYXxZ->UVXWZY', h_aa, rdm_cccaaa, optimize = einsum_type)
     K22_aaa_aaa += 1/12 * einsum('Wx,UVYZXx->UVXWZY', h_aa, rdm_cccaaa, optimize = einsum_type)
     K22_aaa_aaa += 1/12 * einsum('Wx,UVYxZX->UVXWZY', h_aa, rdm_cccaaa, optimize = einsum_type)
