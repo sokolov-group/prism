@@ -164,10 +164,12 @@ def compute_t2_amplitudes(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
+    approx_trans_moments = mr_adc.approx_trans_moments
+
     # Approximate second-order amplitudes
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
-        if ncore > 0 and nextern > 0:
+        if (ncore > 0) and (nextern > 0) and not (approx_trans_moments):
             print("Computing T[0']^(2) amplitudes...")
             sys.stdout.flush()
             mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)

@@ -76,6 +76,9 @@ class MRADC:
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
 
+        # Approximations
+        self.approx_trans_moments = False
+
         # Parameters for the CVS implementation
         self.ncvs = None
         self.nval = None
