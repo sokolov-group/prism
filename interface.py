@@ -1,3 +1,22 @@
+# Copyright 2023 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#
+
 import sys
 import numpy as np
 
@@ -128,9 +147,9 @@ def print_header():
         PRISM: Open-Source implementation of ab initio methods
                 for excited states and spectroscopy
 
-                           Version 1.0
+                           Version 0.1
 
-               Copyright (C) 2022 Alexander Sokolov
+               Copyright (C) 2023 Alexander Sokolov
                                   Carlos E. V. de Moura
 
         Unless required by applicable law or agreed to in
