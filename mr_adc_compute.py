@@ -55,7 +55,7 @@ def kernel(mr_adc):
     print("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
     print("Number of CASCI states:                            %d\n" % mr_adc.ncasci)
 
-    if mr_adc.ncasci > 0:
+    if mr_adc.e_cas_ci is not None:
         print("CASCI excitation energies (eV):                    %s\n" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
     sys.stdout.flush()
 
