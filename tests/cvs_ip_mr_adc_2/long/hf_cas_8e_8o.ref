@@ -1,0 +1,641 @@
+#INFO: **** input file is /Users/carlos/GitHub/prism/tests/cvs_ip_mr_adc_2/long/hf_cas_8e_8o.py ****
+# Copyright 2023 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#
+
+import unittest
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.mr_adc
+
+r = 0.917
+mol = pyscf.gto.Mole()
+mol.verbose = 4
+mol.atom = [
+            ['H', (0.0, 0.0, -r/2)],
+            ['F', (0.0, 0.0,  r/2)]]
+mol.basis = 'aug-cc-pvdz'
+mol.symmetry = True
+mol.build()
+
+# RHF calculation
+mf = pyscf.scf.RHF(mol)
+mf.conv_tol = 1e-12
+
+ehf = mf.scf()
+mf.analyze()
+print ("SCF energy: %f\n" % ehf)
+
+# CASSCF calculation
+mc = pyscf.mcscf.CASSCF(mf, 8, 8)
+
+mc.conv_tol = 1e-11
+mc.conv_tol_grad = 1e-6
+mc.max_cycle_macro = 100
+mc.verbose = 4
+
+emc = mc.mc1step()[0]
+
+mc.analyze()
+print ("CASSCF energy: %f\n" % emc)
+
+# MR-ADC calculation
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+mr_adc = prism.mr_adc.MRADC(interface)
+mr_adc.ncvs = 1
+mr_adc.nroots = 4
+mr_adc.s_thresh_singles = 1e-6
+mr_adc.s_thresh_doubles = 1e-10
+mr_adc.method_type = "cvs-ip"
+mr_adc.method = "mr-adc(2)"
+
+class KnownValues(unittest.TestCase):
+
+    def test_cvs_ip_mr_adc2(self):
+
+        e,p = mr_adc.kernel()
+
+        self.assertAlmostEqual(e[0], 700.37019484, 4)
+        self.assertAlmostEqual(e[1], 734.67162604, 4)
+
+if __name__ == "__main__":
+    print("IP calculations for different IP-MR-ADC methods")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Darwin', node='CarlosMacBookPro', release='20.5.0', version='Darwin Kernel Version 20.5.0: Sat May  8 05:10:33 PDT 2021; root:xnu-7195.121.3~9/RELEASE_X86_64', machine='x86_64')  Threads 1
+Python 3.9.12 (main, Jun  1 2022, 06:36:29) 
+[Clang 12.0.0 ]
+numpy 1.22.3  scipy 1.7.3
+Date: Sun Apr  2 21:43:28 2023
+PySCF version 2.0.1
+PySCF path  /usr/local/Caskroom/miniconda/base/envs/compchem/lib/python3.9/site-packages/pyscf
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 10
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry True subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT]  1 H      0.000000000000   0.000000000000  -0.458500000000 AA    0.000000000000   0.000000000000  -0.866439428113 Bohr
+[INPUT]  2 F      0.000000000000   0.000000000000   0.458500000000 AA    0.000000000000   0.000000000000   0.866439428113 Bohr
+
+nuclear repulsion = 5.19366946377317
+point group symmetry = Coov
+num. orbitals of irrep A1 = 14
+num. orbitals of irrep E1x = 7
+num. orbitals of irrep E1y = 7
+num. orbitals of irrep E2x = 2
+num. orbitals of irrep E2y = 2
+number of shells = 13
+number of NR pGTOs = 46
+number of NR cGTOs = 32
+basis = aug-cc-pvdz
+ecp = {}
+CPU time:         1.20
+
+
+******** <class 'pyscf.scf.hf_symm.SymAdaptedRHF'> ********
+method = SymAdaptedRHF-RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /var/folders/3l/j_26z9753t9c2998pwc56hhw0000gn/T/tmpqkph73mf
+max_memory 4000 MB (current use 0 MB)
+Freeze 0 electrons in irreps []
+    10 free electrons in irreps A1 E1x E1y E2x E2y
+Set gradient conv threshold to 1e-06
+init E= -99.8456248711572
+HOMO (E1x) = -0.659585465796956  LUMO (A1) = 0.0239029399920716
+cycle= 1 E= -100.00778932401  delta_E= -0.162  |g|= 0.375  |ddm|= 1.06
+HOMO (E1y) = -0.584606533711898  LUMO (A1) = 0.0319503212960215
+cycle= 2 E= -100.02747431421  delta_E= -0.0197  |g|=  0.2  |ddm|= 0.302
+HOMO (E1x) = -0.660906674752082  LUMO (A1) = 0.0342998761858429
+cycle= 3 E= -100.033275952314  delta_E= -0.0058  |g|= 0.0311  |ddm|= 0.0992
+HOMO (E1x) = -0.649443401620484  LUMO (A1) = 0.0355750968849246
+cycle= 4 E= -100.033450372345  delta_E= -0.000174  |g|= 0.00584  |ddm|= 0.0187
+HOMO (E1x) = -0.650598805020858  LUMO (A1) = 0.0357978893823391
+cycle= 5 E= -100.033465423833  delta_E= -1.51e-05  |g|= 0.00101  |ddm|= 0.00864
+HOMO (E1x) = -0.65073726511737  LUMO (A1) = 0.0358011718573025
+cycle= 6 E= -100.033466070012  delta_E= -6.46e-07  |g|= 0.000137  |ddm|= 0.00239
+HOMO (E1x) = -0.650767955586428  LUMO (A1) = 0.0358053071419865
+cycle= 7 E= -100.033466082053  delta_E= -1.2e-08  |g|= 1.12e-05  |ddm|= 0.000245
+HOMO (E1y) = -0.650765562176315  LUMO (A1) = 0.0358057171108569
+cycle= 8 E= -100.033466082097  delta_E= -4.44e-11  |g|= 1.47e-06  |ddm|= 2.08e-05
+HOMO (E1y) = -0.65076580806945  LUMO (A1) = 0.035805784994722
+cycle= 9 E= -100.033466082098  delta_E= -9.66e-13  |g|= 1.52e-07  |ddm|= 3.04e-06
+HOMO (E1y) = -0.650765724471276  LUMO (A1) = 0.0358057907370986
+Extra cycle  E= -100.033466082098  delta_E= 1.28e-13  |g|= 6.44e-08  |ddm|= 3.89e-07
+converged SCF energy = -100.033466082098
+**** SCF Summaries ****
+Total Energy =                        -100.033466082098187
+Nuclear Repulsion Energy =               5.193669463773174
+One-electron Energy =                 -150.471594730639481
+Two-electron Energy =                   45.244459184768111
+Wave-function symmetry = Coov
+occupancy for each irrep:     A1  E1x  E1y  E2x  E2y
+                               3    1    1    0    0
+**** MO energy ****
+MO #1 (A1 #1), energy= -26.3109339548649 occ= 2
+MO #2 (A1 #2), energy= -1.60756062017186 occ= 2
+MO #3 (A1 #3), energy= -0.771311921284121 occ= 2
+MO #4 (E1x #1), energy= -0.650765724471279 occ= 2
+MO #5 (E1y #1), energy= -0.650765724471276 occ= 2
+MO #6 (A1 #4), energy= 0.0358057907370986 occ= 0
+MO #7 (A1 #5), energy= 0.19447259604407 occ= 0
+MO #8 (E1x #2), energy= 0.244026248389523 occ= 0
+MO #9 (E1y #2), energy= 0.244026248389524 occ= 0
+MO #10 (A1 #6), energy= 0.256558308420185 occ= 0
+MO #11 (A1 #7), energy= 0.361068128152048 occ= 0
+MO #12 (E1x #3), energy= 0.402971764580516 occ= 0
+MO #13 (E1y #3), energy= 0.402971764580516 occ= 0
+MO #14 (A1 #8), energy= 0.66165368969383 occ= 0
+MO #15 (A1 #9), energy= 0.940866161382188 occ= 0
+MO #16 (E2x #1), energy= 1.34627038801853 occ= 0
+MO #17 (E2y #1), energy= 1.34627038801853 occ= 0
+MO #18 (E1x #4), energy= 1.43192984323208 occ= 0
+MO #19 (E1y #4), energy= 1.43192984323208 occ= 0
+MO #20 (A1 #10), energy= 1.62347400814324 occ= 0
+MO #21 (E1x #5), energy= 1.67075296834786 occ= 0
+MO #22 (E1y #5), energy= 1.67075296834786 occ= 0
+MO #23 (A1 #11), energy= 2.06705134759672 occ= 0
+MO #24 (E1x #6), energy= 2.16188779442958 occ= 0
+MO #25 (E1y #6), energy= 2.16188779442958 occ= 0
+MO #26 (A1 #12), energy= 2.67156443690442 occ= 0
+MO #27 (A1 #13), energy= 3.5961329551807 occ= 0
+MO #28 (E2x #2), energy= 4.85231059160105 occ= 0
+MO #29 (E2y #2), energy= 4.85231059160104 occ= 0
+MO #30 (E1x #7), energy= 4.92521640840461 occ= 0
+MO #31 (E1y #7), energy= 4.92521640840461 occ= 0
+MO #32 (A1 #14), energy= 5.15137493603721 occ= 0
+ ** Mulliken pop on meta-lowdin orthogonal AOs  **
+ ** Mulliken pop  **
+pop of  0 H 1s        0.52398
+pop of  0 H 2s        0.01576
+pop of  0 H 3s        0.00641
+pop of  0 H 2px       0.00240
+pop of  0 H 2py       0.00240
+pop of  0 H 2pz       0.00176
+pop of  0 H 3px       0.00018
+pop of  0 H 3py       0.00018
+pop of  0 H 3pz       0.00086
+pop of  1 F 1s        2.00000
+pop of  1 F 2s        1.83649
+pop of  1 F 3s        0.00312
+pop of  1 F 4s        0.00148
+pop of  1 F 2px       1.99359
+pop of  1 F 2py       1.99359
+pop of  1 F 2pz       1.60046
+pop of  1 F 3px       0.00036
+pop of  1 F 3py       0.00036
+pop of  1 F 3pz       0.00234
+pop of  1 F 4px       0.00167
+pop of  1 F 4py       0.00167
+pop of  1 F 4pz       0.00152
+pop of  1 F 3dxy      0.00000
+pop of  1 F 3dyz      0.00143
+pop of  1 F 3dz^2     0.00536
+pop of  1 F 3dxz      0.00143
+pop of  1 F 3dx2-y2    0.00000
+pop of  1 F 4dxy      0.00000
+pop of  1 F 4dyz      0.00036
+pop of  1 F 4dz^2     0.00046
+pop of  1 F 4dxz      0.00036
+pop of  1 F 4dx2-y2    0.00000
+ ** Mulliken atomic charges  **
+charge of  0H =      0.44606
+charge of  1F =     -0.44606
+Dipole moment(X, Y, Z, Debye):  0.00000,  0.00000, -1.93112
+SCF energy: -100.033466
+
+
+******** <class 'pyscf.mcscf.mc1step_symm.SymAdaptedCASSCF'> ********
+CAS (4e+4e, 8o), ncore = 1, nvir = 23
+max_cycle_macro = 100
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = 1e-06
+orbital rotation max_stepsize = 0.02
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /var/folders/3l/j_26z9753t9c2998pwc56hhw0000gn/T/tmpqkph73mf
+max_memory 4000 MB (current use 0 MB)
+internal_rotation = False
+******** <class 'pyscf.fci.direct_spin1_symm.FCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = True
+linear dependence = 1e-10
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 1
+pspace_size = 0
+spin = None
+CI wfn symmetry = None
+Active space CI wfn symmetry = A1
+CASCI E = -100.03934689288  S^2 = 0.0000000
+macro iter 1 (21 JK  4 micro), CASSCF E = -100.074372341391  dE = -0.035025449  S^2 = 0.0000000
+               |grad[o]|=0.0265  |grad[c]|= 0.04805194259342205  |ddm|=0.0318
+macro iter 2 (21 JK  4 micro), CASSCF E = -100.119298836303  dE = -0.044926495  S^2 = 0.0000000
+               |grad[o]|=0.0733  |grad[c]|= 0.046576713419246  |ddm|=0.0173
+macro iter 3 (21 JK  4 micro), CASSCF E = -100.15113122754  dE = -0.031832391  S^2 = 0.0000000
+               |grad[o]|=0.0478  |grad[c]|= 0.04416445368853315  |ddm|=0.0111
+macro iter 4 (20 JK  4 micro), CASSCF E = -100.165222367677  dE = -0.01409114  S^2 = 0.0000000
+               |grad[o]|=0.0298  |grad[c]|= 0.018460854346746502  |ddm|=0.00481
+macro iter 5 (10 JK  4 micro), CASSCF E = -100.165265256972  dE = -4.2889295e-05  S^2 = 0.0000000
+               |grad[o]|=0.00594  |grad[c]|= 0.00023687958832109996  |ddm|=0.00246
+macro iter 6 (12 JK  4 micro), CASSCF E = -100.165265258943  dE = -1.9705908e-09  S^2 = 0.0000000
+               |grad[o]|=5.25e-05  |grad[c]|= 2.772303717848815e-06  |ddm|=3.58e-05
+macro iter 7 (17 JK  1 micro), CASSCF E = -100.165265258943  dE = -3.5527137e-13  S^2 = 0.0000000
+               |grad[o]|=1.46e-07  |grad[c]|= 1.1740300971742674e-06  |ddm|=8.42e-07
+1-step CASSCF converged in 7 macro (122 JK 25 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.98962111 1.97718141 1.98122844 1.98122844 0.01161674 0.0224123
+ 0.01835578 0.01835578]
+CASSCF energy = -100.165265258943
+CASCI E = -100.165265258943  E(CI) = -28.730769700123  S^2 = 0.0000000
+Natural occ [1.99097618 1.97607128 1.98182291 1.98182291 0.02426672 0.00951739
+ 0.01776131 0.01776131]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+  0 H 1s       0.23744  -0.45429   0.00000   0.00000   0.71182
+  0 H 2s      -0.01358   0.08743  -0.00000   0.00000  -0.17325
+  0 H 3s       0.01289  -0.05462   0.00000  -0.00000   0.02650
+  0 H 2px      0.00000  -0.00000   0.04251   0.00000  -0.00000
+  0 H 2py     -0.00000   0.00000  -0.00000   0.04251   0.00000
+  0 H 2pz      0.01892  -0.01898  -0.00000   0.00000   0.05349
+  0 H 3px      0.00000  -0.00000  -0.00252  -0.00000  -0.00000
+  0 H 3py      0.00000   0.00000   0.00000  -0.00252   0.00000
+  0 H 3pz     -0.00033   0.01997   0.00000   0.00000  -0.10234
+  1 F 1s      -0.00022   0.00167   0.00000   0.00000   0.00049
+  1 F 2s       0.95713  -0.03427   0.00000   0.00000  -0.23933
+  1 F 3s       0.01057   0.04155   0.00000  -0.00000  -0.17876
+  1 F 4s      -0.00517   0.02692   0.00000  -0.00000  -0.12606
+  1 F 2px      0.00000  -0.00000   0.99809   0.00000  -0.00000
+  1 F 2py      0.00000   0.00000   0.00000   0.99809   0.00000
+  1 F 2pz      0.16281   0.87963   0.00000   0.00000   0.38148
+  1 F 3px     -0.00000   0.00000   0.02332  -0.00000   0.00000
+  1 F 3py      0.00000  -0.00000  -0.00000   0.02332  -0.00000
+  1 F 3pz      0.01195  -0.03606  -0.00000   0.00000  -0.36893
+  1 F 4px     -0.00000   0.00000  -0.02138  -0.00000   0.00000
+  1 F 4py      0.00000  -0.00000  -0.00000  -0.02138  -0.00000
+  1 F 4pz     -0.00057  -0.02132  -0.00000   0.00000   0.24614
+  1 F 3dxy     0.00000   0.00000   0.00000   0.00000  -0.00000
+  1 F 3dyz    -0.00000   0.00000  -0.00000  -0.02780   0.00000
+  1 F 3dz^2    0.00435  -0.05277   0.00000  -0.00000  -0.02683
+  1 F 3dxz     0.00000  -0.00000  -0.02780   0.00000   0.00000
+ 1 F 3dx2-y2   0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+  1 F 4dxy    -0.00000   0.00000  -0.00000   0.00000   0.00000
+  1 F 4dyz    -0.00000   0.00000  -0.00000  -0.01527   0.00000
+  1 F 4dz^2   -0.00310  -0.01769  -0.00000  -0.00000  -0.03457
+  1 F 4dxz     0.00000  -0.00000  -0.01527   0.00000   0.00000
+ 1 F 4dx2-y2   0.00000   0.00000  -0.00000   0.00000   0.00000
+               #6        #7        #8       
+  0 H 1s       0.31533  -0.00000   0.00000
+  0 H 2s       0.13373  -0.00000   0.00000
+  0 H 3s      -0.06266   0.00000  -0.00000
+  0 H 2px     -0.00000   0.33942   0.00000
+  0 H 2py     -0.00000   0.00000   0.33942
+  0 H 2pz      0.29399  -0.00000   0.00000
+  0 H 3px      0.00000   0.16891   0.00000
+  0 H 3py      0.00000   0.00000   0.16891
+  0 H 3pz      0.20899   0.00000   0.00000
+  1 F 1s       0.00057   0.00000   0.00000
+  1 F 2s      -0.11649  -0.00000   0.00000
+  1 F 3s       0.68179  -0.00000  -0.00000
+  1 F 4s      -0.24155   0.00000  -0.00000
+  1 F 2px     -0.00000  -0.04441   0.00000
+  1 F 2py      0.00000   0.00000  -0.04441
+  1 F 2pz      0.12541  -0.00000   0.00000
+  1 F 3px     -0.00000   0.82449  -0.00000
+  1 F 3py      0.00000  -0.00000   0.82449
+  1 F 3pz      0.40833  -0.00000   0.00000
+  1 F 4px     -0.00000  -0.41134  -0.00000
+  1 F 4py      0.00000  -0.00000  -0.41134
+  1 F 4pz     -0.13169  -0.00000   0.00000
+  1 F 3dxy     0.00000   0.00000   0.00000
+  1 F 3dyz    -0.00000   0.00000  -0.06665
+  1 F 3dz^2   -0.07350   0.00000  -0.00000
+  1 F 3dxz     0.00000  -0.06665   0.00000
+ 1 F 3dx2-y2   0.00000   0.00000  -0.00000
+  1 F 4dxy    -0.00000  -0.00000   0.00000
+  1 F 4dyz    -0.00000   0.00000  -0.02946
+  1 F 4dz^2   -0.08174  -0.00000  -0.00000
+  1 F 4dxz     0.00000  -0.02946   0.00000
+ 1 F 4dx2-y2  -0.00000  -0.00000   0.00000
+<mo_coeff-mcscf|mo_coeff-hf>  1  1    0.99999466
+<mo_coeff-mcscf|mo_coeff-hf>  2  2    0.99997133
+<mo_coeff-mcscf|mo_coeff-hf>  3  3    0.99992541
+<mo_coeff-mcscf|mo_coeff-hf>  4  4    0.99987092
+<mo_coeff-mcscf|mo_coeff-hf>  5  5    0.99987092
+<mo_coeff-mcscf|mo_coeff-hf>  6  10    0.41378025
+<mo_coeff-mcscf|mo_coeff-hf>  6  14    0.42108335
+<mo_coeff-mcscf|mo_coeff-hf>  6  23    0.45738749
+<mo_coeff-mcscf|mo_coeff-hf>  6  26   -0.45549503
+<mo_coeff-mcscf|mo_coeff-hf>  7  7    0.42562936
+<mo_coeff-mcscf|mo_coeff-hf>  7  20   -0.44073606
+<mo_coeff-mcscf|mo_coeff-hf>  8  8    0.49957225
+<mo_coeff-mcscf|mo_coeff-hf>  8  21    0.82695347
+<mo_coeff-mcscf|mo_coeff-hf>  9  9    0.49957225
+<mo_coeff-mcscf|mo_coeff-hf>  9  22    0.82695347
+<mo_coeff-mcscf|mo_coeff-hf>  10  6   -0.94877307
+<mo_coeff-mcscf|mo_coeff-hf>  11  7    0.65478054
+<mo_coeff-mcscf|mo_coeff-hf>  11  10   -0.56450791
+<mo_coeff-mcscf|mo_coeff-hf>  11  11    0.48682975
+<mo_coeff-mcscf|mo_coeff-hf>  12  8   -0.55690391
+<mo_coeff-mcscf|mo_coeff-hf>  12  12    0.82625427
+<mo_coeff-mcscf|mo_coeff-hf>  13  9   -0.55690391
+<mo_coeff-mcscf|mo_coeff-hf>  13  13    0.82625427
+<mo_coeff-mcscf|mo_coeff-hf>  14  7   -0.49338299
+<mo_coeff-mcscf|mo_coeff-hf>  14  10   -0.55758079
+<mo_coeff-mcscf|mo_coeff-hf>  14  14    0.60482621
+<mo_coeff-mcscf|mo_coeff-hf>  15  11   -0.55011239
+<mo_coeff-mcscf|mo_coeff-hf>  15  15    0.64172904
+<mo_coeff-mcscf|mo_coeff-hf>  16  16    0.99999934
+<mo_coeff-mcscf|mo_coeff-hf>  17  17    0.99999934
+<mo_coeff-mcscf|mo_coeff-hf>  18  8   -0.66343651
+<mo_coeff-mcscf|mo_coeff-hf>  18  12   -0.50380415
+<mo_coeff-mcscf|mo_coeff-hf>  18  21    0.55232673
+<mo_coeff-mcscf|mo_coeff-hf>  19  9   -0.66343651
+<mo_coeff-mcscf|mo_coeff-hf>  19  13   -0.50380415
+<mo_coeff-mcscf|mo_coeff-hf>  19  22    0.55232673
+<mo_coeff-mcscf|mo_coeff-hf>  20  11    0.42785530
+<mo_coeff-mcscf|mo_coeff-hf>  20  15    0.63753327
+<mo_coeff-mcscf|mo_coeff-hf>  21  18    0.99953569
+<mo_coeff-mcscf|mo_coeff-hf>  22  19    0.99953569
+<mo_coeff-mcscf|mo_coeff-hf>  23  20    0.74617560
+<mo_coeff-mcscf|mo_coeff-hf>  23  23   -0.48577834
+<mo_coeff-mcscf|mo_coeff-hf>  24  24    0.99861043
+<mo_coeff-mcscf|mo_coeff-hf>  25  25    0.99861043
+<mo_coeff-mcscf|mo_coeff-hf>  26  23    0.43393044
+<mo_coeff-mcscf|mo_coeff-hf>  26  26    0.81471415
+<mo_coeff-mcscf|mo_coeff-hf>  27  27    0.95870438
+<mo_coeff-mcscf|mo_coeff-hf>  28  28    0.99999934
+<mo_coeff-mcscf|mo_coeff-hf>  29  29    0.99999934
+<mo_coeff-mcscf|mo_coeff-hf>  30  30    0.99989350
+<mo_coeff-mcscf|mo_coeff-hf>  31  31    0.99989350
+<mo_coeff-mcscf|mo_coeff-hf>  32  32    0.99860498
+** Largest CI components **
+  [alpha occ-orbitals] [beta occ-orbitals]            CI coefficient
+  [0 1 2 3]            [0 1 2 3]                      -0.982021439920
+ ** Mulliken pop on meta-lowdin orthogonal AOs  **
+ ** Mulliken pop  **
+pop of  0 H 1s        0.53331
+pop of  0 H 2s        0.01637
+pop of  0 H 3s        0.00628
+pop of  0 H 2px       0.00563
+pop of  0 H 2py       0.00563
+pop of  0 H 2pz       0.00232
+pop of  0 H 3px       0.00052
+pop of  0 H 3py       0.00052
+pop of  0 H 3pz       0.00146
+pop of  1 F 1s        2.00000
+pop of  1 F 2s        1.82777
+pop of  1 F 3s        0.00883
+pop of  1 F 4s        0.00243
+pop of  1 F 2px       1.97429
+pop of  1 F 2py       1.97429
+pop of  1 F 2pz       1.58545
+pop of  1 F 3px       0.01315
+pop of  1 F 3py       0.01315
+pop of  1 F 3pz       0.00774
+pop of  1 F 4px       0.00391
+pop of  1 F 4py       0.00391
+pop of  1 F 4pz       0.00253
+pop of  1 F 3dxy      0.00000
+pop of  1 F 3dyz      0.00161
+pop of  1 F 3dz^2     0.00561
+pop of  1 F 3dxz      0.00161
+pop of  1 F 3dx2-y2    0.00000
+pop of  1 F 4dxy      0.00000
+pop of  1 F 4dyz      0.00048
+pop of  1 F 4dz^2     0.00073
+pop of  1 F 4dxz      0.00048
+pop of  1 F 4dx2-y2    0.00000
+ ** Mulliken atomic charges  **
+charge of  0H =      0.42796
+charge of  1F =     -0.42796
+CASSCF energy: -100.165265
+
+
+
+----------------------------------------------------------------------
+        PRISM: Open-Source implementation of ab initio methods
+                for excited states and spectroscopy
+
+                           Version 0.1
+
+               Copyright (C) 2023 Alexander Sokolov
+                                  Carlos E. V. de Moura
+
+        Unless required by applicable law or agreed to in
+        writing, software distributed under the GNU General
+        Public License v3.0 and is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+        either express or implied.
+
+        See the License for the specific language governing
+        permissions and limitations.
+
+        Available at https://github.com/sokolov-group/prism
+
+----------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Initializing MR-ADC...
+
+IP calculations for different IP-MR-ADC methods
+Transforming 1e integrals to MO basis...
+Time for transforming 1e integrals:                0.000070 sec
+
+Transforming 2e integrals to MO basis (in-core)...
+Time for transforming integrals:                   0.074349 sec
+
+Computing ground-state RDMs...
+Time for computing ground-state RDMs:              2.097857 sec
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)
+Number of MR-ADC roots requested:                  4
+Ground-state active-space energy:                -28.730769700123
+Nuclear repulsion energy:                          5.193669463773
+Number of basis functions:                         32
+Number of core orbitals:                           1
+Number of active orbitals:                         8
+Number of external orbitals:                       23
+Number of electrons:                               10
+Number of active electrons:                        (4, 4)
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              0
+Overlap truncation parameter (singles):            1.000000e-06
+Overlap truncation parameter (doubles):            1.000000e-10
+Number of CASCI states:                            6
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    126
+Smallest eigenvalue of the [0'] overlap metric:    1.321925e-05
+Norm of T[0']^(1):                                 0.002892817047
+Correlation energy [0']:                          -0.001221259907
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   621
+Smallest eigenvalue of the [+1'] overlap metric:   1.000802e-06
+Norm of T[+1']^(1):                                0.006626021088
+Correlation energy [+1']:                         -0.000493274569
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   619
+Smallest eigenvalue of the [-1'] overlap metric:   1.006154e-06
+Norm of T[-1']^(1):                                0.253379495910
+Correlation energy [-1']:                         -0.020462201747
+
+Computing T[0]^(1) amplitudes...
+Norm of T[0]^(1):                                  0.000479800165
+Correlation energy [0]:                           -0.000013026806
+
+Computing T[+1]^(1) amplitudes...
+Dimension of the [+1] orthonormalized subspace:    8
+Smallest eigenvalue of the [+1] overlap metric:    4.511909e-03
+Norm of T[+1]^(1):                                 0.001187845805
+Correlation energy [+1]:                          -0.000096007416
+
+Computing T[-1]^(1) amplitudes...
+Dimension of the [-1] orthonormalized subspace:    8
+Smallest eigenvalue of the [-1] overlap metric:    4.758693e-03
+Norm of T[-1]^(1):                                 0.001647925723
+Correlation energy [-1]:                          -0.000207601540
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    64
+Smallest eigenvalue of the [+2] overlap metric:    1.376408e-05
+Norm of T[+2]^(1):                                 0.003235799483
+Correlation energy [+2]:                          -0.000211215457
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    64
+Smallest eigenvalue of the [-2] overlap metric:    1.600477e-05
+Norm of T[-2]^(1):                                 0.212268121336
+Correlation energy [-2]:                          -0.062167456913
+
+CASSCF reference energy:                        -100.165265258943
+PC-NEVPT2 correlation energy:                     -0.084872044354
+Total PC-NEVPT2 energy:                         -100.250137303297
+
+Computing T[0']^(2) amplitudes...
+Norm of T[0']^(2):                                 0.000074741091
+
+Time for computing amplitudes:                     26.499238 sec
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       775
+Total dimension of the excitation manifold:                776
+Dimension of the orthogonalized excitation manifold:       772
+
+Computing M(h0-h0) block...
+Time for computing M(h0-h0) block:                 0.578085 sec
+
+Computing M(h0-h1) blocks...
+Time for computing M(h0-h1) blocks:                0.106499 sec
+
+Time for computing preconditioner:                 0.079838 sec
+
+tol 1e-12  toloose 1e-05
+max_cycle 50  max_space 109  max_memory 2000  incore True
+davidson 0 4  |r|= 1.39  e= [26.34306162 27.09851941 27.09851941 27.09851941]  max|de|= 27.1  lindep=    1
+Old state -> New state
+    3     ->     1 
+    1     ->     2 
+    2     ->     3 
+davidson 1 8  |r|= 0.208  e= [25.74917433 26.99867063 26.99867063 26.99867063]  max|de|= -0.594  lindep= 0.999
+root 1 converged  |r|= 6.42e-08  e= 26.998670632324323  max|de|= -1.42e-14
+root 2 converged  |r|= 6.42e-08  e= 26.998670632324348  max|de|= 3.55e-15
+root 3 converged  |r|= 6.42e-08  e= 26.99867063232436  max|de|= 3.55e-15
+davidson 2 9  |r|= 0.0276  e= [25.73837216 26.99867063 26.99867063 26.99867063]  max|de|= -0.0108  lindep=    1
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+davidson 3 10  |r|= 0.00526  e= [25.73812346 26.99867063 26.99867063 26.99867063]  max|de|= -0.000249  lindep= 0.987
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+davidson 4 11  |r|= 0.000698  e= [25.73811704 26.99867063 26.99867063 26.99867063]  max|de|= -6.42e-06  lindep= 0.985
+Old state -> New state
+    2     ->     1 
+    3     ->     2 
+    1     ->     3 
+davidson 5 12  |r|= 9.44e-05  e= [25.73811693 26.99867063 26.99867063 26.99867063]  max|de|= -1.15e-07  lindep= 0.996
+Old state -> New state
+    2     ->     1 
+    1     ->     2 
+davidson 6 13  |r|= 1.41e-05  e= [25.73811692 26.99867063 26.99867063 26.99867063]  max|de|= -2.83e-09  lindep= 0.98
+Old state -> New state
+    2     ->     1 
+    1     ->     2 
+davidson 7 14  |r|= 2.15e-06  e= [25.73811692 26.99867063 26.99867063 26.99867063]  max|de|= -4.99e-11  lindep= 0.975
+Old state -> New state
+    2     ->     1 
+    1     ->     2 
+davidson 8 15  |r|= 2.77e-07  e= [25.73811692 26.99867063 26.99867063 26.99867063]  max|de|= -1.15e-12  lindep= 0.784
+root 0 converged  |r|= 1.18e-07  e= 25.738116922961296  max|de|= -1.78e-14
+converged 9 16  |r|= 1.18e-07  e= [25.73811692 26.99867063 26.99867063 26.99867063]  max|de|= -1.78e-14
+
+cvs-ip-mr-adc(2) excitation energies (a.u.):
+[[25.73811692]
+ [26.99867063]
+ [26.99867063]
+ [26.99867063]]
+
+cvs-ip-mr-adc(2) excitation energies (eV):
+[[700.37019484]
+ [734.67162604]
+ [734.67162604]
+ [734.67162604]]
+
+Total time:                                       28.723379 sec
