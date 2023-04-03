@@ -1,0 +1,6 @@
+Prism 0.1 (2023-03-27)
+------------------------
+* Added
+  - PySCF interface
+  - pc-NEVPT2 amplitudes
+  - CVS-IP-MR-ADC(2) energies
