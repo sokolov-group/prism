@@ -146,10 +146,25 @@ def compute_t1_amplitudes(mr_adc):
 
         if mr_adc.method_type in ("cvs-ip"):
             mr_adc.t1.xcee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs,:,:,:])
+            mr_adc.t1.xxee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs,:ncvs,:,:])
+
             mr_adc.t1.xcea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,:,:,:])
             mr_adc.t1.cxea = np.ascontiguousarray(mr_adc.t1.ccea[:,:ncvs,:,:])
+            mr_adc.t1.xxea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,:ncvs,:,:])
+
             mr_adc.t1.xaee = np.ascontiguousarray(mr_adc.t1.caee[:ncvs,:,:,:])
+
             mr_adc.t1.xcaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,:,:,:])
+            mr_adc.t1.xxaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,:ncvs,:,:])
+
+            if nval > 0:
+                mr_adc.t1.vxee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:,:ncvs,:,:])
+                mr_adc.t1.xvee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs,ncvs:,:,:])
+
+                mr_adc.t1.vxea = np.ascontiguousarray(mr_adc.t1.ccea[ncvs:,:ncvs,:,:])
+                mr_adc.t1.xvea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,ncvs:,:,:])
+
+                mr_adc.t1.xvaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,ncvs:,:,:])
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr
@@ -160,6 +175,8 @@ def compute_t1_amplitudes(mr_adc):
 
 def compute_t2_amplitudes(mr_adc):
 
+    ncvs = mr_adc.ncvs
+    nval = mr_adc.nval
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
@@ -179,18 +196,8 @@ def compute_t2_amplitudes(mr_adc):
         else:
             mr_adc.t2.ce = np.zeros((ncore, nextern))
 
-        mr_adc.t2.caea = np.zeros((ncore, ncas, nextern, ncas))
-        mr_adc.t2.aa = np.zeros((ncas, ncas))
-        mr_adc.t2.ca = np.zeros((ncore, ncas))
-        mr_adc.t2.ae = np.zeros((ncas, nextern))
-
-        mr_adc.t2.caaa = np.zeros((ncore, ncas, ncas, ncas))
-        mr_adc.t2.aaea = np.zeros((ncas, ncas, nextern, ncas))
-        mr_adc.t2.ccee = np.zeros((ncore, ncore, nextern, nextern))
-        mr_adc.t2.ccea = np.zeros((ncore, ncore, nextern, ncas))
-        mr_adc.t2.caee = np.zeros((ncore, ncas, nextern, nextern))
-        mr_adc.t2.ccaa = np.zeros((ncore, ncore, ncas, ncas))
-        mr_adc.t2.aaee = np.zeros((ncas, ncas, nextern, nextern))
+        if mr_adc.method_type in ("cvs-ip"):
+            mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs,:])
 
 def compute_t1_0(mr_adc):
 

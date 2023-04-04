@@ -2609,3 +2609,444 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma[s_cva__bab:f_cva__bab] += sigma_cva.reshape(-1).copy()
 
     return sigma
+
+### Under development
+def compute_trans_moments(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    nmo = mr_adc.nmo
+    nocc = mr_adc.nocc
+
+    ncore = mr_adc.ncore
+    ncvs = mr_adc.ncvs
+    nval = mr_adc.nval
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+
+    ## Amplitudes
+    t1_ce = mr_adc.t1.ce
+    t1_caea = mr_adc.t1.caea
+    t1_caae = mr_adc.t1.caae
+
+    t1_ca = mr_adc.t1.ca
+    t1_caaa = mr_adc.t1.caaa
+
+    t1_ae   = mr_adc.t1.ae
+    t1_aaea = mr_adc.t1.aaea
+
+    t1_xe   = mr_adc.t1.xe
+    t1_xaea = mr_adc.t1.xaea
+    t1_xaae = mr_adc.t1.xaae
+    t1_xa   = mr_adc.t1.xa
+    t1_xaaa = mr_adc.t1.xaaa
+
+    t1_caee = mr_adc.t1.caee
+    t1_aaee = mr_adc.t1.aaee
+
+    t1_xcee = mr_adc.t1.xcee
+    t1_xcea = mr_adc.t1.xcea
+    t1_cxea = mr_adc.t1.cxea
+    t1_xaee = mr_adc.t1.xaee
+    t1_xcaa = mr_adc.t1.xcaa
+
+    t1_xxee = mr_adc.t1.xxee
+    t1_xxea = mr_adc.t1.xxea
+    t1_xxaa = mr_adc.t1.xxaa
+
+    t2_xe = mr_adc.t2.xe
+
+    if nval > 0:
+        t1_vxee = mr_adc.t1.vxee
+        t1_vxea = mr_adc.t1.vxea
+        t1_xvea = mr_adc.t1.xvea
+
+        t1_xvee = mr_adc.t1.xvee
+        t1_xvaa = mr_adc.t1.xvaa
+
+    ## Reduced density matrices
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+
+    ## Excitation Manifolds
+    s_c = mr_adc.h0.s_c
+    f_c = mr_adc.h0.f_c
+
+    s_caa__aaa = mr_adc.h1.s_caa__aaa
+    f_caa__aaa = mr_adc.h1.f_caa__aaa
+    s_caa__abb = mr_adc.h1.s_caa__abb
+    f_caa__abb = mr_adc.h1.f_caa__abb
+    s_caa__bab = mr_adc.h1.s_caa__bab
+    f_caa__bab = mr_adc.h1.f_caa__bab
+
+    s_cce__aaa = mr_adc.h1.s_cce__aaa
+    f_cce__aaa = mr_adc.h1.f_cce__aaa
+    s_cce__abb = mr_adc.h1.s_cce__abb
+    f_cce__abb = mr_adc.h1.f_cce__abb
+
+    s_cae__aaa = mr_adc.h1.s_cae__aaa
+    f_cae__aaa = mr_adc.h1.f_cae__aaa
+    s_cae__abb = mr_adc.h1.s_cae__abb
+    f_cae__abb = mr_adc.h1.f_cae__abb
+    s_cae__bab = mr_adc.h1.s_cae__bab
+    f_cae__bab = mr_adc.h1.f_cae__bab
+
+    s_cca__aaa = mr_adc.h1.s_cca__aaa
+    f_cca__aaa = mr_adc.h1.f_cca__aaa
+    s_cca__abb = mr_adc.h1.s_cca__abb
+    f_cca__abb = mr_adc.h1.f_cca__abb
+
+    if nval > 0:
+        s_cve__aaa = mr_adc.h1.s_cve__aaa
+        f_cve__aaa = mr_adc.h1.f_cve__aaa
+        s_cve__abb = mr_adc.h1.s_cve__abb
+        f_cve__abb = mr_adc.h1.f_cve__abb
+        s_cve__bab = mr_adc.h1.s_cve__bab
+        f_cve__bab = mr_adc.h1.f_cve__bab
+
+        s_cva__aaa = mr_adc.h1.s_cva__aaa
+        f_cva__aaa = mr_adc.h1.f_cva__aaa
+        s_cva__abb = mr_adc.h1.s_cva__abb
+        f_cva__abb = mr_adc.h1.f_cva__abb
+        s_cva__bab = mr_adc.h1.s_cva__bab
+        f_cva__bab = mr_adc.h1.f_cva__bab
+
+    ho_dim = mr_adc.h_orth.dim
+
+    ## Indices
+    cvs_tril_ind = np.tril_indices(ncvs, k=-1)
+
+    # MR-ADC(0) terms
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        dim = mr_adc.h0.dim + mr_adc.h1.dim
+    else:
+        dim = mr_adc.h0.dim
+
+    T = np.zeros((nmo, dim))
+
+    ## < [ q^(0), h^(0)^\dag ] >
+    ### CORE(0) - C
+    T[:ncvs, s_c:f_c] = np.identity(ncvs)
+
+    # MR-ADC(1) terms
+    ## < [ q^(1), h^(0)^\dag ] >
+    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        ### ACTIVE(1) - C
+        T_a_c  = einsum('JX->XJ', t1_xa, optimize = einsum_type).copy()
+        T_a_c += einsum('JxXy,yx->XJ', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JxyX,yx->XJ', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T[ncore:nocc, s_c:f_c] = T_a_c.copy()
+
+        ### EXTERNAL(1) - C
+        T_e_c  = einsum('JA->AJ', t1_xe, optimize = einsum_type).copy()
+        T_e_c += einsum('JxAy,yx->AJ', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t1_xaae, rdm_ca, optimize = einsum_type)
+        T[nocc:, s_c:f_c] = T_e_c.copy()
+
+    # MR-ADC(2) terms
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        ## < [ q^(0), h^(1)^\dag ] >
+        ### CORE(0) - CAA
+        T_c_caa  = 1/2 * einsum('IJ,YZ->IJYZ', np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        T[:ncvs, s_caa__aaa:f_caa__aaa] += T_c_caa.reshape(ncvs, -1)
+        T[:ncvs, s_caa__abb:f_caa__abb] += T_c_caa.reshape(ncvs, -1)
+
+        ## < [ q^(1), h^(1)^\dag ] >
+        ### ACTIVE(1) - CAA
+        T_a_caa =- 1/2 * einsum('JxZX,Yx->XJYZ', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_a_caa += 1/6 * einsum('JxyX,YyZx->XJYZ', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_a_caa += 1/3 * einsum('JxyX,YyxZ->XJYZ', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T[ncore:nocc, s_caa__aaa:f_caa__aaa] += T_a_caa.reshape(ncas, -1)
+        T[ncore:nocc, s_caa__abb:f_caa__abb] += T_a_caa.reshape(ncas, -1)
+        T[ncore:nocc, s_caa__bab:f_caa__bab] += T_a_caa.reshape(ncas, -1)
+
+        ### VIRTUAL(1) - CAA
+        if nextern > 0:
+            T_e_caa  = 1/2 * einsum('JA,YZ->AJYZ', t1_xe, rdm_ca, optimize = einsum_type)
+            T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t1_xaea, rdm_ca, optimize = einsum_type)
+            T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t1_xaea, rdm_ccaa, optimize = einsum_type)
+            T_e_caa -= 1/2 * einsum('JxZA,Yx->AJYZ', t1_xaae, rdm_ca, optimize = einsum_type)
+            T_e_caa -= 1/6 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+            T_e_caa += 1/6 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+            T[nocc:, s_caa__aaa:f_caa__aaa] += T_e_caa.reshape(nextern, -1)
+
+            T_e_caa  = 1/2 * einsum('JA,YZ->AJYZ', t1_xe, rdm_ca, optimize = einsum_type)
+            T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t1_xaea, rdm_ca, optimize = einsum_type)
+            T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t1_xaea, rdm_ccaa, optimize = einsum_type)
+            T_e_caa -= 1/3 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+            T_e_caa -= 1/6 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+            T[nocc:, s_caa__abb:f_caa__abb] += T_e_caa.reshape(nextern, -1)
+
+            T_e_caa =- 1/2 * einsum('JxZA,Yx->AJYZ', t1_xaae, rdm_ca, optimize = einsum_type)
+            T_e_caa += 1/6 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+            T_e_caa += 1/3 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+            T[nocc:, s_caa__bab:f_caa__bab] += T_e_caa.reshape(nextern, -1)
+
+        ### ACTIVE(1) - CCE
+        T_a_cce =- einsum('JKBX->XJKB', t1_xxea, optimize = einsum_type).copy()
+        T_a_cce += einsum('KJBX->XJKB', t1_xxea, optimize = einsum_type).copy()
+        T[ncore:nocc, s_cce__aaa:f_cce__aaa] += T_a_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncas, -1)
+
+        T_a_cce  = einsum('KJBX->XJKB', t1_xxea, optimize = einsum_type).copy()
+        T[ncore:nocc, s_cce__abb:f_cce__abb] += T_a_cce.reshape(ncas, -1)
+
+        ### ACTIVE(1) - CVE
+        if nval > 0:
+            T_a_cve =- einsum('JKBX->XJKB', t1_xvea, optimize = einsum_type).copy()
+            T_a_cve += einsum('KJBX->XJKB', t1_vxea, optimize = einsum_type).copy()
+            T[ncore:nocc, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
+
+            T_a_cve  = einsum('KJBX->XJKB', t1_vxea, optimize = einsum_type).copy()
+            T[ncore:nocc, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
+
+            T_a_cve =- einsum('JKBX->XJKB', t1_xvea, optimize = einsum_type).copy()
+            T[ncore:nocc, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
+
+        ### VIRTUAL(1) - CCE
+        if nextern > 0:
+            T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+            T_e_cce -= einsum('KJAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+            T[nocc:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
+
+            T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+            T[nocc:, s_cce__abb:f_cce__abb] += T_e_cce.reshape(nextern, -1)
+
+        ### VIRTUAL(1) - CVE
+        if nval > 0 and nextern > 0:
+            T_e_cve  = einsum('JKAB->AJKB', t1_xvee, optimize = einsum_type).copy()
+            T_e_cve -= einsum('KJAB->AJKB', t1_vxee, optimize = einsum_type).copy()
+            T[nocc:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(nextern, -1)
+
+            T_e_cve  = einsum('JKAB->AJKB', t1_xvee, optimize = einsum_type).copy()
+            T[nocc:, s_cve__abb:f_cve__abb] += T_e_cve.reshape(nextern, -1)
+
+            T_e_cve =- einsum('KJAB->AJKB', t1_vxee, optimize = einsum_type).copy()
+            T[nocc:, s_cve__bab:f_cve__bab] += T_e_cve.reshape(nextern, -1)
+
+        ### ACTIVE(1) - CAE
+        T_a_cae =- 1/2 * einsum('JxBX,Yx->XJYB', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_a_cae += 1/2 * einsum('JxXB,Yx->XJYB', t1_xaae, rdm_ca, optimize = einsum_type)
+        T[ncore:nocc, s_cae__aaa:f_cae__aaa] += T_a_cae.reshape(ncas, -1)
+
+        T_a_cae  = 1/2 * einsum('JxXB,Yx->XJYB', t1_xaae, rdm_ca, optimize = einsum_type)
+        T[ncore:nocc, s_cae__abb:f_cae__abb] += T_a_cae.reshape(ncas, -1)
+
+        T_a_cae =- 1/2 * einsum('JxBX,Yx->XJYB', t1_xaea, rdm_ca, optimize = einsum_type)
+        T[ncore:nocc, s_cae__bab:f_cae__bab] += T_a_cae.reshape(ncas, -1)
+
+        ### VIRTUAL(1) - CAE
+        if nextern > 0:
+            T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+            T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+            T[nocc:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(nextern, -1)
+
+            T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+            T[nocc:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(nextern, -1)
+
+            T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+            T[nocc:, s_cae__bab:f_cae__bab] += T_e_cae.reshape(nextern, -1)
+
+        ### ACTIVE(1) - CCA
+        T_a_cca  = einsum('JKXY->XJKY', t1_xxaa, optimize = einsum_type).copy()
+        T_a_cca -= einsum('JKYX->XJKY', t1_xxaa, optimize = einsum_type).copy()
+        T_a_cca -= 1/2 * einsum('JKXx,xY->XJKY', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T_a_cca += 1/2 * einsum('JKxX,xY->XJKY', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T[ncore:nocc, s_cca__aaa:f_cca__aaa] += T_a_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncas, -1)
+
+        T_a_cca  = einsum('JKXY->XJKY', t1_xxaa, optimize = einsum_type).copy()
+        T_a_cca -= 1/2 * einsum('JKXx,xY->XJKY', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T[ncore:nocc, s_cca__abb:f_cca__abb] += T_a_cca.reshape(ncas, -1)
+
+        ### ACTIVE(1) - CVA
+        if nval > 0:
+            T_a_cva  = einsum('JKXY->XJKY', t1_xvaa, optimize = einsum_type).copy()
+            T_a_cva -= einsum('JKYX->XJKY', t1_xvaa, optimize = einsum_type).copy()
+            T_a_cva -= 1/2 * einsum('JKXx,xY->XJKY', t1_xvaa, rdm_ca, optimize = einsum_type)
+            T_a_cva += 1/2 * einsum('JKxX,xY->XJKY', t1_xvaa, rdm_ca, optimize = einsum_type)
+            T[ncore:nocc, s_cva__aaa:f_cva__aaa] += T_a_cva.reshape(ncas, -1)
+
+            T_a_cva__a_abb  = einsum('JKXY->XJKY', t1_xvaa, optimize = einsum_type).copy()
+            T_a_cva__a_abb -= 1/2 * einsum('JKXx,xY->XJKY', t1_xvaa, rdm_ca, optimize = einsum_type)
+            T[ncore:nocc, s_cva__abb:f_cva__abb] += T_a_cva.reshape(ncas, -1)
+
+            T_a_cva__a_bab =- einsum('JKYX->XJKY', t1_xvaa, optimize = einsum_type).copy()
+            T_a_cva__a_bab += 1/2 * einsum('JKxX,xY->XJKY', t1_xvaa, rdm_ca, optimize = einsum_type)
+            T[ncore:nocc, s_cva__bab:f_cva__bab] += T_a_cva.reshape(ncas, -1)
+
+        ### VIRTUAL(1) - CCA
+        if nextern > 0:
+            T_e_cca  = einsum('JKAY->AJKY', t1_xxea, optimize = einsum_type).copy()
+            T_e_cca -= einsum('KJAY->AJKY', t1_xxea, optimize = einsum_type).copy()
+            T_e_cca -= 1/2 * einsum('JKAx,xY->AJKY', t1_xxea, rdm_ca, optimize = einsum_type)
+            T_e_cca += 1/2 * einsum('KJAx,xY->AJKY', t1_xxea, rdm_ca, optimize = einsum_type)
+            T[nocc:, s_cca__aaa:f_cca__aaa] += T_e_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
+
+            T_e_cca  = einsum('JKAY->AJKY', t1_xxea, optimize = einsum_type).copy()
+            T_e_cca -= 1/2 * einsum('JKAx,xY->AJKY', t1_xxea, rdm_ca, optimize = einsum_type)
+            T[nocc:, s_cca__abb:f_cca__abb] += T_e_cca.reshape(nextern, -1)
+
+        ### VIRTUAL(1) - CVA
+        if nval > 0 and nextern > 0:
+            T_e_cva  = einsum('JKAY->AJKY', t1_xvea, optimize = einsum_type).copy()
+            T_e_cva -= einsum('KJAY->AJKY', t1_vxea, optimize = einsum_type).copy()
+            T_e_cva -= 1/2 * einsum('JKAx,xY->AJKY', t1_xvea, rdm_ca, optimize = einsum_type)
+            T_e_cva += 1/2 * einsum('KJAx,xY->AJKY', t1_vxea, rdm_ca, optimize = einsum_type)
+            T[nocc:, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(nextern, -1)
+
+            T_e_cva  = einsum('JKAY->AJKY', t1_xvea, optimize = einsum_type).copy()
+            T_e_cva -= 1/2 * einsum('JKAx,xY->AJKY', t1_xvea, rdm_ca, optimize = einsum_type)
+            T[nocc:, s_cva__abb:f_cva__abb] += T_e_cva.reshape(nextern, -1)
+
+            T_e_cva =- einsum('KJAY->AJKY', t1_vxea, optimize = einsum_type).copy()
+            T_e_cva += 1/2 * einsum('KJAx,xY->AJKY', t1_vxea, rdm_ca, optimize = einsum_type)
+            T[nocc:, s_cva__bab:f_cva__bab] += T_e_cva.reshape(nextern, -1)
+
+        ## < [ q^(2), h^(0)^\dag ] >
+        ### CORE(2) - C
+        T_c_c =- 1/2 * einsum('Ix,Jx->IJ', t1_xa, t1_xa, optimize = einsum_type)
+        T_c_c -= einsum('Iixy,Jixy->IJ', t1_xcaa, t1_xcaa, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iixy,Jiyx->IJ', t1_xcaa, t1_xcaa, optimize = einsum_type)
+        T_c_c -= einsum('Iiax,Jiax->IJ', t1_xcea, t1_xcea, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iiax,iJax->IJ', t1_xcea, t1_cxea, optimize = einsum_type)
+        T_c_c -= einsum('Iiab,Jiab->IJ', t1_xcee, t1_xcee, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iiab,Jiba->IJ', t1_xcee, t1_xcee, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ia,Ja->IJ', t1_xe, t1_xe, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Jiax,iIax->IJ', t1_xcea, t1_cxea, optimize = einsum_type)
+        T_c_c -= einsum('iIax,iJax->IJ', t1_cxea, t1_cxea, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ix,Jyxz,zy->IJ', t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ix,Jyzx,zy->IJ', t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Ixyz,Jxwu,yzwu->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixyz,Jy,xz->IJ', t1_xaaa, t1_xa, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jz,xy->IJ', t1_xaaa, t1_xa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixyz,Jwyz,xw->IJ', t1_xaaa, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixyz,Jwyu,xuzw->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jwzy,xw->IJ', t1_xaaa, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jwzu,xuyw->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jwuy,xuzw->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jwuz,xuwy->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixya,Ja,xy->IJ', t1_xaae, t1_xe, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixya,Jzya,xz->IJ', t1_xaae, t1_xaae, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixya,Jzay,xz->IJ', t1_xaae, t1_xaea, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixya,Jzaw,xwyz->IJ', t1_xaae, t1_xaea, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixya,Jzwa,xwzy->IJ', t1_xaae, t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixay,Ja,xy->IJ', t1_xaea, t1_xe, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixay,Jzay,xz->IJ', t1_xaea, t1_xaea, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixay,Jzaw,xwyz->IJ', t1_xaea, t1_xaea, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixay,Jzya,xz->IJ', t1_xaea, t1_xaae, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixay,Jzwa,xwyz->IJ', t1_xaea, t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixab,Jyab,xy->IJ', t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixab,Jyba,xy->IJ', t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iixy,Jixz,zy->IJ', t1_xcaa, t1_xcaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Iixy,Jiyz,zx->IJ', t1_xcaa, t1_xcaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Iixy,Jizx,zy->IJ', t1_xcaa, t1_xcaa, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iixy,Jizy,zx->IJ', t1_xcaa, t1_xcaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Iixy,Jizw,xyzw->IJ', t1_xcaa, t1_xcaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iiax,Jiay,yx->IJ', t1_xcea, t1_xcea, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Iiax,iJay,yx->IJ', t1_xcea, t1_cxea, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ia,Jxay,yx->IJ', t1_xe, t1_xaea, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ia,Jxya,yx->IJ', t1_xe, t1_xaae, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Jiax,iIay,xy->IJ', t1_xcea, t1_cxea, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('iIax,iJay,yx->IJ', t1_cxea, t1_cxea, rdm_ca, optimize = einsum_type)
+        T[:ncore, s_c:f_c] += T_c_c.copy()
+
+        ### ACTIVE(2) - C
+        T_a_c  = einsum('JiXx,ix->XJ', t1_xcaa, t1_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JixX,ix->XJ', t1_xcaa, t1_ca, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('Jixy,iXxy->XJ', t1_xcaa, t1_caaa, optimize = einsum_type)
+        T_a_c -= einsum('Jixy,iXyx->XJ', t1_xcaa, t1_caaa, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JiaX,ia->XJ', t1_xcea, t1_ce, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('Jiax,iXax->XJ', t1_xcea, t1_caea, optimize = einsum_type)
+        T_a_c -= einsum('Jiax,iXxa->XJ', t1_xcea, t1_caae, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('Jiab,iXab->XJ', t1_xcee, t1_caee, optimize = einsum_type)
+        T_a_c -= einsum('Jiab,iXba->XJ', t1_xcee, t1_caee, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('Ja,Xa->XJ', t1_xe, t1_ae, optimize = einsum_type)
+        T_a_c += einsum('iJaX,ia->XJ', t1_cxea, t1_ce, optimize = einsum_type)
+        T_a_c -= einsum('iJax,iXax->XJ', t1_cxea, t1_caea, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('iJax,iXxa->XJ', t1_cxea, t1_caae, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('JxXa,ya,yx->XJ', t1_xaae, t1_ae, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('JxXa,yzaw,xwyz->XJ', t1_xaae, t1_aaea, rdm_ccaa, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('Jxya,Xa,yx->XJ', t1_xaae, t1_ae, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('Jxya,Xzay,zx->XJ', t1_xaae, t1_aaea, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('Jxya,Xzaw,xwyz->XJ', t1_xaae, t1_aaea, rdm_ccaa, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('Jxya,zXay,zx->XJ', t1_xaae, t1_aaea, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('Jxya,zXaw,xwzy->XJ', t1_xaae, t1_aaea, rdm_ccaa, optimize = einsum_type)
+        T_a_c -= 1/4 * einsum('JxaX,ya,yx->XJ', t1_xaea, t1_ae, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/4 * einsum('JxaX,yzaw,xwyz->XJ', t1_xaea, t1_aaea, rdm_ccaa, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('Jxay,Xa,yx->XJ', t1_xaea, t1_ae, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('Jxay,Xzay,zx->XJ', t1_xaea, t1_aaea, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('Jxay,Xzaw,xwyz->XJ', t1_xaea, t1_aaea, rdm_ccaa, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('Jxay,zXay,zx->XJ', t1_xaea, t1_aaea, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('Jxay,zXaw,xwyz->XJ', t1_xaea, t1_aaea, rdm_ccaa, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('Jxab,Xyab,yx->XJ', t1_xaee, t1_aaee, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('Jxab,Xyba,yx->XJ', t1_xaee, t1_aaee, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JiXx,iy,xy->XJ', t1_xcaa, t1_ca, rdm_ca, optimize = einsum_type)
+        T_a_c += einsum('JiXx,iyxz,yz->XJ', t1_xcaa, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JiXx,iyzx,yz->XJ', t1_xcaa, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JiXx,iyzw,xyzw->XJ', t1_xcaa, t1_caaa, rdm_ccaa, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('JixX,iy,xy->XJ', t1_xcaa, t1_ca, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JixX,iyxz,yz->XJ', t1_xcaa, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('JixX,iyzx,yz->XJ', t1_xcaa, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('JixX,iyzw,xyzw->XJ', t1_xcaa, t1_caaa, rdm_ccaa, optimize = einsum_type)
+        T_a_c -= 1/4 * einsum('Jixy,iXxz,yz->XJ', t1_xcaa, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('Jixy,iXyz,xz->XJ', t1_xcaa, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('Jixy,iXzx,yz->XJ', t1_xcaa, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/4 * einsum('Jixy,iXzy,xz->XJ', t1_xcaa, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/4 * einsum('Jixy,iXzw,xywz->XJ', t1_xcaa, t1_caaa, rdm_ccaa, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JiaX,ixay,xy->XJ', t1_xcea, t1_caea, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('JiaX,ixya,xy->XJ', t1_xcea, t1_caae, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/4 * einsum('Jiax,iXay,xy->XJ', t1_xcea, t1_caea, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('Jiax,iXya,xy->XJ', t1_xcea, t1_caae, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('Ja,Xxay,xy->XJ', t1_xe, t1_aaea, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/4 * einsum('Ja,xXay,xy->XJ', t1_xe, t1_aaea, rdm_ca, optimize = einsum_type)
+        T_a_c += einsum('iJaX,ixay,xy->XJ', t1_cxea, t1_caea, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('iJaX,ixya,xy->XJ', t1_cxea, t1_caae, rdm_ca, optimize = einsum_type)
+        T_a_c += 1/2 * einsum('iJax,iXay,xy->XJ', t1_cxea, t1_caea, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/4 * einsum('iJax,iXya,xy->XJ', t1_cxea, t1_caae, rdm_ca, optimize = einsum_type)
+        T[ncore:nocc, s_c:f_c] += T_a_c.copy()
+
+        ### EXTERNAL(2) - C
+        T_e_c  = einsum('JA->AJ', t2_xe, optimize = einsum_type).copy()
+        T_e_c += 1/2 * einsum('xA,Jx->AJ', t1_ae, t1_xa, optimize = einsum_type)
+        T_e_c += einsum('JiAx,ix->AJ', t1_xcea, t1_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('iJAx,ix->AJ', t1_cxea, t1_ca, optimize = einsum_type)
+        T_e_c += einsum('JiAa,ia->AJ', t1_xcee, t1_ce, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xA,Jyxz,zy->AJ', t1_ae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xA,Jyzx,zy->AJ', t1_ae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c += einsum('JiAx,iyxz,yz->AJ', t1_xcea, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JiAx,iy,xy->AJ', t1_xcea, t1_ca, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JiAx,iyzx,yz->AJ', t1_xcea, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JiAx,iyzw,xyzw->AJ', t1_xcea, t1_caaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('xyAz,Jzwu,xywu->AJ', t1_aaea, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xyAz,Jx,zy->AJ', t1_aaea, t1_xa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyAz,Jy,zx->AJ', t1_aaea, t1_xa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xyAz,Jwxy,zw->AJ', t1_aaea, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xyAz,Jwxu,zuyw->AJ', t1_aaea, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyAz,Jwyx,zw->AJ', t1_aaea, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyAz,Jwyu,zuxw->AJ', t1_aaea, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyAz,Jwux,zuyw->AJ', t1_aaea, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyAz,Jwuy,zuwx->AJ', t1_aaea, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('iJAx,iyxz,yz->AJ', t1_cxea, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('iJAx,iy,xy->AJ', t1_cxea, t1_ca, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('iJAx,iyzx,yz->AJ', t1_cxea, t1_caaa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('iJAx,iyzw,xyzw->AJ', t1_cxea, t1_caaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('JxAa,ya,yx->AJ', t1_xaee, t1_ae, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('JxAa,yzaw,xwyz->AJ', t1_xaee, t1_aaea, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('JxaA,ya,yx->AJ', t1_xaee, t1_ae, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('JxaA,yzaw,xwyz->AJ', t1_xaee, t1_aaea, rdm_ccaa, optimize = einsum_type)
+        T_e_c += einsum('JiAa,ixay,xy->AJ', t1_xcee, t1_caea, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JiAa,ixya,xy->AJ', t1_xcee, t1_caae, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JiaA,ixay,xy->AJ', t1_xcee, t1_caea, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('JiaA,ixya,xy->AJ', t1_xcee, t1_caae, rdm_ca, optimize = einsum_type)
+        T[nocc:, s_c:f_c] += T_e_c.copy()
+
+    # Transform to the orthogonal basis
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        T_ortho = np.zeros((T.shape[0], ho_dim))
+        for p in range(T.shape[0]):
+            T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
+        T = T_ortho
+
+    return T
