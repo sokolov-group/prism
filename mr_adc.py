@@ -65,8 +65,9 @@ class MRADC:
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
 
-        self.s_damping_strength = None  # If set to a positive value defines the range (log scale) of overlap matrix
-                                        # eigenvalues damped by a sigmoid function
+        # If set to a positive value defines the range (log scale) of overlap matrix
+        # eigenvalues damped by a sigmoid function
+        # self.s_damping_strength = None
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
