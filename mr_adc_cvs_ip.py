@@ -2644,7 +2644,10 @@ def compute_trans_moments(mr_adc):
     t1_xa   = mr_adc.t1.xa
     t1_xaaa = mr_adc.t1.xaaa
 
+    t1_ccee = mr_adc.t1.ccee
+    t1_ccea = mr_adc.t1.ccea
     t1_caee = mr_adc.t1.caee
+    t1_ccaa = mr_adc.t1.ccaa
     t1_aaee = mr_adc.t1.aaee
 
     t1_xcee = mr_adc.t1.xcee
@@ -2800,10 +2803,10 @@ def compute_trans_moments(mr_adc):
             T[ncore:nocc, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
 
             T_a_cve  = einsum('KJBX->XJKB', t1_vxea, optimize = einsum_type).copy()
-            T[ncore:nocc, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
+            T[ncore:nocc, s_cve__abb:f_cve__abb] += T_a_cve.reshape(ncas, -1)
 
             T_a_cve =- einsum('JKBX->XJKB', t1_xvea, optimize = einsum_type).copy()
-            T[ncore:nocc, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
+            T[ncore:nocc, s_cve__bab:f_cve__bab] += T_a_cve.reshape(ncas, -1)
 
         ### VIRTUAL(1) - CCE
         if nextern > 0:
@@ -2906,50 +2909,50 @@ def compute_trans_moments(mr_adc):
 
         ## < [ q^(2), h^(0)^\dag ] >
         ### CORE(2) - C
-        T_c_c =- 1/2 * einsum('Ix,Jx->IJ', t1_xa, t1_xa, optimize = einsum_type)
-        T_c_c -= einsum('Iixy,Jixy->IJ', t1_xcaa, t1_xcaa, optimize = einsum_type)
-        T_c_c += 1/2 * einsum('Iixy,Jiyx->IJ', t1_xcaa, t1_xcaa, optimize = einsum_type)
-        T_c_c -= einsum('Iiax,Jiax->IJ', t1_xcea, t1_xcea, optimize = einsum_type)
-        T_c_c += 1/2 * einsum('Iiax,iJax->IJ', t1_xcea, t1_cxea, optimize = einsum_type)
-        T_c_c -= einsum('Iiab,Jiab->IJ', t1_xcee, t1_xcee, optimize = einsum_type)
-        T_c_c += 1/2 * einsum('Iiab,Jiba->IJ', t1_xcee, t1_xcee, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ia,Ja->IJ', t1_xe, t1_xe, optimize = einsum_type)
-        T_c_c += 1/2 * einsum('Jiax,iIax->IJ', t1_xcea, t1_cxea, optimize = einsum_type)
-        T_c_c -= einsum('iIax,iJax->IJ', t1_cxea, t1_cxea, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ix,Jyxz,zy->IJ', t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ix,Jyzx,zy->IJ', t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/4 * einsum('Ixyz,Jxwu,yzwu->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ixyz,Jy,xz->IJ', t1_xaaa, t1_xa, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixyz,Jz,xy->IJ', t1_xaaa, t1_xa, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ixyz,Jwyz,xw->IJ', t1_xaaa, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ixyz,Jwyu,xuzw->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixyz,Jwzy,xw->IJ', t1_xaaa, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixyz,Jwzu,xuyw->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixyz,Jwuy,xuzw->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixyz,Jwuz,xuwy->IJ', t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixya,Ja,xy->IJ', t1_xaae, t1_xe, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ixya,Jzya,xz->IJ', t1_xaae, t1_xaae, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixya,Jzay,xz->IJ', t1_xaae, t1_xaea, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixya,Jzaw,xwyz->IJ', t1_xaae, t1_xaea, rdm_ccaa, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixya,Jzwa,xwzy->IJ', t1_xaae, t1_xaae, rdm_ccaa, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ixay,Ja,xy->IJ', t1_xaea, t1_xe, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ixay,Jzay,xz->IJ', t1_xaea, t1_xaea, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ixay,Jzaw,xwyz->IJ', t1_xaea, t1_xaea, rdm_ccaa, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixay,Jzya,xz->IJ', t1_xaea, t1_xaae, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixay,Jzwa,xwyz->IJ', t1_xaea, t1_xaae, rdm_ccaa, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ixab,Jyab,xy->IJ', t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ixab,Jyba,xy->IJ', t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/2 * einsum('Iixy,Jixz,zy->IJ', t1_xcaa, t1_xcaa, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/4 * einsum('Iixy,Jiyz,zx->IJ', t1_xcaa, t1_xcaa, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/4 * einsum('Iixy,Jizx,zy->IJ', t1_xcaa, t1_xcaa, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/2 * einsum('Iixy,Jizy,zx->IJ', t1_xcaa, t1_xcaa, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/4 * einsum('Iixy,Jizw,xyzw->IJ', t1_xcaa, t1_xcaa, rdm_ccaa, optimize = einsum_type)
-        T_c_c += 1/2 * einsum('Iiax,Jiay,yx->IJ', t1_xcea, t1_xcea, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/4 * einsum('Iiax,iJay,yx->IJ', t1_xcea, t1_cxea, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/2 * einsum('Ia,Jxay,yx->IJ', t1_xe, t1_xaea, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/4 * einsum('Ia,Jxya,yx->IJ', t1_xe, t1_xaae, rdm_ca, optimize = einsum_type)
-        T_c_c -= 1/4 * einsum('Jiax,iIay,xy->IJ', t1_xcea, t1_cxea, rdm_ca, optimize = einsum_type)
-        T_c_c += 1/2 * einsum('iIax,iJay,yx->IJ', t1_cxea, t1_cxea, rdm_ca, optimize = einsum_type)
+        T_c_c =- 1/2 * einsum('Ix,Jx->IJ', t1_ca, t1_xa, optimize = einsum_type)
+        T_c_c -= einsum('Iixy,Jixy->IJ', t1_ccaa, t1_xcaa, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iixy,Jiyx->IJ', t1_ccaa, t1_xcaa, optimize = einsum_type)
+        T_c_c -= einsum('Iiax,Jiax->IJ', t1_ccea, t1_xcea, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iiax,iJax->IJ', t1_ccea, t1_cxea, optimize = einsum_type)
+        T_c_c -= einsum('Iiab,Jiab->IJ', t1_ccee, t1_xcee, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iiab,Jiba->IJ', t1_ccee, t1_xcee, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ia,Ja->IJ', t1_ce, t1_xe, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Jiax,iIax->IJ', t1_xcea, t1_ccea, optimize = einsum_type)
+        T_c_c -= einsum('iIax,iJax->IJ', t1_ccea, t1_cxea, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ix,Jyxz,zy->IJ', t1_ca, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ix,Jyzx,zy->IJ', t1_ca, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Ixyz,Jxwu,yzwu->IJ', t1_caaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixyz,Jy,xz->IJ', t1_caaa, t1_xa, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jz,xy->IJ', t1_caaa, t1_xa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixyz,Jwyz,xw->IJ', t1_caaa, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixyz,Jwyu,xuzw->IJ', t1_caaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jwzy,xw->IJ', t1_caaa, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jwzu,xuyw->IJ', t1_caaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jwuy,xuzw->IJ', t1_caaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixyz,Jwuz,xuwy->IJ', t1_caaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixya,Ja,xy->IJ', t1_caae, t1_xe, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixya,Jzya,xz->IJ', t1_caae, t1_xaae, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixya,Jzay,xz->IJ', t1_caae, t1_xaea, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixya,Jzaw,xwyz->IJ', t1_caae, t1_xaea, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixya,Jzwa,xwzy->IJ', t1_caae, t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixay,Ja,xy->IJ', t1_caea, t1_xe, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixay,Jzay,xz->IJ', t1_caea, t1_xaea, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixay,Jzaw,xwyz->IJ', t1_caea, t1_xaea, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixay,Jzya,xz->IJ', t1_caea, t1_xaae, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixay,Jzwa,xwyz->IJ', t1_caea, t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ixab,Jyab,xy->IJ', t1_caee, t1_xaee, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ixab,Jyba,xy->IJ', t1_caee, t1_xaee, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iixy,Jixz,zy->IJ', t1_ccaa, t1_xcaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Iixy,Jiyz,zx->IJ', t1_ccaa, t1_xcaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Iixy,Jizx,zy->IJ', t1_ccaa, t1_xcaa, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iixy,Jizy,zx->IJ', t1_ccaa, t1_xcaa, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Iixy,Jizw,xyzw->IJ', t1_ccaa, t1_xcaa, rdm_ccaa, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('Iiax,Jiay,yx->IJ', t1_ccea, t1_xcea, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Iiax,iJay,yx->IJ', t1_ccea, t1_cxea, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/2 * einsum('Ia,Jxay,yx->IJ', t1_ce, t1_xaea, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/4 * einsum('Ia,Jxya,yx->IJ', t1_ce, t1_xaae, rdm_ca, optimize = einsum_type)
+        T_c_c -= 1/4 * einsum('Jiax,iIay,xy->IJ', t1_xcea, t1_ccea, rdm_ca, optimize = einsum_type)
+        T_c_c += 1/2 * einsum('iIax,iJay,yx->IJ', t1_ccea, t1_cxea, rdm_ca, optimize = einsum_type)
         T[:ncore, s_c:f_c] += T_c_c.copy()
 
         ### ACTIVE(2) - C
