@@ -165,6 +165,8 @@ def compute_S12_0p_projector(mr_adc):
     ncas = mr_adc.ncas
     nelecas = sum(mr_adc.nelecas)
 
+    s_thresh = mr_adc.s_thresh_singles
+
     if nelecas == 0:
         nelecas = 1
 
@@ -173,12 +175,12 @@ def compute_S12_0p_projector(mr_adc):
     rdm_ccaa = mr_adc.rdm.ccaa
 
     # Damping for singles
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_damping = mr_adc.s_damping_strength
-        s_damping_thresh = mr_adc.s_thresh_singles
-        s_thresh = s_damping_thresh * 10**(-s_damping / 2)
+    # if mr_adc.s_damping_strength is None:
+    #     s_thresh = mr_adc.s_thresh_singles
+    # else:
+    #     s_damping = mr_adc.s_damping_strength
+    #     s_damping_thresh = mr_adc.s_thresh_singles
+    #     s_thresh = s_damping_thresh * 10**(-s_damping / 2)
 
     # Compute S matrix
     ## S22 block: < Psi_0 | a^{\dag}_X a_Y a^{\dag}_Z a_W | Psi_0 >
@@ -275,17 +277,19 @@ def compute_S12_0p_gno_projector(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    s_thresh = mr_adc.s_thresh_singles
+
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
     # Damping for singles
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_damping = mr_adc.s_damping_strength
-        s_damping_thresh = mr_adc.s_thresh_singles
-        s_thresh = s_damping_thresh * 10**(-s_damping / 2)
+    # if mr_adc.s_damping_strength is None:
+    #     s_thresh = mr_adc.s_thresh_singles
+    # else:
+    #     s_damping = mr_adc.s_damping_strength
+    #     s_damping_thresh = mr_adc.s_thresh_singles
+    #     s_thresh = s_damping_thresh * 10**(-s_damping / 2)
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a^{\dag}_X a_Y | Psi_0 >
@@ -344,9 +348,9 @@ def compute_S12_0p_gno_projector(mr_adc):
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
     ## Apply damping
-    if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
-        S_inv_eval *= damping_prefactor
+    # if mr_adc.s_damping_strength is not None:
+    #     damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
+    #     S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
 
@@ -367,18 +371,20 @@ def compute_S12_p1p_gno_projector(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    s_thresh = mr_adc.s_thresh_singles
+
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
     # Damping for singles
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_damping = mr_adc.s_damping_strength
-        s_damping_thresh = mr_adc.s_thresh_singles
-        s_thresh = s_damping_thresh * 10**(-s_damping / 2)
+    # if mr_adc.s_damping_strength is None:
+    #     s_thresh = mr_adc.s_thresh_singles
+    # else:
+    #     s_damping = mr_adc.s_damping_strength
+    #     s_damping_thresh = mr_adc.s_thresh_singles
+    #     s_thresh = s_damping_thresh * 10**(-s_damping / 2)
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a_X a^{\dag}_Y | Psi_0 >
@@ -499,9 +505,9 @@ def compute_S12_p1p_gno_projector(mr_adc):
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
     ## Apply damping
-    if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
-        S_inv_eval *= damping_prefactor
+    # if mr_adc.s_damping_strength is not None:
+    #     damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
+    #     S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
 
@@ -522,18 +528,20 @@ def compute_S12_m1p_gno_projector(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    s_thresh = mr_adc.s_thresh_singles
+
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
     # Damping for singles
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_damping = mr_adc.s_damping_strength
-        s_damping_thresh = mr_adc.s_thresh_singles
-        s_thresh = s_damping_thresh * 10**(-s_damping / 2)
+    # if mr_adc.s_damping_strength is None:
+    #     s_thresh = mr_adc.s_thresh_singles
+    # else:
+    #     s_damping = mr_adc.s_damping_strength
+    #     s_damping_thresh = mr_adc.s_thresh_singles
+    #     s_thresh = s_damping_thresh * 10**(-s_damping / 2)
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a^{\dag}_X a_Y | Psi_0 >
@@ -640,9 +648,9 @@ def compute_S12_m1p_gno_projector(mr_adc):
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
     ## Apply damping
-    if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
-        S_inv_eval *= damping_prefactor
+    # if mr_adc.s_damping_strength is not None:
+    #     damping_prefactor = compute_damping(S_eval[S_ind_nonzero], s_damping_thresh, s_damping)
+    #     S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
 
@@ -668,10 +676,12 @@ def compute_S12_0p_sanity_check_gno_projector(mr_adc):
 
     dim = 1 + ncas * 2 * ncas * 2
 
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+    s_thresh = mr_adc.s_thresh_singles
+
+    # if mr_adc.s_damping_strength is None:
+    #     s_thresh = mr_adc.s_thresh_singles
+    # else:
+    #     s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
 
     S_0p = np.zeros((dim, dim))
 
@@ -723,9 +733,9 @@ def compute_S12_0p_sanity_check_gno_projector(mr_adc):
 
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
-    if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
-        S_inv_eval *= damping_prefactor
+    # if mr_adc.s_damping_strength is not None:
+    #     damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
+    #     S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
 
@@ -755,10 +765,12 @@ def compute_S12_p1p_sanity_check_gno_projector(mr_adc):
     dim_act = n_x + n_xzw
     xy_ind = np.tril_indices(ncas * 2, k=-1)
 
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+    s_thresh = mr_adc.s_thresh_singles
+
+    # if mr_adc.s_damping_strength is None:
+    #     s_thresh = mr_adc.s_thresh_singles
+    # else:
+    #     s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
 
     S_act = np.zeros((dim_act, dim_act))
 
@@ -880,9 +892,9 @@ def compute_S12_p1p_sanity_check_gno_projector(mr_adc):
 
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
-    if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
-        S_inv_eval *= damping_prefactor
+    # if mr_adc.s_damping_strength is not None:
+    #     damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
+    #     S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
 
@@ -912,10 +924,12 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc):
     dim_act = n_x + n_xzw
     xy_ind = np.tril_indices(ncas * 2, k=-1)
 
-    if mr_adc.s_damping_strength is None:
-        s_thresh = mr_adc.s_thresh_singles
-    else:
-        s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
+    s_thresh = mr_adc.s_thresh_singles
+
+    # if mr_adc.s_damping_strength is None:
+    #     s_thresh = mr_adc.s_thresh_singles
+    # else:
+    #     s_thresh = mr_adc.s_thresh_singles * 10**(-mr_adc.s_damping_strength / 2)
 
     S_act = np.zeros((dim_act, dim_act))
 
@@ -1019,9 +1033,9 @@ def compute_S12_m1p_sanity_check_gno_projector(mr_adc):
 
     S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
 
-    if mr_adc.s_damping_strength is not None:
-        damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
-        S_inv_eval *= damping_prefactor
+    # if mr_adc.s_damping_strength is not None:
+    #     damping_prefactor = compute_damping(S_eval[S_ind_nonzero], mr_adc.s_damping_strength, mr_adc.s_thresh_singles)
+    #     S_inv_eval *= damping_prefactor
 
     S_evec = S_evec[:, S_ind_nonzero]
 

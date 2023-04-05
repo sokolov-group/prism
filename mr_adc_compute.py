@@ -45,11 +45,12 @@ def kernel(mr_adc):
         print("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
         print("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
-    if mr_adc.s_damping_strength is None:
-        print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    else:
-        print("Overlap damping width:                             %f" % mr_adc.s_damping_strength)
-        print("Overlap truncation parameter (singles):            %e" % (mr_adc.s_thresh_singles * 10**(- mr_adc.s_damping_strength / 2)))
+    print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
+    # if mr_adc.s_damping_strength is None:
+    #     print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
+    # else:
+    #     print("Overlap damping width:                             %f" % mr_adc.s_damping_strength)
+    #     print("Overlap truncation parameter (singles):            %e" % (mr_adc.s_thresh_singles * 10**(- mr_adc.s_damping_strength / 2)))
 
     # Print info about CASCI states
     print("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
