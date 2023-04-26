@@ -164,7 +164,16 @@ def compute_t1_amplitudes(mr_adc):
                 mr_adc.t1.vxea = np.ascontiguousarray(mr_adc.t1.ccea[ncvs:,:ncvs,:,:])
                 mr_adc.t1.xvea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,ncvs:,:,:])
 
+                t1_ccea_aaa = (mr_adc.t1.ccea - mr_adc.t1.ccea.transpose(1,0,2,3))
+                t1_ccae = -(t1_ccea_aaa - mr_adc.t1.ccea).transpose(0,1,3,2)
+
+                mr_adc.t1.vxae = np.ascontiguousarray(t1_ccae[ncvs:,:ncvs,:,:])
+                mr_adc.t1.xvae = np.ascontiguousarray(t1_ccae[:ncvs,ncvs:,:,:])
+
+                mr_adc.t1.vaee = np.ascontiguousarray(mr_adc.t1.caee[ncvs:,:,:,:])
+
                 mr_adc.t1.xvaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs,ncvs:,:,:])
+                mr_adc.t1.vxaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:,:ncvs,:,:])
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr

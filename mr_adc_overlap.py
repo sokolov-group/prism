@@ -385,7 +385,7 @@ def compute_S12_p1p_gno_projector(mr_adc):
     S11_a_a  = einsum('XY->XY', np.identity(ncas), optimize = einsum_type).copy()
     S11_a_a -= 1/2 * einsum('YX->XY', rdm_ca, optimize = einsum_type).copy()
 
-    ## S12 block: < Psi_0 | a_X a^{\dag}_W a^{\dag}_Z a_Y | Psi_0 >
+    ## S12 block: < Psi_0 | a_X a^{\dag}_Y a^{\dag}_Z a_W | Psi_0 >
     S12_a_bba =- 1/6 * einsum('WXYZ->XWZY', rdm_ccaa, optimize = einsum_type).copy()
     S12_a_bba -= 1/3 * einsum('WXZY->XWZY', rdm_ccaa, optimize = einsum_type).copy()
     S12_a_bba += 1/2 * einsum('XY,ZW->XWZY', np.identity(ncas), rdm_ca, optimize = einsum_type)
@@ -545,7 +545,7 @@ def compute_S12_m1p_gno_projector(mr_adc):
 
     S12_a_aaa = np.ascontiguousarray(S12_a_abb - S12_a_abb.transpose(0,2,1,3))
 
-    ## S22 block: < Psi_0 | a^{\dag}_U a^{\dag}_V a_X a^{\dag}_W a_Z a_Y | Psi_0 >
+    ## S22 block: < Psi_0 | a^{\dag}_U a^{\dag}_V a_X a^{\dag}_Y a_Z a_W | Psi_0 >
     S22_aaa_aaa =- 1/12 * einsum('UVYWZX->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
     S22_aaa_aaa -= 1/12 * einsum('UVYXWZ->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
     S22_aaa_aaa -= 1/12 * einsum('UVYZXW->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()

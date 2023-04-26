@@ -77,6 +77,7 @@ def transform_integrals_2e_incore(mr_adc):
 
     mr_adc.v2e.aaaa = transform_2e_phys_incore(mr_adc.interface, mo_a, mo_a, mo_a, mo_a)
 
+    #TODO: Organize integrals required and the condition statements
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.caaa = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_a, mo_a, mo_a)
@@ -92,6 +93,9 @@ def transform_integrals_2e_incore(mr_adc):
                 mr_adc.v2e.xaea = np.ascontiguousarray(mr_adc.v2e.caea[:ncvs,:,:,:])
                 mr_adc.v2e.xaxa = np.ascontiguousarray(mr_adc.v2e.caca[:ncvs,:,:ncvs,:])
                 mr_adc.v2e.xaax = np.ascontiguousarray(mr_adc.v2e.caac[:ncvs,:,:,:ncvs])
+
+                mr_adc.v2e.xaca = np.ascontiguousarray(mr_adc.v2e.caca[:ncvs,:,:,:])
+                mr_adc.v2e.xaac = np.ascontiguousarray(mr_adc.v2e.caac[:ncvs,:,:,:])
 
                 if nval > 0:
                     mr_adc.v2e.vaaa = np.ascontiguousarray(mr_adc.v2e.caaa[ncvs:,:,:,:])
@@ -142,6 +146,74 @@ def transform_integrals_2e_incore(mr_adc):
 
             if mr_adc.method == "mr-adc(2)-x":
                 mr_adc.v2e.cccc = transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
+                mr_adc.v2e.xxxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs,:ncvs,:ncvs,:ncvs])
+
+                mr_adc.v2e.xexe = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs,:,:ncvs,:])
+                mr_adc.v2e.xeex = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs,:,:,:ncvs])
+
+                mr_adc.v2e.cexe = np.ascontiguousarray(mr_adc.v2e.cece[:,:,:ncvs,:])
+                mr_adc.v2e.ceex = np.ascontiguousarray(mr_adc.v2e.ceec[:,:,:,:ncvs])
+
+                mr_adc.v2e.xeae = np.ascontiguousarray(mr_adc.v2e.ceae[:ncvs,:,:,:])
+                mr_adc.v2e.xeea = np.ascontiguousarray(mr_adc.v2e.ceea[:ncvs,:,:,:])
+
+                mr_adc.v2e.xeaa = np.ascontiguousarray(mr_adc.v2e.ceaa[:ncvs,:,:,:])
+
+                # new
+                mr_adc.v2e.xxee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xxae = np.ascontiguousarray(mr_adc.v2e.ccae[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xxaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:ncvs,:ncvs,:,:])
+                mr_adc.v2e.xxxe = np.ascontiguousarray(mr_adc.v2e.ccce[:ncvs,:ncvs,:ncvs,:])
+                mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs,:ncvs,:ncvs,:])
+
+                if nval > 0:
+                    mr_adc.v2e.xxxv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs,:ncvs,:ncvs,ncvs:])
+                    mr_adc.v2e.xxvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs,:ncvs,ncvs:,:ncvs])
+
+                    mr_adc.v2e.xave = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs,:,ncvs:,:])
+                    mr_adc.v2e.xaev = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs,:,:,ncvs:])
+
+                    mr_adc.v2e.vave = np.ascontiguousarray(mr_adc.v2e.cace[ncvs:,:,ncvs:,:])
+                    mr_adc.v2e.vaev = np.ascontiguousarray(mr_adc.v2e.caec[ncvs:,:,:,ncvs:])
+
+                    mr_adc.v2e.xeve = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs,:,ncvs:,:])
+                    mr_adc.v2e.xeev = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs,:,:,ncvs:])
+
+                    mr_adc.v2e.vexe = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:,:,:ncvs,:])
+                    mr_adc.v2e.veex = np.ascontiguousarray(mr_adc.v2e.ceec[ncvs:,:,:,:ncvs])
+
+                    mr_adc.v2e.veve = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:,:,ncvs:,:])
+                    mr_adc.v2e.veev = np.ascontiguousarray(mr_adc.v2e.ceec[ncvs:,:,:,ncvs:])
+
+                    mr_adc.v2e.xvxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs,ncvs:,:ncvs,:ncvs])
+                    mr_adc.v2e.xvxv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs,ncvs:,:ncvs,ncvs:])
+                    mr_adc.v2e.xvvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs,ncvs:,ncvs:,:ncvs])
+
+                    mr_adc.v2e.vaxa = np.ascontiguousarray(mr_adc.v2e.caca[ncvs:,:,:ncvs,:])
+                    mr_adc.v2e.vaax = np.ascontiguousarray(mr_adc.v2e.caac[ncvs:,:,:,:ncvs])
+
+                    mr_adc.v2e.xava = np.ascontiguousarray(mr_adc.v2e.caca[:ncvs,:,ncvs:,:])
+                    mr_adc.v2e.xaav = np.ascontiguousarray(mr_adc.v2e.caac[:ncvs,:,:,ncvs:])
+
+                    mr_adc.v2e.vaxe = np.ascontiguousarray(mr_adc.v2e.cace[ncvs:,:,:ncvs,:])
+                    mr_adc.v2e.vaex = np.ascontiguousarray(mr_adc.v2e.caec[ncvs:,:,:,:ncvs])
+
+                    mr_adc.v2e.vava = np.ascontiguousarray(mr_adc.v2e.caca[ncvs:,:,ncvs:,:])
+                    mr_adc.v2e.vaav = np.ascontiguousarray(mr_adc.v2e.caac[ncvs:,:,:,ncvs:])
+
+                    mr_adc.v2e.veaa = np.ascontiguousarray(mr_adc.v2e.ceaa[ncvs:,:,:,:])
+
+                    mr_adc.v2e.veae = np.ascontiguousarray(mr_adc.v2e.ceae[ncvs:,:,:,:])
+                    mr_adc.v2e.veea = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:,:,:,:])
+
+                    # new
+                    mr_adc.v2e.xvee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs,ncvs:,:,:])
+                    mr_adc.v2e.xvaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:ncvs,ncvs:,:,:])
+                    mr_adc.v2e.xvae = np.ascontiguousarray(mr_adc.v2e.ccae[:ncvs,ncvs:,:,:])
+                    mr_adc.v2e.vxae = np.ascontiguousarray(mr_adc.v2e.ccae[ncvs:,:ncvs,:,:])
+                    mr_adc.v2e.vxxe = np.ascontiguousarray(mr_adc.v2e.ccce[ncvs:,:ncvs,:ncvs,:])
+                    mr_adc.v2e.vxxa = np.ascontiguousarray(mr_adc.v2e.ccca[ncvs:,:ncvs,:ncvs,:])
+                    mr_adc.v2e.xvxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs,ncvs:,:ncvs,:])
 
             if (mr_adc.method == "mr-adc(2)-x" and mr_adc.method_type == "ea"):
                 mr_adc.v2e.eeee = transform_2e_phys_incore(mr_adc.interface, mo_e, mo_e, mo_e, mo_e)

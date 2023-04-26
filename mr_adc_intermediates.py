@@ -334,6 +334,7 @@ def compute_K_p1p(mr_adc):
 
     K12_a_aaa = np.ascontiguousarray(K12_a_bba - K12_a_bba.transpose(0,1,3,2))
 
+    # K22 block: < Psi_0 | a^{\dag}_U a_V a_X [H_{act}, a^{\dag}_Y a^{\dag}_Z a_W] | Psi_0 >
     K22_aaa_aaa  = 1/6 * einsum('VY,UZWX->UVXWZY', h_aa, rdm_ccaa, optimize = einsum_type)
     K22_aaa_aaa -= 1/6 * einsum('VY,UZXW->UVXWZY', h_aa, rdm_ccaa, optimize = einsum_type)
     K22_aaa_aaa -= 1/6 * einsum('VZ,UYWX->UVXWZY', h_aa, rdm_ccaa, optimize = einsum_type)
