@@ -164,8 +164,10 @@ def compute_t1_amplitudes(mr_adc):
                 mr_adc.t1.vxea = np.ascontiguousarray(mr_adc.t1.ccea[ncvs:,:ncvs,:,:])
                 mr_adc.t1.xvea = np.ascontiguousarray(mr_adc.t1.ccea[:ncvs,ncvs:,:,:])
 
+                #TODO: Improve this
                 t1_ccea_aaa = (mr_adc.t1.ccea - mr_adc.t1.ccea.transpose(1,0,2,3))
                 t1_ccae = -(t1_ccea_aaa - mr_adc.t1.ccea).transpose(0,1,3,2)
+                mr_adc.t1.xxae = np.ascontiguousarray(t1_ccae[:ncvs,:ncvs,:,:])
 
                 mr_adc.t1.vxae = np.ascontiguousarray(t1_ccae[ncvs:,:ncvs,:,:])
                 mr_adc.t1.xvae = np.ascontiguousarray(t1_ccae[:ncvs,ncvs:,:,:])
@@ -205,8 +207,36 @@ def compute_t2_amplitudes(mr_adc):
         else:
             mr_adc.t2.ce = np.zeros((ncore, nextern))
 
+        if mr_adc.method_type not in ("ee", "cvs-ee"):
+            mr_adc.t2.aa = np.zeros((ncas, ncas))
+            mr_adc.t2.ca = np.zeros((ncore, ncas))
+            mr_adc.t2.ae = np.zeros((ncas, nextern))
+
+        mr_adc.t2.caaa = np.zeros((ncore, ncas, ncas, ncas))
+        mr_adc.t2.aaea = np.zeros((ncas, ncas, nextern, ncas))
+        mr_adc.t2.ccee = np.zeros((ncore, ncore, nextern, nextern))
+        mr_adc.t2.ccea = np.zeros((ncore, ncore, nextern, ncas))
+        mr_adc.t2.caee = np.zeros((ncore, ncas, nextern, nextern))
+        mr_adc.t2.ccaa = np.zeros((ncore, ncore, ncas, ncas))
+        mr_adc.t2.aaee = np.zeros((ncas, ncas, nextern, nextern))
+
         if mr_adc.method_type in ("cvs-ip"):
             mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs,:])
+            mr_adc.t2.xa = np.zeros((ncvs, ncas))
+
+            mr_adc.t2.xaaa = np.zeros((ncvs, ncas, ncas, ncas))
+            mr_adc.t2.xxee = np.zeros((ncvs, ncvs, nextern, nextern))
+            mr_adc.t2.xxea = np.zeros((ncvs, ncvs, nextern, ncas))
+            mr_adc.t2.xaee = np.zeros((ncvs, ncas, nextern, nextern))
+            mr_adc.t2.xxaa = np.zeros((ncvs, ncvs, ncas, ncas))
+            mr_adc.t2.xaea = np.zeros((ncvs, ncas, nextern, ncas))
+            mr_adc.t2.xaae = np.zeros((ncvs, ncas, ncas, nextern))
+
+            if nval > 0:
+                mr_adc.t2.xvea = np.zeros((ncvs, nval, nextern, ncas))
+                mr_adc.t2.xvae = np.zeros((ncvs, nval, ncas, nextern))
+                mr_adc.t2.xvaa = np.zeros((ncvs, nval, ncas, ncas))
+                mr_adc.t2.xvee = np.zeros((ncvs, nval, nextern, nextern))
 
 def compute_t1_0(mr_adc):
 
