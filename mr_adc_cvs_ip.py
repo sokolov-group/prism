@@ -13458,7 +13458,7 @@ def compute_trans_moments(mr_adc):
             T_v_c += 1/4 * einsum('Ixyz,Jz,xy->IJ', t1_vaaa, t1_xa, rdm_ca, optimize = einsum_type)
             T_v_c -= 1/4 * einsum('Jiax,iIay,xy->IJ', t1_xvea, t1_vvea, rdm_ca, optimize = einsum_type)
             T_v_c += 1/2 * einsum('Jixa,iIay,xy->IJ', t1_xvae, t1_vvea, rdm_ca, optimize = einsum_type)
-            T[ncore:nocc], s_c:f_c] += T_v_c.copy()
+            T[ncvs:ncore, s_c:f_c] += T_v_c.copy()
 
         ### ACTIVE(2) - C
         T_a_c  = einsum('JiXx,ix->XJ', t1_xcaa, t1_ca, optimize = einsum_type)
