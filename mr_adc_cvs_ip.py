@@ -13096,6 +13096,24 @@ def compute_trans_moments(mr_adc):
         t1_xvee = mr_adc.t1.xvee
         t1_xvaa = mr_adc.t1.xvaa
 
+        t1_vvee = mr_adc.t1.vvee
+        t1_vvaa = mr_adc.t1.vvaa
+        t1_vxaa = mr_adc.t1.vxaa
+
+        t1_va = mr_adc.t1.va
+        t1_ve = mr_adc.t1.ve
+
+        t1_vaea = mr_adc.t1.vaea
+        t1_vaae = mr_adc.t1.vaae
+
+        t1_vaaa = mr_adc.t1.vaaa
+        t1_vaee = mr_adc.t1.vaee
+
+        t1_vxea = mr_adc.t1.vxea
+        t1_vxae = mr_adc.t1.vxae
+
+        t1_vvea = mr_adc.t1.vvea
+
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
