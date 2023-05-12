@@ -21,6 +21,7 @@ import sys
 import time
 import numpy as np
 import prism.mr_adc_amplitudes as mr_adc_amplitudes
+import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
 from functools import reduce
 
@@ -45,11 +46,7 @@ def kernel(mr_adc):
         print("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
         print("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
-    if mr_adc.s_damping_strength is None:
-        print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    else:
-        print("Overlap damping width:                             %f" % mr_adc.s_damping_strength)
-        print("Overlap truncation parameter (singles):            %e" % (mr_adc.s_thresh_singles * 10**(- mr_adc.s_damping_strength / 2)))
+    print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
 
     # Print info about CASCI states
     print("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
@@ -61,6 +58,11 @@ def kernel(mr_adc):
 
     # Compute amplitudes
     mr_adc_amplitudes.compute_amplitudes(mr_adc)
+
+    # Compute CVS integrals and amplitudes
+    if mr_adc.method_type == "cvs-ip":
+        mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
+        mr_adc_amplitudes.compute_cvs_amplitudes(mr_adc)
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
     if mr_adc.method_type == "ip":
