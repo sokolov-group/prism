@@ -30749,28 +30749,6 @@ def compute_trans_moments(mr_adc):
                 # VIRTUAL(2) - CVA
                 compute_T__q2_h1__E_CVA(mr_adc, T)
 
-
-    ncvs = mr_adc.ncvs
-
-    s_c = mr_adc.h0.s_c
-    f_c = mr_adc.h0.f_c
-
-    s_cce = mr_adc.h1.s_cce
-    f_cce = mr_adc.h1.f_cce
-    s_cca = mr_adc.h1.s_cca
-    f_cca = mr_adc.h1.f_cca
-
-    s_caa = mr_adc.h1.s_caa
-    f_caa = mr_adc.h1.f_caa
-
-    s_cae = mr_adc.h1.s_cae
-    f_cae = mr_adc.h1.f_cae
-
-    s_cve = mr_adc.h1.s_cve
-    f_cve = mr_adc.h1.f_cve
-    s_cva = mr_adc.h1.s_cva
-    f_cva = mr_adc.h1.f_cva
-
     # Transform to the orthogonal basis
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
         T_ortho = np.zeros((T.shape[0], mr_adc.h_orth.dim))
