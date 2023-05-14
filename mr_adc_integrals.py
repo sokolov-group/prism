@@ -44,20 +44,6 @@ def transform_integrals_1e(mr_adc):
 
     print("Time for transforming 1e integrals:                %f sec\n" % (time.time() - start_time))
 
-def transform_2e_phys_incore(interface, mo_1, mo_2, mo_3, mo_4):
-    'Two-electron integral transformation in Physicists notation'
-
-    nmo_1 = mo_1.shape[1]
-    nmo_2 = mo_2.shape[1]
-    nmo_3 = mo_3.shape[1]
-    nmo_4 = mo_4.shape[1]
-
-    v2e = interface.transform_2e_chem_incore(interface.v2e_ao, (mo_1, mo_3, mo_2, mo_4), compact=False)
-    v2e = v2e.reshape(nmo_1, nmo_3, nmo_2, nmo_4)
-    v2e = v2e.transpose(0,2,1,3)
-
-    return np.ascontiguousarray(v2e)
-
 def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4):
     'Two-electron integral transformation in Chemists notation'
 
@@ -164,7 +150,6 @@ def compute_cvs_integrals_2e_incore(mr_adc):
     # Variables from kernel
     ncvs = mr_adc.ncvs
 
-    #TODO: Organize integrals required and the condition statements
     if mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :])

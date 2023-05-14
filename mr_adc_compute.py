@@ -242,7 +242,7 @@ def compute_trans_properties(mr_adc, E, U):
     #     analyze_trans_properties(mr_adc, T)
     #     analyze_spec_factor(mr_adc, T)
 
-    print("Time for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
+    print("\nTime for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
     return spec_intensity

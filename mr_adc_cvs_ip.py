@@ -284,7 +284,6 @@ def compute_M_00(mr_adc):
 
     # Variables from kernel
     ncvs = mr_adc.ncvs
-    nval = mr_adc.nval
 
     ## Molecular Orbitals Energies
     e_cvs = mr_adc.mo_energy.x
@@ -1456,7 +1455,7 @@ def compute_M_01(mr_adc):
 
     start_time = time.time()
 
-    print ("Computing M(h0-h1) blocks...")
+    print("Computing M(h0-h1) blocks...")
     sys.stdout.flush()
 
     # Variables from kernel
@@ -2552,7 +2551,7 @@ def compute_preconditioner(mr_adc):
     # Multiply by -1.0, since we are solving for -M C = -S C E
     precond *= (-1.0)
 
-    print ("Time for computing preconditioner:                 %f sec\n" % (time.time() - start_time))
+    print("Time for computing preconditioner:                 %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
     return np.ascontiguousarray(precond)
@@ -24728,20 +24727,12 @@ def compute_sigma_vector(mr_adc, Xt):
 
 def compute_trans_moments(mr_adc):
 
-    # Variables from kernel
-    nmo = mr_adc.nmo
-    nocc = mr_adc.nocc
-
-    ncore = mr_adc.ncore
-    nval = mr_adc.nval
-    nextern = mr_adc.nextern
-
     # Define functions to compute T blocks
     def compute_T__q0_h0__C_C(mr_adc, T):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
-
+    
         # Excitation Manifolds
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
@@ -24753,6 +24744,10 @@ def compute_trans_moments(mr_adc):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
 
         # Amplitudes
         t1_xa = mr_adc.t1.xa
@@ -24776,6 +24771,9 @@ def compute_trans_moments(mr_adc):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        nocc = mr_adc.nocc
 
         # Amplitudes
         t1_xe = mr_adc.t1.xe
@@ -24824,7 +24822,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -24872,6 +24871,8 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -24900,7 +24901,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -24936,6 +24938,8 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -24970,7 +24974,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -25002,7 +25007,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -25040,7 +25046,7 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -25089,6 +25095,7 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -25117,7 +25124,7 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -25152,6 +25159,7 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -25186,7 +25194,7 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -25218,7 +25226,7 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -25474,8 +25482,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
         ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
 
         # Amplitudes
         t1_ae = mr_adc.t1.ae
@@ -25663,6 +25671,7 @@ def compute_trans_moments(mr_adc):
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
 
+        print(">>> SA t2_xe: {:}".format(np.linalg.norm(t2_xe)))
         T_e_c  = einsum('JA->AJ', t2_xe, optimize = einsum_type).copy()
         T_e_c += einsum('JiAa,ia->AJ', t1_xxee, t1_xe, optimize = einsum_type)
         T_e_c -= 1/2 * einsum('JixA,ix->AJ', t1_xxae, t1_xa, optimize = einsum_type)
@@ -26757,6 +26766,7 @@ def compute_trans_moments(mr_adc):
         # Variables from kernel
         ncvs = mr_adc.ncvs
         nval = mr_adc.nval
+        ncore = mr_adc.ncore
 
         # Amplitudes
         t1_xe = mr_adc.t1.xe
@@ -27256,6 +27266,7 @@ def compute_trans_moments(mr_adc):
         # Variables from kernel
         ncvs = mr_adc.ncvs
         nval = mr_adc.nval
+        ncore = mr_adc.ncore
 
         # Amplitudes
         t1_ve = mr_adc.t1.ve
@@ -27314,6 +27325,7 @@ def compute_trans_moments(mr_adc):
         # Variables from kernel
         ncvs = mr_adc.ncvs
         nval = mr_adc.nval
+        ncore = mr_adc.ncore
 
         # Amplitudes
         t1_ve = mr_adc.t1.ve
@@ -27457,6 +27469,7 @@ def compute_trans_moments(mr_adc):
         # Variables from kernel
         ncvs = mr_adc.ncvs
         nval = mr_adc.nval
+        ncore = mr_adc.ncore
 
         # Amplitudes
         t1_ve = mr_adc.t1.ve
@@ -27584,6 +27597,7 @@ def compute_trans_moments(mr_adc):
         # Variables from kernel
         ncvs = mr_adc.ncvs
         nval = mr_adc.nval
+        ncore = mr_adc.ncore
 
         # Amplitudes
         t1_ve = mr_adc.t1.ve
@@ -27652,6 +27666,7 @@ def compute_trans_moments(mr_adc):
         # Variables from kernel
         ncvs = mr_adc.ncvs
         nval = mr_adc.nval
+        ncore = mr_adc.ncore
 
         # Amplitudes
         t1_ve = mr_adc.t1.ve
@@ -27810,7 +27825,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -28434,6 +28450,8 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -28548,7 +28566,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -28738,6 +28757,8 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -28924,7 +28945,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -29071,7 +29093,8 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
+        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
 
         # Amplitudes
@@ -29314,7 +29337,7 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -29741,6 +29764,7 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -29859,7 +29883,7 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -30001,6 +30025,7 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -30176,7 +30201,7 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -30328,7 +30353,7 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -30553,6 +30578,14 @@ def compute_trans_moments(mr_adc):
         T_e_cva += 1/4 * einsum('xyzA,JKxy,Yz->AJKY', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T[nocc:, s_cva__bab:f_cva__bab] += T_e_cva.reshape(nextern, -1)
 
+    # Variables from kernel
+    nmo = mr_adc.nmo
+    nocc = mr_adc.nocc
+
+    ncore = mr_adc.ncore
+    nval = mr_adc.nval
+    nextern = mr_adc.nextern
+
     # MR-ADC(0) terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
         dim = mr_adc.h0.dim + mr_adc.h1.dim
@@ -30715,6 +30748,28 @@ def compute_trans_moments(mr_adc):
 
                 # VIRTUAL(2) - CVA
                 compute_T__q2_h1__E_CVA(mr_adc, T)
+
+
+    ncvs = mr_adc.ncvs
+
+    s_c = mr_adc.h0.s_c
+    f_c = mr_adc.h0.f_c
+
+    s_cce = mr_adc.h1.s_cce
+    f_cce = mr_adc.h1.f_cce
+    s_cca = mr_adc.h1.s_cca
+    f_cca = mr_adc.h1.f_cca
+
+    s_caa = mr_adc.h1.s_caa
+    f_caa = mr_adc.h1.f_caa
+
+    s_cae = mr_adc.h1.s_cae
+    f_cae = mr_adc.h1.f_cae
+
+    s_cve = mr_adc.h1.s_cve
+    f_cve = mr_adc.h1.f_cve
+    s_cva = mr_adc.h1.s_cva
+    f_cva = mr_adc.h1.f_cva
 
     # Transform to the orthogonal basis
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
