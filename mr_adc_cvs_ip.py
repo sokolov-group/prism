@@ -25671,7 +25671,6 @@ def compute_trans_moments(mr_adc):
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
 
-        print(">>> SA t2_xe: {:}".format(np.linalg.norm(t2_xe)))
         T_e_c  = einsum('JA->AJ', t2_xe, optimize = einsum_type).copy()
         T_e_c += einsum('JiAa,ia->AJ', t1_xxee, t1_xe, optimize = einsum_type)
         T_e_c -= 1/2 * einsum('JixA,ix->AJ', t1_xxae, t1_xa, optimize = einsum_type)
