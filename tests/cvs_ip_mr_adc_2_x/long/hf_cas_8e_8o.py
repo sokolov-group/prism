@@ -62,18 +62,18 @@ mr_adc.nroots = 4
 mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"
-mr_adc.method = "mr-adc(2)"
+mr_adc.method = "mr-adc(2)-x"
 
 class KnownValues(unittest.TestCase):
 
-    def test_cvs_ip_mr_adc_2(self):
+    def test_cvs_ip_mr_adc_2_x(self):
 
         e,p = mr_adc.kernel()
 
-        self.assertAlmostEqual(e[0], 700.37019484, 4)
-        self.assertAlmostEqual(e[1], 734.67162604, 4)
+        self.assertAlmostEqual(e[0], 697.50459219, 4)
+        self.assertAlmostEqual(e[1], 719.26720842, 4)
 
-        self.assertAlmostEqual(p[0], 1.63714823, 4)
+        self.assertAlmostEqual(p[0], 1.41472810, 4)
         self.assertAlmostEqual(p[1], 0.00000000, 4)
 
 if __name__ == "__main__":

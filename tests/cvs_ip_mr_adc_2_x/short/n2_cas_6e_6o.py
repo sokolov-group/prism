@@ -60,23 +60,23 @@ mr_adc.ncvs = 2
 mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"
-mr_adc.method = "mr-adc(2)"
+mr_adc.method = "mr-adc(2)-x"
 
 class KnownValues(unittest.TestCase):
 
-    def test_ip_mr_adc2(self):
+    def test_ip_mr_adc_2_x(self):
 
         e,p = mr_adc.kernel()
 
-        self.assertAlmostEqual(e[0], 413.28898349, 4)
-        self.assertAlmostEqual(e[1], 413.37510246, 4)
-        self.assertAlmostEqual(e[2], 435.69778380, 4)
-        self.assertAlmostEqual(e[3], 435.77181575, 4)
+        self.assertAlmostEqual(e[0], 412.02295663, 4)
+        self.assertAlmostEqual(e[1], 412.10657368, 4)
+        self.assertAlmostEqual(e[2], 427.08545494, 4)
+        self.assertAlmostEqual(e[3], 427.08571832, 4)
 
-        self.assertAlmostEqual(p[0], 1.61992423, 4)
-        self.assertAlmostEqual(p[1], 1.61945498, 4)
-        self.assertAlmostEqual(p[2], 0.00223770, 4)
-        self.assertAlmostEqual(p[3], 0.00208213, 4)
+        self.assertAlmostEqual(p[0], 1.48851131, 4)
+        self.assertAlmostEqual(p[1], 1.48658244, 4)
+        self.assertAlmostEqual(p[2], 0.00000000, 4)
+        self.assertAlmostEqual(p[3], 0.00000000, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")
