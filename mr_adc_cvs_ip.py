@@ -2205,17 +2205,31 @@ def compute_preconditioner(mr_adc):
         M_00 = mr_adc.M_00
 
         # C and CAA
-        # 0th-order
-        precond_c_caa  = 1/2 * einsum('I,II,XY->IXY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        # 0th- and 1s-order
+        precond_c_caa__a_aaa  = 1/2 * einsum('IIxY,Xx->IXY', v_xxaa, rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_aaa += 1/2 * einsum('IIxy,XyYx->IXY', v_xxaa, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_aaa -= 1/2 * einsum('IYxI,Xx->IXY', v_xaax, rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_aaa -= 1/6 * einsum('IxyI,XxYy->IXY', v_xaax, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_aaa += 1/6 * einsum('IxyI,XxyY->IXY', v_xaax, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_aaa += 1/2 * einsum('I,II,XY->IXY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_aaa += 1/2 * einsum('Xx,II,Yx->IXY', h_aa, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_aaa -= 1/2 * einsum('Yx,II,Xx->IXY', h_aa, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_aaa += 1/2 * einsum('II,Xxyz,Yyxz->IXY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_aaa -= 1/2 * einsum('II,Yxyz,Xyxz->IXY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_aaa -= 1/2 * einsum('IIxy,xy,XY->IXY', v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_aaa += 1/4 * einsum('IxyI,yx,XY->IXY', v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
 
-        # 1st-order
-        precond_c_caa += 1/2 * einsum('IIYx,Xx->IXY', v_xxaa, rdm_ca, optimize = einsum_type)
-        precond_c_caa += 1/2 * einsum('IIxy,XxYy->IXY', v_xxaa, rdm_ccaa, optimize = einsum_type)
-        precond_c_caa -= 1/2 * einsum('IxYI,Xx->IXY', v_xaax, rdm_ca, optimize = einsum_type)
-        precond_c_caa -= 1/6 * einsum('IxyI,XyYx->IXY', v_xaax, rdm_ccaa, optimize = einsum_type)
-        precond_c_caa += 1/6 * einsum('IxyI,XyxY->IXY', v_xaax, rdm_ccaa, optimize = einsum_type)
-        precond_c_caa -= 1/2 * einsum('IIxy,xy,XY->IXY', v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
-        precond_c_caa += 1/4 * einsum('IxyI,yx,XY->IXY', v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_abb  = 1/2 * einsum('IIxY,Xx->IXY', v_xxaa, rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_abb += 1/2 * einsum('IIxy,XyYx->IXY', v_xxaa, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_abb -= 1/3 * einsum('IxyI,XxYy->IXY', v_xaax, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_abb -= 1/6 * einsum('IxyI,XxyY->IXY', v_xaax, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_abb += 1/2 * einsum('I,II,XY->IXY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_abb += 1/2 * einsum('Xx,II,Yx->IXY', h_aa, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_abb -= 1/2 * einsum('Yx,II,Xx->IXY', h_aa, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_abb += 1/2 * einsum('II,Xxyz,Yyxz->IXY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_abb -= 1/2 * einsum('II,Yxyz,Xyxz->IXY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
+        precond_c_caa__a_abb -= 1/2 * einsum('IIxy,xy,XY->IXY', v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
+        precond_c_caa__a_abb += 1/4 * einsum('IxyI,yx,XY->IXY', v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
 
         precond_caa__aaa =- 1/6 * einsum('I,II,WYXZ->IWZXY', e_cvs, np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
         precond_caa__aaa += 1/6 * einsum('I,II,WYZX->IWZXY', e_cvs, np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
@@ -2296,7 +2310,7 @@ def compute_preconditioner(mr_adc):
         precond_caa__aaa_abb += 1/24 * einsum('II,Yxyz,WxzZyX->IWZXY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caa__aaa_abb += 1/24 * einsum('II,Yxyz,WxzyXZ->IWZXY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caa__aaa_abb += 1/24 * einsum('II,Yxyz,WxzyZX->IWZXY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
-
+        
         ## Building C-CAA matrix
         dim_xy = ncas * ncas
         dim_c_caa = 3 * dim_xy
@@ -2311,8 +2325,8 @@ def compute_preconditioner(mr_adc):
         precond_caa = np.zeros((ncvs, (1 + dim_c_caa), (1 + dim_c_caa)))
         precond_caa[:, 0, 0] = np.diag(M_00[s_c:f_c, s_c:f_c]).copy()
 
-        precond_caa[:, 0, s_aa:f_aa] = precond_c_caa.reshape(ncvs, ncas * ncas).copy()
-        precond_caa[:, 0, s_bb:f_bb] = precond_c_caa.reshape(ncvs, ncas * ncas).copy()
+        precond_caa[:, 0, s_aa:f_aa] = precond_c_caa__a_aaa.reshape(ncvs, ncas * ncas).copy()
+        precond_caa[:, 0, s_bb:f_bb] = precond_c_caa__a_abb.reshape(ncvs, ncas * ncas).copy()
         precond_caa[:, s_aa:f_ab, 0] = precond_caa[:, 0, s_aa:f_ab].copy()
 
         precond_caa[:, s_aa:f_aa, s_aa:f_aa] = precond_caa__aaa.reshape(ncvs, ncas * ncas, ncas * ncas).copy()
@@ -2344,7 +2358,7 @@ def compute_preconditioner(mr_adc):
         precond_cce =- einsum('A,AA,II,JJ->IJA', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
         precond_cce += einsum('I,AA,II,JJ->IJA', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
         precond_cce += einsum('J,AA,II,JJ->IJA', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
-
+    
         return precond_cce
 
     def compute_preconditioner__CAE(mr_adc):
@@ -2482,7 +2496,7 @@ def compute_preconditioner(mr_adc):
         precond_cva -= einsum('XYxy,II,JJ,xy->IJXY', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
         precond_cva += 1/2 * einsum('XxyY,II,JJ,yx->IJXY', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
         precond_cva += 1/2 * einsum('Xxyz,II,JJ,Yyxz->IJXY', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
-
+    
         precond_cva = einsum("IJXY,XP,YP->IJP", precond_cva, S12_cca, S12_cca, optimize = einsum_type)
 
         return precond_cva
