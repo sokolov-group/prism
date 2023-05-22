@@ -66,11 +66,12 @@ def kernel(mr_adc):
     mr_adc_amplitudes.compute_amplitudes(mr_adc)
 
     # Compute CVS integrals
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
         if mr_adc.interface.with_df:
             mr_adc_integrals.compute_cvs_integrals_2e_df(mr_adc)
         else:
             mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
+        mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
     if mr_adc.method_type == "ip":

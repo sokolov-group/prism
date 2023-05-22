@@ -138,7 +138,7 @@ class MRADC:
             log.error(msg)
             raise Exception(msg)
 
-        if self.method_type == "cvs-ip" and self.ncvs is None:
+        if self.method_type in ("cvs-ip", "cvs-ee") and self.ncvs is None:
             msg = "Method type %s requires setting the ncvs parameter" % self.method_type
             log.error(msg)
             raise Exception(msg)
@@ -160,7 +160,7 @@ class MRADC:
                 raise Exception(msg)
 
         # TODO: Temporary check of what methods are implemented in this version
-        if self.method_type not in ("cvs-ip"):
+        if self.method_type not in ("cvs-ip, cvs-ee"):
             msg = "This spin-adapted version does not currently support method type %s" % self.method_type
             log.error(msg)
             raise Exception(msg)
