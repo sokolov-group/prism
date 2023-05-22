@@ -15,6 +15,7 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Ilia M. Mazin  <ilia.mazin@gmail.com>
 #
 
 import sys
@@ -25,251 +26,519 @@ import prism.mr_adc_overlap as mr_adc_overlap
 def compute_excitation_manifolds(mr_adc):
 
     # MR-ADC(0) and MR-ADC(1)
-    mr_adc.h0.n_c = mr_adc.ncvs
+    mr_adc.h0.n_ce = mr_adc.ncvs * mr_adc.nextern
+    mr_adc.h0.n_ca = mr_adc.ncvs * mr_adc.ncas
 
-    ## Total dimension of h0
-    mr_adc.h0.dim = mr_adc.h0.n_c
+    ## Zeroth-order manifold
+    mr_adc.h0.dim_ce = 2 * mr_adc.h0.n_ce
+    mr_adc.h0.dim_ca = 2 * mr_adc.h0.n_ca
+    mr_adc.h0.dim = mr_adc.h0.dim_ce + mr_adc.h0.dim_ca
 
-    mr_adc.h0.s_c = 0
-    mr_adc.h0.f_c = mr_adc.h0.s_c + mr_adc.h0.n_c
+    mr_adc.h0.s_ce_aa = 0
+    mr_adc.h0.f_ce_aa = mr_adc.h0.s_ce_aa + mr_adc.h0.n_ce
+    mr_adc.h0.s_ce_bb = mr_adc.h0.f_ce_aa
+    mr_adc.h0.f_ce_bb = mr_adc.h0.s_ce_bb + mr_adc.h0.n_ce
+    mr_adc.h0.s_ca_aa = mr_adc.h0.f_ce_bb
+    mr_adc.h0.f_ca_aa = mr_adc.h0.s_ca_aa + mr_adc.h0.n_ca
+    mr_adc.h0.s_ca_bb = mr_adc.h0.f_ca_aa
+    mr_adc.h0.f_ca_bb = mr_adc.h0.s_ca_bb + mr_adc.h0.n_ca
 
     print("Dimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
 
-    # MR-ADC(2)
+    # Orthogonalized zeroth-order manifold
+    mr_adc.S12.ca = mr_adc_overlap.compute_S12_p1(mr_adc)
+
+    mr_adc.h_orth.n_ce_caea = mr_adc.h0.n_ce
+#    mr_adc.h_orth.n_ca_caaa = mr_adc.ncvs * mr_adc.S12.ca.shape[1]
+
     mr_adc.h1.dim = 0
-    mr_adc.h_orth.dim = mr_adc.h0.dim
 
+
+    # MR-ADC(2)
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-        mr_adc.h1.n_caa      = mr_adc.ncvs * mr_adc.ncas * mr_adc.ncas
-        mr_adc.h1.n_cce      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern
-        mr_adc.h1.n_cce_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.nextern // 2
-        mr_adc.h1.n_cae      = mr_adc.ncvs * mr_adc.ncas * mr_adc.nextern
-        mr_adc.h1.n_cca      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.ncas
-        mr_adc.h1.n_cca_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.ncas // 2
 
-        mr_adc.h1.dim_caa = 3 * mr_adc.h1.n_caa
-        mr_adc.h1.dim_cce = mr_adc.h1.n_cce + mr_adc.h1.n_cce_tril
-        mr_adc.h1.dim_cae = 3 * mr_adc.h1.n_cae
-        mr_adc.h1.dim_cca = mr_adc.h1.n_cca + mr_adc.h1.n_cca_tril
-
-        if mr_adc.nval > 0:
-            mr_adc.h1.n_cve = mr_adc.ncvs * mr_adc.nval * mr_adc.nextern
-            mr_adc.h1.n_cva = mr_adc.ncvs * mr_adc.nval * mr_adc.ncas
-
-            mr_adc.h1.dim_cve = 3 * mr_adc.h1.n_cve
-            mr_adc.h1.dim_cva = 3 * mr_adc.h1.n_cva
-
-            mr_adc.h1.dim = (mr_adc.h1.dim_caa + mr_adc.h1.dim_cce + mr_adc.h1.dim_cve +
-                             mr_adc.h1.dim_cae + mr_adc.h1.dim_cca + mr_adc.h1.dim_cva)
-        else:
-            mr_adc.h1.dim = (mr_adc.h1.dim_caa + mr_adc.h1.dim_cce +
-                             mr_adc.h1.dim_cae + mr_adc.h1.dim_cca)
-
-        if mr_adc.nval > 0:
-            mr_adc.h1.s_caa = mr_adc.h0.f_c
-            mr_adc.h1.f_caa = mr_adc.h1.s_caa + mr_adc.h1.dim_caa
-            mr_adc.h1.s_cce = mr_adc.h1.f_caa
-            mr_adc.h1.f_cce = mr_adc.h1.s_cce + mr_adc.h1.dim_cce
-            mr_adc.h1.s_cve = mr_adc.h1.f_cce
-            mr_adc.h1.f_cve = mr_adc.h1.s_cve + mr_adc.h1.dim_cve
-            mr_adc.h1.s_cae = mr_adc.h1.f_cve
-            mr_adc.h1.f_cae = mr_adc.h1.s_cae + mr_adc.h1.dim_cae
-            mr_adc.h1.s_cca = mr_adc.h1.f_cae
-            mr_adc.h1.f_cca = mr_adc.h1.s_cca + mr_adc.h1.dim_cca
-            mr_adc.h1.s_cva = mr_adc.h1.f_cca
-            mr_adc.h1.f_cva = mr_adc.h1.s_cva + mr_adc.h1.dim_cva
-
-            # Spin-cases slices
-            mr_adc.h1.s_caa__aaa = mr_adc.h1.s_caa
-            mr_adc.h1.f_caa__aaa = mr_adc.h1.s_caa__aaa + mr_adc.h1.n_caa
-            mr_adc.h1.s_caa__abb = mr_adc.h1.f_caa__aaa
-            mr_adc.h1.f_caa__abb = mr_adc.h1.s_caa__abb + mr_adc.h1.n_caa
-            mr_adc.h1.s_caa__bab = mr_adc.h1.f_caa__abb
-            mr_adc.h1.f_caa__bab = mr_adc.h1.s_caa__bab + mr_adc.h1.n_caa
-
-            mr_adc.h1.s_cce__aaa = mr_adc.h1.s_cce
-            mr_adc.h1.f_cce__aaa = mr_adc.h1.s_cce__aaa + mr_adc.h1.n_cce_tril
-            mr_adc.h1.s_cce__abb = mr_adc.h1.f_cce__aaa
-            mr_adc.h1.f_cce__abb = mr_adc.h1.s_cce__abb + mr_adc.h1.n_cce
-
-            mr_adc.h1.s_cve__aaa = mr_adc.h1.s_cve
-            mr_adc.h1.f_cve__aaa = mr_adc.h1.s_cve__aaa + mr_adc.h1.n_cve
-            mr_adc.h1.s_cve__abb = mr_adc.h1.f_cve__aaa
-            mr_adc.h1.f_cve__abb = mr_adc.h1.s_cve__abb + mr_adc.h1.n_cve
-            mr_adc.h1.s_cve__bab = mr_adc.h1.f_cve__abb
-            mr_adc.h1.f_cve__bab = mr_adc.h1.s_cve__bab + mr_adc.h1.n_cve
-
-            mr_adc.h1.s_cae__aaa = mr_adc.h1.s_cae
-            mr_adc.h1.f_cae__aaa = mr_adc.h1.s_cae__aaa + mr_adc.h1.n_cae
-            mr_adc.h1.s_cae__abb = mr_adc.h1.f_cae__aaa
-            mr_adc.h1.f_cae__abb = mr_adc.h1.s_cae__abb + mr_adc.h1.n_cae
-            mr_adc.h1.s_cae__bab = mr_adc.h1.f_cae__abb
-            mr_adc.h1.f_cae__bab = mr_adc.h1.s_cae__bab + mr_adc.h1.n_cae
-
-            mr_adc.h1.s_cca__aaa = mr_adc.h1.s_cca
-            mr_adc.h1.f_cca__aaa = mr_adc.h1.s_cca__aaa + mr_adc.h1.n_cca_tril
-            mr_adc.h1.s_cca__abb = mr_adc.h1.f_cca__aaa
-            mr_adc.h1.f_cca__abb = mr_adc.h1.s_cca__abb + mr_adc.h1.n_cca
-
-            mr_adc.h1.s_cva__aaa = mr_adc.h1.s_cva
-            mr_adc.h1.f_cva__aaa = mr_adc.h1.s_cva__aaa + mr_adc.h1.n_cva
-            mr_adc.h1.s_cva__abb = mr_adc.h1.f_cva__aaa
-            mr_adc.h1.f_cva__abb = mr_adc.h1.s_cva__abb + mr_adc.h1.n_cva
-            mr_adc.h1.s_cva__bab = mr_adc.h1.f_cva__abb
-            mr_adc.h1.f_cva__bab = mr_adc.h1.s_cva__bab + mr_adc.h1.n_cva
-
-        else:
-            mr_adc.h1.s_caa = mr_adc.h0.f_c
-            mr_adc.h1.f_caa = mr_adc.h1.s_caa + mr_adc.h1.dim_caa
-            mr_adc.h1.s_cce = mr_adc.h1.f_caa
-            mr_adc.h1.f_cce = mr_adc.h1.s_cce + mr_adc.h1.dim_cce
-            mr_adc.h1.s_cae = mr_adc.h1.f_cce
-            mr_adc.h1.f_cae = mr_adc.h1.s_cae + mr_adc.h1.dim_cae
-            mr_adc.h1.s_cca = mr_adc.h1.f_cae
-            mr_adc.h1.f_cca = mr_adc.h1.s_cca + mr_adc.h1.dim_cca
-
-            #Spin-cases_ slices
-            mr_adc.h1.s_caa__aaa = mr_adc.h1.s_caa
-            mr_adc.h1.f_caa__aaa = mr_adc.h1.s_caa__aaa + mr_adc.h1.n_caa
-            mr_adc.h1.s_caa__abb = mr_adc.h1.f_caa__aaa
-            mr_adc.h1.f_caa__abb = mr_adc.h1.s_caa__abb + mr_adc.h1.n_caa
-            mr_adc.h1.s_caa__bab = mr_adc.h1.f_caa__abb
-            mr_adc.h1.f_caa__bab = mr_adc.h1.s_caa__bab + mr_adc.h1.n_caa
-
-            mr_adc.h1.s_cce__aaa = mr_adc.h1.s_cce
-            mr_adc.h1.f_cce__aaa = mr_adc.h1.s_cce__aaa + mr_adc.h1.n_cce_tril
-            mr_adc.h1.s_cce__abb = mr_adc.h1.f_cce__aaa
-            mr_adc.h1.f_cce__abb = mr_adc.h1.s_cce__abb + mr_adc.h1.n_cce
-
-            mr_adc.h1.s_cae__aaa = mr_adc.h1.s_cae
-            mr_adc.h1.f_cae__aaa = mr_adc.h1.s_cae__aaa + mr_adc.h1.n_cae
-            mr_adc.h1.s_cae__abb = mr_adc.h1.f_cae__aaa
-            mr_adc.h1.f_cae__abb = mr_adc.h1.s_cae__abb + mr_adc.h1.n_cae
-            mr_adc.h1.s_cae__bab = mr_adc.h1.f_cae__abb
-            mr_adc.h1.f_cae__bab = mr_adc.h1.s_cae__bab + mr_adc.h1.n_cae
-
-            mr_adc.h1.s_cca__aaa = mr_adc.h1.s_cca
-            mr_adc.h1.f_cca__aaa = mr_adc.h1.s_cca__aaa + mr_adc.h1.n_cca_tril
-            mr_adc.h1.s_cca__abb = mr_adc.h1.f_cca__aaa
-            mr_adc.h1.f_cca__abb = mr_adc.h1.s_cca__abb + mr_adc.h1.n_cca
-
-        print("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
-
-        # Overlap for c-caa
-        mr_adc.S12.c_caa = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
-        if not hasattr(mr_adc.S12, "cae"):
-            mr_adc.S12.cae = mr_adc_overlap.compute_S12_m1(mr_adc, ignore_print = True)
-        if not hasattr(mr_adc.S12, "cca"):
-            mr_adc.S12.cca = mr_adc_overlap.compute_S12_p1(mr_adc, ignore_print = True)
-
-        # Determine dimensions of orthogonalized excitation spaces
-        mr_adc.h_orth.n_c_caa    = mr_adc.ncvs * mr_adc.S12.c_caa.shape[1]
-        mr_adc.h_orth.n_cce      = mr_adc.h1.n_cce
-        mr_adc.h_orth.n_cce_tril = mr_adc.h1.n_cce_tril
-        mr_adc.h_orth.n_cae      = mr_adc.ncvs * mr_adc.S12.cae.shape[1] * mr_adc.nextern
-        mr_adc.h_orth.n_cca      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.S12.cca.shape[1]
-        mr_adc.h_orth.n_cca_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.S12.cca.shape[1] // 2
-
-        mr_adc.h_orth.dim_c_caa = mr_adc.h_orth.n_c_caa
-        mr_adc.h_orth.dim_cce   = mr_adc.h1.dim_cce
-        mr_adc.h_orth.dim_cae   = 3 * mr_adc.h_orth.n_cae
-        mr_adc.h_orth.dim_cca   = mr_adc.h_orth.n_cca_tril + mr_adc.h_orth.n_cca
-
-        if mr_adc.nval > 0:
-            mr_adc.h_orth.n_cve = mr_adc.h1.n_cve
-            mr_adc.h_orth.n_cva = mr_adc.ncvs * mr_adc.nval * mr_adc.S12.cca.shape[1]
-
-            mr_adc.h_orth.dim_cve = mr_adc.h1.dim_cve
-            mr_adc.h_orth.dim_cva = 3 * mr_adc.h_orth.n_cva
-
-            mr_adc.h_orth.dim = (mr_adc.h_orth.dim_c_caa + mr_adc.h_orth.dim_cce + mr_adc.h_orth.dim_cve +
-                                 mr_adc.h_orth.dim_cae + mr_adc.h_orth.dim_cca + mr_adc.h_orth.dim_cva)
-        else:
-            mr_adc.h_orth.dim = (mr_adc.h_orth.dim_c_caa + mr_adc.h_orth.dim_cce +
-                                 mr_adc.h_orth.dim_cae + mr_adc.h_orth.dim_cca)
-
-        if mr_adc.nval > 0:
-            mr_adc.h_orth.s_c_caa = 0
-            mr_adc.h_orth.f_c_caa = mr_adc.h_orth.s_c_caa + mr_adc.h_orth.dim_c_caa
-            mr_adc.h_orth.s_cce = mr_adc.h_orth.f_c_caa
-            mr_adc.h_orth.f_cce = mr_adc.h_orth.s_cce + mr_adc.h_orth.dim_cce
-            mr_adc.h_orth.s_cve = mr_adc.h_orth.f_cce
-            mr_adc.h_orth.f_cve = mr_adc.h_orth.s_cve + mr_adc.h_orth.dim_cve
-            mr_adc.h_orth.s_cae = mr_adc.h_orth.f_cve
-            mr_adc.h_orth.f_cae = mr_adc.h_orth.s_cae + mr_adc.h_orth.dim_cae
-            mr_adc.h_orth.s_cca = mr_adc.h_orth.f_cae
-            mr_adc.h_orth.f_cca = mr_adc.h_orth.s_cca + mr_adc.h_orth.dim_cca
-            mr_adc.h_orth.s_cva = mr_adc.h_orth.f_cca
-            mr_adc.h_orth.f_cva = mr_adc.h_orth.s_cva + mr_adc.h_orth.dim_cva
-
-            # Spin-cases slices
-            mr_adc.h_orth.s_cce__aaa = mr_adc.h_orth.s_cce
-            mr_adc.h_orth.f_cce__aaa = mr_adc.h_orth.s_cce__aaa + mr_adc.h_orth.n_cce_tril
-            mr_adc.h_orth.s_cce__abb = mr_adc.h_orth.f_cce__aaa
-            mr_adc.h_orth.f_cce__abb = mr_adc.h_orth.s_cce__abb + mr_adc.h_orth.n_cce
-
-            mr_adc.h_orth.s_cve__aaa = mr_adc.h_orth.s_cve
-            mr_adc.h_orth.f_cve__aaa = mr_adc.h_orth.s_cve__aaa + mr_adc.h_orth.n_cve
-            mr_adc.h_orth.s_cve__abb = mr_adc.h_orth.f_cve__aaa
-            mr_adc.h_orth.f_cve__abb = mr_adc.h_orth.s_cve__abb + mr_adc.h_orth.n_cve
-            mr_adc.h_orth.s_cve__bab = mr_adc.h_orth.f_cve__abb
-            mr_adc.h_orth.f_cve__bab = mr_adc.h_orth.s_cve__bab + mr_adc.h_orth.n_cve
-
-            mr_adc.h_orth.s_cae__aaa = mr_adc.h_orth.s_cae
-            mr_adc.h_orth.f_cae__aaa = mr_adc.h_orth.s_cae__aaa + mr_adc.h_orth.n_cae
-            mr_adc.h_orth.s_cae__abb = mr_adc.h_orth.f_cae__aaa
-            mr_adc.h_orth.f_cae__abb = mr_adc.h_orth.s_cae__abb + mr_adc.h_orth.n_cae
-            mr_adc.h_orth.s_cae__bab = mr_adc.h_orth.f_cae__abb
-            mr_adc.h_orth.f_cae__bab = mr_adc.h_orth.s_cae__bab + mr_adc.h_orth.n_cae
-
-            mr_adc.h_orth.s_cca__aaa = mr_adc.h_orth.s_cca
-            mr_adc.h_orth.f_cca__aaa = mr_adc.h_orth.s_cca__aaa + mr_adc.h_orth.n_cca_tril
-            mr_adc.h_orth.s_cca__abb = mr_adc.h_orth.f_cca__aaa
-            mr_adc.h_orth.f_cca__abb = mr_adc.h_orth.s_cca__abb + mr_adc.h_orth.n_cca
-
-            mr_adc.h_orth.s_cva__aaa = mr_adc.h_orth.s_cva
-            mr_adc.h_orth.f_cva__aaa = mr_adc.h_orth.s_cva__aaa + mr_adc.h_orth.n_cva
-            mr_adc.h_orth.s_cva__abb = mr_adc.h_orth.f_cva__aaa
-            mr_adc.h_orth.f_cva__abb = mr_adc.h_orth.s_cva__abb + mr_adc.h_orth.n_cva
-            mr_adc.h_orth.s_cva__bab = mr_adc.h_orth.f_cva__abb
-            mr_adc.h_orth.f_cva__bab = mr_adc.h_orth.s_cva__bab + mr_adc.h_orth.n_cva
-
-        else:
-            mr_adc.h_orth.s_c_caa = 0
-            mr_adc.h_orth.f_c_caa = mr_adc.h_orth.s_c_caa + mr_adc.h_orth.dim_c_caa
-            mr_adc.h_orth.s_cce = mr_adc.h_orth.f_c_caa
-            mr_adc.h_orth.f_cce = mr_adc.h_orth.s_cce + mr_adc.h_orth.dim_cce
-            mr_adc.h_orth.s_cae = mr_adc.h_orth.f_cce
-            mr_adc.h_orth.f_cae = mr_adc.h_orth.s_cae + mr_adc.h_orth.dim_cae
-            mr_adc.h_orth.s_cca = mr_adc.h_orth.f_cae
-            mr_adc.h_orth.f_cca = mr_adc.h_orth.s_cca + mr_adc.h_orth.dim_cca
-
-            # Spin-cases slices
-            mr_adc.h_orth.s_cce__aaa = mr_adc.h_orth.s_cce
-            mr_adc.h_orth.f_cce__aaa = mr_adc.h_orth.s_cce__aaa + mr_adc.h_orth.n_cce_tril
-            mr_adc.h_orth.s_cce__abb = mr_adc.h_orth.f_cce__aaa
-            mr_adc.h_orth.f_cce__abb = mr_adc.h_orth.s_cce__abb + mr_adc.h_orth.n_cce
-
-            mr_adc.h_orth.s_cae__aaa = mr_adc.h_orth.s_cae
-            mr_adc.h_orth.f_cae__aaa = mr_adc.h_orth.s_cae__aaa + mr_adc.h_orth.n_cae
-            mr_adc.h_orth.s_cae__abb = mr_adc.h_orth.f_cae__aaa
-            mr_adc.h_orth.f_cae__abb = mr_adc.h_orth.s_cae__abb + mr_adc.h_orth.n_cae
-            mr_adc.h_orth.s_cae__bab = mr_adc.h_orth.f_cae__abb
-            mr_adc.h_orth.f_cae__bab = mr_adc.h_orth.s_cae__bab + mr_adc.h_orth.n_cae
-
-            mr_adc.h_orth.s_cca__aaa = mr_adc.h_orth.s_cca
-            mr_adc.h_orth.f_cca__aaa = mr_adc.h_orth.s_cca__aaa + mr_adc.h_orth.n_cca_tril
-            mr_adc.h_orth.s_cca__abb = mr_adc.h_orth.f_cca__aaa
-            mr_adc.h_orth.f_cca__abb = mr_adc.h_orth.s_cca__abb + mr_adc.h_orth.n_cca
-
-    print("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
-    print("Dimension of the orthogonalized excitation manifold:       %d\n" % (mr_adc.h_orth.dim))
-    sys.stdout.flush()
-
-    if (mr_adc.h_orth.dim < mr_adc.nroots):
-        mr_adc.nroots = mr_adc.h_orth.dim
+        raise Exception("Only implemented up to first-order. Second-order is a WIP")
+            
+##        mr_adc.h1.n_caa      = mr_adc.ncvs * mr_adc.ncas * mr_adc.ncas
+##        mr_adc.h1.n_cce      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern
+##        mr_adc.h1.n_cce_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.nextern // 2
+##        mr_adc.h1.n_cae      = mr_adc.ncvs * mr_adc.ncas * mr_adc.nextern
+##        mr_adc.h1.n_cca      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.ncas
+##        mr_adc.h1.n_cca_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.ncas // 2
+##
+##        mr_adc.h1.dim_caa = 3 * mr_adc.h1.n_caa
+##        mr_adc.h1.dim_cce = mr_adc.h1.n_cce + mr_adc.h1.n_cce_tril
+##        mr_adc.h1.dim_cae = 3 * mr_adc.h1.n_cae
+##        mr_adc.h1.dim_cca = mr_adc.h1.n_cca + mr_adc.h1.n_cca_tril
+##
+##        if mr_adc.nval > 0:
+##            mr_adc.h1.n_cve = mr_adc.ncvs * mr_adc.nval * mr_adc.nextern
+##            mr_adc.h1.n_cva = mr_adc.ncvs * mr_adc.nval * mr_adc.ncas
+##
+##            mr_adc.h1.dim_cve = 3 * mr_adc.h1.n_cve
+##            mr_adc.h1.dim_cva = 3 * mr_adc.h1.n_cva
+##
+##            mr_adc.h1.dim = (mr_adc.h1.dim_caa + mr_adc.h1.dim_cce + mr_adc.h1.dim_cve +
+##                             mr_adc.h1.dim_cae + mr_adc.h1.dim_cca + mr_adc.h1.dim_cva)
+##        else:
+##            mr_adc.h1.dim = (mr_adc.h1.dim_caa + mr_adc.h1.dim_cce +
+##                             mr_adc.h1.dim_cae + mr_adc.h1.dim_cca)
+##
+##        if mr_adc.nval > 0:
+##            mr_adc.h1.s_caa = mr_adc.h0.f_c
+##            mr_adc.h1.f_caa = mr_adc.h1.s_caa + mr_adc.h1.dim_caa
+##            mr_adc.h1.s_cce = mr_adc.h1.f_caa
+##            mr_adc.h1.f_cce = mr_adc.h1.s_cce + mr_adc.h1.dim_cce
+##            mr_adc.h1.s_cve = mr_adc.h1.f_cce
+##            mr_adc.h1.f_cve = mr_adc.h1.s_cve + mr_adc.h1.dim_cve
+##            mr_adc.h1.s_cae = mr_adc.h1.f_cve
+##            mr_adc.h1.f_cae = mr_adc.h1.s_cae + mr_adc.h1.dim_cae
+##            mr_adc.h1.s_cca = mr_adc.h1.f_cae
+##            mr_adc.h1.f_cca = mr_adc.h1.s_cca + mr_adc.h1.dim_cca
+##            mr_adc.h1.s_cva = mr_adc.h1.f_cca
+##            mr_adc.h1.f_cva = mr_adc.h1.s_cva + mr_adc.h1.dim_cva
+##
+##            # Spin-cases slices
+##            mr_adc.h1.s_caa__aaa = mr_adc.h1.s_caa
+##            mr_adc.h1.f_caa__aaa = mr_adc.h1.s_caa__aaa + mr_adc.h1.n_caa
+##            mr_adc.h1.s_caa__abb = mr_adc.h1.f_caa__aaa
+##            mr_adc.h1.f_caa__abb = mr_adc.h1.s_caa__abb + mr_adc.h1.n_caa
+##            mr_adc.h1.s_caa__bab = mr_adc.h1.f_caa__abb
+##            mr_adc.h1.f_caa__bab = mr_adc.h1.s_caa__bab + mr_adc.h1.n_caa
+##
+##            mr_adc.h1.s_cce__aaa = mr_adc.h1.s_cce
+##            mr_adc.h1.f_cce__aaa = mr_adc.h1.s_cce__aaa + mr_adc.h1.n_cce_tril
+##            mr_adc.h1.s_cce__abb = mr_adc.h1.f_cce__aaa
+##            mr_adc.h1.f_cce__abb = mr_adc.h1.s_cce__abb + mr_adc.h1.n_cce
+##
+##            mr_adc.h1.s_cve__aaa = mr_adc.h1.s_cve
+##            mr_adc.h1.f_cve__aaa = mr_adc.h1.s_cve__aaa + mr_adc.h1.n_cve
+##            mr_adc.h1.s_cve__abb = mr_adc.h1.f_cve__aaa
+##            mr_adc.h1.f_cve__abb = mr_adc.h1.s_cve__abb + mr_adc.h1.n_cve
+##            mr_adc.h1.s_cve__bab = mr_adc.h1.f_cve__abb
+##            mr_adc.h1.f_cve__bab = mr_adc.h1.s_cve__bab + mr_adc.h1.n_cve
+##
+##            mr_adc.h1.s_cae__aaa = mr_adc.h1.s_cae
+##            mr_adc.h1.f_cae__aaa = mr_adc.h1.s_cae__aaa + mr_adc.h1.n_cae
+##            mr_adc.h1.s_cae__abb = mr_adc.h1.f_cae__aaa
+##            mr_adc.h1.f_cae__abb = mr_adc.h1.s_cae__abb + mr_adc.h1.n_cae
+##            mr_adc.h1.s_cae__bab = mr_adc.h1.f_cae__abb
+##            mr_adc.h1.f_cae__bab = mr_adc.h1.s_cae__bab + mr_adc.h1.n_cae
+##
+##            mr_adc.h1.s_cca__aaa = mr_adc.h1.s_cca
+##            mr_adc.h1.f_cca__aaa = mr_adc.h1.s_cca__aaa + mr_adc.h1.n_cca_tril
+##            mr_adc.h1.s_cca__abb = mr_adc.h1.f_cca__aaa
+##            mr_adc.h1.f_cca__abb = mr_adc.h1.s_cca__abb + mr_adc.h1.n_cca
+##
+##            mr_adc.h1.s_cva__aaa = mr_adc.h1.s_cva
+##            mr_adc.h1.f_cva__aaa = mr_adc.h1.s_cva__aaa + mr_adc.h1.n_cva
+##            mr_adc.h1.s_cva__abb = mr_adc.h1.f_cva__aaa
+##            mr_adc.h1.f_cva__abb = mr_adc.h1.s_cva__abb + mr_adc.h1.n_cva
+##            mr_adc.h1.s_cva__bab = mr_adc.h1.f_cva__abb
+##            mr_adc.h1.f_cva__bab = mr_adc.h1.s_cva__bab + mr_adc.h1.n_cva
+##
+##        else:
+##            mr_adc.h1.s_caa = mr_adc.h0.f_c
+##            mr_adc.h1.f_caa = mr_adc.h1.s_caa + mr_adc.h1.dim_caa
+##            mr_adc.h1.s_cce = mr_adc.h1.f_caa
+##            mr_adc.h1.f_cce = mr_adc.h1.s_cce + mr_adc.h1.dim_cce
+##            mr_adc.h1.s_cae = mr_adc.h1.f_cce
+##            mr_adc.h1.f_cae = mr_adc.h1.s_cae + mr_adc.h1.dim_cae
+##            mr_adc.h1.s_cca = mr_adc.h1.f_cae
+##            mr_adc.h1.f_cca = mr_adc.h1.s_cca + mr_adc.h1.dim_cca
+##
+##            #Spin-cases_ slices
+##            mr_adc.h1.s_caa__aaa = mr_adc.h1.s_caa
+##            mr_adc.h1.f_caa__aaa = mr_adc.h1.s_caa__aaa + mr_adc.h1.n_caa
+##            mr_adc.h1.s_caa__abb = mr_adc.h1.f_caa__aaa
+##            mr_adc.h1.f_caa__abb = mr_adc.h1.s_caa__abb + mr_adc.h1.n_caa
+##            mr_adc.h1.s_caa__bab = mr_adc.h1.f_caa__abb
+##            mr_adc.h1.f_caa__bab = mr_adc.h1.s_caa__bab + mr_adc.h1.n_caa
+##
+##            mr_adc.h1.s_cce__aaa = mr_adc.h1.s_cce
+##            mr_adc.h1.f_cce__aaa = mr_adc.h1.s_cce__aaa + mr_adc.h1.n_cce_tril
+##            mr_adc.h1.s_cce__abb = mr_adc.h1.f_cce__aaa
+##            mr_adc.h1.f_cce__abb = mr_adc.h1.s_cce__abb + mr_adc.h1.n_cce
+##
+##            mr_adc.h1.s_cae__aaa = mr_adc.h1.s_cae
+##            mr_adc.h1.f_cae__aaa = mr_adc.h1.s_cae__aaa + mr_adc.h1.n_cae
+##            mr_adc.h1.s_cae__abb = mr_adc.h1.f_cae__aaa
+##            mr_adc.h1.f_cae__abb = mr_adc.h1.s_cae__abb + mr_adc.h1.n_cae
+##            mr_adc.h1.s_cae__bab = mr_adc.h1.f_cae__abb
+##            mr_adc.h1.f_cae__bab = mr_adc.h1.s_cae__bab + mr_adc.h1.n_cae
+##
+##            mr_adc.h1.s_cca__aaa = mr_adc.h1.s_cca
+##            mr_adc.h1.f_cca__aaa = mr_adc.h1.s_cca__aaa + mr_adc.h1.n_cca_tril
+##            mr_adc.h1.s_cca__abb = mr_adc.h1.f_cca__aaa
+##            mr_adc.h1.f_cca__abb = mr_adc.h1.s_cca__abb + mr_adc.h1.n_cca
+##
+##        print("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
+##
+##        # Overlap for c-caa
+##        mr_adc.S12.c_caa = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
+##        if not hasattr(mr_adc.S12, "cae"):
+##            mr_adc.S12.cae = mr_adc_overlap.compute_S12_m1(mr_adc, ignore_print = True)
+##        if not hasattr(mr_adc.S12, "cca"):
+##            mr_adc.S12.cca = mr_adc_overlap.compute_S12_p1(mr_adc, ignore_print = True)
+##
+##        # Determine dimensions of orthogonalized excitation spaces
+##        mr_adc.h_orth.n_c_caa    = mr_adc.ncvs * mr_adc.S12.c_caa.shape[1]
+##        mr_adc.h_orth.n_cce      = mr_adc.h1.n_cce
+##        mr_adc.h_orth.n_cce_tril = mr_adc.h1.n_cce_tril
+##        mr_adc.h_orth.n_cae      = mr_adc.ncvs * mr_adc.S12.cae.shape[1] * mr_adc.nextern
+##        mr_adc.h_orth.n_cca      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.S12.cca.shape[1]
+##        mr_adc.h_orth.n_cca_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.S12.cca.shape[1] // 2
+##
+##        mr_adc.h_orth.dim_c_caa = mr_adc.h_orth.n_c_caa
+##        mr_adc.h_orth.dim_cce   = mr_adc.h1.dim_cce
+##        mr_adc.h_orth.dim_cae   = 3 * mr_adc.h_orth.n_cae
+##        mr_adc.h_orth.dim_cca   = mr_adc.h_orth.n_cca_tril + mr_adc.h_orth.n_cca
+##
+##        if mr_adc.nval > 0:
+##            mr_adc.h_orth.n_cve = mr_adc.h1.n_cve
+##            mr_adc.h_orth.n_cva = mr_adc.ncvs * mr_adc.nval * mr_adc.S12.cca.shape[1]
+##
+##            mr_adc.h_orth.dim_cve = mr_adc.h1.dim_cve
+##            mr_adc.h_orth.dim_cva = 3 * mr_adc.h_orth.n_cva
+##
+##            mr_adc.h_orth.dim = (mr_adc.h_orth.dim_c_caa + mr_adc.h_orth.dim_cce + mr_adc.h_orth.dim_cve +
+##                                 mr_adc.h_orth.dim_cae + mr_adc.h_orth.dim_cca + mr_adc.h_orth.dim_cva)
+##        else:
+##            mr_adc.h_orth.dim = (mr_adc.h_orth.dim_c_caa + mr_adc.h_orth.dim_cce +
+##                                 mr_adc.h_orth.dim_cae + mr_adc.h_orth.dim_cca)
+##
+##        if mr_adc.nval > 0:
+##            mr_adc.h_orth.s_c_caa = 0
+##            mr_adc.h_orth.f_c_caa = mr_adc.h_orth.s_c_caa + mr_adc.h_orth.dim_c_caa
+##            mr_adc.h_orth.s_cce = mr_adc.h_orth.f_c_caa
+##            mr_adc.h_orth.f_cce = mr_adc.h_orth.s_cce + mr_adc.h_orth.dim_cce
+##            mr_adc.h_orth.s_cve = mr_adc.h_orth.f_cce
+##            mr_adc.h_orth.f_cve = mr_adc.h_orth.s_cve + mr_adc.h_orth.dim_cve
+##            mr_adc.h_orth.s_cae = mr_adc.h_orth.f_cve
+##            mr_adc.h_orth.f_cae = mr_adc.h_orth.s_cae + mr_adc.h_orth.dim_cae
+##            mr_adc.h_orth.s_cca = mr_adc.h_orth.f_cae
+##            mr_adc.h_orth.f_cca = mr_adc.h_orth.s_cca + mr_adc.h_orth.dim_cca
+##            mr_adc.h_orth.s_cva = mr_adc.h_orth.f_cca
+##            mr_adc.h_orth.f_cva = mr_adc.h_orth.s_cva + mr_adc.h_orth.dim_cva
+##
+##            # Spin-cases slices
+##            mr_adc.h_orth.s_cce__aaa = mr_adc.h_orth.s_cce
+##            mr_adc.h_orth.f_cce__aaa = mr_adc.h_orth.s_cce__aaa + mr_adc.h_orth.n_cce_tril
+##            mr_adc.h_orth.s_cce__abb = mr_adc.h_orth.f_cce__aaa
+##            mr_adc.h_orth.f_cce__abb = mr_adc.h_orth.s_cce__abb + mr_adc.h_orth.n_cce
+##
+##            mr_adc.h_orth.s_cve__aaa = mr_adc.h_orth.s_cve
+##            mr_adc.h_orth.f_cve__aaa = mr_adc.h_orth.s_cve__aaa + mr_adc.h_orth.n_cve
+##            mr_adc.h_orth.s_cve__abb = mr_adc.h_orth.f_cve__aaa
+##            mr_adc.h_orth.f_cve__abb = mr_adc.h_orth.s_cve__abb + mr_adc.h_orth.n_cve
+##            mr_adc.h_orth.s_cve__bab = mr_adc.h_orth.f_cve__abb
+##            mr_adc.h_orth.f_cve__bab = mr_adc.h_orth.s_cve__bab + mr_adc.h_orth.n_cve
+##
+##            mr_adc.h_orth.s_cae__aaa = mr_adc.h_orth.s_cae
+##            mr_adc.h_orth.f_cae__aaa = mr_adc.h_orth.s_cae__aaa + mr_adc.h_orth.n_cae
+##            mr_adc.h_orth.s_cae__abb = mr_adc.h_orth.f_cae__aaa
+##            mr_adc.h_orth.f_cae__abb = mr_adc.h_orth.s_cae__abb + mr_adc.h_orth.n_cae
+##            mr_adc.h_orth.s_cae__bab = mr_adc.h_orth.f_cae__abb
+##            mr_adc.h_orth.f_cae__bab = mr_adc.h_orth.s_cae__bab + mr_adc.h_orth.n_cae
+##
+##            mr_adc.h_orth.s_cca__aaa = mr_adc.h_orth.s_cca
+##            mr_adc.h_orth.f_cca__aaa = mr_adc.h_orth.s_cca__aaa + mr_adc.h_orth.n_cca_tril
+##            mr_adc.h_orth.s_cca__abb = mr_adc.h_orth.f_cca__aaa
+##            mr_adc.h_orth.f_cca__abb = mr_adc.h_orth.s_cca__abb + mr_adc.h_orth.n_cca
+##
+##            mr_adc.h_orth.s_cva__aaa = mr_adc.h_orth.s_cva
+##            mr_adc.h_orth.f_cva__aaa = mr_adc.h_orth.s_cva__aaa + mr_adc.h_orth.n_cva
+##            mr_adc.h_orth.s_cva__abb = mr_adc.h_orth.f_cva__aaa
+##            mr_adc.h_orth.f_cva__abb = mr_adc.h_orth.s_cva__abb + mr_adc.h_orth.n_cva
+##            mr_adc.h_orth.s_cva__bab = mr_adc.h_orth.f_cva__abb
+##            mr_adc.h_orth.f_cva__bab = mr_adc.h_orth.s_cva__bab + mr_adc.h_orth.n_cva
+##
+##        else:
+##            mr_adc.h_orth.s_c_caa = 0
+##            mr_adc.h_orth.f_c_caa = mr_adc.h_orth.s_c_caa + mr_adc.h_orth.dim_c_caa
+##            mr_adc.h_orth.s_cce = mr_adc.h_orth.f_c_caa
+##            mr_adc.h_orth.f_cce = mr_adc.h_orth.s_cce + mr_adc.h_orth.dim_cce
+##            mr_adc.h_orth.s_cae = mr_adc.h_orth.f_cce
+##            mr_adc.h_orth.f_cae = mr_adc.h_orth.s_cae + mr_adc.h_orth.dim_cae
+##            mr_adc.h_orth.s_cca = mr_adc.h_orth.f_cae
+##            mr_adc.h_orth.f_cca = mr_adc.h_orth.s_cca + mr_adc.h_orth.dim_cca
+##
+##            # Spin-cases slices
+##            mr_adc.h_orth.s_cce__aaa = mr_adc.h_orth.s_cce
+##            mr_adc.h_orth.f_cce__aaa = mr_adc.h_orth.s_cce__aaa + mr_adc.h_orth.n_cce_tril
+##            mr_adc.h_orth.s_cce__abb = mr_adc.h_orth.f_cce__aaa
+##            mr_adc.h_orth.f_cce__abb = mr_adc.h_orth.s_cce__abb + mr_adc.h_orth.n_cce
+##
+##            mr_adc.h_orth.s_cae__aaa = mr_adc.h_orth.s_cae
+##            mr_adc.h_orth.f_cae__aaa = mr_adc.h_orth.s_cae__aaa + mr_adc.h_orth.n_cae
+##            mr_adc.h_orth.s_cae__abb = mr_adc.h_orth.f_cae__aaa
+##            mr_adc.h_orth.f_cae__abb = mr_adc.h_orth.s_cae__abb + mr_adc.h_orth.n_cae
+##            mr_adc.h_orth.s_cae__bab = mr_adc.h_orth.f_cae__abb
+##            mr_adc.h_orth.f_cae__bab = mr_adc.h_orth.s_cae__bab + mr_adc.h_orth.n_cae
+##
+##            mr_adc.h_orth.s_cca__aaa = mr_adc.h_orth.s_cca
+##            mr_adc.h_orth.f_cca__aaa = mr_adc.h_orth.s_cca__aaa + mr_adc.h_orth.n_cca_tril
+##            mr_adc.h_orth.s_cca__abb = mr_adc.h_orth.f_cca__aaa
+##            mr_adc.h_orth.f_cca__abb = mr_adc.h_orth.s_cca__abb + mr_adc.h_orth.n_cca
+##
+##    print("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
+##    print("Dimension of the orthogonalized excitation manifold:       %d\n" % (mr_adc.h_orth.dim))
+##    sys.stdout.flush()
+##
+##    if (mr_adc.h_orth.dim < mr_adc.nroots):
+##        mr_adc.nroots = mr_adc.h_orth.dim
 
     return mr_adc
+
+# IP reference function
+#def compute_excitation_manifolds(mr_adc):
+#
+#    # MR-ADC(0) and MR-ADC(1)
+#    mr_adc.h0.n_c = mr_adc.ncvs
+#
+#    ## Total dimension of h0
+#    mr_adc.h0.dim = mr_adc.h0.n_c
+#
+#    mr_adc.h0.s_c = 0
+#    mr_adc.h0.f_c = mr_adc.h0.s_c + mr_adc.h0.n_c
+#
+#    print("Dimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
+#
+#    # MR-ADC(2)
+#    mr_adc.h1.dim = 0
+#    mr_adc.h_orth.dim = mr_adc.h0.dim
+#
+#    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+#        mr_adc.h1.n_caa      = mr_adc.ncvs * mr_adc.ncas * mr_adc.ncas
+#        mr_adc.h1.n_cce      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern
+#        mr_adc.h1.n_cce_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.nextern // 2
+#        mr_adc.h1.n_cae      = mr_adc.ncvs * mr_adc.ncas * mr_adc.nextern
+#        mr_adc.h1.n_cca      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.ncas
+#        mr_adc.h1.n_cca_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.ncas // 2
+#
+#        mr_adc.h1.dim_caa = 3 * mr_adc.h1.n_caa
+#        mr_adc.h1.dim_cce = mr_adc.h1.n_cce + mr_adc.h1.n_cce_tril
+#        mr_adc.h1.dim_cae = 3 * mr_adc.h1.n_cae
+#        mr_adc.h1.dim_cca = mr_adc.h1.n_cca + mr_adc.h1.n_cca_tril
+#
+#        if mr_adc.nval > 0:
+#            mr_adc.h1.n_cve = mr_adc.ncvs * mr_adc.nval * mr_adc.nextern
+#            mr_adc.h1.n_cva = mr_adc.ncvs * mr_adc.nval * mr_adc.ncas
+#
+#            mr_adc.h1.dim_cve = 3 * mr_adc.h1.n_cve
+#            mr_adc.h1.dim_cva = 3 * mr_adc.h1.n_cva
+#
+#            mr_adc.h1.dim = (mr_adc.h1.dim_caa + mr_adc.h1.dim_cce + mr_adc.h1.dim_cve +
+#                             mr_adc.h1.dim_cae + mr_adc.h1.dim_cca + mr_adc.h1.dim_cva)
+#        else:
+#            mr_adc.h1.dim = (mr_adc.h1.dim_caa + mr_adc.h1.dim_cce +
+#                             mr_adc.h1.dim_cae + mr_adc.h1.dim_cca)
+#
+#        if mr_adc.nval > 0:
+#            mr_adc.h1.s_caa = mr_adc.h0.f_c
+#            mr_adc.h1.f_caa = mr_adc.h1.s_caa + mr_adc.h1.dim_caa
+#            mr_adc.h1.s_cce = mr_adc.h1.f_caa
+#            mr_adc.h1.f_cce = mr_adc.h1.s_cce + mr_adc.h1.dim_cce
+#            mr_adc.h1.s_cve = mr_adc.h1.f_cce
+#            mr_adc.h1.f_cve = mr_adc.h1.s_cve + mr_adc.h1.dim_cve
+#            mr_adc.h1.s_cae = mr_adc.h1.f_cve
+#            mr_adc.h1.f_cae = mr_adc.h1.s_cae + mr_adc.h1.dim_cae
+#            mr_adc.h1.s_cca = mr_adc.h1.f_cae
+#            mr_adc.h1.f_cca = mr_adc.h1.s_cca + mr_adc.h1.dim_cca
+#            mr_adc.h1.s_cva = mr_adc.h1.f_cca
+#            mr_adc.h1.f_cva = mr_adc.h1.s_cva + mr_adc.h1.dim_cva
+#
+#            # Spin-cases slices
+#            mr_adc.h1.s_caa__aaa = mr_adc.h1.s_caa
+#            mr_adc.h1.f_caa__aaa = mr_adc.h1.s_caa__aaa + mr_adc.h1.n_caa
+#            mr_adc.h1.s_caa__abb = mr_adc.h1.f_caa__aaa
+#            mr_adc.h1.f_caa__abb = mr_adc.h1.s_caa__abb + mr_adc.h1.n_caa
+#            mr_adc.h1.s_caa__bab = mr_adc.h1.f_caa__abb
+#            mr_adc.h1.f_caa__bab = mr_adc.h1.s_caa__bab + mr_adc.h1.n_caa
+#
+#            mr_adc.h1.s_cce__aaa = mr_adc.h1.s_cce
+#            mr_adc.h1.f_cce__aaa = mr_adc.h1.s_cce__aaa + mr_adc.h1.n_cce_tril
+#            mr_adc.h1.s_cce__abb = mr_adc.h1.f_cce__aaa
+#            mr_adc.h1.f_cce__abb = mr_adc.h1.s_cce__abb + mr_adc.h1.n_cce
+#
+#            mr_adc.h1.s_cve__aaa = mr_adc.h1.s_cve
+#            mr_adc.h1.f_cve__aaa = mr_adc.h1.s_cve__aaa + mr_adc.h1.n_cve
+#            mr_adc.h1.s_cve__abb = mr_adc.h1.f_cve__aaa
+#            mr_adc.h1.f_cve__abb = mr_adc.h1.s_cve__abb + mr_adc.h1.n_cve
+#            mr_adc.h1.s_cve__bab = mr_adc.h1.f_cve__abb
+#            mr_adc.h1.f_cve__bab = mr_adc.h1.s_cve__bab + mr_adc.h1.n_cve
+#
+#            mr_adc.h1.s_cae__aaa = mr_adc.h1.s_cae
+#            mr_adc.h1.f_cae__aaa = mr_adc.h1.s_cae__aaa + mr_adc.h1.n_cae
+#            mr_adc.h1.s_cae__abb = mr_adc.h1.f_cae__aaa
+#            mr_adc.h1.f_cae__abb = mr_adc.h1.s_cae__abb + mr_adc.h1.n_cae
+#            mr_adc.h1.s_cae__bab = mr_adc.h1.f_cae__abb
+#            mr_adc.h1.f_cae__bab = mr_adc.h1.s_cae__bab + mr_adc.h1.n_cae
+#
+#            mr_adc.h1.s_cca__aaa = mr_adc.h1.s_cca
+#            mr_adc.h1.f_cca__aaa = mr_adc.h1.s_cca__aaa + mr_adc.h1.n_cca_tril
+#            mr_adc.h1.s_cca__abb = mr_adc.h1.f_cca__aaa
+#            mr_adc.h1.f_cca__abb = mr_adc.h1.s_cca__abb + mr_adc.h1.n_cca
+#
+#            mr_adc.h1.s_cva__aaa = mr_adc.h1.s_cva
+#            mr_adc.h1.f_cva__aaa = mr_adc.h1.s_cva__aaa + mr_adc.h1.n_cva
+#            mr_adc.h1.s_cva__abb = mr_adc.h1.f_cva__aaa
+#            mr_adc.h1.f_cva__abb = mr_adc.h1.s_cva__abb + mr_adc.h1.n_cva
+#            mr_adc.h1.s_cva__bab = mr_adc.h1.f_cva__abb
+#            mr_adc.h1.f_cva__bab = mr_adc.h1.s_cva__bab + mr_adc.h1.n_cva
+#
+#        else:
+#            mr_adc.h1.s_caa = mr_adc.h0.f_c
+#            mr_adc.h1.f_caa = mr_adc.h1.s_caa + mr_adc.h1.dim_caa
+#            mr_adc.h1.s_cce = mr_adc.h1.f_caa
+#            mr_adc.h1.f_cce = mr_adc.h1.s_cce + mr_adc.h1.dim_cce
+#            mr_adc.h1.s_cae = mr_adc.h1.f_cce
+#            mr_adc.h1.f_cae = mr_adc.h1.s_cae + mr_adc.h1.dim_cae
+#            mr_adc.h1.s_cca = mr_adc.h1.f_cae
+#            mr_adc.h1.f_cca = mr_adc.h1.s_cca + mr_adc.h1.dim_cca
+#
+#            #Spin-cases_ slices
+#            mr_adc.h1.s_caa__aaa = mr_adc.h1.s_caa
+#            mr_adc.h1.f_caa__aaa = mr_adc.h1.s_caa__aaa + mr_adc.h1.n_caa
+#            mr_adc.h1.s_caa__abb = mr_adc.h1.f_caa__aaa
+#            mr_adc.h1.f_caa__abb = mr_adc.h1.s_caa__abb + mr_adc.h1.n_caa
+#            mr_adc.h1.s_caa__bab = mr_adc.h1.f_caa__abb
+#            mr_adc.h1.f_caa__bab = mr_adc.h1.s_caa__bab + mr_adc.h1.n_caa
+#
+#            mr_adc.h1.s_cce__aaa = mr_adc.h1.s_cce
+#            mr_adc.h1.f_cce__aaa = mr_adc.h1.s_cce__aaa + mr_adc.h1.n_cce_tril
+#            mr_adc.h1.s_cce__abb = mr_adc.h1.f_cce__aaa
+#            mr_adc.h1.f_cce__abb = mr_adc.h1.s_cce__abb + mr_adc.h1.n_cce
+#
+#            mr_adc.h1.s_cae__aaa = mr_adc.h1.s_cae
+#            mr_adc.h1.f_cae__aaa = mr_adc.h1.s_cae__aaa + mr_adc.h1.n_cae
+#            mr_adc.h1.s_cae__abb = mr_adc.h1.f_cae__aaa
+#            mr_adc.h1.f_cae__abb = mr_adc.h1.s_cae__abb + mr_adc.h1.n_cae
+#            mr_adc.h1.s_cae__bab = mr_adc.h1.f_cae__abb
+#            mr_adc.h1.f_cae__bab = mr_adc.h1.s_cae__bab + mr_adc.h1.n_cae
+#
+#            mr_adc.h1.s_cca__aaa = mr_adc.h1.s_cca
+#            mr_adc.h1.f_cca__aaa = mr_adc.h1.s_cca__aaa + mr_adc.h1.n_cca_tril
+#            mr_adc.h1.s_cca__abb = mr_adc.h1.f_cca__aaa
+#            mr_adc.h1.f_cca__abb = mr_adc.h1.s_cca__abb + mr_adc.h1.n_cca
+#
+#        print("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
+#
+#        # Overlap for c-caa
+#        mr_adc.S12.c_caa = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
+#        if not hasattr(mr_adc.S12, "cae"):
+#            mr_adc.S12.cae = mr_adc_overlap.compute_S12_m1(mr_adc, ignore_print = True)
+#        if not hasattr(mr_adc.S12, "cca"):
+#            mr_adc.S12.cca = mr_adc_overlap.compute_S12_p1(mr_adc, ignore_print = True)
+#
+#        # Determine dimensions of orthogonalized excitation spaces
+#        mr_adc.h_orth.n_c_caa    = mr_adc.ncvs * mr_adc.S12.c_caa.shape[1]
+#        mr_adc.h_orth.n_cce      = mr_adc.h1.n_cce
+#        mr_adc.h_orth.n_cce_tril = mr_adc.h1.n_cce_tril
+#        mr_adc.h_orth.n_cae      = mr_adc.ncvs * mr_adc.S12.cae.shape[1] * mr_adc.nextern
+#        mr_adc.h_orth.n_cca      = mr_adc.ncvs * mr_adc.ncvs * mr_adc.S12.cca.shape[1]
+#        mr_adc.h_orth.n_cca_tril = mr_adc.ncvs * (mr_adc.ncvs - 1) * mr_adc.S12.cca.shape[1] // 2
+#
+#        mr_adc.h_orth.dim_c_caa = mr_adc.h_orth.n_c_caa
+#        mr_adc.h_orth.dim_cce   = mr_adc.h1.dim_cce
+#        mr_adc.h_orth.dim_cae   = 3 * mr_adc.h_orth.n_cae
+#        mr_adc.h_orth.dim_cca   = mr_adc.h_orth.n_cca_tril + mr_adc.h_orth.n_cca
+#
+#        if mr_adc.nval > 0:
+#            mr_adc.h_orth.n_cve = mr_adc.h1.n_cve
+#            mr_adc.h_orth.n_cva = mr_adc.ncvs * mr_adc.nval * mr_adc.S12.cca.shape[1]
+#
+#            mr_adc.h_orth.dim_cve = mr_adc.h1.dim_cve
+#            mr_adc.h_orth.dim_cva = 3 * mr_adc.h_orth.n_cva
+#
+#            mr_adc.h_orth.dim = (mr_adc.h_orth.dim_c_caa + mr_adc.h_orth.dim_cce + mr_adc.h_orth.dim_cve +
+#                                 mr_adc.h_orth.dim_cae + mr_adc.h_orth.dim_cca + mr_adc.h_orth.dim_cva)
+#        else:
+#            mr_adc.h_orth.dim = (mr_adc.h_orth.dim_c_caa + mr_adc.h_orth.dim_cce +
+#                                 mr_adc.h_orth.dim_cae + mr_adc.h_orth.dim_cca)
+#
+#        if mr_adc.nval > 0:
+#            mr_adc.h_orth.s_c_caa = 0
+#            mr_adc.h_orth.f_c_caa = mr_adc.h_orth.s_c_caa + mr_adc.h_orth.dim_c_caa
+#            mr_adc.h_orth.s_cce = mr_adc.h_orth.f_c_caa
+#            mr_adc.h_orth.f_cce = mr_adc.h_orth.s_cce + mr_adc.h_orth.dim_cce
+#            mr_adc.h_orth.s_cve = mr_adc.h_orth.f_cce
+#            mr_adc.h_orth.f_cve = mr_adc.h_orth.s_cve + mr_adc.h_orth.dim_cve
+#            mr_adc.h_orth.s_cae = mr_adc.h_orth.f_cve
+#            mr_adc.h_orth.f_cae = mr_adc.h_orth.s_cae + mr_adc.h_orth.dim_cae
+#            mr_adc.h_orth.s_cca = mr_adc.h_orth.f_cae
+#            mr_adc.h_orth.f_cca = mr_adc.h_orth.s_cca + mr_adc.h_orth.dim_cca
+#            mr_adc.h_orth.s_cva = mr_adc.h_orth.f_cca
+#            mr_adc.h_orth.f_cva = mr_adc.h_orth.s_cva + mr_adc.h_orth.dim_cva
+#
+#            # Spin-cases slices
+#            mr_adc.h_orth.s_cce__aaa = mr_adc.h_orth.s_cce
+#            mr_adc.h_orth.f_cce__aaa = mr_adc.h_orth.s_cce__aaa + mr_adc.h_orth.n_cce_tril
+#            mr_adc.h_orth.s_cce__abb = mr_adc.h_orth.f_cce__aaa
+#            mr_adc.h_orth.f_cce__abb = mr_adc.h_orth.s_cce__abb + mr_adc.h_orth.n_cce
+#
+#            mr_adc.h_orth.s_cve__aaa = mr_adc.h_orth.s_cve
+#            mr_adc.h_orth.f_cve__aaa = mr_adc.h_orth.s_cve__aaa + mr_adc.h_orth.n_cve
+#            mr_adc.h_orth.s_cve__abb = mr_adc.h_orth.f_cve__aaa
+#            mr_adc.h_orth.f_cve__abb = mr_adc.h_orth.s_cve__abb + mr_adc.h_orth.n_cve
+#            mr_adc.h_orth.s_cve__bab = mr_adc.h_orth.f_cve__abb
+#            mr_adc.h_orth.f_cve__bab = mr_adc.h_orth.s_cve__bab + mr_adc.h_orth.n_cve
+#
+#            mr_adc.h_orth.s_cae__aaa = mr_adc.h_orth.s_cae
+#            mr_adc.h_orth.f_cae__aaa = mr_adc.h_orth.s_cae__aaa + mr_adc.h_orth.n_cae
+#            mr_adc.h_orth.s_cae__abb = mr_adc.h_orth.f_cae__aaa
+#            mr_adc.h_orth.f_cae__abb = mr_adc.h_orth.s_cae__abb + mr_adc.h_orth.n_cae
+#            mr_adc.h_orth.s_cae__bab = mr_adc.h_orth.f_cae__abb
+#            mr_adc.h_orth.f_cae__bab = mr_adc.h_orth.s_cae__bab + mr_adc.h_orth.n_cae
+#
+#            mr_adc.h_orth.s_cca__aaa = mr_adc.h_orth.s_cca
+#            mr_adc.h_orth.f_cca__aaa = mr_adc.h_orth.s_cca__aaa + mr_adc.h_orth.n_cca_tril
+#            mr_adc.h_orth.s_cca__abb = mr_adc.h_orth.f_cca__aaa
+#            mr_adc.h_orth.f_cca__abb = mr_adc.h_orth.s_cca__abb + mr_adc.h_orth.n_cca
+#
+#            mr_adc.h_orth.s_cva__aaa = mr_adc.h_orth.s_cva
+#            mr_adc.h_orth.f_cva__aaa = mr_adc.h_orth.s_cva__aaa + mr_adc.h_orth.n_cva
+#            mr_adc.h_orth.s_cva__abb = mr_adc.h_orth.f_cva__aaa
+#            mr_adc.h_orth.f_cva__abb = mr_adc.h_orth.s_cva__abb + mr_adc.h_orth.n_cva
+#            mr_adc.h_orth.s_cva__bab = mr_adc.h_orth.f_cva__abb
+#            mr_adc.h_orth.f_cva__bab = mr_adc.h_orth.s_cva__bab + mr_adc.h_orth.n_cva
+#
+#        else:
+#            mr_adc.h_orth.s_c_caa = 0
+#            mr_adc.h_orth.f_c_caa = mr_adc.h_orth.s_c_caa + mr_adc.h_orth.dim_c_caa
+#            mr_adc.h_orth.s_cce = mr_adc.h_orth.f_c_caa
+#            mr_adc.h_orth.f_cce = mr_adc.h_orth.s_cce + mr_adc.h_orth.dim_cce
+#            mr_adc.h_orth.s_cae = mr_adc.h_orth.f_cce
+#            mr_adc.h_orth.f_cae = mr_adc.h_orth.s_cae + mr_adc.h_orth.dim_cae
+#            mr_adc.h_orth.s_cca = mr_adc.h_orth.f_cae
+#            mr_adc.h_orth.f_cca = mr_adc.h_orth.s_cca + mr_adc.h_orth.dim_cca
+#
+#            # Spin-cases slices
+#            mr_adc.h_orth.s_cce__aaa = mr_adc.h_orth.s_cce
+#            mr_adc.h_orth.f_cce__aaa = mr_adc.h_orth.s_cce__aaa + mr_adc.h_orth.n_cce_tril
+#            mr_adc.h_orth.s_cce__abb = mr_adc.h_orth.f_cce__aaa
+#            mr_adc.h_orth.f_cce__abb = mr_adc.h_orth.s_cce__abb + mr_adc.h_orth.n_cce
+#
+#            mr_adc.h_orth.s_cae__aaa = mr_adc.h_orth.s_cae
+#            mr_adc.h_orth.f_cae__aaa = mr_adc.h_orth.s_cae__aaa + mr_adc.h_orth.n_cae
+#            mr_adc.h_orth.s_cae__abb = mr_adc.h_orth.f_cae__aaa
+#            mr_adc.h_orth.f_cae__abb = mr_adc.h_orth.s_cae__abb + mr_adc.h_orth.n_cae
+#            mr_adc.h_orth.s_cae__bab = mr_adc.h_orth.f_cae__abb
+#            mr_adc.h_orth.f_cae__bab = mr_adc.h_orth.s_cae__bab + mr_adc.h_orth.n_cae
+#
+#            mr_adc.h_orth.s_cca__aaa = mr_adc.h_orth.s_cca
+#            mr_adc.h_orth.f_cca__aaa = mr_adc.h_orth.s_cca__aaa + mr_adc.h_orth.n_cca_tril
+#            mr_adc.h_orth.s_cca__abb = mr_adc.h_orth.f_cca__aaa
+#            mr_adc.h_orth.f_cca__abb = mr_adc.h_orth.s_cca__abb + mr_adc.h_orth.n_cca
+#
+#    print("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
+#    print("Dimension of the orthogonalized excitation manifold:       %d\n" % (mr_adc.h_orth.dim))
+#    sys.stdout.flush()
+#
+#    if (mr_adc.h_orth.dim < mr_adc.nroots):
+#        mr_adc.nroots = mr_adc.h_orth.dim
+#
+#    return mr_adc
 
 def compute_M_00(mr_adc):
 
