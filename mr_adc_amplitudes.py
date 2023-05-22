@@ -243,33 +243,19 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.xxae = np.ascontiguousarray(mr_adc.t2.ccae[:ncvs, :ncvs, :, :])
             mr_adc.t2.xvae = np.ascontiguousarray(mr_adc.t2.ccae[:ncvs, ncvs:, :, :])
             mr_adc.t2.vxae = np.ascontiguousarray(mr_adc.t2.ccae[ncvs:, :ncvs, :, :])
-            mr_adc.t2.vvae = np.ascontiguousarray(mr_adc.t2.ccae[ncvs:, ncvs:, :, :])
 
             mr_adc.t2.xaee = np.ascontiguousarray(mr_adc.t2.caee[:ncvs, :, :, :])
-            mr_adc.t2.vaee = np.ascontiguousarray(mr_adc.t2.caee[ncvs:, :, :, :])
 
             mr_adc.t2.xxaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, :ncvs, :, :])
             mr_adc.t2.xvaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, ncvs:, :, :])
-            mr_adc.t2.vvaa = np.ascontiguousarray(mr_adc.t2.ccaa[ncvs:, ncvs:, :, :])
 
-        del(mr_adc.t1.ce)
-        del(mr_adc.t1.caea)
-        del(mr_adc.t1.caae)
-        del(mr_adc.t1.ca)
-        del(mr_adc.t1.caaa)
-        del(mr_adc.t1.ccee)
-        del(mr_adc.t1.ccae)
-        del(mr_adc.t1.caee)
-        del(mr_adc.t1.ccaa)
-        del(mr_adc.t2.ce)
-        del(mr_adc.t2.caea)
-        del(mr_adc.t2.caae)
-        del(mr_adc.t2.ca)
-        del(mr_adc.t2.caaa)
-        del(mr_adc.t2.ccee)
-        del(mr_adc.t2.ccae)
-        del(mr_adc.t2.caee)
-        del(mr_adc.t2.ccaa)
+        del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
+            mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
+            mr_adc.t1.ccae, mr_adc.t1.caee, mr_adc.t1.ccaa,
+            mr_adc.t2.ce, mr_adc.t2.caea, mr_adc.t2.caae,
+            mr_adc.t2.ca, mr_adc.t2.caaa, mr_adc.t2.ccee,
+            mr_adc.t2.ccae, mr_adc.t2.caee, mr_adc.t2.ccaa
+        )
 
     print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
 
