@@ -122,7 +122,7 @@ class MRADC:
                 raise Exception("Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type)
 
         # TODO: Temporary check of what methods are implemented in this version
-        if self.method_type not in ("ip", "cvs-ip"):
+        if self.method_type not in ("ip", "cvs-ip", "cvs-ee"):
             raise Exception("This spin-adapted version does not currently support method type %s" % self.method_type)
 
         # Transform one- and two-electron integrals

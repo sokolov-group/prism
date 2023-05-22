@@ -60,7 +60,7 @@ def kernel(mr_adc):
     mr_adc_amplitudes.compute_amplitudes(mr_adc)
 
     # Compute CVS integrals and amplitudes
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
         mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
         mr_adc_amplitudes.compute_cvs_amplitudes(mr_adc)
 
