@@ -128,6 +128,9 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
+    if mr_adc.method_type == 'cvs-ip':
+        del(mr_adc.rdm.ccccaaaa)
+
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr
 
