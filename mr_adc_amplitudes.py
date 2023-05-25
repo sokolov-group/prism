@@ -34,6 +34,11 @@ def compute_amplitudes(mr_adc):
     # Second-order amplitudes
     compute_t2_amplitudes(mr_adc)
 
+    # Compute CVS amplitudes and remove non-CVS core integrals, amplitudes and unnecessary RDMs
+    if mr_adc.method_type == "cvs-ip":
+        compute_cvs_amplitudes(mr_adc)
+        remove_non_cvs_variables(mr_adc)
+
     print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
 
 def compute_t1_amplitudes(mr_adc):
@@ -127,9 +132,6 @@ def compute_t1_amplitudes(mr_adc):
             print("Correlation energy [-2]:                     %20.12f\n" % e_m2)
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
-
-    if mr_adc.method_type == 'cvs-ip':
-        del(mr_adc.rdm.ccccaaaa)
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr
@@ -252,6 +254,19 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.xxaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, :ncvs, :, :])
             mr_adc.t2.xvaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, ncvs:, :, :])
 
+    print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
+
+def remove_non_cvs_variables(mr_adc):
+    'Remove core integrals, core amplitudes and RDMs not used in CVS calculations'
+
+    if mr_adc.method_type == "cvs-ip":
+        del(mr_adc.h1eff.ca, mr_adc.h1eff.ce,
+            mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
+            mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
+            mr_adc.v2e.ceaa, mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
+            mr_adc.v2e.caee, mr_adc.v2e.ceea
+        )
+
         del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
             mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
             mr_adc.t1.ccae, mr_adc.t1.caee, mr_adc.t1.ccaa,
@@ -260,7 +275,7 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.ccae, mr_adc.t2.caee, mr_adc.t2.ccaa
         )
 
-    print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
+        del(mr_adc.rdm.ccccaaaa)
 
 def compute_t1_0(mr_adc):
 

@@ -254,12 +254,4 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.xeea = np.ascontiguousarray(mr_adc.v2e.ceea[:ncvs, :, :, :])
             mr_adc.v2e.veea = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:, :, :, :])
 
-        del(mr_adc.h1eff.ca, mr_adc.h1eff.ce,
-            mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
-            mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
-            mr_adc.v2e.ceaa, mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
-            mr_adc.v2e.caee, mr_adc.v2e.ceea
-        )
-
-
     print("Time for computing integrals:                      %f sec\n" % (time.time() - start_time))

@@ -130,6 +130,10 @@ class MRADC:
         mr_adc_integrals.transform_integrals_1e(self)
         mr_adc_integrals.transform_integrals_2e_incore(self)
 
+        # Compute CVS integrals
+        if self.method_type == "cvs-ip":
+            mr_adc_integrals.compute_cvs_integrals_2e_incore(self)
+
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
 

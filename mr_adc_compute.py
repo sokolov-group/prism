@@ -59,11 +59,6 @@ def kernel(mr_adc):
     # Compute amplitudes
     mr_adc_amplitudes.compute_amplitudes(mr_adc)
 
-    # Compute CVS integrals and amplitudes
-    if mr_adc.method_type == "cvs-ip":
-        mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
-        mr_adc_amplitudes.compute_cvs_amplitudes(mr_adc)
-
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
     if mr_adc.method_type == "ip":
         mr_adc = mr_adc_ip.compute_excitation_manifolds(mr_adc)
