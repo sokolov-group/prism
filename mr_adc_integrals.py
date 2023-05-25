@@ -57,6 +57,19 @@ def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4):
 
     return np.ascontiguousarray(v2e)
 
+def compute_effective_1e(mr_adc, h1e_pq, v2e_ccpq, v2e_cpqc):
+    'Effective one-electron integrals'
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    h1eff  = np.ascontiguousarray(h1e_pq)
+    h1eff += 2.0 * einsum('rrpq->pq', v2e_ccpq, optimize = einsum_type)
+    h1eff -= einsum('rpqr->pq', v2e_cpqc, optimize = einsum_type)
+
+    return h1eff
+
 def transform_integrals_2e_incore(mr_adc):
 
     start_time = time.time()
@@ -66,8 +79,6 @@ def transform_integrals_2e_incore(mr_adc):
 
     # Einsum definition from kernel
     interface = mr_adc.interface
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
     ncore = mr_adc.ncore
@@ -80,7 +91,6 @@ def transform_integrals_2e_incore(mr_adc):
 
     mr_adc.v2e.aaaa = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
 
-    #TODO: Organize integrals required and the condition statements
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.ccca = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
@@ -125,14 +135,13 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.aeea = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
 
     # Effective one-electron integrals
-    ggcc = transform_2e_chem_incore(interface, mo, mo, mo_c, mo_c)
-    gccg = transform_2e_chem_incore(interface, mo, mo_c, mo_c, mo)
-    h1eff = mr_adc.h1e + 2.0 * einsum('pqrr->pq', ggcc, optimize = einsum_type) - einsum('prrq->pq', gccg, optimize = einsum_type)
+    v2e_ccac = mr_adc.v2e.ccca.transpose(1,0,3,2)
+    v2e_ccec = mr_adc.v2e.ccce.transpose(1,0,3,2)
 
-    mr_adc.h1eff.ca = np.ascontiguousarray(h1eff[:ncore, ncore:nocc])
-    mr_adc.h1eff.ce = np.ascontiguousarray(h1eff[:ncore, nocc:])
-    mr_adc.h1eff.aa = np.ascontiguousarray(h1eff[ncore:nocc, ncore:nocc])
-    mr_adc.h1eff.ae = np.ascontiguousarray(h1eff[ncore:nocc, nocc:])
+    mr_adc.h1eff.ca = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, ncore:nocc], mr_adc.v2e.ccca, v2e_ccac)
+    mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, v2e_ccec)
+    mr_adc.h1eff.aa = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, ncore:nocc], mr_adc.v2e.ccaa, mr_adc.v2e.caac)
+    mr_adc.h1eff.ae = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, nocc:], mr_adc.v2e.ccae, mr_adc.v2e.caec)
 
     # Store diagonal elements of the generalized Fock operator
     mr_adc.mo_energy.c = mr_adc.interface.mo_energy[:ncore]
