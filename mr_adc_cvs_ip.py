@@ -27381,9 +27381,7 @@ def compute_trans_moments(mr_adc):
 
     # Variables from kernel
     nmo = mr_adc.nmo
-    nocc = mr_adc.nocc
 
-    ncore = mr_adc.ncore
     nval = mr_adc.nval
     nextern = mr_adc.nextern
 

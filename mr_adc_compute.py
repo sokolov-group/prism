@@ -224,8 +224,6 @@ def compute_trans_properties(mr_adc, E, U):
     U = np.array(U)
     T = np.dot(T, U.T)
 
-    #TODO: Discuss about it
-    # spec_intensity = np.sum(T**2, axis=0)
     spec_intensity = 2.0 * np.sum(T**2, axis=0)
 
     print("%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
