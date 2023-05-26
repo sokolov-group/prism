@@ -165,6 +165,8 @@ def compute_S12_0p_projector(mr_adc):
     ncas = mr_adc.ncas
     nelecas = sum(mr_adc.nelecas)
 
+    s_thresh = mr_adc.s_thresh_singles
+
     if nelecas == 0:
         nelecas = 1
 
@@ -269,6 +271,8 @@ def compute_S12_0p_gno_projector(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    s_thresh = mr_adc.s_thresh_singles
+
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
@@ -349,6 +353,8 @@ def compute_S12_p1p_gno_projector(mr_adc):
 
     # Variables from kernel
     ncas = mr_adc.ncas
+
+    s_thresh = mr_adc.s_thresh_singles
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
@@ -494,6 +500,8 @@ def compute_S12_m1p_gno_projector(mr_adc):
     # Variables from kernel
     ncas = mr_adc.ncas
 
+    s_thresh = mr_adc.s_thresh_singles
+
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
@@ -615,15 +623,4 @@ def compute_S12_m1p_gno_projector(mr_adc):
 
     return S_m1p_12_inv_act
 
-# Damping Function
-def compute_damping(s_evals, damping_center, damping_strength):
-    'Calculate logarithmic sigmoid damping prefactors for overlap eigenvalues in the range (damping_max, damping_min)'
-
-    def sigmoid(x, shift, scale):
-        x = np.log10(x)
-        return 1 / (1 + np.exp(scale * (shift - x)))
-
-    center = np.log10(damping_center)
-    scale_sigmoid = 10 / damping_strength
-
-    return sigmoid(s_evals, center, scale_sigmoid)
+  
