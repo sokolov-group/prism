@@ -125,7 +125,7 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.aeea = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
 
     # EE and CVS-EE
-    if mr_adc.method_type == "ee" or mr_adc.method_type == "cvs-ee":
+    elif mr_adc.method_type == "ee" or mr_adc.method_type == "cvs-ee":
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.caca = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_a)
             mr_adc.v2e.cece = transform_2e_chem_incore(interface, mo_c, mo_e, mo_c, mo_e)
@@ -261,19 +261,6 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.veaa = np.ascontiguousarray(mr_adc.v2e.ceaa[ncvs:, :, :, :])
             del(mr_adc.v2e.ceaa)
 
-            # Effective one-electron integrals
-            mr_adc.h1eff.xa = np.ascontiguousarray(mr_adc.h1eff.ca[:ncvs,:])
-            mr_adc.h1eff.va = np.ascontiguousarray(mr_adc.h1eff.ca[ncvs:,:])
-            del(mr_adc.h1eff.ca)
-
-            mr_adc.h1eff.xe = np.ascontiguousarray(mr_adc.h1eff.ce[:ncvs,:])
-            mr_adc.h1eff.ve = np.ascontiguousarray(mr_adc.h1eff.ce[ncvs:,:])
-            del(mr_adc.h1eff.ce)
-
-            # Store diagonal elements of the generalized Fock operator
-            mr_adc.mo_energy.x = mr_adc.mo_energy.c[:ncvs]
-            mr_adc.mo_energy.v = mr_adc.mo_energy.c[ncvs:]
-
         if mr_adc.method in ("mr-adc(2)-x"):
             mr_adc.v2e.xxxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs])
             mr_adc.v2e.xxvv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:])
@@ -312,5 +299,58 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.veea = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:, :, :, :])
             del(mr_adc.v2e.ceea)
 
+    # CVS-EE
+    elif mr_adc.method_type == "cvs-ee":
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+            mr_adc.v2e.xaxa = np.ascontiguousarray(mr_adc.v2e.caca[:ncvs, :, :ncvs, :])
+            mr_adc.v2e.xava = np.ascontiguousarray(mr_adc.v2e.caca[:ncvs, :, ncvs:, :])
+            mr_adc.v2e.vaxa = np.ascontiguousarray(mr_adc.v2e.caca[ncvs:, :, :ncvs, :])
+            mr_adc.v2e.vava = np.ascontiguousarray(mr_adc.v2e.caca[ncvs:, :, ncvs:, :])
+            del(mr_adc.v2e.caca)
+
+            mr_adc.v2e.xexe = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, :ncvs, :])
+            mr_adc.v2e.xeve = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, ncvs:, :])
+            mr_adc.v2e.vexe = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, :ncvs, :])
+            mr_adc.v2e.veve = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, ncvs:, :])
+            del(mr_adc.v2e.cece)
+
+            mr_adc.v2e.xaxe = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs, :, :ncvs, :])
+            mr_adc.v2e.xave = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs, :, ncvs:, :])
+            mr_adc.v2e.vaxe = np.ascontiguousarray(mr_adc.v2e.cace[ncvs:, :, :ncvs, :])
+            mr_adc.v2e.vave = np.ascontiguousarray(mr_adc.v2e.cace[ncvs:, :, ncvs:, :])
+            del(mr_adc.v2e.cace)
+
+            mr_adc.v2e.xaaa = np.ascontiguousarray(mr_adc.v2e.caaa[:ncvs, :, :, :])
+            mr_adc.v2e.vaaa = np.ascontiguousarray(mr_adc.v2e.caaa[ncvs:, :, :, :])
+            del(mr_adc.v2e.caaa)
+
+            mr_adc.v2e.xeae = np.ascontiguousarray(mr_adc.v2e.ceae[:ncvs, :, :, :])
+            mr_adc.v2e.veae = np.ascontiguousarray(mr_adc.v2e.ceae[ncvs:, :, :, :])
+            del(mr_adc.v2e.ceae)
+
+            mr_adc.v2e.xaae = np.ascontiguousarray(mr_adc.v2e.caae[:ncvs, :, :, :])
+            mr_adc.v2e.vaae = np.ascontiguousarray(mr_adc.v2e.caae[ncvs:, :, :, :])
+            del(mr_adc.v2e.caae)
+
+            mr_adc.v2e.xeaa = np.ascontiguousarray(mr_adc.v2e.ceaa[:ncvs, :, :, :])
+            mr_adc.v2e.veaa = np.ascontiguousarray(mr_adc.v2e.ceaa[ncvs:, :, :, :])
+            del(mr_adc.v2e.ceaa)
+
+            # Delete 2e- integral without CVS indices
+            del(mr_adc.v2e.aaae) 
+            del(mr_adc.v2e.aeae)
+
+        # Effective one-electron integrals
+        mr_adc.h1eff.xa = np.ascontiguousarray(mr_adc.h1eff.ca[:ncvs,:])
+        mr_adc.h1eff.va = np.ascontiguousarray(mr_adc.h1eff.ca[ncvs:,:])
+        del(mr_adc.h1eff.ca)
+
+        mr_adc.h1eff.xe = np.ascontiguousarray(mr_adc.h1eff.ce[:ncvs,:])
+        mr_adc.h1eff.ve = np.ascontiguousarray(mr_adc.h1eff.ce[ncvs:,:])
+        del(mr_adc.h1eff.ce)
+
+        # Store diagonal elements of the generalized Fock operator
+        mr_adc.mo_energy.x = mr_adc.mo_energy.c[:ncvs]
+        mr_adc.mo_energy.v = mr_adc.mo_energy.c[ncvs:]
 
     print("Time for computing integrals:                      %f sec\n" % (time.time() - start_time))
