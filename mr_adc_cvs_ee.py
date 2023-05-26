@@ -324,6 +324,12 @@ def compute_M_00(mr_adc):
     e_val    = mr_adc.mo_energy.v
     e_extern = mr_adc.mo_energy.e
 
+    ## One-electron integrals
+    h_aa = mr_adc.h1eff.aa
+        
+    ## Two-electron integrals
+    v_aaaa = mr_adc.v2e.aaaa
+
     n_ce = mr_adc.h0.n_ce
     n_ca = mr_adc.h0.n_ca
 
@@ -340,6 +346,7 @@ def compute_M_00(mr_adc):
 
     # Reduced Density Matrices
     rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
 
     M_00 = np.zeros((dim, dim))
 
@@ -350,21 +357,47 @@ def compute_M_00(mr_adc):
     temp -= einsum('J,AB,IJ->IAJB', e_cvs, np.identity(nextern), np.identity(ncvs), optimize = einsum_type)
 
     temp.shape = (n_ce, n_ce)
-    print (np.linalg.norm(temp))
-
     M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
     M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
 
     # Delete used temporary matrix
     del temp
 
-    ## bb, bb
-
-    ## aa, bb
-
-    ## bb, aa
-
     # CA - CA
+    ## aa,aa || bb,bb
+    temp  = einsum('XY,IJ->IXJY', h_aa, np.identity(ncvs), optimize = einsum_type)
+    temp -= einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+    temp += 1/2 * einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+    temp -= 1/2 * einsum('Yx,IJ,Xx->IXJY', h_aa, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+    temp += einsum('IJ,XYxy,xy->IXJY', np.identity(ncvs), v_aaaa, rdm_ca, optimize = einsum_type)
+    temp -= 1/2 * einsum('IJ,XxyY,yx->IXJY', np.identity(ncvs), v_aaaa, rdm_ca, optimize = einsum_type)
+    temp -= 1/2 * einsum('IJ,Yxyz,Xyxz->IXJY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
+
+    temp.shape = (n_ca, n_ca)
+    M_00[s_ca_aa:f_ca_aa, s_ca_aa:f_ca_aa] += temp
+    M_00[s_ca_bb:f_ca_bb, s_ca_bb:f_ca_bb] += temp
+
+    # Delete used temporary matrix
+    del temp
+    
+    ## First-order terms
+    # CE - CE
+    ## aa,aa
+
+    ## bb,bb
+
+    ## aa,bb
+
+    ## bb,aa
+    
+    # CA - CA
+    ## aa,aa
+
+    ## bb,bb
+
+    ## aa,bb
+
+    ## bb,aa
 
     ## Second-order terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):

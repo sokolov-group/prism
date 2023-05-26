@@ -146,6 +146,7 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "cvs-ee":
         # Compute h0-h0 block of the effective Hamiltonian matrix
         M_00 = mr_adc_cvs_ee.compute_M_00(mr_adc)
+        exit()
 
     # Compute diagonal of the M matrix
     if mr_adc.method_type == "ip":
