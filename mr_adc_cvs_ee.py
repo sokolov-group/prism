@@ -329,6 +329,8 @@ def compute_M_00(mr_adc):
         
     ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
+    v_xeex = mr_adc.v2e.xeex
+    v_xxee = mr_adc.v2e.xxee
 
     n_ce = mr_adc.h0.n_ce
     n_ca = mr_adc.h0.n_ca
@@ -359,8 +361,6 @@ def compute_M_00(mr_adc):
     temp.shape = (n_ce, n_ce)
     M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
     M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
-
-    # Delete used temporary matrix
     del temp
 
     # CA - CA
@@ -376,28 +376,77 @@ def compute_M_00(mr_adc):
     temp.shape = (n_ca, n_ca)
     M_00[s_ca_aa:f_ca_aa, s_ca_aa:f_ca_aa] += temp
     M_00[s_ca_bb:f_ca_bb, s_ca_bb:f_ca_bb] += temp
-
-    # Delete used temporary matrix
     del temp
     
     ## First-order terms
     # CE - CE
-    ## aa,aa
-
-    ## bb,bb
-
-    ## aa,bb
-
-    ## bb,aa
+    ## aa,aa || bb,bb
+    temp  = einsum('IABJ->IAJB', v_xeex, optimize = einsum_type).copy()
+    temp -= einsum('JIAB->IAJB', v_xxee, optimize = einsum_type).copy()
     
+    temp.shape = (n_ce, n_ce)
+    M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
+    M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
+    del temp
+
+    ## aa,bb || bb,aa
+    temp  = einsum('IABJ->IAJB', v_xeex, optimize = einsum_type).copy()
+    
+    temp.shape = (n_ce, n_ce)
+    M_00[s_ce_aa:f_ce_aa, s_ce_bb:f_ce_bb] += temp
+    M_00[s_ce_bb:f_ce_bb, s_ce_aa:f_ce_aa] += temp.T
+    del temp
+
     # CA - CA
+    ## aa,aa || bb,bb
+    temp =- einsum('IJYX->IXJY', v_xxaa, optimize = einsum_type).copy()
+    temp += einsum('IXYJ->IXJY', v_xaax, optimize = einsum_type).copy()
+    temp += 1/2 * einsum('IJYx,Xx->IXJY', v_xxaa, rdm_ca, optimize = einsum_type)
+    temp += 1/2 * einsum('IJxX,Yx->IXJY', v_xxaa, rdm_ca, optimize = einsum_type)
+    temp += 1/2 * einsum('IJxy,XxYy->IXJY', v_xxaa, rdm_ccaa, optimize = einsum_type)
+    temp -= 1/2 * einsum('IXxJ,Yx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
+    temp -= 1/2 * einsum('IxYJ,Xx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
+    temp -= 1/6 * einsum('IxyJ,XyYx->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
+    temp += 1/6 * einsum('IxyJ,XyxY->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
+    temp -= 1/2 * einsum('IJxy,xy,XY->IXJY', v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
+    temp += 1/4 * einsum('IxyJ,yx,XY->IXJY', v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
+
+    temp.shape = (n_ca, n_ca)
+    M_00[s_ca_aa:f_ca_aa, s_ca_aa:f_ca_aa] += temp
+    M_00[s_ca_bb:f_ca_bb, s_ca_bb:f_ca_bb] += temp
+    del temp
+
+    ## aa,bb || bb,aa
+    temp  = einsum('IXYJ->IXJY', v_xaax, optimize = einsum_type).copy()
+    temp -= 1/2 * einsum('IXxJ,Yx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
+    temp -= 1/2 * einsum('IxYJ,Xx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
+    temp += 1/6 * einsum('IxyJ,XyYx->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
+    temp += 1/3 * einsum('IxyJ,XyxY->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
+
+    temp.shape = (n_ca, n_ca)
+    M_00[s_ca_aa:f_ca_aa, s_ca_bb:f_ca_bb] += temp
+    M_00[s_ca_bb:f_ca_bb, s_ca_aa:f_ca_aa] += temp.T
+    del temp
+
+    # CE - CA
+
     ## aa,aa
 
     ## bb,bb
 
+    ## bb,aa
+
     ## aa,bb
 
+    # CA - CE
+
+    ## aa,aa
+
+    ## bb,bb
+
     ## bb,aa
+
+    ## aa,bb
 
     ## Second-order terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
