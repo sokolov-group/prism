@@ -174,8 +174,6 @@ def compute_S12_0p_projector(mr_adc):
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
-    s_thresh = mr_adc.s_thresh_singles
-
     # Compute S matrix
     ## S22 block: < Psi_0 | a^{\dag}_X a_Y a^{\dag}_Z a_W | Psi_0 >
     S22_aa_aa =- 1/6 * einsum('WYXZ->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
@@ -277,8 +275,6 @@ def compute_S12_0p_gno_projector(mr_adc):
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
 
-    s_thresh = mr_adc.s_thresh_singles
-
     # Compute S matrix
     ## S11 block: < Psi_0 | a^{\dag}_X a_Y | Psi_0 >
     S12_a_a = 1/2 * einsum('XY->XY', rdm_ca, optimize = einsum_type).copy()
@@ -360,8 +356,6 @@ def compute_S12_p1p_gno_projector(mr_adc):
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
-
-    s_thresh = mr_adc.s_thresh_singles
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a_X a^{\dag}_Y | Psi_0 >
@@ -506,8 +500,6 @@ def compute_S12_m1p_gno_projector(mr_adc):
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
     rdm_cccaaa = mr_adc.rdm.cccaaa
-
-    s_thresh = mr_adc.s_thresh_singles
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a^{\dag}_X a_Y | Psi_0 >
