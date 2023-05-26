@@ -23,6 +23,7 @@ import numpy as np
 import prism.mr_adc_amplitudes as mr_adc_amplitudes
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
+import prism.mr_adc_cvs_ee as mr_adc_cvs_ee
 from functools import reduce
 
 def kernel(mr_adc):
