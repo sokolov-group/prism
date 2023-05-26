@@ -324,8 +324,8 @@ def compute_M_00(mr_adc):
     e_val    = mr_adc.mo_energy.v
     e_extern = mr_adc.mo_energy.e
 
-    n_ce = mr_adc.h0.dim_ce
-    n_ca = mr_adc.h0.dim_ca
+    n_ce = mr_adc.h0.n_ce
+    n_ca = mr_adc.h0.n_ca
 
     dim = mr_adc.h0.dim
 
@@ -345,6 +345,24 @@ def compute_M_00(mr_adc):
 
     ## Zeroth-order terms
     # CE - CE
+    ## aa,aa || bb,bb
+    temp  = einsum('B,AB,IJ->IAJB', e_extern, np.identity(nextern), np.identity(ncvs), optimize = einsum_type)
+    temp -= einsum('J,AB,IJ->IAJB', e_cvs, np.identity(nextern), np.identity(ncvs), optimize = einsum_type)
+
+    temp.shape = (n_ce, n_ce)
+    print (np.linalg.norm(temp))
+
+    M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
+    M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
+
+    # Delete used temporary matrix
+    del temp
+
+    ## bb, bb
+
+    ## aa, bb
+
+    ## bb, aa
 
     # CA - CA
 

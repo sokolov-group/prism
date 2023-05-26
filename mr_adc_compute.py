@@ -24,6 +24,7 @@ from functools import reduce
 import prism.mr_adc_amplitudes as mr_adc_amplitudes
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
+import prism.mr_adc_cvs_ee as mr_adc_cvs_ee
 
 import prism.lib.logger as logger
 
