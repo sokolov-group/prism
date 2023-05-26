@@ -1,8 +1,8 @@
-converged SCF energy = -76.0412566941273
+converged SCF energy = -76.0412566941275
 SCF energy: -76.041257
 
-CASSCF energy = -76.0412566941273
-CASCI E = -76.0412566941273  E(CI) = 0  S^2 = 0.0000000
+CASSCF energy = -76.0412566941275
+CASCI E = -76.0412566941275  E(CI) = 0  S^2 = 0.0000000
 CASSCF energy: -76.041257
 
 
@@ -35,17 +35,20 @@ Initializing MR-ADC...
 
 IP calculations for different IP-MR-ADC methods
 Transforming 1e integrals to MO basis...
-Time for transforming 1e integrals:                0.000131 sec
+Time for transforming 1e integrals:                0.000094 sec
 
 Transforming 2e integrals to MO basis (in-core)...
-Time for transforming integrals:                   0.326910 sec
+Time for transforming integrals:                   0.254320 sec
+
+Computing CVS integrals to MO basis (in-core)...
+Time for computing integrals:                      0.000296 sec
 
 Computing ground-state RDMs...
-Time for computing ground-state RDMs:              0.027298 sec
+Time for computing ground-state RDMs:              0.014618 sec
 
 Computing MR-ADC excitation energies...
 
-Method:                                            cvs-ip-mr-adc(2)
+Method:                                            cvs-ip-mr-adc(2)-x
 Number of MR-ADC roots requested:                  4
 Ground-state active-space energy:                  0.000000000000
 Nuclear repulsion energy:                          9.168193300756
@@ -106,18 +109,15 @@ Correlation energy [-2]:                           0.000000000000
 
 CASSCF reference energy:                         -76.041256694127
 PC-NEVPT2 correlation energy:                     -0.221843899942
-Total PC-NEVPT2 energy:                          -76.263100594069
+Total PC-NEVPT2 energy:                          -76.263100594070
 
 Computing T[0']^(2) amplitudes...
-Norm of T[0']^(2):                                 0.039651505131
-
-Time for computing amplitudes:                     0.825015 sec
-
-Computing CVS integrals to MO basis (in-core)...
-Time for computing integrals:                      0.000532 sec
+Norm of T[0']^(2):                                 0.019825752692
 
 Computing CVS amplitudes...
-Time for computing amplitudes:                     0.000279 sec
+Time for computing amplitudes:                     0.000098 sec
+
+Time for computing amplitudes:                     0.561869 sec
 
 Dimension of h0 excitation manifold:                       1
 Dimension of h1 excitation manifold:                       900
@@ -125,61 +125,57 @@ Total dimension of the excitation manifold:                901
 Dimension of the orthogonalized excitation manifold:       469
 
 Computing M(h0-h0) block...
-Time for computing M(h0-h0) block:                 0.468247 sec
+Time for computing M(h0-h0) block:                 0.339458 sec
 
 Computing M(h0-h1) blocks...
-Time for computing M(h0-h1) blocks:                0.078583 sec
+Time for computing M(h0-h1) blocks:                0.063075 sec
 
-Time for computing preconditioner:                 0.032168 sec
+Time for computing preconditioner:                 0.028429 sec
 
 tol 1e-12  toloose 1e-05
 max_cycle 50  max_space 109  max_memory 2000  incore True
-davidson 0 4  |r|= 1.45  e= [20.5792064  21.12233747 21.12233747 21.12233747]  max|de|= 21.1  lindep=    1
-Old state -> New state
-    3     ->     1 
-    1     ->     2 
-    2     ->     3 
-root 1 converged  |r|= 5.08e-10  e= 21.12233747387849  max|de|= -1.78e-14
-root 2 converged  |r|= 5.08e-10  e= 21.12233747387849  max|de|= 3.55e-15
-root 3 converged  |r|= 5.08e-10  e= 21.122337473878492  max|de|= 3.55e-15
-davidson 1 5  |r|= 0.228  e= [19.85340387 21.12233747 21.12233747 21.12233747]  max|de|= -0.726  lindep= 0.95
-Old state -> New state
-    2     ->     1 
-    3     ->     2 
-    1     ->     3 
-davidson 2 6  |r|= 0.000882  e= [19.83826198 21.12233747 21.12233747 21.12233747]  max|de|= -0.0151  lindep= 0.912
-Old state -> New state
-    3     ->     1 
-    1     ->     2 
-    2     ->     3 
-Throwing out eigenvector 0 with norm=1.49e-11
-Throwing out eigenvector 1 with norm=5.08e-10
-Throwing out eigenvector 2 with norm=5.08e-10
-Throwing out eigenvector 3 with norm=5.08e-10
-davidson 3 7  |r|= 5.08e-10  e= [19.83826189 21.12233747 21.12233747 21.12233747]  max|de|= -8.23e-08  lindep=    1
-Linear dependency in trial subspace. |r| for each state [1.4857123863920765e-11, 5.078721682102468e-10, 5.078721681622747e-10, 5.078721679501074e-10]
+davidson 0 4  |r|= 1.45  e= [20.5792064  21.73666309 21.74166144 21.79773118]  max|de|= 21.8  lindep=    1
+davidson 1 8  |r|= 0.35  e= [19.92307428 21.33902105 21.41524834 21.42740901]  max|de|= -0.656  lindep= 0.956
+davidson 2 12  |r|= 0.125  e= [19.87768605 21.19016072 21.27989003 21.30604423]  max|de|= -0.149  lindep= 0.974
+davidson 3 16  |r|= 0.147  e= [19.8763703  21.17104242 21.26055863 21.28908276]  max|de|= -0.0193  lindep= 0.975
+davidson 4 20  |r|= 0.0479  e= [19.87626819 21.16854833 21.2576089  21.28675736]  max|de|= -0.00295  lindep= 0.74
+davidson 5 24  |r|= 0.016  e= [19.87626294 21.16837628 21.25718449 21.28639876]  max|de|= -0.000424  lindep= 0.878
+davidson 6 28  |r|= 0.00443  e= [19.87626269 21.16835459 21.25714437 21.28634628]  max|de|= -5.25e-05  lindep= 0.879
+davidson 7 32  |r|= 0.00353  e= [19.87626267 21.1683488  21.25714049 21.28633583]  max|de|= -1.04e-05  lindep= 0.834
+davidson 8 36  |r|= 0.00176  e= [19.87626267 21.16834816 21.25713965 21.28633362]  max|de|= -2.22e-06  lindep= 0.745
+davidson 9 40  |r|= 0.000679  e= [19.87626267 21.16834815 21.25713942 21.28633298]  max|de|= -6.35e-07  lindep= 0.763
+davidson 10 44  |r|= 0.000204  e= [19.87626267 21.16834815 21.2571394  21.28633288]  max|de|= -9.84e-08  lindep= 0.784
+root 0 converged  |r|= 9.33e-08  e= 19.876262667633533  max|de|= -5.68e-14
+davidson 11 48  |r|= 3.65e-05  e= [19.87626267 21.16834815 21.2571394  21.28633288]  max|de|= -6.72e-09  lindep= 0.815
+root 1 converged  |r|= 2.08e-07  e= 21.168348147606658  max|de|= -4.23e-13
+davidson 12 51  |r|= 2.33e-05  e= [19.87626267 21.16834815 21.2571394  21.28633288]  max|de|= -4.05e-10  lindep= 0.82
+davidson 13 53  |r|= 4e-06  e= [19.87626267 21.16834815 21.2571394  21.28633287]  max|de|= -4.38e-11  lindep= 0.746
+root 2 converged  |r|= 1.35e-07  e= 21.257139399130295  max|de|= -2.59e-13
+davidson 14 55  |r|= 4.07e-07  e= [19.87626267 21.16834815 21.2571394  21.28633287]  max|de|= -5.19e-12  lindep= 0.96
+root 3 converged  |r|= 7.97e-08  e= 21.28633287498816  max|de|= -9.24e-14
+converged 15 56  |r|= 2.08e-07  e= [19.87626267 21.16834815 21.2571394  21.28633287]  max|de|= -9.24e-14
 
-cvs-ip-mr-adc(2) excitation energies (a.u.):
-[[19.83826189]
- [21.12233747]
- [21.12233747]
- [21.12233747]]
+cvs-ip-mr-adc(2)-x excitation energies (a.u.):
+[[19.87626267]
+ [21.16834815]
+ [21.2571394 ]
+ [21.28633287]]
 
-cvs-ip-mr-adc(2) excitation energies (eV):
-[[539.82687971]
- [574.76837394]
- [574.76837394]
- [574.76837394]]
+cvs-ip-mr-adc(2)-x excitation energies (eV):
+[[540.86093395]
+ [576.02038878]
+ [578.43652305]
+ [579.23091839]]
 
 Computing transition moments matrix...
 
-cvs-ip-mr-adc(2) spectroscopic intensity:
-[[1.51974156]
- [0.00000001]
- [0.00000013]
- [0.00000005]]
+cvs-ip-mr-adc(2)-x spectroscopic intensity:
+[[1.56909518]
+ [0.        ]
+ [0.0000012 ]
+ [0.0000033 ]]
 
-Time for computing transition moments matrix:     0.098940 sec
+Time for computing transition moments matrix:     1.052962 sec
 
 
-Total time:                                       1.941684 sec
+Total time:                                       287.953995 sec

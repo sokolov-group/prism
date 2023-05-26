@@ -74,9 +74,13 @@ class KnownValues(unittest.TestCase):
 
         self.assertAlmostEqual(e[0], 539.82687971, 4)
         self.assertAlmostEqual(e[1], 574.76837394, 4)
+        self.assertAlmostEqual(e[2], 574.76837394, 4)
+        self.assertAlmostEqual(e[3], 574.76837394, 4)
 
-        self.assertAlmostEqual(p[0], 1.51974156, 4)
-        self.assertAlmostEqual(p[1], 0.00000001, 4)
+        self.assertAlmostEqual(p[0], 1.51974470, 4)
+        self.assertAlmostEqual(p[1], 0.00000016, 4)
+        self.assertAlmostEqual(p[2], 0.00000002, 4)
+        self.assertAlmostEqual(p[3], 0.00000001, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")

@@ -30,7 +30,6 @@ np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 r = 0.917
 
 mol = pyscf.gto.Mole()
-mol.verbose = 4
 mol.atom = [
             ['H', (0.0, 0.0, -r/2)],
             ['F', (0.0, 0.0,  r/2)]]
@@ -73,9 +72,13 @@ class KnownValues(unittest.TestCase):
 
         self.assertAlmostEqual(e[0], 693.67507492, 4)
         self.assertAlmostEqual(e[1], 735.43509365, 4)
+        self.assertAlmostEqual(e[2], 735.43509365, 4)
+        self.assertAlmostEqual(e[3], 735.43509365, 4)
 
-        self.assertAlmostEqual(p[0], 1.55247056, 4)
+        self.assertAlmostEqual(p[0], 1.55247105, 4)
         self.assertAlmostEqual(p[1], 0.00000000, 4)
+        self.assertAlmostEqual(p[2], 0.00000000, 4)
+        self.assertAlmostEqual(p[3], 0.00000000, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")

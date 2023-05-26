@@ -30,7 +30,6 @@ np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 r = 0.917
 
 mol = pyscf.gto.Mole()
-mol.verbose = 4
 mol.atom = [
             ['H', (0.0, 0.0, -r/2)],
             ['F', (0.0, 0.0,  r/2)]]
@@ -63,7 +62,7 @@ mr_adc.nroots = 4
 mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"
-mr_adc.method = "mr-adc(2)"
+mr_adc.method = "mr-adc(2)-x"
 
 class KnownValues(unittest.TestCase):
 
@@ -71,11 +70,15 @@ class KnownValues(unittest.TestCase):
 
         e,p = mr_adc.kernel()
 
-        self.assertAlmostEqual(e[0], 693.67507492, 4)
-        self.assertAlmostEqual(e[1], 735.43509365, 4)
+        self.assertAlmostEqual(e[0], 695.35938730, 4)
+        self.assertAlmostEqual(e[1], 735.49340108, 4)
+        self.assertAlmostEqual(e[2], 735.49340108, 4)
+        self.assertAlmostEqual(e[3], 738.04862671, 4)
 
-        self.assertAlmostEqual(p[0], 1.55247056, 4)
+        self.assertAlmostEqual(p[0], 1.60962979, 4)
         self.assertAlmostEqual(p[1], 0.00000000, 4)
+        self.assertAlmostEqual(p[2], 0.00000000, 4)
+        self.assertAlmostEqual(p[3], 0.00000174, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")

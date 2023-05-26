@@ -49,7 +49,6 @@ mc = pyscf.mcscf.CASSCF(mf, 8, 8)
 mc.conv_tol = 1e-11
 mc.conv_tol_grad = 1e-6
 mc.max_cycle_macro = 100
-mc.verbose = 4
 
 emc = mc.mc1step()[0]
 print("CASSCF energy: %f\n" % emc)
@@ -70,11 +69,15 @@ class KnownValues(unittest.TestCase):
 
         e,p = mr_adc.kernel()
 
-        self.assertAlmostEqual(e[0], 697.50459219, 4)
-        self.assertAlmostEqual(e[1], 719.26720842, 4)
+        self.assertAlmostEqual(e[0], 697.50491913, 4)
+        self.assertAlmostEqual(e[1], 719.26750085, 4)
+        self.assertAlmostEqual(e[2], 720.51337977, 4)
+        self.assertAlmostEqual(e[3], 723.71496278, 4)
 
-        self.assertAlmostEqual(p[0], 1.41472810, 4)
+        self.assertAlmostEqual(p[0], 1.41477864, 4)
         self.assertAlmostEqual(p[1], 0.00000000, 4)
+        self.assertAlmostEqual(p[2], 0.00000130, 4)
+        self.assertAlmostEqual(p[3], 0.00000072, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")
