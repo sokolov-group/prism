@@ -26,12 +26,13 @@ import pyscf.mcscf
 import prism.interface
 import prism.mr_adc
 
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+
 r = 0.96
 x = r * math.sin(104.5 * math.pi/(2 * 180.0))
 y = r * math.cos(104.5 * math.pi/(2 * 180.0))
 
 mol = pyscf.gto.Mole()
-mol.verbose = 4
 mol.atom = [
             ['O', (0.0, 0.0, 0.0)],
             ['H', (0.0,  -x,   y)],
@@ -45,8 +46,7 @@ mf = pyscf.scf.RHF(mol)
 mf.conv_tol = 1e-12
 
 ehf = mf.scf()
-mf.analyze()
-print ("SCF energy: %f\n" % ehf)
+print("SCF energy: %f\n" % ehf)
 
 # CASSCF calculation
 mc = pyscf.mcscf.CASSCF(mf, 8, 8)
@@ -54,8 +54,7 @@ mc.conv_tol = 1e-11
 mc.conv_tol_grad = 1e-6
 
 emc = mc.mc1step()[0]
-
-print ("CASSCF energy: %f\n" % emc)
+print("CASSCF energy: %f\n" % emc)
 
 # MR-ADC calculation
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
@@ -69,12 +68,19 @@ mr_adc.method = "mr-adc(2)"
 
 class KnownValues(unittest.TestCase):
 
-    def test_cvs_ip_mr_adc2(self):
+    def test_cvs_ip_mr_adc_2(self):
 
         e,p = mr_adc.kernel()
 
         self.assertAlmostEqual(e[0], 545.52580788, 4)
         self.assertAlmostEqual(e[1], 574.30585139, 4)
+        self.assertAlmostEqual(e[2], 574.30585139, 4)
+        self.assertAlmostEqual(e[3], 574.30585139, 4)
+
+        self.assertAlmostEqual(p[0], 1.62020831, 4)
+        self.assertAlmostEqual(p[1], 0.00000000, 4)
+        self.assertAlmostEqual(p[2], 0.00000000, 4)
+        self.assertAlmostEqual(p[3], 0.00000001, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")

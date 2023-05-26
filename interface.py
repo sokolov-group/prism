@@ -147,7 +147,7 @@ def print_header():
         PRISM: Open-Source implementation of ab initio methods
                 for excited states and spectroscopy
 
-                           Version 0.1
+                           Version 0.2
 
                Copyright (C) 2023 Alexander Sokolov
                                   Carlos E. V. de Moura

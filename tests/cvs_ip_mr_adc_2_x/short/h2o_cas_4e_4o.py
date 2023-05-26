@@ -49,7 +49,7 @@ ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
 # CASSCF calculation
-mc = pyscf.mcscf.CASSCF(mf, 4, 0)
+mc = pyscf.mcscf.CASSCF(mf, 4, 4)
 mc.conv_tol = 1e-11
 mc.conv_tol_grad = 1e-6
 
@@ -64,23 +64,23 @@ mr_adc.nroots = 4
 mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"
-mr_adc.method = "mr-adc(2)"
+mr_adc.method = "mr-adc(2)-x"
 
 class KnownValues(unittest.TestCase):
 
     def test_cvs_ip_mr_adc_2(self):
 
-        e, p = mr_adc.kernel()
+        e,p = mr_adc.kernel()
 
-        self.assertAlmostEqual(e[0], 539.82687971, 4)
-        self.assertAlmostEqual(e[1], 574.76837394, 4)
-        self.assertAlmostEqual(e[2], 574.76837394, 4)
-        self.assertAlmostEqual(e[3], 574.76837394, 4)
+        self.assertAlmostEqual(e[0], 541.46811298, 4)
+        self.assertAlmostEqual(e[1], 572.29726670, 4)
+        self.assertAlmostEqual(e[2], 572.62486305, 4)
+        self.assertAlmostEqual(e[3], 573.13842920, 4)
 
-        self.assertAlmostEqual(p[0], 1.51974470, 4)
-        self.assertAlmostEqual(p[1], 0.00000016, 4)
-        self.assertAlmostEqual(p[2], 0.00000002, 4)
-        self.assertAlmostEqual(p[3], 0.00000001, 4)
+        self.assertAlmostEqual(p[0], 1.55313121, 4)
+        self.assertAlmostEqual(p[1], 0.00000000, 4)
+        self.assertAlmostEqual(p[2], 0.00000000, 4)
+        self.assertAlmostEqual(p[3], 0.01404335, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")

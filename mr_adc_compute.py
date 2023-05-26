@@ -21,6 +21,7 @@ import sys
 import time
 import numpy as np
 import prism.mr_adc_amplitudes as mr_adc_amplitudes
+import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
 from functools import reduce
 
@@ -46,11 +47,6 @@ def kernel(mr_adc):
         print("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
     print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    # if mr_adc.s_damping_strength is None:
-    #     print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    # else:
-    #     print("Overlap damping width:                             %f" % mr_adc.s_damping_strength)
-    #     print("Overlap truncation parameter (singles):            %e" % (mr_adc.s_thresh_singles * 10**(- mr_adc.s_damping_strength / 2)))
 
     # Print info about CASCI states
     print("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
@@ -98,8 +94,7 @@ def kernel(mr_adc):
     sys.stdout.flush()
 
     # Compute transition moments and spectroscopic factors
-    # spec_intensity = compute_trans_properties(mr_adc, E, U)
-    spec_intensity = 'spec_intensity'
+    spec_intensity = compute_trans_properties(mr_adc, E, U)
 
     print("\nTotal time:                                       %f sec" % (time.time() - start_time))
 
@@ -224,7 +219,7 @@ def compute_trans_properties(mr_adc, E, U):
     U = np.array(U)
     T = np.dot(T, U.T)
 
-    spec_intensity = np.sum(T**2, axis=0)
+    spec_intensity = 2.0 * np.sum(T**2, axis=0)
 
     print("%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
     print(spec_intensity.reshape(-1, 1))
@@ -236,11 +231,11 @@ def compute_trans_properties(mr_adc, E, U):
         print(osc_strength.reshape(-1, 1))
 
     #TODO: Change to external functions
-    if mr_adc.print_level > 5:
-        analyze_trans_properties(mr_adc, T)
-        analyze_spec_factor(mr_adc, T)
+    # if mr_adc.print_level > 5:
+    #     analyze_trans_properties(mr_adc, T)
+    #     analyze_spec_factor(mr_adc, T)
 
-    print("Time for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
+    print("\nTime for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
     return spec_intensity

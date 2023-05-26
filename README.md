@@ -33,7 +33,7 @@ Detailed examples of the implemented methods can be found [here](examples/).
 An extensive and comprehensive manual of Prism will be released soon.
 
 # Features
-[//]: # (To be moved to FEADURES file)
+[//]: # (To be moved to FEATURES file)
 ## Core-valence separation for ionization processes MR-ADC (CVS-IP-MR-ADC) method
 - Second-order perturbation order: CVS-IP-MR-ADC(2)
 

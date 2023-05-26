@@ -4,3 +4,10 @@ Prism 0.1 (2023-03-27)
   - PySCF interface
   - pc-NEVPT2 amplitudes
   - CVS-IP-MR-ADC(2) energies
+
+Prism 0.2 (2023-05-12)
+------------------------
+* Added
+  - CVS-IP-MR-ADC(2)-X energies
+  - CVS-IP-MR-ADC(2) intensities
+  - CVS-IP-MR-ADC(2)-X intensities

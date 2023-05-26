@@ -19,12 +19,13 @@
 
 import unittest
 import numpy as np
-import math
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
 import prism.interface
 import prism.mr_adc
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
 r = 1.098
 
@@ -41,8 +42,7 @@ mf = pyscf.scf.RHF(mol)
 mf.conv_tol = 1e-12
 
 ehf = mf.scf()
-mf.analyze()
-print ("SCF energy: %f\n" % ehf)
+print("SCF energy: %f\n" % ehf)
 
 # CASSCF calculation
 mc = pyscf.mcscf.CASSCF(mf, 8, 8)
@@ -50,9 +50,7 @@ mc.conv_tol = 1e-11
 mc.conv_tol_grad = 1e-6
 
 emc = mc.mc1step()[0]
-
-mc.analyze()
-print ("CASSCF energy: %f\n" % emc)
+print("CASSCF energy: %f\n" % emc)
 
 # Run MR-ADC computation
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
@@ -74,6 +72,19 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(e[1], 413.78525486, 4)
         self.assertAlmostEqual(e[2], 435.71993060, 4)
         self.assertAlmostEqual(e[3], 435.82938644, 4)
+        self.assertAlmostEqual(e[4], 437.34873670, 4)
+        self.assertAlmostEqual(e[5], 437.34873670, 4)
+        self.assertAlmostEqual(e[6], 437.34873674, 4)
+        self.assertAlmostEqual(e[7], 437.34873674, 4)
+
+        self.assertAlmostEqual(p[0], 1.63123872, 4)
+        self.assertAlmostEqual(p[1], 1.63056841, 4)
+        self.assertAlmostEqual(p[2], 0.00251891, 4)
+        self.assertAlmostEqual(p[3], 0.00233324, 4)
+        self.assertAlmostEqual(p[4], 0.00000151, 4)
+        self.assertAlmostEqual(p[5], 0.00000275, 4)
+        self.assertAlmostEqual(p[6], 0.00000071, 4)
+        self.assertAlmostEqual(p[7], 0.00000355, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")

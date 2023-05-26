@@ -35,20 +35,20 @@ Initializing MR-ADC...
 
 IP calculations for different IP-MR-ADC methods
 Transforming 1e integrals to MO basis...
-Time for transforming 1e integrals:                0.000078 sec
+Time for transforming 1e integrals:                0.000055 sec
 
 Transforming 2e integrals to MO basis (in-core)...
-Time for transforming integrals:                   0.077144 sec
+Time for transforming integrals:                   0.066242 sec
 
 Computing CVS integrals to MO basis (in-core)...
-Time for computing integrals:                      0.000151 sec
+Time for computing integrals:                      0.000087 sec
 
 Computing ground-state RDMs...
-Time for computing ground-state RDMs:              2.161081 sec
+Time for computing ground-state RDMs:              0.638680 sec
 
 Computing MR-ADC excitation energies...
 
-Method:                                            cvs-ip-mr-adc(2)
+Method:                                            cvs-ip-mr-adc(2)-x
 Number of MR-ADC roots requested:                  4
 Ground-state active-space energy:                -28.730769700123
 Nuclear repulsion energy:                          5.193669463773
@@ -73,14 +73,14 @@ Correlation energy [0']:                          -0.001221259907
 Computing T[+1']^(1) amplitudes...
 Dimension of the [+1'] orthonormalized subspace:   621
 Smallest eigenvalue of the [+1'] overlap metric:   1.000802e-06
-Norm of T[+1']^(1):                                0.006626021088
+Norm of T[+1']^(1):                                0.006626021091
 Correlation energy [+1']:                         -0.000493274569
 
 Computing T[-1']^(1) amplitudes...
 Dimension of the [-1'] orthonormalized subspace:   619
 Smallest eigenvalue of the [-1'] overlap metric:   1.006154e-06
-Norm of T[-1']^(1):                                0.253379495892
-Correlation energy [-1']:                         -0.020462201747
+Norm of T[-1']^(1):                                0.253379495963
+Correlation energy [-1']:                         -0.020462201746
 
 Computing T[0]^(1) amplitudes...
 Norm of T[0]^(1):                                  0.000479800165
@@ -107,7 +107,7 @@ Correlation energy [+2]:                          -0.000211215457
 Computing T[-2]^(1) amplitudes...
 Dimension of the [-2] orthonormalized subspace:    64
 Smallest eigenvalue of the [-2] overlap metric:    1.600477e-05
-Norm of T[-2]^(1):                                 0.212268121338
+Norm of T[-2]^(1):                                 0.212268121340
 Correlation energy [-2]:                          -0.062167456913
 
 CASSCF reference energy:                        -100.165265258943
@@ -118,9 +118,9 @@ Computing T[0']^(2) amplitudes...
 Norm of T[0']^(2):                                 0.000074741091
 
 Computing CVS amplitudes...
-Time for computing amplitudes:                     0.000070 sec
+Time for computing amplitudes:                     0.000054 sec
 
-Time for computing amplitudes:                     39.668258 sec
+Time for computing amplitudes:                     21.001609 sec
 
 Dimension of h0 excitation manifold:                       1
 Dimension of h1 excitation manifold:                       775
@@ -128,72 +128,70 @@ Total dimension of the excitation manifold:                776
 Dimension of the orthogonalized excitation manifold:       772
 
 Computing M(h0-h0) block...
-Time for computing M(h0-h0) block:                 0.679023 sec
+Time for computing M(h0-h0) block:                 0.488458 sec
 
 Computing M(h0-h1) blocks...
-Time for computing M(h0-h1) blocks:                0.091633 sec
+Time for computing M(h0-h1) blocks:                0.067834 sec
 
-Time for computing preconditioner:                 0.063136 sec
+Time for computing preconditioner:                 0.046271 sec
 
 tol 1e-12  toloose 1e-05
 max_cycle 50  max_space 109  max_memory 2000  incore True
-davidson 0 4  |r|= 1.39  e= [26.34306162 27.09851941 27.09851941 27.09851941]  max|de|= 27.1  lindep=    1
-davidson 1 8  |r|= 0.208  e= [25.74917433 26.99867063 26.99867063 26.99867063]  max|de|= -0.594  lindep= 0.999
-Old state -> New state
-    3     ->     2 
-    2     ->     3 
-root 1 converged  |r|= 6.42e-08  e= 26.99867063232433  max|de|= 1.42e-14
-root 2 converged  |r|= 6.42e-08  e= 26.998670632324338  max|de|= -3.55e-15
-root 3 converged  |r|= 6.42e-08  e= 26.998670632324348  max|de|= 1.42e-14
-davidson 2 9  |r|= 0.0276  e= [25.73837216 26.99867063 26.99867063 26.99867063]  max|de|= -0.0108  lindep=    1
-Old state -> New state
-    1     ->     2 
-davidson 3 10  |r|= 0.00526  e= [25.73812346 26.99867063 26.99867063 26.99867063]  max|de|= -0.000249  lindep= 0.987
+davidson 0 4  |r|= 1.59  e= [26.34306162 27.93451471 27.93495838 28.01117423]  max|de|=   28  lindep=    1
 Old state -> New state
     2     ->     1 
-    3     ->     2 
-    2     ->     3 
-davidson 4 11  |r|= 0.000698  e= [25.73811704 26.99867063 26.99867063 26.99867063]  max|de|= -6.42e-06  lindep= 0.985
-Old state -> New state
-    3     ->     1 
-    1     ->     3 
-davidson 5 12  |r|= 9.44e-05  e= [25.73811693 26.99867063 26.99867063 26.99867063]  max|de|= -1.15e-07  lindep= 0.996
-Old state -> New state
-    3     ->     2 
-    2     ->     3 
-davidson 6 13  |r|= 1.41e-05  e= [25.73811692 26.99867063 26.99867063 26.99867063]  max|de|= -2.83e-09  lindep= 0.98
-Old state -> New state
-    3     ->     1 
     1     ->     2 
-davidson 7 14  |r|= 2.15e-06  e= [25.73811692 26.99867063 26.99867063 26.99867063]  max|de|= -4.99e-11  lindep= 0.975
+davidson 1 8  |r|= 0.716  e= [25.81358766 27.03220426 27.03260099 27.19067043]  max|de|= -0.903  lindep=    1
+davidson 2 12  |r|= 0.372  e= [25.67620285 27.00730751 27.00907478 27.16226605]  max|de|= -0.137  lindep= 0.986
 Old state -> New state
-    3     ->     2 
-    2     ->     3 
-davidson 8 15  |r|= 2.77e-07  e= [25.73811692 26.99867063 26.99867063 26.99867063]  max|de|= -1.15e-12  lindep= 0.784
-root 0 converged  |r|= 1.18e-07  e= 25.738116922961638  max|de|= -1.78e-14
-converged 9 16  |r|= 1.18e-07  e= [25.73811692 26.99867063 26.99867063 26.99867063]  max|de|= -2.84e-14
+    2     ->     1 
+    1     ->     2 
+davidson 3 16  |r|= 0.382  e= [25.63853826 26.69455492 26.72210545 26.8502397 ]  max|de|= -0.315  lindep= 0.971
+davidson 4 20  |r|= 0.464  e= [25.63359138 26.56619785 26.61885301 26.71714067]  max|de|= -0.133  lindep= 0.972
+davidson 5 24  |r|= 0.182  e= [25.63297014 26.46871579 26.51692404 26.63063102]  max|de|= -0.102  lindep= 0.991
+davidson 6 28  |r|= 0.162  e= [25.63286031 26.45086952 26.49690668 26.61174157]  max|de|= -0.02  lindep= 0.964
+davidson 7 32  |r|= 0.11  e= [25.63282683 26.43852838 26.48494599 26.60065819]  max|de|= -0.0123  lindep= 0.972
+davidson 8 36  |r|= 0.0594  e= [25.6328211  26.43397649 26.48001781 26.59704374]  max|de|= -0.00493  lindep= 0.947
+davidson 9 40  |r|= 0.0281  e= [25.63282022 26.4329554  26.47875215 26.59627354]  max|de|= -0.00127  lindep= 0.97
+davidson 10 44  |r|= 0.0132  e= [25.63282007 26.43264932 26.47844687 26.59607135]  max|de|= -0.000306  lindep= 0.933
+davidson 11 48  |r|= 0.00658  e= [25.63282004 26.43259338 26.47837999 26.59603049]  max|de|= -6.69e-05  lindep= 0.978
+davidson 12 52  |r|= 0.00237  e= [25.63282004 26.43258125 26.47836694 26.59602294]  max|de|= -1.31e-05  lindep= 0.963
+davidson 13 56  |r|= 0.000946  e= [25.63282004 26.43257993 26.47836521 26.59602177]  max|de|= -1.73e-06  lindep= 0.976
+davidson 14 60  |r|= 0.000848  e= [25.63282004 26.43257979 26.47836502 26.59602134]  max|de|= -4.34e-07  lindep= 0.975
+davidson 15 64  |r|= 0.000515  e= [25.63282004 26.43257977 26.47836496 26.59602096]  max|de|= -3.72e-07  lindep= 0.934
+davidson 16 68  |r|= 0.000173  e= [25.63282004 26.43257976 26.47836495 26.5960209 ]  max|de|= -6.76e-08  lindep= 0.815
+root 0 converged  |r|= 1.2e-06  e= 25.632820035928557  max|de|= -6.93e-13
+davidson 17 72  |r|= 6.24e-05  e= [25.63282004 26.43257976 26.47836494 26.59602089]  max|de|= -7.59e-09  lindep= 0.97
+davidson 18 75  |r|= 2.67e-05  e= [25.63282004 26.43257976 26.47836494 26.59602089]  max|de|= -1.38e-09  lindep= 0.961
+davidson 19 78  |r|= 8.65e-06  e= [25.63282004 26.43257976 26.47836494 26.59602089]  max|de|= -1.7e-10  lindep= 0.96
+davidson 20 81  |r|= 3.73e-06  e= [25.63282004 26.43257976 26.47836494 26.59602089]  max|de|= -2.48e-11  lindep= 0.938
+root 1 converged  |r|= 7.02e-07  e= 26.432579758807258  max|de|= -7.67e-13
+davidson 21 84  |r|= 1.36e-06  e= [25.63282004 26.43257976 26.47836494 26.59602089]  max|de|= -3.18e-12  lindep= 0.843
+root 2 converged  |r|= 5.32e-07  e= 26.478364941420732  max|de|= -2.95e-13
+root 3 converged  |r|= 6.34e-07  e= 26.59602088768799  max|de|= -6.25e-13
+converged 22 86  |r|= 1.2e-06  e= [25.63282004 26.43257976 26.47836494 26.59602089]  max|de|= -6.25e-13
 
-cvs-ip-mr-adc(2) excitation energies (a.u.):
-[[25.73811692]
- [26.99867063]
- [26.99867063]
- [26.99867063]]
+cvs-ip-mr-adc(2)-x excitation energies (a.u.):
+[[25.63282004]
+ [26.43257976]
+ [26.47836494]
+ [26.59602089]]
 
-cvs-ip-mr-adc(2) excitation energies (eV):
-[[700.37019484]
- [734.67162604]
- [734.67162604]
- [734.67162604]]
+cvs-ip-mr-adc(2)-x excitation energies (eV):
+[[697.50491913]
+ [719.26750085]
+ [720.51337977]
+ [723.71496278]]
 
 Computing transition moments matrix...
 
-cvs-ip-mr-adc(2) spectroscopic intensity:
-[[1.6371484]
- [0.       ]
- [0.       ]
- [0.       ]]
+cvs-ip-mr-adc(2)-x spectroscopic intensity:
+[[1.41477864]
+ [0.        ]
+ [0.0000013 ]
+ [0.00000072]]
 
-Time for computing transition moments matrix:     0.078491 sec
+Time for computing transition moments matrix:     0.856714 sec
 
 
-Total time:                                       42.338864 sec
+Total time:                                       564.336056 sec

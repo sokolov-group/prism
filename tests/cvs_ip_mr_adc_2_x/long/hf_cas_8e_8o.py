@@ -19,7 +19,6 @@
 
 import unittest
 import numpy as np
-import math
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
@@ -28,15 +27,11 @@ import prism.mr_adc
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
-r = 0.96
-x = r * math.sin(104.5 * math.pi/(2 * 180.0))
-y = r * math.cos(104.5 * math.pi/(2 * 180.0))
-
+r = 0.917
 mol = pyscf.gto.Mole()
 mol.atom = [
-            ['O', (0.0, 0.0, 0.0)],
-            ['H', (0.0,  -x,   y)],
-            ['H', (0.0,   x,   y)]]
+            ['H', (0.0, 0.0, -r/2)],
+            ['F', (0.0, 0.0,  r/2)]]
 mol.basis = 'aug-cc-pvdz'
 mol.symmetry = True
 mol.build()
@@ -49,9 +44,11 @@ ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
 # CASSCF calculation
-mc = pyscf.mcscf.CASSCF(mf, 4, 0)
+mc = pyscf.mcscf.CASSCF(mf, 8, 8)
+
 mc.conv_tol = 1e-11
 mc.conv_tol_grad = 1e-6
+mc.max_cycle_macro = 100
 
 emc = mc.mc1step()[0]
 print("CASSCF energy: %f\n" % emc)
@@ -64,23 +61,23 @@ mr_adc.nroots = 4
 mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"
-mr_adc.method = "mr-adc(2)"
+mr_adc.method = "mr-adc(2)-x"
 
 class KnownValues(unittest.TestCase):
 
-    def test_cvs_ip_mr_adc_2(self):
+    def test_cvs_ip_mr_adc_2_x(self):
 
-        e, p = mr_adc.kernel()
+        e,p = mr_adc.kernel()
 
-        self.assertAlmostEqual(e[0], 539.82687971, 4)
-        self.assertAlmostEqual(e[1], 574.76837394, 4)
-        self.assertAlmostEqual(e[2], 574.76837394, 4)
-        self.assertAlmostEqual(e[3], 574.76837394, 4)
+        self.assertAlmostEqual(e[0], 697.50491913, 4)
+        self.assertAlmostEqual(e[1], 719.26750085, 4)
+        self.assertAlmostEqual(e[2], 720.51337977, 4)
+        self.assertAlmostEqual(e[3], 723.71496278, 4)
 
-        self.assertAlmostEqual(p[0], 1.51974470, 4)
-        self.assertAlmostEqual(p[1], 0.00000016, 4)
-        self.assertAlmostEqual(p[2], 0.00000002, 4)
-        self.assertAlmostEqual(p[3], 0.00000001, 4)
+        self.assertAlmostEqual(p[0], 1.41477864, 4)
+        self.assertAlmostEqual(p[1], 0.00000000, 4)
+        self.assertAlmostEqual(p[2], 0.00000130, 4)
+        self.assertAlmostEqual(p[3], 0.00000072, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")

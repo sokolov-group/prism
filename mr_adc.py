@@ -65,10 +65,6 @@ class MRADC:
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
 
-        # If set to a positive value defines the range (log scale) of overlap matrix
-        # eigenvalues damped by a sigmoid function
-        # self.s_damping_strength = None
-
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
         self.nelecasci = None           # Active-space number of electrons of CASCI states
@@ -126,13 +122,17 @@ class MRADC:
                 raise Exception("Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type)
 
         # TODO: Temporary check of what methods are implemented in this version
-        if self.method_type not in ("ip", "cvs-ip"):
+        if self.method_type not in ("cvs-ip"):
             raise Exception("This spin-adapted version does not currently support method type %s" % self.method_type)
 
         # Transform one- and two-electron integrals
         # TODO: implement DF integral transformation
         mr_adc_integrals.transform_integrals_1e(self)
         mr_adc_integrals.transform_integrals_2e_incore(self)
+
+        # Compute CVS integrals
+        if self.method_type == "cvs-ip":
+            mr_adc_integrals.compute_cvs_integrals_2e_incore(self)
 
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
