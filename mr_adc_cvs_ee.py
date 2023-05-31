@@ -1703,182 +1703,97 @@ def compute_preconditioner(mr_adc):
 
     return np.ascontiguousarray(precond)
 
+
 def apply_S_12(mr_adc, X, transpose = False):
+
+    if (len(X.shape) > 1):
+        raise Exception("Input vector must be one-dimensional array")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
-    ncvs = mr_adc.ncvs
-    nval = mr_adc.nval
-    ncas = mr_adc.ncas
+    ncvs    = mr_adc.ncvs
+    ncas    = mr_adc.ncas
     nextern = mr_adc.nextern
 
-    ## Overlap Matrices
-    S12_c_caa = mr_adc.S12.c_caa
-    S12_cae = mr_adc.S12.cae
-    S12_cca = mr_adc.S12.cca
+    # Compound indices
+    n_ce = mr_adc.h0.n_ce
+    n_ca = mr_adc.h0.n_ca
 
-    ## Excitation Manifolds
-    s_c = mr_adc.h0.s_c
-    f_c = mr_adc.h0.f_c
-
-    s_cce = mr_adc.h1.s_cce
-    f_cce = mr_adc.h1.f_cce
-    s_cca = mr_adc.h1.s_cca
-    f_cca = mr_adc.h1.f_cca
-
-    s_caa__aaa = mr_adc.h1.s_caa__aaa
-    f_caa__aaa = mr_adc.h1.f_caa__aaa
-    s_caa__abb = mr_adc.h1.s_caa__abb
-    f_caa__abb = mr_adc.h1.f_caa__abb
-    s_caa__bab = mr_adc.h1.s_caa__bab
-    f_caa__bab = mr_adc.h1.f_caa__bab
-
-    s_cae__aaa = mr_adc.h1.s_cae__aaa
-    f_cae__aaa = mr_adc.h1.f_cae__aaa
-    s_cae__abb = mr_adc.h1.s_cae__abb
-    f_cae__abb = mr_adc.h1.f_cae__abb
-    s_cae__bab = mr_adc.h1.s_cae__bab
-    f_cae__bab = mr_adc.h1.f_cae__bab
-
-    ho_s_c_caa = mr_adc.h_orth.s_c_caa
-    ho_f_c_caa = mr_adc.h_orth.f_c_caa
-
-    ho_s_cce = mr_adc.h_orth.s_cce
-    ho_f_cce = mr_adc.h_orth.f_cce
-    ho_s_cca = mr_adc.h_orth.s_cca
-    ho_f_cca = mr_adc.h_orth.f_cca
-
-    ho_s_cae__aaa = mr_adc.h_orth.s_cae__aaa
-    ho_f_cae__aaa = mr_adc.h_orth.f_cae__aaa
-    ho_s_cae__abb = mr_adc.h_orth.s_cae__abb
-    ho_f_cae__abb = mr_adc.h_orth.f_cae__abb
-    ho_s_cae__bab = mr_adc.h_orth.s_cae__bab
-    ho_f_cae__bab = mr_adc.h_orth.f_cae__bab
-
-    # Active indices manifolds
-    n_aa = ncas * ncas
-
-    s_aa = 1
-    f_aa = s_aa + n_aa
-    s_bb = f_aa
-    f_bb = s_bb + n_aa
-    s_ab = f_bb
-    f_ab = s_ab + n_aa
+    # Non-orthogonal dimension indices
+    s_ce_aa = mr_adc.h0.s_ce_aa
+    f_ce_aa = mr_adc.h0.f_ce_aa
+    s_ce_bb = mr_adc.h0.s_ce_bb
+    f_ce_bb = mr_adc.h0.f_ce_bb
+    s_ca_aa = mr_adc.h0.s_ca_aa
+    f_ca_aa = mr_adc.h0.f_ca_aa
+    s_ca_bb = mr_adc.h0.s_ca_bb
+    f_ca_bb = mr_adc.h0.f_ca_bb
 
     Xt = None
 
-    if transpose:
-        if (X.shape[0] != (mr_adc.h0.dim + mr_adc.h1.dim)):
-            raise Exception("Dimensions do not match when applying S_12 transpose")
+    # MR-ADC(0) and MR-ADC(1)
+    if mr_adc.method in ("mr-adc(0)", "mr-adc(1)"):
 
-        Xt = np.zeros(mr_adc.h_orth.dim)
+        # Orthogonal dimension indices
+        ho_s_ce_caea_aa = mr_adc.h_orth.s_ce_caea_aa
+        ho_f_ce_caea_aa = mr_adc.h_orth.f_ce_caea_aa
+        ho_s_ce_caea_bb = mr_adc.h_orth.s_ce_caea_bb
+        ho_f_ce_caea_bb = mr_adc.h_orth.f_ce_caea_bb
+        ho_s_ca_caaa_aa = mr_adc.h_orth.s_ca_caaa_aa
+        ho_f_ca_caaa_aa = mr_adc.h_orth.f_ca_caaa_aa
+        ho_s_ca_caaa_bb = mr_adc.h_orth.s_ca_caaa_bb
+        ho_f_ca_caaa_bb = mr_adc.h_orth.f_ca_caaa_bb
 
-        ## C and CAA -> C_CAA
-        temp = np.zeros((ncvs, S12_c_caa.shape[0]))
-        temp[:, 0] = X[s_c:f_c].copy()
-        temp[:, s_aa:f_aa] = X[s_caa__aaa:f_caa__aaa].reshape(ncvs, -1).copy()
-        temp[:, s_bb:f_bb] = X[s_caa__abb:f_caa__abb].reshape(ncvs, -1).copy()
-        temp[:, s_ab:f_ab] = X[s_caa__bab:f_caa__bab].reshape(ncvs, -1).copy()
+        # Overlap matrix
+        S12_ca = mr_adc.S12.ca
 
-        Xt[ho_s_c_caa:ho_f_c_caa] = np.dot(temp, S12_c_caa).reshape(-1).copy()
+        # Transformation to orthogonal basis
+        if transpose:
+            if (X.shape[0] != mr_adc.h0.dim):
+                raise Exception("Dimensions do not match when applying S_12 transpose")
 
-        ## CCE
-        Xt[ho_s_cce:ho_f_cce] = X[s_cce:f_cce].copy()
+            Xt = np.zeros(mr_adc.h_orth.dim)
 
-        ## CAE
-        temp = X[s_cae__aaa:f_cae__aaa].reshape(ncvs, S12_cae.shape[0], nextern).copy()
-        Xt[ho_s_cae__aaa:ho_f_cae__aaa] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+            # CA
+            # aa,aa
+            temp = X[s_ca_aa:f_ca_aa].reshape(ncvs, ncas).copy()
+            Xt[ho_s_ca_caaa_aa:ho_f_ca_caaa_aa] = np.dot(temp, S12_ca).reshape(-1)
 
-        temp = X[s_cae__abb:f_cae__abb].reshape(ncvs, S12_cae.shape[0], nextern).copy()
-        Xt[ho_s_cae__abb:ho_f_cae__abb] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+            # bb,bb
+            temp = X[s_ca_bb:f_ca_bb].reshape(ncvs, ncas).copy()
+            Xt[ho_s_ca_caaa_bb:ho_f_ca_caaa_bb] = np.dot(temp, S12_ca).reshape(-1)
 
-        temp = X[s_cae__bab:f_cae__bab].reshape(ncvs, S12_cae.shape[0], nextern).copy()
-        Xt[ho_s_cae__bab:ho_f_cae__bab] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+            # CE
+            Xt[ho_s_ce_caea_aa:ho_f_ce_caea_bb] = X[s_ce_aa:f_ce_bb].copy()
 
-        ## CCA
-        temp = X[s_cca:f_cca].reshape(-1, S12_cca.shape[0]).copy()
-        Xt[ho_s_cca:ho_f_cca] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+        # Transformation to non-orthogonal basis
+        else:
+            if (X.shape[0] != (mr_adc.h_orth.dim)):
+                raise Exception("Dimensions do not match when applying S_12")
 
-        if nval > 0:
+            Xt = np.zeros(mr_adc.h0.dim)
 
-            ## Excitation Manifolds
-            s_cve = mr_adc.h1.s_cve
-            f_cve = mr_adc.h1.f_cve
+            # CA
+            # aa,aa
+            temp = X[ho_s_ca_caaa_aa:ho_f_ca_caaa_aa].reshape(ncvs, S12_ca.shape[1]).copy()
+            Xt[s_ca_aa:f_ca_aa] = np.dot(temp, S12_ca.T).reshape(-1)
 
-            s_cva = mr_adc.h1.s_cva
-            f_cva = mr_adc.h1.f_cva
+            # bb,bb
+            temp = X[ho_s_ca_caaa_bb:ho_f_ca_caaa_bb].reshape(ncvs, S12_ca.shape[1]).copy()
+            Xt[s_ca_bb:f_ca_bb] = np.dot(temp, S12_ca.T).reshape(-1)
 
-            ho_s_cve = mr_adc.h_orth.s_cve
-            ho_f_cve = mr_adc.h_orth.f_cve
+            # CE
+            Xt[s_ce_aa:f_ce_bb] = X[ho_s_ce_caea_aa:ho_f_ce_caea_bb].copy()
 
-            ho_s_cva = mr_adc.h_orth.s_cva
-            ho_f_cva = mr_adc.h_orth.f_cva
-
-            ## CVE
-            Xt[ho_s_cve:ho_f_cve] = X[s_cve:f_cve].copy()
-
-            ## CVA
-            temp = X[s_cva:f_cva].reshape(-1, S12_cca.shape[0]).copy()
-            Xt[ho_s_cva:ho_f_cva] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
-
+    # MR-ADC(2) and MR-ADC(2)-X
     else:
-        if (X.shape[0] != (mr_adc.h_orth.dim)):
-            raise Exception("Dimensions do not match when applying S_12")
-
-        Xt = np.zeros(mr_adc.h0.dim + mr_adc.h1.dim)
-
-        ## C_CAA -> C and CAA
-        temp = X[ho_s_c_caa:ho_f_c_caa].reshape(ncvs, S12_c_caa.shape[1]).copy()
-        temp = np.dot(temp, S12_c_caa.T)
-        Xt[s_c:f_c] = temp[:,0].copy()
-
-        Xt[s_caa__aaa:f_caa__aaa] = temp[:, s_aa:f_aa].reshape(-1).copy()
-        Xt[s_caa__abb:f_caa__abb] = temp[:, s_bb:f_bb].reshape(-1).copy()
-        Xt[s_caa__bab:f_caa__bab] = temp[:, s_ab:f_ab].reshape(-1).copy()
-
-        ## CCE
-        Xt[s_cce:f_cce] = X[ho_s_cce:ho_f_cce].copy()
-
-        ## CAE
-        temp = X[ho_s_cae__aaa:ho_f_cae__aaa].reshape(ncvs, S12_cae.shape[1], nextern).copy()
-        Xt[s_cae__aaa:f_cae__aaa] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
-
-        temp = X[ho_s_cae__abb:ho_f_cae__abb].reshape(ncvs, S12_cae.shape[1], nextern).copy()
-        Xt[s_cae__abb:f_cae__abb] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
-
-        temp = X[ho_s_cae__bab:ho_f_cae__bab].reshape(ncvs, S12_cae.shape[1], nextern).copy()
-        Xt[s_cae__bab:f_cae__bab] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
-
-        ## CCA
-        temp = X[ho_s_cca:ho_f_cca].reshape(-1, S12_cca.shape[1]).copy()
-        Xt[s_cca:f_cca] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
-
-        if nval > 0:
-
-            ## Excitation Manifolds
-            s_cve = mr_adc.h1.s_cve
-            f_cve = mr_adc.h1.f_cve
-
-            s_cva = mr_adc.h1.s_cva
-            f_cva = mr_adc.h1.f_cva
-
-            ho_s_cve = mr_adc.h_orth.s_cve
-            ho_f_cve = mr_adc.h_orth.f_cve
-
-            ho_s_cva = mr_adc.h_orth.s_cva
-            ho_f_cva = mr_adc.h_orth.f_cva
-
-            # CVE
-            Xt[s_cve:f_cve] = X[ho_s_cve:ho_f_cve].copy()
-
-            ## CVA
-            temp = X[ho_s_cva:ho_f_cva].reshape(-1, S12_cca.shape[1]).copy()
-            Xt[s_cva:f_cva] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+        raise Exception("Only implemented up to first-order. Second-order is a WIP")
 
     return Xt
+
 
 def compute_sigma_vector(mr_adc, Xt):
 
