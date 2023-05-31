@@ -161,6 +161,10 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "cvs-ee":
         # Compute h0-h0 block of the effective Hamiltonian matrix
         M_00 = mr_adc_cvs_ee.compute_M_00(mr_adc)
+
+        # Transform to orthogonal basis
+#        val, vec = np.linalg.eigh(M_00)
+#        print (val.reshape(-1,1))
         exit()
 
     # Compute diagonal of the M matrix
