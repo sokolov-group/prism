@@ -115,7 +115,7 @@ def transform_integrals_2e_incore(mr_adc):
 
         if mr_adc.method in ("mr-adc(2)-x"):
             mr_adc.v2e.cccc = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
-            mr_adc.v2e.eeee = transform_2e_chem_incore(interface, mo_e, mo_e, mo_e, mo_e)
+#            mr_adc.v2e.eeee = transform_2e_chem_incore(interface, mo_e, mo_e, mo_e, mo_e)
 
             mr_adc.v2e.ccee = transform_2e_chem_incore(interface, mo_c, mo_c, mo_e, mo_e)
             mr_adc.v2e.ceec = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_c)
