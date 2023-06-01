@@ -84,6 +84,7 @@ def kernel(mr_adc):
                                            verbose = 6,
                                            max_space = mr_adc.max_space,
                                            max_cycle = mr_adc.max_cycle,
+                                           tol = mr_adc.tol_e,
                                            tol_residual = mr_adc.tol_davidson)
 
     print("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
