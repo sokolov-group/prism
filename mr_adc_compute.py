@@ -148,16 +148,17 @@ def setup_davidson(mr_adc):
         M_00 = mr_adc_cvs_ee.compute_M_00(mr_adc)
 
         # Transform to orthogonal basis
-        M_00_orth = np.zeros((mr_adc.h_orth.dim, mr_adc.h_orth.dim))
+        M_00_horth = np.zeros((mr_adc.h0.dim, mr_adc.h_orth.dim))
+        M_00_forth = np.zeros((mr_adc.h_orth.dim, mr_adc.h_orth.dim))
 
         for i in range(mr_adc.h0.dim):
-            M_00_orth[i, :] = mr_adc_cvs_ee.apply_S_12(mr_adc, M_00[i, :], transpose = True)
+            M_00_horth[i, :] = mr_adc_cvs_ee.apply_S_12(mr_adc, M_00[i, :], transpose = True)
 
         for i in range(mr_adc.h0.dim):
-            M_00_orth[:, i] = mr_adc_cvs_ee.apply_S_12(mr_adc, M_00[:, i], transpose = True)
+            M_00_forth[:, i] = mr_adc_cvs_ee.apply_S_12(mr_adc, M_00_horth[:, i], transpose = True)
 
         # Diagonalize M matrix
-        val, vec = np.linalg.eigh(M_00_orth)
+        val, vec = np.linalg.eigh(M_00_forth)
         print (val.reshape(-1,1))
         exit()
 
