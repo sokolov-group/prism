@@ -29,22 +29,22 @@ mf.kernel()
 mc = pyscf.mcscf.CASSCF(mf, 6, 6)
 emc = mc.mc1step()[0]
 
-# CVS-EE-MR-ADC calculation
-interface = prism_beta.interface.PYSCF(mf, mc, opt_einsum = True)
-mr_adc = prism_beta.mr_adc.MRADC(interface)
-mr_adc.method_type = "cvs-ee"
-mr_adc.method = "mr-adc(1)"
-mr_adc.s_thresh_singles = 1e-5
-mr_adc.s_thresh_doubles = 1e-10
-mr_adc.ncvs = 2
-mr_adc.nroots = 8
-e, p = mr_adc.kernel()
+## CVS-EE-MR-ADC calculation
+#interface = prism_beta.interface.PYSCF(mf, mc, opt_einsum = True)
+#mr_adc = prism_beta.mr_adc.MRADC(interface)
+#mr_adc.method_type = "cvs-ee"
+#mr_adc.method = "mr-adc(1)"
+#mr_adc.s_thresh_singles = 1e-5
+#mr_adc.s_thresh_doubles = 1e-10
+#mr_adc.ncvs = 2
+#mr_adc.nroots = 8
+#e, p = mr_adc.kernel()
 
 # CVS-EE-MR-ADC calculation
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ee"
-mr_adc.method = "mr-adc(1)"
+mr_adc.method = "mr-adc(2)"
 mr_adc.s_thresh_singles = 1e-5
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.ncvs = 2

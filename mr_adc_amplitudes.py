@@ -39,7 +39,7 @@ def compute_amplitudes(mr_adc):
     compute_t2_amplitudes(mr_adc)
 
     # Compute CVS amplitudes and remove non-CVS core integrals, amplitudes and unnecessary RDMs
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
         compute_cvs_amplitudes(mr_adc)
 
     mr_adc.log.timer("computing amplitudes", *cput0)
@@ -165,7 +165,7 @@ def compute_cvs_amplitudes(mr_adc):
         mr_adc.tmpfile.xt1 = None
     tmpfile = mr_adc.tmpfile.xt1
 
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
