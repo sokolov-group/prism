@@ -270,6 +270,99 @@ def compute_cvs_amplitudes(mr_adc):
         del(mr_adc.t2.ccae)
         del(mr_adc.t2.caee)
         del(mr_adc.t2.ccaa)
+    
+    elif mr_adc.method_type == "cvs-ee":
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+
+            mr_adc.t1.xe = np.ascontiguousarray(mr_adc.t1.ce[:ncvs, :])
+#            mr_adc.t1.ve = np.ascontiguousarray(mr_adc.t1.ce[ncvs:, :])
+#
+#            mr_adc.t1.xaea = np.ascontiguousarray(mr_adc.t1.caea[:ncvs, :, :, :])
+#            mr_adc.t1.vaea = np.ascontiguousarray(mr_adc.t1.caea[ncvs:, :, :, :])
+#
+#            mr_adc.t1.xaae = np.ascontiguousarray(mr_adc.t1.caae[:ncvs, :, :, :])
+#            mr_adc.t1.vaae = np.ascontiguousarray(mr_adc.t1.caae[ncvs:, :, :, :])
+#
+#            mr_adc.t1.xa = np.ascontiguousarray(mr_adc.t1.ca[:ncvs, :])
+#            mr_adc.t1.va = np.ascontiguousarray(mr_adc.t1.ca[ncvs:, :])
+#
+#            mr_adc.t1.xaaa = np.ascontiguousarray(mr_adc.t1.caaa[:ncvs, :, :, :])
+#            mr_adc.t1.vaaa = np.ascontiguousarray(mr_adc.t1.caaa[ncvs:, :, :, :])
+
+            mr_adc.t1.xxee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs, :ncvs, :, :])
+            mr_adc.t1.xvee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs, ncvs:, :, :])
+            mr_adc.t1.vxee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:, :ncvs, :, :])
+            mr_adc.t1.vvee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:, ncvs:, :, :])
+
+            mr_adc.t1.xxae = np.ascontiguousarray(mr_adc.t1.ccae[:ncvs, :ncvs, :, :])
+            mr_adc.t1.xvae = np.ascontiguousarray(mr_adc.t1.ccae[:ncvs, ncvs:, :, :])
+            mr_adc.t1.vxae = np.ascontiguousarray(mr_adc.t1.ccae[ncvs:, :ncvs, :, :])
+            mr_adc.t1.vvae = np.ascontiguousarray(mr_adc.t1.ccae[ncvs:, ncvs:, :, :])
+
+#            mr_adc.t1.xaee = np.ascontiguousarray(mr_adc.t1.caee[:ncvs, :, :, :])
+#            mr_adc.t1.vaee = np.ascontiguousarray(mr_adc.t1.caee[ncvs:, :, :, :])
+#
+#            mr_adc.t1.xxaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs, :ncvs, :, :])
+#            mr_adc.t1.xvaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs, ncvs:, :, :])
+#            mr_adc.t1.vxaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, :ncvs, :, :])
+#            mr_adc.t1.vvaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, ncvs:, :, :])
+#
+#            mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs, :])
+#            mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
+#
+#            mr_adc.t2.xaea = np.ascontiguousarray(mr_adc.t2.caea[:ncvs, :, :, :])
+#            mr_adc.t2.vaea = np.ascontiguousarray(mr_adc.t2.caea[ncvs:, :, :, :])
+#
+#            mr_adc.t2.xaae = np.ascontiguousarray(mr_adc.t2.caae[:ncvs, :, :, :])
+#            mr_adc.t2.vaae = np.ascontiguousarray(mr_adc.t2.caae[ncvs:, :, :, :])
+#
+#            mr_adc.t2.xa = np.ascontiguousarray(mr_adc.t2.ca[:ncvs, :])
+#            mr_adc.t2.va = np.ascontiguousarray(mr_adc.t2.ca[ncvs:, :])
+#
+#            mr_adc.t2.xaaa = np.ascontiguousarray(mr_adc.t2.caaa[:ncvs, :, :, :])
+#            mr_adc.t2.vaaa = np.ascontiguousarray(mr_adc.t2.caaa[ncvs:, :, :, :])
+#
+#        if mr_adc.method == "mr-adc(2)-x":
+#
+#            mr_adc.t2.xxee = np.ascontiguousarray(mr_adc.t2.ccee[:ncvs, :ncvs, :, :])
+#            mr_adc.t2.xvee = np.ascontiguousarray(mr_adc.t2.ccee[:ncvs, ncvs:, :, :])
+#            mr_adc.t2.vxee = np.ascontiguousarray(mr_adc.t2.ccee[ncvs:, :ncvs, :, :])
+#            mr_adc.t2.vvee = np.ascontiguousarray(mr_adc.t2.ccee[ncvs:, ncvs:, :, :])
+#
+#            mr_adc.t2.xxae = np.ascontiguousarray(mr_adc.t2.ccae[:ncvs, :ncvs, :, :])
+#            mr_adc.t2.xvae = np.ascontiguousarray(mr_adc.t2.ccae[:ncvs, ncvs:, :, :])
+#            mr_adc.t2.vxae = np.ascontiguousarray(mr_adc.t2.ccae[ncvs:, :ncvs, :, :])
+#            mr_adc.t2.vvae = np.ascontiguousarray(mr_adc.t2.ccae[ncvs:, ncvs:, :, :])
+#
+#            mr_adc.t2.xaee = np.ascontiguousarray(mr_adc.t2.caee[:ncvs, :, :, :])
+#            mr_adc.t2.vaee = np.ascontiguousarray(mr_adc.t2.caee[ncvs:, :, :, :])
+#
+#            mr_adc.t2.xxaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, :ncvs, :, :])
+#            mr_adc.t2.xvaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, ncvs:, :, :])
+#            mr_adc.t2.vvaa = np.ascontiguousarray(mr_adc.t2.ccaa[ncvs:, ncvs:, :, :])
+
+        del(mr_adc.t1.ce)
+#        del(mr_adc.t1.caea)
+#        del(mr_adc.t1.caae)
+#        del(mr_adc.t1.ca)
+#        del(mr_adc.t1.caaa)
+        del(mr_adc.t1.ccee)
+        del(mr_adc.t1.ccae)
+#        del(mr_adc.t1.caee)
+#        del(mr_adc.t1.ccaa)
+#        del(mr_adc.t2.ce)
+#        del(mr_adc.t2.caea)
+#        del(mr_adc.t2.caae)
+#        del(mr_adc.t2.ca)
+#        del(mr_adc.t2.caaa)
+#        del(mr_adc.t2.ccee)
+#        del(mr_adc.t2.ccae)
+#        del(mr_adc.t2.caee)
+#        del(mr_adc.t2.ccaa)
 
     print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
 
