@@ -15,6 +15,7 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#                  Ilia M. Mazin <ilia.mazin@gmail.com>
 #
 
 import sys
@@ -308,8 +309,8 @@ def compute_cvs_amplitudes(mr_adc):
 
             mr_adc.t1.xxaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs, :ncvs, :, :])
             mr_adc.t1.xvaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs, ncvs:, :, :])
-#            mr_adc.t1.vxaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, :ncvs, :, :])
-#            mr_adc.t1.vvaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, ncvs:, :, :])
+            mr_adc.t1.vxaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, :ncvs, :, :])
+            mr_adc.t1.vvaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, ncvs:, :, :])
 
 #            mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs, :])
 #            mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
