@@ -498,17 +498,78 @@ def compute_M_00(mr_adc):
     ## Second-order terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
     
+        ## One-electron integrals
+        h_xa = mr_adc.h1eff.xa
+        h_xe = mr_adc.h1eff.xe
+        h_ve = mr_adc.h1eff.ve
+    
         ## Two-electron integrals
-        v_xeee = mr_adc.v2e.xeee
-        v_xexe = mr_adc.v2e.xexe
+        v_xxxa = mr_adc.v2e.xxxa
+        v_xxva = mr_adc.v2e.xxva
+        v_vxxa = mr_adc.v2e.vxxa
+        v_xxxe = mr_adc.v2e.xxxe
+        v_xxve = mr_adc.v2e.xxve
+        v_vxxe = mr_adc.v2e.vxxe
+
+        v_xvee = mr_adc.v2e.xvee
+
+        v_xaxa = mr_adc.v2e.xaxa
+        v_xava = mr_adc.v2e.xava
         v_xaxe = mr_adc.v2e.xaxe
+        v_xave = mr_adc.v2e.xave
+        v_vaxe = mr_adc.v2e.vaxe
+        v_vave = mr_adc.v2e.vaxe
+        v_xexe = mr_adc.v2e.xexe
+        v_xeve = mr_adc.v2e.xeve
+        v_vexe = mr_adc.v2e.vexe
+        v_veve = mr_adc.v2e.veve
+        
+        v_xeaa = mr_adc.v2e.xeaa
+        v_veaa = mr_adc.v2e.veaa
+        v_xaae = mr_adc.v2e.xaae
+        v_vaae = mr_adc.v2e.vaae
+        v_xeae = mr_adc.v2e.xeae
+        v_veae = mr_adc.v2e.veae
+        v_xeea = mr_adc.v2e.xeea
+        v_veea = mr_adc.v2e.veea
+        v_xaee = mr_adc.v2e.xaee
+        v_vaee = mr_adc.v2e.vaee
+        
+        v_xaaa = mr_adc.v2e.xaaa
+        v_xeee = mr_adc.v2e.xeee
+        v_veee = mr_adc.v2e.veee
+        
+        v_aeae = mr_adc.v2e.aeae
+        v_aeee = mr_adc.v2e.aeee
 
         ## Amplitudes
+        t1_xa = mr_adc.t1.xa
+        t1_va = mr_adc.t1.va
         t1_xe = mr_adc.t1.xe
+        t1_ve = mr_adc.t1.ve
 
-        t1_xxee = mr_adc.t1.xxee
+        t1_xxaa = mr_adc.t1.xxaa
+        t1_xvaa = mr_adc.t1.xvaa
         t1_xxae = mr_adc.t1.xxae
+        t1_xvae = mr_adc.t1.xvae
+        t1_vxae = mr_adc.t1.vxae
+        t1_vvae = mr_adc.t1.vvae
+        t1_xxee = mr_adc.t1.xxee
+        t1_xvee = mr_adc.t1.xvee
+        t1_vxee = mr_adc.t1.vxee
+        t1_vvee = mr_adc.t1.vvee
 
+        t1_xaaa = mr_adc.t1.xaaa
+        t1_vaaa = mr_adc.t1.vaaa
+        t1_xaae = mr_adc.t1.xaae
+        t1_vaae = mr_adc.t1.vaae
+        t1_xaea = mr_adc.t1.xaea
+        t1_vaea = mr_adc.t1.vaea
+        t1_xaee = mr_adc.t1.xaee
+        t1_vaee = mr_adc.t1.vaee
+        
+        t1_aaee = mr_adc.t1.aaee
+        
         # CE - CE
         ## aa,aa || bb,bb
         temp  = einsum('Ia,JBAa->IAJB', t1_xe, v_xeee, optimize = einsum_type)
@@ -3284,6 +3345,7 @@ def compute_M_00(mr_adc):
         temp -= 1/2 * einsum('IJ,xyzw,zxuA,ywvB,uv->IAJB', np.identity(ncvs), v_aaaa, t1_aaae, t1_aaae, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,xyzw,zxuB,vsuA,ywsv->IAJB', np.identity(ncvs), v_aaaa, t1_aaae, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
+        temp = np.ascontiguousarray(temp)
         temp.shape = (n_ce, n_ce)
         M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
         M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
