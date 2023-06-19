@@ -15,6 +15,7 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#                  Ilia M. Mazin <ilia.mazin@gmail.com>
 #
 
 import os
