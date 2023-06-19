@@ -852,13 +852,28 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.veae = np.ascontiguousarray(mr_adc.v2e.ceae[ncvs:, :, :, :])
             del(mr_adc.v2e.ceae)
             
-            # Delete 2e- integral without CVS indices
-            del(mr_adc.v2e.aeae)
-        
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+            mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :])
+            mr_adc.v2e.xxva = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :])
+            mr_adc.v2e.vxxa = np.ascontiguousarray(mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :])
+            del(mr_adc.v2e.ccca)
+
             mr_adc.v2e.xeee = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs, :, :, :])
             mr_adc.v2e.veee = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:, :, :, :])
             del(mr_adc.v2e.ceee)
+
+            mr_adc.v2e.xeea = np.ascontiguousarray(mr_adc.v2e.ceea[:ncvs, :, :, :])
+            mr_adc.v2e.veea = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:, :, :, :])
+            del(mr_adc.v2e.ceea)
+
+            mr_adc.v2e.xaee = np.ascontiguousarray(mr_adc.v2e.caee[:ncvs, :, :, :])
+            mr_adc.v2e.vaee = np.ascontiguousarray(mr_adc.v2e.caee[ncvs:, :, :, :])
+            del(mr_adc.v2e.caee)
+
+            mr_adc.v2e.xxxe = np.ascontiguousarray(mr_adc.v2e.ccce[:ncvs, :ncvs, :ncvs, :])
+            mr_adc.v2e.xxve = np.ascontiguousarray(mr_adc.v2e.ccce[:ncvs, :ncvs, ncvs:, :])
+            mr_adc.v2e.vxxe = np.ascontiguousarray(mr_adc.v2e.ccce[ncvs:, :ncvs, :ncvs, :])
+            del(mr_adc.v2e.ccce)
 
     # Effective one-electron integrals
     mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :])
