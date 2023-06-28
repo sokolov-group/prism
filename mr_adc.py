@@ -142,6 +142,6 @@ class MRADC:
         # mr_adc_rdms.compute_es_rdms(self)
 
         # Run MR-ADC computation
-        ee, spec_factors = mr_adc_compute.kernel(self)
+        ee, spec_factors, X = mr_adc_compute.kernel(self)
 
-        return ee, spec_factors
+        return ee, spec_factors, X

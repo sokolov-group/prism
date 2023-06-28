@@ -66,7 +66,7 @@ class KnownValues(unittest.TestCase):
 
     def test_ip_mr_adc_2_x(self):
 
-        e,p = mr_adc.kernel()
+        e, p, x = mr_adc.kernel()
 
         self.assertAlmostEqual(e[0], 412.02301397, 4)
         self.assertAlmostEqual(e[1], 412.10663047, 4)

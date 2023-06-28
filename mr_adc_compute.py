@@ -95,11 +95,11 @@ def kernel(mr_adc):
     sys.stdout.flush()
 
     # Compute transition moments and spectroscopic factors
-    spec_intensity = compute_trans_properties(mr_adc, E, U)
+    spec_intensity, X = compute_trans_properties(mr_adc, E, U)
 
     print("\nTotal time:                                       %f sec" % (time.time() - start_time))
 
-    return E_ev, spec_intensity
+    return E_ev, spec_intensity, X
 
 def setup_davidson(mr_adc):
 
@@ -218,9 +218,9 @@ def compute_trans_properties(mr_adc, E, U):
         raise Exception("Unknown Method Type ...")
 
     U = np.array(U)
-    T = np.dot(T, U.T)
+    X = np.dot(T, U.T)
 
-    spec_intensity = 2.0 * np.sum(T**2, axis=0)
+    spec_intensity = 2.0 * np.sum(X**2, axis=0)
 
     print("%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
     print(spec_intensity.reshape(-1, 1))
@@ -233,13 +233,13 @@ def compute_trans_properties(mr_adc, E, U):
 
     #TODO: Change to external functions
     # if mr_adc.print_level > 5:
-    #     analyze_trans_properties(mr_adc, T)
-    #     analyze_spec_factor(mr_adc, T)
+    #     analyze_trans_properties(mr_adc, X)
+    #     analyze_spec_factor(mr_adc, X)
 
     print("\nTime for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
-    return spec_intensity
+    return spec_intensity, X
 
 def analyze_trans_properties(mr_adc, T):
 
