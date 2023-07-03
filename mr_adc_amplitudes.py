@@ -62,6 +62,7 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.ce = np.zeros((ncore, nextern))
             mr_adc.t1.caea = np.zeros((ncore, ncas, nextern, ncas))
+            mr_adc.t1.caae = np.zeros((ncore, ncas, ncas, nextern))
 
         if ncore > 0 and ncas > 0:
             print("Computing T[+1']^(1) amplitudes...")
@@ -86,6 +87,15 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.ae = np.zeros((ncas, nextern))
             mr_adc.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
+
+    else:
+        mr_adc.t1.ce = np.zeros((ncore, nextern))
+        mr_adc.t1.caea = np.zeros((ncore, ncas, nextern, ncas))
+        mr_adc.t1.caae = np.zeros((ncore, ncas, ncas, nextern))
+        mr_adc.t1.ca = np.zeros((ncore, ncas))
+        mr_adc.t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
+        mr_adc.t1.ae = np.zeros((ncas, nextern))
+        mr_adc.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
 
     if ((mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x")) or
         (mr_adc.method == "mr-adc(1)" and mr_adc.method_type in ("ee", "cvs-ee"))):
@@ -133,6 +143,13 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
+    else:
+        mr_adc.t1.ccee = np.zeros((ncore, ncore, nextern, nextern))
+        mr_adc.t1.ccae = np.zeros((ncore, ncore, ncas, nextern))
+        mr_adc.t1.caee = np.zeros((ncore, ncas, nextern, nextern))
+        mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
+        mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
+
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr
 
@@ -176,6 +193,22 @@ def compute_t2_amplitudes(mr_adc):
         mr_adc.t2.ccaa = np.zeros((ncore, ncore, ncas, ncas))
         mr_adc.t2.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
+    else:
+        mr_adc.t2.ce = np.zeros((ncore, nextern))
+        mr_adc.t2.ca = np.zeros((ncore, ncas))
+        mr_adc.t2.aa = np.zeros((ncas, ncas))
+        mr_adc.t2.ae = np.zeros((ncas, nextern))
+
+        mr_adc.t2.caea = np.zeros((ncore, ncas, nextern, ncas))
+        mr_adc.t2.caae = np.zeros((ncore, ncas, ncas, nextern))
+        mr_adc.t2.caaa = np.zeros((ncore, ncas, ncas, ncas))
+        mr_adc.t2.aaae = np.zeros((ncas, ncas, ncas, nextern))
+        mr_adc.t2.ccee = np.zeros((ncore, ncore, nextern, nextern))
+        mr_adc.t2.ccae = np.zeros((ncore, ncore, ncas, nextern))
+        mr_adc.t2.caee = np.zeros((ncore, ncas, nextern, nextern))
+        mr_adc.t2.ccaa = np.zeros((ncore, ncore, ncas, ncas))
+        mr_adc.t2.aaee = np.zeros((ncas, ncas, nextern, nextern))
+
 def compute_cvs_amplitudes(mr_adc):
 
     start_time = time.time()
@@ -205,6 +238,7 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t1.xaaa = np.ascontiguousarray(mr_adc.t1.caaa[:ncvs, :, :, :])
             mr_adc.t1.vaaa = np.ascontiguousarray(mr_adc.t1.caaa[ncvs:, :, :, :])
 
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.t1.xxee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs, :ncvs, :, :])
             mr_adc.t1.xvee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs, ncvs:, :, :])
             mr_adc.t1.vxee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:, :ncvs, :, :])
@@ -263,17 +297,18 @@ def remove_non_cvs_variables(mr_adc):
         del(mr_adc.h1eff.ca, mr_adc.h1eff.ce,
             mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
             mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
-            mr_adc.v2e.ceaa, mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
-            mr_adc.v2e.caee, mr_adc.v2e.ceea
-        )
+            mr_adc.v2e.ceaa)
+
+        if mr_adc.method in ("mr-adc(2)-x"):
+            del(mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
+                mr_adc.v2e.caee, mr_adc.v2e.ceea)
 
         del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
             mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
             mr_adc.t1.ccae, mr_adc.t1.caee, mr_adc.t1.ccaa,
             mr_adc.t2.ce, mr_adc.t2.caea, mr_adc.t2.caae,
             mr_adc.t2.ca, mr_adc.t2.caaa, mr_adc.t2.ccee,
-            mr_adc.t2.ccae, mr_adc.t2.caee, mr_adc.t2.ccaa
-        )
+            mr_adc.t2.ccae, mr_adc.t2.caee, mr_adc.t2.ccaa)
 
         del(mr_adc.rdm.ccccaaaa)
 
