@@ -60,7 +60,7 @@ print("CASSCF energy: %f\n" % emc)
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.ncvs = 1
-mr_adc.nroots = 4
+mr_adc.nroots = 8
 mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"

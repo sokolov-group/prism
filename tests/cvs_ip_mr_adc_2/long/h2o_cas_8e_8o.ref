@@ -1,8 +1,8 @@
 converged SCF energy = -76.0412566941275
 SCF energy: -76.041257
 
-CASSCF energy = -76.1682816965807
-CASCI E = -76.1682816965807  E(CI) = -24.0259553480954  S^2 = 0.0000000
+CASSCF energy = -76.1682816965806
+CASCI E = -76.1682816965806  E(CI) = -24.0259553480955  S^2 = 0.0000000
 CASSCF energy: -76.168282
 
 
@@ -11,7 +11,7 @@ CASSCF energy: -76.168282
         PRISM: Open-Source implementation of ab initio methods
                 for excited states and spectroscopy
 
-                           Version 0.2
+                           Version 0.2.1
 
                Copyright (C) 2023 Alexander Sokolov
                                   Carlos E. V. de Moura
@@ -35,16 +35,16 @@ Initializing MR-ADC...
 
 IP calculations for different IP-MR-ADC methods
 Transforming 1e integrals to MO basis...
-Time for transforming 1e integrals:                0.000091 sec
+Time for transforming 1e integrals:                0.000122 sec
 
 Transforming 2e integrals to MO basis (in-core)...
-Time for transforming integrals:                   0.170287 sec
+Time for transforming integrals:                   0.038450 sec
 
 Computing CVS integrals to MO basis (in-core)...
-Time for computing integrals:                      0.000142 sec
+Time for computing integrals:                      0.000141 sec
 
 Computing ground-state RDMs...
-Time for computing ground-state RDMs:              2.485945 sec
+Time for computing ground-state RDMs:              0.784143 sec
 
 Computing MR-ADC excitation energies...
 
@@ -73,13 +73,13 @@ Correlation energy [0']:                          -0.001193772586
 Computing T[+1']^(1) amplitudes...
 Dimension of the [+1'] orthonormalized subspace:   665
 Smallest eigenvalue of the [+1'] overlap metric:   1.023052e-06
-Norm of T[+1']^(1):                                0.008298440301
+Norm of T[+1']^(1):                                0.008298440302
 Correlation energy [+1']:                         -0.000486430242
 
 Computing T[-1']^(1) amplitudes...
 Dimension of the [-1'] orthonormalized subspace:   668
 Smallest eigenvalue of the [-1'] overlap metric:   1.001132e-06
-Norm of T[-1']^(1):                                0.308956310149
+Norm of T[-1']^(1):                                0.308956310165
 Correlation energy [-1']:                         -0.026069866695
 
 Computing T[0]^(1) amplitudes...
@@ -107,20 +107,20 @@ Correlation energy [+2]:                          -0.000222470132
 Computing T[-2]^(1) amplitudes...
 Dimension of the [-2] orthonormalized subspace:    64
 Smallest eigenvalue of the [-2] overlap metric:    2.544577e-05
-Norm of T[-2]^(1):                                 0.236481911341
+Norm of T[-2]^(1):                                 0.236481911344
 Correlation energy [-2]:                          -0.060514109880
 
 CASSCF reference energy:                         -76.168281696581
-PC-NEVPT2 correlation energy:                     -0.089017976026
+PC-NEVPT2 correlation energy:                     -0.089017976027
 Total PC-NEVPT2 energy:                          -76.257299672607
 
 Computing T[0']^(2) amplitudes...
 Norm of T[0']^(2):                                 0.000121818638
 
 Computing CVS amplitudes...
-Time for computing amplitudes:                     0.000116 sec
+Time for computing amplitudes:                     0.000066 sec
 
-Time for computing amplitudes:                     36.544286 sec
+Time for computing amplitudes:                     5.872614 sec
 
 Dimension of h0 excitation manifold:                       1
 Dimension of h1 excitation manifold:                       1000
@@ -128,53 +128,40 @@ Total dimension of the excitation manifold:                1001
 Dimension of the orthogonalized excitation manifold:       998
 
 Computing M(h0-h0) block...
-Time for computing M(h0-h0) block:                 0.626497 sec
+Time for computing M(h0-h0) block:                 0.562867 sec
 
 Computing M(h0-h1) blocks...
-Time for computing M(h0-h1) blocks:                0.088560 sec
+Time for computing M(h0-h1) blocks:                0.058862 sec
 
-Time for computing preconditioner:                 0.059038 sec
+Time for computing preconditioner:                 0.042208 sec
 
-tol 1e-12  toloose 1e-05
+tol 1e-08  toloose 1e-05
 max_cycle 50  max_space 109  max_memory 2000  incore True
 davidson 0 4  |r|= 1.21  e= [20.58810366 21.18889941 21.18889941 21.18889941]  max|de|= 21.2  lindep=    1
-Old state -> New state
-    3     ->     1 
-    1     ->     3 
 davidson 1 8  |r|= 0.164  e= [20.05479687 21.10534009 21.10534009 21.10534009]  max|de|= -0.533  lindep= 0.998
 Old state -> New state
-    3     ->     1 
+    2     ->     1 
     1     ->     2 
-    2     ->     3 
-root 1 converged  |r|= 5.97e-07  e= 21.105340092222853  max|de|= -1.07e-14
-root 2 converged  |r|= 5.97e-07  e= 21.105340092222853  max|de|= 7.11e-15
-root 3 converged  |r|= 5.97e-07  e= 21.105340092222857  max|de|= 3.55e-15
+root 1 converged  |r|= 5.97e-07  e= 21.10534009222286  max|de|= -3.55e-15
+root 2 converged  |r|= 5.97e-07  e= 21.105340092222875  max|de|= 1.42e-14
+root 3 converged  |r|= 5.97e-07  e= 21.105340092222885  max|de|= 1.07e-14
 davidson 2 9  |r|= 0.0185  e= [20.0478429  21.10534009 21.10534009 21.10534009]  max|de|= -0.00695  lindep= 0.999
 Old state -> New state
     3     ->     2 
     2     ->     3 
 davidson 3 10  |r|= 0.00418  e= [20.04769931 21.10534009 21.10534009 21.10534009]  max|de|= -0.000144  lindep= 0.991
 Old state -> New state
-    3     ->     1 
-    1     ->     2 
-    2     ->     3 
+    2     ->     1 
+    3     ->     2 
+    1     ->     3 
 davidson 4 11  |r|= 0.000476  e= [20.04769359 21.10534009 21.10534009 21.10534009]  max|de|= -5.72e-06  lindep= 0.991
+Old state -> New state
+    2     ->     1 
+    3     ->     2 
+    1     ->     3 
 davidson 5 12  |r|= 5.33e-05  e= [20.04769354 21.10534009 21.10534009 21.10534009]  max|de|= -5.63e-08  lindep= 0.99
-Old state -> New state
-    2     ->     1 
-    3     ->     2 
-    1     ->     3 
-davidson 6 13  |r|= 7.4e-06  e= [20.04769354 21.10534009 21.10534009 21.10534009]  max|de|= -8.96e-10  lindep= 0.995
-Old state -> New state
-    3     ->     2 
-    2     ->     3 
-davidson 7 14  |r|= 8.03e-07  e= [20.04769354 21.10534009 21.10534009 21.10534009]  max|de|= -1.46e-11  lindep= 0.993
-Old state -> New state
-    2     ->     1 
-    3     ->     2 
-    1     ->     3 
-root 0 converged  |r|= 1.1e-07  e= 20.047693535691128  max|de|= -1.85e-13
-converged 8 15  |r|= 5.97e-07  e= [20.04769354 21.10534009 21.10534009 21.10534009]  max|de|= -1.85e-13
+root 0 converged  |r|= 7.4e-06  e= 20.04769353570542  max|de|= -8.96e-10
+converged 6 13  |r|= 7.4e-06  e= [20.04769354 21.10534009 21.10534009 21.10534009]  max|de|= -8.96e-10
 
 cvs-ip-mr-adc(2) excitation energies (a.u.):
 [[20.04769354]
@@ -191,12 +178,12 @@ cvs-ip-mr-adc(2) excitation energies (eV):
 Computing transition moments matrix...
 
 cvs-ip-mr-adc(2) spectroscopic intensity:
-[[1.62020831]
+[[1.62020824]
  [0.        ]
- [0.        ]
- [0.00000001]]
+ [0.00000001]
+ [0.        ]]
 
-Time for computing transition moments matrix:     0.079987 sec
+Time for computing transition moments matrix:     0.073016 sec
 
 
-Total time:                                       38.994853 sec
+Total time:                                       7.400923 sec
