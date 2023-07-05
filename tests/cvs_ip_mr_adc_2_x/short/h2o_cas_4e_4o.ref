@@ -1,8 +1,8 @@
 converged SCF energy = -76.0412566941274
 SCF energy: -76.041257
 
-CASSCF energy = -76.0585829208874
-CASCI E = -76.0585829208874  E(CI) = -6.55621871818961  S^2 = 0.0000000
+CASSCF energy = -76.0585829208872
+CASCI E = -76.0585829208872  E(CI) = -6.55621871819133  S^2 = 0.0000000
 CASSCF energy: -76.058583
 
 
@@ -11,7 +11,7 @@ CASSCF energy: -76.058583
         PRISM: Open-Source implementation of ab initio methods
                 for excited states and spectroscopy
 
-                           Version 0.2
+                           Version 0.2.1
 
                Copyright (C) 2023 Alexander Sokolov
                                   Carlos E. V. de Moura
@@ -35,22 +35,22 @@ Initializing MR-ADC...
 
 IP calculations for different IP-MR-ADC methods
 Transforming 1e integrals to MO basis...
-Time for transforming 1e integrals:                0.000065 sec
+Time for transforming 1e integrals:                0.000152 sec
 
 Transforming 2e integrals to MO basis (in-core)...
-Time for transforming integrals:                   0.105406 sec
+Time for transforming integrals:                   0.049362 sec
 
 Computing CVS integrals to MO basis (in-core)...
-Time for computing integrals:                      0.000214 sec
+Time for computing integrals:                      0.000235 sec
 
 Computing ground-state RDMs...
-Time for computing ground-state RDMs:              0.026002 sec
+Time for computing ground-state RDMs:              0.013581 sec
 
 Computing MR-ADC excitation energies...
 
 Method:                                            cvs-ip-mr-adc(2)-x
-Number of MR-ADC roots requested:                  4
-Ground-state active-space energy:                 -6.556218718190
+Number of MR-ADC roots requested:                  8
+Ground-state active-space energy:                 -6.556218718191
 Nuclear repulsion energy:                          9.168193300756
 Number of basis functions:                         41
 Number of core orbitals:                           3
@@ -73,13 +73,13 @@ Correlation energy [0']:                          -0.045589937302
 Computing T[+1']^(1) amplitudes...
 Dimension of the [+1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [+1'] overlap metric:   2.321308e-06
-Norm of T[+1']^(1):                                0.046719989748
+Norm of T[+1']^(1):                                0.046719989931
 Correlation energy [+1']:                         -0.003382789495
 
 Computing T[-1']^(1) amplitudes...
 Dimension of the [-1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [-1'] overlap metric:   2.383881e-06
-Norm of T[-1']^(1):                                0.080514678752
+Norm of T[-1']^(1):                                0.080514678661
 Correlation energy [-1']:                         -0.019893897613
 
 Computing T[0]^(1) amplitudes...
@@ -101,13 +101,13 @@ Correlation energy [-1]:                          -0.055351644611
 Computing T[+2]^(1) amplitudes...
 Dimension of the [+2] orthonormalized subspace:    16
 Smallest eigenvalue of the [+2] overlap metric:    1.524087e-08
-Norm of T[+2]^(1):                                 0.062507831595
+Norm of T[+2]^(1):                                 0.062507831790
 Correlation energy [+2]:                          -0.004365204892
 
 Computing T[-2]^(1) amplitudes...
 Dimension of the [-2] orthonormalized subspace:    16
 Smallest eigenvalue of the [-2] overlap metric:    6.223999e-08
-Norm of T[-2]^(1):                                 0.433242520690
+Norm of T[-2]^(1):                                 0.433242526264
 Correlation energy [-2]:                          -0.029997511948
 
 CASSCF reference energy:                         -76.058582920887
@@ -118,9 +118,9 @@ Computing T[0']^(2) amplitudes...
 Norm of T[0']^(2):                                 0.009862700467
 
 Computing CVS amplitudes...
-Time for computing amplitudes:                     0.000071 sec
+Time for computing amplitudes:                     0.000103 sec
 
-Time for computing amplitudes:                     0.564197 sec
+Time for computing amplitudes:                     0.568083 sec
 
 Dimension of h0 excitation manifold:                       1
 Dimension of h1 excitation manifold:                       722
@@ -128,84 +128,145 @@ Total dimension of the excitation manifold:                723
 Dimension of the orthogonalized excitation manifold:       696
 
 Computing M(h0-h0) block...
-Time for computing M(h0-h0) block:                 0.315018 sec
+Time for computing M(h0-h0) block:                 0.484012 sec
 
 Computing M(h0-h1) blocks...
-Time for computing M(h0-h1) blocks:                0.052583 sec
+Time for computing M(h0-h1) blocks:                0.077631 sec
 
-Time for computing preconditioner:                 0.023445 sec
+Time for computing preconditioner:                 0.036798 sec
 
-tol 1e-12  toloose 1e-05
-max_cycle 50  max_space 109  max_memory 2000  incore True
-davidson 0 4  |r|= 1.43  e= [20.59575104 21.81489179 21.81604666 21.87457275]  max|de|= 21.9  lindep=    1
-davidson 1 8  |r|= 0.372  e= [19.94952724 21.60224211 21.6350751  21.68145722]  max|de|= -0.646  lindep= 0.972
-davidson 2 12  |r|= 0.389  e= [19.90125164 21.23771524 21.29554302 21.38101625]  max|de|= -0.365  lindep= 0.983
-davidson 3 16  |r|= 0.562  e= [19.89882952 21.08046509 21.14175382 21.18731892]  max|de|= -0.194  lindep= 0.98
-davidson 4 20  |r|= 0.178  e= [19.89859835 21.04639697 21.10680557 21.13106182]  max|de|= -0.0563  lindep= 0.929
-davidson 5 24  |r|= 0.0437  e= [19.89857918 21.04374617 21.10450312 21.1267459 ]  max|de|= -0.00432  lindep= 0.742
-davidson 6 28  |r|= 0.0162  e= [19.89857643 21.04358584 21.10423769 21.12635866]  max|de|= -0.000387  lindep= 0.875
-davidson 7 32  |r|= 0.00861  e= [19.8985761  21.04357205 21.10411125 21.12628525]  max|de|= -0.000126  lindep= 0.941
-davidson 8 36  |r|= 0.00924  e= [19.89857608 21.04356982 21.10404382 21.12626593]  max|de|= -6.74e-05  lindep= 0.948
-davidson 9 40  |r|= 0.00949  e= [19.89857607 21.04356738 21.1040089  21.12625936]  max|de|= -3.49e-05  lindep= 0.92
-davidson 10 44  |r|= 0.0361  e= [19.89857607 21.04356579 21.10385973 21.12624125]  max|de|= -0.000149  lindep= 0.893
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 121  max_memory 2000  incore True
+davidson 0 8  |r|= 1.43  e= [20.595694   21.77806852 21.81489179 21.81604666 21.83176101 21.83304112 21.87457275 21.89148221]  max|de|= 21.9  lindep=    1
 Old state -> New state
+    4     ->     1 
+    5     ->     2 
+    7     ->     3 
+    1     ->     4 
+    2     ->     5 
+    3     ->     6 
+    6     ->     7 
+davidson 1 16  |r|= 0.392  e= [19.94869297 21.40469435 21.46041752 21.48853687 21.51158825 21.60906052 21.64362821 21.69780562]  max|de|= -0.647  lindep= 0.972
+Old state -> New state
+    5     ->     3 
+    3     ->     4 
+    6     ->     5 
+    7     ->     6 
+    4     ->     7 
+davidson 2 24  |r|= 0.379  e= [19.9011862  21.16587081 21.23991694 21.25556553 21.2793336  21.35801579 21.43928624 21.47748344]  max|de|= -0.353  lindep= 0.984
+Old state -> New state
+    3     ->     1 
+    1     ->     2 
+    5     ->     3 
+    6     ->     4 
+    2     ->     5 
+    4     ->     6 
+davidson 3 32  |r|= 0.633  e= [19.89881887 21.09397466 21.15801714 21.1602704  21.22310369 21.23171815 21.2699096  21.45161664]  max|de|= -0.216  lindep= 0.978
+Old state -> New state
+    3     ->     2 
+    4     ->     3 
+    2     ->     4 
+davidson 4 40  |r|= 0.741  e= [19.89859781 21.04789595 21.10821538 21.13411559 21.15705245 21.23057631 21.26824014 21.33551357]  max|de|= -0.116  lindep= 0.852
+Old state -> New state
+    7     ->     6 
+    6     ->     7 
+davidson 5 48  |r|= 0.358  e= [19.89857911 21.04392146 21.10466042 21.12703115 21.15691372 21.23039864 21.24158345 21.26801513]  max|de|= -0.0939  lindep= 0.738
+Old state -> New state
+    6     ->     5 
+    5     ->     6 
+    6     ->     7 
+davidson 6 56  |r|= 0.576  e= [19.89857641 21.04364591 21.10428967 21.12637586 21.15690532 21.16875274 21.23039041 21.23297336]  max|de|= -0.0728  lindep= 0.888
+Old state -> New state
+    7     ->     3 
+    3     ->     4 
+    4     ->     6 
+    6     ->     7 
+davidson 7 64  |r|= 0.306  e= [19.8985761  21.043599   21.10416782 21.10455695 21.12626603 21.1377535  21.15690262 21.23038865]  max|de|= -0.128  lindep= 0.862
+Old state -> New state
+    3     ->     2 
     2     ->     3 
-davidson 11 48  |r|= 0.223  e= [19.89857607 21.04356379 21.05277457 21.10418187]  max|de|= -0.0511  lindep= 0.864
+    5     ->     4 
+    4     ->     5 
+davidson 8 72  |r|= 0.175  e= [19.89857608 21.04358954 21.07728405 21.1041114  21.12514476 21.12623015 21.15690246 21.23038814]  max|de|= -0.0273  lindep= 0.834
+davidson 9 80  |r|= 0.117  e= [19.89857607 21.04357555 21.06844292 21.10409399 21.11742126 21.12618763 21.15690246 21.2303881 ]  max|de|= -0.00884  lindep= 0.905
+Old state -> New state
+    5     ->     7 
+root 0 converged  |r|= 5.51e-06  e= 19.898576074121628  max|de|= -1.22e-10
+davidson 10 88  |r|= 0.429  e= [19.89857607 21.04356777 21.06461724 21.10407085 21.10938198 21.1259909  21.15690246 21.15750106]  max|de|= 0.0313  lindep= 0.899
+Old state -> New state
+    7     ->     2 
+    2     ->     3 
+    3     ->     4 
+    4     ->     5 
+    5     ->     6 
+davidson 11 95  |r|= 0.244  e= [19.89857607 21.0435581  21.05112533 21.06306323 21.1041238  21.10685986 21.12630296 21.14557793]  max|de|= -0.106  lindep= 0.881
 Old state -> New state
     2     ->     1 
     1     ->     2 
-davidson 12 52  |r|= 0.0927  e= [19.89857607 21.03737311 21.04356559 21.10413049]  max|de|= -0.0154  lindep= 0.919
-root 0 converged  |r|= 2e-07  e= 19.898576074116455  max|de|= -1.07e-13
-davidson 13 56  |r|= 0.0487  e= [19.89857607 21.03392571 21.04356506 21.10411982]  max|de|= -0.00345  lindep= 0.906
-davidson 14 59  |r|= 0.0317  e= [19.89857607 21.03268081 21.04356496 21.10411646]  max|de|= -0.00124  lindep= 0.943
-davidson 15 62  |r|= 0.0222  e= [19.89857607 21.03215928 21.04356495 21.10411562]  max|de|= -0.000522  lindep= 0.965
-davidson 16 65  |r|= 0.017  e= [19.89857607 21.03169301 21.04356495 21.10411456]  max|de|= -0.000466  lindep= 0.971
-davidson 17 68  |r|= 0.00986  e= [19.89857607 21.03157759 21.04356494 21.10411411]  max|de|= -0.000115  lindep= 0.892
-Old state -> New state
-    1     ->     3 
-davidson 18 71  |r|= 0.235  e= [19.89857607 21.03155298 21.04356494 21.08192227]  max|de|= 0.0503  lindep= 0.887
-davidson 19 74  |r|= 0.0737  e= [19.89857607 21.03154045 21.04356494 21.06496968]  max|de|= -0.017  lindep= 0.924
-davidson 20 77  |r|= 0.034  e= [19.89857607 21.03153284 21.04356494 21.06288839]  max|de|= -0.00208  lindep= 0.888
-davidson 21 80  |r|= 0.0164  e= [19.89857607 21.03152777 21.04356494 21.06251587]  max|de|= -0.000373  lindep= 0.862
-davidson 22 83  |r|= 0.00685  e= [19.89857607 21.0315264  21.04356494 21.06245606]  max|de|= -5.98e-05  lindep= 0.844
-davidson 23 86  |r|= 0.00367  e= [19.89857607 21.03152606 21.04356494 21.06244347]  max|de|= -1.26e-05  lindep= 0.883
-davidson 24 89  |r|= 0.00201  e= [19.89857607 21.03152601 21.04356494 21.06243976]  max|de|= -3.7e-06  lindep= 0.733
-root 2 converged  |r|= 7.29e-07  e= 21.04356494147462  max|de|= -6.18e-13
-davidson 25 92  |r|= 0.00111  e= [19.89857607 21.031526   21.04356494 21.06243889]  max|de|= -8.69e-07  lindep= 0.863
-davidson 26 94  |r|= 0.000697  e= [19.89857607 21.031526   21.04356494 21.06243849]  max|de|= -4.05e-07  lindep= 0.874
-davidson 27 96  |r|= 0.000497  e= [19.89857607 21.031526   21.04356494 21.06243825]  max|de|= -2.44e-07  lindep= 0.906
-davidson 28 98  |r|= 0.000255  e= [19.89857607 21.031526   21.04356494 21.06243816]  max|de|= -8.41e-08  lindep= 0.878
-root 1 converged  |r|= 8.45e-07  e= 21.031526003712422  max|de|= -7.99e-13
-davidson 29 100  |r|= 9.73e-05  e= [19.89857607 21.031526   21.04356494 21.06243814]  max|de|= -1.81e-08  lindep= 0.937
-davidson 30 101  |r|= 4.66e-05  e= [19.89857607 21.031526   21.04356494 21.06243814]  max|de|= -2.7e-09  lindep= 0.916
-davidson 31 102  |r|= 2.24e-05  e= [19.89857607 21.031526   21.04356494 21.06243814]  max|de|= -4.83e-10  lindep= 0.838
-davidson 32 103  |r|= 8.95e-06  e= [19.89857607 21.031526   21.04356494 21.06243814]  max|de|= -9.68e-11  lindep= 0.804
-davidson 33 104  |r|= 3.98e-06  e= [19.89857607 21.031526   21.04356494 21.06243814]  max|de|= -1.97e-11  lindep= 0.649
-davidson 34 105  |r|= 2.37e-06  e= [19.89857607 21.031526   21.04356494 21.06243814]  max|de|= -3.2e-12  lindep= 0.352
-root 3 converged  |r|= 1.74e-06  e= 21.062438139882325  max|de|= -5.29e-13
-converged 35 106  |r|= 1.74e-06  e= [19.89857607 21.031526   21.04356494 21.06243814]  max|de|= -5.29e-13
+davidson 12 102  |r|= 0.0913  e= [19.89857607 21.03572868 21.04356766 21.06269395 21.10411654 21.10608533 21.12627746 21.14048251]  max|de|= -0.0154  lindep= 0.865
+davidson 13 109  |r|= 0.0418  e= [19.89857607 21.03265094 21.04356566 21.06254275 21.10411509 21.10574764 21.1262707  21.13851169]  max|de|= -0.00308  lindep= 0.902
+davidson 14 116  |r|= 0.0274  e= [19.89857607 21.03183114 21.04356514 21.06247925 21.10411464 21.10562736 21.12626811 21.13740102]  max|de|= -0.00111  lindep= 0.877
+davidson 15 8  |r|= 0.0274  e= [19.89857613 21.03183109 21.04356531 21.06247923 21.10411479 21.1056274  21.12626823 21.13740104]  max|de|= 1.77e-07  lindep= 0.999
+root 0 converged  |r|= 9.37e-07  e= 19.898576126648617  max|de|= -3.55e-12
+davidson 16 16  |r|= 0.0187  e= [19.89857613 21.03169976 21.04356523 21.06246326 21.10411462 21.10559816 21.12626767 21.13710499]  max|de|= -0.000296  lindep= 0.886
+davidson 17 23  |r|= 0.02  e= [19.89857613 21.03161864 21.0435652  21.06245127 21.10411437 21.10558413 21.12626745 21.13690477]  max|de|= -0.0002  lindep= 0.862
+davidson 18 30  |r|= 0.0161  e= [19.89857613 21.03156152 21.04356518 21.06244313 21.10411406 21.10557651 21.12626729 21.13672083]  max|de|= -0.000184  lindep= 0.891
+davidson 19 37  |r|= 0.0137  e= [19.89857613 21.03153541 21.04356517 21.06243946 21.10411383 21.10557255 21.12626706 21.13650359]  max|de|= -0.000217  lindep= 0.896
+davidson 20 44  |r|= 0.0168  e= [19.89857613 21.0315292  21.04356516 21.06243853 21.10411375 21.1055713  21.12626677 21.13637146]  max|de|= -0.000132  lindep= 0.823
+davidson 21 51  |r|= 0.0115  e= [19.89857613 21.03152712 21.04356516 21.06243825 21.10411371 21.10557099 21.12626652 21.13628183]  max|de|= -8.96e-05  lindep= 0.883
+davidson 22 58  |r|= 0.012  e= [19.89857613 21.03152632 21.04356516 21.06243814 21.10411368 21.10557085 21.12626635 21.1362004 ]  max|de|= -8.14e-05  lindep= 0.855
+davidson 23 65  |r|= 0.0159  e= [19.89857613 21.03152603 21.04356516 21.06243808 21.10411366 21.10557077 21.12626625 21.13609687]  max|de|= -0.000104  lindep= 0.887
+root 2 converged  |r|= 7.06e-06  e= 21.043565158931724  max|de|= -7.84e-11
+davidson 24 72  |r|= 0.0091  e= [19.89857613 21.03152597 21.04356516 21.06243806 21.10411364 21.10557074 21.1262662  21.13601563]  max|de|= -8.12e-05  lindep= 0.881
+davidson 25 78  |r|= 0.00532  e= [19.89857613 21.03152597 21.04356516 21.06243806 21.10411364 21.10557073 21.12626618 21.13597278]  max|de|= -4.28e-05  lindep= 0.904
+davidson 26 84  |r|= 0.00369  e= [19.89857613 21.03152596 21.04356516 21.06243806 21.10411364 21.10557072 21.12626618 21.13595756]  max|de|= -1.52e-05  lindep= 0.873
+davidson 27 90  |r|= 0.00212  e= [19.89857613 21.03152596 21.04356516 21.06243806 21.10411364 21.10557072 21.12626617 21.13595305]  max|de|= -4.51e-06  lindep= 0.889
+root 1 converged  |r|= 5.04e-06  e= 21.031525964458375  max|de|= -4.42e-11
+root 3 converged  |r|= 5.44e-06  e= 21.062438059773484  max|de|= -3.7e-11
+root 4 converged  |r|= 7.35e-06  e= 21.104113637932894  max|de|= -8.16e-11
+davidson 28 96  |r|= 0.00105  e= [19.89857613 21.03152596 21.04356516 21.06243806 21.10411364 21.10557072 21.12626617 21.1359515 ]  max|de|= -1.55e-06  lindep= 0.89
+root 5 converged  |r|= 9.19e-06  e= 21.10557072146616  max|de|= -9.44e-11
+root 6 converged  |r|= 4.38e-06  e= 21.126266174271763  max|de|= -3.03e-11
+davidson 29 99  |r|= 0.000491  e= [19.89857613 21.03152596 21.04356516 21.06243806 21.10411364 21.10557072 21.12626617 21.13595122]  max|de|= -2.84e-07  lindep= 0.899
+davidson 30 100  |r|= 0.000149  e= [19.89857613 21.03152596 21.04356516 21.06243806 21.10411364 21.10557072 21.12626617 21.13595118]  max|de|= -4.18e-08  lindep= 0.834
+davidson 31 101  |r|= 4.77e-05  e= [19.89857613 21.03152596 21.04356516 21.06243806 21.10411364 21.10557072 21.12626617 21.13595117]  max|de|= -4.62e-09  lindep= 0.864
+davidson 32 102  |r|= 1.56e-05  e= [19.89857613 21.03152596 21.04356516 21.06243806 21.10411364 21.10557072 21.12626617 21.13595117]  max|de|= -6.75e-10  lindep= 0.933
+root 7 converged  |r|= 7.73e-06  e= 21.135951170404642  max|de|= -7.12e-11
+converged 33 103  |r|= 9.19e-06  e= [19.89857613 21.03152596 21.04356516 21.06243806 21.10411364 21.10557072 21.12626617 21.13595117]  max|de|= -7.12e-11
 
 cvs-ip-mr-adc(2)-x excitation energies (a.u.):
-[[19.89857607]
- [21.031526  ]
- [21.04356494]
- [21.06243814]]
+[[19.89857613]
+ [21.03152596]
+ [21.04356516]
+ [21.06243806]
+ [21.10411364]
+ [21.10557072]
+ [21.12626617]
+ [21.13595117]]
 
 cvs-ip-mr-adc(2)-x excitation energies (eV):
-[[541.46811298]
- [572.2972667 ]
- [572.62486305]
- [573.1384292 ]]
+[[541.46811441]
+ [572.29726563]
+ [572.62486897]
+ [573.13842702]
+ [574.27247785]
+ [574.31212713]
+ [574.87527937]
+ [575.13882168]]
 
 Computing transition moments matrix...
 
 cvs-ip-mr-adc(2)-x spectroscopic intensity:
-[[1.55313121]
+[[1.55313124]
  [0.        ]
  [0.        ]
- [0.01404335]]
+ [0.01404337]
+ [0.00000324]
+ [0.        ]
+ [0.00000133]
+ [0.00000186]]
 
-Time for computing transition moments matrix:     1.053833 sec
+Time for computing transition moments matrix:     1.017841 sec
 
 
-Total time:                                       541.390304 sec
+Total time:                                       501.798825 sec

@@ -55,7 +55,7 @@ print("CASSCF energy: %f\n" % emc)
 # Run MR-ADC computation
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 mr_adc = prism.mr_adc.MRADC(interface)
-mr_adc.nroots = 8
+mr_adc.nroots = 12
 mr_adc.ncvs = 2
 mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
@@ -70,21 +70,23 @@ class KnownValues(unittest.TestCase):
 
         self.assertAlmostEqual(e[0], 412.02301397, 4)
         self.assertAlmostEqual(e[1], 412.10663047, 4)
-        self.assertAlmostEqual(e[2], 427.08535075, 4)
+        self.assertAlmostEqual(e[2], 427.08535074, 4)
         self.assertAlmostEqual(e[3], 427.08535166, 4)
         self.assertAlmostEqual(e[4], 427.14809876, 4)
-        self.assertAlmostEqual(e[5], 427.35365668, 4)
-        self.assertAlmostEqual(e[6], 427.41436629, 4)
+        self.assertAlmostEqual(e[5], 427.14809966, 4)
+        self.assertAlmostEqual(e[6], 428.27041639, 4)
         self.assertAlmostEqual(e[7], 428.71577035, 4)
+        self.assertAlmostEqual(e[8], 428.71577133, 4)
 
-        self.assertAlmostEqual(p[0], 1.48851550, 4)
-        self.assertAlmostEqual(p[1], 1.48658653, 4)
+        self.assertAlmostEqual(p[0], 1.48851563, 4)
+        self.assertAlmostEqual(p[1], 1.48658671, 4)
         self.assertAlmostEqual(p[2], 0.00000000, 4)
         self.assertAlmostEqual(p[3], 0.00000000, 4)
         self.assertAlmostEqual(p[4], 0.00000000, 4)
-        self.assertAlmostEqual(p[5], 0.00782285, 4)
-        self.assertAlmostEqual(p[6], 0.00685551, 4)
+        self.assertAlmostEqual(p[5], 0.00000000, 4)
+        self.assertAlmostEqual(p[6], 0.00000000, 4)
         self.assertAlmostEqual(p[7], 0.00000476, 4)
+        self.assertAlmostEqual(p[8], 0.00000476, 4)
 
 if __name__ == "__main__":
     print("IP calculations for different IP-MR-ADC methods")

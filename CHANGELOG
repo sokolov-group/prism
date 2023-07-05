@@ -11,3 +11,8 @@ Prism 0.2 (2023-05-12)
   - CVS-IP-MR-ADC(2)-X energies
   - CVS-IP-MR-ADC(2) intensities
   - CVS-IP-MR-ADC(2)-X intensities
+
+Prism 0.2.1 (2023-07-04)
+------------------------
+* Added
+  - Efficient combinations of einsum terms containing 3-RDMs and 4-RDMs
