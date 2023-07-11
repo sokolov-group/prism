@@ -168,11 +168,10 @@ def compute_t2_amplitudes(mr_adc):
             print("Computing T[-1']^(2) amplitudes...")
             sys.stdout.flush()
             mr_adc.t2.ae = compute_t2_m1p_singles(mr_adc)
-            print("Norm of T[-1']^(2):                           %20.12f\n" % np.linalg.norm(mr_adc.t2.ae))
+            print("Norm of T[-1']^(2):                          %20.12f\n" % np.linalg.norm(mr_adc.t2.ae))
             sys.stdout.flush()
             
             mr_adc.t2.aa = np.zeros((ncas, ncas))
-            mr_adc.t2.ca = np.zeros((ncore, ncas))
 
         mr_adc.t2.caea = np.zeros((ncore, ncas, nextern, ncas))
         mr_adc.t2.caae = np.zeros((ncore, ncas, ncas, nextern))
@@ -1884,14 +1883,14 @@ def compute_t2_m1p_singles(mr_adc):
     rdm_cccaaa = mr_adc.rdm.cccaaa
     rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
-    # Compute K_m1p matrix
-    K_m1p = mr_adc_intermediates.compute_K_m1p(mr_adc)
+    # Compute K_ca matrix
+    K_ca = mr_adc_intermediates.compute_K_ca(mr_adc)
     
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gno_projector(mr_adc)
+    S_m1_12_inv_act = mr_adc_overlap.compute_S12_m1(mr_adc)
 
     # Compute K^{-1} matrix
-    SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
+    SKS = reduce(np.dot, (S_m1_12_inv_act.T, K_ca, S_m1_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
 
     # Compute R.H.S. of the equation
@@ -2953,7 +2952,7 @@ def compute_t2_m1p_singles(mr_adc):
     V1 += 11/48 * einsum('xyzw,zxua,vsAa,Xywvsu->XA', v_aaaa, t1_aaae, t1_aaee, rdm_cccaaa, optimize = einsum_type)
     V1 -= 1/48 * einsum('xyzw,zxua,vsAa,Xywvus->XA', v_aaaa, t1_aaae, t1_aaee, rdm_cccaaa, optimize = einsum_type)
 
-    S_12_V = np.einsum("Pa,Pm->ma", V1, S_m1p_12_inv_act)
+    S_12_V = np.einsum("Pa,Pm->ma", V1, S_m1_12_inv_act)
     S_12_V = np.einsum("mp,ma->pa", evecs, S_12_V)
 
     # Compute denominators
@@ -2964,6 +2963,6 @@ def compute_t2_m1p_singles(mr_adc):
     S_12_V = np.einsum("mp,pa->ma", evecs, S_12_V)
 
     # Compute T2[-1'] t2_ae amplitudes
-    t2_ae = np.einsum("Pm,ma->Pa", S_m1p_12_inv_act, S_12_V)
+    t2_ae = np.einsum("Pm,ma->Pa", S_m1_12_inv_act, S_12_V)
 
     return t2_ae

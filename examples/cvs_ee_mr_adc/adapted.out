@@ -1,0 +1,464 @@
+#INFO: **** input file is /home/mazin.3/Documents/programs/prism/examples/cvs_ee_mr_adc/adapted.py ****
+#!/usr/bin/env python
+
+'''
+CVS-EE-MR-ADC(2) calculations for N2
+'''
+
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.mr_adc
+
+mol = pyscf.gto.Mole()
+r = 1.098
+mol.atom = [
+    ['N', ( 0., 0.    , -r/2)],
+    ['N', ( 0., 0.    ,  r/2)],]
+mol.basis = {'N':'aug-cc-pvdz'}
+mol.verbose = 4
+mol.build()
+
+# RHF calculation as guess for CASSCF
+mf = pyscf.scf.RHF(mol)
+mf.kernel()
+
+# CASSCF(6e,6o) calculation
+mc = pyscf.mcscf.CASSCF(mf, 6, 6)
+emc = mc.mc1step()[0]
+
+# CVS-EE-MR-ADC calculation
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+mr_adc = prism.mr_adc.MRADC(interface)
+mr_adc.method_type = "cvs-ee"
+mr_adc.method = "mr-adc(2)"
+mr_adc.s_thresh_singles = 1e-5
+mr_adc.s_thresh_doubles = 1e-10
+mr_adc.ncvs = 2
+mr_adc.nroots = 8
+e, p = mr_adc.kernel()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-01181202.asc.ohio-state.edu', release='4.18.0-477.13.1.el8_8.x86_64', version='#1 SMP Thu May 18 10:27:05 EDT 2023', machine='x86_64')  Threads 24
+Python 3.9.13 (main, Oct 13 2022, 21:15:33) 
+[GCC 11.2.0]
+numpy 1.23.3  scipy 1.9.1
+Date: Mon Jun 26 16:53:35 2023
+PySCF version 2.2.1
+PySCF path  /home/cbc-sokolov-group/python-packages/pyscf-2.2.1/pyscf
+
+[ENV] PYSCF_TMPDIR /scratch/local/mazin.3
+[ENV] PYSCF_EXT_PATH /home/cbc-sokolov-group/pyscf/intel/17.1/1.5
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 14
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 N      0.000000000000   0.000000000000  -0.549000000000 AA    0.000000000000   0.000000000000  -1.037459642386 Bohr   0.0
+[INPUT]  2 N      0.000000000000   0.000000000000   0.549000000000 AA    0.000000000000   0.000000000000   1.037459642386 Bohr   0.0
+
+nuclear repulsion = 23.6153764436066
+number of shells = 16
+number of NR pGTOs = 70
+number of NR cGTOs = 46
+basis = {'N': 'aug-cc-pvdz'}
+ecp = {}
+CPU time:         0.71
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/mazin.3/tmpj5dufbuh
+max_memory 4000 MB (current use 111 MB)
+Set gradient conv threshold to 3.16228e-05
+init E= -108.997365976287
+  HOMO = -0.383394863650677  LUMO = 0.0527605148347132
+cycle= 1 E= -108.938371912804  delta_E= 0.059  |g|= 0.292  |ddm|= 1.69
+  HOMO = -0.667440590652664  LUMO = 0.0959074131140584
+cycle= 2 E= -108.959124150663  delta_E= -0.0208  |g|= 0.0773  |ddm|= 0.446
+  HOMO = -0.614135902462246  LUMO = 0.103850078545038
+cycle= 3 E= -108.96052045917  delta_E= -0.0014  |g|= 0.0147  |ddm|= 0.0743
+  HOMO = -0.615371970638092  LUMO = 0.103817157893765
+cycle= 4 E= -108.960607977205  delta_E= -8.75e-05  |g|= 0.00121  |ddm|= 0.0563
+  HOMO = -0.615311473909255  LUMO = 0.103828098400752
+cycle= 5 E= -108.960608490355  delta_E= -5.13e-07  |g|= 0.000172  |ddm|= 0.00327
+  HOMO = -0.615315360390603  LUMO = 0.103822137652769
+cycle= 6 E= -108.960608506598  delta_E= -1.62e-08  |g|= 3.2e-05  |ddm|= 0.000482
+  HOMO = -0.615307686837616  LUMO = 0.103821253141505
+cycle= 7 E= -108.960608507242  delta_E= -6.44e-10  |g|= 3.01e-06  |ddm|= 0.000174
+  HOMO = -0.615307964143237  LUMO = 0.103821216566374
+Extra cycle  E= -108.960608507245  delta_E= -2.98e-12  |g|= 7.72e-07  |ddm|= 1.33e-05
+converged SCF energy = -108.960608507245
+
+******** <class 'pyscf.mcscf.mc1step.CASSCF'> ********
+CAS (3e+3e, 6o), ncore = 4, nvir = 36
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-07
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /scratch/local/mazin.3/tmpj5dufbuh
+max_memory 4000 MB (current use 151 MB)
+internal_rotation = False
+******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 1
+pspace_size = 400
+spin = None
+CASCI E = -108.978701814276  S^2 = 0.0000000
+Set conv_tol_grad to 0.000316228
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -109.024292488747  dE = -4.55906745e-02  S^2 = 0.0000000
+               |grad[o]|=0.0356  |grad[c]|=0.0465  |ddm|=0.0542  |maxRot[o]|=0.312
+macro iter   2 ( 21 JK    4 micro), CASSCF E = -109.054904371709  dE = -3.06118830e-02  S^2 = 0.0000000
+               |grad[o]|=0.053  |grad[c]|=0.0388  |ddm|=0.0308  |maxRot[o]|=0.263
+macro iter   3 ( 21 JK    4 micro), CASSCF E = -109.066893616280  dE = -1.19892446e-02  S^2 = 0.0000000
+               |grad[o]|=0.0272  |grad[c]|=0.0391  |ddm|=0.00536  |maxRot[o]|= 0.29
+macro iter   4 ( 21 JK    4 micro), CASSCF E = -109.082204662456  dE = -1.53110462e-02  S^2 = 0.0000000
+               |grad[o]|=0.0272  |grad[c]|=0.0392  |ddm|=0.00615  |maxRot[o]|=0.285
+macro iter   5 ( 21 JK    4 micro), CASSCF E = -109.094408052788  dE = -1.22033903e-02  S^2 = 0.0000000
+               |grad[o]|=0.0234  |grad[c]|=0.0317  |ddm|=0.00487  |maxRot[o]|=0.311
+macro iter   6 ( 14 JK    4 micro), CASSCF E = -109.096203125232  dE = -1.79507244e-03  S^2 = 0.0000000
+               |grad[o]|=0.0122  |grad[c]|=0.00287  |ddm|=0.00206  |maxRot[o]|=0.163
+macro iter   7 (  5 JK    2 micro), CASSCF E = -109.096203343394  dE = -2.18161915e-07  S^2 = 0.0000000
+               |grad[o]|=0.000718  |grad[c]|=4.61e-05  |ddm|=2.42e-05  |maxRot[o]|=0.0005
+macro iter   8 (  1 JK    1 micro), CASSCF E = -109.096203343454  dE = -6.01261263e-11  S^2 = 0.0000000
+               |grad[o]|=1.7e-05  |grad[c]|=1.23e-05  |ddm|=2.07e-06  |maxRot[o]|=    0
+1-step CASSCF converged in   8 macro (125 JK  27 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.98235477 1.94163419 1.94163419 0.01782568 0.05827558 0.05827558]
+CASSCF energy = -109.096203343454
+CASCI E = -109.096203343454  E(CI) = -13.6482676136642  S^2 = 0.0000000
+
+
+----------------------------------------------------------------------
+        PRISM: Open-Source implementation of ab initio methods
+                for excited states and spectroscopy
+
+                           Version 0.2
+
+               Copyright (C) 2023 Alexander Sokolov
+                                  Carlos E. V. de Moura
+
+        Unless required by applicable law or agreed to in
+        writing, software distributed under the GNU General
+        Public License v3.0 and is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+        either express or implied.
+
+        See the License for the specific language governing
+        permissions and limitations.
+
+        Available at https://github.com/sokolov-group/prism
+
+----------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Initializing MR-ADC...
+
+Transforming 1e integrals to MO basis...
+Time for transforming 1e integrals:                0.000350 sec
+
+Transforming 2e integrals to MO basis (in-core)...
+Time for transforming integrals:                   0.335047 sec
+
+Computing ground-state RDMs...
+Time for computing ground-state RDMs:              0.136695 sec
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ee-mr-adc(2)
+Number of MR-ADC roots requested:                  8
+Ground-state active-space energy:                -13.648267613664
+Nuclear repulsion energy:                         23.615376443607
+Number of basis functions:                         46
+Number of core orbitals:                           4
+Number of active orbitals:                         6
+Number of external orbitals:                       36
+Number of electrons:                               14
+Number of active electrons:                        (3, 3)
+Number of CVS orbitals:                            2
+Number of valence (non-CVS) orbitals:              2
+Overlap truncation parameter (singles):            1.000000e-05
+Overlap truncation parameter (doubles):            1.000000e-10
+Number of CASCI states:                            6
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    70
+Smallest eigenvalue of the [0'] overlap metric:    5.433916e-05
+Norm of T[0']^(1):                                 0.122867720634
+Correlation energy [0']:                          -0.057708856690
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   215
+Smallest eigenvalue of the [+1'] overlap metric:   1.030234e-05
+Norm of T[+1']^(1):                                0.053832273516
+Correlation energy [+1']:                         -0.001966761484
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   215
+Smallest eigenvalue of the [-1'] overlap metric:   1.023340e-05
+Norm of T[-1']^(1):                                0.212073752394
+Correlation energy [-1']:                         -0.007007137299
+
+Computing T[0]^(1) amplitudes...
+Norm of T[0]^(1):                                  0.063303996270
+Correlation energy [0]:                           -0.018704842085
+
+Computing T[+1]^(1) amplitudes...
+Dimension of the [+1] orthonormalized subspace:    6
+Smallest eigenvalue of the [+1] overlap metric:    8.822614e-03
+Norm of T[+1]^(1):                                 0.032366414404
+Correlation energy [+1]:                          -0.006871919765
+
+Computing T[-1]^(1) amplitudes...
+Dimension of the [-1] orthonormalized subspace:    6
+Smallest eigenvalue of the [-1] overlap metric:    8.912838e-03
+Norm of T[-1]^(1):                                 0.064019685239
+Correlation energy [-1]:                          -0.025992206994
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    7.457107e-05
+Norm of T[+2]^(1):                                 0.060451194003
+Correlation energy [+2]:                          -0.005328292662
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    7.634186e-05
+Norm of T[-2]^(1):                                 0.121664689423
+Correlation energy [-2]:                          -0.043297539853
+
+CASSCF reference energy:                        -109.096203343454
+PC-NEVPT2 correlation energy:                     -0.166877556832
+Total PC-NEVPT2 energy:                         -109.263080900286
+
+Computing T[0']^(2) amplitudes...
+Norm of T[0']^(2):                                 0.006663088304
+
+Computing T[-1']^(2) amplitudes...
+Dimension of the [-1] orthonormalized subspace:    6
+Smallest eigenvalue of the [-1] overlap metric:    8.912838e-03
+Norm of T[-1']^(2):                                0.050009878698
+
+Time for computing amplitudes:                     6.111579 sec
+
+Computing CVS integrals to MO basis (in-core)...
+Time for computing integrals:                      0.000533 sec
+
+Computing CVS amplitudes...
+Time for computing amplitudes:                     0.000143 sec
+
+Dimension of h0 excitation manifold:                       168
+
+Computing M(h0-h0) block...
+Time for computing M(h0-h0) block:                 73.482015 sec
+
+[[14.98818532]
+ [14.98818537]
+ [14.99131443]
+ [14.99131449]
+ [15.00709706]
+ [15.00709711]
+ [15.00796246]
+ [15.00796251]
+ [15.44214032]
+ [15.44345373]
+ [15.47070676]
+ [15.47243352]
+ [15.47352018]
+ [15.47352022]
+ [15.47585631]
+ [15.47585635]
+ [15.49939449]
+ [15.49939452]
+ [15.50239537]
+ [15.5023954 ]
+ [15.59185228]
+ [15.5925395 ]
+ [15.59275696]
+ [15.59337788]
+ [15.63148751]
+ [15.63258655]
+ [15.63341278]
+ [15.63467062]
+ [15.65349101]
+ [15.65584182]
+ [15.66076652]
+ [15.66076652]
+ [15.66147317]
+ [15.66147318]
+ [15.66327988]
+ [15.66327988]
+ [15.66397209]
+ [15.66397209]
+ [15.68708512]
+ [15.68746025]
+ [15.75982368]
+ [15.76202995]
+ [15.76675801]
+ [15.76898394]
+ [15.81782073]
+ [15.81782085]
+ [15.82009681]
+ [15.82009692]
+ [15.86035462]
+ [15.86035475]
+ [15.86315547]
+ [15.8631556 ]
+ [15.86426213]
+ [15.86426214]
+ [15.86432629]
+ [15.8643263 ]
+ [15.86670391]
+ [15.86670391]
+ [15.86677459]
+ [15.8667746 ]
+ [15.94722833]
+ [15.94943291]
+ [15.97900271]
+ [15.98256142]
+ [16.04463059]
+ [16.0446306 ]
+ [16.04573582]
+ [16.04573583]
+ [16.05592003]
+ [16.05592004]
+ [16.05652405]
+ [16.05770702]
+ [16.05770703]
+ [16.0578525 ]
+ [16.10481024]
+ [16.10676181]
+ [16.19935954]
+ [16.19935954]
+ [16.19937422]
+ [16.19937422]
+ [16.20184439]
+ [16.2018444 ]
+ [16.20185941]
+ [16.20185941]
+ [16.24021575]
+ [16.24021579]
+ [16.24079736]
+ [16.2407974 ]
+ [16.25315934]
+ [16.25315937]
+ [16.25391161]
+ [16.25391164]
+ [16.26194954]
+ [16.26395741]
+ [16.28064455]
+ [16.28226148]
+ [16.32516528]
+ [16.32699916]
+ [16.34777551]
+ [16.34895062]
+ [16.49870464]
+ [16.49870479]
+ [16.49881321]
+ [16.49881336]
+ [16.52323937]
+ [16.52323952]
+ [16.52330774]
+ [16.52330788]
+ [16.6839801 ]
+ [16.68398018]
+ [16.68487874]
+ [16.68487882]
+ [16.69388305]
+ [16.69388314]
+ [16.69470691]
+ [16.69470699]
+ [16.7786171 ]
+ [16.78032159]
+ [16.84336872]
+ [16.84423228]
+ [17.04853383]
+ [17.0509195 ]
+ [17.0628798 ]
+ [17.06572478]
+ [17.28174796]
+ [17.28174797]
+ [17.28337539]
+ [17.2833754 ]
+ [17.28367573]
+ [17.28367574]
+ [17.28538579]
+ [17.2853858 ]
+ [17.30770714]
+ [17.30770723]
+ [17.31010755]
+ [17.31010764]
+ [17.31272075]
+ [17.31272084]
+ [17.31516722]
+ [17.31516731]
+ [17.80798874]
+ [17.80798874]
+ [17.80840427]
+ [17.80840428]
+ [17.80997288]
+ [17.80997288]
+ [17.81041248]
+ [17.81041249]
+ [18.15546017]
+ [18.15809641]
+ [18.17965465]
+ [18.18173727]
+ [18.22793244]
+ [18.22793244]
+ [18.230449  ]
+ [18.230449  ]
+ [18.23363347]
+ [18.23363347]
+ [18.23607804]
+ [18.23607804]
+ [18.29041446]
+ [18.29276225]
+ [18.33285394]
+ [18.33418198]
+ [18.43050745]
+ [18.4326476 ]
+ [18.46459226]
+ [18.46631814]]
