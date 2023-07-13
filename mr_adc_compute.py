@@ -232,38 +232,15 @@ def compute_trans_properties(mr_adc, E, U):
         print(osc_strength.reshape(-1, 1))
 
     #TODO: Change to external functions
-    # if mr_adc.print_level > 5:
-    #     analyze_trans_properties(mr_adc, X)
-    #     analyze_spec_factor(mr_adc, X)
+    if mr_adc.print_level > 5:
+        analyze_spec_factor(mr_adc, X, spec_intensity)
 
     print("\nTime for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
     return spec_intensity, X
 
-def analyze_trans_properties(mr_adc, T):
-
-    print("Overlap of CASSCF and HF spatial MO's:")
-
-    cas_hf_ovlp = reduce(np.dot, (mr_adc.mo.T, mr_adc.ovlp, mr_adc.mo_hf))
-
-    print_thresh = 0.1
-
-    for p in range(mr_adc.mo.shape[1]):
-
-        hf_ovlp = cas_hf_ovlp[p]**2
-        hf_ovlp_ind = np.argsort(hf_ovlp)[::-1]
-        hf_ovlp_sorted = hf_ovlp[hf_ovlp_ind]
-
-        print("\nCASSCF MO #%d:" % (p + 1))
-
-        for hf_p in range(mr_adc.mo_hf.shape[1]):
-            if (hf_ovlp_sorted[hf_p] > print_thresh):
-                print("%.3f HF MO #%d" % (hf_ovlp_sorted[hf_p], hf_ovlp_ind[hf_p] + 1))
-
-    print("\n")
-
-def analyze_spec_factor(mr_adc, T):
+def analyze_spec_factor(mr_adc, T, spec_intensity):
 
     # Einsum
     einsum = mr_adc.interface.einsum
@@ -278,7 +255,7 @@ def analyze_spec_factor(mr_adc, T):
     print("Printing threshold: %e" %  print_thresh)
 
     X = (T.T).copy()
-    X_2 = X.copy()**2
+    X_2 = 2.0 * X**2
 
     for i in range(X_2.shape[0]):
 
@@ -289,21 +266,18 @@ def analyze_spec_factor(mr_adc, T):
         spec_Contribution = X_2_row[X_2_row > print_thresh]
         index_orb = sort[X_2_row > print_thresh]
 
-        if np.sum(spec_Contribution) == 0.0:
+        if np.sum(spec_Contribution) <= print_thresh:
             continue
 
+        rel_Contribution = spec_Contribution / spec_intensity[i]
+
         print("\nRoot %d:\n" % (i))
-        print("  MO (spin)    Spec. Contribution")
-        print("---------------------------------")
+        print("  MO           Spec. Contribution      Relative Contribution")
+        print("--------------------------------------------------------------")
 
         for c in range(index_orb.shape[0]):
-            index_mo = index_orb[c] // 2 + 1
 
-            spin = "A"
-            if (index_orb[c] % 2 == 1):
-                spin = "B"
-
-            print(" %3.d (%s)               %10.8f" % (index_mo, spin, spec_Contribution[c]))
+            print(" %3.d                %10.8f               %10.8f" % (index_orb[c], spec_Contribution[c], rel_Contribution[c]))
 
     print("\n")
 
