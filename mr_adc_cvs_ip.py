@@ -16821,3 +16821,55 @@ def compute_trans_moments(mr_adc):
         T = T_ortho
 
     return T
+
+def analyze_spec_factor(mr_adc, T, spec_intensity):
+
+    # Einsum
+    einsum = mr_adc.interface.einsum
+
+    print("\nSpectroscopic Factors Analysis:\n")
+
+    print_thresh = mr_adc.spec_factor_print_tol
+
+    print("Print spectroscopic factors > %e" %  print_thresh)
+
+    X = (T.T).copy()
+    X_2 = 2.0 * X**2
+
+    for i in range(X_2.shape[0]):
+
+        sort = np.argsort(-X_2[i,:])
+        X_2_row = X_2[i,:]
+        X_2_row = X_2_row[sort]
+
+        if not mr_adc.symmetry:
+            group_repr_symm = np.repeat(['A'], X_2_row.shape[0])
+        else:
+            group_repr_symm = mr_adc.group_repr_symm
+            group_repr_symm = np.array(group_repr_symm)
+
+            group_repr_symm = group_repr_symm[sort]
+
+        spec_Contribution = X_2_row[X_2_row > print_thresh]
+        index_orb = sort[X_2_row > print_thresh] + 1
+
+        if np.sum(spec_Contribution) <= print_thresh:
+            continue
+
+        rel_Contribution = spec_Contribution / spec_intensity[i]
+
+        print("\n%s | root %d \n" % (mr_adc.method, i))
+        print("  MO          Spec. Contribution      Relative Contribution")
+        print("-------------------------------------------------------------")
+
+        for c in range(index_orb.shape[0]):
+            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c], spec_Contribution[c], rel_Contribution[c]))
+
+    print("\n*************************************************************\n")
+
+def compute_dyson_mo(mr_adc, X):
+
+    #TODO: Include threshhold for orbitals, print statement for which states are printed
+    mo_dyson = np.dot(mr_adc.mo, X)
+
+    return mo_dyson

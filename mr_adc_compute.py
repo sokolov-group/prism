@@ -231,55 +231,15 @@ def compute_trans_properties(mr_adc, E, U):
         print("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
         print(osc_strength.reshape(-1, 1))
 
-    #TODO: Change to external functions
-    if mr_adc.print_level > 5:
-        analyze_spec_factor(mr_adc, X, spec_intensity)
+    if mr_adc.method_type == "cvs-ip":
+        mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
+        #TODO: Include keyword to export Dyson orbitals
+        mr_adc_cvs_ip.compute_dyson_mo(mr_adc, X)
 
     print("\nTime for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
     return spec_intensity, X
-
-def analyze_spec_factor(mr_adc, T, spec_intensity):
-
-    # Einsum
-    einsum = mr_adc.interface.einsum
-
-    print("\nSpectroscopic Factors Analysis:\n")
-
-    if  mr_adc.print_level == 6:
-        print_thresh = 0.1
-    else:
-        print_thresh = 0.00000001
-
-    print("Printing threshold: %e" %  print_thresh)
-
-    X = (T.T).copy()
-    X_2 = 2.0 * X**2
-
-    for i in range(X_2.shape[0]):
-
-        sort = np.argsort(-X_2[i,:])
-        X_2_row = X_2[i,:]
-        X_2_row = X_2_row[sort]
-
-        spec_Contribution = X_2_row[X_2_row > print_thresh]
-        index_orb = sort[X_2_row > print_thresh]
-
-        if np.sum(spec_Contribution) <= print_thresh:
-            continue
-
-        rel_Contribution = spec_Contribution / spec_intensity[i]
-
-        print("\nRoot %d:\n" % (i))
-        print("  MO           Spec. Contribution      Relative Contribution")
-        print("--------------------------------------------------------------")
-
-        for c in range(index_orb.shape[0]):
-
-            print(" %3.d                %10.8f               %10.8f" % (index_orb[c], spec_Contribution[c], rel_Contribution[c]))
-
-    print("\n")
 
 def dyall_hamiltonian(mr_adc):
     """Zeroth Order Dyall Hamiltonian"""

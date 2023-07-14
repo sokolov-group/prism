@@ -36,6 +36,7 @@ class PYSCF:
         self.enuc = mf.mol.energy_nuc()
         self.e_scf = mf.e_tot
         self.mf = mf
+
         # Maximum S^2 value of CASCI roots to keep; default to only singlet calculations
         self.spin_sq_thresh = 0
 
@@ -44,6 +45,10 @@ class PYSCF:
             self.mo = mf.mo_coeff.copy()
             self.nmo = self.mo.shape[1]
             self.mo_energy = mf.mo_energy.copy()
+            self.symmetry = mf.mol.symmetry
+            if self.symmetry:
+                from pyscf import symm
+                self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf._scf.mo_coeff.orbsym]
         else:
             self.reference = "casscf"
             self.mo = mc.mo_coeff.copy()
@@ -66,6 +71,11 @@ class PYSCF:
             self.mo = mo.copy()
             self.wfn_casscf = ci.copy()
             self.mo_energy = mo_energy.copy()
+
+            self.symmetry = mc.mol.symmetry
+            if self.symmetry:
+                from pyscf import symm
+                self.group_repr_symm = [symm.irrep_id2name(mc.mol.groupname, x) for x in mc.mo_coeff.orbsym]
 
             from pyscf import ao2mo
             self.transform_2e_chem_incore = ao2mo.general
