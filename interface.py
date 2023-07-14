@@ -49,6 +49,8 @@ class PYSCF:
             if self.symmetry:
                 from pyscf import symm
                 self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf._scf.mo_coeff.orbsym]
+            else:
+                self.group_repr_symm = None
         else:
             self.reference = "casscf"
             self.mo = mc.mo_coeff.copy()
@@ -76,6 +78,8 @@ class PYSCF:
             if self.symmetry:
                 from pyscf import symm
                 self.group_repr_symm = [symm.irrep_id2name(mc.mol.groupname, x) for x in mc.mo_coeff.orbsym]
+            else:
+                self.group_repr_symm = None
 
             from pyscf import ao2mo
             self.transform_2e_chem_incore = ao2mo.general
