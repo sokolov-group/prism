@@ -16856,16 +16856,16 @@ def analyze_spec_factor(mr_adc, T, spec_intensity):
         if np.sum(spec_Contribution) <= print_thresh:
             continue
 
-        rel_Contribution = spec_Contribution / spec_intensity[i]
+        partial_Contribution = spec_Contribution / spec_intensity[i]
 
         print("\n%s | root %d \n" % (mr_adc.method, i))
-        print("  MO          Spec. Contribution      Relative Contribution")
+        print("  MO          Spec. Contribution       Partial Contribution")
         print("-------------------------------------------------------------")
 
         for c in range(index_orb.shape[0]):
-            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c], spec_Contribution[c], rel_Contribution[c]))
+            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c], spec_Contribution[c], partial_Contribution[c]))
 
-    print("\n*************************************************************\n")
+    print("\n*************************************************************")
 
 def compute_dyson_mo(mr_adc, X):
 

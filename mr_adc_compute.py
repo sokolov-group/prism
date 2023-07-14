@@ -233,8 +233,6 @@ def compute_trans_properties(mr_adc, E, U):
 
     if mr_adc.method_type == "cvs-ip":
         mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
-        #TODO: Include keyword to export Dyson orbitals
-        mr_adc_cvs_ip.compute_dyson_mo(mr_adc, X)
 
     print("\nTime for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
