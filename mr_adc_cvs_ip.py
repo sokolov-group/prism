@@ -16863,13 +16863,16 @@ def analyze_spec_factor(mr_adc, T, spec_intensity):
         print("-------------------------------------------------------------")
 
         for c in range(index_orb.shape[0]):
-            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c], spec_Contribution[c], partial_Contribution[c]))
+            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c],
+                                                                            spec_Contribution[c],
+                                                                            partial_Contribution[c]))
 
     print("\n*************************************************************")
 
 def compute_dyson_mo(mr_adc, X):
 
-    #TODO: Include threshhold for orbitals, print statement for which states are printed
+    print("\nComputing Dyson molecular orbitals...")
     mo_dyson = np.dot(mr_adc.mo, X)
+    print("Done!\n")
 
     return mo_dyson

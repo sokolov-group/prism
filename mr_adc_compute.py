@@ -231,7 +231,7 @@ def compute_trans_properties(mr_adc, E, U):
         print("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
         print(osc_strength.reshape(-1, 1))
 
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.analyze_spec_factor and (mr_adc.method_type == "cvs-ip"):
         mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
 
     print("\nTime for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))

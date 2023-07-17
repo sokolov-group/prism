@@ -69,6 +69,7 @@ class MRADC:
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
 
+        self.analyze_spec_factor = True
         self.spec_factor_print_tol = 0.1
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
