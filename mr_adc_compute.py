@@ -172,7 +172,7 @@ def setup_davidson(mr_adc):
 
         # Print excitation energies in a.u. and eV
         print ("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
-        print(val.reshape(-1,1)[mr_adc.nroots:])
+        print(val.reshape(-1,1)[:mr_adc.nroots])
         print ("\n%s-%s excitation energies (eV):" % (mr_adc.method_type, mr_adc.method))
         val_ev = val * 27.2114
         print (val_ev.reshape(-1, 1)[:mr_adc.nroots])
@@ -198,6 +198,9 @@ def setup_davidson(mr_adc):
         osc_strength = (2.0/3.0) * val[:mr_adc.nroots] * spec_intensity
         print ("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
         print(osc_strength.reshape(-1,1))
+
+        # Will try with full first-order T matrix
+        ##mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, val, spec_intensity, X)
 
         exit()
 
