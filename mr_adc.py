@@ -73,6 +73,7 @@ class MRADC:
         self.h1 = lambda:None           # Information about h1 excitation manifold
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
+        self.dip_mom = None 
 
         # Approximations
         self.approx_trans_moments = False
@@ -88,7 +89,6 @@ class MRADC:
         self.rdm = lambda:None
         self.t1 = lambda:None
         self.t2 = lambda:None
-        self.dip_mom = None
 
         # Matrix blocks
         self.M_00 = None
