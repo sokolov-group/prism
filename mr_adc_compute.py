@@ -199,7 +199,7 @@ def setup_davidson(mr_adc):
         print ("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
         print(osc_strength.reshape(-1,1))
 
-        # Will try with full first-order T matrix
+        # Not producing physically meaningful results, Will try with full first-order T matrix
         ##mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, val, spec_intensity, X)
 
         exit()
