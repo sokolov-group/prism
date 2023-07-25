@@ -1,21 +1,27 @@
 #!/usr/bin/env python
 
 '''
-CVS-EE-MR-ADC(2) calculations for N2
+CVS-EE-MR-ADC(1) calculations for N2
 '''
+
 
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
 import prism.interface
 import prism.mr_adc
+import numpy as np
+
+##############################
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+#############################
 
 mol = pyscf.gto.Mole()
 r = 1.098
 mol.atom = [
     ['N', ( 0., 0.    , -r/2)],
     ['N', ( 0., 0.    ,  r/2)],]
-mol.basis = {'N':'aug-cc-pvdz'}
+mol.basis = {'N':'cc-pvdz'}
 mol.verbose = 4
 mol.build()
 
@@ -24,8 +30,8 @@ mf = pyscf.scf.RHF(mol)
 mf.kernel()
 
 # CASSCF(6e,6o) calculation
-#mc = pyscf.mcscf.CASSCF(mf, 6, 6)
-mc = pyscf.mcscf.CASSCF(mf, 12, 10)
+mc = pyscf.mcscf.CASSCF(mf, 6, 6)
+#mc = pyscf.mcscf.CASSCF(mf, 12, 10)
 emc = mc.mc1step()[0]
 
 # CVS-EE-MR-ADC calculation
