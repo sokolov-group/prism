@@ -30743,6 +30743,671 @@ def compute_trans_moments(mr_adc):
         T[:ncore, ncore + ncas:ncore + ncas + nextern, s_ce_aa:f_ce_aa] += T_ce_ce
         T[:ncore, ncore + ncas:ncore + ncas + nextern, s_ce_bb:f_ce_bb] += T_ce_ce
 
+    def compute_T__q1_h0__AA_CA(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        
+        ## Amplitudes
+        t1_xa = mr_adc.t1.xa
+
+        t1_xaaa = mr_adc.t1.xaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        # Dimensions
+        s_ca_aa = mr_adc.h0.s_ca_aa
+        f_ca_aa = mr_adc.h0.f_ca_aa
+        s_ca_bb = mr_adc.h0.s_ca_bb
+        f_ca_bb = mr_adc.h0.f_ca_bb
+        
+        # Compound indices
+        n_ca = mr_adc.h0.n_ca
+
+        ## aa,aa || bb,bb
+        T_aa_ca  = einsum('QX,IP->PQIX', np.identity(ncas), t1_xa, optimize = einsum_type)
+        T_aa_ca -= 1/2 * einsum('IP,QX->PQIX', t1_xa, rdm_ca, optimize = einsum_type)
+        T_aa_ca -= 1/2 * einsum('IQXx,Px->PQIX', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_aa_ca += 1/2 * einsum('IQxX,Px->PQIX', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_aa_ca -= 1/6 * einsum('IQxy,PXxy->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_aa_ca += 1/6 * einsum('IQxy,PXyx->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_aa_ca -= 1/2 * einsum('IxPX,Qx->PQIX', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_aa_ca -= 1/2 * einsum('IxPy,QyXx->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_aa_ca += 1/2 * einsum('IxXP,Qx->PQIX', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_aa_ca += 1/6 * einsum('IxyP,QyXx->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_aa_ca -= 1/6 * einsum('IxyP,QyxX->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_aa_ca += einsum('QX,IxPy,xy->PQIX', np.identity(ncas), t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_aa_ca -= 1/2 * einsum('QX,IxyP,xy->PQIX', np.identity(ncas), t1_xaaa, rdm_ca, optimize = einsum_type)
+        
+        T_aa_ca = T_aa_ca.reshape(T_aa_ca.shape[0], T_aa_ca.shape[1], n_ca)
+
+        T[ncore:ncore + ncas, ncore:ncore + ncas, s_ca_aa:f_ca_aa] += T_aa_ca
+        T[ncore:ncore + ncas, ncore:ncore + ncas, s_ca_bb:f_ca_bb] += T_aa_ca
+
+        # Delete block before making other spin case
+        del T_aa_ca
+
+        ## aa,bb || bb,aa
+        T_aa_ca =- 1/2 * einsum('IQXx,Px->PQIX', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_aa_ca += 1/6 * einsum('IQxy,PXxy->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_aa_ca += 1/3 * einsum('IQxy,PXyx->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_aa_ca += 1/2 * einsum('IxXP,Qx->PQIX', t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_aa_ca -= 1/6 * einsum('IxyP,QyXx->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_aa_ca -= 1/3 * einsum('IxyP,QyxX->PQIX', t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        
+        T_aa_ca = T_aa_ca.reshape(T_aa_ca.shape[0], T_aa_ca.shape[1], n_ca)
+
+        T[ncore:ncore + ncas, ncore:ncore + ncas, s_ca_aa:f_ca_aa] += T_aa_ca
+        T[ncore:ncore + ncas, ncore:ncore + ncas, s_ca_bb:f_ca_bb] += T_aa_ca
+
+    def compute_T__q1_h0__AC_CA(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        
+        ## Amplitudes
+        t1_xxaa = mr_adc.t1.xxaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        # Dimensions
+        s_ca_aa = mr_adc.h0.s_ca_aa
+        f_ca_aa = mr_adc.h0.f_ca_aa
+        s_ca_bb = mr_adc.h0.s_ca_bb
+        f_ca_bb = mr_adc.h0.f_ca_bb
+        
+        # Compound indices
+        n_ca = mr_adc.h0.n_ca
+
+        ## aa,aa || bb,bb
+        T_ac_ca =- einsum('IQPX->PQIX', t1_xxaa, optimize = einsum_type).copy()
+        T_ac_ca += einsum('IQXP->PQIX', t1_xxaa, optimize = einsum_type).copy()
+        T_ac_ca += 1/2 * einsum('IQPx,Xx->PQIX', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T_ac_ca -= 1/2 * einsum('IQXx,Px->PQIX', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T_ac_ca -= 1/2 * einsum('IQxP,Xx->PQIX', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T_ac_ca += 1/2 * einsum('IQxX,Px->PQIX', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T_ac_ca -= 1/6 * einsum('IQxy,PXxy->PQIX', t1_xxaa, rdm_ccaa, optimize = einsum_type)
+        T_ac_ca += 1/6 * einsum('IQxy,PXyx->PQIX', t1_xxaa, rdm_ccaa, optimize = einsum_type)
+        
+        T_ac_ca = T_ac_ca.reshape(T_ac_ca.shape[0], T_ac_ca.shape[1], n_ca)
+
+        T[ncore:ncore + ncas, :ncvs, s_ca_aa:f_ca_aa] += T_ac_ca
+        T[ncore:ncore + ncas, :ncvs, s_ca_bb:f_ca_bb] += T_ac_ca
+
+        # Delete block before making other spin case
+        del T_ac_ca
+
+        ## aa,bb || bb,aa
+        T_ac_ca  = einsum('IQXP->PQIX', t1_xxaa, optimize = einsum_type).copy()
+        T_ac_ca -= 1/2 * einsum('IQXx,Px->PQIX', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T_ac_ca -= 1/2 * einsum('IQxP,Xx->PQIX', t1_xxaa, rdm_ca, optimize = einsum_type)
+        T_ac_ca += 1/6 * einsum('IQxy,PXxy->PQIX', t1_xxaa, rdm_ccaa, optimize = einsum_type)
+        T_ac_ca += 1/3 * einsum('IQxy,PXyx->PQIX', t1_xxaa, rdm_ccaa, optimize = einsum_type)
+        
+        T_ac_ca = T_ac_ca.reshape(T_ac_ca.shape[0], T_ac_ca.shape[1], n_ca)
+
+        T[ncore:ncore + ncas, :ncvs, s_ca_aa:f_ca_aa] += T_ac_ca
+        T[ncore:ncore + ncas, :ncvs, s_ca_bb:f_ca_bb] += T_ac_ca
+
+    def compute_T__q1_h0__CC_CA(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        
+        ## Amplitudes
+        t1_xa = mr_adc.t1.xa
+
+        t1_xaaa = mr_adc.t1.xaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        # Dimensions
+        s_ca_aa = mr_adc.h0.s_ca_aa
+        f_ca_aa = mr_adc.h0.f_ca_aa
+        s_ca_bb = mr_adc.h0.s_ca_bb
+        f_ca_bb = mr_adc.h0.f_ca_bb
+        
+        # Compound indices
+        n_ca = mr_adc.h0.n_ca
+
+        ## aa,aa || bb,bb
+        T_cc_ca =- einsum('IP,QX->PQIX', np.identity(ncore)[:ncvs], t1_xa, optimize = einsum_type)
+        T_cc_ca += 1/2 * einsum('IP,Qx,Xx->PQIX', np.identity(ncore)[:ncvs], t1_xa, rdm_ca, optimize = einsum_type)
+        T_cc_ca -= einsum('IP,QxXy,xy->PQIX', np.identity(ncore)[:ncvs], t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_cc_ca += 1/2 * einsum('IP,QxyX,xy->PQIX', np.identity(ncore)[:ncvs], t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_cc_ca += 1/2 * einsum('IP,Qxyz,Xxyz->PQIX', np.identity(ncore)[:ncvs], t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        
+        T_cc_ca = T_cc_ca.reshape(T_cc_ca.shape[0], T_cc_ca.shape[1], n_ca)
+
+        T[:ncore, :ncvs, s_ca_aa:f_ca_aa] += T_cc_ca
+        T[:ncore, :ncvs, s_ca_bb:f_ca_bb] += T_cc_ca
+
+    def compute_T__q1_h0__CE_CA(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_ae = mr_adc.t1.ae
+
+        t1_aaae = mr_adc.t1.aaae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        # Dimensions
+        s_ca_aa = mr_adc.h0.s_ca_aa
+        f_ca_aa = mr_adc.h0.f_ca_aa
+        s_ca_bb = mr_adc.h0.s_ca_bb
+        f_ca_bb = mr_adc.h0.f_ca_bb
+        
+        # Compound indices
+        n_ca = mr_adc.h0.n_ca
+
+        ## aa,aa || bb,bb
+        T_ce_ca  = einsum('IP,XQ->PQIX', np.identity(ncore)[:ncvs], t1_ae, optimize = einsum_type)
+        T_ce_ca -= 1/2 * einsum('IP,XxyQ,yx->PQIX', np.identity(ncore)[:ncvs], t1_aaae, rdm_ca, optimize = einsum_type)
+        T_ce_ca -= 1/2 * einsum('IP,xQ,Xx->PQIX', np.identity(ncore)[:ncvs], t1_ae, rdm_ca, optimize = einsum_type)
+        T_ce_ca += einsum('IP,xXyQ,yx->PQIX', np.identity(ncore)[:ncvs], t1_aaae, rdm_ca, optimize = einsum_type)
+        T_ce_ca -= 1/2 * einsum('IP,xyzQ,Xzyx->PQIX', np.identity(ncore)[:ncvs], t1_aaae, rdm_ccaa, optimize = einsum_type)
+        
+        T_ce_ca = T_ce_ca.reshape(T_ce_ca.shape[0], T_ce_ca.shape[1], n_ca)
+
+        T[:ncore, ncore + ncas:ncore + ncas + nextern, s_ca_aa:f_ca_aa] += T_ce_ca
+        T[:ncore, ncore + ncas:ncore + ncas + nextern, s_ca_bb:f_ca_bb] += T_ce_ca
+
+    def compute_T__q1_h0__EA_CA(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xe = mr_adc.t1.xe
+
+        t1_xaea = mr_adc.t1.xaea
+        t1_xaae = mr_adc.t1.xaae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        # Dimensions
+        s_ca_aa = mr_adc.h0.s_ca_aa
+        f_ca_aa = mr_adc.h0.f_ca_aa
+        s_ca_bb = mr_adc.h0.s_ca_bb
+        f_ca_bb = mr_adc.h0.f_ca_bb
+        
+        # Compound indices
+        n_ca = mr_adc.h0.n_ca
+
+        ## aa,aa || bb,bb
+        T_ea_ca  = einsum('QX,IP->PQIX', np.identity(ncas), t1_xe, optimize = einsum_type)
+        T_ea_ca -= 1/2 * einsum('IP,QX->PQIX', t1_xe, rdm_ca, optimize = einsum_type)
+        T_ea_ca -= 1/2 * einsum('IxPX,Qx->PQIX', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_ea_ca -= 1/2 * einsum('IxPy,QyXx->PQIX', t1_xaea, rdm_ccaa, optimize = einsum_type)
+        T_ea_ca += 1/2 * einsum('IxXP,Qx->PQIX', t1_xaae, rdm_ca, optimize = einsum_type)
+        T_ea_ca += 1/6 * einsum('IxyP,QyXx->PQIX', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_ea_ca -= 1/6 * einsum('IxyP,QyxX->PQIX', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_ea_ca += einsum('QX,IxPy,xy->PQIX', np.identity(ncas), t1_xaea, rdm_ca, optimize = einsum_type)
+        T_ea_ca -= 1/2 * einsum('QX,IxyP,xy->PQIX', np.identity(ncas), t1_xaae, rdm_ca, optimize = einsum_type)
+        
+        T_ea_ca = T_ea_ca.reshape(T_ea_ca.shape[0], T_ea_ca.shape[1], n_ca)
+
+        T[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas, s_ca_aa:f_ca_aa] += T_ea_ca
+        T[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas, s_ca_bb:f_ca_bb] += T_ea_ca
+
+        # Delete block before making other spin case
+        del T_ea_ca
+
+        ## aa,bb || bb,aa
+        T_ea_ca  = 1/2 * einsum('IxXP,Qx->PQIX', t1_xaae, rdm_ca, optimize = einsum_type)
+        T_ea_ca -= 1/6 * einsum('IxyP,QyXx->PQIX', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_ea_ca -= 1/3 * einsum('IxyP,QyxX->PQIX', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        
+        T_ea_ca = T_ea_ca.reshape(T_ea_ca.shape[0], T_ea_ca.shape[1], n_ca)
+
+        T[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas, s_ca_aa:f_ca_aa] += T_ea_ca
+        T[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas, s_ca_bb:f_ca_bb] += T_ea_ca
+        
+    def compute_T__q1_h0__EC_CA(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xxae = mr_adc.t1.xxae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        # Dimensions
+        s_ca_aa = mr_adc.h0.s_ca_aa
+        f_ca_aa = mr_adc.h0.f_ca_aa
+        s_ca_bb = mr_adc.h0.s_ca_bb
+        f_ca_bb = mr_adc.h0.f_ca_bb
+        
+        # Compound indices
+        n_ca = mr_adc.h0.n_ca
+
+        ## aa,aa || bb,bb
+        T_ec_ca  = einsum('IQXP->PQIX', t1_xxae, optimize = einsum_type).copy()
+        T_ec_ca -= einsum('QIXP->PQIX', t1_xxae, optimize = einsum_type).copy()
+        T_ec_ca -= 1/2 * einsum('IQxP,Xx->PQIX', t1_xxae, rdm_ca, optimize = einsum_type)
+        T_ec_ca += 1/2 * einsum('QIxP,Xx->PQIX', t1_xxae, rdm_ca, optimize = einsum_type)
+        
+        T_ec_ca = T_ec_ca.reshape(T_ec_ca.shape[0], T_ec_ca.shape[1], n_ca)
+
+        T[ncore + ncas:ncore + ncas + nextern, :ncvs, s_ca_aa:f_ca_aa] += T_ec_ca
+        T[ncore + ncas:ncore + ncas + nextern, :ncvs, s_ca_bb:f_ca_bb] += T_ec_ca
+
+        # Delete block before making other spin case
+        del T_ec_ca
+
+        ## aa,bb || bb,aa
+        T_ec_ca  = einsum('IQXP->PQIX', t1_xxae, optimize = einsum_type).copy()
+        T_ec_ca -= 1/2 * einsum('IQxP,Xx->PQIX', t1_xxae, rdm_ca, optimize = einsum_type)
+        
+        T_ec_ca = T_ec_ca.reshape(T_ec_ca.shape[0], T_ec_ca.shape[1], n_ca)
+
+        T[ncore + ncas:ncore + ncas + nextern, :ncvs, s_ca_aa:f_ca_aa] += T_ec_ca
+        T[ncore + ncas:ncore + ncas + nextern, :ncvs, s_ca_bb:f_ca_bb] += T_ec_ca
+        
+    def compute_T__q1_h0__AA_CE(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xaea = mr_adc.t1.xaea
+        t1_xaae = mr_adc.t1.xaae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        # Dimensions
+        s_ce_aa = mr_adc.h0.s_ce_aa
+        f_ce_aa = mr_adc.h0.f_ce_aa
+        s_ce_bb = mr_adc.h0.s_ce_bb
+        f_ce_bb = mr_adc.h0.f_ce_bb
+        
+        # Compound indices
+        n_ce = mr_adc.h0.n_ce
+
+        ## aa,aa || bb,bb
+        T_aa_ce =- 1/2 * einsum('IQAx,Px->PQIA', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_aa_ce += 1/2 * einsum('IQxA,Px->PQIA', t1_xaae, rdm_ca, optimize = einsum_type)
+        T_aa_ce += 1/2 * einsum('IxAP,Qx->PQIA', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_aa_ce -= 1/2 * einsum('IxPA,Qx->PQIA', t1_xaae, rdm_ca, optimize = einsum_type)
+        
+        T_aa_ce = T_aa_ce.reshape(T_aa_ce.shape[0], T_aa_ce.shape[1], n_ce)
+
+        T[ncore:ncore + ncas, ncore:ncore + ncas, s_ce_aa:f_ce_aa] += T_aa_ce
+        T[ncore:ncore + ncas, ncore:ncore + ncas, s_ce_bb:f_ce_bb] += T_aa_ce
+
+        # Delete block before making other spin case
+        del T_aa_ce
+
+        ## aa,bb || bb,aa
+        T_aa_ce =- 1/2 * einsum('IQAx,Px->PQIA', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_aa_ce += 1/2 * einsum('IxAP,Qx->PQIA', t1_xaea, rdm_ca, optimize = einsum_type)
+        
+        T_aa_ce = T_aa_ce.reshape(T_aa_ce.shape[0], T_aa_ce.shape[1], n_ce)
+
+        T[ncore:ncore + ncas, ncore:ncore + ncas, s_ce_aa:f_ce_aa] += T_aa_ce
+        T[ncore:ncore + ncas, ncore:ncore + ncas, s_ce_bb:f_ce_bb] += T_aa_ce
+        
+    def compute_T__q1_h0__AC_CE(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xxae = mr_adc.t1.xxae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        # Dimensions
+        s_ce_aa = mr_adc.h0.s_ce_aa
+        f_ce_aa = mr_adc.h0.f_ce_aa
+        s_ce_bb = mr_adc.h0.s_ce_bb
+        f_ce_bb = mr_adc.h0.f_ce_bb
+        
+        # Compound indices
+        n_ce = mr_adc.h0.n_ce
+
+        ## aa,aa || bb,bb
+        T_ac_ce =- einsum('IQPA->PQIA', t1_xxae, optimize = einsum_type).copy()
+        T_ac_ce += einsum('QIPA->PQIA', t1_xxae, optimize = einsum_type).copy()
+        T_ac_ce += 1/2 * einsum('IQxA,Px->PQIA', t1_xxae, rdm_ca, optimize = einsum_type)
+        T_ac_ce -= 1/2 * einsum('QIxA,Px->PQIA', t1_xxae, rdm_ca, optimize = einsum_type)
+        
+        T_ac_ce = T_ac_ce.reshape(T_ac_ce.shape[0], T_ac_ce.shape[1], n_ce)
+
+        T[ncore:ncore + ncas, :ncvs, s_ce_aa:f_ce_aa] += T_ac_ce
+        T[ncore:ncore + ncas, :ncvs, s_ce_bb:f_ce_bb] += T_ac_ce
+
+        # Delete block before making other spin case
+        del T_ac_ce
+
+        ## aa,bb || bb,aa
+        T_ac_ce  = einsum('QIPA->PQIA', t1_xxae, optimize = einsum_type).copy()
+        T_ac_ce -= 1/2 * einsum('QIxA,Px->PQIA', t1_xxae, rdm_ca, optimize = einsum_type)
+        
+        T_ac_ce = T_ac_ce.reshape(T_ac_ce.shape[0], T_ac_ce.shape[1], n_ce)
+
+        T[ncore:ncore + ncas, :ncvs, s_ce_aa:f_ce_aa] += T_ac_ce
+        T[ncore:ncore + ncas, :ncvs, s_ce_bb:f_ce_bb] += T_ac_ce
+        
+    def compute_T__q1_h0__AE_CE(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xa = mr_adc.t1.xa
+
+        t1_xaaa = mr_adc.t1.xaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        # Dimensions
+        s_ce_aa = mr_adc.h0.s_ce_aa
+        f_ce_aa = mr_adc.h0.f_ce_aa
+        s_ce_bb = mr_adc.h0.s_ce_bb
+        f_ce_bb = mr_adc.h0.f_ce_bb
+        
+        # Compound indices
+        n_ce = mr_adc.h0.n_ce
+
+        ## aa,aa || bb,bb
+        T_ae_ce  = einsum('AQ,IP->PQIA', np.identity(nextern), t1_xa, optimize = einsum_type)
+        T_ae_ce += einsum('AQ,IxPy,xy->PQIA', np.identity(nextern), t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_ae_ce -= 1/2 * einsum('AQ,IxyP,xy->PQIA', np.identity(nextern), t1_xaaa, rdm_ca, optimize = einsum_type)
+        
+        T_ae_ce = T_ae_ce.reshape(T_ae_ce.shape[0], T_ae_ce.shape[1], n_ce)
+
+        T[ncore:ncore + ncas, ncore + ncas:ncore + ncas + nextern, s_ce_aa:f_ce_aa] += T_ae_ce
+        T[ncore:ncore + ncas, ncore + ncas:ncore + ncas + nextern, s_ce_bb:f_ce_bb] += T_ae_ce
+        
+    def compute_T__q1_h0__CA_CE(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_ae = mr_adc.t1.ae
+
+        t1_aaae = mr_adc.t1.aaae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        # Dimensions
+        s_ce_aa = mr_adc.h0.s_ce_aa
+        f_ce_aa = mr_adc.h0.f_ce_aa
+        s_ce_bb = mr_adc.h0.s_ce_bb
+        f_ce_bb = mr_adc.h0.f_ce_bb
+        
+        # Compound indices
+        n_ce = mr_adc.h0.n_ce
+
+        ## aa,aa || bb,bb
+        T_ca_ce =- einsum('IP,QA->PQIA', np.identity(ncore)[:ncvs], t1_ae, optimize = einsum_type)
+        T_ca_ce += 1/2 * einsum('IP,QxyA,yx->PQIA', np.identity(ncore)[:ncvs], t1_aaae, rdm_ca, optimize = einsum_type)
+        T_ca_ce -= einsum('IP,xQyA,yx->PQIA', np.identity(ncore)[:ncvs], t1_aaae, rdm_ca, optimize = einsum_type)
+        
+        T_ca_ce = T_ca_ce.reshape(T_ca_ce.shape[0], T_ca_ce.shape[1], n_ce)
+
+        T[:ncore, ncore:ncore + ncas, s_ce_aa:f_ce_aa] += T_ca_ce
+        T[:ncore, ncore:ncore + ncas, s_ce_bb:f_ce_bb] += T_ca_ce
+        
+    def compute_T__q1_h0__CC_CE(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xe = mr_adc.t1.xe
+
+        t1_xaea = mr_adc.t1.xaea
+        t1_xaae = mr_adc.t1.xaae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        # Dimensions
+        s_ce_aa = mr_adc.h0.s_ce_aa
+        f_ce_aa = mr_adc.h0.f_ce_aa
+        s_ce_bb = mr_adc.h0.s_ce_bb
+        f_ce_bb = mr_adc.h0.f_ce_bb
+        
+        # Compound indices
+        n_ce = mr_adc.h0.n_ce
+
+        ## aa,aa || bb,bb
+        T_cc_ce =- einsum('IP,QA->PQIA', np.identity(ncore)[:ncvs], t1_xe, optimize = einsum_type)
+        T_cc_ce -= einsum('IP,QxAy,yx->PQIA', np.identity(ncore)[:ncvs], t1_xaea, rdm_ca, optimize = einsum_type)
+        T_cc_ce += 1/2 * einsum('IP,QxyA,yx->PQIA', np.identity(ncore)[:ncvs], t1_xaae, rdm_ca, optimize = einsum_type)
+        
+        T_cc_ce = T_cc_ce.reshape(T_cc_ce.shape[0], T_cc_ce.shape[1], n_ce)
+
+        T[:ncore, :ncvs, s_ce_aa:f_ce_aa] += T_cc_ce
+        T[:ncore, :ncvs, s_ce_bb:f_ce_bb] += T_cc_ce
+        
+    def compute_T__q1_h0__EA_CE(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xaee = mr_adc.t1.xaee
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        # Dimensions
+        s_ce_aa = mr_adc.h0.s_ce_aa
+        f_ce_aa = mr_adc.h0.f_ce_aa
+        s_ce_bb = mr_adc.h0.s_ce_bb
+        f_ce_bb = mr_adc.h0.f_ce_bb
+        
+        # Compound indices
+        n_ce = mr_adc.h0.n_ce
+
+        ## aa,aa || bb,bb
+        T_ea_ce  = 1/2 * einsum('IxAP,Qx->PQIA', t1_xaee, rdm_ca, optimize = einsum_type)
+        T_ea_ce -= 1/2 * einsum('IxPA,Qx->PQIA', t1_xaee, rdm_ca, optimize = einsum_type)
+        
+        T_ea_ce = T_ea_ce.reshape(T_ea_ce.shape[0], T_ea_ce.shape[1], n_ce)
+
+        T[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas, s_ce_aa:f_ce_aa] += T_ea_ce
+        T[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas, s_ce_bb:f_ce_bb] += T_ea_ce
+
+        # Delete block before making other spin case
+        del T_ea_ce
+
+        ## aa,bb || bb,aa
+        T_ea_ce  = 1/2 * einsum('IxAP,Qx->PQIA', t1_xaee, rdm_ca, optimize = einsum_type)
+        
+        T_ea_ce = T_ea_ce.reshape(T_ea_ce.shape[0], T_ea_ce.shape[1], n_ce)
+
+        T[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas, s_ce_aa:f_ce_aa] += T_ea_ce
+        T[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas, s_ce_bb:f_ce_bb] += T_ea_ce
+        
+    def compute_T__q1_h0__EC_CE(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xxee = mr_adc.t1.xxee
+
+        # Dimensions
+        s_ce_aa = mr_adc.h0.s_ce_aa
+        f_ce_aa = mr_adc.h0.f_ce_aa
+        s_ce_bb = mr_adc.h0.s_ce_bb
+        f_ce_bb = mr_adc.h0.f_ce_bb
+        
+        # Compound indices
+        n_ce = mr_adc.h0.n_ce
+
+        ## aa,aa || bb,bb
+        T_ec_ce  = einsum('IQAP->PQIA', t1_xxee, optimize = einsum_type).copy()
+        T_ec_ce -= einsum('QIAP->PQIA', t1_xxee, optimize = einsum_type).copy()
+        
+        T_ec_ce = T_ec_ce.reshape(T_ec_ce.shape[0], T_ec_ce.shape[1], n_ce)
+
+        T[ncore + ncas:ncore + ncas + nextern, :ncvs, s_ce_aa:f_ce_aa] += T_ec_ce
+        T[ncore + ncas:ncore + ncas + nextern, :ncvs, s_ce_bb:f_ce_bb] += T_ec_ce
+
+        # Delete block before making other spin case
+        del T_ec_ce
+
+        ## aa,bb || bb,aa
+        T_ec_ce  = einsum('IQAP->PQIA', t1_xxee, optimize = einsum_type).copy()
+        
+        T_ec_ce = T_ec_ce.reshape(T_ec_ce.shape[0], T_ec_ce.shape[1], n_ce)
+
+        T[ncore + ncas:ncore + ncas + nextern, :ncvs, s_ce_aa:f_ce_aa] += T_ec_ce
+        T[ncore + ncas:ncore + ncas + nextern, :ncvs, s_ce_bb:f_ce_bb] += T_ec_ce
+        
+    def compute_T__q1_h0__EE_CE(mr_adc, T):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        ncore   = mr_adc.ncore
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+        
+        ## Amplitudes
+        t1_xe = mr_adc.t1.xe
+
+        t1_xaea = mr_adc.t1.xaea
+        t1_xaae = mr_adc.t1.xaae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        # Dimensions
+        s_ce_aa = mr_adc.h0.s_ce_aa
+        f_ce_aa = mr_adc.h0.f_ce_aa
+        s_ce_bb = mr_adc.h0.s_ce_bb
+        f_ce_bb = mr_adc.h0.f_ce_bb
+        
+        # Compound indices
+        n_ce = mr_adc.h0.n_ce
+
+        ## aa,aa || bb,bb
+        T_ee_ce  = einsum('AQ,IP->PQIA', np.identity(nextern), t1_xe, optimize = einsum_type)
+        T_ee_ce += einsum('AQ,IxPy,xy->PQIA', np.identity(nextern), t1_xaea, rdm_ca, optimize = einsum_type)
+        T_ee_ce -= 1/2 * einsum('AQ,IxyP,xy->PQIA', np.identity(nextern), t1_xaae, rdm_ca, optimize = einsum_type)
+        
+        T_ee_ce = T_ee_ce.reshape(T_ee_ce.shape[0], T_ee_ce.shape[1], n_ce)
+
+        T[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern, s_ce_aa:f_ce_aa] += T_ee_ce
+        T[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern, s_ce_bb:f_ce_bb] += T_ee_ce
+
     # Variables from kernel
     nmo = mr_adc.nmo
 
@@ -30764,8 +31429,48 @@ def compute_trans_moments(mr_adc):
 
     # MR-ADC(1) terms
     ## < [ q^(1), h^(0)^\dag ] >
-    ### TODO
+    ### AA(1) - CA
+    compute_T__q1_h0__AA_CA(mr_adc, T)
 
+    ### AC(1) - CA
+    compute_T__q1_h0__AC_CA(mr_adc, T)
+
+    ### CC(1) - CA
+    compute_T__q1_h0__CC_CA(mr_adc, T)
+
+    ### CE(1) - CA
+    compute_T__q1_h0__CE_CA(mr_adc, T)
+
+    ### EA(1) - CA
+    compute_T__q1_h0__EA_CA(mr_adc, T)
+
+    ### EC(1) - CA
+    compute_T__q1_h0__EC_CA(mr_adc, T)
+
+    ### AA(1) - CE
+    compute_T__q1_h0__AA_CE(mr_adc, T)
+
+    ### AC(1) - CE
+    compute_T__q1_h0__AC_CE(mr_adc, T)
+
+    ### AE(1) - CE
+    compute_T__q1_h0__AE_CE(mr_adc, T)
+
+    ### CA(1) - CE
+    compute_T__q1_h0__CA_CE(mr_adc, T)
+
+    ### CC(1) - CE
+    compute_T__q1_h0__CC_CE(mr_adc, T)
+
+    ### EA(1) - CE
+    compute_T__q1_h0__EA_CE(mr_adc, T)
+
+    ### EC(1) - CE
+    compute_T__q1_h0__EC_CE(mr_adc, T)
+
+    ### EE(1) - CE
+    compute_T__q1_h0__EE_CE(mr_adc, T)
+    
     # Reshape T tensor
     T = T.reshape(nmo ** 2, dim)
 
@@ -30779,8 +31484,10 @@ def compute_trans_moments(mr_adc):
     return T
 
 def analyze_eigenvectors(mr_adc, E, spec_intensity, X):
-   
+  
+    ##################################################
     ## WIP IN PROGRESS - NEEDS COMPLETION AND TESTING
+    ##################################################
 
     # Definitions
     nmo     = mr_adc.nmo
