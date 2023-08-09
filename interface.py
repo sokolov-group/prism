@@ -29,23 +29,36 @@ class PYSCF:
         print("\nImporting Pyscf objects...\n")
         sys.stdout.flush()
 
+        from pyscf import lib
+
         self.type = "pyscf"
 
         # General info
+        self.mol = mf.mol
         self.nelec = mf.mol.nelectron
         self.enuc = mf.mol.energy_nuc()
         self.e_scf = mf.e_tot
-        self.mf = mf
+ 
         # Maximum S^2 value of CASCI roots to keep; default to only singlet calculations
         self.spin_sq_thresh = 0
 
         if mc is None:
             self.reference = "scf"
+            self.max_memory = mf.max_memory
+
             self.mo = mf.mo_coeff.copy()
             self.nmo = self.mo.shape[1]
             self.mo_energy = mf.mo_energy.copy()
+
+            if hasattr(mf._scf, 'with_df'):
+                self.with_df = mf._scf.with_df
+            else:
+                self.with_df = None
+
         else:
             self.reference = "casscf"
+            self.max_memory = mc.max_memory
+
             self.mo = mc.mo_coeff.copy()
             self.mo_hf = mf.mo_coeff.copy()
             self.ovlp = mf.get_ovlp(mf.mol)
@@ -69,6 +82,12 @@ class PYSCF:
 
             from pyscf import ao2mo
             self.transform_2e_chem_incore = ao2mo.general
+            self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
+
+            if hasattr(mc, 'with_df'):
+                self.with_df = mc.with_df
+            else:
+                self.with_df = None
 
         #    from pyscf import fci
         #    self.cre_a = fci.addons.cre_a
@@ -78,24 +97,32 @@ class PYSCF:
         #    self.trans_rdm1s = fci.direct_spin1.trans_rdm1s
         #    self.trans_rdm12s = fci.direct_spin1.trans_rdm12s
 
-            from pyscf import lib
             self.davidson = lib.linalg_helper.davidson1
 
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
             self.select_casci = None
 
+        # Current Memory
+        self.current_memory = lib.current_memory
+
+        # HDF5 Files
+        self.create_HDF5_temp_file = lib.H5TmpFile
+
         # Integrals
         self.h1e_ao = mf.get_hcore()
-
-        # TODO: replace exact 2e integrals with the DF integrals
         self.v2e_ao = None
+
+        self.with_df = None
+        self.naux = None
+
         if mf._eri is None:
             raise Exception("Out-of-core algorithm is not implemented for Pyscf")
+
         else:
             self.v2e_ao = mf._eri.copy()
 
         # Dipole moments
-        self.dip_mom_ao    = mf.mol.intor_symmetric("int1e_r", comp = 3)
+        self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
         # Whether to use opt_einsum
         if opt_einsum:
@@ -105,7 +132,6 @@ class PYSCF:
         else:
             self.einsum = np.einsum
             self.einsum_type = "greedy"
-
 
     def compute_rdm123(self, bra, ket, nelecas):
 
@@ -139,6 +165,31 @@ class PYSCF:
         rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))
 
         return rdm1, rdm2, rdm3, rdm4
+
+    @property
+    def with_df(self):
+        return self._with_df
+    @with_df.setter
+    def with_df(self, obj):
+        self._with_df = obj
+        if obj:
+            self.naux = obj.get_naoaux()
+
+    def density_fit(self, auxbasis=None, with_df = None):
+        if with_df is None:
+            from pyscf import df
+
+            self.with_df = df.DF(self.mol)
+            self.with_df.max_memory = self.max_memory
+
+            if auxbasis:
+                self.with_df.auxbasis = auxbasis
+                self.naux = self.with_df.get_naoaux()
+
+        else:
+            self.with_df = with_df
+
+        return self
 
 def print_header():
 
