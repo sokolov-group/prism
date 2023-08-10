@@ -26,7 +26,7 @@ class PYSCF:
 
         print_header()
 
-        print("\nImporting Pyscf objects...\n")
+        print("\nImporting Pyscf objects...")
         sys.stdout.flush()
 
         from pyscf import lib
@@ -177,7 +177,7 @@ class PYSCF:
 
     def density_fit(self, auxbasis=None, with_df = None):
         if with_df is None:
-            print("Importing Pyscf density-fitting objects...\n")
+            print("\nImporting Pyscf density-fitting objects...\n")
 
             from pyscf import df
 

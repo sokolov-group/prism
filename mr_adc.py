@@ -25,7 +25,7 @@ import prism.mr_adc_compute as mr_adc_compute
 class MRADC:
     def __init__(self, interface):
 
-        print("Initializing MR-ADC...\n")
+        print("\nInitializing MR-ADC...\n")
         sys.stdout.flush()
 
         if (interface.reference != "casscf"):
