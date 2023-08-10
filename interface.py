@@ -177,6 +177,8 @@ class PYSCF:
 
     def density_fit(self, auxbasis=None, with_df = None):
         if with_df is None:
+            print("Importing Pyscf density-fitting objects...\n")
+
             from pyscf import df
 
             self.with_df = df.DF(self.mol)
