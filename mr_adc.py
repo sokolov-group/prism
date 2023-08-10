@@ -94,10 +94,6 @@ class MRADC:
         self.t2 = lambda:None
         self.dip_mom = None
 
-        # Density-fitting
-        self.with_df = interface.with_df
-        self.naux = interface.naux
-
         # Matrix blocks
         self.M_00 = None
         self.M_01 = lambda:None
@@ -113,7 +109,7 @@ class MRADC:
         if self.method_type not in ("ee", "ip", "ea", "cvs-ip", "cvs-ee"):
             raise Exception("Unknown method type %s" % self.method_type)
 
-        if self.with_df and self.method_type not in ('cvs-ip'):
+        if self.interface.with_df and self.method_type not in ('cvs-ip'):
             raise Exception("Density-fitting currently only compatible with CVS-IP method type.")
 
         if self.nelecas[0] != self.nelecas[1]:
@@ -139,7 +135,7 @@ class MRADC:
 
         # Transform one- and two-electron integrals
         mr_adc_integrals.transform_integrals_1e(self)
-        if self.with_df:
+        if self.interface.with_df:
             mr_adc_integrals.transform_integrals_2e_df(self)
         else:
             mr_adc_integrals.transform_integrals_2e_incore(self)

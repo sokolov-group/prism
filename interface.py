@@ -181,12 +181,9 @@ class PYSCF:
 
             from pyscf import df
 
-            self.with_df = df.DF(self.mol)
+            self.with_df = df.DF(self.mol, auxbasis)
             self.with_df.max_memory = self.max_memory
-
-            if auxbasis:
-                self.with_df.auxbasis = auxbasis
-                self.naux = self.with_df.get_naoaux()
+            self.naux = self.with_df.get_naoaux()
 
         else:
             self.with_df = with_df

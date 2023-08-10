@@ -88,7 +88,7 @@ def transform_integrals_2e_incore(mr_adc):
     print("Transforming 2e integrals to MO basis (in-core)...")
     sys.stdout.flush()
 
-    # Einsum definition from kernel
+    # Import interface
     interface = mr_adc.interface
 
     # Variables from kernel
@@ -164,8 +164,11 @@ def transform_integrals_2e_df(mr_adc):
     print("Transforming 2e integrals to MO basis (density-fitting)...")
     sys.stdout.flush()
 
-    # Einsum definition from kernel
+    # Import interface
     interface = mr_adc.interface
+
+    with_df = interface.with_df
+    naux = interface.naux
 
     # Variables from kernel
     ncore = mr_adc.ncore
@@ -175,9 +178,6 @@ def transform_integrals_2e_df(mr_adc):
 
     nmo = mr_adc.nmo
     mo = mr_adc.mo
-
-    with_df = mr_adc.with_df
-    naux = mr_adc.naux
 
     mr_adc.v2e.eeee = None
     mr_adc.v2e.ceee = None
