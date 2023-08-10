@@ -84,6 +84,7 @@ def kernel(mr_adc):
                                            verbose = 6,
                                            max_space = mr_adc.max_space,
                                            max_cycle = mr_adc.max_cycle,
+                                           max_memory = mr_adc.max_memory,
                                            tol = mr_adc.tol_e,
                                            tol_residual = mr_adc.tol_davidson)
 
