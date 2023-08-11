@@ -380,7 +380,7 @@ def compute_cvs_integrals_2e(mr_adc):
 
     start_time = time.time()
 
-    print("Computing CVS integrals to MO basis (in-core)...")
+    print("Computing CVS integrals to MO basis ...")
     sys.stdout.flush()
 
     # Variables from kernel
