@@ -23,6 +23,7 @@ import numpy as np
 from functools import reduce
 import prism.mr_adc_intermediates as mr_adc_intermediates
 import prism.mr_adc_overlap as mr_adc_overlap
+import prism.mr_adc_integrals as mr_adc_integrals
 
 def compute_amplitudes(mr_adc):
 
@@ -967,10 +968,16 @@ def compute_t1_m1p(mr_adc):
 def compute_t2_0p_singles(mr_adc):
 
     # Einsum definition from kernel
+    interface = mr_adc.interface
+
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
+    ncore = mr_adc.ncore
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+
     ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
@@ -1044,8 +1051,27 @@ def compute_t2_0p_singles(mr_adc):
     V1 += einsum('ix,IixA->IA', h_ca, t1_ccae, optimize = einsum_type)
     V1 -= 2 * einsum('ix,iIxA->IA', h_ca, t1_ccae, optimize = einsum_type)
     V1 -= einsum('xA,Ix->IA', h_ae, t1_ca, optimize = einsum_type)
-    V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
-    V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
+    # V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
+    # V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
+    if isinstance(v_ceee, type(None)):
+        chnk_size = mr_adc_integrals.calculate_chunk_size(mr_adc)
+    else:
+        chnk_size = ncore
+
+    a = 0
+    for p in range(0, ncore, chnk_size):
+        if getattr(interface, 'with_df', None):
+            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
+        else:
+            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.ceee, nextern)
+
+        k = v_ceee.shape[0]
+
+        V1 += einsum('Iiab,iaAb->IA', t1_ccee[a:a+k], v_ceee, optimize = einsum_type)
+        V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee[a:a+k], v_ceee, optimize = einsum_type)
+
+        del v_ceee
+        a += k
     V1 -= 2 * einsum('Iixa,iaAx->IA', t1_ccae, v_ceea, optimize = einsum_type)
     V1 += einsum('Iixa,ixAa->IA', t1_ccae, v_caee, optimize = einsum_type)
     V1 += einsum('Iixy,ixAy->IA', t1_ccaa, v_caea, optimize = einsum_type)
@@ -1111,8 +1137,26 @@ def compute_t2_0p_singles(mr_adc):
     V1 -= einsum('Ix,yzxA,zy->IA', t1_ca, v_aaae, rdm_ca, optimize = einsum_type)
     V1 -= einsum('IxAa,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
     V1 += 1/2 * einsum('IxaA,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
-    V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
-    V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
+    # V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
+    # V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
+    if isinstance(v_aeee, type(None)):
+        chnk_size = mr_adc_integrals.calculate_chunk_size(mr_adc)
+    else:
+        chnk_size = ncas
+
+    a = 0
+    for p in range(0, ncas, chnk_size):
+        if getattr(interface, 'with_df', None):
+            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
+        else:
+            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee, nextern)
+
+        k = v_aeee.shape[0]
+        V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee[:,a:a+k], v_aeee, rdm_ca, optimize = einsum_type)
+        V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee[:,a:a+k], v_aeee, rdm_ca, optimize = einsum_type)
+
+        del v_aeee
+        a += k
     V1 += 1/2 * einsum('Ixay,yAaz,xz->IA', t1_caea, v_aeea, rdm_ca, optimize = einsum_type)
     V1 += 1/2 * einsum('Ixay,zAaw,xzyw->IA', t1_caea, v_aeea, rdm_ccaa, optimize = einsum_type)
     V1 -= einsum('Ixay,zwAa,xwyz->IA', t1_caea, v_aaee, rdm_ccaa, optimize = einsum_type)

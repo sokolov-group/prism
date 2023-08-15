@@ -26,12 +26,14 @@ class PYSCF:
 
         print_header()
 
-        print("\nImporting Pyscf objects...\n")
+        print("\nImporting Pyscf objects...")
         sys.stdout.flush()
 
+        from pyscf import lib
         self.type = "pyscf"
 
         # General info
+        self.mol = mf.mol
         self.nelec = mf.mol.nelectron
         self.enuc = mf.mol.energy_nuc()
         self.e_scf = mf.e_tot
@@ -42,6 +44,8 @@ class PYSCF:
 
         if mc is None:
             self.reference = "scf"
+            self.max_memory = mf.max_memory
+
             self.mo = mf.mo_coeff.copy()
             self.nmo = self.mo.shape[1]
             self.mo_energy = mf.mo_energy.copy()
@@ -53,6 +57,8 @@ class PYSCF:
                 self.group_repr_symm = None
         else:
             self.reference = "casscf"
+            self.max_memory = mc.max_memory
+
             self.mo = mc.mo_coeff.copy()
             self.mo_hf = mf.mo_coeff.copy()
             self.ovlp = mf.get_ovlp(mf.mol)
@@ -83,6 +89,7 @@ class PYSCF:
 
             from pyscf import ao2mo
             self.transform_2e_chem_incore = ao2mo.general
+            self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
 
         #    from pyscf import fci
         #    self.cre_a = fci.addons.cre_a
@@ -92,24 +99,32 @@ class PYSCF:
         #    self.trans_rdm1s = fci.direct_spin1.trans_rdm1s
         #    self.trans_rdm12s = fci.direct_spin1.trans_rdm12s
 
-            from pyscf import lib
             self.davidson = lib.linalg_helper.davidson1
 
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
             self.select_casci = None
 
+        # Current Memory
+        self.current_memory = lib.current_memory
+
+        # HDF5 Files
+        self.create_HDF5_temp_file = lib.H5TmpFile
+
         # Integrals
         self.h1e_ao = mf.get_hcore()
 
-        # TODO: replace exact 2e integrals with the DF integrals
         self.v2e_ao = None
+
+        self.with_df = None
+        self.naux = None
+
         if mf._eri is None:
             raise Exception("Out-of-core algorithm is not implemented for Pyscf")
         else:
             self.v2e_ao = mf._eri.copy()
 
         # Dipole moments
-        self.dip_mom_ao    = mf.mol.intor_symmetric("int1e_r", comp = 3)
+        self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
         # Whether to use opt_einsum
         if opt_einsum:
@@ -120,6 +135,28 @@ class PYSCF:
             self.einsum = np.einsum
             self.einsum_type = "greedy"
 
+    @property
+    def with_df(self):
+        return self._with_df
+    @with_df.setter
+    def with_df(self, obj):
+        self._with_df = obj
+        if obj:
+            self.naux = obj.get_naoaux()
+
+    def density_fit(self, auxbasis=None, with_df = None):
+        if with_df is None:
+            print("\nImporting Pyscf density-fitting objects...\n")
+            from pyscf import df
+
+            self.with_df = df.DF(self.mol, auxbasis)
+            self.with_df.max_memory = self.max_memory
+            self.naux = self.with_df.get_naoaux()
+
+        else:
+            self.with_df = with_df
+
+        return self
 
     def compute_rdm123(self, bra, ket, nelecas):
 
@@ -161,7 +198,7 @@ def print_header():
         PRISM: Open-Source implementation of ab initio methods
                 for excited states and spectroscopy
 
-                           Version 0.2.1
+                           Version 0.3
 
                Copyright (C) 2023 Alexander Sokolov
                                   Carlos E. V. de Moura
