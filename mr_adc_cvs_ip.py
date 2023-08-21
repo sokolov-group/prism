@@ -16824,9 +16824,6 @@ def compute_trans_moments(mr_adc):
 
 def analyze_spec_factor(mr_adc, T, spec_intensity):
 
-    # Einsum
-    einsum = mr_adc.interface.einsum
-
     print("\nSpectroscopic Factors Analysis:\n")
 
     print_thresh = mr_adc.spec_factor_print_tol
