@@ -88,7 +88,7 @@ def transform_integrals_2e_incore(mr_adc):
     print("Transforming 2e integrals to MO basis (in-core)...")
     sys.stdout.flush()
 
-    # Einsum definition from kernel
+    # Import Prism interface
     interface = mr_adc.interface
 
     # Variables from kernel
@@ -166,7 +166,7 @@ def transform_integrals_2e_df(mr_adc):
     print("Transforming 2e integrals to MO basis (density-fitting)...")
     sys.stdout.flush()
 
-    # Import interface
+    # Import Prism interface
     interface = mr_adc.interface
 
     with_df = interface.with_df
@@ -308,11 +308,11 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.aeea[:] = np.dot(mr_adc.v2e.Lae.T, mr_adc.v2e.Lea).reshape(ncas, nextern, nextern, ncas)
 
     # Effective one-electron integrals
-    mr_adc.v2e.ccac = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lac).reshape(ncore, ncore, ncas, ncore)
-    mr_adc.v2e.ccec = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lec).reshape(ncore, ncore, nextern, ncore)
+    v2e_ccac = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lac).reshape(ncore, ncore, ncas, ncore)
+    v2e_ccec = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lec).reshape(ncore, ncore, nextern, ncore)
 
-    mr_adc.h1eff.ca = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, ncore:nocc], mr_adc.v2e.ccca, mr_adc.v2e.ccac)
-    mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, mr_adc.v2e.ccec)
+    mr_adc.h1eff.ca = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, ncore:nocc], mr_adc.v2e.ccca, v2e_ccac)
+    mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, v2e_ccec)
     mr_adc.h1eff.aa = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, ncore:nocc], mr_adc.v2e.ccaa, mr_adc.v2e.caac)
     mr_adc.h1eff.ae = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, nocc:], mr_adc.v2e.ccae, mr_adc.v2e.caec)
 
@@ -336,7 +336,7 @@ def calculate_chunk_size(mr_adc):
 
 def get_oeee_df(mr_adc, Loe, Lee, p, chnk_size):
 
-    # Import interface
+    # Import Prism interface
     interface = mr_adc.interface
 
     naux = interface.naux
@@ -382,11 +382,11 @@ def unpack_v2e_oeee(v2e_oeee, norb):
 
     return v2e_oeee_
 
-def compute_cvs_integrals_2e(mr_adc):
+def compute_cvs_integrals_2e_incore(mr_adc):
 
     start_time = time.time()
 
-    print("Computing CVS integrals to MO basis...")
+    print("Computing CVS integrals to MO basis (in-core)...")
     sys.stdout.flush()
 
     # Variables from kernel
@@ -486,5 +486,112 @@ def compute_cvs_integrals_2e(mr_adc):
 
             mr_adc.v2e.xeea = np.ascontiguousarray(mr_adc.v2e.ceea[:ncvs, :, :, :])
             mr_adc.v2e.veea = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:, :, :, :])
+
+    print("Time for computing integrals:                      %f sec\n" % (time.time() - start_time))
+
+def compute_cvs_integrals_2e_df(mr_adc):
+
+    start_time = time.time()
+
+    print("Computing CVS integrals to MO basis (density-fitting)...")
+    sys.stdout.flush()
+
+    # Variables from kernel
+    ncvs = mr_adc.ncvs
+
+    if mr_adc.method_type == "cvs-ip":
+        if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+            mr_adc.v2e.xxxa = mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :]
+            mr_adc.v2e.xxva = mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :]
+            mr_adc.v2e.vxxa = mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :]
+
+            mr_adc.v2e.xxxe = mr_adc.v2e.ccce[:ncvs, :ncvs, :ncvs, :]
+            mr_adc.v2e.xxve = mr_adc.v2e.ccce[:ncvs, :ncvs, ncvs:, :]
+            mr_adc.v2e.vxxe = mr_adc.v2e.ccce[ncvs:, :ncvs, :ncvs, :]
+
+            mr_adc.v2e.xxaa = mr_adc.v2e.ccaa[:ncvs, :ncvs, :, :]
+            mr_adc.v2e.xvaa = mr_adc.v2e.ccaa[:ncvs, ncvs:, :, :]
+            mr_adc.v2e.vxaa = mr_adc.v2e.ccaa[ncvs:, :ncvs, :, :]
+            mr_adc.v2e.vvaa = mr_adc.v2e.ccaa[ncvs:, ncvs:, :, :]
+
+            mr_adc.v2e.xxae = mr_adc.v2e.ccae[:ncvs, :ncvs, :, :]
+            mr_adc.v2e.xvae = mr_adc.v2e.ccae[:ncvs, ncvs:, :, :]
+            mr_adc.v2e.vxae = mr_adc.v2e.ccae[ncvs:, :ncvs, :, :]
+            mr_adc.v2e.vvae = mr_adc.v2e.ccae[ncvs:, ncvs:, :, :]
+
+            mr_adc.v2e.xaax = mr_adc.v2e.caac[:ncvs, :, :, :ncvs]
+            mr_adc.v2e.xaav = mr_adc.v2e.caac[:ncvs, :, :, ncvs:]
+            mr_adc.v2e.vaax = mr_adc.v2e.caac[ncvs:, :, :, :ncvs]
+            mr_adc.v2e.vaav = mr_adc.v2e.caac[ncvs:, :, :, ncvs:]
+
+            mr_adc.v2e.xaex = mr_adc.v2e.caec[:ncvs, :, :, :ncvs]
+            mr_adc.v2e.xaev = mr_adc.v2e.caec[:ncvs, :, :, ncvs:]
+            mr_adc.v2e.vaex = mr_adc.v2e.caec[ncvs:, :, :, :ncvs]
+            mr_adc.v2e.vaev = mr_adc.v2e.caec[ncvs:, :, :, ncvs:]
+
+            mr_adc.v2e.xaxa = mr_adc.v2e.caca[:ncvs, :, :ncvs, :]
+            mr_adc.v2e.xava = mr_adc.v2e.caca[:ncvs, :, ncvs:, :]
+            mr_adc.v2e.vaxa = mr_adc.v2e.caca[ncvs:, :, :ncvs, :]
+            mr_adc.v2e.vava = mr_adc.v2e.caca[ncvs:, :, ncvs:, :]
+
+            mr_adc.v2e.xexe = mr_adc.v2e.cece[:ncvs, :, :ncvs, :]
+            mr_adc.v2e.xeve = mr_adc.v2e.cece[:ncvs, :, ncvs:, :]
+            mr_adc.v2e.vexe = mr_adc.v2e.cece[ncvs:, :, :ncvs, :]
+            mr_adc.v2e.veve = mr_adc.v2e.cece[ncvs:, :, ncvs:, :]
+
+            mr_adc.v2e.xaxe = mr_adc.v2e.cace[:ncvs, :, :ncvs, :]
+            mr_adc.v2e.xave = mr_adc.v2e.cace[:ncvs, :, ncvs:, :]
+            mr_adc.v2e.vaxe = mr_adc.v2e.cace[ncvs:, :, :ncvs, :]
+            mr_adc.v2e.vave = mr_adc.v2e.cace[ncvs:, :, ncvs:, :]
+
+            mr_adc.v2e.xaaa = mr_adc.v2e.caaa[:ncvs, :, :, :]
+            mr_adc.v2e.vaaa = mr_adc.v2e.caaa[ncvs:, :, :, :]
+
+            mr_adc.v2e.xeae = mr_adc.v2e.ceae[:ncvs, :, :, :]
+            mr_adc.v2e.veae = mr_adc.v2e.ceae[ncvs:, :, :, :]
+
+            mr_adc.v2e.xaae = mr_adc.v2e.caae[:ncvs, :, :, :]
+            mr_adc.v2e.vaae = mr_adc.v2e.caae[ncvs:, :, :, :]
+
+            mr_adc.v2e.xeaa = mr_adc.v2e.ceaa[:ncvs, :, :, :]
+            mr_adc.v2e.veaa = mr_adc.v2e.ceaa[ncvs:, :, :, :]
+
+            # Effective one-electron integrals
+            mr_adc.h1eff.xa = np.ascontiguousarray(mr_adc.h1eff.ca[:ncvs,:])
+            mr_adc.h1eff.va = np.ascontiguousarray(mr_adc.h1eff.ca[ncvs:,:])
+
+            mr_adc.h1eff.xe = np.ascontiguousarray(mr_adc.h1eff.ce[:ncvs,:])
+            mr_adc.h1eff.ve = np.ascontiguousarray(mr_adc.h1eff.ce[ncvs:,:])
+
+            # Store diagonal elements of the generalized Fock operator
+            mr_adc.mo_energy.x = mr_adc.mo_energy.c[:ncvs]
+            mr_adc.mo_energy.v = mr_adc.mo_energy.c[ncvs:]
+
+        if mr_adc.method in ("mr-adc(2)-x"):
+            mr_adc.v2e.xxxx = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs]
+            mr_adc.v2e.xxvv = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:]
+            mr_adc.v2e.xvvx = mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs]
+            mr_adc.v2e.xxvx = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs]
+            mr_adc.v2e.xxxv = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:]
+            mr_adc.v2e.xvxx = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
+
+            mr_adc.v2e.xxee = mr_adc.v2e.ccee[:ncvs, :ncvs, :, :]
+            mr_adc.v2e.xvee = mr_adc.v2e.ccee[:ncvs, ncvs:, :, :]
+            mr_adc.v2e.vxee = mr_adc.v2e.ccee[ncvs:, :ncvs, :, :]
+            mr_adc.v2e.vvee = mr_adc.v2e.ccee[ncvs:, ncvs:, :, :]
+
+            mr_adc.v2e.xeex = mr_adc.v2e.ceec[:ncvs, :, :, :ncvs]
+            mr_adc.v2e.xeev = mr_adc.v2e.ceec[:ncvs, :, :, ncvs:]
+            mr_adc.v2e.veex = mr_adc.v2e.ceec[ncvs:, :, :, :ncvs]
+            mr_adc.v2e.veev = mr_adc.v2e.ceec[ncvs:, :, :, ncvs:]
+
+            mr_adc.v2e.xaea = mr_adc.v2e.caea[:ncvs, :, :, :]
+            mr_adc.v2e.vaea = mr_adc.v2e.caea[ncvs:, :, :, :]
+
+            mr_adc.v2e.xaee = mr_adc.v2e.caee[:ncvs, :, :, :]
+            mr_adc.v2e.vaee = mr_adc.v2e.caee[ncvs:, :, :, :]
+
+            mr_adc.v2e.xeea = mr_adc.v2e.ceea[:ncvs, :, :, :]
+            mr_adc.v2e.veea = mr_adc.v2e.ceea[ncvs:, :, :, :]
 
     print("Time for computing integrals:                      %f sec\n" % (time.time() - start_time))

@@ -29,6 +29,9 @@ def compute_amplitudes(mr_adc):
 
     start_time = time.time()
 
+    # Import Prism interface
+    interface = mr_adc.interface
+
     # First-order amplitudes
     compute_t1_amplitudes(mr_adc)
 
@@ -38,7 +41,11 @@ def compute_amplitudes(mr_adc):
     # Compute CVS amplitudes and remove non-CVS core integrals, amplitudes and unnecessary RDMs
     if mr_adc.method_type == "cvs-ip":
         compute_cvs_amplitudes(mr_adc)
-        remove_non_cvs_variables(mr_adc)
+
+        if interface.with_df:
+            remove_non_cvs_variables_df(mr_adc)
+        else:
+            remove_non_cvs_variables_incore(mr_adc)
 
     print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
 
@@ -291,7 +298,7 @@ def compute_cvs_amplitudes(mr_adc):
 
     print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
 
-def remove_non_cvs_variables(mr_adc):
+def remove_non_cvs_variables_incore(mr_adc):
     'Remove core integrals, core amplitudes and RDMs not used in CVS calculations'
 
     if mr_adc.method_type == "cvs-ip":
@@ -303,6 +310,21 @@ def remove_non_cvs_variables(mr_adc):
         if mr_adc.method in ("mr-adc(2)-x"):
             del(mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
                 mr_adc.v2e.caee, mr_adc.v2e.ceea)
+
+        del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
+            mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
+            mr_adc.t1.ccae, mr_adc.t1.caee, mr_adc.t1.ccaa,
+            mr_adc.t2.ce, mr_adc.t2.caea, mr_adc.t2.caae,
+            mr_adc.t2.ca, mr_adc.t2.caaa, mr_adc.t2.ccee,
+            mr_adc.t2.ccae, mr_adc.t2.caee, mr_adc.t2.ccaa)
+
+        del(mr_adc.rdm.ccccaaaa)
+
+def remove_non_cvs_variables_df(mr_adc):
+    'Remove core integrals, core amplitudes and RDMs not used in CVS calculations'
+
+    if mr_adc.method_type == "cvs-ip":
+        del(mr_adc.h1eff.ca, mr_adc.h1eff.ce)
 
         del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
             mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
@@ -967,9 +989,10 @@ def compute_t1_m1p(mr_adc):
 
 def compute_t2_0p_singles(mr_adc):
 
-    # Einsum definition from kernel
+    # Import Prism interface
     interface = mr_adc.interface
 
+    # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
 
@@ -1060,7 +1083,7 @@ def compute_t2_0p_singles(mr_adc):
 
     a = 0
     for p in range(0, ncore, chnk_size):
-        if getattr(interface, 'with_df', None):
+        if interface.with_df:
             v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
         else:
             v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.ceee, nextern)
@@ -1146,7 +1169,7 @@ def compute_t2_0p_singles(mr_adc):
 
     a = 0
     for p in range(0, ncas, chnk_size):
-        if getattr(interface, 'with_df', None):
+        if interface.with_df:
             v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
         else:
             v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee, nextern)
