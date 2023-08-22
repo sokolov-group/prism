@@ -480,13 +480,13 @@ def compute_t1_m1(mr_adc):
     d_abix = d_abix**(-1)
 
     # Compute T[-1] amplitudes
-    S_12_V_m1 = np.einsum("IXAB,Xm->ImAB", V1_m1, S_m1_12_inv_act)
-    S_12_V_m1 = np.einsum("mp,ImAB->IpAB", evecs, S_12_V_m1)
-    S_12_V_m1 = np.einsum("ABIp,IpAB->IpAB", d_abix, S_12_V_m1)
-    S_12_V_m1 = np.einsum("mp,IpAB->ImAB", evecs, S_12_V_m1)
+    S_12_V_m1 = einsum("IXAB,Xm->ImAB", V1_m1, S_m1_12_inv_act, optimize = einsum_type)
+    S_12_V_m1 = einsum("mp,ImAB->IpAB", evecs, S_12_V_m1, optimize = einsum_type)
+    S_12_V_m1 = einsum("ABIp,IpAB->IpAB", d_abix, S_12_V_m1, optimize = einsum_type)
+    S_12_V_m1 = einsum("mp,IpAB->ImAB", evecs, S_12_V_m1, optimize = einsum_type)
 
     ## Compute T[-1] t1_caee tensor
-    t1_caee = np.einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act).copy()
+    t1_caee = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
 
     # Compute electronic correlation energy for T[-1]
     e_m1  = 2 * einsum('ixab,iayb,xy', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
@@ -540,13 +540,13 @@ def compute_t1_p2(mr_adc):
     d_pij = d_pij**(-1)
 
     # Compute T[+2] amplitudes
-    S_12_V_p2 = np.einsum("IJX,Xm->IJm", V1_p2, S_p2_12_inv_act)
-    S_12_V_p2 = np.einsum("mp,IJm->IJp", evecs, S_12_V_p2)
-    S_12_V_p2 = np.einsum("pIJ,IJp->IJp", d_pij, S_12_V_p2)
-    S_12_V_p2 = np.einsum("mp,IJp->IJm", evecs, S_12_V_p2)
+    S_12_V_p2 = einsum("IJX,Xm->IJm", V1_p2, S_p2_12_inv_act, optimize = einsum_type)
+    S_12_V_p2 = einsum("mp,IJm->IJp", evecs, S_12_V_p2, optimize = einsum_type)
+    S_12_V_p2 = einsum("pIJ,IJp->IJp", d_pij, S_12_V_p2, optimize = einsum_type)
+    S_12_V_p2 = einsum("mp,IJp->IJm", evecs, S_12_V_p2, optimize = einsum_type)
 
     ## Compute T[+2] t1_ccaa tensor
-    t1_ccaa = np.einsum("IJm,Xm->IJX", S_12_V_p2, S_p2_12_inv_act)
+    t1_ccaa = einsum("IJm,Xm->IJX", S_12_V_p2, S_p2_12_inv_act, optimize = einsum_type)
     t1_ccaa = t1_ccaa.reshape(ncore, ncore, ncas, ncas)
 
     # Compute electronic correlation energy for T[+2]
@@ -600,13 +600,13 @@ def compute_t1_m2(mr_adc):
     d_abp = d_abp**(-1)
 
     # Compute T[-2] amplitudes
-    S_12_V_m2 = np.einsum("XAB,Xm->mAB", V1_m2, S_m2_12_inv_act)
-    S_12_V_m2 = np.einsum("mp,mAB->pAB", evecs, S_12_V_m2)
-    S_12_V_m2 = np.einsum("ABp,pAB->pAB", d_abp, S_12_V_m2)
-    S_12_V_m2 = np.einsum("mp,pAB->mAB", evecs, S_12_V_m2)
+    S_12_V_m2 = einsum("XAB,Xm->mAB", V1_m2, S_m2_12_inv_act, optimize = einsum_type)
+    S_12_V_m2 = einsum("mp,mAB->pAB", evecs, S_12_V_m2, optimize = einsum_type)
+    S_12_V_m2 = einsum("ABp,pAB->pAB", d_abp, S_12_V_m2, optimize = einsum_type)
+    S_12_V_m2 = einsum("mp,pAB->mAB", evecs, S_12_V_m2, optimize = einsum_type)
 
     ## Compute T[-2] t1_aaee tensor
-    t1_aaee = np.einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act)
+    t1_aaee = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
     t1_aaee = t1_aaee.reshape(ncas, ncas, nextern, nextern)
 
     # Compute electronic correlation energy for T[-2]
