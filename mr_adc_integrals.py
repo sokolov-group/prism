@@ -308,8 +308,8 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.aeea[:] = np.dot(mr_adc.v2e.Lae.T, mr_adc.v2e.Lea).reshape(ncas, nextern, nextern, ncas)
 
     # Effective one-electron integrals
-    mr_adc.v2e.ccac = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncas, ncore), 'f8')
-    mr_adc.v2e.ccec = mr_adc.v2e.feri1.create_dataset('ccce', (ncore, ncore, nextern, ncore), 'f8', chunks=(ncore, ncore, 1, ncore))
+    mr_adc.v2e.ccac = mr_adc.v2e.feri1.create_dataset('ccac', (ncore, ncore, ncas, ncore), 'f8')
+    mr_adc.v2e.ccec = mr_adc.v2e.feri1.create_dataset('ccec', (ncore, ncore, nextern, ncore), 'f8', chunks=(ncore, ncore, 1, ncore))
 
     mr_adc.v2e.ccac[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lac).reshape(ncore, ncore, ncas, ncore)
     mr_adc.v2e.ccec[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lec).reshape(ncore, ncore, nextern, ncore)
