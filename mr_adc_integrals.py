@@ -308,8 +308,11 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.aeea[:] = np.dot(mr_adc.v2e.Lae.T, mr_adc.v2e.Lea).reshape(ncas, nextern, nextern, ncas)
 
     # Effective one-electron integrals
-    v2e_ccac = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lac).reshape(ncore, ncore, ncas, ncore)
-    v2e_ccec = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lec).reshape(ncore, ncore, nextern, ncore)
+    mr_adc.v2e.ccac = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncas, ncore), 'f8')
+    mr_adc.v2e.ccec = mr_adc.v2e.feri1.create_dataset('ccce', (ncore, ncore, nextern, ncore), 'f8', chunks=(ncore, ncore, 1, ncore))
+
+    mr_adc.v2e.ccac[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lac).reshape(ncore, ncore, ncas, ncore)
+    mr_adc.v2e.ccec[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lec).reshape(ncore, ncore, nextern, ncore)
 
     mr_adc.h1eff.ca = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, ncore:nocc], mr_adc.v2e.ccca, v2e_ccac)
     mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, v2e_ccec)
