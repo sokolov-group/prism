@@ -1162,9 +1162,7 @@ def compute_t2_0p_singles(mr_adc):
     V1 += 1/2 * einsum('IxaA,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
     # V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
     # V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
-    if isinstance(v_aeee, type(None)):
-        chnk_size = mr_adc_integrals.calculate_chunk_size(mr_adc)
-    else:
+    if not isinstance(v_aeee, type(None)):
         chnk_size = ncas
 
     a = 0

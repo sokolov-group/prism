@@ -78,7 +78,7 @@ def kernel(mr_adc):
     # Setup Davidson algorithm parameters
     apply_M, precond, x0 = setup_davidson(mr_adc)
 
-    avail_mem = mr_adc.max_memory - mr_adc.interface.current_memory()[0]
+    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
     
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
