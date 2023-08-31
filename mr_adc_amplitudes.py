@@ -362,8 +362,7 @@ def compute_t1_0(mr_adc):
     V1_0 =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type).copy()
 
     # Compute T[0] t1_ccee tensor
-    t1_0 = (V1_0 / D2).copy()
-    t1_ccee = t1_0.copy()
+    t1_ccee = (V1_0 / D2)
 
     # Compute electronic correlation energy for T[0]
     e_0  = 2 * einsum('ijab,iajb', t1_ccee, v_cece, optimize = einsum_type)
