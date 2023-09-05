@@ -143,8 +143,10 @@ class MRADC:
         mr_adc_integrals.transform_integrals_1e(self)
         if self.interface.with_df:
             mr_adc_integrals.transform_integrals_2e_df(self)
-        else:
+        elif self.interface.v2e_ao:
             mr_adc_integrals.transform_integrals_2e_incore(self)
+        else:
+            raise Exception("Out-of-core algorithm is not implemented in Prism.")
     
         # Compute CVS integrals
         if self.method_type == "cvs-ip":

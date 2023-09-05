@@ -118,10 +118,7 @@ class PYSCF:
         self.with_df = None
         self.naux = None
 
-        if mf._eri is None:
-            raise Exception("Out-of-core algorithm is not implemented for Pyscf")
-        else:
-            self.v2e_ao = mf._eri.copy()
+        self.v2e_ao = mf._eri
 
         # Dipole moments
         self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)

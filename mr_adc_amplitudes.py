@@ -1089,8 +1089,8 @@ def compute_t2_0p_singles(mr_adc):
 
         k = v_ceee.shape[0]
 
-        V1 += einsum('Iiab,iaAb->IA', t1_ccee[a:a+k], v_ceee, optimize = einsum_type)
-        V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee[a:a+k], v_ceee, optimize = einsum_type)
+        V1 += einsum('Iiab,iaAb->IA', t1_ccee[:,a:a+k], v_ceee, optimize = einsum_type)
+        V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee[:,a:a+k], v_ceee, optimize = einsum_type)
 
         del v_ceee
         a += k
@@ -1172,8 +1172,8 @@ def compute_t2_0p_singles(mr_adc):
             v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee, nextern)
 
         k = v_aeee.shape[0]
-        V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee[:,a:a+k], v_aeee, rdm_ca, optimize = einsum_type)
-        V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee[:,a:a+k], v_aeee, rdm_ca, optimize = einsum_type)
+        V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca[:,a:a+k], optimize = einsum_type)
+        V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca[:,a:a+k], optimize = einsum_type)
 
         del v_aeee
         a += k
