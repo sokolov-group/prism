@@ -296,7 +296,7 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.xxaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, :ncvs, :, :])
             mr_adc.t2.xvaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, ncvs:, :, :])
 
-    print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
+    print("Time for computing CVS amplitudes:                  %f sec\n" % (time.time() - start_time))
 
 def remove_non_cvs_variables_incore(mr_adc):
     'Remove core integrals, core amplitudes and RDMs not used in CVS calculations'
