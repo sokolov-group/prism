@@ -112,13 +112,10 @@ class PYSCF:
 
         # Integrals
         self.h1e_ao = mf.get_hcore()
-
-        self.v2e_ao = None
+        self.v2e_ao = mf._eri
 
         self.with_df = None
         self.naux = None
-
-        self.v2e_ao = mf._eri
 
         # Dipole moments
         self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
