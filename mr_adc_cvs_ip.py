@@ -16855,6 +16855,10 @@ def analyze_spec_factor(mr_adc, T, spec_intensity):
 
         partial_Contribution = spec_Contribution / spec_intensity[i]
 
+        spec_Contribution = spec_Contribution[partial_Contribution > 1e-6]
+        index_orb = index_orb[partial_Contribution > 1e-6]
+        partial_Contribution = partial_Contribution[partial_Contribution > 1e-6]
+
         print("\n%s | root %d \n" % (mr_adc.method, i))
         print("  MO          Spec. Contribution       Partial Contribution")
         print("-------------------------------------------------------------")
