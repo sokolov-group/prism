@@ -326,6 +326,8 @@ def remove_non_cvs_variables_df(mr_adc):
     if mr_adc.method_type == "cvs-ip":
         del(mr_adc.h1eff.ca, mr_adc.h1eff.ce)
 
+        del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+
         del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
             mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
             mr_adc.t1.ccae, mr_adc.t1.caee, mr_adc.t1.ccaa,

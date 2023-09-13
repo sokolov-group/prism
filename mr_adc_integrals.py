@@ -217,22 +217,22 @@ def transform_integrals_2e_df(mr_adc):
         Lea[p0:p1] = Lpq[:, nocc:, ncore:nocc]
         Lee[p0:p1] = Lpq[:, nocc:, nocc:]
 
-    mr_adc.v2e.Lcc = Lcc.reshape(naux, ncore*ncore)
-    mr_adc.v2e.Lca = Lca.reshape(naux, ncore*ncas)
+    Lcc = Lcc.reshape(naux, ncore*ncore)
+    Lca = Lca.reshape(naux, ncore*ncas)
     mr_adc.v2e.Lce = Lce.reshape(naux, ncore*nextern)
 
-    mr_adc.v2e.Lac = Lac.reshape(naux, ncas*ncore)
-    mr_adc.v2e.Laa = Laa.reshape(naux, ncas*ncas)
+    Lac = Lac.reshape(naux, ncas*ncore)
+    Laa = Laa.reshape(naux, ncas*ncas)
     mr_adc.v2e.Lae = Lae.reshape(naux, ncas*nextern)
 
-    mr_adc.v2e.Lec = Lec.reshape(naux, nextern*ncore)
-    mr_adc.v2e.Lea = Lea.reshape(naux, nextern*ncas)
+    Lec = Lec.reshape(naux, nextern*ncore)
+    Lea = Lea.reshape(naux, nextern*ncas)
     mr_adc.v2e.Lee = Lee.reshape(naux, nextern*nextern)
 
     mr_adc.v2e.feri1 = interface.create_HDF5_temp_file()
     mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
 
-    mr_adc.v2e.aaaa[:] = np.dot(mr_adc.v2e.Laa.T, mr_adc.v2e.Laa).reshape(ncas, ncas, ncas, ncas)
+    mr_adc.v2e.aaaa[:] = np.dot(Laa.T, Laa).reshape(ncas, ncas, ncas, ncas)
 
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
@@ -256,25 +256,25 @@ def transform_integrals_2e_df(mr_adc):
 
             mr_adc.v2e.aaae = mr_adc.v2e.feri1.create_dataset('aaae', (ncas, ncas, ncas, nextern), 'f8')
 
-            mr_adc.v2e.ccca[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lca).reshape(ncore, ncore, ncore, ncas)
-            mr_adc.v2e.ccce[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lce).reshape(ncore, ncore, ncore, nextern)
+            mr_adc.v2e.ccca[:] = np.dot(Lcc.T, Lca).reshape(ncore, ncore, ncore, ncas)
+            mr_adc.v2e.ccce[:] = np.dot(Lcc.T, mr_adc.v2e.Lce).reshape(ncore, ncore, ncore, nextern)
 
-            mr_adc.v2e.ccaa[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Laa).reshape(ncore, ncore, ncas, ncas)
-            mr_adc.v2e.ccae[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lae).reshape(ncore, ncore, ncas, nextern)
+            mr_adc.v2e.ccaa[:] = np.dot(Lcc.T, Laa).reshape(ncore, ncore, ncas, ncas)
+            mr_adc.v2e.ccae[:] = np.dot(Lcc.T, mr_adc.v2e.Lae).reshape(ncore, ncore, ncas, nextern)
 
-            mr_adc.v2e.caac[:] = np.dot(mr_adc.v2e.Lca.T, mr_adc.v2e.Lac).reshape(ncore, ncas, ncas, ncore)
-            mr_adc.v2e.caec[:] = np.dot(mr_adc.v2e.Lca.T, mr_adc.v2e.Lec).reshape(ncore, ncas, nextern, ncore)
+            mr_adc.v2e.caac[:] = np.dot(Lca.T, Lac).reshape(ncore, ncas, ncas, ncore)
+            mr_adc.v2e.caec[:] = np.dot(Lca.T, Lec).reshape(ncore, ncas, nextern, ncore)
 
-            mr_adc.v2e.caca[:] = np.dot(mr_adc.v2e.Lca.T, mr_adc.v2e.Lca).reshape(ncore, ncas, ncore, ncas)
+            mr_adc.v2e.caca[:] = np.dot(Lca.T, Lca).reshape(ncore, ncas, ncore, ncas)
             mr_adc.v2e.cece[:] = np.dot(mr_adc.v2e.Lce.T, mr_adc.v2e.Lce).reshape(ncore, nextern, ncore, nextern)
-            mr_adc.v2e.cace[:] = np.dot(mr_adc.v2e.Lca.T, mr_adc.v2e.Lce).reshape(ncore, ncas, ncore, nextern)
+            mr_adc.v2e.cace[:] = np.dot(Lca.T, mr_adc.v2e.Lce).reshape(ncore, ncas, ncore, nextern)
 
-            mr_adc.v2e.caaa[:] = np.dot(mr_adc.v2e.Lca.T, mr_adc.v2e.Laa).reshape(ncore, ncas, ncas, ncas)
+            mr_adc.v2e.caaa[:] = np.dot(Lca.T, Laa).reshape(ncore, ncas, ncas, ncas)
             mr_adc.v2e.ceae[:] = np.dot(mr_adc.v2e.Lce.T, mr_adc.v2e.Lae).reshape(ncore, nextern, ncas, nextern)
-            mr_adc.v2e.caae[:] = np.dot(mr_adc.v2e.Lca.T, mr_adc.v2e.Lae).reshape(ncore, ncas, ncas, nextern)
-            mr_adc.v2e.ceaa[:] = np.dot(mr_adc.v2e.Lce.T, mr_adc.v2e.Laa).reshape(ncore, nextern, ncas, ncas)
+            mr_adc.v2e.caae[:] = np.dot(Lca.T, mr_adc.v2e.Lae).reshape(ncore, ncas, ncas, nextern)
+            mr_adc.v2e.ceaa[:] = np.dot(mr_adc.v2e.Lce.T, Laa).reshape(ncore, nextern, ncas, ncas)
 
-            mr_adc.v2e.aaae[:] = np.dot(mr_adc.v2e.Laa.T, mr_adc.v2e.Lae).reshape(ncas, ncas, ncas, nextern)
+            mr_adc.v2e.aaae[:] = np.dot(Laa.T, mr_adc.v2e.Lae).reshape(ncas, ncas, ncas, nextern)
 
         if mr_adc.method in ("mr-adc(2)-x"):
             mr_adc.v2e.cccc = mr_adc.v2e.feri1.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
@@ -292,27 +292,27 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.aaee = mr_adc.v2e.feri1.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
             mr_adc.v2e.aeea = mr_adc.v2e.feri1.create_dataset('aeea', (ncas, nextern, nextern, ncas), 'f8')
 
-            mr_adc.v2e.cccc[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lcc).reshape(ncore, ncore, ncore, ncore)
+            mr_adc.v2e.cccc[:] = np.dot(Lcc.T, Lcc).reshape(ncore, ncore, ncore, ncore)
 
-            mr_adc.v2e.ccee[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lee).reshape(ncore, ncore, nextern, nextern)
-            mr_adc.v2e.ceec[:] = np.dot(mr_adc.v2e.Lce.T, mr_adc.v2e.Lec).reshape(ncore, nextern, nextern, ncore)
+            mr_adc.v2e.ccee[:] = np.dot(Lcc.T, mr_adc.v2e.Lee).reshape(ncore, ncore, nextern, nextern)
+            mr_adc.v2e.ceec[:] = np.dot(mr_adc.v2e.Lce.T, Lec).reshape(ncore, nextern, nextern, ncore)
 
-            mr_adc.v2e.caea[:] = np.dot(mr_adc.v2e.Lca.T, mr_adc.v2e.Lea).reshape(ncore, ncas, nextern, ncas)
-            mr_adc.v2e.caee[:] = np.dot(mr_adc.v2e.Lca.T, mr_adc.v2e.Lee).reshape(ncore, ncas, nextern, nextern)
+            mr_adc.v2e.caea[:] = np.dot(Lca.T, Lea).reshape(ncore, ncas, nextern, ncas)
+            mr_adc.v2e.caee[:] = np.dot(Lca.T, mr_adc.v2e.Lee).reshape(ncore, ncas, nextern, nextern)
 
-            mr_adc.v2e.ceea[:] = np.dot(mr_adc.v2e.Lce.T, mr_adc.v2e.Lea).reshape(ncore, nextern, nextern, ncas)
+            mr_adc.v2e.ceea[:] = np.dot(mr_adc.v2e.Lce.T, Lea).reshape(ncore, nextern, nextern, ncas)
 
             mr_adc.v2e.aeae[:] = np.dot(mr_adc.v2e.Lae.T, mr_adc.v2e.Lae).reshape(ncas, nextern, ncas, nextern)
 
-            mr_adc.v2e.aaee[:] = np.dot(mr_adc.v2e.Laa.T, mr_adc.v2e.Lee).reshape(ncas, ncas, nextern, nextern)
-            mr_adc.v2e.aeea[:] = np.dot(mr_adc.v2e.Lae.T, mr_adc.v2e.Lea).reshape(ncas, nextern, nextern, ncas)
+            mr_adc.v2e.aaee[:] = np.dot(Laa.T, mr_adc.v2e.Lee).reshape(ncas, ncas, nextern, nextern)
+            mr_adc.v2e.aeea[:] = np.dot(mr_adc.v2e.Lae.T, Lea).reshape(ncas, nextern, nextern, ncas)
 
     # Effective one-electron integrals
     mr_adc.v2e.ccac = mr_adc.v2e.feri1.create_dataset('ccac', (ncore, ncore, ncas, ncore), 'f8')
     mr_adc.v2e.ccec = mr_adc.v2e.feri1.create_dataset('ccec', (ncore, ncore, nextern, ncore), 'f8')
 
-    mr_adc.v2e.ccac[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lac).reshape(ncore, ncore, ncas, ncore)
-    mr_adc.v2e.ccec[:] = np.dot(mr_adc.v2e.Lcc.T, mr_adc.v2e.Lec).reshape(ncore, ncore, nextern, ncore)
+    mr_adc.v2e.ccac[:] = np.dot(Lcc.T, Lac).reshape(ncore, ncore, ncas, ncore)
+    mr_adc.v2e.ccec[:] = np.dot(Lcc.T, Lec).reshape(ncore, ncore, nextern, ncore)
 
     mr_adc.h1eff.ca = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, ncore:nocc], mr_adc.v2e.ccca, mr_adc.v2e.ccac)
     mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, mr_adc.v2e.ccec)
