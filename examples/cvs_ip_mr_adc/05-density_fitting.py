@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-CVS-IP-MR-ADC(2) calculations for N2
+DF-CVS-IP-MR-ADC(2)-X calculations for N2
 '''
 
 import pyscf.gto
@@ -28,9 +28,10 @@ mc = pyscf.mcscf.CASSCF(mf, 6, 6)
 emc = mc.mc1step()[0]
 
 # CVS-IP-MR-ADC calculation
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ip"
+mr_adc.method = "mr-adc(2)-x"
 mr_adc.ncvs = 2
 mr_adc.nroots = 8
 

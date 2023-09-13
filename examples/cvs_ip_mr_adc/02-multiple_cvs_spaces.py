@@ -46,4 +46,4 @@ mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 2
 mr_adc.nroots = 4
 
-e, p = mr_adc.kernel()
+e, p, x = mr_adc.kernel()

@@ -35,4 +35,4 @@ mr_adc.method = "mr-adc(2)-x"
 mr_adc.ncvs = 2
 mr_adc.nroots = 8
 
-e, p = mr_adc.kernel()
+e, p, x = mr_adc.kernel()
