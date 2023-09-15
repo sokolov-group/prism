@@ -29,9 +29,6 @@ def compute_amplitudes(mr_adc):
 
     start_time = time.time()
 
-    # Import Prism interface
-    interface = mr_adc.interface
-
     # First-order amplitudes
     compute_t1_amplitudes(mr_adc)
 
@@ -41,11 +38,7 @@ def compute_amplitudes(mr_adc):
     # Compute CVS amplitudes and remove non-CVS core integrals, amplitudes and unnecessary RDMs
     if mr_adc.method_type == "cvs-ip":
         compute_cvs_amplitudes(mr_adc)
-
-        if interface.with_df:
-            remove_non_cvs_variables_df(mr_adc)
-        else:
-            remove_non_cvs_variables_incore(mr_adc)
+        remove_non_cvs_variables(mr_adc)
 
     print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
 
@@ -298,35 +291,25 @@ def compute_cvs_amplitudes(mr_adc):
 
     print("Time for computing CVS amplitudes:                 %f sec\n" % (time.time() - start_time))
 
-def remove_non_cvs_variables_incore(mr_adc):
+def remove_non_cvs_variables(mr_adc):
     'Remove core integrals, core amplitudes and RDMs not used in CVS calculations'
 
-    if mr_adc.method_type == "cvs-ip":
-        del(mr_adc.h1eff.ca, mr_adc.h1eff.ce,
-            mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
-            mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
-            mr_adc.v2e.ceaa)
-
-        if mr_adc.method in ("mr-adc(2)-x"):
-            del(mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
-                mr_adc.v2e.caee, mr_adc.v2e.ceea)
-
-        del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
-            mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
-            mr_adc.t1.ccae, mr_adc.t1.caee, mr_adc.t1.ccaa,
-            mr_adc.t2.ce, mr_adc.t2.caea, mr_adc.t2.caae,
-            mr_adc.t2.ca, mr_adc.t2.caaa, mr_adc.t2.ccee,
-            mr_adc.t2.ccae, mr_adc.t2.caee, mr_adc.t2.ccaa)
-
-        del(mr_adc.rdm.ccccaaaa)
-
-def remove_non_cvs_variables_df(mr_adc):
-    'Remove core integrals, core amplitudes and RDMs not used in CVS calculations'
+    # Import Prism interface
+    interface = mr_adc.interface
 
     if mr_adc.method_type == "cvs-ip":
         del(mr_adc.h1eff.ca, mr_adc.h1eff.ce)
 
-        del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+        if interface.with_df:
+            del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+        else:
+            del(mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
+                mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
+                mr_adc.v2e.ceaa)
+
+            if mr_adc.method in ("mr-adc(2)-x"):
+                del(mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
+                    mr_adc.v2e.caee, mr_adc.v2e.ceea)
 
         del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
             mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
