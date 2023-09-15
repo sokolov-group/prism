@@ -44,7 +44,7 @@ def transform_integrals_1e(mr_adc):
 
     print("Time for transforming 1e integrals:                %f sec\n" % (time.time() - start_time))
 
-def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4):
+def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4, compacted=False):
     'Two-electron integral transformation in Chemists notation'
 
     nmo_1 = mo_1.shape[1]
@@ -52,19 +52,11 @@ def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4):
     nmo_3 = mo_3.shape[1]
     nmo_4 = mo_4.shape[1]
 
-    v2e = interface.transform_2e_chem_incore(interface.v2e_ao, (mo_1, mo_2, mo_3, mo_4), compact=False)
-    v2e = v2e.reshape(nmo_1, nmo_2, nmo_3, nmo_4)
-
-    return np.ascontiguousarray(v2e)
-
-def transform_2e_chem_incore_compacted(interface, mo_1, mo_2, mo_3, mo_4):
-    'Two-electron integral transformation in Chemists notation'
-
-    nmo_1 = mo_1.shape[1]
-    nmo_2 = mo_2.shape[1]
-
-    v2e = interface.transform_2e_chem_incore(interface.v2e_ao, (mo_1, mo_2, mo_3, mo_4), compact=True)
-    v2e = v2e.reshape(nmo_1, nmo_2, -1)
+    v2e = interface.transform_2e_chem_incore(interface.v2e_ao, (mo_1, mo_2, mo_3, mo_4), compact=compacted)
+    if compacted:
+        v2e = v2e.reshape(nmo_1, nmo_2, -1)
+    else:
+        v2e = v2e.reshape(nmo_1, nmo_2, nmo_3, nmo_4)
 
     return np.ascontiguousarray(v2e)
 
@@ -141,8 +133,8 @@ def transform_integrals_2e_incore(mr_adc):
 
             mr_adc.v2e.aeea = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
 
-            mr_adc.v2e.ceee = transform_2e_chem_incore_compacted(interface, mo_c, mo_e, mo_e, mo_e)
-            mr_adc.v2e.aeee = transform_2e_chem_incore_compacted(interface, mo_a, mo_e, mo_e, mo_e)
+            mr_adc.v2e.ceee = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_e, compacted = True)
+            mr_adc.v2e.aeee = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_e, compacted = True)
 
     # Effective one-electron integrals
     v2e_ccac = mr_adc.v2e.ccca.transpose(1,0,3,2)
