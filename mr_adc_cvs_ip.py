@@ -16821,3 +16821,59 @@ def compute_trans_moments(mr_adc):
         T = T_ortho
 
     return T
+
+def analyze_spec_factor(mr_adc, T, spec_intensity):
+
+    print("\nSpectroscopic Factors Analysis:\n")
+
+    print_thresh = mr_adc.spec_factor_print_tol
+
+    print("Print spectroscopic factors > %e" %  print_thresh)
+
+    X = (T.T).copy()
+    X_2 = 2.0 * X**2
+
+    for i in range(X_2.shape[0]):
+
+        sort = np.argsort(-X_2[i,:])
+        X_2_row = X_2[i,:]
+        X_2_row = X_2_row[sort]
+
+        if not mr_adc.symmetry:
+            group_repr_symm = np.repeat(['A'], X_2_row.shape[0])
+        else:
+            group_repr_symm = mr_adc.group_repr_symm
+            group_repr_symm = np.array(group_repr_symm)
+
+            group_repr_symm = group_repr_symm[sort]
+
+        spec_Contribution = X_2_row[X_2_row > print_thresh]
+        index_orb = sort[X_2_row > print_thresh] + 1
+
+        if np.sum(spec_Contribution) <= print_thresh:
+            continue
+
+        partial_Contribution = spec_Contribution / spec_intensity[i]
+
+        spec_Contribution = spec_Contribution[partial_Contribution > 1e-6]
+        index_orb = index_orb[partial_Contribution > 1e-6]
+        partial_Contribution = partial_Contribution[partial_Contribution > 1e-6]
+
+        print("\n%s | root %d \n" % (mr_adc.method, i))
+        print("  MO          Spec. Contribution       Partial Contribution")
+        print("-------------------------------------------------------------")
+
+        for c in range(index_orb.shape[0]):
+            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c],
+                                                                            spec_Contribution[c],
+                                                                            partial_Contribution[c]))
+
+    print("\n*************************************************************")
+
+def compute_dyson_mo(mr_adc, X):
+
+    print("\nComputing Dyson molecular orbitals...")
+    mo_dyson = np.dot(mr_adc.mo, X)
+    print("Done!\n")
+
+    return mo_dyson

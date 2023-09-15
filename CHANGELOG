@@ -16,3 +16,9 @@ Prism 0.2.1 (2023-07-04)
 ------------------------
 * Added
   - Efficient combinations of einsum terms containing 3-RDMs and 4-RDMs
+
+Prism 0.3 (2023-09-15)
+------------------------
+* Added
+  - Support to density-fitting 2e- integrals
+  - Spectroscopic factors analysis for CVS-IP-MR-ADC

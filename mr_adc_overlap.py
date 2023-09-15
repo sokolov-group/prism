@@ -217,11 +217,11 @@ def compute_S12_0p_projector(mr_adc):
     S22_aa_aa = S22_aa_aa.reshape(ncas, ncas, ncas, ncas)
     S22_aa_bb = S22_aa_bb.reshape(ncas, ncas, ncas, ncas)
 
-    Q_aa_aa  = np.einsum("XW,YZ->XYWZ", np.identity(ncas), np.identity(ncas)).copy()
-    Q_aa_aa -= 2.0 * np.einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_aa) / (nelecas ** 2)
+    Q_aa_aa  = einsum("XW,YZ->XYWZ", np.identity(ncas), np.identity(ncas), optimize = einsum_type).copy()
+    Q_aa_aa -= 2.0 * einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_aa, optimize = einsum_type) / (nelecas ** 2)
 
-    Q_aa_bb =- 2.0 * np.einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb) / (nelecas ** 2)
-    Q_bb_aa =- 2.0 * np.einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb.T) / (nelecas ** 2)
+    Q_aa_bb =- 2.0 * einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb, optimize = einsum_type) / (nelecas ** 2)
+    Q_bb_aa =- 2.0 * einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb.T, optimize = einsum_type) / (nelecas ** 2)
 
     Q_aa_aa = Q_aa_aa.reshape(dim_wz, dim_wz)
     Q_aa_bb = Q_aa_bb.reshape(dim_wz, dim_wz)
@@ -453,10 +453,10 @@ def compute_S12_p1p_gno_projector(mr_adc):
     # Compute projector to the GNO operator basis
     Y = np.identity(S_p1p_act.shape[0])
 
-    Y_a_aaa =- 0.5 * np.einsum("XZ,YW->XYWZ", np.identity(ncas), rdm_ca)
-    Y_a_aaa += 0.5 * np.einsum("XW,YZ->XYWZ", np.identity(ncas), rdm_ca)
+    Y_a_aaa =- 0.5 * einsum("XZ,YW->XYWZ", np.identity(ncas), rdm_ca, optimize = einsum_type)
+    Y_a_aaa += 0.5 * einsum("XW,YZ->XYWZ", np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    Y_a_bba =- 0.5 * np.einsum("XZ,YW->XYWZ", np.identity(ncas), rdm_ca)
+    Y_a_bba =- 0.5 * einsum("XZ,YW->XYWZ", np.identity(ncas), rdm_ca, optimize = einsum_type)
 
     Y_a_aaa = Y_a_aaa[:, :, tril_ind[0], tril_ind[1]]
 
@@ -584,10 +584,10 @@ def compute_S12_m1p_gno_projector(mr_adc):
     # Compute projector to the GNO operator basis
     Y = np.identity(S_m1p_act.shape[0])
 
-    Y_a_aaa =- 0.5 * np.einsum("XY,ZW->XYZW", np.identity(ncas), rdm_ca)
-    Y_a_aaa += 0.5 * np.einsum("XZ,YW->XYZW", np.identity(ncas), rdm_ca)
+    Y_a_aaa =- 0.5 * einsum("XY,ZW->XYZW", np.identity(ncas), rdm_ca, optimize = einsum_type)
+    Y_a_aaa += 0.5 * einsum("XZ,YW->XYZW", np.identity(ncas), rdm_ca, optimize = einsum_type)
 
-    Y_a_abb =- 0.5 * np.einsum("XY,ZW->XYZW", np.identity(ncas), rdm_ca)
+    Y_a_abb =- 0.5 * einsum("XY,ZW->XYZW", np.identity(ncas), rdm_ca, optimize = einsum_type)
 
     Y_a_aaa = Y_a_aaa[:,tril_ind[0],tril_ind[1]]
 

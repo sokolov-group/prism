@@ -23,6 +23,7 @@ import numpy as np
 from functools import reduce
 import prism.mr_adc_intermediates as mr_adc_intermediates
 import prism.mr_adc_overlap as mr_adc_overlap
+import prism.mr_adc_integrals as mr_adc_integrals
 
 def compute_amplitudes(mr_adc):
 
@@ -288,20 +289,27 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.xxaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, :ncvs, :, :])
             mr_adc.t2.xvaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, ncvs:, :, :])
 
-    print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
+    print("Time for computing CVS amplitudes:                 %f sec\n" % (time.time() - start_time))
 
 def remove_non_cvs_variables(mr_adc):
     'Remove core integrals, core amplitudes and RDMs not used in CVS calculations'
 
-    if mr_adc.method_type == "cvs-ip":
-        del(mr_adc.h1eff.ca, mr_adc.h1eff.ce,
-            mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
-            mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
-            mr_adc.v2e.ceaa)
+    # Import Prism interface
+    interface = mr_adc.interface
 
-        if mr_adc.method in ("mr-adc(2)-x"):
-            del(mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
-                mr_adc.v2e.caee, mr_adc.v2e.ceea)
+    if mr_adc.method_type == "cvs-ip":
+        del(mr_adc.h1eff.ca, mr_adc.h1eff.ce)
+
+        if interface.with_df:
+            del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+        else:
+            del(mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
+                mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
+                mr_adc.v2e.ceaa)
+
+            if mr_adc.method in ("mr-adc(2)-x"):
+                del(mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
+                    mr_adc.v2e.caee, mr_adc.v2e.ceea)
 
         del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
             mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
@@ -339,8 +347,7 @@ def compute_t1_0(mr_adc):
     V1_0 =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type).copy()
 
     # Compute T[0] t1_ccee tensor
-    t1_0 = (V1_0 / D2).copy()
-    t1_ccee = t1_0.copy()
+    t1_ccee = (V1_0 / D2)
 
     # Compute electronic correlation energy for T[0]
     e_0  = 2 * einsum('ijab,iajb', t1_ccee, v_cece, optimize = einsum_type)
@@ -457,13 +464,13 @@ def compute_t1_m1(mr_adc):
     d_abix = d_abix**(-1)
 
     # Compute T[-1] amplitudes
-    S_12_V_m1 = np.einsum("IXAB,Xm->ImAB", V1_m1, S_m1_12_inv_act)
-    S_12_V_m1 = np.einsum("mp,ImAB->IpAB", evecs, S_12_V_m1)
-    S_12_V_m1 = np.einsum("ABIp,IpAB->IpAB", d_abix, S_12_V_m1)
-    S_12_V_m1 = np.einsum("mp,IpAB->ImAB", evecs, S_12_V_m1)
+    S_12_V_m1 = einsum("IXAB,Xm->ImAB", V1_m1, S_m1_12_inv_act, optimize = einsum_type)
+    S_12_V_m1 = einsum("mp,ImAB->IpAB", evecs, S_12_V_m1, optimize = einsum_type)
+    S_12_V_m1 = einsum("ABIp,IpAB->IpAB", d_abix, S_12_V_m1, optimize = einsum_type)
+    S_12_V_m1 = einsum("mp,IpAB->ImAB", evecs, S_12_V_m1, optimize = einsum_type)
 
     ## Compute T[-1] t1_caee tensor
-    t1_caee = np.einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act).copy()
+    t1_caee = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
 
     # Compute electronic correlation energy for T[-1]
     e_m1  = 2 * einsum('ixab,iayb,xy', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
@@ -517,13 +524,13 @@ def compute_t1_p2(mr_adc):
     d_pij = d_pij**(-1)
 
     # Compute T[+2] amplitudes
-    S_12_V_p2 = np.einsum("IJX,Xm->IJm", V1_p2, S_p2_12_inv_act)
-    S_12_V_p2 = np.einsum("mp,IJm->IJp", evecs, S_12_V_p2)
-    S_12_V_p2 = np.einsum("pIJ,IJp->IJp", d_pij, S_12_V_p2)
-    S_12_V_p2 = np.einsum("mp,IJp->IJm", evecs, S_12_V_p2)
+    S_12_V_p2 = einsum("IJX,Xm->IJm", V1_p2, S_p2_12_inv_act, optimize = einsum_type)
+    S_12_V_p2 = einsum("mp,IJm->IJp", evecs, S_12_V_p2, optimize = einsum_type)
+    S_12_V_p2 = einsum("pIJ,IJp->IJp", d_pij, S_12_V_p2, optimize = einsum_type)
+    S_12_V_p2 = einsum("mp,IJp->IJm", evecs, S_12_V_p2, optimize = einsum_type)
 
     ## Compute T[+2] t1_ccaa tensor
-    t1_ccaa = np.einsum("IJm,Xm->IJX", S_12_V_p2, S_p2_12_inv_act)
+    t1_ccaa = einsum("IJm,Xm->IJX", S_12_V_p2, S_p2_12_inv_act, optimize = einsum_type)
     t1_ccaa = t1_ccaa.reshape(ncore, ncore, ncas, ncas)
 
     # Compute electronic correlation energy for T[+2]
@@ -577,13 +584,13 @@ def compute_t1_m2(mr_adc):
     d_abp = d_abp**(-1)
 
     # Compute T[-2] amplitudes
-    S_12_V_m2 = np.einsum("XAB,Xm->mAB", V1_m2, S_m2_12_inv_act)
-    S_12_V_m2 = np.einsum("mp,mAB->pAB", evecs, S_12_V_m2)
-    S_12_V_m2 = np.einsum("ABp,pAB->pAB", d_abp, S_12_V_m2)
-    S_12_V_m2 = np.einsum("mp,pAB->mAB", evecs, S_12_V_m2)
+    S_12_V_m2 = einsum("XAB,Xm->mAB", V1_m2, S_m2_12_inv_act, optimize = einsum_type)
+    S_12_V_m2 = einsum("mp,mAB->pAB", evecs, S_12_V_m2, optimize = einsum_type)
+    S_12_V_m2 = einsum("ABp,pAB->pAB", d_abp, S_12_V_m2, optimize = einsum_type)
+    S_12_V_m2 = einsum("mp,pAB->mAB", evecs, S_12_V_m2, optimize = einsum_type)
 
     ## Compute T[-2] t1_aaee tensor
-    t1_aaee = np.einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act)
+    t1_aaee = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
     t1_aaee = t1_aaee.reshape(ncas, ncas, nextern, nextern)
 
     # Compute electronic correlation energy for T[-2]
@@ -966,11 +973,18 @@ def compute_t1_m1p(mr_adc):
 
 def compute_t2_0p_singles(mr_adc):
 
+    # Import Prism interface
+    interface = mr_adc.interface
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
+    ncore = mr_adc.ncore
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+
     ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
@@ -1044,8 +1058,27 @@ def compute_t2_0p_singles(mr_adc):
     V1 += einsum('ix,IixA->IA', h_ca, t1_ccae, optimize = einsum_type)
     V1 -= 2 * einsum('ix,iIxA->IA', h_ca, t1_ccae, optimize = einsum_type)
     V1 -= einsum('xA,Ix->IA', h_ae, t1_ca, optimize = einsum_type)
-    V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
-    V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
+    # V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
+    # V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
+    if isinstance(v_ceee, type(None)):
+        chnk_size = mr_adc_integrals.calculate_chunk_size(mr_adc)
+    else:
+        chnk_size = ncore
+
+    a = 0
+    for p in range(0, ncore, chnk_size):
+        if interface.with_df:
+            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
+        else:
+            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.ceee, nextern)
+
+        k = v_ceee.shape[0]
+
+        V1 += einsum('Iiab,iaAb->IA', t1_ccee[:,a:a+k], v_ceee, optimize = einsum_type)
+        V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee[:,a:a+k], v_ceee, optimize = einsum_type)
+
+        del v_ceee
+        a += k
     V1 -= 2 * einsum('Iixa,iaAx->IA', t1_ccae, v_ceea, optimize = einsum_type)
     V1 += einsum('Iixa,ixAa->IA', t1_ccae, v_caee, optimize = einsum_type)
     V1 += einsum('Iixy,ixAy->IA', t1_ccaa, v_caea, optimize = einsum_type)
@@ -1111,8 +1144,24 @@ def compute_t2_0p_singles(mr_adc):
     V1 -= einsum('Ix,yzxA,zy->IA', t1_ca, v_aaae, rdm_ca, optimize = einsum_type)
     V1 -= einsum('IxAa,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
     V1 += 1/2 * einsum('IxaA,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
-    V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
-    V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
+    # V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
+    # V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
+    if not isinstance(v_aeee, type(None)):
+        chnk_size = ncas
+
+    a = 0
+    for p in range(0, ncas, chnk_size):
+        if interface.with_df:
+            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
+        else:
+            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee, nextern)
+
+        k = v_aeee.shape[0]
+        V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca[:,a:a+k], optimize = einsum_type)
+        V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca[:,a:a+k], optimize = einsum_type)
+
+        del v_aeee
+        a += k
     V1 += 1/2 * einsum('Ixay,yAaz,xz->IA', t1_caea, v_aeea, rdm_ca, optimize = einsum_type)
     V1 += 1/2 * einsum('Ixay,zAaw,xzyw->IA', t1_caea, v_aeea, rdm_ccaa, optimize = einsum_type)
     V1 -= einsum('Ixay,zwAa,xwyz->IA', t1_caea, v_aaee, rdm_ccaa, optimize = einsum_type)

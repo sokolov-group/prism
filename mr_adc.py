@@ -25,13 +25,19 @@ import prism.mr_adc_compute as mr_adc_compute
 class MRADC:
     def __init__(self, interface):
 
-        print("Initializing MR-ADC...\n")
+        print("\nInitializing MR-ADC...\n")
         sys.stdout.flush()
 
         if (interface.reference != "casscf"):
             raise Exception("MR-ADC requires CASSCF reference")
 
         # General info
+        self.interface = interface
+
+        self.print_level = interface.print_level
+        self.max_memory = interface.max_memory
+        self.current_memory = interface.current_memory
+
         self.mo = interface.mo
         self.mo_hf = interface.mo_hf
         self.ovlp = interface.ovlp
@@ -39,8 +45,9 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
-        self.interface = interface
-        self.print_level = interface.print_level
+
+        self.symmetry = interface.symmetry
+        self.group_repr_symm = interface.group_repr_symm
 
         # CASSCF specific
         self.ncore = interface.ncore
@@ -65,6 +72,9 @@ class MRADC:
         self.s_thresh_singles = 1e-5
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
+
+        self.analyze_spec_factor = True
+        self.spec_factor_print_tol = 0.1
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
@@ -105,6 +115,9 @@ class MRADC:
         if self.method_type not in ("ee", "ip", "ea", "cvs-ip", "cvs-ee"):
             raise Exception("Unknown method type %s" % self.method_type)
 
+        if self.interface.with_df and self.method_type not in ('cvs-ip'):
+            raise Exception("Density-fitting currently only compatible with CVS-IP method type.")
+
         if self.nelecas[0] != self.nelecas[1]:
             raise Exception("This program currently does not work for open-shell molecules")
 
@@ -127,13 +140,20 @@ class MRADC:
             raise Exception("This spin-adapted version does not currently support method type %s" % self.method_type)
 
         # Transform one- and two-electron integrals
-        # TODO: implement DF integral transformation
         mr_adc_integrals.transform_integrals_1e(self)
-        mr_adc_integrals.transform_integrals_2e_incore(self)
-
+        if self.interface.with_df:
+            mr_adc_integrals.transform_integrals_2e_df(self)
+        elif self.interface.v2e_ao is not None:
+            mr_adc_integrals.transform_integrals_2e_incore(self)
+        else:
+            raise Exception("Out-of-core algorithm is not implemented in Prism.")
+    
         # Compute CVS integrals
         if self.method_type == "cvs-ip":
-            mr_adc_integrals.compute_cvs_integrals_2e_incore(self)
+            if self.interface.with_df:
+                mr_adc_integrals.compute_cvs_integrals_2e_df(self)
+            else:
+                mr_adc_integrals.compute_cvs_integrals_2e_incore(self)
 
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
