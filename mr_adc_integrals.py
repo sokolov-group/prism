@@ -179,7 +179,7 @@ def transform_integrals_2e_df(mr_adc):
 
     Lcc = np.empty((naux, ncore, ncore))
     Lca = np.empty((naux, ncore, ncas))
-    Lac = np.empty((naux, ncas, ncore))
+    #HACK Lac = np.empty((naux, ncas, ncore))
     Laa = np.empty((naux, ncas, ncas))
 
     Lec = np.empty((naux, nextern,  ncore))
@@ -201,7 +201,7 @@ def transform_integrals_2e_df(mr_adc):
         Lca[p0:p1] = Lpq[:, :ncore, ncore:nocc]
         Lce[p0:p1] = Lpq[:, :ncore, nocc:]
 
-        Lac[p0:p1] = Lpq[:, ncore:nocc, :ncore]
+        #HACK Lac[p0:p1] = Lpq[:, ncore:nocc, :ncore]
         Laa[p0:p1] = Lpq[:, ncore:nocc, ncore:nocc]
         Lae[p0:p1] = Lpq[:, ncore:nocc, nocc:]
 
@@ -213,7 +213,7 @@ def transform_integrals_2e_df(mr_adc):
     Lca = Lca.reshape(naux, ncore*ncas)
     mr_adc.v2e.Lce = Lce.reshape(naux, ncore*nextern)
 
-    Lac = Lac.reshape(naux, ncas*ncore)
+    #HACK Lac = Lac.reshape(naux, ncas*ncore)
     Laa = Laa.reshape(naux, ncas*ncas)
     mr_adc.v2e.Lae = Lae.reshape(naux, ncas*nextern)
 
@@ -222,19 +222,28 @@ def transform_integrals_2e_df(mr_adc):
     mr_adc.v2e.Lee = Lee.reshape(naux, nextern*nextern)
 
     mr_adc.v2e.feri1 = interface.create_HDF5_temp_file()
-    mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
+    #HACK mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
 
-    mr_adc.v2e.aaaa[:] = np.dot(Laa.T, Laa).reshape(ncas, ncas, ncas, ncas)
+    #HACK mr_adc.v2e.aaaa[:] = np.dot(mr_adc.v2e.Laa.T, mr_adc.v2e.Laa).reshape(ncas, ncas, ncas, ncas)
+    mo = mr_adc.mo #HACK
+    mo_c = mo[:, :ncore].copy() #HACK
+    mo_a = mo[:, ncore:nocc].copy() #HACK
+    mo_e = mo[:, nocc:].copy() #HACK
+    mr_adc.v2e.aaaa = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a) #HACK
 
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc.v2e.ccca = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
+            #HACK mr_adc.v2e.ccca = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
             mr_adc.v2e.ccce = mr_adc.v2e.feri1.create_dataset('ccce', (ncore, ncore, ncore, nextern), 'f8')
+            mr_adc.v2e.ccca = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a) #HACK
 
-            mr_adc.v2e.ccaa = mr_adc.v2e.feri1.create_dataset('ccaa', (ncore, ncore, ncas, ncas), 'f8')
+            #HACK mr_adc.v2e.ccaa = mr_adc.v2e.feri1.create_dataset('ccaa', (ncore, ncore, ncas, ncas), 'f8')
+            mr_adc.v2e.ccaa = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a) #HACK
+
             mr_adc.v2e.ccae = mr_adc.v2e.feri1.create_dataset('ccae', (ncore, ncore, ncas, nextern), 'f8')
 
-            mr_adc.v2e.caac = mr_adc.v2e.feri1.create_dataset('caac', (ncore, ncas, ncas, ncore), 'f8')
+            #HACK mr_adc.v2e.caac = mr_adc.v2e.feri1.create_dataset('caac', (ncore, ncas, ncas, ncore), 'f8')
+            mr_adc.v2e.caac = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c) #HACK
             mr_adc.v2e.caec = mr_adc.v2e.feri1.create_dataset('caec', (ncore, ncas, nextern, ncore), 'f8')
 
             mr_adc.v2e.caca = mr_adc.v2e.feri1.create_dataset('caca', (ncore, ncas, ncore, ncas), 'f8')
@@ -248,13 +257,13 @@ def transform_integrals_2e_df(mr_adc):
 
             mr_adc.v2e.aaae = mr_adc.v2e.feri1.create_dataset('aaae', (ncas, ncas, ncas, nextern), 'f8')
 
-            mr_adc.v2e.ccca[:] = np.dot(Lcc.T, Lca).reshape(ncore, ncore, ncore, ncas)
+            #HACK mr_adc.v2e.ccca[:] = np.dot(Lcc.T, Lca).reshape(ncore, ncore, ncore, ncas)
             mr_adc.v2e.ccce[:] = np.dot(Lcc.T, mr_adc.v2e.Lce).reshape(ncore, ncore, ncore, nextern)
 
-            mr_adc.v2e.ccaa[:] = np.dot(Lcc.T, Laa).reshape(ncore, ncore, ncas, ncas)
+            #HACK mr_adc.v2e.ccaa[:] = np.dot(Lcc.T, Laa).reshape(ncore, ncore, ncas, ncas)
             mr_adc.v2e.ccae[:] = np.dot(Lcc.T, mr_adc.v2e.Lae).reshape(ncore, ncore, ncas, nextern)
 
-            mr_adc.v2e.caac[:] = np.dot(Lca.T, Lac).reshape(ncore, ncas, ncas, ncore)
+            #HACK mr_adc.v2e.caac[:] = np.dot(Lca.T, Lac).reshape(ncore, ncas, ncas, ncore)
             mr_adc.v2e.caec[:] = np.dot(Lca.T, Lec).reshape(ncore, ncas, nextern, ncore)
 
             mr_adc.v2e.caca[:] = np.dot(Lca.T, Lca).reshape(ncore, ncas, ncore, ncas)
@@ -269,7 +278,8 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.aaae[:] = np.dot(Laa.T, mr_adc.v2e.Lae).reshape(ncas, ncas, ncas, nextern)
 
         if mr_adc.method in ("mr-adc(2)-x"):
-            mr_adc.v2e.cccc = mr_adc.v2e.feri1.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
+            #HACK mr_adc.v2e.cccc = mr_adc.v2e.feri1.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
+            mr_adc.v2e.cccc = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c) #HACK
 
             mr_adc.v2e.ccee = mr_adc.v2e.feri1.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
             mr_adc.v2e.ceec = mr_adc.v2e.feri1.create_dataset('ceec', (ncore, nextern, nextern, ncore), 'f8')
@@ -284,7 +294,7 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.aaee = mr_adc.v2e.feri1.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
             mr_adc.v2e.aeea = mr_adc.v2e.feri1.create_dataset('aeea', (ncas, nextern, nextern, ncas), 'f8')
 
-            mr_adc.v2e.cccc[:] = np.dot(Lcc.T, Lcc).reshape(ncore, ncore, ncore, ncore)
+            #HACK mr_adc.v2e.cccc[:] = np.dot(Lcc.T, Lcc).reshape(ncore, ncore, ncore, ncore)
 
             mr_adc.v2e.ccee[:] = np.dot(Lcc.T, mr_adc.v2e.Lee).reshape(ncore, ncore, nextern, nextern)
             mr_adc.v2e.ceec[:] = np.dot(mr_adc.v2e.Lce.T, Lec).reshape(ncore, nextern, nextern, ncore)
@@ -300,13 +310,14 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.aeea[:] = np.dot(mr_adc.v2e.Lae.T, Lea).reshape(ncas, nextern, nextern, ncas)
 
     # Effective one-electron integrals
-    mr_adc.v2e.ccac = mr_adc.v2e.feri1.create_dataset('ccac', (ncore, ncore, ncas, ncore), 'f8')
+    #HACK mr_adc.v2e.ccac = mr_adc.v2e.feri1.create_dataset('ccac', (ncore, ncore, ncas, ncore), 'f8')
+    v2e_ccac = mr_adc.v2e.ccca.transpose(1,0,3,2) #HACK
     mr_adc.v2e.ccec = mr_adc.v2e.feri1.create_dataset('ccec', (ncore, ncore, nextern, ncore), 'f8')
 
-    mr_adc.v2e.ccac[:] = np.dot(Lcc.T, Lac).reshape(ncore, ncore, ncas, ncore)
+    #HACK mr_adc.v2e.ccac[:] = np.dot(Lcc.T, Lac).reshape(ncore, ncore, ncas, ncore)
     mr_adc.v2e.ccec[:] = np.dot(Lcc.T, Lec).reshape(ncore, ncore, nextern, ncore)
 
-    mr_adc.h1eff.ca = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, ncore:nocc], mr_adc.v2e.ccca, mr_adc.v2e.ccac)
+    mr_adc.h1eff.ca = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, ncore:nocc], mr_adc.v2e.ccca, v2e_ccac)
     mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, mr_adc.v2e.ccec)
     mr_adc.h1eff.aa = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, ncore:nocc], mr_adc.v2e.ccaa, mr_adc.v2e.caac)
     mr_adc.h1eff.ae = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, nocc:], mr_adc.v2e.ccae, mr_adc.v2e.caec)
@@ -499,28 +510,39 @@ def compute_cvs_integrals_2e_df(mr_adc):
 
     if mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc.v2e.xxxa = mr_adc.v2e.feri1.create_dataset('xxxa', (ncvs, ncvs, ncvs, ncas), 'f8')
-            mr_adc.v2e.xxva = mr_adc.v2e.feri1.create_dataset('xxva', (ncvs, ncvs, nval, ncas), 'f8')
-            mr_adc.v2e.vxxa = mr_adc.v2e.feri1.create_dataset('vxxa', (nval, ncvs, ncvs, ncas), 'f8')
+            #HACK mr_adc.v2e.xxxa = mr_adc.v2e.feri1.create_dataset('xxxa', (ncvs, ncvs, ncvs, ncas), 'f8')
+            #HACK mr_adc.v2e.xxva = mr_adc.v2e.feri1.create_dataset('xxva', (ncvs, ncvs, nval, ncas), 'f8')
+            #HACK mr_adc.v2e.vxxa = mr_adc.v2e.feri1.create_dataset('vxxa', (nval, ncvs, ncvs, ncas), 'f8')
+            mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :]) #HACK
+            mr_adc.v2e.xxva = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :]) #HACK
+            mr_adc.v2e.vxxa = np.ascontiguousarray(mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :]) #HACK
 
             mr_adc.v2e.xxxe = mr_adc.v2e.feri1.create_dataset('xxxe', (ncvs, ncvs, ncvs, nextern), 'f8')
             mr_adc.v2e.xxve = mr_adc.v2e.feri1.create_dataset('xxve', (ncvs, ncvs, nval, nextern), 'f8')
             mr_adc.v2e.vxxe = mr_adc.v2e.feri1.create_dataset('vxxe', (nval, ncvs, ncvs, nextern), 'f8')
 
-            mr_adc.v2e.xxaa = mr_adc.v2e.feri1.create_dataset('xxaa', (ncvs, ncvs, ncas, ncas), 'f8')
-            mr_adc.v2e.xvaa = mr_adc.v2e.feri1.create_dataset('xvaa', (ncvs, nval, ncas, ncas), 'f8')
-            mr_adc.v2e.vxaa = mr_adc.v2e.feri1.create_dataset('vxaa', (nval, ncvs, ncas, ncas), 'f8')
-            mr_adc.v2e.vvaa = mr_adc.v2e.feri1.create_dataset('vvaa', (nval, nval, ncas, ncas), 'f8')
+            #HACK mr_adc.v2e.xxaa = mr_adc.v2e.feri1.create_dataset('xxaa', (ncvs, ncvs, ncas, ncas), 'f8')
+            #HACK mr_adc.v2e.xvaa = mr_adc.v2e.feri1.create_dataset('xvaa', (ncvs, nval, ncas, ncas), 'f8')
+            #HACK mr_adc.v2e.vxaa = mr_adc.v2e.feri1.create_dataset('vxaa', (nval, ncvs, ncas, ncas), 'f8')
+            #HACK mr_adc.v2e.vvaa = mr_adc.v2e.feri1.create_dataset('vvaa', (nval, nval, ncas, ncas), 'f8')
+            mr_adc.v2e.xxaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:ncvs, :ncvs, :, :]) #HACK
+            mr_adc.v2e.xvaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:ncvs, ncvs:, :, :]) #HACK
+            mr_adc.v2e.vxaa = np.ascontiguousarray(mr_adc.v2e.ccaa[ncvs:, :ncvs, :, :]) #HACK
+            mr_adc.v2e.vvaa = np.ascontiguousarray(mr_adc.v2e.ccaa[ncvs:, ncvs:, :, :]) #HACK
 
             mr_adc.v2e.xxae = mr_adc.v2e.feri1.create_dataset('xxae', (ncvs, ncvs, ncas, nextern), 'f8')
             mr_adc.v2e.xvae = mr_adc.v2e.feri1.create_dataset('xvae', (ncvs, nval, ncas, nextern), 'f8')
             mr_adc.v2e.vxae = mr_adc.v2e.feri1.create_dataset('vxae', (nval, ncvs, ncas, nextern), 'f8')
             mr_adc.v2e.vvae = mr_adc.v2e.feri1.create_dataset('vvae', (nval, nval, ncas, nextern), 'f8')
 
-            mr_adc.v2e.xaax = mr_adc.v2e.feri1.create_dataset('xaax', (ncvs, ncas, ncas, ncvs), 'f8')
-            mr_adc.v2e.xaav = mr_adc.v2e.feri1.create_dataset('xaav', (ncvs, ncas, ncas, nval), 'f8')
-            mr_adc.v2e.vaax = mr_adc.v2e.feri1.create_dataset('vaax', (nval, ncas, ncas, ncvs), 'f8')
-            mr_adc.v2e.vaav = mr_adc.v2e.feri1.create_dataset('vaav', (nval, ncas, ncas, nval), 'f8')
+            #HACK mr_adc.v2e.xaax = mr_adc.v2e.feri1.create_dataset('xaax', (ncvs, ncas, ncas, ncvs), 'f8')
+            #HACK mr_adc.v2e.xaav = mr_adc.v2e.feri1.create_dataset('xaav', (ncvs, ncas, ncas, nval), 'f8')
+            #HACK mr_adc.v2e.vaax = mr_adc.v2e.feri1.create_dataset('vaax', (nval, ncas, ncas, ncvs), 'f8')
+            #HACK mr_adc.v2e.vaav = mr_adc.v2e.feri1.create_dataset('vaav', (nval, ncas, ncas, nval), 'f8')
+            mr_adc.v2e.xaax = np.ascontiguousarray(mr_adc.v2e.caac[:ncvs, :, :, :ncvs]) #HACK
+            mr_adc.v2e.xaav = np.ascontiguousarray(mr_adc.v2e.caac[:ncvs, :, :, ncvs:]) #HACK
+            mr_adc.v2e.vaax = np.ascontiguousarray(mr_adc.v2e.caac[ncvs:, :, :, :ncvs]) #HACK
+            mr_adc.v2e.vaav = np.ascontiguousarray(mr_adc.v2e.caac[ncvs:, :, :, ncvs:]) #HACK
 
             mr_adc.v2e.xaex = mr_adc.v2e.feri1.create_dataset('xaex', (ncvs, ncas, nextern, ncvs), 'f8')
             mr_adc.v2e.xaev = mr_adc.v2e.feri1.create_dataset('xaev', (ncvs, ncas, nextern, nval), 'f8')
@@ -554,28 +576,28 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xeaa = mr_adc.v2e.feri1.create_dataset('xeaa', (ncvs, nextern, ncas, ncas), 'f8')
             mr_adc.v2e.veaa = mr_adc.v2e.feri1.create_dataset('veaa', (nval, nextern, ncas, ncas), 'f8')
 
-            mr_adc.v2e.xxxa[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :]
-            mr_adc.v2e.xxva[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :]
-            mr_adc.v2e.vxxa[:] = mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :]
+            #HACK mr_adc.v2e.xxxa[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :]
+            #HACK mr_adc.v2e.xxva[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :]
+            #HACK mr_adc.v2e.vxxa[:] = mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :]
 
             mr_adc.v2e.xxxe[:] = mr_adc.v2e.ccce[:ncvs, :ncvs, :ncvs, :]
             mr_adc.v2e.xxve[:] = mr_adc.v2e.ccce[:ncvs, :ncvs, ncvs:, :]
             mr_adc.v2e.vxxe[:] = mr_adc.v2e.ccce[ncvs:, :ncvs, :ncvs, :]
 
-            mr_adc.v2e.xxaa[:] = mr_adc.v2e.ccaa[:ncvs, :ncvs, :, :]
-            mr_adc.v2e.xvaa[:] = mr_adc.v2e.ccaa[:ncvs, ncvs:, :, :]
-            mr_adc.v2e.vxaa[:] = mr_adc.v2e.ccaa[ncvs:, :ncvs, :, :]
-            mr_adc.v2e.vvaa[:] = mr_adc.v2e.ccaa[ncvs:, ncvs:, :, :]
+            #HACK mr_adc.v2e.xxaa[:] = mr_adc.v2e.ccaa[:ncvs, :ncvs, :, :]
+            #HACK mr_adc.v2e.xvaa[:] = mr_adc.v2e.ccaa[:ncvs, ncvs:, :, :]
+            #HACK mr_adc.v2e.vxaa[:] = mr_adc.v2e.ccaa[ncvs:, :ncvs, :, :]
+            #HACK mr_adc.v2e.vvaa[:] = mr_adc.v2e.ccaa[ncvs:, ncvs:, :, :]
 
             mr_adc.v2e.xxae[:] = mr_adc.v2e.ccae[:ncvs, :ncvs, :, :]
             mr_adc.v2e.xvae[:] = mr_adc.v2e.ccae[:ncvs, ncvs:, :, :]
             mr_adc.v2e.vxae[:] = mr_adc.v2e.ccae[ncvs:, :ncvs, :, :]
             mr_adc.v2e.vvae[:] = mr_adc.v2e.ccae[ncvs:, ncvs:, :, :]
 
-            mr_adc.v2e.xaax[:] = mr_adc.v2e.caac[:ncvs, :, :, :ncvs]
-            mr_adc.v2e.xaav[:] = mr_adc.v2e.caac[:ncvs, :, :, ncvs:]
-            mr_adc.v2e.vaax[:] = mr_adc.v2e.caac[ncvs:, :, :, :ncvs]
-            mr_adc.v2e.vaav[:] = mr_adc.v2e.caac[ncvs:, :, :, ncvs:]
+            #HACK mr_adc.v2e.xaax[:] = mr_adc.v2e.caac[:ncvs, :, :, :ncvs]
+            #HACK mr_adc.v2e.xaav[:] = mr_adc.v2e.caac[:ncvs, :, :, ncvs:]
+            #HACK mr_adc.v2e.vaax[:] = mr_adc.v2e.caac[ncvs:, :, :, :ncvs]
+            #HACK mr_adc.v2e.vaav[:] = mr_adc.v2e.caac[ncvs:, :, :, ncvs:]
 
             mr_adc.v2e.xaex[:] = mr_adc.v2e.caec[:ncvs, :, :, :ncvs]
             mr_adc.v2e.xaev[:] = mr_adc.v2e.caec[:ncvs, :, :, ncvs:]
@@ -621,12 +643,18 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.mo_energy.v = mr_adc.mo_energy.c[ncvs:]
 
         if mr_adc.method in ("mr-adc(2)-x"):
-            mr_adc.v2e.xxxx = mr_adc.v2e.feri1.create_dataset('xxxx', (ncvs, ncvs, ncvs, ncvs), 'f8')
-            mr_adc.v2e.xxvv = mr_adc.v2e.feri1.create_dataset('xxvv', (ncvs, ncvs, nval, nval), 'f8')
-            mr_adc.v2e.xvvx = mr_adc.v2e.feri1.create_dataset('xvvx', (ncvs, nval, nval, ncvs), 'f8')
-            mr_adc.v2e.xxvx = mr_adc.v2e.feri1.create_dataset('xxvx', (ncvs, ncvs, nval, ncvs), 'f8')
-            mr_adc.v2e.xxxv = mr_adc.v2e.feri1.create_dataset('xxxv', (ncvs, ncvs, ncvs, nval), 'f8')
-            mr_adc.v2e.xvxx = mr_adc.v2e.feri1.create_dataset('xvxx', (ncvs, nval, ncvs, ncvs), 'f8')
+            #HACK mr_adc.v2e.xxxx = mr_adc.v2e.feri1.create_dataset('xxxx', (ncvs, ncvs, ncvs, ncvs), 'f8')
+            #HACK mr_adc.v2e.xxvv = mr_adc.v2e.feri1.create_dataset('xxvv', (ncvs, ncvs, nval, nval), 'f8')
+            #HACK mr_adc.v2e.xvvx = mr_adc.v2e.feri1.create_dataset('xvvx', (ncvs, nval, nval, ncvs), 'f8')
+            #HACK mr_adc.v2e.xxvx = mr_adc.v2e.feri1.create_dataset('xxvx', (ncvs, ncvs, nval, ncvs), 'f8')
+            #HACK mr_adc.v2e.xxxv = mr_adc.v2e.feri1.create_dataset('xxxv', (ncvs, ncvs, ncvs, nval), 'f8')
+            #HACK mr_adc.v2e.xvxx = mr_adc.v2e.feri1.create_dataset('xvxx', (ncvs, nval, ncvs, ncvs), 'f8')
+            mr_adc.v2e.xxxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs]) #HACK
+            mr_adc.v2e.xxvv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:]) #HACK
+            mr_adc.v2e.xvvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs]) #HACK
+            mr_adc.v2e.xxvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs]) #HACK
+            mr_adc.v2e.xxxv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:]) #HACK
+            mr_adc.v2e.xvxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]) #HACK
 
             mr_adc.v2e.xxee = mr_adc.v2e.feri1.create_dataset('xxee', (ncvs, ncvs, nextern, nextern), 'f8')
             mr_adc.v2e.xvee = mr_adc.v2e.feri1.create_dataset('xvee', (ncvs, nval, nextern, nextern), 'f8')
@@ -647,12 +675,12 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xeea = mr_adc.v2e.feri1.create_dataset('xeea', (ncvs, nextern, nextern, ncas), 'f8')
             mr_adc.v2e.veea = mr_adc.v2e.feri1.create_dataset('veea', (nval, nextern, nextern, ncas), 'f8')
 
-            mr_adc.v2e.xxxx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs]
-            mr_adc.v2e.xxvv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:]
-            mr_adc.v2e.xvvx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs]
-            mr_adc.v2e.xxvx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs]
-            mr_adc.v2e.xxxv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:]
-            mr_adc.v2e.xvxx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
+            #HACK mr_adc.v2e.xxxx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs]
+            #HACK mr_adc.v2e.xxvv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:]
+            #HACK mr_adc.v2e.xvvx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs]
+            #HACK mr_adc.v2e.xxvx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs]
+            #HACK mr_adc.v2e.xxxv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:]
+            #HACK mr_adc.v2e.xvxx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
 
             mr_adc.v2e.xxee[:] = mr_adc.v2e.ccee[:ncvs, :ncvs, :, :]
             mr_adc.v2e.xvee[:] = mr_adc.v2e.ccee[:ncvs, ncvs:, :, :]

@@ -302,6 +302,12 @@ def remove_non_cvs_variables(mr_adc):
 
         if interface.with_df:
             del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+
+            del(mr_adc.v2e.ccca, mr_adc.v2e.ccaa, mr_adc.v2e.caac) #HACK
+
+            if mr_adc.method in ("mr-adc(2)-x"): #HACK
+                del(mr_adc.v2e.cccc) #HACK
+
         else:
             del(mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
                 mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
