@@ -329,14 +329,12 @@ def compute_t1_0(mr_adc):
     # Compute denominators
     d_ij = e_core[:,None] + e_core
     d_ab = e_extern[:,None] + e_extern
-    D2 = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
-    D2 = D2.reshape((ncore, ncore, nextern, nextern))
+    temp = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
+    temp = temp.reshape((ncore, ncore, nextern, nextern))
 
-    # Compute V tensor: - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0>
-    V1_0 =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type).copy()
-
-    # Compute T[0] t1_ccee tensor
-    t1_ccee = (V1_0 / D2)
+    # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
+    temp =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type) / temp
+    t1_ccee = temp
 
     # Compute electronic correlation energy for T[0]
     e_0  = 2 * einsum('ijab,iajb', t1_ccee, v_cece, optimize = einsum_type)
