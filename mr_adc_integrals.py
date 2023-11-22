@@ -130,7 +130,7 @@ def transform_integrals_2e_incore(mr_adc):
 
             mr_adc.v2e.aeea = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
 
-        if mr_adc.method in ("mr-adc(2)-x") or (mr_adc.method in ("mr-adc(2)") and not mr_adc.approx_trans_moments)):
+        if mr_adc.method in ("mr-adc(2)-x") or (mr_adc.method in ("mr-adc(2)") and not mr_adc.approx_trans_moments):
             mr_adc.v2e.ceee = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_e, compacted = True)
             mr_adc.v2e.aeee = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_e, compacted = True)
 
