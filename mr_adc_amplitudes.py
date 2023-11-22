@@ -38,7 +38,6 @@ def compute_amplitudes(mr_adc):
     # Compute CVS amplitudes and remove non-CVS core integrals, amplitudes and unnecessary RDMs
     if mr_adc.method_type == "cvs-ip":
         compute_cvs_amplitudes(mr_adc)
-        remove_non_cvs_variables(mr_adc)
 
     print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
 
@@ -50,6 +49,9 @@ def compute_t1_amplitudes(mr_adc):
 
     e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8
 
+    if mr_adc.outcore_amplitudes:
+        mr_adc.t1.chk = mr_adc.interface.create_HDF5_temp_file()        
+
     # First-order amplitudes
     if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
         if ncore > 0 and nextern > 0 and ncas > 0:
@@ -58,7 +60,7 @@ def compute_t1_amplitudes(mr_adc):
             e_0p, mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae = compute_t1_0p(mr_adc)
 
             print("Norm of T[0']^(1):                           %20.12f" % (np.linalg.norm(mr_adc.t1.ce) +
-                                                                           np.linalg.norm(mr_adc.t1.caea)))
+                                                                            np.linalg.norm(mr_adc.t1.caea)))
             print("Correlation energy [0']:                     %20.12f\n" % e_0p)
         else:
             mr_adc.t1.ce = np.zeros((ncore, nextern))
@@ -71,7 +73,7 @@ def compute_t1_amplitudes(mr_adc):
             e_p1p, mr_adc.t1.ca, mr_adc.t1.caaa = compute_t1_p1p(mr_adc)
 
             print("Norm of T[+1']^(1):                          %20.12f" % (np.linalg.norm(mr_adc.t1.ca) +
-                                                                           np.linalg.norm(mr_adc.t1.caaa)))
+                                                                            np.linalg.norm(mr_adc.t1.caaa)))
             print("Correlation energy [+1']:                    %20.12f\n" % e_p1p)
         else:
             mr_adc.t1.ca = np.zeros((ncore, ncas))
@@ -83,7 +85,7 @@ def compute_t1_amplitudes(mr_adc):
             e_m1p, mr_adc.t1.ae, mr_adc.t1.aaae = compute_t1_m1p(mr_adc)
 
             print("Norm of T[-1']^(1):                          %20.12f" % (np.linalg.norm(mr_adc.t1.ae) +
-                                                                           np.linalg.norm(mr_adc.t1.aaae)))
+                                                                            np.linalg.norm(mr_adc.t1.aaae)))
             print("Correlation energy [-1']:                    %20.12f\n" % e_m1p)
         else:
             mr_adc.t1.ae = np.zeros((ncas, nextern))
@@ -211,6 +213,7 @@ def compute_t2_amplitudes(mr_adc):
         mr_adc.t2.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
 def compute_cvs_amplitudes(mr_adc):
+    'Create CVS amplitudes tensors and remove core integrals, core amplitudes and RDMs not used in CVS calculations'
 
     start_time = time.time()
 
@@ -222,103 +225,91 @@ def compute_cvs_amplitudes(mr_adc):
         # Variables from kernel
         ncvs = mr_adc.ncvs
 
-        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        del(mr_adc.rdm.ccccaaaa)
 
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.t1.xe = np.ascontiguousarray(mr_adc.t1.ce[:ncvs, :])
             mr_adc.t1.ve = np.ascontiguousarray(mr_adc.t1.ce[ncvs:, :])
+            del(mr_adc.t1.ce)
 
             mr_adc.t1.xaea = np.ascontiguousarray(mr_adc.t1.caea[:ncvs, :, :, :])
             mr_adc.t1.vaea = np.ascontiguousarray(mr_adc.t1.caea[ncvs:, :, :, :])
+            del(mr_adc.t1.caea)
 
             mr_adc.t1.xaae = np.ascontiguousarray(mr_adc.t1.caae[:ncvs, :, :, :])
             mr_adc.t1.vaae = np.ascontiguousarray(mr_adc.t1.caae[ncvs:, :, :, :])
+            del(mr_adc.t1.caae)
 
             mr_adc.t1.xa = np.ascontiguousarray(mr_adc.t1.ca[:ncvs, :])
             mr_adc.t1.va = np.ascontiguousarray(mr_adc.t1.ca[ncvs:, :])
+            del(mr_adc.t1.ca)
 
             mr_adc.t1.xaaa = np.ascontiguousarray(mr_adc.t1.caaa[:ncvs, :, :, :])
             mr_adc.t1.vaaa = np.ascontiguousarray(mr_adc.t1.caaa[ncvs:, :, :, :])
+            del(mr_adc.t1.caaa)
 
-        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.t1.xxee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs, :ncvs, :, :])
             mr_adc.t1.xvee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs, ncvs:, :, :])
             mr_adc.t1.vxee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:, :ncvs, :, :])
             mr_adc.t1.vvee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:, ncvs:, :, :])
+            del(mr_adc.t1.ccee)
 
             mr_adc.t1.xxae = np.ascontiguousarray(mr_adc.t1.ccae[:ncvs, :ncvs, :, :])
             mr_adc.t1.xvae = np.ascontiguousarray(mr_adc.t1.ccae[:ncvs, ncvs:, :, :])
             mr_adc.t1.vxae = np.ascontiguousarray(mr_adc.t1.ccae[ncvs:, :ncvs, :, :])
             mr_adc.t1.vvae = np.ascontiguousarray(mr_adc.t1.ccae[ncvs:, ncvs:, :, :])
+            del(mr_adc.t1.ccae)
 
             mr_adc.t1.xaee = np.ascontiguousarray(mr_adc.t1.caee[:ncvs, :, :, :])
             mr_adc.t1.vaee = np.ascontiguousarray(mr_adc.t1.caee[ncvs:, :, :, :])
+            del(mr_adc.t1.caee)
 
             mr_adc.t1.xxaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs, :ncvs, :, :])
             mr_adc.t1.xvaa = np.ascontiguousarray(mr_adc.t1.ccaa[:ncvs, ncvs:, :, :])
             mr_adc.t1.vxaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, :ncvs, :, :])
             mr_adc.t1.vvaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, ncvs:, :, :])
+            del(mr_adc.t1.ccaa)
 
             mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs, :])
             mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
+            del(mr_adc.t2.ce)
 
             mr_adc.t2.xaea = np.ascontiguousarray(mr_adc.t2.caea[:ncvs, :, :, :])
             mr_adc.t2.vaea = np.ascontiguousarray(mr_adc.t2.caea[ncvs:, :, :, :])
+            del(mr_adc.t2.caea)
 
             mr_adc.t2.xaae = np.ascontiguousarray(mr_adc.t2.caae[:ncvs, :, :, :])
             mr_adc.t2.vaae = np.ascontiguousarray(mr_adc.t2.caae[ncvs:, :, :, :])
+            del(mr_adc.t2.caae)
 
             mr_adc.t2.xa = np.ascontiguousarray(mr_adc.t2.ca[:ncvs, :])
             mr_adc.t2.va = np.ascontiguousarray(mr_adc.t2.ca[ncvs:, :])
+            del(mr_adc.t2.ca)
 
             mr_adc.t2.xaaa = np.ascontiguousarray(mr_adc.t2.caaa[:ncvs, :, :, :])
             mr_adc.t2.vaaa = np.ascontiguousarray(mr_adc.t2.caaa[ncvs:, :, :, :])
+            del(mr_adc.t2.caaa)
 
         if mr_adc.method == "mr-adc(2)-x":
-
             mr_adc.t2.xxee = np.ascontiguousarray(mr_adc.t2.ccee[:ncvs, :ncvs, :, :])
             mr_adc.t2.xvee = np.ascontiguousarray(mr_adc.t2.ccee[:ncvs, ncvs:, :, :])
             mr_adc.t2.vxee = np.ascontiguousarray(mr_adc.t2.ccee[ncvs:, :ncvs, :, :])
             mr_adc.t2.vvee = np.ascontiguousarray(mr_adc.t2.ccee[ncvs:, ncvs:, :, :])
+            del(mr_adc.t2.ccee)
 
             mr_adc.t2.xxae = np.ascontiguousarray(mr_adc.t2.ccae[:ncvs, :ncvs, :, :])
             mr_adc.t2.xvae = np.ascontiguousarray(mr_adc.t2.ccae[:ncvs, ncvs:, :, :])
             mr_adc.t2.vxae = np.ascontiguousarray(mr_adc.t2.ccae[ncvs:, :ncvs, :, :])
+            del(mr_adc.t2.ccae)
 
             mr_adc.t2.xaee = np.ascontiguousarray(mr_adc.t2.caee[:ncvs, :, :, :])
+            del(mr_adc.t2.caee)
 
             mr_adc.t2.xxaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, :ncvs, :, :])
             mr_adc.t2.xvaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, ncvs:, :, :])
+            del(mr_adc.t2.ccaa)
 
-    print("Time for computing CVS amplitudes:                 %f sec\n" % (time.time() - start_time))
-
-def remove_non_cvs_variables(mr_adc):
-    'Remove core integrals, core amplitudes and RDMs not used in CVS calculations'
-
-    # Import Prism interface
-    interface = mr_adc.interface
-
-    if mr_adc.method_type == "cvs-ip":
-        del(mr_adc.h1eff.ca, mr_adc.h1eff.ce)
-
-        if interface.with_df:
-            del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
-        else:
-            del(mr_adc.v2e.ccca, mr_adc.v2e.ccce, mr_adc.v2e.ccaa, mr_adc.v2e.ccae, mr_adc.v2e.caac, mr_adc.v2e.caec,
-                mr_adc.v2e.caca, mr_adc.v2e.cece, mr_adc.v2e.cace, mr_adc.v2e.caaa, mr_adc.v2e.ceae, mr_adc.v2e.caae,
-                mr_adc.v2e.ceaa)
-
-            if mr_adc.method in ("mr-adc(2)-x"):
-                del(mr_adc.v2e.cccc, mr_adc.v2e.ccee, mr_adc.v2e.ceec, mr_adc.v2e.caea, mr_adc.v2e.ceee, 
-                    mr_adc.v2e.caee, mr_adc.v2e.ceea)
-
-        del(mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae,
-            mr_adc.t1.ca, mr_adc.t1.caaa, mr_adc.t1.ccee,
-            mr_adc.t1.ccae, mr_adc.t1.caee, mr_adc.t1.ccaa,
-            mr_adc.t2.ce, mr_adc.t2.caea, mr_adc.t2.caae,
-            mr_adc.t2.ca, mr_adc.t2.caaa, mr_adc.t2.ccee,
-            mr_adc.t2.ccae, mr_adc.t2.caee, mr_adc.t2.ccaa)
-
-        del(mr_adc.rdm.ccccaaaa)
+    print("Time for computing CVS amplitudes:                   %f sec\n" % (time.time() - start_time))
 
 def compute_t1_0(mr_adc):
 
@@ -335,19 +326,24 @@ def compute_t1_0(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     ## Two-electron integrals
-    v_cece =  mr_adc.v2e.cece
+    v_cece = mr_adc.v2e.cece
 
     # Compute denominators
     d_ij = e_core[:,None] + e_core
     d_ab = e_extern[:,None] + e_extern
-    D2 = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
-    D2 = D2.reshape((ncore, ncore, nextern, nextern))
+    temp = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
+    temp = temp.reshape((ncore, ncore, nextern, nextern))
+    del(d_ij, d_ab)
 
-    # Compute V tensor: - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0>
-    V1_0 =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type).copy()
+    # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
+    temp =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type) / temp
 
-    # Compute T[0] t1_ccee tensor
-    t1_ccee = (V1_0 / D2)
+    if mr_adc.outcore_amplitudes:
+        t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
+        t1_ccee[:] = temp
+        del(temp)
+    else:
+        t1_ccee = temp
 
     # Compute electronic correlation energy for T[0]
     e_0  = 2 * einsum('ijab,iajb', t1_ccee, v_cece, optimize = einsum_type)
@@ -370,7 +366,7 @@ def compute_t1_p1(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     ## Two-electron integrals
-    v_cace =  mr_adc.v2e.cace
+    v_cace = mr_adc.v2e.cace
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
@@ -386,8 +382,8 @@ def compute_t1_p1(mr_adc):
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1_12_inv_act.T, K_ac, S_p1_12_inv_act))
-
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V tensor: - < Psi_0 | a^{\dag}_I a^{\dag}_J a_X a_A V | Psi_0>
@@ -406,9 +402,11 @@ def compute_t1_p1(mr_adc):
     S_12_V_p1 = einsum("mp,IJAm->IJAp", evecs, S_12_V_p1, optimize = einsum_type)
     S_12_V_p1 = einsum("ApIJ,IJAp->IJAp", d_apij, S_12_V_p1, optimize = einsum_type)
     S_12_V_p1 = einsum("mp,IJAp->IJAm", evecs, S_12_V_p1, optimize = einsum_type)
+    del(V1_p1, d_ap, d_ij, d_apij, evals, evecs)
 
     ## Compute T[+1] t1_ccae tensor
     t1_ccae = einsum("IJAm,Xm->JIXA", S_12_V_p1, S_p1_12_inv_act, optimize = einsum_type).copy()
+    del(S_12_V_p1, S_p1_12_inv_act)
 
     # Compute electronic correlation energy for T[+1]
     e_p1 =- 2 * einsum('ijxa,jxia', t1_ccae, v_cace, optimize = einsum_type)
@@ -426,6 +424,7 @@ def compute_t1_m1(mr_adc):
 
     # Variables from kernel
     ncore = mr_adc.ncore
+    ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
     ## Molecular Orbitals Energies
@@ -433,7 +432,7 @@ def compute_t1_m1(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     ## Two-electron integrals
-    v_ceae =  mr_adc.v2e.ceae
+    v_ceae = mr_adc.v2e.ceae
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
@@ -449,8 +448,8 @@ def compute_t1_m1(mr_adc):
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1_12_inv_act.T, K_ca, S_m1_12_inv_act))
-
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V matrix: - < Psi_0 | a^{\dag}_I a^{\dag}_X a_B a_A V | Psi_0>
@@ -468,9 +467,18 @@ def compute_t1_m1(mr_adc):
     S_12_V_m1 = einsum("mp,ImAB->IpAB", evecs, S_12_V_m1, optimize = einsum_type)
     S_12_V_m1 = einsum("ABIp,IpAB->IpAB", d_abix, S_12_V_m1, optimize = einsum_type)
     S_12_V_m1 = einsum("mp,IpAB->ImAB", evecs, S_12_V_m1, optimize = einsum_type)
+    del(V1_m1, d_ab, d_ix, d_abix, evals, evecs)
 
     ## Compute T[-1] t1_caee tensor
-    t1_caee = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
+    temp = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
+    del(S_12_V_m1, S_m1_12_inv_act)
+
+    if mr_adc.outcore_amplitudes:
+        t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8')
+        t1_caee[:] = temp
+        del(temp)
+    else:
+        t1_caee = temp
 
     # Compute electronic correlation energy for T[-1]
     e_m1  = 2 * einsum('ixab,iayb,xy', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
@@ -492,7 +500,7 @@ def compute_t1_p2(mr_adc):
     e_core = mr_adc.mo_energy.c
 
     ## Two-electron integrals
-    v_caca =  mr_adc.v2e.caca
+    v_caca = mr_adc.v2e.caca
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
@@ -506,8 +514,8 @@ def compute_t1_p2(mr_adc):
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p2_12_inv_act.T, K_aacc, S_p2_12_inv_act))
-
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V tensor: - < Psi_0 | a^{\dag}_I a^{\dag}_J a_Y a_X V | Psi_0>
@@ -528,10 +536,12 @@ def compute_t1_p2(mr_adc):
     S_12_V_p2 = einsum("mp,IJm->IJp", evecs, S_12_V_p2, optimize = einsum_type)
     S_12_V_p2 = einsum("pIJ,IJp->IJp", d_pij, S_12_V_p2, optimize = einsum_type)
     S_12_V_p2 = einsum("mp,IJp->IJm", evecs, S_12_V_p2, optimize = einsum_type)
+    del(V1_p2, d_ij, d_pij, evals, evecs)
 
     ## Compute T[+2] t1_ccaa tensor
     t1_ccaa = einsum("IJm,Xm->IJX", S_12_V_p2, S_p2_12_inv_act, optimize = einsum_type)
     t1_ccaa = t1_ccaa.reshape(ncore, ncore, ncas, ncas)
+    del(S_12_V_p2, S_p2_12_inv_act)
 
     # Compute electronic correlation energy for T[+2]
     e_p2  = 2 * einsum('ijxy,ixjy', t1_ccaa, v_caca, optimize = einsum_type)
@@ -556,7 +566,7 @@ def compute_t1_m2(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     ## Two-electron integrals
-    v_aeae =  mr_adc.v2e.aeae
+    v_aeae = mr_adc.v2e.aeae
 
     ## Reduced density matrices
     rdm_ccaa = mr_adc.rdm.ccaa
@@ -569,8 +579,8 @@ def compute_t1_m2(mr_adc):
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m2_12_inv_act.T, K_ccaa, S_m2_12_inv_act))
-
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V tensor: - < Psi_0 | a^{\dag}_X a^{\dag}_Y a_B a_A V | Psi_0>
@@ -588,10 +598,19 @@ def compute_t1_m2(mr_adc):
     S_12_V_m2 = einsum("mp,mAB->pAB", evecs, S_12_V_m2, optimize = einsum_type)
     S_12_V_m2 = einsum("ABp,pAB->pAB", d_abp, S_12_V_m2, optimize = einsum_type)
     S_12_V_m2 = einsum("mp,pAB->mAB", evecs, S_12_V_m2, optimize = einsum_type)
+    del(V1_m2, d_ab, d_abp, evals, evecs)
 
     ## Compute T[-2] t1_aaee tensor
-    t1_aaee = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
-    t1_aaee = t1_aaee.reshape(ncas, ncas, nextern, nextern)
+    temp = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
+    temp = temp.reshape(ncas, ncas, nextern, nextern)
+    del(S_12_V_m2, S_m2_12_inv_act)
+
+    if mr_adc.outcore_amplitudes:
+        t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
+        t1_aaee[:] = temp
+        del(temp)
+    else:
+        t1_aaee = temp
 
     # Compute electronic correlation energy for T[-2]
     e_m2  = 1/2 * einsum('xyab,zawb,xyzw', t1_aaee, v_aeae, rdm_ccaa, optimize = einsum_type)
@@ -633,6 +652,7 @@ def compute_t1_0p(mr_adc):
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_0p_12_inv_act[1:,:].T, K_caca, S_0p_12_inv_act[1:,:]))
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V1 block: - < Psi_0 | a^{\dag}_I a_A V | Psi_0>
@@ -669,9 +689,11 @@ def compute_t1_0p(mr_adc):
     V_0p = np.zeros((ncore, nextern, dim_act))
 
     V_0p[:,:,0] = V1_a_a.copy()
+    del(V1_a_a)
 
     V_0p[:,:,V_aa_aa_i:V_aa_aa_f] = V2_aa_aa.copy()
     V_0p[:,:,V_aa_bb_i:V_aa_bb_f] = V2_aa_bb.copy()
+    del(V2_aa_aa, V2_aa_bb)
 
     ## Compute denominators
     d_ai = (e_extern[:,None] - e_core).reshape(-1)
@@ -683,9 +705,11 @@ def compute_t1_0p(mr_adc):
     S_12_V_0p = einsum("mp,iam->iap", evecs, S_12_V_0p, optimize = einsum_type)
     S_12_V_0p = einsum("aip,iap->iap", d_aip, S_12_V_0p, optimize = einsum_type)
     S_12_V_0p = einsum("mp,iap->iam", evecs, S_12_V_0p, optimize = einsum_type)
+    del(V_0p, d_ai, d_aip, evals, evecs)
 
     ## Compute T[0'] t1_ce, t1_caea and t1_caae tensors
     t_0p = einsum("iam,Pm->iaP", S_12_V_0p, S_0p_12_inv_act, optimize = einsum_type)
+    del(S_12_V_0p, S_0p_12_inv_act)
 
     ## Build T[0'] tensors
     t1_ce = t_0p[:,:,0].copy()
@@ -694,6 +718,7 @@ def compute_t1_0p(mr_adc):
 
     t1_caea = t1_caea_abab
     t1_caae = (t1_caea_abab - t1_caea_aaaa).transpose(0,1,3,2).copy()
+    del(t_0p, t1_caea_aaaa, t1_caea_abab)
 
     # Compute electronic correlation energy for T[0']
     e_0p  = 2 * einsum('ia,ia', h_ce, t1_ce, optimize = einsum_type)
@@ -745,6 +770,7 @@ def compute_t1_p1p(mr_adc):
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V1 block: - < Psi_0 | a^{\dag}_I a_X V | Psi_0>
@@ -807,8 +833,11 @@ def compute_t1_p1p(mr_adc):
     V_p1p = np.zeros((ncore, dim_act))
 
     V_p1p[:,V_a_i:V_a_f] = V1_a_a.copy()
+    del(V1_a_a)
+
     V_p1p[:,V_aaa_i:V_aaa_f] = V2_aa_aa.copy()
     V_p1p[:,V_bba_i:V_bba_f] = V2_ab_ba.copy()
+    del(V2_aa_aa, V2_ab_ba)
 
     ## Compute denominators
     d_ip = (-e_core[:,None] + evals)
@@ -817,18 +846,21 @@ def compute_t1_p1p(mr_adc):
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
-    S_12_V_p1p *= d_ip
+    S_12_V_p1p = einsum("ip,ip->ip", d_ip, S_12_V_p1p, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,ip->im", evecs, S_12_V_p1p, optimize = einsum_type)
+    del(V_p1p, d_ip, evals, evecs)
 
     ## Compute T[+1'] t1_ca and t1_caaa tensors
     t_p1p = einsum("Pm,im->iP", S_p1p_12_inv_act, S_12_V_p1p, optimize = einsum_type)
+    del(S_p1p_12_inv_act, S_12_V_p1p)
 
     ## Build T[+1'] tensors
     t1_ca = t_p1p[:, V_a_i:V_a_f].copy()
     t1_caaa = t_p1p[:,V_bba_i: V_bba_f].reshape(ncore, ncas, ncas, ncas).copy()
-
+ 
     ## Transpose indices to the conventional order
     t1_caaa = t1_caaa.transpose(0,1,3,2).copy()
+    del(t_p1p)
 
     # Compute electronic correlation energy for T[+1']
     e_p1p  = 2 * einsum('ix,ix', h_ca, t1_ca, optimize = einsum_type)
@@ -887,6 +919,7 @@ def compute_t1_m1p(mr_adc):
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V1 block: - < Psi_0 | a^{\dag}_X a_A V | Psi_0>
@@ -936,8 +969,11 @@ def compute_t1_m1p(mr_adc):
     V_m1p = np.zeros((dim_act, nextern))
 
     V_m1p[V_a_i:V_a_f, :] = V1_a_a.copy()
+    del(V1_a_a)
+
     V_m1p[V_aaa_i:V_aaa_f, :] = V2_aa_aa.copy()
     V_m1p[V_abb_i:V_abb_f, :] = V2_ab_ba.copy()
+    del(V2_aa_aa, V2_ab_ba)
 
     ## Compute denominators
     d_pa = (evals[:,None] + e_extern)
@@ -946,16 +982,19 @@ def compute_t1_m1p(mr_adc):
     # Compute T[-1'] amplitudes
     S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
     S_12_V_m1p = einsum("mp,ma->pa", evecs, S_12_V_m1p, optimize = einsum_type)
-    S_12_V_m1p *= d_pa
+    S_12_V_m1p = einsum("pa,pa->pa", d_pa, S_12_V_m1p, optimize = einsum_type)
     S_12_V_m1p = einsum("mp,pa->ma", evecs, S_12_V_m1p, optimize = einsum_type)
+    del(V_m1p, d_pa, evals, evecs)
 
     ## Compute T[-1'] t1_ae and t1_aaea tensors
     t_m1p = einsum("Pm,ma->Pa", S_m1p_12_inv_act, S_12_V_m1p, optimize = einsum_type)
+    del(S_m1p_12_inv_act, S_12_V_m1p)
 
     ## Build T[-1'] tensors
     t1_ae = t_m1p[V_a_i:V_a_f, :].copy()
     t1_aaae = t_m1p[V_abb_i:V_abb_f, :].reshape(ncas, ncas, ncas, nextern).copy()
     t1_aaae = t1_aaae.transpose(1,0,2,3)
+    del(t_m1p)
 
     # Compute electronic correlation energy for T[-1']
     e_m1p  = einsum('xa,ya,xy', h_ae, t1_ae, rdm_ca, optimize = einsum_type)
@@ -1061,7 +1100,7 @@ def compute_t2_0p_singles(mr_adc):
     # V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
     # V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
     if isinstance(v_ceee, type(None)):
-        chnk_size = mr_adc_integrals.calculate_chunk_size(mr_adc)
+        chnk_size = mr_adc_integrals.calculate_chunk_size_oeee(mr_adc)
     else:
         chnk_size = ncore
 
