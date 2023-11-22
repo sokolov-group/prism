@@ -307,7 +307,7 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.xvaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, ncvs:, :, :])
             del(mr_adc.t2.ccaa)
 
-    print("Time for computing CVS amplitudes:                 %f sec\n" % (time.time() - start_time))
+    print("Time for computing CVS amplitudes:                   %f sec\n" % (time.time() - start_time))
 
 def compute_t1_0(mr_adc):
 
