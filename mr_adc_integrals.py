@@ -185,9 +185,9 @@ def transform_integrals_2e_df(mr_adc):
     Lec = np.empty((naux, nextern,  ncore))
     Lea = np.empty((naux, nextern, ncas))
 
-    Lee = np.empty((naux, nextern, nextern))
-    Lce = np.empty((naux, ncore, nextern))
-    Lae = np.empty((naux, ncas, nextern))
+    mr_adc.v2e.Lee = np.empty((naux, nextern, nextern))
+    mr_adc.v2e.Lce = np.empty((naux, ncore, nextern))
+    mr_adc.v2e.Lae = np.empty((naux, ncas, nextern))
 
     ijslice = (0, nmo, 0, nmo)
     Lpq = None
@@ -199,27 +199,27 @@ def transform_integrals_2e_df(mr_adc):
         p0, p1 = p1, p1 + Lpq.shape[0]
         Lcc[p0:p1] = Lpq[:, :ncore, :ncore]
         Lca[p0:p1] = Lpq[:, :ncore, ncore:nocc]
-        Lce[p0:p1] = Lpq[:, :ncore, nocc:]
+        mr_adc.v2e.Lce[p0:p1] = Lpq[:, :ncore, nocc:]
 
         Lac[p0:p1] = Lpq[:, ncore:nocc, :ncore]
         Laa[p0:p1] = Lpq[:, ncore:nocc, ncore:nocc]
-        Lae[p0:p1] = Lpq[:, ncore:nocc, nocc:]
+        mr_adc.v2e.Lae[p0:p1] = Lpq[:, ncore:nocc, nocc:]
 
         Lec[p0:p1] = Lpq[:, nocc:, :ncore]
         Lea[p0:p1] = Lpq[:, nocc:, ncore:nocc]
-        Lee[p0:p1] = Lpq[:, nocc:, nocc:]
+        mr_adc.v2e.Lee[p0:p1] = Lpq[:, nocc:, nocc:]
 
     Lcc = Lcc.reshape(naux, ncore*ncore)
     Lca = Lca.reshape(naux, ncore*ncas)
-    mr_adc.v2e.Lce = Lce.reshape(naux, ncore*nextern)
+    mr_adc.v2e.Lce = mr_adc.v2e.Lce.reshape(naux, ncore*nextern)
 
     Lac = Lac.reshape(naux, ncas*ncore)
     Laa = Laa.reshape(naux, ncas*ncas)
-    mr_adc.v2e.Lae = Lae.reshape(naux, ncas*nextern)
+    mr_adc.v2e.Lae = mr_adc.v2e.Lae.reshape(naux, ncas*nextern)
 
     Lec = Lec.reshape(naux, nextern*ncore)
     Lea = Lea.reshape(naux, nextern*ncas)
-    mr_adc.v2e.Lee = Lee.reshape(naux, nextern*nextern)
+    mr_adc.v2e.Lee = mr_adc.v2e.Lee.reshape(naux, nextern*nextern)
 
     mr_adc.v2e.feri1 = interface.create_HDF5_temp_file()
     mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
