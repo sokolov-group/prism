@@ -245,7 +245,6 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t1.vaaa = np.ascontiguousarray(mr_adc.t1.caaa[ncvs:, :, :, :])
             del(mr_adc.t1.caaa)
 
-        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.t1.xxee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs, :ncvs, :, :])
             mr_adc.t1.xvee = np.ascontiguousarray(mr_adc.t1.ccee[:ncvs, ncvs:, :, :])
             mr_adc.t1.vxee = np.ascontiguousarray(mr_adc.t1.ccee[ncvs:, :ncvs, :, :])
@@ -324,7 +323,7 @@ def compute_t1_0(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     ## Two-electron integrals
-    v_cece =  mr_adc.v2e.cece
+    v_cece = mr_adc.v2e.cece
 
     # Compute denominators
     d_ij = e_core[:,None] + e_core
@@ -358,7 +357,7 @@ def compute_t1_p1(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     ## Two-electron integrals
-    v_cace =  mr_adc.v2e.cace
+    v_cace = mr_adc.v2e.cace
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
@@ -423,7 +422,7 @@ def compute_t1_m1(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     ## Two-electron integrals
-    v_ceae =  mr_adc.v2e.ceae
+    v_ceae = mr_adc.v2e.ceae
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
@@ -484,7 +483,7 @@ def compute_t1_p2(mr_adc):
     e_core = mr_adc.mo_energy.c
 
     ## Two-electron integrals
-    v_caca =  mr_adc.v2e.caca
+    v_caca = mr_adc.v2e.caca
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
@@ -550,7 +549,7 @@ def compute_t1_m2(mr_adc):
     e_extern = mr_adc.mo_energy.e
 
     ## Two-electron integrals
-    v_aeae =  mr_adc.v2e.aeae
+    v_aeae = mr_adc.v2e.aeae
 
     ## Reduced density matrices
     rdm_ccaa = mr_adc.rdm.ccaa
