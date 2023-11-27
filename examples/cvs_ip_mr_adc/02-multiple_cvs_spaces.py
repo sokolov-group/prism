@@ -36,7 +36,7 @@ mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 1
 mr_adc.nroots = 4
 
-e, p = mr_adc.kernel()
+e, p, x = mr_adc.kernel()
 
 ## Second calculation: CVS space for C 1s^{-1} states
 print("## Second calculation: CVS space for C 1s^{-1} states")
