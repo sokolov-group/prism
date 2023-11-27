@@ -331,6 +331,7 @@ def compute_t1_0(mr_adc):
     d_ab = e_extern[:,None] + e_extern
     temp = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
     temp = temp.reshape((ncore, ncore, nextern, nextern))
+    del(d_ij, d_ab)
 
     # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
     temp =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type) / temp
@@ -373,8 +374,8 @@ def compute_t1_p1(mr_adc):
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1_12_inv_act.T, K_ac, S_p1_12_inv_act))
-
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V tensor: - < Psi_0 | a^{\dag}_I a^{\dag}_J a_X a_A V | Psi_0>
@@ -393,9 +394,11 @@ def compute_t1_p1(mr_adc):
     S_12_V_p1 = einsum("mp,IJAm->IJAp", evecs, S_12_V_p1, optimize = einsum_type)
     S_12_V_p1 = einsum("ApIJ,IJAp->IJAp", d_apij, S_12_V_p1, optimize = einsum_type)
     S_12_V_p1 = einsum("mp,IJAp->IJAm", evecs, S_12_V_p1, optimize = einsum_type)
+    del(V1_p1, d_ap, d_ij, d_apij, evals, evecs)
 
     ## Compute T[+1] t1_ccae tensor
     t1_ccae = einsum("IJAm,Xm->JIXA", S_12_V_p1, S_p1_12_inv_act, optimize = einsum_type).copy()
+    del(S_12_V_p1, S_p1_12_inv_act)
 
     # Compute electronic correlation energy for T[+1]
     e_p1 =- 2 * einsum('ijxa,jxia', t1_ccae, v_cace, optimize = einsum_type)
@@ -436,8 +439,8 @@ def compute_t1_m1(mr_adc):
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1_12_inv_act.T, K_ca, S_m1_12_inv_act))
-
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V matrix: - < Psi_0 | a^{\dag}_I a^{\dag}_X a_B a_A V | Psi_0>
@@ -455,9 +458,11 @@ def compute_t1_m1(mr_adc):
     S_12_V_m1 = einsum("mp,ImAB->IpAB", evecs, S_12_V_m1, optimize = einsum_type)
     S_12_V_m1 = einsum("ABIp,IpAB->IpAB", d_abix, S_12_V_m1, optimize = einsum_type)
     S_12_V_m1 = einsum("mp,IpAB->ImAB", evecs, S_12_V_m1, optimize = einsum_type)
+    del(V1_m1, d_ab, d_ix, d_abix, evals, evecs)
 
     ## Compute T[-1] t1_caee tensor
     t1_caee = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
+    del(S_12_V_m1, S_m1_12_inv_act)
 
     # Compute electronic correlation energy for T[-1]
     e_m1  = 2 * einsum('ixab,iayb,xy', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
@@ -493,8 +498,8 @@ def compute_t1_p2(mr_adc):
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p2_12_inv_act.T, K_aacc, S_p2_12_inv_act))
-
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V tensor: - < Psi_0 | a^{\dag}_I a^{\dag}_J a_Y a_X V | Psi_0>
@@ -515,10 +520,12 @@ def compute_t1_p2(mr_adc):
     S_12_V_p2 = einsum("mp,IJm->IJp", evecs, S_12_V_p2, optimize = einsum_type)
     S_12_V_p2 = einsum("pIJ,IJp->IJp", d_pij, S_12_V_p2, optimize = einsum_type)
     S_12_V_p2 = einsum("mp,IJp->IJm", evecs, S_12_V_p2, optimize = einsum_type)
+    del(V1_p2, d_ij, d_pij, evals, evecs)
 
     ## Compute T[+2] t1_ccaa tensor
     t1_ccaa = einsum("IJm,Xm->IJX", S_12_V_p2, S_p2_12_inv_act, optimize = einsum_type)
     t1_ccaa = t1_ccaa.reshape(ncore, ncore, ncas, ncas)
+    del(S_12_V_p2, S_p2_12_inv_act)
 
     # Compute electronic correlation energy for T[+2]
     e_p2  = 2 * einsum('ijxy,ixjy', t1_ccaa, v_caca, optimize = einsum_type)
@@ -556,8 +563,8 @@ def compute_t1_m2(mr_adc):
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m2_12_inv_act.T, K_ccaa, S_m2_12_inv_act))
-
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V tensor: - < Psi_0 | a^{\dag}_X a^{\dag}_Y a_B a_A V | Psi_0>
@@ -575,10 +582,12 @@ def compute_t1_m2(mr_adc):
     S_12_V_m2 = einsum("mp,mAB->pAB", evecs, S_12_V_m2, optimize = einsum_type)
     S_12_V_m2 = einsum("ABp,pAB->pAB", d_abp, S_12_V_m2, optimize = einsum_type)
     S_12_V_m2 = einsum("mp,pAB->mAB", evecs, S_12_V_m2, optimize = einsum_type)
+    del(V1_m2, d_ab, d_abp, evals, evecs)
 
     ## Compute T[-2] t1_aaee tensor
     t1_aaee = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
     t1_aaee = t1_aaee.reshape(ncas, ncas, nextern, nextern)
+    del(S_12_V_m2, S_m2_12_inv_act)
 
     # Compute electronic correlation energy for T[-2]
     e_m2  = 1/2 * einsum('xyab,zawb,xyzw', t1_aaee, v_aeae, rdm_ccaa, optimize = einsum_type)
@@ -620,6 +629,7 @@ def compute_t1_0p(mr_adc):
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_0p_12_inv_act[1:,:].T, K_caca, S_0p_12_inv_act[1:,:]))
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V1 block: - < Psi_0 | a^{\dag}_I a_A V | Psi_0>
@@ -656,9 +666,11 @@ def compute_t1_0p(mr_adc):
     V_0p = np.zeros((ncore, nextern, dim_act))
 
     V_0p[:,:,0] = V1_a_a.copy()
+    del(V1_a_a)
 
     V_0p[:,:,V_aa_aa_i:V_aa_aa_f] = V2_aa_aa.copy()
     V_0p[:,:,V_aa_bb_i:V_aa_bb_f] = V2_aa_bb.copy()
+    del(V2_aa_aa, V2_aa_bb)
 
     ## Compute denominators
     d_ai = (e_extern[:,None] - e_core).reshape(-1)
@@ -670,9 +682,11 @@ def compute_t1_0p(mr_adc):
     S_12_V_0p = einsum("mp,iam->iap", evecs, S_12_V_0p, optimize = einsum_type)
     S_12_V_0p = einsum("aip,iap->iap", d_aip, S_12_V_0p, optimize = einsum_type)
     S_12_V_0p = einsum("mp,iap->iam", evecs, S_12_V_0p, optimize = einsum_type)
+    del(V_0p, d_ai, d_aip, evals, evecs)
 
     ## Compute T[0'] t1_ce, t1_caea and t1_caae tensors
     t_0p = einsum("iam,Pm->iaP", S_12_V_0p, S_0p_12_inv_act, optimize = einsum_type)
+    del(S_12_V_0p, S_0p_12_inv_act)
 
     ## Build T[0'] tensors
     t1_ce = t_0p[:,:,0].copy()
@@ -681,6 +695,7 @@ def compute_t1_0p(mr_adc):
 
     t1_caea = t1_caea_abab
     t1_caae = (t1_caea_abab - t1_caea_aaaa).transpose(0,1,3,2).copy()
+    del(t_0p, t1_caea_aaaa, t1_caea_abab)
 
     # Compute electronic correlation energy for T[0']
     e_0p  = 2 * einsum('ia,ia', h_ce, t1_ce, optimize = einsum_type)
@@ -732,6 +747,7 @@ def compute_t1_p1p(mr_adc):
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V1 block: - < Psi_0 | a^{\dag}_I a_X V | Psi_0>
@@ -794,8 +810,11 @@ def compute_t1_p1p(mr_adc):
     V_p1p = np.zeros((ncore, dim_act))
 
     V_p1p[:,V_a_i:V_a_f] = V1_a_a.copy()
+    del(V1_a_a)
+
     V_p1p[:,V_aaa_i:V_aaa_f] = V2_aa_aa.copy()
     V_p1p[:,V_bba_i:V_bba_f] = V2_ab_ba.copy()
+    del(V2_aa_aa, V2_ab_ba)
 
     ## Compute denominators
     d_ip = (-e_core[:,None] + evals)
@@ -804,18 +823,21 @@ def compute_t1_p1p(mr_adc):
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
-    S_12_V_p1p *= d_ip
+    S_12_V_p1p = einsum("ip,ip->ip", d_ip, S_12_V_p1p, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,ip->im", evecs, S_12_V_p1p, optimize = einsum_type)
+    del(V_p1p, d_ip, evals, evecs)
 
     ## Compute T[+1'] t1_ca and t1_caaa tensors
     t_p1p = einsum("Pm,im->iP", S_p1p_12_inv_act, S_12_V_p1p, optimize = einsum_type)
+    del(S_p1p_12_inv_act, S_12_V_p1p)
 
     ## Build T[+1'] tensors
     t1_ca = t_p1p[:, V_a_i:V_a_f].copy()
     t1_caaa = t_p1p[:,V_bba_i: V_bba_f].reshape(ncore, ncas, ncas, ncas).copy()
-
+ 
     ## Transpose indices to the conventional order
     t1_caaa = t1_caaa.transpose(0,1,3,2).copy()
+    del(t_p1p)
 
     # Compute electronic correlation energy for T[+1']
     e_p1p  = 2 * einsum('ix,ix', h_ca, t1_ca, optimize = einsum_type)
@@ -874,6 +896,7 @@ def compute_t1_m1p(mr_adc):
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
+    del(SKS)
 
     # Compute R.H.S. of the equation
     ## V1 block: - < Psi_0 | a^{\dag}_X a_A V | Psi_0>
@@ -923,8 +946,11 @@ def compute_t1_m1p(mr_adc):
     V_m1p = np.zeros((dim_act, nextern))
 
     V_m1p[V_a_i:V_a_f, :] = V1_a_a.copy()
+    del(V1_a_a)
+
     V_m1p[V_aaa_i:V_aaa_f, :] = V2_aa_aa.copy()
     V_m1p[V_abb_i:V_abb_f, :] = V2_ab_ba.copy()
+    del(V2_aa_aa, V2_ab_ba)
 
     ## Compute denominators
     d_pa = (evals[:,None] + e_extern)
@@ -933,16 +959,19 @@ def compute_t1_m1p(mr_adc):
     # Compute T[-1'] amplitudes
     S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
     S_12_V_m1p = einsum("mp,ma->pa", evecs, S_12_V_m1p, optimize = einsum_type)
-    S_12_V_m1p *= d_pa
+    S_12_V_m1p = einsum("pa,pa->pa", d_pa, S_12_V_m1p, optimize = einsum_type)
     S_12_V_m1p = einsum("mp,pa->ma", evecs, S_12_V_m1p, optimize = einsum_type)
+    del(V_m1p, d_pa, evals, evecs)
 
     ## Compute T[-1'] t1_ae and t1_aaea tensors
     t_m1p = einsum("Pm,ma->Pa", S_m1p_12_inv_act, S_12_V_m1p, optimize = einsum_type)
+    del(S_m1p_12_inv_act, S_12_V_m1p)
 
     ## Build T[-1'] tensors
     t1_ae = t_m1p[V_a_i:V_a_f, :].copy()
     t1_aaae = t_m1p[V_abb_i:V_abb_f, :].reshape(ncas, ncas, ncas, nextern).copy()
     t1_aaae = t1_aaae.transpose(1,0,2,3)
+    del(t_m1p)
 
     # Compute electronic correlation energy for T[-1']
     e_m1p  = einsum('xa,ya,xy', h_ae, t1_ae, rdm_ca, optimize = einsum_type)
