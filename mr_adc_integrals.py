@@ -165,10 +165,6 @@ def transform_integrals_2e_df(mr_adc):
     with_df = interface.with_df
     naux = interface.naux
 
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
     # Variables from kernel
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
@@ -261,7 +257,7 @@ def transform_integrals_2e_df(mr_adc):
 
             mr_adc.v2e.ceae = mr_adc.v2e.feri1.create_dataset('ceae', (ncore, nextern, ncas, nextern), 'f8')
             chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
-            for p in range(0, ncas, chnk_size):
+            for p in range(0, ncore, chnk_size):
                 mr_adc.v2e.ceae[p:p+chnk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
                                                                      mr_adc.v2e.Lae, ncas, nextern, chnk_size)
 
@@ -295,12 +291,12 @@ def transform_integrals_2e_df(mr_adc):
 
             mr_adc.v2e.caee = mr_adc.v2e.feri1.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8')
             chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
-            for p in range(0, ncas, chnk_size):
+            for p in range(0, ncore, chnk_size):
                 mr_adc.v2e.caee[p:p+chnk_size] = get_ooee_df(mr_adc, Lca, p, ncas,
                                                                      mr_adc.v2e.Lee, nextern, nextern, chnk_size)
 
             mr_adc.v2e.ceea = mr_adc.v2e.feri1.create_dataset('ceea', (ncore, nextern, nextern, ncas), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncore)
+            chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
             for p in range(0, ncore, chnk_size):
                 mr_adc.v2e.ceea[p:p+chnk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
                                                                      Lea, nextern, ncas, chnk_size)
