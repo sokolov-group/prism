@@ -49,6 +49,9 @@ def compute_t1_amplitudes(mr_adc):
 
     e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8
 
+    if mr_adc.outcore_amplitudes:
+        mr_adc.t1.chk = mr_adc.interface.create_HDF5_temp_file()        
+
     # First-order amplitudes
     if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
         if ncore > 0 and nextern > 0 and ncas > 0:
@@ -334,7 +337,13 @@ def compute_t1_0(mr_adc):
 
     # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
     temp =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type) / temp
-    t1_ccee = temp
+
+    if mr_adc.outcore_amplitudes:
+        t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
+        t1_ccee[:] = temp
+        del(temp)
+    else:
+        t1_ccee = temp
 
     # Compute electronic correlation energy for T[0]
     e_0  = 2 * einsum('ijab,iajb', t1_ccee, v_cece, optimize = einsum_type)
@@ -415,6 +424,7 @@ def compute_t1_m1(mr_adc):
 
     # Variables from kernel
     ncore = mr_adc.ncore
+    ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
     ## Molecular Orbitals Energies
@@ -460,8 +470,15 @@ def compute_t1_m1(mr_adc):
     del(V1_m1, d_ab, d_ix, d_abix, evals, evecs)
 
     ## Compute T[-1] t1_caee tensor
-    t1_caee = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
+    temp = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
     del(S_12_V_m1, S_m1_12_inv_act)
+
+    if mr_adc.outcore_amplitudes:
+        t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8')
+        t1_caee[:] = temp
+        del(temp)
+    else:
+        t1_caee = temp
 
     # Compute electronic correlation energy for T[-1]
     e_m1  = 2 * einsum('ixab,iayb,xy', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
@@ -584,9 +601,16 @@ def compute_t1_m2(mr_adc):
     del(V1_m2, d_ab, d_abp, evals, evecs)
 
     ## Compute T[-2] t1_aaee tensor
-    t1_aaee = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
-    t1_aaee = t1_aaee.reshape(ncas, ncas, nextern, nextern)
+    temp = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
+    temp = temp.reshape(ncas, ncas, nextern, nextern)
     del(S_12_V_m2, S_m2_12_inv_act)
+
+    if mr_adc.outcore_amplitudes:
+        t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
+        t1_aaee[:] = temp
+        del(temp)
+    else:
+        t1_aaee = temp
 
     # Compute electronic correlation energy for T[-2]
     e_m2  = 1/2 * einsum('xyab,zawb,xyzw', t1_aaee, v_aeae, rdm_ccaa, optimize = einsum_type)

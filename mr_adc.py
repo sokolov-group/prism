@@ -84,6 +84,8 @@ class MRADC:
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
 
+        self.outcore_amplitudes = False # Store expensive amplitudes in disk
+
         # Approximations
         self.approx_trans_moments = False
 
