@@ -1076,7 +1076,7 @@ def compute_t2_0p_singles(mr_adc):
     # V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
     # V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
     if isinstance(v_ceee, type(None)):
-        chnk_size = mr_adc_integrals.calculate_chunk_size(mr_adc)
+        chnk_size = mr_adc_integrals.calculate_chunk_size_oeee(mr_adc)
     else:
         chnk_size = ncore
 
