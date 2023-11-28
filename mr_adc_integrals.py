@@ -173,6 +173,9 @@ def transform_integrals_2e_df(mr_adc):
 
     nmo = mr_adc.nmo
     mo = mr_adc.mo
+    mo_c = mo[:, :ncore].copy()
+    mo_a = mo[:, ncore:nocc].copy()
+    mo_e = mo[:, nocc:].copy()
 
     mr_adc.v2e.ceee = None
     mr_adc.v2e.aeee = None
@@ -223,19 +226,18 @@ def transform_integrals_2e_df(mr_adc):
 
     mr_adc.v2e.feri1 = interface.create_HDF5_temp_file()
     mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
-
-    mr_adc.v2e.aaaa[:] = np.dot(Laa.T, Laa).reshape(ncas, ncas, ncas, ncas)
+    mr_adc.v2e.aaaa[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
 
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.ccaa = mr_adc.v2e.feri1.create_dataset('ccaa', (ncore, ncore, ncas, ncas), 'f8')
-            mr_adc.v2e.ccaa[:] = np.dot(Lcc.T, Laa).reshape(ncore, ncore, ncas, ncas)
+            mr_adc.v2e.ccaa[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
 
             mr_adc.v2e.ccae = mr_adc.v2e.feri1.create_dataset('ccae', (ncore, ncore, ncas, nextern), 'f8')
             mr_adc.v2e.ccae[:] = np.dot(Lcc.T, mr_adc.v2e.Lae).reshape(ncore, ncore, ncas, nextern)
 
             mr_adc.v2e.caac = mr_adc.v2e.feri1.create_dataset('caac', (ncore, ncas, ncas, ncore), 'f8')
-            mr_adc.v2e.caac[:] = np.dot(Lca.T, Lac).reshape(ncore, ncas, ncas, ncore)
+            mr_adc.v2e.caac[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
 
             mr_adc.v2e.caec = mr_adc.v2e.feri1.create_dataset('caec', (ncore, ncas, nextern, ncore), 'f8')
             mr_adc.v2e.caec[:] = np.dot(Lca.T, Lec).reshape(ncore, ncas, nextern, ncore)
@@ -272,7 +274,7 @@ def transform_integrals_2e_df(mr_adc):
 
         if mr_adc.method in ("mr-adc(2)-x"):
             mr_adc.v2e.cccc = mr_adc.v2e.feri1.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
-            mr_adc.v2e.cccc[:] = np.dot(Lcc.T, Lcc).reshape(ncore, ncore, ncore, ncore)
+            mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
 
             mr_adc.v2e.ccee = mr_adc.v2e.feri1.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
             chnk_size = calculate_chunk_size_oee(mr_adc, ncore)
@@ -321,7 +323,7 @@ def transform_integrals_2e_df(mr_adc):
 
     # Effective one-electron integrals
     mr_adc.v2e.ccca = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
-    mr_adc.v2e.ccca[:] = np.dot(Lcc.T, Lca).reshape(ncore, ncore, ncore, ncas)
+    mr_adc.v2e.ccca[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
 
     mr_adc.v2e.ccce = mr_adc.v2e.feri1.create_dataset('ccce', (ncore, ncore, ncore, nextern), 'f8')
     mr_adc.v2e.ccce[:] = np.dot(Lcc.T, mr_adc.v2e.Lce).reshape(ncore, ncore, ncore, nextern)
