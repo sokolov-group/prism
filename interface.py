@@ -112,7 +112,10 @@ class PYSCF:
 
         # Integrals
         self.h1e_ao = mf.get_hcore()
-        self.v2e_ao = mf._eri
+        if isinstance(mf._eri, np.ndarray):
+            self.v2e_ao = mf._eri
+        else:
+            self.v2e_ao = mf.mol
 
         self.with_df = None
         self.naux = None
