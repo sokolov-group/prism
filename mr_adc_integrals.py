@@ -245,11 +245,12 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.caca = mr_adc.v2e.feri1.create_dataset('caca', (ncore, ncas, ncore, ncas), 'f8')
             mr_adc.v2e.caca[:] = np.dot(Lca.T, Lca).reshape(ncore, ncas, ncore, ncas)
 
-            mr_adc.v2e.cece = mr_adc.v2e.feri1.create_dataset('cece', (ncore, nextern, ncore, nextern), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncore)
-            for p in range(0, ncore, chnk_size):
-                mr_adc.v2e.cece[p:p+chnk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
-                                                                     mr_adc.v2e.Lce, ncore, nextern, chnk_size)
+            mr_adc.v2e.cece = mr_adc.v2e.feri1.create_dataset('cece', (ncore, nextern, ncore, nextern), 'f8',
+                                                              chunks=(1, nextern, 1, nextern))
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
+            for p in range(0, ncore, chunk_size):
+                mr_adc.v2e.cece[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
+                                                                      mr_adc.v2e.Lce, ncore, nextern, chunk_size)
 
             mr_adc.v2e.cace = mr_adc.v2e.feri1.create_dataset('cace', (ncore, ncas, ncore, nextern), 'f8')
             mr_adc.v2e.cace[:] = np.dot(Lca.T, mr_adc.v2e.Lce).reshape(ncore, ncas, ncore, nextern)
@@ -257,11 +258,12 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.caaa = mr_adc.v2e.feri1.create_dataset('caaa', (ncore, ncas, ncas, ncas), 'f8')
             mr_adc.v2e.caaa[:] = np.dot(Lca.T, Laa).reshape(ncore, ncas, ncas, ncas)
 
-            mr_adc.v2e.ceae = mr_adc.v2e.feri1.create_dataset('ceae', (ncore, nextern, ncas, nextern), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
-            for p in range(0, ncore, chnk_size):
-                mr_adc.v2e.ceae[p:p+chnk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
-                                                                     mr_adc.v2e.Lae, ncas, nextern, chnk_size)
+            mr_adc.v2e.ceae = mr_adc.v2e.feri1.create_dataset('ceae', (ncore, nextern, ncas, nextern), 'f8',
+                                                              chunks=(1, nextern, ncas, nextern))
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            for p in range(0, ncore, chunk_size):
+                mr_adc.v2e.ceae[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
+                                                                      mr_adc.v2e.Lae, ncas, nextern, chunk_size)
 
             mr_adc.v2e.caae = mr_adc.v2e.feri1.create_dataset('caae', (ncore, ncas, ncas, nextern), 'f8')
             mr_adc.v2e.caae[:] = np.dot(Lca.T, mr_adc.v2e.Lae).reshape(ncore, ncas, ncas, nextern)
@@ -277,49 +279,49 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
 
             mr_adc.v2e.ccee = mr_adc.v2e.feri1.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncore)
-            for p in range(0, ncore, chnk_size):
-                mr_adc.v2e.ccee[p:p+chnk_size] = get_ooee_df(mr_adc, Lcc, p, ncore,
-                                                                     mr_adc.v2e.Lee, nextern, nextern, chnk_size)
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
+            for p in range(0, ncore, chunk_size):
+                mr_adc.v2e.ccee[p:p+chunk_size] = get_ooee_df(mr_adc, Lcc, p, ncore,
+                                                                      mr_adc.v2e.Lee, nextern, nextern, chunk_size)
 
             mr_adc.v2e.ceec = mr_adc.v2e.feri1.create_dataset('ceec', (ncore, nextern, nextern, ncore), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncore)
-            for p in range(0, ncore, chnk_size):
-                mr_adc.v2e.ceec[p:p+chnk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
-                                                                     Lec, nextern, ncore, chnk_size)
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
+            for p in range(0, ncore, chunk_size):
+                mr_adc.v2e.ceec[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
+                                                                      Lec, nextern, ncore, chunk_size)
 
             mr_adc.v2e.caea = mr_adc.v2e.feri1.create_dataset('caea', (ncore, ncas, nextern, ncas), 'f8')
             mr_adc.v2e.caea[:] = np.dot(Lca.T, Lea).reshape(ncore, ncas, nextern, ncas)
 
             mr_adc.v2e.caee = mr_adc.v2e.feri1.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
-            for p in range(0, ncore, chnk_size):
-                mr_adc.v2e.caee[p:p+chnk_size] = get_ooee_df(mr_adc, Lca, p, ncas,
-                                                                     mr_adc.v2e.Lee, nextern, nextern, chnk_size)
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            for p in range(0, ncore, chunk_size):
+                mr_adc.v2e.caee[p:p+chunk_size] = get_ooee_df(mr_adc, Lca, p, ncas,
+                                                                      mr_adc.v2e.Lee, nextern, nextern, chunk_size)
 
             mr_adc.v2e.ceea = mr_adc.v2e.feri1.create_dataset('ceea', (ncore, nextern, nextern, ncas), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
-            for p in range(0, ncore, chnk_size):
-                mr_adc.v2e.ceea[p:p+chnk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
-                                                                     Lea, nextern, ncas, chnk_size)
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            for p in range(0, ncore, chunk_size):
+                mr_adc.v2e.ceea[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
+                                                                      Lea, nextern, ncas, chunk_size)
 
             mr_adc.v2e.aeae = mr_adc.v2e.feri1.create_dataset('aeae', (ncas, nextern, ncas, nextern), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
-            for p in range(0, ncas, chnk_size):
-                mr_adc.v2e.aeae[p:p+chnk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, p, nextern,
-                                                                     mr_adc.v2e.Lae, ncas, nextern, chnk_size)
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            for p in range(0, ncas, chunk_size):
+                mr_adc.v2e.aeae[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, p, nextern,
+                                                                      mr_adc.v2e.Lae, ncas, nextern, chunk_size)
 
             mr_adc.v2e.aaee = mr_adc.v2e.feri1.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
-            for p in range(0, ncas, chnk_size):
-                mr_adc.v2e.aaee[p:p+chnk_size] = get_ooee_df(mr_adc, Laa, p, ncas,
-                                                                     mr_adc.v2e.Lee, nextern, nextern, chnk_size)
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            for p in range(0, ncas, chunk_size):
+                mr_adc.v2e.aaee[p:p+chunk_size] = get_ooee_df(mr_adc, Laa, p, ncas,
+                                                                      mr_adc.v2e.Lee, nextern, nextern, chunk_size)
 
             mr_adc.v2e.aeea = mr_adc.v2e.feri1.create_dataset('aeea', (ncas, nextern, nextern, ncas), 'f8')
-            chnk_size = calculate_chunk_size_oee(mr_adc, ncas)
-            for p in range(0, ncas, chnk_size):
-                mr_adc.v2e.aeea[p:p+chnk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, p, nextern,
-                                                                     Lea, nextern, ncas, chnk_size)
+            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            for p in range(0, ncas, chunk_size):
+                mr_adc.v2e.aeea[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, p, nextern,
+                                                                      Lea, nextern, ncas, chunk_size)
 
     # Effective one-electron integrals
     mr_adc.v2e.ccca = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
@@ -369,7 +371,7 @@ def calculate_chunk_size_oee(mr_adc, nocc):
 
     return chunk_size
 
-def get_oeee_df(mr_adc, Loe, Lee, p, chnk_size):
+def get_oeee_df(mr_adc, Loe, Lee, p, chunk_size):
 
     # Import Prism interface
     interface = mr_adc.interface
@@ -383,8 +385,8 @@ def get_oeee_df(mr_adc, Loe, Lee, p, chnk_size):
     Loe = Loe.reshape(naux, -1, nextern)
     nocc = Loe.shape[1]
 
-    if chnk_size < nocc:
-        Loe_temp = np.ascontiguousarray(Loe.transpose(1,2,0)[p:p+chnk_size].reshape(-1, naux))
+    if chunk_size < nocc:
+        Loe_temp = np.ascontiguousarray(Loe.transpose(1,2,0)[p:p+chunk_size].reshape(-1, naux))
     else:
         Loe_temp = np.ascontiguousarray(Loe.transpose(1,2,0).reshape(-1, naux))
 
@@ -392,7 +394,7 @@ def get_oeee_df(mr_adc, Loe, Lee, p, chnk_size):
     oeee = oeee.reshape(-1, nextern, nextern, nextern)
     return oeee
 
-def get_ooee_df(mr_adc, Lpq, p, q, Lrs, r, s, chnk_size):
+def get_ooee_df(mr_adc, Lpq, p, q, Lrs, r, s, chunk_size):
 
     # Import Prism interface
     interface = mr_adc.interface
@@ -403,7 +405,7 @@ def get_ooee_df(mr_adc, Lpq, p, q, Lrs, r, s, chnk_size):
     einsum_type = mr_adc.interface.einsum_type
 
     Lpq = Lpq.reshape(naux, -1, q)
-    Lpq = np.ascontiguousarray(Lpq[:,p:p+chnk_size])
+    Lpq = np.ascontiguousarray(Lpq[:,p:p+chunk_size])
     Lpq = Lpq.reshape(naux, -1)
 
     ooee = einsum('ji,jk', Lpq, Lrs, optimize = einsum_type)

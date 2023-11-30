@@ -331,23 +331,28 @@ def compute_t1_0(mr_adc):
     # Compute denominators
     d_ij = e_core[:,None] + e_core
     d_ab = e_extern[:,None] + e_extern
-    temp = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
-    temp = temp.reshape((ncore, ncore, nextern, nextern))
-    del(d_ij, d_ab)
 
-    # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
-    temp =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type) / temp
-
+    chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncore)
     if mr_adc.outcore_amplitudes:
-        t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
-        t1_ccee[:] = temp
-        del(temp)
+        t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8',
+                                               chunks=(1, 1, nextern, nextern))
     else:
-        t1_ccee = temp
+        t1_ccee = np.zeros((ncore, ncore, nextern, nextern))
 
-    # Compute electronic correlation energy for T[0]
-    e_0  = 2 * einsum('ijab,iajb', t1_ccee, v_cece, optimize = einsum_type)
-    e_0 -= einsum('ijab,jaib', t1_ccee, v_cece, optimize = einsum_type)
+    e_0 = 0.0
+    for p in range(0, ncore, chunk_size):
+        temp = -d_ij[p:p+chunk_size].reshape(-1,1) + d_ab.reshape(-1)
+        temp = temp.reshape((-1, ncore, nextern, nextern))
+        k = temp.shape[0]
+
+        # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
+        temp =- einsum('IAJB->IJAB', v_cece[p:p+k], optimize = einsum_type) / temp
+
+        # Compute electronic correlation energy for T[0]
+        e_0 += 2 * einsum('ijab,iajb', temp, v_cece[p:p+k], optimize = einsum_type)
+        e_0 -= einsum('ijab,jaib', temp, v_cece[:,:,p:p+k], optimize = einsum_type)
+
+        t1_ccee[p:p+k] = temp
 
     return e_0, t1_ccee
 
@@ -452,37 +457,43 @@ def compute_t1_m1(mr_adc):
     del(SKS)
 
     # Compute R.H.S. of the equation
-    ## V matrix: - < Psi_0 | a^{\dag}_I a^{\dag}_X a_B a_A V | Psi_0>
-    V1_m1 =- 1/2 * einsum('IAxB,Xx->IXAB', v_ceae, rdm_ca, optimize = einsum_type)
-
     ## Compute denominators
     d_ab = (e_extern[:,None] + e_extern).reshape(-1)
     d_ix = (e_core[:,None] - evals).reshape(-1)
 
-    d_abix = (d_ab[:,None] - d_ix).reshape(nextern, nextern, ncore, evals.shape[0])
-    d_abix = d_abix**(-1)
-
-    # Compute T[-1] amplitudes
-    S_12_V_m1 = einsum("IXAB,Xm->ImAB", V1_m1, S_m1_12_inv_act, optimize = einsum_type)
-    S_12_V_m1 = einsum("mp,ImAB->IpAB", evecs, S_12_V_m1, optimize = einsum_type)
-    S_12_V_m1 = einsum("ABIp,IpAB->IpAB", d_abix, S_12_V_m1, optimize = einsum_type)
-    S_12_V_m1 = einsum("mp,IpAB->ImAB", evecs, S_12_V_m1, optimize = einsum_type)
-    del(V1_m1, d_ab, d_ix, d_abix, evals, evecs)
-
-    ## Compute T[-1] t1_caee tensor
-    temp = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
-    del(S_12_V_m1, S_m1_12_inv_act)
-
+    chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
     if mr_adc.outcore_amplitudes:
-        t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8')
-        t1_caee[:] = temp
-        del(temp)
+        t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8',
+                                               chunks=(1, 1, nextern, nextern))
     else:
-        t1_caee = temp
+        t1_caee = np.zeros((ncore, ncas, nextern, nextern))
 
-    # Compute electronic correlation energy for T[-1]
-    e_m1  = 2 * einsum('ixab,iayb,xy', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
-    e_m1 -= einsum('ixab,ibya,xy', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
+    e_m1 = 0.0
+    for p in range(0, ncore, chunk_size):
+        ## Compute denominators
+        d_abix = (d_ab[:,None] - d_ix[p:p+chunk_size]).reshape(nextern, nextern, -1, evals.shape[0])
+        d_abix = d_abix**(-1)
+        k = d_abix.shape[0]
+
+        ## V matrix: - < Psi_0 | a^{\dag}_I a^{\dag}_X a_B a_A V | Psi_0>
+        V1_m1 =- 1/2 * einsum('IAxB,Xx->IXAB', v_ceae[p:p+k], rdm_ca, optimize = einsum_type)
+
+        # Compute T[-1] amplitudes
+        S_12_V_m1 = einsum("IXAB,Xm->ImAB", V1_m1, S_m1_12_inv_act, optimize = einsum_type)
+        S_12_V_m1 = einsum("mp,ImAB->IpAB", evecs, S_12_V_m1, optimize = einsum_type)
+        S_12_V_m1 = einsum("ABIp,IpAB->IpAB", d_abix, S_12_V_m1, optimize = einsum_type)
+        S_12_V_m1 = einsum("mp,IpAB->ImAB", evecs, S_12_V_m1, optimize = einsum_type)
+        del(V1_m1, d_abix)
+
+        ## Compute T[-1] t1_caee tensor
+        temp = einsum("ImAB,Xm->IXAB", S_12_V_m1, S_m1_12_inv_act, optimize = einsum_type).copy()
+        del(S_12_V_m1)
+
+        # Compute electronic correlation energy for T[-1]
+        e_m1 += 2 * einsum('ixab,iayb,xy', temp, v_ceae[p:p+k], rdm_ca, optimize = einsum_type)
+        e_m1 -= einsum('ixab,ibya,xy', temp, v_ceae[p:p+k], rdm_ca, optimize = einsum_type)
+
+        t1_caee[p:p+k] = temp
 
     return e_m1, t1_caee
 
@@ -583,37 +594,42 @@ def compute_t1_m2(mr_adc):
     del(SKS)
 
     # Compute R.H.S. of the equation
-    ## V tensor: - < Psi_0 | a^{\dag}_X a^{\dag}_Y a_B a_A V | Psi_0>
-    V1_m2 =- 1/3 * einsum('xAyB,XYxy->XYAB', v_aeae, rdm_ccaa, optimize = einsum_type)
-    V1_m2 -= 1/6 * einsum('xAyB,XYyx->XYAB', v_aeae, rdm_ccaa, optimize = einsum_type)
-    V1_m2 = V1_m2.reshape(ncas**2, nextern, nextern)
-
     ## Compute denominators
     d_ab = (e_extern[:,None] + e_extern).reshape(-1)
     d_abp = (d_ab[:,None] + evals).reshape(nextern, nextern, evals.shape[0])
     d_abp = d_abp**(-1)
 
-    # Compute T[-2] amplitudes
-    S_12_V_m2 = einsum("XAB,Xm->mAB", V1_m2, S_m2_12_inv_act, optimize = einsum_type)
-    S_12_V_m2 = einsum("mp,mAB->pAB", evecs, S_12_V_m2, optimize = einsum_type)
-    S_12_V_m2 = einsum("ABp,pAB->pAB", d_abp, S_12_V_m2, optimize = einsum_type)
-    S_12_V_m2 = einsum("mp,pAB->mAB", evecs, S_12_V_m2, optimize = einsum_type)
-    del(V1_m2, d_ab, d_abp, evals, evecs)
-
-    ## Compute T[-2] t1_aaee tensor
-    temp = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
-    temp = temp.reshape(ncas, ncas, nextern, nextern)
-    del(S_12_V_m2, S_m2_12_inv_act)
-
+    chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
     if mr_adc.outcore_amplitudes:
-        t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
-        t1_aaee[:] = temp
-        del(temp)
+        t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8',
+                                               chunks=(1, 1, nextern, nextern))
     else:
-        t1_aaee = temp
+        t1_aaee = np.zeros((ncas, ncas, nextern, nextern))
 
-    # Compute electronic correlation energy for T[-2]
-    e_m2  = 1/2 * einsum('xyab,zawb,xyzw', t1_aaee, v_aeae, rdm_ccaa, optimize = einsum_type)
+    e_m2 = 0.0
+    for p in range(0, ncas, chunk_size):
+        ## V tensor: - < Psi_0 | a^{\dag}_X a^{\dag}_Y a_B a_A V | Psi_0>
+        V1_m2 =- 1/3 * einsum('xAyB,XYxy->XYAB', v_aeae[p:p+chunk_size], rdm_ccaa, optimize = einsum_type)
+        V1_m2 -= 1/6 * einsum('xAyB,XYyx->XYAB', v_aeae[p:p+chunk_size], rdm_ccaa, optimize = einsum_type)
+        V1_m2 = V1_m2.reshape(-1, nextern, nextern)
+        k = int(V1_m2.shape[0] / ncas)
+
+        # Compute T[-2] amplitudes
+        S_12_V_m2 = einsum("XAB,Xm->mAB", V1_m2, S_m2_12_inv_act, optimize = einsum_type)
+        S_12_V_m2 = einsum("mp,mAB->pAB", evecs, S_12_V_m2, optimize = einsum_type)
+        S_12_V_m2 = einsum("ABp,pAB->pAB", d_abp, S_12_V_m2, optimize = einsum_type)
+        S_12_V_m2 = einsum("mp,pAB->mAB", evecs, S_12_V_m2, optimize = einsum_type)
+        del(V1_m2)
+
+        ## Compute T[-2] t1_aaee tensor
+        temp = einsum("mAB,Xm->XAB", S_12_V_m2, S_m2_12_inv_act, optimize = einsum_type)
+        temp = temp.reshape(ncas, ncas, nextern, nextern)
+        del(S_12_V_m2)
+
+        # Compute electronic correlation energy for T[-2]
+        e_m2 += 1/2 * einsum('xyab,zawb,xyzw', temp, v_aeae, rdm_ccaa[p:p+k], optimize = einsum_type)
+
+        t1_aaee[p:p+k] = temp
 
     return e_m2, t1_aaee
 
@@ -1100,14 +1116,14 @@ def compute_t2_0p_singles(mr_adc):
     # V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
     # V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
     if isinstance(v_ceee, type(None)):
-        chnk_size = mr_adc_integrals.calculate_chunk_size_oeee(mr_adc)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oeee(mr_adc)
     else:
-        chnk_size = ncore
+        chunk_size = ncore
 
     a = 0
-    for p in range(0, ncore, chnk_size):
+    for p in range(0, ncore, chunk_size):
         if interface.with_df:
-            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
+            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, p, chunk_size).reshape(-1, nextern, nextern, nextern)
         else:
             v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.ceee, nextern)
 
@@ -1186,12 +1202,12 @@ def compute_t2_0p_singles(mr_adc):
     # V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
     # V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
     if not isinstance(v_aeee, type(None)):
-        chnk_size = ncas
+        chunk_size = ncas
 
     a = 0
-    for p in range(0, ncas, chnk_size):
+    for p in range(0, ncas, chunk_size):
         if interface.with_df:
-            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
+            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, p, chunk_size).reshape(-1, nextern, nextern, nextern)
         else:
             v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee, nextern)
 
