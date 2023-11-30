@@ -35,6 +35,7 @@ class PYSCF:
         # General info
         self.mol = mf.mol
         self.nelec = mf.mol.nelectron
+        self.spin = mf.mol.spin
         self.enuc = mf.mol.energy_nuc()
         self.e_scf = mf.e_tot
         self.mf = mf
@@ -50,6 +51,12 @@ class PYSCF:
             self.nmo = self.mo.shape[1]
             self.mo_energy = mf.mo_energy.copy()
             self.symmetry = mf.mol.symmetry
+
+            if getattr(mf, 'with_df', None):
+                self.reference_df = mc.with_df
+            else:
+                self.reference_df = None
+
             if self.symmetry:
                 from pyscf import symm
                 self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf._scf.mo_coeff.orbsym]
@@ -73,6 +80,11 @@ class PYSCF:
             self.davidson_only = mc.fcisolver.davidson_only
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
+
+            if getattr(mc, 'with_df', None):
+                self.reference_df = mc.with_df
+            else:
+                self.reference_df = None
 
             # Make sure that the orbitals are canonicalized
             mo, ci, mo_energy = mc.canonicalize(mo_coeff=mc.mo_coeff, ci=mc.ci)
@@ -139,7 +151,7 @@ class PYSCF:
     def with_df(self, obj):
         self._with_df = obj
         if obj:
-            self.naux = obj.get_naoaux()
+            self.get_naux = obj.get_naoaux
 
     def density_fit(self, auxbasis=None, with_df = None):
         if with_df is None:
@@ -147,9 +159,7 @@ class PYSCF:
             from pyscf import df
 
             self.with_df = df.DF(self.mol, auxbasis)
-            self.with_df.max_memory = self.max_memory
-            self.naux = self.with_df.get_naoaux()
-
+            self.get_naux = self.with_df.get_naoaux
         else:
             self.with_df = with_df
 
@@ -195,7 +205,7 @@ def print_header():
         PRISM: Open-Source implementation of ab initio methods
                 for excited states and spectroscopy
 
-                           Version 0.3
+                           Version 0.4
 
                Copyright (C) 2023 Alexander Sokolov
                                   Carlos E. V. de Moura

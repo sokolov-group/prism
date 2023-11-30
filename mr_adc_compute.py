@@ -102,6 +102,7 @@ def kernel(mr_adc):
     sys.stdout.flush()
 
     # Compute transition moments and spectroscopic factors
+    U = np.array(U)
     spec_intensity, X = compute_trans_properties(mr_adc, E, U)
 
     print("\nTotal time:                                       %f sec" % (time.time() - start_time))
@@ -209,23 +210,20 @@ def compute_trans_properties(mr_adc, E, U):
     print("\nComputing transition moments matrix...\n")
     sys.stdout.flush()
 
-    T = None
+    X = None
 
     if mr_adc.method_type == "ip":
-        T = mr_adc_ip.compute_trans_moments(mr_adc)
+        X = mr_adc_ip.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "cvs-ip":
-        T = mr_adc_cvs_ip.compute_trans_moments(mr_adc)
+        X = mr_adc_cvs_ip.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "ea":
-        T = mr_adc_ea.compute_trans_moments(mr_adc)
+        X = mr_adc_ea.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "ee":
-        T = mr_adc_ee.compute_trans_moments(mr_adc)
+        X = mr_adc_ee.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "cvs-ee":
-        T = mr_adc_cvs_ee.compute_trans_moments(mr_adc)
+        X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
     else:
         raise Exception("Unknown Method Type ...")
-
-    U = np.array(U)
-    X = np.dot(T, U.T)
 
     spec_intensity = 2.0 * np.sum(X**2, axis=0)
 

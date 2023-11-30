@@ -25,7 +25,7 @@ import prism.mr_adc_compute as mr_adc_compute
 class MRADC:
     def __init__(self, interface):
 
-        print("\nInitializing MR-ADC...\n")
+        print("Initializing MR-ADC...\n")
         sys.stdout.flush()
 
         if (interface.reference != "casscf"):
@@ -45,6 +45,7 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
+        self.spin = interface.spin
 
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
@@ -84,7 +85,7 @@ class MRADC:
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
 
-        self.outcore_amplitudes = False # Store expensive amplitudes in disk
+        self.outcore_expensive_tensors = False # Store expensive integrals and amplitudes in disk
 
         # Approximations
         self.approx_trans_moments = False
@@ -120,7 +121,7 @@ class MRADC:
         if self.interface.with_df and self.method_type not in ('cvs-ip'):
             raise Exception("Density-fitting currently only compatible with CVS-IP method type.")
 
-        if self.nelecas[0] != self.nelecas[1]:
+        if self.spin > 0:
             raise Exception("This program currently does not work for open-shell molecules")
 
         if self.method_type == "cvs-ip" and self.ncvs is None:
@@ -144,12 +145,15 @@ class MRADC:
         # Transform one- and two-electron integrals
         mr_adc_integrals.transform_integrals_1e(self)
         if self.interface.with_df:
+            self.outcore_expensive_tensors = True
+
+            mr_adc_integrals.transform_Heff_integrals_2e_df(self)
             mr_adc_integrals.transform_integrals_2e_df(self)
         elif self.interface.v2e_ao is not None:
             mr_adc_integrals.transform_integrals_2e_incore(self)
         else:
             raise Exception("Out-of-core algorithm is not implemented in Prism.")
-    
+
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
 

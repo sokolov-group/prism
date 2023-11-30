@@ -615,4 +615,4 @@ def compute_S12_m1p_gno_projector(mr_adc):
 
     return S_m1p_12_inv_act
 
-  
+
