@@ -225,7 +225,8 @@ def transform_integrals_2e_df(mr_adc):
     mr_adc.v2e.Lee = mr_adc.v2e.Lee.reshape(naux, nextern*nextern)
 
     mr_adc.v2e.feri1 = interface.create_HDF5_temp_file()
-    mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
+    mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8',
+                                                              chunks=(1, ncas, ncas, ncas))
     mr_adc.v2e.aaaa[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
 
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
@@ -265,10 +266,12 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.ceae[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
                                                                       mr_adc.v2e.Lae, ncas, nextern, chunk_size)
 
-            mr_adc.v2e.caae = mr_adc.v2e.feri1.create_dataset('caae', (ncore, ncas, ncas, nextern), 'f8')
+            mr_adc.v2e.caae = mr_adc.v2e.feri1.create_dataset('caae', (ncore, ncas, ncas, nextern), 'f8',
+                                                              chunks=(1, ncas, ncas, nextern))
             mr_adc.v2e.caae[:] = np.dot(Lca.T, mr_adc.v2e.Lae).reshape(ncore, ncas, ncas, nextern)
 
-            mr_adc.v2e.ceaa = mr_adc.v2e.feri1.create_dataset('ceaa', (ncore, nextern, ncas, ncas), 'f8')
+            mr_adc.v2e.ceaa = mr_adc.v2e.feri1.create_dataset('ceaa', (ncore, nextern, ncas, ncas), 'f8',
+                                                              chunks=(1, nextern, ncas, ncas))
             mr_adc.v2e.ceaa[:] = np.dot(mr_adc.v2e.Lce.T, Laa).reshape(ncore, nextern, ncas, ncas)
 
             mr_adc.v2e.aaae = mr_adc.v2e.feri1.create_dataset('aaae', (ncas, ncas, ncas, nextern), 'f8')
@@ -278,13 +281,15 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.cccc = mr_adc.v2e.feri1.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
             mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
 
-            mr_adc.v2e.ccee = mr_adc.v2e.feri1.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
+            mr_adc.v2e.ccee = mr_adc.v2e.feri1.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8',
+                                                              chunks=(1, ncore, nextern, nextern))
             chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
             for p in range(0, ncore, chunk_size):
                 mr_adc.v2e.ccee[p:p+chunk_size] = get_ooee_df(mr_adc, Lcc, p, ncore,
                                                                       mr_adc.v2e.Lee, nextern, nextern, chunk_size)
 
-            mr_adc.v2e.ceec = mr_adc.v2e.feri1.create_dataset('ceec', (ncore, nextern, nextern, ncore), 'f8')
+            mr_adc.v2e.ceec = mr_adc.v2e.feri1.create_dataset('ceec', (ncore, nextern, nextern, ncore), 'f8',
+                                                              chunks=(ncore, nextern, nextern, 1))
             chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
             for p in range(0, ncore, chunk_size):
                 mr_adc.v2e.ceec[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
@@ -293,13 +298,15 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.caea = mr_adc.v2e.feri1.create_dataset('caea', (ncore, ncas, nextern, ncas), 'f8')
             mr_adc.v2e.caea[:] = np.dot(Lca.T, Lea).reshape(ncore, ncas, nextern, ncas)
 
-            mr_adc.v2e.caee = mr_adc.v2e.feri1.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8')
+            mr_adc.v2e.caee = mr_adc.v2e.feri1.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8',
+                                                              chunks=(1, 1, nextern, nextern))
             chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
             for p in range(0, ncore, chunk_size):
                 mr_adc.v2e.caee[p:p+chunk_size] = get_ooee_df(mr_adc, Lca, p, ncas,
                                                                       mr_adc.v2e.Lee, nextern, nextern, chunk_size)
 
-            mr_adc.v2e.ceea = mr_adc.v2e.feri1.create_dataset('ceea', (ncore, nextern, nextern, ncas), 'f8')
+            mr_adc.v2e.ceea = mr_adc.v2e.feri1.create_dataset('ceea', (ncore, nextern, nextern, ncas), 'f8',
+                                                              chunks=(1, nextern, nextern, 1))
             chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
             for p in range(0, ncore, chunk_size):
                 mr_adc.v2e.ceea[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, p, nextern,
@@ -311,7 +318,8 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.aeae[p:p+chunk_size] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, p, nextern,
                                                                       mr_adc.v2e.Lae, ncas, nextern, chunk_size)
 
-            mr_adc.v2e.aaee = mr_adc.v2e.feri1.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
+            mr_adc.v2e.aaee = mr_adc.v2e.feri1.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8',
+                                                              chunks=(1, ncas, nextern, nextern))
             chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
             for p in range(0, ncas, chunk_size):
                 mr_adc.v2e.aaee[p:p+chunk_size] = get_ooee_df(mr_adc, Laa, p, ncas,
@@ -370,6 +378,39 @@ def calculate_chunk_size_oee(mr_adc, nocc):
         chunk_size = 1
 
     return chunk_size
+
+def calculate_chunk_size_aae(mr_adc):
+
+    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
+    ee_mem = (mr_adc.nextern * mr_adc.ncas**2) * 8/1e6
+
+    chunk_size = int(avail_mem / ee_mem)
+
+    if chunk_size <= 0 :
+        chunk_size = 1
+
+    return chunk_size
+
+def calculate_chunk_size_oee_oeee(mr_adc, nocc):
+
+    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
+    eee_mem = (mr_adc.nextern**3) * 8/1e6
+    ee_mem  = (nocc * mr_adc.nextern**2) * 8/1e6
+
+    if eee_mem > ee_mem:
+        chunk_size_eee = int(avail_mem / (eee_mem - ee_mem))
+        chunk_size_ee = int((avail_mem - eee_mem) / eee_mem)
+    else:
+        chunk_size_eee = 1
+        chunk_size_ee = 1
+
+    if chunk_size_eee <= 0 :
+        chunk_size_eee = 1
+
+    if chunk_size_ee <= 0 :
+        chunk_size_ee = 1
+
+    return chunk_size_ee, chunk_size_eee
 
 def get_oeee_df(mr_adc, Loe, Lee, p, chunk_size):
 
