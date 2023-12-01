@@ -460,7 +460,6 @@ def compute_t1_m1(mr_adc):
     # Compute R.H.S. of the equation
     ## Compute denominators
     d_ab = (e_extern[:,None] + e_extern).reshape(-1)
-    d_ix = (e_core[:,None] - evals).reshape(-1)
 
     chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
     if mr_adc.outcore_amplitudes:
@@ -474,7 +473,8 @@ def compute_t1_m1(mr_adc):
         f_chunk = s_chunk + chunk_size
 
         ## Compute denominators
-        d_abix = (d_ab[:,None] - d_ix[s_chunk:f_chunk]).reshape(nextern, nextern, -1, evals.shape[0])
+        d_ix = (e_core[s_chunk:f_chunk][:,None] - evals).reshape(-1)
+        d_abix = (d_ab[:,None] - d_ix).reshape(nextern, nextern, -1, evals.shape[0])
         d_abix = d_abix**(-1)
 
         ## V matrix: - < Psi_0 | a^{\dag}_I a^{\dag}_X a_B a_A V | Psi_0>
