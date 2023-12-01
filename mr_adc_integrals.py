@@ -414,6 +414,27 @@ def calculate_chunk_size_oee_oeee(mr_adc, nocc):
 
     return chunk_size_ee, chunk_size_eee
 
+def calculate_chunk_size_oee_oee(mr_adc, nocc1, nocc2):
+
+    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
+    ee1_mem = (nocc1 * mr_adc.nextern**2) * 8/1e6
+    ee2_mem = (nocc2 * mr_adc.nextern**2) * 8/1e6
+
+    if ee1_mem > ee2_mem:
+        chunk_size_ee1 = int(avail_mem / (ee1_mem - ee2_mem))
+        chunk_size_ee2 = int((avail_mem - ee1_mem) / ee1_mem)
+    else:
+        chunk_size_ee1 = 1
+        chunk_size_ee2 = 1
+
+    if chunk_size_ee1 <= 0 :
+        chunk_size_ee1 = 1
+
+    if chunk_size_ee2 <= 0 :
+        chunk_size_ee2 = 1
+
+    return chunk_size_ee1, chunk_size_ee2
+
 def get_oeee_df(mr_adc, Loe, Lee, p, chunk_size):
 
     # Import Prism interface

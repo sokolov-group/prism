@@ -21,6 +21,7 @@ import sys
 import time
 import numpy as np
 import prism.mr_adc_overlap as mr_adc_overlap
+import prism.mr_adc_integrals as mr_adc_integrals
 
 def compute_excitation_manifolds(mr_adc):
 
@@ -284,6 +285,8 @@ def compute_M_00(mr_adc):
 
     # Variables from kernel
     ncvs = mr_adc.ncvs
+    ncore = mr_adc.ncore
+    ncas = mr_adc.ncas
 
     ## Molecular Orbitals Energies
     e_cvs = mr_adc.mo_energy.x
@@ -377,26 +380,18 @@ def compute_M_00(mr_adc):
         M_00 += einsum('Ix,Jx->IJ', h_xa, t1_xa, optimize = einsum_type)
         M_00 += einsum('Ja,Ia->IJ', h_xe, t1_xe, optimize = einsum_type)
         M_00 += einsum('Jx,Ix->IJ', h_xa, t1_xa, optimize = einsum_type)
-        M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xxee, v_xexe, optimize = einsum_type)
-        M_00 -= einsum('Iiab,Jbia->IJ', t1_xxee, v_xexe, optimize = einsum_type)
         M_00 += 2 * einsum('Iixa,Jxia->IJ', t1_xxae, v_xaxe, optimize = einsum_type)
         M_00 -= einsum('Iixa,ixJa->IJ', t1_xxae, v_xaxe, optimize = einsum_type)
         M_00 += 2 * einsum('Iixy,Jxiy->IJ', t1_xxaa, v_xaxa, optimize = einsum_type)
         M_00 -= einsum('Iixy,Jyix->IJ', t1_xxaa, v_xaxa, optimize = einsum_type)
-        M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xvee, v_xeve, optimize = einsum_type)
-        M_00 -= einsum('Iiab,Jbia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
         M_00 += 2 * einsum('Iixa,Jxia->IJ', t1_xvae, v_xave, optimize = einsum_type)
         M_00 -= einsum('Iixa,ixJa->IJ', t1_xvae, v_vaxe, optimize = einsum_type)
         M_00 += 2 * einsum('Iixy,Jxiy->IJ', t1_xvaa, v_xava, optimize = einsum_type)
         M_00 -= einsum('Iixy,Jyix->IJ', t1_xvaa, v_xava, optimize = einsum_type)
-        M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xxee, v_xexe, optimize = einsum_type)
-        M_00 -= einsum('Jiab,Ibia->IJ', t1_xxee, v_xexe, optimize = einsum_type)
         M_00 += 2 * einsum('Jixa,Ixia->IJ', t1_xxae, v_xaxe, optimize = einsum_type)
         M_00 -= einsum('Jixa,ixIa->IJ', t1_xxae, v_xaxe, optimize = einsum_type)
         M_00 += 2 * einsum('Jixy,Ixiy->IJ', t1_xxaa, v_xaxa, optimize = einsum_type)
         M_00 -= einsum('Jixy,Iyix->IJ', t1_xxaa, v_xaxa, optimize = einsum_type)
-        M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xvee, v_xeve, optimize = einsum_type)
-        M_00 -= einsum('Jiab,Ibia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
         M_00 += 2 * einsum('Jixa,Ixia->IJ', t1_xvae, v_xave, optimize = einsum_type)
         M_00 -= einsum('Jixa,ixIa->IJ', t1_xvae, v_vaxe, optimize = einsum_type)
         M_00 += 2 * einsum('Jixy,Ixiy->IJ', t1_xvaa, v_xava, optimize = einsum_type)
@@ -426,14 +421,10 @@ def compute_M_00(mr_adc):
         M_00 -= einsum('ix,iIJx->IJ', t1_va, v_vxxa, optimize = einsum_type)
         M_00 -= einsum('ix,iJIx->IJ', t1_va, v_vxxa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('I,Ia,Ja->IJ', e_cvs, t1_xe, t1_xe, optimize = einsum_type)
-        M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
-        M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
         M_00 -= einsum('I,Iixa,Jixa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 += 1/2 * einsum('I,Iixa,iJxa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 -= einsum('I,Iixy,Jixy->IJ', e_cvs, t1_xxaa, t1_xxaa, optimize = einsum_type)
         M_00 += 1/2 * einsum('I,Iixy,Jiyx->IJ', e_cvs, t1_xxaa, t1_xxaa, optimize = einsum_type)
-        M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
-        M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
         M_00 -= einsum('I,Iixa,Jixa->IJ', e_cvs, t1_xvae, t1_xvae, optimize = einsum_type)
         M_00 += 1/2 * einsum('I,Iixa,iJxa->IJ', e_cvs, t1_xvae, t1_vxae, optimize = einsum_type)
         M_00 -= einsum('I,Iixy,Jixy->IJ', e_cvs, t1_xvaa, t1_xvaa, optimize = einsum_type)
@@ -444,14 +435,10 @@ def compute_M_00(mr_adc):
         M_00 += 1/2 * einsum('I,iIxa,Jixa->IJ', e_cvs, t1_vxae, t1_xvae, optimize = einsum_type)
         M_00 -= einsum('I,iIxa,iJxa->IJ', e_cvs, t1_vxae, t1_vxae, optimize = einsum_type)
         M_00 -= 1/2 * einsum('J,Ia,Ja->IJ', e_cvs, t1_xe, t1_xe, optimize = einsum_type)
-        M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
-        M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
         M_00 -= einsum('J,Iixa,Jixa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 += 1/2 * einsum('J,Iixa,iJxa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 -= einsum('J,Iixy,Jixy->IJ', e_cvs, t1_xxaa, t1_xxaa, optimize = einsum_type)
         M_00 += 1/2 * einsum('J,Iixy,Jiyx->IJ', e_cvs, t1_xxaa, t1_xxaa, optimize = einsum_type)
-        M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
-        M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
         M_00 -= einsum('J,Iixa,Jixa->IJ', e_cvs, t1_xvae, t1_xvae, optimize = einsum_type)
         M_00 += 1/2 * einsum('J,Iixa,iJxa->IJ', e_cvs, t1_xvae, t1_vxae, optimize = einsum_type)
         M_00 -= einsum('J,Iixy,Jixy->IJ', e_cvs, t1_xvaa, t1_xvaa, optimize = einsum_type)
@@ -462,30 +449,18 @@ def compute_M_00(mr_adc):
         M_00 += 1/2 * einsum('J,iIxa,Jixa->IJ', e_cvs, t1_vxae, t1_xvae, optimize = einsum_type)
         M_00 -= einsum('J,iIxa,iJxa->IJ', e_cvs, t1_vxae, t1_vxae, optimize = einsum_type)
         M_00 += einsum('a,Ia,Ja->IJ', e_extern, t1_xe, t1_xe, optimize = einsum_type)
-        M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
-        M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
-        M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
-        M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
         M_00 += 2 * einsum('a,Iixa,Jixa->IJ', e_extern, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 -= einsum('a,Iixa,iJxa->IJ', e_extern, t1_xxae, t1_xxae, optimize = einsum_type)
-        M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
-        M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
-        M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
-        M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
         M_00 += 2 * einsum('a,Iixa,Jixa->IJ', e_extern, t1_xvae, t1_xvae, optimize = einsum_type)
         M_00 -= einsum('a,Iixa,iJxa->IJ', e_extern, t1_xvae, t1_vxae, optimize = einsum_type)
         M_00 -= einsum('a,iIxa,Jixa->IJ', e_extern, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 += 2 * einsum('a,iIxa,iJxa->IJ', e_extern, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 -= einsum('a,iIxa,Jixa->IJ', e_extern, t1_vxae, t1_xvae, optimize = einsum_type)
         M_00 += 2 * einsum('a,iIxa,iJxa->IJ', e_extern, t1_vxae, t1_vxae, optimize = einsum_type)
-        M_00 -= einsum('i,Iiab,Jiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
-        M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
         M_00 -= einsum('i,Iixa,Jixa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 += 1/2 * einsum('i,Iixa,iJxa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 -= einsum('i,Iixy,Jixy->IJ', e_cvs, t1_xxaa, t1_xxaa, optimize = einsum_type)
         M_00 += 1/2 * einsum('i,Iixy,Jiyx->IJ', e_cvs, t1_xxaa, t1_xxaa, optimize = einsum_type)
-        M_00 -= einsum('i,Jiab,Iiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
-        M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
         M_00 -= einsum('i,Jixa,Iixa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 += 1/2 * einsum('i,Jixa,iIxa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 -= einsum('i,Jixy,Iixy->IJ', e_cvs, t1_xxaa, t1_xxaa, optimize = einsum_type)
@@ -494,14 +469,10 @@ def compute_M_00(mr_adc):
         M_00 -= einsum('i,iIxa,iJxa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 += 1/2 * einsum('i,iJxa,Iixa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
         M_00 -= einsum('i,iJxa,iIxa->IJ', e_cvs, t1_xxae, t1_xxae, optimize = einsum_type)
-        M_00 -= einsum('i,Iiab,Jiab->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
-        M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
         M_00 -= einsum('i,Iixa,Jixa->IJ', e_val, t1_xvae, t1_xvae, optimize = einsum_type)
         M_00 += 1/2 * einsum('i,Iixa,iJxa->IJ', e_val, t1_xvae, t1_vxae, optimize = einsum_type)
         M_00 -= einsum('i,Iixy,Jixy->IJ', e_val, t1_xvaa, t1_xvaa, optimize = einsum_type)
         M_00 += 1/2 * einsum('i,Iixy,Jiyx->IJ', e_val, t1_xvaa, t1_xvaa, optimize = einsum_type)
-        M_00 -= einsum('i,Jiab,Iiab->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
-        M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
         M_00 -= einsum('i,Jixa,Iixa->IJ', e_val, t1_xvae, t1_xvae, optimize = einsum_type)
         M_00 += 1/2 * einsum('i,Jixa,iIxa->IJ', e_val, t1_xvae, t1_vxae, optimize = einsum_type)
         M_00 -= einsum('i,Jixy,Iixy->IJ', e_val, t1_xvaa, t1_xvaa, optimize = einsum_type)
@@ -553,8 +524,6 @@ def compute_M_00(mr_adc):
         M_00 -= einsum('Iixy,Jziy,xz->IJ', t1_xvaa, v_xava, rdm_ca, optimize = einsum_type)
         M_00 += einsum('Ix,Jxyz,yz->IJ', t1_xa, v_xaaa, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('Ix,Jyzx,zy->IJ', t1_xa, v_xaaa, rdm_ca, optimize = einsum_type)
-        M_00 += einsum('Ixab,Jayb,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('Ixab,Jbya,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
         M_00 += einsum('Ixay,Jazw,xwyz->IJ', t1_xaea, v_xeaa, rdm_ccaa, optimize = einsum_type)
         M_00 += einsum('Ixay,Jazy,xz->IJ', t1_xaea, v_xeaa, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('Ixay,Jyza,xz->IJ', t1_xaea, v_xaae, rdm_ca, optimize = einsum_type)
@@ -588,8 +557,6 @@ def compute_M_00(mr_adc):
         M_00 -= einsum('Jixy,Iziy,xz->IJ', t1_xvaa, v_xava, rdm_ca, optimize = einsum_type)
         M_00 += einsum('Jx,Ixyz,yz->IJ', t1_xa, v_xaaa, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('Jx,Iyzx,zy->IJ', t1_xa, v_xaaa, rdm_ca, optimize = einsum_type)
-        M_00 += einsum('Jxab,Iayb,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('Jxab,Ibya,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
         M_00 += einsum('Jxay,Iazw,xwyz->IJ', t1_xaea, v_xeaa, rdm_ccaa, optimize = einsum_type)
         M_00 += einsum('Jxay,Iazy,xz->IJ', t1_xaea, v_xeaa, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('Jxay,Iyza,xz->IJ', t1_xaea, v_xaae, rdm_ca, optimize = einsum_type)
@@ -691,8 +658,6 @@ def compute_M_00(mr_adc):
         M_00 += 1/2 * einsum('I,Iixy,Jizy,xz->IJ', e_cvs, t1_xvaa, t1_xvaa, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('I,Ix,Jyxz,yz->IJ', e_cvs, t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
         M_00 += 1/4 * einsum('I,Ix,Jyzx,yz->IJ', e_cvs, t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('I,Ixab,Jyab,xy->IJ', e_cvs, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        M_00 += 1/4 * einsum('I,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('I,Ixay,Ja,xy->IJ', e_cvs, t1_xaea, t1_xe, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('I,Ixay,Jzaw,xwyz->IJ', e_cvs, t1_xaea, t1_xaea, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('I,Ixay,Jzay,xz->IJ', e_cvs, t1_xaea, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -734,8 +699,6 @@ def compute_M_00(mr_adc):
         M_00 += 1/2 * einsum('J,Iixy,Jizy,xz->IJ', e_cvs, t1_xvaa, t1_xvaa, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('J,Ix,Jyxz,yz->IJ', e_cvs, t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
         M_00 += 1/4 * einsum('J,Ix,Jyzx,yz->IJ', e_cvs, t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('J,Ixab,Jyab,xy->IJ', e_cvs, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        M_00 += 1/4 * einsum('J,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('J,Ixay,Ja,xy->IJ', e_cvs, t1_xaea, t1_xe, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('J,Ixay,Jzaw,xwyz->IJ', e_cvs, t1_xaea, t1_xaea, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('J,Ixay,Jzay,xz->IJ', e_cvs, t1_xaea, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -765,15 +728,11 @@ def compute_M_00(mr_adc):
         M_00 += 1/2 * einsum('a,Iixa,iJya,xy->IJ', e_extern, t1_xxae, t1_xxae, rdm_ca, optimize = einsum_type)
         M_00 -= einsum('a,Iixa,Jiya,xy->IJ', e_extern, t1_xvae, t1_xvae, rdm_ca, optimize = einsum_type)
         M_00 += 1/2 * einsum('a,Iixa,iJya,xy->IJ', e_extern, t1_xvae, t1_vxae, rdm_ca, optimize = einsum_type)
-        M_00 += einsum('a,Ixab,Jyab,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('a,Ixab,Jyba,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
         M_00 += einsum('a,Ixay,Ja,xy->IJ', e_extern, t1_xaea, t1_xe, rdm_ca, optimize = einsum_type)
         M_00 += einsum('a,Ixay,Jzaw,xwyz->IJ', e_extern, t1_xaea, t1_xaea, rdm_ccaa, optimize = einsum_type)
         M_00 += einsum('a,Ixay,Jzay,xz->IJ', e_extern, t1_xaea, t1_xaea, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('a,Ixay,Jzwa,xwyz->IJ', e_extern, t1_xaea, t1_xaae, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('a,Ixay,Jzya,xz->IJ', e_extern, t1_xaea, t1_xaae, rdm_ca, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('a,Ixba,Jyab,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        M_00 += einsum('a,Ixba,Jyba,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('a,Ixya,Ja,xy->IJ', e_extern, t1_xaae, t1_xe, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('a,Ixya,Jzaw,xwyz->IJ', e_extern, t1_xaae, t1_xaea, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('a,Ixya,Jzay,xz->IJ', e_extern, t1_xaae, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -843,8 +802,6 @@ def compute_M_00(mr_adc):
         M_00 -= 1/2 * einsum('xy,Iizx,Jizw,yw->IJ', h_aa, t1_xvaa, t1_xvaa, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xy,Ix,Jzwy,zw->IJ', h_aa, t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
         M_00 += einsum('xy,Ix,Jzyw,zw->IJ', h_aa, t1_xa, t1_xaaa, rdm_ca, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('xy,Ixab,Jzab,yz->IJ', h_aa, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        M_00 += 1/4 * einsum('xy,Ixab,Jzba,yz->IJ', h_aa, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xy,Ixaz,Ja,yz->IJ', h_aa, t1_xaea, t1_xe, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xy,Ixaz,Jwau,yuzw->IJ', h_aa, t1_xaea, t1_xaea, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xy,Ixaz,Jwaz,yw->IJ', h_aa, t1_xaea, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -908,8 +865,6 @@ def compute_M_00(mr_adc):
         M_00 += 1/4 * einsum('xy,Jizx,Iiwu,yzuw->IJ', h_aa, t1_xvaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
         M_00 += 1/4 * einsum('xy,Jizx,Iiwz,yw->IJ', h_aa, t1_xvaa, t1_xvaa, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xy,Jizx,Iizw,yw->IJ', h_aa, t1_xvaa, t1_xvaa, rdm_ca, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('xy,Jxab,Izab,yz->IJ', h_aa, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        M_00 += 1/4 * einsum('xy,Jxab,Izba,yz->IJ', h_aa, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xy,Jxaz,Ia,yz->IJ', h_aa, t1_xaea, t1_xe, rdm_ca, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xy,Jxaz,Iwau,yuzw->IJ', h_aa, t1_xaea, t1_xaea, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xy,Jxaz,Iwaz,yw->IJ', h_aa, t1_xaea, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -1163,8 +1118,6 @@ def compute_M_00(mr_adc):
         M_00 -= 1/2 * einsum('xyzw,Ix,Jw,zy->IJ', v_aaaa, t1_xa, t1_xa, rdm_ca, optimize = einsum_type)
         M_00 += einsum('xyzw,Ix,Jy,zw->IJ', v_aaaa, t1_xa, t1_xa, rdm_ca, optimize = einsum_type)
         M_00 += 1/2 * einsum('xyzw,Ix,Jzuv,ywuv->IJ', v_aaaa, t1_xa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('xyzw,Ixab,Juab,zuwy->IJ', v_aaaa, t1_xaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
-        M_00 += 1/4 * einsum('xyzw,Ixab,Juba,zuwy->IJ', v_aaaa, t1_xaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xyzw,Ixau,Ja,zuwy->IJ', v_aaaa, t1_xaea, t1_xe, rdm_ccaa, optimize = einsum_type)
         M_00 += 1/6 * einsum('xyzw,Ixau,Jvas,zuvswy->IJ', v_aaaa, t1_xaea, t1_xaea, rdm_cccaaa, optimize = einsum_type)
         M_00 += 1/6 * einsum('xyzw,Ixau,Jvas,zuvsyw->IJ', v_aaaa, t1_xaea, t1_xaea, rdm_cccaaa, optimize = einsum_type)
@@ -1314,8 +1267,6 @@ def compute_M_00(mr_adc):
         M_00 -= 1/12 * einsum('xyzw,Juxv,Iust,zstywv->IJ', v_aaaa, t1_xaaa, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
         M_00 -= 1/4 * einsum('xyzw,Juxv,Iv,zuwy->IJ', v_aaaa, t1_xaaa, t1_xa, rdm_ccaa, optimize = einsum_type)
         M_00 += 1/4 * einsum('xyzw,Juxz,Iuvs,ywvs->IJ', v_aaaa, t1_xaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        M_00 -= 1/2 * einsum('xyzw,Jxab,Iuab,zuwy->IJ', v_aaaa, t1_xaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
-        M_00 += 1/4 * einsum('xyzw,Jxab,Iuba,zuwy->IJ', v_aaaa, t1_xaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xyzw,Jxau,Ia,zuwy->IJ', v_aaaa, t1_xaea, t1_xe, rdm_ccaa, optimize = einsum_type)
         M_00 += 1/6 * einsum('xyzw,Jxau,Ivas,zuvswy->IJ', v_aaaa, t1_xaea, t1_xaea, rdm_cccaaa, optimize = einsum_type)
         M_00 += 1/6 * einsum('xyzw,Jxau,Ivas,zuvsyw->IJ', v_aaaa, t1_xaea, t1_xaea, rdm_cccaaa, optimize = einsum_type)
@@ -1380,6 +1331,71 @@ def compute_M_00(mr_adc):
         M_00 += 2 * einsum('xyzw,iIxa,iJya,zw->IJ', v_aaaa, t1_vxae, t1_vxae, rdm_ca, optimize = einsum_type)
         M_00 += 1/4 * einsum('xyzw,iJxa,Iiua,zuwy->IJ', v_aaaa, t1_vxae, t1_xvae, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xyzw,iJxa,iIua,zuwy->IJ', v_aaaa, t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
+
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xxee[:,s_chunk:f_chunk], v_xexe[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('Iiab,Jbia->IJ', t1_xxee[:,s_chunk:f_chunk], v_xexe[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xxee[:,s_chunk:f_chunk], v_xexe[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('Jiab,Ibia->IJ', t1_xxee[:,s_chunk:f_chunk], v_xexe[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('i,Iiab,Jiab->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('i,Jiab,Iiab->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
+        for s_chunk in range(ncvs, ncore, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xvee[:,s_chunk:f_chunk], v_xeve[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('Iiab,Jbia->IJ', t1_xvee[:,s_chunk:f_chunk], v_xeve[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xvee[:,s_chunk:f_chunk], v_xeve[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('Jiab,Ibia->IJ', t1_xvee[:,s_chunk:f_chunk], v_xeve[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('i,Iiab,Jiab->IJ', e_val, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_val, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 -= einsum('i,Jiab,Iiab->IJ', e_val, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+            M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_val, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
+
+        chunk_size_ee1, chunk_size_ee2 = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs, ncvs)
+        for s_chunk1 in range(0, ncas, chunk_size_ee1):
+            f_chunk1 = s_chunk1 + chunk_size_ee1
+
+            for s_chunk2 in range(0, ncas, chunk_size_ee2):
+                f_chunk2 = s_chunk2 + chunk_size_ee2
+                M_00 += einsum('Ixab,Jayb,xy->IJ', t1_xaee[:,s_chunk1:f_chunk1], v_xeae[:,:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 -= 1/2 * einsum('Ixab,Jbya,xy->IJ', t1_xaee[:,s_chunk1:f_chunk1], v_xeae[:,:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 += einsum('Jxab,Iayb,xy->IJ', t1_xaee[:,s_chunk1:f_chunk1], v_xeae[:,:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 -= 1/2 * einsum('Jxab,Ibya,xy->IJ', t1_xaee[:,s_chunk1:f_chunk1], v_xeae[:,:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 -= 1/2 * einsum('I,Ixab,Jyab,xy->IJ', e_cvs, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 += 1/4 * einsum('I,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 -= 1/2 * einsum('J,Ixab,Jyab,xy->IJ', e_cvs, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 += 1/4 * einsum('J,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 += einsum('a,Ixab,Jyab,xy->IJ', e_extern, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 -= 1/2 * einsum('a,Ixab,Jyba,xy->IJ', e_extern, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 -= 1/2 * einsum('a,Ixba,Jyab,xy->IJ', e_extern, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 += einsum('a,Ixba,Jyba,xy->IJ', e_extern, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 -= 1/2 * einsum('xy,Ixab,Jzab,yz->IJ', h_aa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca,s_chunk2:f_chunk2, optimize = einsum_type)
+                M_00 += 1/4 * einsum('xy,Ixab,Jzba,yz->IJ', h_aa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca,s_chunk2:f_chunk2, optimize = einsum_type)
+                M_00 -= 1/2 * einsum('xy,Jxab,Izab,yz->IJ', h_aa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca,s_chunk2:f_chunk2, optimize = einsum_type)
+                M_00 += 1/4 * einsum('xy,Jxab,Izba,yz->IJ', h_aa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca,s_chunk2:f_chunk2, optimize = einsum_type)
+                M_00 -= 1/2 * einsum('xyzw,Ixab,Juab,zuwy->IJ', v_aaaa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ccaa[:,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 += 1/4 * einsum('xyzw,Ixab,Juba,zuwy->IJ', v_aaaa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ccaa[:,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 -= 1/2 * einsum('xyzw,Jxab,Iuab,zuwy->IJ', v_aaaa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ccaa[:,s_chunk2:f_chunk2], optimize = einsum_type)
+                M_00 += 1/4 * einsum('xyzw,Jxab,Iuba,zuwy->IJ', v_aaaa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ccaa[:,s_chunk2:f_chunk2], optimize = einsum_type)
 
     mr_adc.M_00 = np.ascontiguousarray(M_00)
 
@@ -6256,21 +6272,27 @@ def compute_sigma_vector(mr_adc, Xt):
         ## Indices
         cvs_tril_ind = np.tril_indices(ncvs, k=-1)
 
-        sigma_cce =- einsum('Kia,LBai->KLB', X_aaa, v_xeex, optimize = einsum_type)
-        sigma_cce += einsum('Kia,iLBa->KLB', X_aaa, v_xxee, optimize = einsum_type)
-        sigma_cce += einsum('Lia,KBai->KLB', X_aaa, v_xeex, optimize = einsum_type)
-        sigma_cce -= einsum('Lia,iKBa->KLB', X_aaa, v_xxee, optimize = einsum_type)
-        sigma_cce -= 1/2 * einsum('ijB,KiLj->KLB', X_aaa, v_xxxx, optimize = einsum_type)
+        sigma_cce =- 1/2 * einsum('ijB,KiLj->KLB', X_aaa, v_xxxx, optimize = einsum_type)
         sigma_cce += 1/2 * einsum('ijB,KjLi->KLB', X_aaa, v_xxxx, optimize = einsum_type)
-        sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeex, optimize = einsum_type)
-        sigma_cce += einsum('Lia,KBai->KLB', X_abb, v_xeex, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cce += einsum('Kia,iLBa->KLB', X_aaa[:,s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Lia,iKBa->KLB', X_aaa[:,s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce += einsum('Lia,KBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce += einsum('Lia,KBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cce__aaa:f_cce__aaa] += sigma_cce[cvs_tril_ind[0], cvs_tril_ind[1]].reshape(-1).copy()
 
-        sigma_cce =- einsum('Kia,LBai->KLB', X_aaa, v_xeex, optimize = einsum_type)
-        sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeex, optimize = einsum_type)
-        sigma_cce += einsum('Kia,iLBa->KLB', X_abb, v_xxee, optimize = einsum_type)
-        sigma_cce -= einsum('ijB,KiLj->KLB', X_abb, v_xxxx, optimize = einsum_type)
-        sigma_cce += einsum('iLa,iKBa->KLB', X_abb, v_xxee, optimize = einsum_type)
+        sigma_cce =- einsum('ijB,KiLj->KLB', X_abb, v_xxxx, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cce += einsum('iLa,iKBa->KLB', X_abb[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce += einsum('Kia,iLBa->KLB', X_abb[:,s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CAE_CCE(mr_adc, X_aaa, X_abb, sigma):
@@ -6278,6 +6300,10 @@ def compute_sigma_vector(mr_adc, Xt):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
 
         ## Molecular Orbitals Energies
         e_cvs = mr_adc.mo_energy.x
@@ -6317,11 +6343,8 @@ def compute_sigma_vector(mr_adc, Xt):
 
         sigma_cae  = 1/2 * einsum('KiB,ix,Zx->KZB', X_aaa, h_xa, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,Zyxz->KZB', X_aaa, v_xaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa, v_xeea, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_aaa, v_xaee, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/4 * einsum('ijB,iKjx,Zx->KZB', X_aaa, v_xxxa, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/4 * einsum('ijB,jKix,Zx->KZB', X_aaa, v_xxxa, rdm_ca, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb, v_xeea, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ix,Zx->KZB', X_aaa, e_cvs, t1_xa, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ixyz,Zxyz->KZB', X_aaa, e_cvs, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,xy,izwx,Zzwy->KZB', X_aaa, h_aa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
@@ -6338,13 +6361,16 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_aaa, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_aaa, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_aaa, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_xaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_xeea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_xeea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__aaa:f_cae__aaa] += sigma_cae.reshape(-1).copy()
 
-        sigma_cae =- 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa, v_xeea, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('KiB,ix,Zx->KZB', X_abb, h_xa, rdm_ca, optimize = einsum_type)
+        sigma_cae  = 1/2 * einsum('KiB,ix,Zx->KZB', X_abb, h_xa, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,Zyxz->KZB', X_abb, v_xaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb, v_xeea, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_abb, v_xaee, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ijB,iKjx,Zx->KZB', X_abb, v_xxxa, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ix,Zx->KZB', X_abb, e_cvs, t1_xa, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ixyz,Zxyz->KZB', X_abb, e_cvs, t1_xaaa, rdm_ccaa, optimize = einsum_type)
@@ -6362,12 +6388,17 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_abb, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_abb, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_abb, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_xeea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_xeea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_xaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__abb:f_cae__abb] += sigma_cae.reshape(-1).copy()
 
         sigma_cae =- 1/2 * einsum('iKB,ix,Zx->KZB', X_abb, h_xa, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('iKB,ixyz,Zyxz->KZB', X_abb, v_xaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('ijB,jKix,Zx->KZB', X_abb, v_xxxa, rdm_ca, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('iKa,ixBa,Zx->KZB', X_abb, v_xaee, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('iKB,i,ix,Zx->KZB', X_abb, e_cvs, t1_xa, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('iKB,i,ixyz,Zxyz->KZB', X_abb, e_cvs, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('iKB,xy,izwx,Zzwy->KZB', X_abb, h_aa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
@@ -6384,6 +6415,10 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/3 * einsum('iKB,ixyz,ywuv,Zxuwzv->KZB', X_abb, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('iKB,ixyz,ywzu,Zxwu->KZB', X_abb, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('iKB,ixyz,xwuv,Zwvyzu->KZB', X_abb, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae -= 1/2 * einsum('iKa,ixBa,Zx->KZB', X_abb[s_chunk:f_chunk], v_xaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CCA_CCE(mr_adc, X_aaa, X_abb, sigma):
@@ -6547,6 +6582,10 @@ def compute_sigma_vector(mr_adc, Xt):
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
 
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nval = mr_adc.nval
+
         ## Two-electron integrals
         v_xxvx = mr_adc.v2e.xxvx
 
@@ -6561,21 +6600,30 @@ def compute_sigma_vector(mr_adc, Xt):
         s_cve__bab = mr_adc.h1.s_cve__bab
         f_cve__bab = mr_adc.h1.f_cve__bab
 
-        sigma_cve =- einsum('Kia,LBai->KLB', X_aaa, v_veex, optimize = einsum_type)
-        sigma_cve += einsum('Kia,iLBa->KLB', X_aaa, v_xvee, optimize = einsum_type)
-        sigma_cve -= 1/2 * einsum('ijB,KiLj->KLB', X_aaa, v_xxvx, optimize = einsum_type)
+        sigma_cve =- 1/2 * einsum('ijB,KiLj->KLB', X_aaa, v_xxvx, optimize = einsum_type)
         sigma_cve += 1/2 * einsum('ijB,KjLi->KLB', X_aaa, v_xxvx, optimize = einsum_type)
-        sigma_cve -= einsum('Kia,LBai->KLB', X_abb, v_veex, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_veex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve += einsum('Kia,iLBa->KLB', X_aaa[:,s_chunk:f_chunk], v_xvee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_veex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__aaa:f_cve__aaa] += sigma_cve.reshape(-1).copy()
 
-        sigma_cve =- einsum('Kia,LBai->KLB', X_aaa, v_veex, optimize = einsum_type)
-        sigma_cve -= einsum('Kia,LBai->KLB', X_abb, v_veex, optimize = einsum_type)
-        sigma_cve += einsum('Kia,iLBa->KLB', X_abb, v_xvee, optimize = einsum_type)
-        sigma_cve -= einsum('ijB,KiLj->KLB', X_abb, v_xxvx, optimize = einsum_type)
+        sigma_cve =- einsum('ijB,KiLj->KLB', X_abb, v_xxvx, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_veex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_veex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve += einsum('Kia,iLBa->KLB', X_abb[:,s_chunk:f_chunk], v_xvee[s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
         sigma_cve  = einsum('ijB,KjLi->KLB', X_abb, v_xxvx, optimize = einsum_type)
-        sigma_cve -= einsum('iKa,iLBa->KLB', X_abb, v_xvee, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve -= einsum('iKa,iLBa->KLB', X_abb[s_chunk:f_chunk], v_xvee[s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CVA_CCE(mr_adc, X_aaa, X_abb, sigma):
@@ -7061,6 +7109,7 @@ def compute_sigma_vector(mr_adc, Xt):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
 
         ## Molecular Orbitals Energies
         e_cvs = mr_adc.mo_energy.x
@@ -7106,16 +7155,10 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= einsum('LxB,xy,Ky->KLB', X_aaa, h_aa, t1_xa, optimize = einsum_type)
         sigma_cce += einsum('KxB,Lxyz,yz->KLB', X_aaa, v_xaaa, rdm_ca, optimize = einsum_type)
         sigma_cce -= 1/2 * einsum('KxB,Lyzx,zy->KLB', X_aaa, v_xaaa, rdm_ca, optimize = einsum_type)
-        sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_xeea, rdm_ca, optimize = einsum_type)
-        sigma_cce += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_aaa, v_xaee, rdm_ca, optimize = einsum_type)
         sigma_cce -= einsum('LxB,Kxyz,yz->KLB', X_aaa, v_xaaa, rdm_ca, optimize = einsum_type)
         sigma_cce += 1/2 * einsum('LxB,Kyzx,zy->KLB', X_aaa, v_xaaa, rdm_ca, optimize = einsum_type)
-        sigma_cce += 1/2 * einsum('Lxa,KBay,xy->KLB', X_aaa, v_xeea, rdm_ca, optimize = einsum_type)
-        sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_aaa, v_xaee, rdm_ca, optimize = einsum_type)
         sigma_cce -= 1/2 * einsum('ixB,KiLy,xy->KLB', X_aaa, v_xxxa, rdm_ca, optimize = einsum_type)
         sigma_cce += 1/2 * einsum('ixB,LiKy,xy->KLB', X_aaa, v_xxxa, rdm_ca, optimize = einsum_type)
-        sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_xeea, rdm_ca, optimize = einsum_type)
-        sigma_cce += 1/2 * einsum('Lxa,KBay,xy->KLB', X_abb, v_xeea, rdm_ca, optimize = einsum_type)
         sigma_cce += 1/2 * einsum('KxB,L,Lyzx,yz->KLB', X_aaa, e_cvs, t1_xaaa, rdm_ca, optimize = einsum_type)
         sigma_cce -= einsum('KxB,L,Lyxz,yz->KLB', X_aaa, e_cvs, t1_xaaa, rdm_ca, optimize = einsum_type)
         sigma_cce -= 1/2 * einsum('LxB,K,Kyzx,yz->KLB', X_aaa, e_cvs, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -7158,23 +7201,28 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= 1/2 * einsum('LxB,Kyzx,ywuv,zuwv->KLB', X_aaa, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cce -= einsum('LxB,Kyxz,zwuv,yuwv->KLB', X_aaa, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cce += einsum('LxB,Kyxz,ywuv,zuwv->KLB', X_aaa, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncas, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cce += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_aaa[:,:,s_chunk:f_chunk], v_xaee[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_aaa[:,:,s_chunk:f_chunk], v_xaee[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa[:,:,s_chunk:f_chunk], v_xeea[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cce += 1/2 * einsum('Lxa,KBay,xy->KLB', X_aaa[:,:,s_chunk:f_chunk], v_xeea[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb[:,:,s_chunk:f_chunk], v_xeea[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cce += 1/2 * einsum('Lxa,KBay,xy->KLB', X_abb[:,:,s_chunk:f_chunk], v_xeea[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cce__aaa:f_cce__aaa] += sigma_cce[cvs_tril_ind[0], cvs_tril_ind[1]].reshape(-1).copy()
 
         sigma_cce  = einsum('KxB,Lx->KLB', X_abb, h_xa, optimize = einsum_type)
         sigma_cce -= einsum('LxB,Kx->KLB', X_bab, h_xa, optimize = einsum_type)
-        sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_xeea, rdm_ca, optimize = einsum_type)
         sigma_cce -= einsum('KxB,L,Lx->KLB', X_abb, e_cvs, t1_xa, optimize = einsum_type)
         sigma_cce += einsum('KxB,xy,Ly->KLB', X_abb, h_aa, t1_xa, optimize = einsum_type)
         sigma_cce += einsum('KxB,Lxyz,yz->KLB', X_abb, v_xaaa, rdm_ca, optimize = einsum_type)
         sigma_cce -= 1/2 * einsum('KxB,Lyzx,zy->KLB', X_abb, v_xaaa, rdm_ca, optimize = einsum_type)
-        sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_xeea, rdm_ca, optimize = einsum_type)
-        sigma_cce += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_abb, v_xaee, rdm_ca, optimize = einsum_type)
         sigma_cce -= 1/2 * einsum('ixB,KiLy,xy->KLB', X_abb, v_xxxa, rdm_ca, optimize = einsum_type)
         sigma_cce += einsum('LxB,K,Kx->KLB', X_bab, e_cvs, t1_xa, optimize = einsum_type)
         sigma_cce -= einsum('LxB,xy,Ky->KLB', X_bab, h_aa, t1_xa, optimize = einsum_type)
         sigma_cce -= einsum('LxB,Kxyz,yz->KLB', X_bab, v_xaaa, rdm_ca, optimize = einsum_type)
         sigma_cce += 1/2 * einsum('LxB,Kyzx,zy->KLB', X_bab, v_xaaa, rdm_ca, optimize = einsum_type)
-        sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_bab, v_xaee, rdm_ca, optimize = einsum_type)
         sigma_cce += 1/2 * einsum('ixB,LiKy,xy->KLB', X_bab, v_xxxa, rdm_ca, optimize = einsum_type)
         sigma_cce += 1/2 * einsum('KxB,L,Lyzx,yz->KLB', X_abb, e_cvs, t1_xaaa, rdm_ca, optimize = einsum_type)
         sigma_cce -= einsum('KxB,L,Lyxz,yz->KLB', X_abb, e_cvs, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -7218,6 +7266,13 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= 1/2 * einsum('LxB,Kyzx,ywuv,zuwv->KLB', X_bab, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cce -= einsum('LxB,Kyxz,zwuv,yuwv->KLB', X_bab, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cce += einsum('LxB,Kyxz,ywuv,zuwv->KLB', X_bab, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncas, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cce += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_abb, v_xaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_bab, v_xaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_xeea[:,:,:s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_xeea[:,:,:s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CAE_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -7225,6 +7280,10 @@ def compute_sigma_vector(mr_adc, Xt):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
 
         ## Two-electron integrals
         v_xxaa = mr_adc.v2e.xxaa
@@ -7248,55 +7307,73 @@ def compute_sigma_vector(mr_adc, Xt):
         s_cae__bab = mr_adc.h1.s_cae__bab
         f_cae__bab = mr_adc.h1.f_cae__bab
 
-        sigma_cae  = 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_aaa, v_aaee, rdm_ccaa, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('ixB,Kiyz,Zzxy->KZB', X_aaa, v_xxaa, rdm_ccaa, optimize = einsum_type)
+        sigma_cae  = 1/2 * einsum('ixB,Kiyz,Zzxy->KZB', X_aaa, v_xxaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/6 * einsum('ixB,Kyzi,Zyzx->KZB', X_aaa, v_xaax, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/6 * einsum('ixB,Kyzi,Zyxz->KZB', X_aaa, v_xaax, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_aaa, v_xeex, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_aaa, v_xxee, rdm_ca, optimize = einsum_type)
-        sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab, v_xeex, rdm_ca, optimize = einsum_type)
-        sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_aaa, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_aaa, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ixB,Kiyz,yz,Zx->KZB', X_aaa, v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/4 * einsum('ixB,Kyzi,zy,Zx->KZB', X_aaa, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_aaa[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_aaa[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, ncas, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae =+ 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_aaa, v_aaee[s_chunk:f_chunk], rdm_ccaa[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_aaa, v_aaee[s_chunk:f_chunk], rdm_ca[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__aaa:f_cae__aaa] += sigma_cae.reshape(-1).copy()
 
-        sigma_cae =- 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_abb, v_aaee, rdm_ccaa, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('ixB,Kiyz,Zzxy->KZB', X_abb, v_xxaa, rdm_ccaa, optimize = einsum_type)
+        sigma_cae  = 1/2 * einsum('ixB,Kiyz,Zzxy->KZB', X_abb, v_xxaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/6 * einsum('ixB,Kyzi,Zyzx->KZB', X_abb, v_xaax, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/3 * einsum('ixB,Kyzi,Zyxz->KZB', X_abb, v_xaax, rdm_ccaa, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_abb, v_xxee, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/3 * einsum('ixB,Kyzi,Zyzx->KZB', X_bab, v_xaax, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/6 * einsum('ixB,Kyzi,Zyxz->KZB', X_bab, v_xaax, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_abb, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_abb, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ixB,Kiyz,yz,Zx->KZB', X_abb, v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/4 * einsum('ixB,Kyzi,zy,Zx->KZB', X_abb, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_abb[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, ncas, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_abb, v_aaee[s_chunk:f_chunk], rdm_ccaa[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_abb, v_aaee[s_chunk:f_chunk], rdm_ca[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__abb:f_cae__abb] += sigma_cae.reshape(-1).copy()
 
-        sigma_cae =- 1/2 * einsum('ixa,KBai,Zx->KZB', X_aaa, v_xeex, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/3 * einsum('ixB,Kyzi,Zyzx->KZB', X_abb, v_xaax, rdm_ccaa, optimize = einsum_type)
+        sigma_cae  = 1/3 * einsum('ixB,Kyzi,Zyzx->KZB', X_abb, v_xaax, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/6 * einsum('ixB,Kyzi,Zyxz->KZB', X_abb, v_xaax, rdm_ccaa, optimize = einsum_type)
-        sigma_cae += 1/3 * einsum('Kxa,yBaz,Zzxy->KZB', X_bab, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_bab, v_aeea, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_bab, v_aaee, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('ixB,Kiyz,Zzxy->KZB', X_bab, v_xxaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/6 * einsum('ixB,Kyzi,Zyzx->KZB', X_bab, v_xaax, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/3 * einsum('ixB,Kyzi,Zyxz->KZB', X_bab, v_xaax, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab, v_xeex, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_bab, v_xxee, rdm_ca, optimize = einsum_type)
-        sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_bab, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_bab, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ixB,Kiyz,yz,Zx->KZB', X_bab, v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/4 * einsum('ixB,Kyzi,zy,Zx->KZB', X_bab, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_aaa[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_bab[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, ncas, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae += 1/3 * einsum('Kxa,yBaz,Zzxy->KZB', X_bab, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_bab, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_bab, v_aaee[s_chunk:f_chunk], rdm_ccaa[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_bab, v_aeea[s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_bab, v_aaee[s_chunk:f_chunk], rdm_ca[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CCA_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -7358,6 +7435,10 @@ def compute_sigma_vector(mr_adc, Xt):
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
 
+        # Variables from kernel
+        nval = mr_adc.nval
+        ncas = mr_adc.ncas
+
         ## Molecular Orbitals Energies
         e_val = mr_adc.mo_energy.v
 
@@ -7399,11 +7480,8 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += einsum('KxB,xy,Ly->KLB', X_aaa, h_aa, t1_va, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lxyz,yz->KLB', X_aaa, v_vaaa, rdm_ca, optimize = einsum_type)
         sigma_cve -= 1/2 * einsum('KxB,Lyzx,zy->KLB', X_aaa, v_vaaa, rdm_ca, optimize = einsum_type)
-        sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_veea, rdm_ca, optimize = einsum_type)
-        sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_aaa, v_vaee, rdm_ca, optimize = einsum_type)
         sigma_cve -= 1/2 * einsum('ixB,KiLy,xy->KLB', X_aaa, v_xxva, rdm_ca, optimize = einsum_type)
         sigma_cve += 1/2 * einsum('ixB,LiKy,xy->KLB', X_aaa, v_vxxa, rdm_ca, optimize = einsum_type)
-        sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_veea, rdm_ca, optimize = einsum_type)
         sigma_cve += 1/2 * einsum('KxB,L,Lyzx,yz->KLB', X_aaa, e_val, t1_vaaa, rdm_ca, optimize = einsum_type)
         sigma_cve -= einsum('KxB,L,Lyxz,yz->KLB', X_aaa, e_val, t1_vaaa, rdm_ca, optimize = einsum_type)
         sigma_cve -= 1/2 * einsum('KxB,xy,Lzwy,zw->KLB', X_aaa, h_aa, t1_vaaa, rdm_ca, optimize = einsum_type)
@@ -7425,16 +7503,19 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += 1/2 * einsum('KxB,Lyzx,ywuv,zuwv->KLB', X_aaa, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lyxz,zwuv,yuwv->KLB', X_aaa, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve -= einsum('KxB,Lyxz,ywuv,zuwv->KLB', X_aaa, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, ncas, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_veea[:,:,:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_veea[:,:,:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_aaa, v_vaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__aaa:f_cve__aaa] += sigma_cve.reshape(-1).copy()
 
         sigma_cve  = einsum('KxB,Lx->KLB', X_abb, h_va, optimize = einsum_type)
-        sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_veea, rdm_ca, optimize = einsum_type)
         sigma_cve -= einsum('KxB,L,Lx->KLB', X_abb, e_val, t1_va, optimize = einsum_type)
         sigma_cve += einsum('KxB,xy,Ly->KLB', X_abb, h_aa, t1_va, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lxyz,yz->KLB', X_abb, v_vaaa, rdm_ca, optimize = einsum_type)
         sigma_cve -= 1/2 * einsum('KxB,Lyzx,zy->KLB', X_abb, v_vaaa, rdm_ca, optimize = einsum_type)
-        sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_veea, rdm_ca, optimize = einsum_type)
-        sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_abb, v_vaee, rdm_ca, optimize = einsum_type)
         sigma_cve -= 1/2 * einsum('ixB,KiLy,xy->KLB', X_abb, v_xxva, rdm_ca, optimize = einsum_type)
         sigma_cve += 1/2 * einsum('ixB,LiKy,xy->KLB', X_bab, v_vxxa, rdm_ca, optimize = einsum_type)
         sigma_cve += 1/2 * einsum('KxB,L,Lyzx,yz->KLB', X_abb, e_val, t1_vaaa, rdm_ca, optimize = einsum_type)
@@ -7458,6 +7539,12 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += 1/2 * einsum('KxB,Lyzx,ywuv,zuwv->KLB', X_abb, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lyxz,zwuv,yuwv->KLB', X_abb, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve -= einsum('KxB,Lyxz,ywuv,zuwv->KLB', X_abb, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, ncas, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_veea[:,:,:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_veea[:,:,:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_abb, v_vaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
         sigma_cve  = einsum('KxB,Lx->KLB', X_bab, h_va, optimize = einsum_type)
@@ -7466,7 +7553,6 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += einsum('KxB,xy,Ly->KLB', X_bab, h_aa, t1_va, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lxyz,yz->KLB', X_bab, v_vaaa, rdm_ca, optimize = einsum_type)
         sigma_cve -= 1/2 * einsum('KxB,Lyzx,zy->KLB', X_bab, v_vaaa, rdm_ca, optimize = einsum_type)
-        sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_bab, v_vaee, rdm_ca, optimize = einsum_type)
         sigma_cve -= 1/2 * einsum('ixB,KiLy,xy->KLB', X_bab, v_xxva, rdm_ca, optimize = einsum_type)
         sigma_cve += 1/2 * einsum('KxB,L,Lyzx,yz->KLB', X_bab, e_val, t1_vaaa, rdm_ca, optimize = einsum_type)
         sigma_cve -= einsum('KxB,L,Lyxz,yz->KLB', X_bab, e_val, t1_vaaa, rdm_ca, optimize = einsum_type)
@@ -7489,6 +7575,10 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += 1/2 * einsum('KxB,Lyzx,ywuv,zuwv->KLB', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lyxz,zwuv,yuwv->KLB', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve -= einsum('KxB,Lyxz,ywuv,zuwv->KLB', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, ncas, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_bab, v_vaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CVA_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -8977,6 +9067,7 @@ def compute_sigma_vector(mr_adc, Xt):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
+        nval = mr_adc.nval
 
         ## Two-electron integrals
         v_xxxv = mr_adc.v2e.xxxv
@@ -8994,22 +9085,29 @@ def compute_sigma_vector(mr_adc, Xt):
         ## Indices
         cvs_tril_ind = np.tril_indices(ncvs, k=-1)
 
-        sigma_cce =- einsum('Kia,LBai->KLB', X_aaa, v_xeev, optimize = einsum_type)
-        sigma_cce += einsum('Kia,iLBa->KLB', X_aaa, v_vxee, optimize = einsum_type)
-        sigma_cce += einsum('Lia,KBai->KLB', X_aaa, v_xeev, optimize = einsum_type)
-        sigma_cce -= einsum('Lia,iKBa->KLB', X_aaa, v_vxee, optimize = einsum_type)
-        sigma_cce -= einsum('ijB,KiLj->KLB', X_aaa, v_xxxv, optimize = einsum_type)
+        sigma_cce =- einsum('ijB,KiLj->KLB', X_aaa, v_xxxv, optimize = einsum_type)
         sigma_cce += einsum('ijB,KjLi->KLB', X_aaa, v_xvxx, optimize = einsum_type)
-        sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeev, optimize = einsum_type)
-        sigma_cce += einsum('Lia,KBai->KLB', X_abb, v_xeev, optimize = einsum_type)
+
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce += einsum('Lia,KBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce += einsum('Lia,KBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce += einsum('Kia,iLBa->KLB', X_aaa[:,s_chunk:f_chunk], v_vxee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Lia,iKBa->KLB', X_aaa[:,s_chunk:f_chunk], v_vxee[s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cce__aaa:f_cce__aaa] += sigma_cce[cvs_tril_ind[0], cvs_tril_ind[1]].reshape(-1).copy()
 
-        sigma_cce =- einsum('Kia,LBai->KLB', X_aaa, v_xeev, optimize = einsum_type)
-        sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeev, optimize = einsum_type)
-        sigma_cce += einsum('Kia,iLBa->KLB', X_abb, v_vxee, optimize = einsum_type)
-        sigma_cce -= einsum('ijB,KiLj->KLB', X_abb, v_xxxv, optimize = einsum_type)
-        sigma_cce -= einsum('Lia,iKBa->KLB', X_bab, v_vxee, optimize = einsum_type)
+        sigma_cce =- einsum('ijB,KiLj->KLB', X_abb, v_xxxv, optimize = einsum_type)
         sigma_cce += einsum('ijB,KjLi->KLB', X_bab, v_xvxx, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce += einsum('Kia,iLBa->KLB', X_abb[:,s_chunk:f_chunk], v_vxee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cce -= einsum('Lia,iKBa->KLB', X_bab[:,s_chunk:f_chunk], v_vxee[s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CAE_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -9017,6 +9115,10 @@ def compute_sigma_vector(mr_adc, Xt):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        nval = mr_adc.nval
+        ncas = mr_adc.ncas
 
         ## Molecular Orbitals Energies
         e_val = mr_adc.mo_energy.v
@@ -9057,11 +9159,8 @@ def compute_sigma_vector(mr_adc, Xt):
 
         sigma_cae  = 1/2 * einsum('KiB,ix,Zx->KZB', X_aaa, h_va, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,Zyxz->KZB', X_aaa, v_vaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa, v_veea, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_aaa, v_vaee, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ijB,iKjx,Zx->KZB', X_aaa, v_xxva, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('ijB,jKix,Zx->KZB', X_aaa, v_vxxa, rdm_ca, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb, v_veea, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ix,Zx->KZB', X_aaa, e_val, t1_va, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ixyz,Zxyz->KZB', X_aaa, e_val, t1_vaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,xy,izwx,Zzwy->KZB', X_aaa, h_aa, t1_vaaa, rdm_ccaa, optimize = einsum_type)
@@ -9078,13 +9177,16 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_aaa, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_aaa, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_aaa, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_vaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_veea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_veea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__aaa:f_cae__aaa] += sigma_cae.reshape(-1).copy()
 
-        sigma_cae =- 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa, v_veea, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('KiB,ix,Zx->KZB', X_abb, h_va, rdm_ca, optimize = einsum_type)
+        sigma_cae  = 1/2 * einsum('KiB,ix,Zx->KZB', X_abb, h_va, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,Zyxz->KZB', X_abb, v_vaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb, v_veea, rdm_ca, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_abb, v_vaee, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ijB,iKjx,Zx->KZB', X_abb, v_xxva, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('ijB,jKix,Zx->KZB', X_bab, v_vxxa, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ix,Zx->KZB', X_abb, e_val, t1_va, rdm_ca, optimize = einsum_type)
@@ -9103,12 +9205,17 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_abb, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_abb, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_abb, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_vaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_veea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_veea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__abb:f_cae__abb] += sigma_cae.reshape(-1).copy()
 
         sigma_cae  = 1/2 * einsum('ijB,jKix,Zx->KZB', X_abb, v_vxxa, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ix,Zx->KZB', X_bab, h_va, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,Zyxz->KZB', X_bab, v_vaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_bab, v_vaee, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ijB,iKjx,Zx->KZB', X_bab, v_xxva, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ix,Zx->KZB', X_bab, e_val, t1_va, rdm_ca, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,i,ixyz,Zxyz->KZB', X_bab, e_val, t1_vaaa, rdm_ccaa, optimize = einsum_type)
@@ -9126,6 +9233,10 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_bab, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_bab, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_bab[:,s_chunk:f_chunk], v_vaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CCA_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -9183,6 +9294,10 @@ def compute_sigma_vector(mr_adc, Xt):
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
 
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nval = mr_adc.nval
+
         ## Two-electron integrals
         v_xxvv = mr_adc.v2e.xxvv
         v_xvvx = mr_adc.v2e.xvvx
@@ -9201,30 +9316,48 @@ def compute_sigma_vector(mr_adc, Xt):
         s_cve__bab = mr_adc.h1.s_cve__bab
         f_cve__bab = mr_adc.h1.f_cve__bab
 
-        sigma_cve =- einsum('Kia,LBai->KLB', X_aaa, v_veev, optimize = einsum_type)
-        sigma_cve += einsum('Kia,iLBa->KLB', X_aaa, v_vvee, optimize = einsum_type)
-        sigma_cve -= einsum('ijB,KiLj->KLB', X_aaa, v_xxvv, optimize = einsum_type)
+        sigma_cve =- einsum('ijB,KiLj->KLB', X_aaa, v_xxvv, optimize = einsum_type)
         sigma_cve += einsum('ijB,KjLi->KLB', X_aaa, v_xvvx, optimize = einsum_type)
-        sigma_cve -= einsum('iLa,KBai->KLB', X_aaa, v_xeex, optimize = einsum_type)
-        sigma_cve += einsum('iLa,iKBa->KLB', X_aaa, v_xxee, optimize = einsum_type)
-        sigma_cve -= einsum('Kia,LBai->KLB', X_abb, v_veev, optimize = einsum_type)
-        sigma_cve -= einsum('iLa,KBai->KLB', X_bab, v_xeex, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve += einsum('iLa,iKBa->KLB', X_aaa[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('iLa,KBai->KLB', X_aaa[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('iLa,KBai->KLB', X_bab[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve += einsum('Kia,iLBa->KLB', X_aaa[:,s_chunk:f_chunk], v_vvee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_veev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_veev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__aaa:f_cve__aaa] += sigma_cve.reshape(-1).copy()
 
-        sigma_cve =- einsum('Kia,LBai->KLB', X_aaa, v_veev, optimize = einsum_type)
-        sigma_cve -= einsum('Kia,LBai->KLB', X_abb, v_veev, optimize = einsum_type)
-        sigma_cve += einsum('Kia,iLBa->KLB', X_abb, v_vvee, optimize = einsum_type)
-        sigma_cve -= einsum('ijB,KiLj->KLB', X_abb, v_xxvv, optimize = einsum_type)
-        sigma_cve += einsum('iLa,iKBa->KLB', X_abb, v_xxee, optimize = einsum_type)
+        sigma_cve =- einsum('ijB,KiLj->KLB', X_abb, v_xxvv, optimize = einsum_type)
         sigma_cve += einsum('ijB,KjLi->KLB', X_bab, v_xvvx, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve += einsum('iLa,iKBa->KLB', X_abb[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve += einsum('Kia,iLBa->KLB', X_abb[:,s_chunk:f_chunk], v_vvee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_veev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_veev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
-        sigma_cve =- einsum('iLa,KBai->KLB', X_aaa, v_xeex, optimize = einsum_type)
-        sigma_cve += einsum('ijB,KjLi->KLB', X_abb, v_xvvx, optimize = einsum_type)
-        sigma_cve += einsum('Kia,iLBa->KLB', X_bab, v_vvee, optimize = einsum_type)
+        sigma_cve  = einsum('ijB,KjLi->KLB', X_abb, v_xvvx, optimize = einsum_type)
         sigma_cve -= einsum('ijB,KiLj->KLB', X_bab, v_xxvv, optimize = einsum_type)
-        sigma_cve -= einsum('iLa,KBai->KLB', X_bab, v_xeex, optimize = einsum_type)
-        sigma_cve += einsum('iLa,iKBa->KLB', X_bab, v_xxee, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        for s_chunk in range(0, ncvs, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve += einsum('iLa,iKBa->KLB', X_bab[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('iLa,KBai->KLB', X_aaa[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+            sigma_cve -= einsum('iLa,KBai->KLB', X_bab[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+            sigma_cve += einsum('Kia,iLBa->KLB', X_bab[:,s_chunk:f_chunk], v_vvee[s_chunk:f_chunk], optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CVA_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
