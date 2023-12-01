@@ -707,7 +707,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.v2e.xexe[s_chunk:f_chunk] = mr_adc.v2e.cece[s_chunk:f_chunk, :, :ncvs, :]
                 mr_adc.v2e.xeve[s_chunk:f_chunk] = mr_adc.v2e.cece[s_chunk:f_chunk, :, ncvs:, :]
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
             for s_chunk in range(ncvs, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 if f_chunk > ncore:
@@ -735,7 +734,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
 
                 mr_adc.v2e.xeae[s_chunk:f_chunk] = mr_adc.v2e.ceae[s_chunk:f_chunk, :, :, :]
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
             for s_chunk in range(ncvs, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 if f_chunk > ncore:
@@ -798,7 +796,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.v2e.xeex[s_chunk:f_chunk] = mr_adc.v2e.ceec[s_chunk:f_chunk, :, :, :ncvs]
                 mr_adc.v2e.xeev[s_chunk:f_chunk] = mr_adc.v2e.ceec[s_chunk:f_chunk, :, :, ncvs:]
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
             for s_chunk in range(ncvs, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 if f_chunk > ncore:
@@ -825,7 +822,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.v2e.xaee[s_chunk:f_chunk] = mr_adc.v2e.caee[s_chunk:f_chunk, :, :, :]
                 mr_adc.v2e.xeea[s_chunk:f_chunk] = mr_adc.v2e.ceea[s_chunk:f_chunk, :, :, :]
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
             for s_chunk in range(ncvs, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 if f_chunk > ncore:
