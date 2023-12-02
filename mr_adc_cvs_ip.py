@@ -285,8 +285,9 @@ def compute_M_00(mr_adc):
 
     # Variables from kernel
     ncvs = mr_adc.ncvs
-    ncore = mr_adc.ncore
+    nval = mr_adc.nval
     ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
 
     ## Molecular Orbitals Energies
     e_cvs = mr_adc.mo_energy.x
@@ -1332,70 +1333,166 @@ def compute_M_00(mr_adc):
         M_00 += 1/4 * einsum('xyzw,iJxa,Iiua,zuwy->IJ', v_aaaa, t1_vxae, t1_xvae, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xyzw,iJxa,iIua,zuwy->IJ', v_aaaa, t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, ncvs, (ncvs, nextern, nextern))
         for s_chunk in range(0, ncvs, chunk_size):
             f_chunk = s_chunk + chunk_size
-            M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xxee[:,s_chunk:f_chunk], v_xexe[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('Iiab,Jbia->IJ', t1_xxee[:,s_chunk:f_chunk], v_xexe[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xxee[:,s_chunk:f_chunk], v_xexe[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('Jiab,Ibia->IJ', t1_xxee[:,s_chunk:f_chunk], v_xexe[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('i,Iiab,Jiab->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('i,Jiab,Iiab->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_cvs, t1_xxee[:,s_chunk:f_chunk], t1_xxee[:,s_chunk:f_chunk], optimize = einsum_type)
-        for s_chunk in range(ncvs, ncore, chunk_size):
+
+            ## Amplitudes
+            t1_xxee = mr_adc.t1.xxee[:,s_chunk:f_chunk]
+
+            M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
+
+            ## Molecular Orbitals Energies
+            e_cvs = mr_adc.mo_energy.x[s_chunk:f_chunk]
+
+            M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+        del(t1_xxee)
+
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xvee[:,s_chunk:f_chunk], v_xeve[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('Iiab,Jbia->IJ', t1_xvee[:,s_chunk:f_chunk], v_xeve[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xvee[:,s_chunk:f_chunk], v_xeve[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('Jiab,Ibia->IJ', t1_xvee[:,s_chunk:f_chunk], v_xeve[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('i,Iiab,Jiab->IJ', e_val, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_val, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 -= einsum('i,Jiab,Iiab->IJ', e_val, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
-            M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_val, t1_xvee[:,s_chunk:f_chunk], t1_xvee[:,s_chunk:f_chunk], optimize = einsum_type)
 
-        chunk_size_ee1, chunk_size_ee2 = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs, ncvs)
-        for s_chunk1 in range(0, ncas, chunk_size_ee1):
-            f_chunk1 = s_chunk1 + chunk_size_ee1
+            ## Amplitudes
+            t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
 
-            for s_chunk2 in range(0, ncas, chunk_size_ee2):
-                f_chunk2 = s_chunk2 + chunk_size_ee2
-                M_00 += einsum('Ixab,Jayb,xy->IJ', t1_xaee[:,s_chunk1:f_chunk1], v_xeae[:,:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 -= 1/2 * einsum('Ixab,Jbya,xy->IJ', t1_xaee[:,s_chunk1:f_chunk1], v_xeae[:,:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 += einsum('Jxab,Iayb,xy->IJ', t1_xaee[:,s_chunk1:f_chunk1], v_xeae[:,:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 -= 1/2 * einsum('Jxab,Ibya,xy->IJ', t1_xaee[:,s_chunk1:f_chunk1], v_xeae[:,:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 -= 1/2 * einsum('I,Ixab,Jyab,xy->IJ', e_cvs, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 += 1/4 * einsum('I,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 -= 1/2 * einsum('J,Ixab,Jyab,xy->IJ', e_cvs, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 += 1/4 * einsum('J,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 += einsum('a,Ixab,Jyab,xy->IJ', e_extern, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 -= 1/2 * einsum('a,Ixab,Jyba,xy->IJ', e_extern, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 -= 1/2 * einsum('a,Ixba,Jyab,xy->IJ', e_extern, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 += einsum('a,Ixba,Jyba,xy->IJ', e_extern, t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca[s_chunk1:f_chunk1,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 -= 1/2 * einsum('xy,Ixab,Jzab,yz->IJ', h_aa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca,s_chunk2:f_chunk2, optimize = einsum_type)
-                M_00 += 1/4 * einsum('xy,Ixab,Jzba,yz->IJ', h_aa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca,s_chunk2:f_chunk2, optimize = einsum_type)
-                M_00 -= 1/2 * einsum('xy,Jxab,Izab,yz->IJ', h_aa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca,s_chunk2:f_chunk2, optimize = einsum_type)
-                M_00 += 1/4 * einsum('xy,Jxab,Izba,yz->IJ', h_aa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ca,s_chunk2:f_chunk2, optimize = einsum_type)
-                M_00 -= 1/2 * einsum('xyzw,Ixab,Juab,zuwy->IJ', v_aaaa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ccaa[:,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 += 1/4 * einsum('xyzw,Ixab,Juba,zuwy->IJ', v_aaaa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ccaa[:,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 -= 1/2 * einsum('xyzw,Jxab,Iuab,zuwy->IJ', v_aaaa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ccaa[:,s_chunk2:f_chunk2], optimize = einsum_type)
-                M_00 += 1/4 * einsum('xyzw,Jxab,Iuba,zuwy->IJ', v_aaaa[s_chunk1:f_chunk1], t1_xaee[:,s_chunk1:f_chunk1], t1_xaee[:,s_chunk2:f_chunk2], rdm_ccaa[:,s_chunk2:f_chunk2], optimize = einsum_type)
+            M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
+
+            ## Molecular Orbitals Energies
+            e_val = mr_adc.mo_energy.v[s_chunk:f_chunk]
+
+            M_00 -= einsum('i,Iiab,Jiab->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 -= einsum('i,Jiab,Iiab->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xeve = mr_adc.v2e.xeve[:,s_chunk:f_chunk]
+
+            M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xvee, v_xeve, optimize = einsum_type)
+            M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xvee, v_xeve, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xeve = mr_adc.v2e.xeve[:,s_chunk:f_chunk]
+
+            M_00 -= einsum('Iiab,Jbia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
+            M_00 -= einsum('Jiab,Ibia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
+        del(t1_xvee, v_xeve, e_val)
+
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nval, (ncvs, nextern, nextern))
+        for s_chunk in range(0, nval, chunk_size):
+            f_chunk = s_chunk + chunk_size
+
+            ## Molecular Orbitals Energies
+            e_val = mr_adc.mo_energy.v[s_chunk:f_chunk]
+
+            ## Amplitudes
+            t1_xvee = mr_adc.t1.xvee[:,s_chunk:f_chunk]
+
+            M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
+            M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
+        del(t1_xvee, e_val)
+
+        chunk_size_I, chunk_size_J = mr_adc_integrals.calculate_chunk_sizes(mr_adc, ncvs, (ncas, nextern, nextern),
+                                                                                    ncvs, (ncas, nextern, nextern))
+        for s_chunk_I in range(0, ncvs, chunk_size_I):
+            f_chunk_I = s_chunk_I + chunk_size_I
+
+            ## Amplitudes
+            t1_xaee_I = mr_adc.t1.xaee[s_chunk_I:f_chunk_I]
+
+            for s_chunk_J in range(0, ncvs, chunk_size_J):
+                f_chunk_J = s_chunk_J + chunk_size_J
+
+                ## Molecular Orbitals Energies
+                e_cvs_I = mr_adc.mo_energy.x[s_chunk_I:f_chunk_I]
+                e_cvs_J = mr_adc.mo_energy.x[s_chunk_J:f_chunk_J]
+
+                ## Amplitudes
+                t1_xaee_J = mr_adc.t1.xaee[s_chunk_J:f_chunk_J]
+
+                M_00_chunk = M_00[s_chunk_I:f_chunk_I,s_chunk_J:f_chunk_J]
+                M_00_chunk -= 1/2 * einsum('a,Ixab,Jyba,xy->IJ', e_extern, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
+                M_00_chunk -= 1/2 * einsum('a,Ixba,Jyab,xy->IJ', e_extern, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
+                M_00_chunk += 1/4 * einsum('xy,Ixab,Jzba,yz->IJ', h_aa, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
+                M_00_chunk += 1/4 * einsum('xy,Jxab,Izba,yz->IJ', h_aa, t1_xaee_J, t1_xaee_I, rdm_ca, optimize = einsum_type)
+                M_00_chunk += 1/4 * einsum('xyzw,Ixab,Juba,zuwy->IJ', v_aaaa, t1_xaee_I, t1_xaee_J, rdm_ccaa, optimize = einsum_type)
+                M_00_chunk += 1/4 * einsum('xyzw,Jxab,Iuba,zuwy->IJ', v_aaaa, t1_xaee_J, t1_xaee_I, rdm_ccaa, optimize = einsum_type)
+                M_00_chunk += 1/4 * einsum('I,Ixab,Jyba,xy->IJ', e_cvs_I, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
+                M_00_chunk += 1/4 * einsum('J,Ixab,Jyba,xy->IJ', e_cvs_J, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
+        del(t1_xaee_I, t1_xaee_J)
+
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
+            f_chunk = s_chunk + chunk_size
+
+            ## Molecular Orbitals Energies
+            e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
+
+            ## Amplitudes
+            t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
+
+            M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 -= einsum('i,Iiab,Jiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 -= einsum('i,Jiab,Iiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xexe = mr_adc.v2e.xexe[:,s_chunk:f_chunk]
+
+            M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xxee, v_xexe, optimize = einsum_type)
+            M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xxee, v_xexe, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xexe = mr_adc.v2e.xexe[:,:,:,s_chunk:f_chunk]
+
+            M_00 -= einsum('Iiab,Jbia->IJ', t1_xxee, v_xexe, optimize = einsum_type)
+            M_00 -= einsum('Jiab,Ibia->IJ', t1_xxee, v_xexe, optimize = einsum_type)
+            del(v_xexe)
+        del(t1_xxee)
+
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
+            f_chunk = s_chunk + chunk_size
+
+            ## Molecular Orbitals Energies
+            e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
+
+            ## Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
+
+            M_00 -= 1/2 * einsum('I,Ixab,Jyab,xy->IJ', e_cvs, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+            M_00 -= 1/2 * einsum('J,Ixab,Jyab,xy->IJ', e_cvs, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+            M_00 += einsum('a,Ixab,Jyab,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+            M_00 -= 1/2 * einsum('xy,Ixab,Jzab,yz->IJ', h_aa, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+            M_00 -= 1/2 * einsum('xy,Jxab,Izab,yz->IJ', h_aa, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+            M_00 -= 1/2 * einsum('xyzw,Ixab,Juab,zuwy->IJ', v_aaaa, t1_xaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
+            M_00 -= 1/2 * einsum('xyzw,Jxab,Iuab,zuwy->IJ', v_aaaa, t1_xaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
+            M_00 += einsum('a,Ixba,Jyba,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xeae = mr_adc.v2e.xeae[:,s_chunk:f_chunk]
+
+            M_00 += einsum('Ixab,Jayb,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
+            M_00 += einsum('Jxab,Iayb,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xeae = mr_adc.v2e.xeae[:,:,:,s_chunk:f_chunk]
+
+            M_00 -= 1/2 * einsum('Ixab,Jbya,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
+            M_00 -= 1/2 * einsum('Jxab,Ibya,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
+            del(v_xeae)
+        del(t1_xaee)
 
     mr_adc.M_00 = np.ascontiguousarray(M_00)
 
@@ -6274,25 +6371,38 @@ def compute_sigma_vector(mr_adc, Xt):
 
         sigma_cce =- 1/2 * einsum('ijB,KiLj->KLB', X_aaa, v_xxxx, optimize = einsum_type)
         sigma_cce += 1/2 * einsum('ijB,KjLi->KLB', X_aaa, v_xxxx, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cce += einsum('Kia,iLBa->KLB', X_aaa[:,s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Lia,iKBa->KLB', X_aaa[:,s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce += einsum('Lia,KBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce += einsum('Lia,KBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
+            v_xeex = mr_adc.v2e.xeex[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cce += einsum('Kia,iLBa->KLB', X_aaa_chunk, v_xxee, optimize = einsum_type)
+            sigma_cce -= einsum('Lia,iKBa->KLB', X_aaa_chunk, v_xxee, optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_xeex, optimize = einsum_type)
+            sigma_cce += einsum('Lia,KBai->KLB', X_aaa_chunk, v_xeex, optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_abb_chunk, v_xeex, optimize = einsum_type)
+            sigma_cce += einsum('Lia,KBai->KLB', X_abb_chunk, v_xeex, optimize = einsum_type)
         sigma[s_cce__aaa:f_cce__aaa] += sigma_cce[cvs_tril_ind[0], cvs_tril_ind[1]].reshape(-1).copy()
 
         sigma_cce =- einsum('ijB,KiLj->KLB', X_abb, v_xxxx, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncvs, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cce += einsum('iLa,iKBa->KLB', X_abb[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce += einsum('Kia,iLBa->KLB', X_abb[:,s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
+            v_xeex = mr_adc.v2e.xeex[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_xeex, optimize = einsum_type)
+            sigma_cce += einsum('iLa,iKBa->KLB', X_abb_chunk, v_xxee, optimize = einsum_type)
+            sigma_cce += einsum('Kia,iLBa->KLB', X_abb_chunk, v_xxee, optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_abb_chunk, v_xeex, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CAE_CCE(mr_adc, X_aaa, X_abb, sigma):
@@ -6361,12 +6471,19 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_aaa, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_aaa, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_aaa, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_xaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_xeea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_xeea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xaee = mr_adc.v2e.xaee[:,:,:,s_chunk:f_chunk]
+            v_xeea = mr_adc.v2e.xeea[:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_aaa_chunk, v_xaee, rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa_chunk, v_xeea, rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb_chunk, v_xeea, rdm_ca, optimize = einsum_type)
         sigma[s_cae__aaa:f_cae__aaa] += sigma_cae.reshape(-1).copy()
 
         sigma_cae  = 1/2 * einsum('KiB,ix,Zx->KZB', X_abb, h_xa, rdm_ca, optimize = einsum_type)
@@ -6388,12 +6505,18 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_abb, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_abb, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_abb, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, ncvs, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_xeea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_xeea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_xaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xaee = mr_adc.v2e.xaee[:,:,:,s_chunk:f_chunk]
+            v_xeea = mr_adc.v2e.xeea[:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa_chunk, v_xeea, rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb_chunk, v_xeea, rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_abb_chunk, v_xaee, rdm_ca, optimize = einsum_type)
         sigma[s_cae__abb:f_cae__abb] += sigma_cae.reshape(-1).copy()
 
         sigma_cae =- 1/2 * einsum('iKB,ix,Zx->KZB', X_abb, h_xa, rdm_ca, optimize = einsum_type)
@@ -6415,10 +6538,14 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/3 * einsum('iKB,ixyz,ywuv,Zxuwzv->KZB', X_abb, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('iKB,ixyz,ywzu,Zxwu->KZB', X_abb, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('iKB,ixyz,xwuv,Zwvyzu->KZB', X_abb, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, ncvs, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae -= 1/2 * einsum('iKa,ixBa,Zx->KZB', X_abb[s_chunk:f_chunk], v_xaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xaee = mr_adc.v2e.xaee[:,:,:,s_chunk:f_chunk]
+
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cae -= 1/2 * einsum('iKa,ixBa,Zx->KZB', X_abb_chunk, v_xaee, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CCA_CCE(mr_adc, X_aaa, X_abb, sigma):
@@ -6602,28 +6729,45 @@ def compute_sigma_vector(mr_adc, Xt):
 
         sigma_cve =- 1/2 * einsum('ijB,KiLj->KLB', X_aaa, v_xxvx, optimize = einsum_type)
         sigma_cve += 1/2 * einsum('ijB,KjLi->KLB', X_aaa, v_xxvx, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_veex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve += einsum('Kia,iLBa->KLB', X_aaa[:,s_chunk:f_chunk], v_xvee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_veex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xvee = mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk]
+            v_veex = mr_adc.v2e.veex[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_veex, optimize = einsum_type)
+            sigma_cve += einsum('Kia,iLBa->KLB', X_aaa_chunk, v_xvee, optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_abb_chunk, v_veex, optimize = einsum_type)
         sigma[s_cve__aaa:f_cve__aaa] += sigma_cve.reshape(-1).copy()
 
         sigma_cve =- einsum('ijB,KiLj->KLB', X_abb, v_xxvx, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
-        for s_chunk in range(0, ncvs, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_veex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_veex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve += einsum('Kia,iLBa->KLB', X_abb[:,s_chunk:f_chunk], v_xvee[s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xvee = mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk]
+            v_veex = mr_adc.v2e.veex[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_veex, optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_abb_chunk, v_veex, optimize = einsum_type)
+            sigma_cve += einsum('Kia,iLBa->KLB', X_abb_chunk, v_xvee, optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
         sigma_cve  = einsum('ijB,KjLi->KLB', X_abb, v_xxvx, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
-        for s_chunk in range(0, ncvs, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve -= einsum('iKa,iLBa->KLB', X_abb[s_chunk:f_chunk], v_xvee[s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xvee = mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk]
+
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cve -= einsum('iKa,iLBa->KLB', X_abb_chunk, v_xvee, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CVA_CCE(mr_adc, X_aaa, X_abb, sigma):
@@ -7201,15 +7345,22 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= 1/2 * einsum('LxB,Kyzx,ywuv,zuwv->KLB', X_aaa, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cce -= einsum('LxB,Kyxz,zwuv,yuwv->KLB', X_aaa, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cce += einsum('LxB,Kyxz,ywuv,zuwv->KLB', X_aaa, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncas, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cce += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_aaa[:,:,s_chunk:f_chunk], v_xaee[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_aaa[:,:,s_chunk:f_chunk], v_xaee[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa[:,:,s_chunk:f_chunk], v_xeea[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cce += 1/2 * einsum('Lxa,KBay,xy->KLB', X_aaa[:,:,s_chunk:f_chunk], v_xeea[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb[:,:,s_chunk:f_chunk], v_xeea[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cce += 1/2 * einsum('Lxa,KBay,xy->KLB', X_abb[:,:,s_chunk:f_chunk], v_xeea[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xaee = mr_adc.v2e.xaee[:,:,s_chunk:f_chunk]
+            v_xaee = mr_adc.v2e.xaee[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cce += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_aaa_chunk, v_xaee, rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_aaa_chunk, v_xaee, rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa_chunk, v_xeea, rdm_ca, optimize = einsum_type)
+            sigma_cce += 1/2 * einsum('Lxa,KBay,xy->KLB', X_aaa_chunk, v_xeea, rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb_chunk, v_xeea, rdm_ca, optimize = einsum_type)
+            sigma_cce += 1/2 * einsum('Lxa,KBay,xy->KLB', X_abb_chunk, v_xeea, rdm_ca, optimize = einsum_type)
         sigma[s_cce__aaa:f_cce__aaa] += sigma_cce[cvs_tril_ind[0], cvs_tril_ind[1]].reshape(-1).copy()
 
         sigma_cce  = einsum('KxB,Lx->KLB', X_abb, h_xa, optimize = einsum_type)
@@ -7266,13 +7417,20 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= 1/2 * einsum('LxB,Kyzx,ywuv,zuwv->KLB', X_bab, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cce -= einsum('LxB,Kyxz,zwuv,yuwv->KLB', X_bab, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cce += einsum('LxB,Kyxz,ywuv,zuwv->KLB', X_bab, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncas, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cce += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_abb, v_xaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_bab, v_xaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_xeea[:,:,:s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_xeea[:,:,:s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xaee = mr_adc.v2e.xaee[:,:,s_chunk:f_chunk]
+            v_xaee = mr_adc.v2e.xaee[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cce += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_abb_chunk, v_xaee, rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_bab_chunk, v_xaee, rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa_chunk, v_xeea, rdm_ca, optimize = einsum_type)
+            sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb_chunk, v_xeea, rdm_ca, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CAE_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -7312,22 +7470,36 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/6 * einsum('ixB,Kyzi,Zyxz->KZB', X_aaa, v_xaax, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ixB,Kiyz,yz,Zx->KZB', X_aaa, v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/4 * einsum('ixB,Kyzi,zy,Zx->KZB', X_aaa, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_aaa[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_aaa[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, ncas, chunk_size):
+
+            ## Two-electron integrals
+            v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
+            v_xeex = mr_adc.v2e.xeex[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_aaa_chunk, v_xxee, rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_aaa_chunk, v_xeex, rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab_chunk, v_xeex, rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae =+ 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_aaa, v_aaee[s_chunk:f_chunk], rdm_ccaa[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_aaa, v_aaee[s_chunk:f_chunk], rdm_ca[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_aaee = mr_adc.v2e.aaee[:,:,:,s_chunk:f_chunk]
+            v_aeea = mr_adc.v2e.aeea[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cae =+ 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_aaa_chunk, v_aaee, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_aaa_chunk, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_aaa_chunk, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cae__aaa:f_cae__aaa] += sigma_cae.reshape(-1).copy()
 
         sigma_cae  = 1/2 * einsum('ixB,Kiyz,Zzxy->KZB', X_abb, v_xxaa, rdm_ccaa, optimize = einsum_type)
@@ -7337,20 +7509,33 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/6 * einsum('ixB,Kyzi,Zyxz->KZB', X_bab, v_xaax, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ixB,Kiyz,yz,Zx->KZB', X_abb, v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/4 * einsum('ixB,Kyzi,zy,Zx->KZB', X_abb, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_abb[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, ncas, chunk_size):
+
+            ## Two-electron integrals
+            v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
+
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_abb_chunk, v_xxee, rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_abb, v_aaee[s_chunk:f_chunk], rdm_ccaa[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_abb, v_aeea[s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_abb, v_aaee[s_chunk:f_chunk], rdm_ca[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_aaee = mr_adc.v2e.aaee[:,:,:,s_chunk:f_chunk]
+            v_aeea = mr_adc.v2e.aeea[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+
+            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_abb_chunk, v_aaee, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_abb_chunk, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_abb_chunk, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cae__abb:f_cae__abb] += sigma_cae.reshape(-1).copy()
 
         sigma_cae  = 1/3 * einsum('ixB,Kyzi,Zyzx->KZB', X_abb, v_xaax, rdm_ccaa, optimize = einsum_type)
@@ -7360,20 +7545,33 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/3 * einsum('ixB,Kyzi,Zyxz->KZB', X_bab, v_xaax, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('ixB,Kiyz,yz,Zx->KZB', X_bab, v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cae += 1/4 * einsum('ixB,Kyzi,zy,Zx->KZB', X_bab, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_aaa[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_bab[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, ncas, chunk_size):
+
+            ## Two-electron integrals
+            v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
+            v_xeex = mr_adc.v2e.xeex[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_aaa_chunk, v_xeex, rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab_chunk, v_xeex, rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('ixa,iKBa,Zx->KZB', X_bab_chunk, v_xxee, rdm_ca, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae += 1/3 * einsum('Kxa,yBaz,Zzxy->KZB', X_bab, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_bab, v_aeea[s_chunk:f_chunk], rdm_ccaa[:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_bab, v_aaee[s_chunk:f_chunk], rdm_ccaa[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_bab, v_aeea[s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_bab, v_aaee[s_chunk:f_chunk], rdm_ca[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_aaee = mr_adc.v2e.aaee[:,:,:,s_chunk:f_chunk]
+            v_aeea = mr_adc.v2e.aeea[:,:,s_chunk:f_chunk]
+
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cae += 1/3 * einsum('Kxa,yBaz,Zzxy->KZB', X_bab_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_bab_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kxa,yzBa,Zyxz->KZB', X_bab_chunk, v_aaee, rdm_ccaa, optimize = einsum_type)
+            sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_bab_chunk, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
+            sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_bab_chunk, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CCA_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -7503,12 +7701,19 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += 1/2 * einsum('KxB,Lyzx,ywuv,zuwv->KLB', X_aaa, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lyxz,zwuv,yuwv->KLB', X_aaa, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve -= einsum('KxB,Lyxz,ywuv,zuwv->KLB', X_aaa, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
-        for s_chunk in range(0, ncas, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (nval, ncas, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_veea[:,:,:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_veea[:,:,:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_aaa, v_vaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_vaee = mr_adc.v2e.vaee[:,:,s_chunk:f_chunk]
+            v_veea = mr_adc.v2e.veea[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa_chunk, v_veea, rdm_ca, optimize = einsum_type)
+            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb_chunk, v_veea, rdm_ca, optimize = einsum_type)
+            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_aaa_chunk, v_vaee, rdm_ca, optimize = einsum_type)
         sigma[s_cve__aaa:f_cve__aaa] += sigma_cve.reshape(-1).copy()
 
         sigma_cve  = einsum('KxB,Lx->KLB', X_abb, h_va, optimize = einsum_type)
@@ -7539,12 +7744,18 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += 1/2 * einsum('KxB,Lyzx,ywuv,zuwv->KLB', X_abb, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lyxz,zwuv,yuwv->KLB', X_abb, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve -= einsum('KxB,Lyxz,ywuv,zuwv->KLB', X_abb, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
-        for s_chunk in range(0, ncas, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa, v_veea[:,:,:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_veea[:,:,:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_abb, v_vaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_vaee = mr_adc.v2e.vaee[:,:,s_chunk:f_chunk]
+            v_veea = mr_adc.v2e.veea[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_aaa_chunk, v_veea, rdm_ca, optimize = einsum_type)
+            sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb_chunk, v_veea, rdm_ca, optimize = einsum_type)
+            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_abb_chunk, v_vaee, rdm_ca, optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
         sigma_cve  = einsum('KxB,Lx->KLB', X_bab, h_va, optimize = einsum_type)
@@ -7575,10 +7786,14 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += 1/2 * einsum('KxB,Lyzx,ywuv,zuwv->KLB', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve += einsum('KxB,Lyxz,zwuv,yuwv->KLB', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cve -= einsum('KxB,Lyxz,ywuv,zuwv->KLB', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
         for s_chunk in range(0, ncas, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_bab, v_vaee[:,s_chunk:f_chunk], rdm_ca[:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_vaee = mr_adc.v2e.vaee[:,:,s_chunk:f_chunk]
+
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_bab_chunk, v_vaee, rdm_ca, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CVA_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -9087,27 +9302,40 @@ def compute_sigma_vector(mr_adc, Xt):
 
         sigma_cce =- einsum('ijB,KiLj->KLB', X_aaa, v_xxxv, optimize = einsum_type)
         sigma_cce += einsum('ijB,KjLi->KLB', X_aaa, v_xvxx, optimize = einsum_type)
-
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, nval, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce += einsum('Lia,KBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce += einsum('Lia,KBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce += einsum('Kia,iLBa->KLB', X_aaa[:,s_chunk:f_chunk], v_vxee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Lia,iKBa->KLB', X_aaa[:,s_chunk:f_chunk], v_vxee[s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xeev = mr_adc.v2e.xeev[:,:,s_chunk:f_chunk]
+            v_vxee = mr_adc.v2e.vxee[:,:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_xeev, optimize = einsum_type)
+            sigma_cce += einsum('Lia,KBai->KLB', X_aaa_chunk, v_xeev, optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_abb_chunk, v_xeev, optimize = einsum_type)
+            sigma_cce += einsum('Lia,KBai->KLB', X_abb_chunk, v_xeev, optimize = einsum_type)
+            sigma_cce += einsum('Kia,iLBa->KLB', X_aaa_chunk, v_vxee, optimize = einsum_type)
+            sigma_cce -= einsum('Lia,iKBa->KLB', X_aaa_chunk, v_vxee, optimize = einsum_type)
         sigma[s_cce__aaa:f_cce__aaa] += sigma_cce[cvs_tril_ind[0], cvs_tril_ind[1]].reshape(-1).copy()
 
         sigma_cce =- einsum('ijB,KiLj->KLB', X_abb, v_xxxv, optimize = einsum_type)
         sigma_cce += einsum('ijB,KjLi->KLB', X_bab, v_xvxx, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
         for s_chunk in range(0, nval, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_xeev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce += einsum('Kia,iLBa->KLB', X_abb[:,s_chunk:f_chunk], v_vxee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cce -= einsum('Lia,iKBa->KLB', X_bab[:,s_chunk:f_chunk], v_vxee[s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_xeev = mr_adc.v2e.xeev[:,:,s_chunk:f_chunk]
+            v_vxee = mr_adc.v2e.vxee[:,:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cce -= einsum('Kia,LBai->KLB', X_aaa, v_xeev, optimize = einsum_type)
+            sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeev, optimize = einsum_type)
+            sigma_cce += einsum('Kia,iLBa->KLB', X_abb, v_vxee, optimize = einsum_type)
+            sigma_cce -= einsum('Lia,iKBa->KLB', X_bab, v_vxee, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CAE_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -9177,12 +9405,19 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_aaa, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_aaa, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_aaa, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, nval, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (nval, ncas, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_vaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_veea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_veea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_vaee = mr_adc.v2e.vaee[:,:,:,s_chunk:f_chunk]
+            v_veea = mr_adc.v2e.veea[:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_aaa_chunk, v_vaee, rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa_chunk, v_veea, rdm_ca, optimize = einsum_type)
+            sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb_chunk, v_veea, rdm_ca, optimize = einsum_type)
         sigma[s_cae__aaa:f_cae__aaa] += sigma_cae.reshape(-1).copy()
 
         sigma_cae  = 1/2 * einsum('KiB,ix,Zx->KZB', X_abb, h_va, rdm_ca, optimize = einsum_type)
@@ -9205,9 +9440,15 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_abb, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_abb, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_abb, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, nval, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
+
+            ## Two-electron integrals
+            v_vaee = mr_adc.v2e.vaee[:,:,:,s_chunk:f_chunk]
+            v_veea = mr_adc.v2e.veea[:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
             sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_vaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
             sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_aaa[:,s_chunk:f_chunk], v_veea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
             sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb[:,s_chunk:f_chunk], v_veea[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
@@ -9233,10 +9474,14 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/3 * einsum('KiB,ixyz,ywuv,Zxuwzv->KZB', X_bab, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_cae += 1/2 * einsum('KiB,ixyz,ywzu,Zxwu->KZB', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_cae -= 1/2 * einsum('KiB,ixyz,xwuv,Zwvyzu->KZB', X_bab, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncas)
-        for s_chunk in range(0, nval, chunk_size):
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_bab[:,s_chunk:f_chunk], v_vaee[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_vaee = mr_adc.v2e.vaee[:,:,:,s_chunk:f_chunk]
+
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_bab_chunk, v_vaee, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CCA_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -9318,46 +9563,84 @@ def compute_sigma_vector(mr_adc, Xt):
 
         sigma_cve =- einsum('ijB,KiLj->KLB', X_aaa, v_xxvv, optimize = einsum_type)
         sigma_cve += einsum('ijB,KjLi->KLB', X_aaa, v_xvvx, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve += einsum('iLa,iKBa->KLB', X_aaa[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('iLa,KBai->KLB', X_aaa[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('iLa,KBai->KLB', X_bab[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
-        for s_chunk in range(0, nval, chunk_size):
+
+            ## Two-electron integrals
+            v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
+            v_xeex = mr_adc.v2e.xeex[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cve += einsum('iLa,iKBa->KLB', X_aaa_chunk, v_xxee, optimize = einsum_type)
+            sigma_cve -= einsum('iLa,KBai->KLB', X_aaa_chunk, v_xeex, optimize = einsum_type)
+            sigma_cve -= einsum('iLa,KBai->KLB', X_bab_chunk, v_xeex, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (nval, nval, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve += einsum('Kia,iLBa->KLB', X_aaa[:,s_chunk:f_chunk], v_vvee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_veev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_veev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_vvee = mr_adc.v2e.vvee[:,:,:,s_chunk:f_chunk]
+            v_veev = mr_adc.v2e.veev[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cve += einsum('Kia,iLBa->KLB', X_aaa_chunk, v_vvee, optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_veev, optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_abb_chunk, v_veev, optimize = einsum_type)
         sigma[s_cve__aaa:f_cve__aaa] += sigma_cve.reshape(-1).copy()
 
         sigma_cve =- einsum('ijB,KiLj->KLB', X_abb, v_xxvv, optimize = einsum_type)
         sigma_cve += einsum('ijB,KjLi->KLB', X_bab, v_xvvx, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve += einsum('iLa,iKBa->KLB', X_abb[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
-        for s_chunk in range(0, nval, chunk_size):
+
+            ## Two-electron integrals
+            v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
+
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cve += einsum('iLa,iKBa->KLB', X_abb_chunk, v_xxee, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (nval, nval, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve += einsum('Kia,iLBa->KLB', X_abb[:,s_chunk:f_chunk], v_vvee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa[:,s_chunk:f_chunk], v_veev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('Kia,LBai->KLB', X_abb[:,s_chunk:f_chunk], v_veev[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_vvee = mr_adc.v2e.vvee[:,:,:,s_chunk:f_chunk]
+            v_veev = mr_adc.v2e.veev[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
+            sigma_cve += einsum('Kia,iLBa->KLB', X_abb_chunk, v_vvee, optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_veev, optimize = einsum_type)
+            sigma_cve -= einsum('Kia,LBai->KLB', X_abb_chunk, v_veev, optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
         sigma_cve  = einsum('ijB,KjLi->KLB', X_abb, v_xvvx, optimize = einsum_type)
         sigma_cve -= einsum('ijB,KiLj->KLB', X_bab, v_xxvv, optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, ncvs)
-        for s_chunk in range(0, ncvs, chunk_size):
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve += einsum('iLa,iKBa->KLB', X_bab[s_chunk:f_chunk], v_xxee[s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('iLa,KBai->KLB', X_aaa[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-            sigma_cve -= einsum('iLa,KBai->KLB', X_bab[s_chunk:f_chunk], v_xeex[:,:,:,s_chunk:f_chunk], optimize = einsum_type)
-        chunk_size = mr_adc_integrals.calculate_chunk_size_oee(mr_adc, nval)
-        for s_chunk in range(0, nval, chunk_size):
+
+            ## Two-electron integrals
+            v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
+            v_xeex = mr_adc.v2e.xeex[:,:,s_chunk:f_chunk]
+
+            X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cve += einsum('iLa,iKBa->KLB', X_bab_chunk, v_xxee, optimize = einsum_type)
+            sigma_cve -= einsum('iLa,KBai->KLB', X_aaa_chunk, v_xeex, optimize = einsum_type)
+            sigma_cve -= einsum('iLa,KBai->KLB', X_bab_chunk, v_xeex, optimize = einsum_type)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (nval, nval, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
-            sigma_cve += einsum('Kia,iLBa->KLB', X_bab[:,s_chunk:f_chunk], v_vvee[s_chunk:f_chunk], optimize = einsum_type)
+
+            ## Two-electron integrals
+            v_vvee = mr_adc.v2e.vvee[:,:,:,s_chunk:f_chunk]
+
+            X_bab_chunk = X_bab[:,:,s_chunk:f_chunk]
+            sigma_cve += einsum('Kia,iLBa->KLB', X_bab_chunk, v_vvee, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CVA_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -11445,6 +11728,7 @@ def compute_trans_moments(mr_adc):
         ## Indices
         cvs_tril_ind = np.tril_indices(ncvs, k=-1)
 
+        #TODO: Improve memory
         T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
         T_e_cce -= einsum('KJAB->AJKB', t1_xxee, optimize = einsum_type).copy()
         T[nocc:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)

@@ -248,7 +248,7 @@ def transform_integrals_2e_df(mr_adc):
 
             mr_adc.v2e.cece = mr_adc.v2e.feri1.create_dataset('cece', (ncore, nextern, ncore, nextern), 'f8',
                                                               chunks=(1, nextern, 1, nextern))
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
+            chunk_size = calculate_chunk_size(mr_adc, ncore, (ncore, nextern, nextern))
             for s_chunk in range(0, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 mr_adc.v2e.cece[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, s_chunk, nextern,
@@ -262,7 +262,7 @@ def transform_integrals_2e_df(mr_adc):
 
             mr_adc.v2e.ceae = mr_adc.v2e.feri1.create_dataset('ceae', (ncore, nextern, ncas, nextern), 'f8',
                                                               chunks=(1, nextern, ncas, nextern))
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            chunk_size = calculate_chunk_size(mr_adc, ncore, (ncas, nextern, nextern))
             for s_chunk in range(0, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 mr_adc.v2e.ceae[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, s_chunk, nextern,
@@ -288,7 +288,7 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.ceec = mr_adc.v2e.feri1.create_dataset('ceec', (ncore, nextern, nextern, ncore), 'f8',
                                                               chunks=(ncore, nextern, nextern, 1))
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
+            chunk_size = calculate_chunk_size(mr_adc, ncore, (ncore, nextern, nextern))
             for s_chunk in range(0, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 mr_adc.v2e.ccee[s_chunk:f_chunk] = get_ooee_df(mr_adc, Lcc, s_chunk, ncore,
@@ -305,7 +305,7 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.ceea = mr_adc.v2e.feri1.create_dataset('ceea', (ncore, nextern, nextern, ncas), 'f8',
                                                               chunks=(1, nextern, nextern, 1))
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            chunk_size = calculate_chunk_size(mr_adc, ncore, (ncas, nextern, nextern))
             for s_chunk in range(0, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 mr_adc.v2e.caee[s_chunk:f_chunk] = get_ooee_df(mr_adc, Lca, s_chunk, ncas,
@@ -321,7 +321,7 @@ def transform_integrals_2e_df(mr_adc):
 
             mr_adc.v2e.aeea = mr_adc.v2e.feri1.create_dataset('aeea', (ncas, nextern, nextern, ncas), 'f8')
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            chunk_size = calculate_chunk_size(mr_adc, ncas, (ncas, nextern, nextern))
             for s_chunk in range(0, ncas, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 mr_adc.v2e.aeae[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, s_chunk, nextern,
@@ -357,41 +357,57 @@ def transform_integrals_2e_df(mr_adc):
 
     print("Time for transforming integrals:                   %f sec\n" % (time.time() - start_time))
 
-def calculate_chunk_size_oeee(mr_adc):
+def calculate_chunk_size(mr_adc, nmo_chunked, nmo_non_chunked):
 
     avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
-    eee_mem = (mr_adc.nextern**3) * 8/1e6
 
-    chunk_size = int(avail_mem / eee_mem)
+    nmo_1, nmo_2, nmo_3 = nmo_non_chunked
+    tensor_mem = (nmo_1 * nmo_2 * nmo_3) * 8/1e6
 
-    if chunk_size <= 0 :
+    chunk_size = int(avail_mem / tensor_mem)
+
+    if chunk_size > nmo_chunked:
+        chunk_size = nmo_chunked
+    elif chunk_size <= 0 :
         chunk_size = 1
 
     return chunk_size
 
-def calculate_chunk_size_oee(mr_adc, nocc):
+def calculate_chunk_sizes(mr_adc, nmo_chunked_1, nmo_non_chunked_1, nmo_chunked_2, nmo_non_chunked_2):
 
     avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
-    ee_mem = (nocc * mr_adc.nextern**2) * 8/1e6
 
-    chunk_size = int(avail_mem / ee_mem)
+    nmo_1, nmo_2, nmo_3 = nmo_non_chunked_1
+    tensor_mem_1 = (nmo_1 * nmo_2 * nmo_3) * 8/1e6
 
-    if chunk_size <= 0 :
-        chunk_size = 1
+    nmo_1, nmo_2, nmo_3 = nmo_non_chunked_2
+    tensor_mem_2 = (nmo_1 * nmo_2 * nmo_3) * 8/1e6
 
-    return chunk_size
+    if tensor_mem_1 == tensor_mem_2:
+        chunk_size_1 = int(avail_mem / (tensor_mem_1 * 2))
+        chunk_size_2 = chunk_size_1
+    elif tensor_mem_1 > tensor_mem_2:
+        chunk_size_1 = int(avail_mem / (tensor_mem_1 + tensor_mem_2))
+        chunk_size_2 = int((avail_mem - tensor_mem_1) / tensor_mem_2)
+    elif tensor_mem_2 > tensor_mem_1:
+        chunk_size_1 = int((avail_mem - tensor_mem_2) / tensor_mem_1)
+        chunk_size_2 = int(avail_mem / (tensor_mem_1 + tensor_mem_2))
+    else:
+        chunk_size_1 = 1
+        chunk_size_2 = 1
 
-def calculate_chunk_size_aae(mr_adc):
 
-    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
-    ee_mem = (mr_adc.nextern * mr_adc.ncas**2) * 8/1e6
+    if chunk_size_1 > nmo_chunked_1:
+        chunk_size_1 = nmo_chunked_1
+    elif chunk_size_1 <= 0 :
+        chunk_size_1 = 1
 
-    chunk_size = int(avail_mem / ee_mem)
+    if chunk_size_2 > nmo_chunked_2:
+        chunk_size_2 = nmo_chunked_2
+    elif chunk_size_2 <= 0 :
+        chunk_size_2 = 1
 
-    if chunk_size <= 0 :
-        chunk_size = 1
-
-    return chunk_size
+    return chunk_size_1, chunk_size_2
 
 def calculate_chunk_size_oee_oeee(mr_adc, nocc):
 
@@ -413,27 +429,6 @@ def calculate_chunk_size_oee_oeee(mr_adc, nocc):
         chunk_size_ee = 1
 
     return chunk_size_ee, chunk_size_eee
-
-def calculate_chunk_size_oee_oee(mr_adc, nocc1, nocc2):
-
-    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
-    ee1_mem = (nocc1 * mr_adc.nextern**2) * 8/1e6
-    ee2_mem = (nocc2 * mr_adc.nextern**2) * 8/1e6
-
-    if ee1_mem > ee2_mem:
-        chunk_size_ee1 = int(avail_mem / (ee1_mem - ee2_mem))
-        chunk_size_ee2 = int((avail_mem - ee1_mem) / ee1_mem)
-    else:
-        chunk_size_ee1 = 1
-        chunk_size_ee2 = 1
-
-    if chunk_size_ee1 <= 0 :
-        chunk_size_ee1 = 1
-
-    if chunk_size_ee2 <= 0 :
-        chunk_size_ee2 = 1
-
-    return chunk_size_ee1, chunk_size_ee2
 
 def get_oeee_df(mr_adc, Loe, Lee, p, chunk_size):
 
@@ -719,7 +714,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.vaxa[:] = mr_adc.v2e.caca[ncvs:, :, :ncvs, :]
             mr_adc.v2e.vava[:] = mr_adc.v2e.caca[ncvs:, :, ncvs:, :]
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
+            chunk_size = calculate_chunk_size(mr_adc, ncvs, (ncore, nextern, nextern))
             for s_chunk in range(0, ncvs, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 if f_chunk > ncvs:
@@ -747,7 +742,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xaaa[:] = mr_adc.v2e.caaa[:ncvs, :, :, :]
             mr_adc.v2e.vaaa[:] = mr_adc.v2e.caaa[ncvs:, :, :, :]
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            chunk_size = calculate_chunk_size(mr_adc, ncvs, (ncas, nextern, nextern))
             for s_chunk in range(0, ncvs, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 if f_chunk > ncvs:
@@ -805,7 +800,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xxxv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:]
             mr_adc.v2e.xvxx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncore)
+            chunk_size = calculate_chunk_size(mr_adc, ncvs, (ncore, nextern, nextern))
             for s_chunk in range(0, ncvs, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 if f_chunk > ncvs:
@@ -834,7 +829,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xaea[:] = mr_adc.v2e.caea[:ncvs, :, :, :]
             mr_adc.v2e.vaea[:] = mr_adc.v2e.caea[ncvs:, :, :, :]
 
-            chunk_size = calculate_chunk_size_oee(mr_adc, ncas)
+            chunk_size = calculate_chunk_size(mr_adc, ncvs, (ncas, nextern, nextern))
             for s_chunk in range(0, ncvs, chunk_size):
                 f_chunk = s_chunk + chunk_size
                 if f_chunk > ncvs:
