@@ -357,9 +357,9 @@ def transform_integrals_2e_df(mr_adc):
 
     print("Time for transforming integrals:                   %f sec\n" % (time.time() - start_time))
 
-def calculate_chunk_size(mr_adc, nmo_chunked, nmo_non_chunked):
+def calculate_chunk_size(mr_adc, nmo_chunked, nmo_non_chunked, ntensors = 2):
 
-    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
+    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) / ntensors
 
     nmo_1, nmo_2, nmo_3 = nmo_non_chunked
     tensor_mem = (nmo_1 * nmo_2 * nmo_3) * 8/1e6
@@ -373,9 +373,9 @@ def calculate_chunk_size(mr_adc, nmo_chunked, nmo_non_chunked):
 
     return chunk_size
 
-def calculate_chunk_sizes(mr_adc, nmo_chunked_1, nmo_non_chunked_1, nmo_chunked_2, nmo_non_chunked_2):
+def calculate_chunk_sizes(mr_adc, nmo_chunked_1, nmo_non_chunked_1, nmo_chunked_2, nmo_non_chunked_2, ntensors = 2):
 
-    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
+    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) / ntensors
 
     nmo_1, nmo_2, nmo_3 = nmo_non_chunked_1
     tensor_mem_1 = (nmo_1 * nmo_2 * nmo_3) * 8/1e6

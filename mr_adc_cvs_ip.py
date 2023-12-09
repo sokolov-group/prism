@@ -11716,9 +11716,6 @@ def compute_trans_moments(mr_adc):
         nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
-        # Amplitudes
-        t1_xxee = mr_adc.t1.xxee
-
         ## Excitation Manifolds
         s_cce__aaa = mr_adc.h1.s_cce__aaa
         f_cce__aaa = mr_adc.h1.f_cce__aaa
@@ -11728,13 +11725,22 @@ def compute_trans_moments(mr_adc):
         ## Indices
         cvs_tril_ind = np.tril_indices(ncvs, k=-1)
 
-        #TODO: Improve memory
-        T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
-        T_e_cce -= einsum('KJAB->AJKB', t1_xxee, optimize = einsum_type).copy()
-        T[nocc:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
+        for s_chunk in range(0, nextern, chunk_size):
+            f_chunk = s_chunk + chunk_size
 
-        T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
-        T[nocc:, s_cce__abb:f_cce__abb] += T_e_cce.reshape(nextern, -1)
+            s_nextern = nocc + s_chunk
+
+            ## Amplitudes
+            t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
+            dim_chunk = t1_xxee.shape[2]
+
+            T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+            T_e_cce -= einsum('KJAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+            T[s_nextern:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+
+            T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+            T[s_nextern:, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
 
     def compute_T__q1_h1__E_CAE(mr_adc, T):
 
@@ -11743,11 +11749,10 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Variables from kernel
+        ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
         nocc = mr_adc.nocc
         nextern = mr_adc.nextern
-
-        # Amplitudes
-        t1_xaee = mr_adc.t1.xaee
 
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
@@ -11760,15 +11765,33 @@ def compute_trans_moments(mr_adc):
         s_cae__bab = mr_adc.h1.s_cae__bab
         f_cae__bab = mr_adc.h1.f_cae__bab
 
-        T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
-        T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
-        T[nocc:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(nextern, -1)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
+        chunk_size = 1
+        for s_chunk in range(0, nextern, chunk_size):
+            f_chunk = s_chunk + chunk_size
 
-        T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
-        T[nocc:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(nextern, -1)
+            s_nextern = nocc + s_chunk
 
-        T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
-        T[nocc:, s_cae__bab:f_cae__bab] += T_e_cae.reshape(nextern, -1)
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
+            dim_chunk = t1_xaee.shape[2]
+
+            T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
+            T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+            T[s_nextern:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
+            T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+            T[s_nextern:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
+            T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+            T[s_nextern:, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
 
     def compute_T__q1_h1__E_CCA(mr_adc, T):
 

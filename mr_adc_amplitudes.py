@@ -385,7 +385,7 @@ def compute_t1_0(mr_adc):
     # Compute denominators
     d_ij = e_core[:,None] + e_core
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 3)
     if mr_adc.outcore_amplitudes:
         t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8',
                                                 chunks=(ncore, ncore, 1, 1))
@@ -403,9 +403,10 @@ def compute_t1_0(mr_adc):
         d_ab = e_extern[s_chunk:f_chunk][:,None] + e_extern
         temp = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
         temp = temp.reshape((ncore, ncore, -1, nextern))
+        temp = temp**(-1)
 
         # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
-        temp =- einsum('IAJB->IJAB', v_cece, optimize = einsum_type) / temp
+        temp *= - einsum('IAJB->IJAB', v_cece, optimize = einsum_type)
 
         # Compute electronic correlation energy for T[0]
         e_0 += 2 * einsum('ijab,iajb', temp, v_cece, optimize = einsum_type)
