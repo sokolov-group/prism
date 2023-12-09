@@ -1337,24 +1337,33 @@ def compute_M_00(mr_adc):
         for s_chunk in range(0, ncvs, chunk_size):
             f_chunk = s_chunk + chunk_size
 
+            ## Molecular Orbitals Energies
+            e_cvs = mr_adc.mo_energy.x[s_chunk:f_chunk]
+
             ## Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,s_chunk:f_chunk]
+
+            M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+            M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
+
+            ## Molecular Orbitals Energies
+            e_cvs = mr_adc.mo_energy.x
 
             M_00 += 1/2 * einsum('I,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
             M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
             M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
             M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
-
-            ## Molecular Orbitals Energies
-            e_cvs = mr_adc.mo_energy.x[s_chunk:f_chunk]
-
-            M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
-            M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
         del(t1_xxee)
 
         chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
+
+            ## Molecular Orbitals Energies
+            e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
+
+            ## Two-electron integrals
+            v_xeve = mr_adc.v2e.xeve[:,s_chunk:f_chunk]
 
             ## Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -1362,19 +1371,18 @@ def compute_M_00(mr_adc):
             M_00 -= einsum('I,Iiab,Jiab->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
             M_00 -= einsum('J,Iiab,Jiab->IJ', e_cvs, t1_xvee, t1_xvee, optimize = einsum_type)
             M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
-            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
-
             M_00 -= einsum('i,Iiab,Jiab->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
             M_00 -= einsum('i,Jiab,Iiab->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
-
-            ## Two-electron integrals
-            v_xeve = mr_adc.v2e.xeve[:,s_chunk:f_chunk]
-
             M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xvee, v_xeve, optimize = einsum_type)
             M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xvee, v_xeve, optimize = einsum_type)
 
+            ## Molecular Orbitals Energies
+            e_extern = mr_adc.mo_energy.e
+
+            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
+
             ## Two-electron integrals
-            v_xeve = mr_adc.v2e.xeve[:,s_chunk:f_chunk]
+            v_xeve = mr_adc.v2e.xeve[:,:,:,s_chunk:f_chunk]
 
             M_00 -= einsum('Iiab,Jbia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
             M_00 -= einsum('Jiab,Ibia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
@@ -1398,34 +1406,26 @@ def compute_M_00(mr_adc):
             M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
         del(t1_xvee, e_val)
 
-        chunk_size_I, chunk_size_J = mr_adc_integrals.calculate_chunk_sizes(mr_adc, ncvs, (ncas, nextern, nextern),
-                                                                                    ncvs, (ncas, nextern, nextern))
-        for s_chunk_I in range(0, ncvs, chunk_size_I):
-            f_chunk_I = s_chunk_I + chunk_size_I
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 3)
+        for s_chunk in range(0, nextern, chunk_size):
+            f_chunk = s_chunk + chunk_size
+
+            ## Molecular Orbitals Energies
+            e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
 
             ## Amplitudes
-            t1_xaee_I = mr_adc.t1.xaee[s_chunk_I:f_chunk_I]
+            t1_xaee_ab = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
+            t1_xaee_ba = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
 
-            for s_chunk_J in range(0, ncvs, chunk_size_J):
-                f_chunk_J = s_chunk_J + chunk_size_J
-
-                ## Molecular Orbitals Energies
-                e_cvs_I = mr_adc.mo_energy.x[s_chunk_I:f_chunk_I]
-                e_cvs_J = mr_adc.mo_energy.x[s_chunk_J:f_chunk_J]
-
-                ## Amplitudes
-                t1_xaee_J = mr_adc.t1.xaee[s_chunk_J:f_chunk_J]
-
-                M_00_chunk = M_00[s_chunk_I:f_chunk_I,s_chunk_J:f_chunk_J]
-                M_00_chunk -= 1/2 * einsum('a,Ixab,Jyba,xy->IJ', e_extern, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
-                M_00_chunk -= 1/2 * einsum('a,Ixba,Jyab,xy->IJ', e_extern, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
-                M_00_chunk += 1/4 * einsum('xy,Ixab,Jzba,yz->IJ', h_aa, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
-                M_00_chunk += 1/4 * einsum('xy,Jxab,Izba,yz->IJ', h_aa, t1_xaee_J, t1_xaee_I, rdm_ca, optimize = einsum_type)
-                M_00_chunk += 1/4 * einsum('xyzw,Ixab,Juba,zuwy->IJ', v_aaaa, t1_xaee_I, t1_xaee_J, rdm_ccaa, optimize = einsum_type)
-                M_00_chunk += 1/4 * einsum('xyzw,Jxab,Iuba,zuwy->IJ', v_aaaa, t1_xaee_J, t1_xaee_I, rdm_ccaa, optimize = einsum_type)
-                M_00_chunk += 1/4 * einsum('I,Ixab,Jyba,xy->IJ', e_cvs_I, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
-                M_00_chunk += 1/4 * einsum('J,Ixab,Jyba,xy->IJ', e_cvs_J, t1_xaee_I, t1_xaee_J, rdm_ca, optimize = einsum_type)
-        del(t1_xaee_I, t1_xaee_J)
+            M_00 -= 1/2 * einsum('a,Ixab,Jyba,xy->IJ', e_extern, t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
+            M_00 -= 1/2 * einsum('a,Ixba,Jyab,xy->IJ', e_extern, t1_xaee_ba, t1_xaee_ab, rdm_ca, optimize = einsum_type)
+            M_00 += 1/4 * einsum('xy,Ixab,Jzba,yz->IJ', h_aa, t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
+            M_00 += 1/4 * einsum('xy,Jxab,Izba,yz->IJ', h_aa, t1_xaee_ba, t1_xaee_ab, rdm_ca, optimize = einsum_type)
+            M_00 += 1/4 * einsum('xyzw,Ixab,Juba,zuwy->IJ', v_aaaa, t1_xaee_ab, t1_xaee_ba, rdm_ccaa, optimize = einsum_type)
+            M_00 += 1/4 * einsum('xyzw,Jxab,Iuba,zuwy->IJ', v_aaaa, t1_xaee_ba, t1_xaee_ab, rdm_ccaa, optimize = einsum_type)
+            M_00 += 1/4 * einsum('I,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
+            M_00 += 1/4 * einsum('J,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
+        del(t1_xaee_ab, t1_xaee_ba)
 
         chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern))
         for s_chunk in range(0, nextern, chunk_size):
@@ -1433,6 +1433,9 @@ def compute_M_00(mr_adc):
 
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
+
+            ## Two-electron integrals
+            v_xexe = mr_adc.v2e.xexe[:,s_chunk:f_chunk]
 
             ## Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -1442,11 +1445,6 @@ def compute_M_00(mr_adc):
             M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
             M_00 -= einsum('i,Iiab,Jiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
             M_00 -= einsum('i,Jiab,Iiab->IJ', e_cvs, t1_xxee, t1_xxee, optimize = einsum_type)
-            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
-
-            ## Two-electron integrals
-            v_xexe = mr_adc.v2e.xexe[:,s_chunk:f_chunk]
-
             M_00 += 2 * einsum('Iiab,Jaib->IJ', t1_xxee, v_xexe, optimize = einsum_type)
             M_00 += 2 * einsum('Jiab,Iaib->IJ', t1_xxee, v_xexe, optimize = einsum_type)
 
@@ -1455,8 +1453,12 @@ def compute_M_00(mr_adc):
 
             M_00 -= einsum('Iiab,Jbia->IJ', t1_xxee, v_xexe, optimize = einsum_type)
             M_00 -= einsum('Jiab,Ibia->IJ', t1_xxee, v_xexe, optimize = einsum_type)
-            del(v_xexe)
-        del(t1_xxee)
+
+            ## Molecular Orbitals Energies
+            e_extern = mr_adc.mo_energy.e
+
+            M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
+        del(v_xexe, t1_xxee)
 
         chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
         for s_chunk in range(0, nextern, chunk_size):
@@ -1475,7 +1477,6 @@ def compute_M_00(mr_adc):
             M_00 -= 1/2 * einsum('xy,Jxab,Izab,yz->IJ', h_aa, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
             M_00 -= 1/2 * einsum('xyzw,Ixab,Juab,zuwy->IJ', v_aaaa, t1_xaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
             M_00 -= 1/2 * einsum('xyzw,Jxab,Iuab,zuwy->IJ', v_aaaa, t1_xaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
-            M_00 += einsum('a,Ixba,Jyba,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
 
             ## Two-electron integrals
             v_xeae = mr_adc.v2e.xeae[:,s_chunk:f_chunk]
@@ -1488,8 +1489,12 @@ def compute_M_00(mr_adc):
 
             M_00 -= 1/2 * einsum('Ixab,Jbya,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
             M_00 -= 1/2 * einsum('Jxab,Ibya,xy->IJ', t1_xaee, v_xeae, rdm_ca, optimize = einsum_type)
-            del(v_xeae)
-        del(t1_xaee)
+
+            ## Molecular Orbitals Energies
+            e_extern = mr_adc.mo_energy.e
+
+            M_00 += einsum('a,Ixba,Jyba,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+        del(v_xeae, t1_xaee)
 
     mr_adc.M_00 = np.ascontiguousarray(M_00)
 
