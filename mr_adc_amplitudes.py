@@ -1638,6 +1638,9 @@ def compute_t2_0p_singles(mr_adc):
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
+        ## Molecular Orbitals Energies
+        e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
+
         ## One-electron integrals
         h_ce = mr_adc.h1eff.ce[:,s_chunk:f_chunk]
 
@@ -1645,7 +1648,6 @@ def compute_t2_0p_singles(mr_adc):
         v_ccce = mr_adc.v2e.ccce[:,:,:,s_chunk:f_chunk]
 
         v_caae = mr_adc.v2e.caae[:,:,:,s_chunk:f_chunk]
-        v_caea = mr_adc.v2e.caea[:,:,s_chunk:f_chunk]
         v_ceaa = mr_adc.v2e.ceaa[:,s_chunk:f_chunk]
 
         ## Amplitudes
@@ -1654,6 +1656,16 @@ def compute_t2_0p_singles(mr_adc):
         t1_caae = mr_adc.t1.caae[:,:,:,s_chunk:f_chunk]
 
         t1_ccee = mr_adc.t1.ccee[:,:,:,s_chunk:f_chunk]
+
+        V1 -= 2 * einsum('a,ia,IiAa->IA', e_extern, t1_ce, t1_ccee, optimize = einsum_type)
+        V1 -= 2 * einsum('a,ixay,IiAa,yx->IA', e_extern, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
+        V1 += einsum('a,ixya,IiAa,yx->IA', e_extern, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
+        V1 += einsum('a,ia,iIAa->IA', e_extern, t1_ce, t1_ccee, optimize = einsum_type)
+        V1 += einsum('a,ixay,iIAa,yx->IA', e_extern, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
+        V1 -= 1/2 * einsum('a,ixya,iIAa,yx->IA', e_extern, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
+
+        ## Molecular Orbitals Energies
+        e_extern = mr_adc.mo_energy.e
 
         V1 -= 2 * einsum('ia,IiAa->IA', h_ce, t1_ccee, optimize = einsum_type)
         V1 += einsum('ia,iIAa->IA', h_ce, t1_ccee, optimize = einsum_type)
@@ -1664,13 +1676,10 @@ def compute_t2_0p_singles(mr_adc):
         V1 += 1/4 * einsum('I,iIAa,ixya,yx->IA', e_core, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
         V1 -= 1/2 * einsum('I,IiAa,ixya,yx->IA', e_core, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
         V1 -= einsum('A,IiAa,ia->IA', e_extern, t1_ccee, t1_ce, optimize = einsum_type)
-        V1 -= 2 * einsum('a,ia,IiAa->IA', e_extern, t1_ce, t1_ccee, optimize = einsum_type)
         V1 -= 2 * einsum('IiAa,iaxy,yx->IA', t1_ccee, v_ceaa, rdm_ca, optimize = einsum_type)
         V1 += einsum('IiAa,ixya,xy->IA', t1_ccee, v_caae, rdm_ca, optimize = einsum_type)
         V1 -= einsum('A,IiAa,ixay,yx->IA', e_extern, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('A,IiAa,ixya,yx->IA', e_extern, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
-        V1 -= 2 * einsum('a,ixay,IiAa,yx->IA', e_extern, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
-        V1 += einsum('a,ixya,IiAa,yx->IA', e_extern, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
         V1 += einsum('xy,ixaz,IiAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
         V1 -= 1/2 * einsum('xy,ixza,IiAa,yz->IA', h_aa, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
         V1 -= einsum('xy,izax,IiAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
@@ -1680,13 +1689,10 @@ def compute_t2_0p_singles(mr_adc):
         V1 += einsum('xyzw,ixau,IiAa,zuwy->IA', v_aaaa, t1_caea, t1_ccee, rdm_ccaa, optimize = einsum_type)
         V1 -= 1/2 * einsum('xyzw,ixua,IiAa,zuwy->IA', v_aaaa, t1_caae, t1_ccee, rdm_ccaa, optimize = einsum_type)
         V1 += 1/2 * einsum('A,iIAa,ia->IA', e_extern, t1_ccee, t1_ce, optimize = einsum_type)
-        V1 += einsum('a,ia,iIAa->IA', e_extern, t1_ce, t1_ccee, optimize = einsum_type)
         V1 += einsum('iIAa,iaxy,yx->IA', t1_ccee, v_ceaa, rdm_ca, optimize = einsum_type)
         V1 -= 1/2 * einsum('iIAa,ixya,xy->IA', t1_ccee, v_caae, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('A,iIAa,ixay,yx->IA', e_extern, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
         V1 -= 1/4 * einsum('A,iIAa,ixya,yx->IA', e_extern, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
-        V1 += einsum('a,ixay,iIAa,yx->IA', e_extern, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
-        V1 -= 1/2 * einsum('a,ixya,iIAa,yx->IA', e_extern, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
         V1 -= 1/2 * einsum('xy,ixaz,iIAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
         V1 += 1/4 * einsum('xy,ixza,iIAa,yz->IA', h_aa, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('xy,izax,iIAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
@@ -1697,10 +1703,6 @@ def compute_t2_0p_singles(mr_adc):
         V1 += 1/4 * einsum('xyzw,ixua,iIAa,zuwy->IA', v_aaaa, t1_caae, t1_ccee, rdm_ccaa, optimize = einsum_type)
         V1 += 2 * einsum('ijAa,iIja->IA', t1_ccee, v_ccce, optimize = einsum_type)
         V1 -= einsum('ijAa,jIia->IA', t1_ccee, v_ccce, optimize = einsum_type)
-
-        ## Molecular Orbitals Energies
-        e_core = mr_adc.mo_energy.c[s_chunk:f_chunk]
-
         V1 += einsum('i,IiAa,ia->IA', e_core, t1_ccee, t1_ce, optimize = einsum_type)
         V1 += einsum('i,ia,IiAa->IA', e_core, t1_ce, t1_ccee, optimize = einsum_type)
         V1 += einsum('i,IiAa,ixay,xy->IA', e_core, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
@@ -1713,12 +1715,14 @@ def compute_t2_0p_singles(mr_adc):
         V1 += 1/4 * einsum('i,iIAa,ixya,xy->IA', e_core, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
         V1 -= 1/2 * einsum('i,ixay,iIAa,xy->IA', e_core, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
         V1 += 1/4 * einsum('i,ixya,iIAa,xy->IA', e_core, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
-
-    del(t1_ccee)
+    del(h_ce, v_ccce, v_caae, v_ceaa, t1_ce, t1_caea, t1_caae, t1_ccee)
 
     chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
+
+        ## Molecular Orbitals Energies
+        e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
 
         ## One-electron integrals
         h_ae = mr_adc.h1eff.ae[:,s_chunk:f_chunk]
@@ -1734,6 +1738,12 @@ def compute_t2_0p_singles(mr_adc):
         t1_caee = mr_adc.t1.caee[:,:,s_chunk:f_chunk]
         t1_aaae = mr_adc.t1.aaae[:,:,:,s_chunk:f_chunk]
 
+        V1 += 1/2 * einsum('a,xa,IyaA,xy->IA', e_extern, t1_ae, t1_caee, rdm_ca, optimize = einsum_type)
+        V1 += 1/2 * einsum('a,xyza,IwaA,zwxy->IA', e_extern, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
+
+        ## Molecular Orbitals Energies
+        e_extern = mr_adc.mo_energy.e
+
         V1 -= 1/2 * einsum('ixaA,iIya,xy->IA', t1_caee, v_ccae, rdm_ca, optimize = einsum_type)
         V1 += einsum('ixaA,Iyai,xy->IA', t1_caee, v_caec, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('xa,IyaA,xy->IA', h_ae, t1_caee, rdm_ca, optimize = einsum_type)
@@ -1741,8 +1751,6 @@ def compute_t2_0p_singles(mr_adc):
         V1 += 1/4 * einsum('A,IxaA,yzwa,xwzy->IA', e_extern, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
         V1 -= 1/4 * einsum('I,IxaA,ya,xy->IA', e_core, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
         V1 -= 1/4 * einsum('I,IxaA,yzwa,xwzy->IA', e_core, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
-        V1 += 1/2 * einsum('a,xa,IyaA,xy->IA', e_extern, t1_ae, t1_caee, rdm_ca, optimize = einsum_type)
-        V1 += 1/2 * einsum('a,xyza,IwaA,zwxy->IA', e_extern, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
         V1 -= 1/4 * einsum('xy,IxaA,za,yz->IA', h_aa, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
         V1 -= 1/4 * einsum('xy,IxaA,zwua,yuwz->IA', h_aa, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
         V1 -= 1/4 * einsum('xy,xa,IzaA,yz->IA', h_aa, t1_ae, t1_caee, rdm_ca, optimize = einsum_type)
@@ -1767,7 +1775,7 @@ def compute_t2_0p_singles(mr_adc):
         V1 += 1/12 * einsum('xyzw,xuva,IsaA,zvsywu->IA', v_aaaa, t1_aaae, t1_caee, rdm_cccaaa, optimize = einsum_type)
         V1 -= 1/4 * einsum('xyzw,zxua,IvaA,ywvu->IA', v_aaaa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
         V1 += 1/2 * einsum('IxaA,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
-    del(h_ae, v_ccae, v_caec, t1_ae, t1_caee, t1_aaae)
+    del(h_ae, v_ccae, v_caec, v_aaae, t1_ae, t1_caee, t1_aaae)
 
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
@@ -1779,10 +1787,21 @@ def compute_t2_0p_singles(mr_adc):
         v_ccae = mr_adc.v2e.ccae[:,:,:,s_chunk:f_chunk]
         v_caec = mr_adc.v2e.caec[:,:,s_chunk:f_chunk]
 
+        v_aaae = mr_adc.v2e.aaae[:,:,:,s_chunk:f_chunk]
+
         ## Amplitudes
         t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
         t1_caee = mr_adc.t1.caee[:,:,:,s_chunk:f_chunk]
         t1_aaae = mr_adc.t1.aaae[:,:,:,s_chunk:f_chunk]
+
+        ## Molecular Orbitals Energies
+        e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
+
+        V1 -= einsum('a,xa,IyAa,xy->IA', e_extern, t1_ae, t1_caee, rdm_ca, optimize = einsum_type)
+        V1 -= einsum('a,xyza,IwAa,zwxy->IA', e_extern, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
+
+        ## Molecular Orbitals Energies
+        e_extern = mr_adc.mo_energy.e
 
         V1 -= 1/2 * einsum('ixAa,Iyai,xy->IA', t1_caee, v_caec, rdm_ca, optimize = einsum_type)
         V1 += einsum('ixAa,iIya,xy->IA', t1_caee, v_ccae, rdm_ca, optimize = einsum_type)
@@ -1792,15 +1811,12 @@ def compute_t2_0p_singles(mr_adc):
         V1 -= 1/2 * einsum('A,IxAa,yzwa,xwzy->IA', e_extern, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
         V1 += 1/2 * einsum('I,IxAa,ya,xy->IA', e_core, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('I,IxAa,yzwa,xwzy->IA', e_core, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
-        V1 -= einsum('a,xa,IyAa,xy->IA', e_extern, t1_ae, t1_caee, rdm_ca, optimize = einsum_type)
-        V1 -= einsum('a,xyza,IwAa,zwxy->IA', e_extern, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
         V1 += 1/2 * einsum('xy,IxAa,za,yz->IA', h_aa, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('xy,IxAa,zwua,yuwz->IA', h_aa, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
         V1 += 1/2 * einsum('xy,xa,IzAa,yz->IA', h_aa, t1_ae, t1_caee, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('xy,xzwa,IuAa,yzwu->IA', h_aa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
         V1 -= 1/2 * einsum('xy,zwxa,IuAa,yuzw->IA', h_aa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
         V1 += 1/2 * einsum('xy,zxwa,IuAa,yzuw->IA', h_aa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
-        V1 -= 1/4 * einsum('xy,zxwa,IuaA,yzuw->IA', h_aa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
         V1 += 1/2 * einsum('xyzw,IxAa,ua,zuwy->IA', v_aaaa, t1_caee, t1_ae, rdm_ccaa, optimize = einsum_type)
         V1 -= 1/6 * einsum('xyzw,IxAa,uvsa,zvuswy->IA', v_aaaa, t1_caee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
         V1 -= 1/6 * einsum('xyzw,IxAa,uvsa,zvusyw->IA', v_aaaa, t1_caee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
@@ -1819,6 +1835,11 @@ def compute_t2_0p_singles(mr_adc):
         V1 -= 1/6 * einsum('xyzw,xuva,IsAa,zvsyuw->IA', v_aaaa, t1_aaae, t1_caee, rdm_cccaaa, optimize = einsum_type)
         V1 -= 1/6 * einsum('xyzw,xuva,IsAa,zvsywu->IA', v_aaaa, t1_aaae, t1_caee, rdm_cccaaa, optimize = einsum_type)
         V1 += 1/2 * einsum('xyzw,zxua,IvAa,ywvu->IA', v_aaaa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
+
+        ## Amplitudes
+        t1_caee = mr_adc.t1.caee[:,:,s_chunk:f_chunk]
+
+        V1 -= 1/4 * einsum('xy,zxwa,IuaA,yzuw->IA', h_aa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
     del(h_ae, v_ccae, v_caec, t1_ae, t1_caee, t1_aaae)
 
     chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern))
@@ -1844,11 +1865,12 @@ def compute_t2_0p_singles(mr_adc):
         ## Amplitudes
         t1_ce = mr_adc.t1.ce[:,s_chunk:f_chunk]
         t1_caae = mr_adc.t1.caae[:,:,:,s_chunk:f_chunk]
+        t1_caea = mr_adc.t1.caea[:,:,s_chunk:f_chunk]
 
         V1 -= 1/2 * einsum('ixya,iIAa,xy->IA', t1_caae, v_ccee, rdm_ca, optimize = einsum_type)
         V1 += einsum('ia,iIAa->IA', t1_ce, v_ccee, optimize = einsum_type)
         V1 += einsum('ixay,iIAa,xy->IA', t1_caea, v_ccee, rdm_ca, optimize = einsum_type)
-    del(v_ccee, t1_ce, t1_caae)
+    del(v_ccee, t1_ce, t1_caae, t1_caea)
 
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
@@ -2015,8 +2037,8 @@ def compute_t2_0p_singles(mr_adc):
             ## Reduced density matrices
             rdm_ca = mr_adc.rdm.ca[s_t_chunk:f_t_chunk,s_v_chunk:f_v_chunk]
 
-            V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca[s_t_chunk:f_t_chunk,s_v_chunk:f_v_chunk], optimize = einsum_type)
-            V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca[s_t_chunk:f_t_chunk,s_v_chunk:f_v_chunk], optimize = einsum_type)
+            V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
+            V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
         del(v_aeee, t1_caee, rdm_ca)
 
     ## Molecular Orbitals Energies

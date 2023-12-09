@@ -1364,9 +1364,6 @@ def compute_M_00(mr_adc):
             M_00 += 2 * einsum('a,Iiab,Jiab->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
             M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xvee, t1_xvee, optimize = einsum_type)
 
-            ## Molecular Orbitals Energies
-            e_val = mr_adc.mo_energy.v[s_chunk:f_chunk]
-
             M_00 -= einsum('i,Iiab,Jiab->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
             M_00 -= einsum('i,Jiab,Iiab->IJ', e_val, t1_xvee, t1_xvee, optimize = einsum_type)
 
