@@ -373,7 +373,7 @@ def calculate_chunk_size(mr_adc, nmo_chunked, nmo_non_chunked, ntensors = 2):
 
     return chunk_size
 
-def calculate_chunk_sizes(mr_adc, nmo_chunked_1, nmo_non_chunked_1, nmo_chunked_2, nmo_non_chunked_2, ntensors = 2):
+def calculate_chunk_sizes(mr_adc, nmo_chunked, nmo_non_chunked_1, nmo_non_chunked_2, ntensors = 2):
 
     avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) / ntensors
 
@@ -383,31 +383,14 @@ def calculate_chunk_sizes(mr_adc, nmo_chunked_1, nmo_non_chunked_1, nmo_chunked_
     nmo_1, nmo_2, nmo_3 = nmo_non_chunked_2
     tensor_mem_2 = (nmo_1 * nmo_2 * nmo_3) * 8/1e6
 
-    if tensor_mem_1 == tensor_mem_2:
-        chunk_size_1 = int(avail_mem / (tensor_mem_1 * 2))
-        chunk_size_2 = chunk_size_1
-    elif tensor_mem_1 > tensor_mem_2:
-        chunk_size_1 = int(avail_mem / (tensor_mem_1 + tensor_mem_2))
-        chunk_size_2 = int((avail_mem - tensor_mem_1) / tensor_mem_2)
-    elif tensor_mem_2 > tensor_mem_1:
-        chunk_size_1 = int((avail_mem - tensor_mem_2) / tensor_mem_1)
-        chunk_size_2 = int(avail_mem / (tensor_mem_1 + tensor_mem_2))
-    else:
-        chunk_size_1 = 1
-        chunk_size_2 = 1
+    chunk_size = int(avail_mem / (tensor_mem_1 + tensor_mem_2))
 
+    if chunk_size > nmo_chunked:
+        chunk_size = nmo_chunked
+    elif chunk_size <= 0 :
+        chunk_size = 1
 
-    if chunk_size_1 > nmo_chunked_1:
-        chunk_size_1 = nmo_chunked_1
-    elif chunk_size_1 <= 0 :
-        chunk_size_1 = 1
-
-    if chunk_size_2 > nmo_chunked_2:
-        chunk_size_2 = nmo_chunked_2
-    elif chunk_size_2 <= 0 :
-        chunk_size_2 = 1
-
-    return chunk_size_1, chunk_size_2
+    return chunk_size
 
 def calculate_chunk_size_oee_oeee(mr_adc, nocc):
 
