@@ -206,18 +206,18 @@ def compute_cvs_amplitudes(mr_adc):
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             if mr_adc.outcore_amplitudes:
                 mr_adc.t1.xxee = mr_adc.t1.chk.create_dataset('xxee', (ncvs, ncvs, nextern, nextern), 'f8',
-                                                              chunks=(1, 1, nextern, nextern))
+                                                              chunks=(1, 1, 1, 1))
                 mr_adc.t1.xvee = mr_adc.t1.chk.create_dataset('xvee', (ncvs, nval, nextern, nextern), 'f8',
-                                                              chunks=(1, 1, nextern, nextern))
+                                                              chunks=(ncvs, 1, 1, 1))
                 mr_adc.t1.vxee = mr_adc.t1.chk.create_dataset('vxee', (nval, ncvs, nextern, nextern), 'f8',
-                                                              chunks=(1, 1, nextern, nextern))
+                                                              chunks=(1, ncvs, 1, 1))
                 mr_adc.t1.vvee = mr_adc.t1.chk.create_dataset('vvee', (nval, nval, nextern, nextern), 'f8',
-                                                              chunks=(1, 1, nextern, nextern))
+                                                              chunks=(nval, nval, 1, 1))
 
                 mr_adc.t1.xaee = mr_adc.t1.chk.create_dataset('xaee', (ncvs, ncas, nextern, nextern), 'f8',
-                                                              chunks=(1, 1, nextern, nextern))
+                                                              chunks=(ncvs, 1, 1, 1))
                 mr_adc.t1.vaee = mr_adc.t1.chk.create_dataset('vaee', (nval, ncas, nextern, nextern), 'f8',
-                                                              chunks=(1, 1, nextern, nextern))
+                                                              chunks=(nval, 1, 1, 1))
             else:
                 mr_adc.t1.xxee = np.zeros((ncvs, ncvs, nextern, nextern))
                 mr_adc.t1.xvee = np.zeros((ncvs, nval, nextern, nextern))
@@ -227,44 +227,23 @@ def compute_cvs_amplitudes(mr_adc):
                 mr_adc.t1.xaee = np.zeros((ncvs, ncas, nextern, nextern))
                 mr_adc.t1.vaee = np.zeros((nval, ncas, nextern, nextern))
 
-            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, ncvs, (nextern, nextern, ncore))
-            for s_chunk in range(0, ncvs, chunk_size):
+            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern))
+            for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
-                if f_chunk > ncvs:
-                    f_chunk = ncvs
 
-                mr_adc.t1.xxee[s_chunk:f_chunk] = mr_adc.t1.ccee[s_chunk:f_chunk, :ncvs, :, :]
-                mr_adc.t1.xvee[s_chunk:f_chunk] = mr_adc.t1.ccee[s_chunk:f_chunk, ncvs:, :, :]
-
-            for s_chunk in range(ncvs, ncore, chunk_size):
-                f_chunk = s_chunk + chunk_size
-                if f_chunk > ncore:
-                    f_chunk = ncore
-
-                s_val_chunk = s_chunk - ncvs
-                f_val_chunk = f_chunk - ncvs
-
-                mr_adc.t1.vxee[s_val_chunk:f_val_chunk] = mr_adc.t1.ccee[s_chunk:f_chunk, :ncvs, :, :]
-                mr_adc.t1.vvee[s_val_chunk:f_val_chunk] = mr_adc.t1.ccee[s_chunk:f_chunk, ncvs:, :, :]
+                mr_adc.t1.xxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, :ncvs, s_chunk:f_chunk, :]
+                mr_adc.t1.xvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, ncvs:, s_chunk:f_chunk, :]
+                mr_adc.t1.vxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, :ncvs, s_chunk:f_chunk, :]
+                mr_adc.t1.vvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, ncvs:, s_chunk:f_chunk, :]
             del(mr_adc.t1.ccee)
 
-            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, ncvs, (nextern, nextern, ncas))
-            for s_chunk in range(0, ncvs, chunk_size):
+
+            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
+            for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
-                if f_chunk > ncvs:
-                    f_chunk = ncvs
 
-                mr_adc.t1.xaee[s_chunk:f_chunk] = mr_adc.t1.caee[s_chunk:f_chunk, :, :, :]
-
-            for s_chunk in range(ncvs, ncore, chunk_size):
-                f_chunk = s_chunk + chunk_size
-                if f_chunk > ncore:
-                    f_chunk = ncore
-
-                s_val_chunk = s_chunk - ncvs
-                f_val_chunk = f_chunk - ncvs
-
-                mr_adc.t1.vaee[s_val_chunk:f_val_chunk] = mr_adc.t1.caee[s_chunk:f_chunk, :, :, :]
+                mr_adc.t1.xaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[:ncvs, :, s_chunk:f_chunk]
+                mr_adc.t1.vaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[ncvs:, :, s_chunk:f_chunk]
             del(mr_adc.t1.caee)
 
             mr_adc.t1.xe = np.ascontiguousarray(mr_adc.t1.ce[:ncvs, :])
