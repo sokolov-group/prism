@@ -181,36 +181,8 @@ def compute_t2_amplitudes(mr_adc):
         else:
             mr_adc.t2.ce = np.zeros((ncore, nextern))
 
-        if mr_adc.method_type not in ("ee", "cvs-ee"):
-            mr_adc.t2.aa = np.zeros((ncas, ncas))
-            mr_adc.t2.ca = np.zeros((ncore, ncas))
-            mr_adc.t2.ae = np.zeros((ncas, nextern))
-
-        mr_adc.t2.caea = np.zeros((ncore, ncas, nextern, ncas))
-        mr_adc.t2.caae = np.zeros((ncore, ncas, ncas, nextern))
-        mr_adc.t2.caaa = np.zeros((ncore, ncas, ncas, ncas))
-        mr_adc.t2.aaae = np.zeros((ncas, ncas, ncas, nextern))
-        mr_adc.t2.ccee = np.zeros((ncore, ncore, nextern, nextern))
-        mr_adc.t2.ccae = np.zeros((ncore, ncore, ncas, nextern))
-        mr_adc.t2.caee = np.zeros((ncore, ncas, nextern, nextern))
-        mr_adc.t2.ccaa = np.zeros((ncore, ncore, ncas, ncas))
-        mr_adc.t2.aaee = np.zeros((ncas, ncas, nextern, nextern))
-
     else:
         mr_adc.t2.ce = np.zeros((ncore, nextern))
-        mr_adc.t2.ca = np.zeros((ncore, ncas))
-        mr_adc.t2.aa = np.zeros((ncas, ncas))
-        mr_adc.t2.ae = np.zeros((ncas, nextern))
-
-        mr_adc.t2.caea = np.zeros((ncore, ncas, nextern, ncas))
-        mr_adc.t2.caae = np.zeros((ncore, ncas, ncas, nextern))
-        mr_adc.t2.caaa = np.zeros((ncore, ncas, ncas, ncas))
-        mr_adc.t2.aaae = np.zeros((ncas, ncas, ncas, nextern))
-        mr_adc.t2.ccee = np.zeros((ncore, ncore, nextern, nextern))
-        mr_adc.t2.ccae = np.zeros((ncore, ncore, ncas, nextern))
-        mr_adc.t2.caee = np.zeros((ncore, ncas, nextern, nextern))
-        mr_adc.t2.ccaa = np.zeros((ncore, ncore, ncas, ncas))
-        mr_adc.t2.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
 def compute_cvs_amplitudes(mr_adc):
     'Create CVS amplitudes tensors and remove core integrals, core amplitudes and RDMs not used in CVS calculations'
@@ -330,41 +302,6 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs, :])
             mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
             del(mr_adc.t2.ce)
-
-            mr_adc.t2.xaea = np.ascontiguousarray(mr_adc.t2.caea[:ncvs, :, :, :])
-            mr_adc.t2.vaea = np.ascontiguousarray(mr_adc.t2.caea[ncvs:, :, :, :])
-            del(mr_adc.t2.caea)
-
-            mr_adc.t2.xaae = np.ascontiguousarray(mr_adc.t2.caae[:ncvs, :, :, :])
-            mr_adc.t2.vaae = np.ascontiguousarray(mr_adc.t2.caae[ncvs:, :, :, :])
-            del(mr_adc.t2.caae)
-
-            mr_adc.t2.xa = np.ascontiguousarray(mr_adc.t2.ca[:ncvs, :])
-            mr_adc.t2.va = np.ascontiguousarray(mr_adc.t2.ca[ncvs:, :])
-            del(mr_adc.t2.ca)
-
-            mr_adc.t2.xaaa = np.ascontiguousarray(mr_adc.t2.caaa[:ncvs, :, :, :])
-            mr_adc.t2.vaaa = np.ascontiguousarray(mr_adc.t2.caaa[ncvs:, :, :, :])
-            del(mr_adc.t2.caaa)
-
-        if mr_adc.method == "mr-adc(2)-x":
-            mr_adc.t2.xxee = np.ascontiguousarray(mr_adc.t2.ccee[:ncvs, :ncvs, :, :])
-            mr_adc.t2.xvee = np.ascontiguousarray(mr_adc.t2.ccee[:ncvs, ncvs:, :, :])
-            mr_adc.t2.vxee = np.ascontiguousarray(mr_adc.t2.ccee[ncvs:, :ncvs, :, :])
-            mr_adc.t2.vvee = np.ascontiguousarray(mr_adc.t2.ccee[ncvs:, ncvs:, :, :])
-            del(mr_adc.t2.ccee)
-
-            mr_adc.t2.xxae = np.ascontiguousarray(mr_adc.t2.ccae[:ncvs, :ncvs, :, :])
-            mr_adc.t2.xvae = np.ascontiguousarray(mr_adc.t2.ccae[:ncvs, ncvs:, :, :])
-            mr_adc.t2.vxae = np.ascontiguousarray(mr_adc.t2.ccae[ncvs:, :ncvs, :, :])
-            del(mr_adc.t2.ccae)
-
-            mr_adc.t2.xaee = np.ascontiguousarray(mr_adc.t2.caee[:ncvs, :, :, :])
-            del(mr_adc.t2.caee)
-
-            mr_adc.t2.xxaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, :ncvs, :, :])
-            mr_adc.t2.xvaa = np.ascontiguousarray(mr_adc.t2.ccaa[:ncvs, ncvs:, :, :])
-            del(mr_adc.t2.ccaa)
 
     print("Time for computing CVS amplitudes:                   %f sec\n" % (time.time() - start_time))
 

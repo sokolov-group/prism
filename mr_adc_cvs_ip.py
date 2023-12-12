@@ -12365,9 +12365,6 @@ def compute_trans_moments(mr_adc):
         t1_xxaa = mr_adc.t1.xxaa
         t1_xvaa = mr_adc.t1.xvaa
 
-        t2_xa = mr_adc.t2.xa
-        t2_xaaa = mr_adc.t2.xaaa
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -12376,8 +12373,12 @@ def compute_trans_moments(mr_adc):
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
 
-        T_a_c  = einsum('JX->XJ', t2_xa, optimize = einsum_type).copy()
-        T_a_c -= 1/2 * einsum('Ja,Xa->XJ', t1_xe, t1_ae, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_c  = einsum('JX->XJ', t2_xa, optimize = einsum_type).copy()
+        # T_a_c += einsum('JxXy,xy->XJ', t2_xaaa, rdm_ca, optimize = einsum_type)
+        # T_a_c -= 1/2 * einsum('JxyX,xy->XJ', t2_xaaa, rdm_ca, optimize = einsum_type)
+
+        T_a_c =- 1/2 * einsum('Ja,Xa->XJ', t1_xe, t1_ae, optimize = einsum_type)
         T_a_c += einsum('JiXa,ia->XJ', t1_xxae, t1_xe, optimize = einsum_type)
         T_a_c += einsum('JiXx,ix->XJ', t1_xxaa, t1_xa, optimize = einsum_type)
         T_a_c -= 1/2 * einsum('JixX,ix->XJ', t1_xxaa, t1_xa, optimize = einsum_type)
@@ -12398,8 +12399,6 @@ def compute_trans_moments(mr_adc):
         T_a_c -= 1/2 * einsum('iJXa,ia->XJ', t1_vxae, t1_ve, optimize = einsum_type)
         T_a_c += 1/2 * einsum('iJxa,iXax->XJ', t1_vxae, t1_vaea, optimize = einsum_type)
         T_a_c -= einsum('iJxa,iXxa->XJ', t1_vxae, t1_vaae, optimize = einsum_type)
-        T_a_c += einsum('JxXy,xy->XJ', t2_xaaa, rdm_ca, optimize = einsum_type)
-        T_a_c -= 1/2 * einsum('JxyX,xy->XJ', t2_xaaa, rdm_ca, optimize = einsum_type)
         T_a_c += 1/4 * einsum('Ja,Xxya,xy->XJ', t1_xe, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_c -= 1/2 * einsum('Ja,xXya,xy->XJ', t1_xe, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_c += einsum('JiXa,ixay,xy->XJ', t1_xxae, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -12552,9 +12551,6 @@ def compute_trans_moments(mr_adc):
 
         t2_xe = mr_adc.t2.xe
 
-        t2_xaea = mr_adc.t2.xaea
-        t2_xaae = mr_adc.t2.xaae
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -12563,14 +12559,16 @@ def compute_trans_moments(mr_adc):
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_c  = einsum('JxAy,yx->AJ', t2_xaea, rdm_ca, optimize = einsum_type)
+        # T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t2_xaae, rdm_ca, optimize = einsum_type)
+
         T_e_c  = einsum('JA->AJ', t2_xe, optimize = einsum_type).copy()
         T_e_c -= 1/2 * einsum('JixA,ix->AJ', t1_xxae, t1_xa, optimize = einsum_type)
         T_e_c -= 1/2 * einsum('JixA,ix->AJ', t1_xvae, t1_va, optimize = einsum_type)
         T_e_c += einsum('iJxA,ix->AJ', t1_xxae, t1_xa, optimize = einsum_type)
         T_e_c += einsum('iJxA,ix->AJ', t1_vxae, t1_va, optimize = einsum_type)
         T_e_c += 1/2 * einsum('xA,Jx->AJ', t1_ae, t1_xa, optimize = einsum_type)
-        T_e_c += einsum('JxAy,yx->AJ', t2_xaea, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t2_xaae, rdm_ca, optimize = einsum_type)
         T_e_c += 1/4 * einsum('JixA,iy,xy->AJ', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
         T_e_c -= 1/2 * einsum('JixA,iyxz,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_e_c += 1/4 * einsum('JixA,iyzw,xyzw->AJ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
@@ -15432,9 +15430,6 @@ def compute_trans_moments(mr_adc):
         t1_xxaa = mr_adc.t1.xxaa
         t1_xvaa = mr_adc.t1.xvaa
 
-        t2_xa = mr_adc.t2.xa
-        t2_xaaa = mr_adc.t2.xaaa
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -15448,13 +15443,15 @@ def compute_trans_moments(mr_adc):
         s_caa__bab = mr_adc.h1.s_caa__bab
         f_caa__bab = mr_adc.h1.f_caa__bab
 
-        T_a_caa  = 1/2 * einsum('JX,YZ->XJYZ', t2_xa, rdm_ca, optimize = einsum_type)
-        T_a_caa += 1/2 * einsum('JxXZ,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
-        T_a_caa += 1/2 * einsum('JxXy,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_a_caa -= 1/2 * einsum('JxZX,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
-        T_a_caa -= 1/6 * einsum('JxyX,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_a_caa += 1/6 * einsum('JxyX,YyxZ->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_a_caa += 1/4 * einsum('Ja,XZxa,Yx->XJYZ', t1_xe, t1_aaae, rdm_ca, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_caa  = 1/2 * einsum('JX,YZ->XJYZ', t2_xa, rdm_ca, optimize = einsum_type)
+        # T_a_caa += 1/2 * einsum('JxXZ,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
+        # T_a_caa += 1/2 * einsum('JxXy,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
+        # T_a_caa -= 1/2 * einsum('JxZX,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
+        # T_a_caa -= 1/6 * einsum('JxyX,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
+        # T_a_caa += 1/6 * einsum('JxyX,YyxZ->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
+
+        T_a_caa  = 1/4 * einsum('Ja,XZxa,Yx->XJYZ', t1_xe, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_caa -= 1/4 * einsum('Ja,Xa,YZ->XJYZ', t1_xe, t1_ae, rdm_ca, optimize = einsum_type)
         T_a_caa += 1/12 * einsum('Ja,Xxya,YxZy->XJYZ', t1_xe, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_a_caa -= 1/12 * einsum('Ja,Xxya,YxyZ->XJYZ', t1_xe, t1_aaae, rdm_ccaa, optimize = einsum_type)
@@ -15699,13 +15696,14 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_caa__aaa:f_caa__aaa] += T_a_caa.reshape(ncas, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_caa  = 1/2 * einsum('JX,YZ->XJYZ', t2_xa, rdm_ca, optimize = einsum_type)
+        # T_a_caa += 1/2 * einsum('JxXZ,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
+        # T_a_caa += 1/2 * einsum('JxXy,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
+        # T_a_caa -= 1/3 * einsum('JxyX,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
+        # T_a_caa -= 1/6 * einsum('JxyX,YyxZ->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
 
-        T_a_caa  = 1/2 * einsum('JX,YZ->XJYZ', t2_xa, rdm_ca, optimize = einsum_type)
-        T_a_caa += 1/2 * einsum('JxXZ,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
-        T_a_caa += 1/2 * einsum('JxXy,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_a_caa -= 1/3 * einsum('JxyX,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_a_caa -= 1/6 * einsum('JxyX,YyxZ->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_a_caa -= 1/4 * einsum('Ja,Xa,YZ->XJYZ', t1_xe, t1_ae, rdm_ca, optimize = einsum_type)
+        T_a_caa =- 1/4 * einsum('Ja,Xa,YZ->XJYZ', t1_xe, t1_ae, rdm_ca, optimize = einsum_type)
         T_a_caa += 1/6 * einsum('Ja,Xxya,YxZy->XJYZ', t1_xe, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_a_caa += 1/12 * einsum('Ja,Xxya,YxyZ->XJYZ', t1_xe, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_a_caa -= 1/4 * einsum('Ja,ZXxa,Yx->XJYZ', t1_xe, t1_aaae, rdm_ca, optimize = einsum_type)
@@ -15922,11 +15920,12 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_caa__abb:f_caa__abb] += T_a_caa.reshape(ncas, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_caa =- 1/2 * einsum('JxZX,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
+        # T_a_caa += 1/6 * einsum('JxyX,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
+        # T_a_caa += 1/3 * einsum('JxyX,YyxZ->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
 
-        T_a_caa =- 1/2 * einsum('JxZX,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
-        T_a_caa += 1/6 * einsum('JxyX,YyZx->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_a_caa += 1/3 * einsum('JxyX,YyxZ->XJYZ', t2_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_a_caa += 1/4 * einsum('Ja,XZxa,Yx->XJYZ', t1_xe, t1_aaae, rdm_ca, optimize = einsum_type)
+        T_a_caa  = 1/4 * einsum('Ja,XZxa,Yx->XJYZ', t1_xe, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_caa -= 1/12 * einsum('Ja,Xxya,YxZy->XJYZ', t1_xe, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_a_caa -= 1/6 * einsum('Ja,Xxya,YxyZ->XJYZ', t1_xe, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_a_caa += 1/4 * einsum('JiZX,ix,Yx->XJYZ', t1_xxaa, t1_xa, rdm_ca, optimize = einsum_type)
@@ -16091,8 +16090,6 @@ def compute_trans_moments(mr_adc):
 
         t1_xxaa = mr_adc.t1.xxaa
 
-        t2_xxae = mr_adc.t1.xxae
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
@@ -16105,9 +16102,11 @@ def compute_trans_moments(mr_adc):
         ## Indices
         cvs_tril_ind = np.tril_indices(ncvs, k=-1)
 
-        T_a_cce  = einsum('JKXB->XJKB', t2_xxae, optimize = einsum_type).copy()
-        T_a_cce -= einsum('KJXB->XJKB', t2_xxae, optimize = einsum_type).copy()
-        T_a_cce -= 1/2 * einsum('JxBX,Kx->XJKB', t1_xaea, t1_xa, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cce  = einsum('JKXB->XJKB', t2_xxae, optimize = einsum_type).copy()
+        # T_a_cce -= einsum('KJXB->XJKB', t2_xxae, optimize = einsum_type).copy()
+
+        T_a_cce =- 1/2 * einsum('JxBX,Kx->XJKB', t1_xaea, t1_xa, optimize = einsum_type)
         T_a_cce += 1/2 * einsum('JxXB,Kx->XJKB', t1_xaae, t1_xa, optimize = einsum_type)
         T_a_cce += 1/2 * einsum('KxBX,Jx->XJKB', t1_xaea, t1_xa, optimize = einsum_type)
         T_a_cce -= 1/2 * einsum('KxXB,Jx->XJKB', t1_xaae, t1_xa, optimize = einsum_type)
@@ -16168,9 +16167,10 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cce__aaa:f_cce__aaa] += T_a_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncas, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cce  = einsum('JKXB->XJKB', t2_xxae, optimize = einsum_type).copy()
 
-        T_a_cce  = einsum('JKXB->XJKB', t2_xxae, optimize = einsum_type).copy()
-        T_a_cce += 1/2 * einsum('JxXB,Kx->XJKB', t1_xaae, t1_xa, optimize = einsum_type)
+        T_a_cce  = 1/2 * einsum('JxXB,Kx->XJKB', t1_xaae, t1_xa, optimize = einsum_type)
         T_a_cce += 1/2 * einsum('KxBX,Jx->XJKB', t1_xaea, t1_xa, optimize = einsum_type)
         T_a_cce -= 1/2 * einsum('xB,JKXx->XJKB', t1_ae, t1_xxaa, optimize = einsum_type)
         T_a_cce += 1/2 * einsum('xyXB,JKxy->XJKB', t1_aaae, t1_xxaa, optimize = einsum_type)
@@ -16236,9 +16236,6 @@ def compute_trans_moments(mr_adc):
         t1_xvae = mr_adc.t1.xvae
         t1_vxae = mr_adc.t1.vxae
 
-        t2_xaea = mr_adc.t2.xaea
-        t2_xaae = mr_adc.t2.xaae
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -16251,9 +16248,11 @@ def compute_trans_moments(mr_adc):
         s_cae__bab = mr_adc.h1.s_cae__bab
         f_cae__bab = mr_adc.h1.f_cae__bab
 
-        T_a_cae =- 1/2 * einsum('JxBX,Yx->XJYB', t2_xaea, rdm_ca, optimize = einsum_type)
-        T_a_cae += 1/2 * einsum('JxXB,Yx->XJYB', t2_xaae, rdm_ca, optimize = einsum_type)
-        T_a_cae -= 1/4 * einsum('JiXB,ix,Yx->XJYB', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cae =- 1/2 * einsum('JxBX,Yx->XJYB', t2_xaea, rdm_ca, optimize = einsum_type)
+        # T_a_cae += 1/2 * einsum('JxXB,Yx->XJYB', t2_xaae, rdm_ca, optimize = einsum_type)
+
+        T_a_cae =- 1/4 * einsum('JiXB,ix,Yx->XJYB', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
         T_a_cae -= 1/4 * einsum('JiXB,ixyz,Yxyz->XJYB', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_a_cae -= 1/4 * einsum('JixB,iXxy,Yy->XJYB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_a_cae += 1/4 * einsum('JixB,iXyx,Yy->XJYB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -16364,10 +16363,11 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cae__aaa:f_cae__aaa] += T_a_cae.reshape(ncas, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cae  = 1/2 * einsum('JxXB,Yx->XJYB', t2_xaae, rdm_ca, optimize = einsum_type)
+        # T_a_cae -= 1/4 * einsum('JiXB,ix,Yx->XJYB', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
 
-        T_a_cae  = 1/2 * einsum('JxXB,Yx->XJYB', t2_xaae, rdm_ca, optimize = einsum_type)
-        T_a_cae -= 1/4 * einsum('JiXB,ix,Yx->XJYB', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
-        T_a_cae -= 1/4 * einsum('JiXB,ixyz,Yxyz->XJYB', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_a_cae =- 1/4 * einsum('JiXB,ixyz,Yxyz->XJYB', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_a_cae += 1/4 * einsum('JixB,iXyx,Yy->XJYB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_a_cae -= 1/6 * einsum('JixB,iXyz,Yxyz->XJYB', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_a_cae -= 1/12 * einsum('JixB,iXyz,Yxzy->XJYB', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
@@ -16432,9 +16432,10 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cae__abb:f_cae__abb] += T_a_cae.reshape(ncas, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cae =- 1/2 * einsum('JxBX,Yx->XJYB', t2_xaea, rdm_ca, optimize = einsum_type)
 
-        T_a_cae =- 1/2 * einsum('JxBX,Yx->XJYB', t2_xaea, rdm_ca, optimize = einsum_type)
-        T_a_cae -= 1/4 * einsum('JixB,iXxy,Yy->XJYB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_a_cae =- 1/4 * einsum('JixB,iXxy,Yy->XJYB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_a_cae += 1/12 * einsum('JixB,iXyz,Yxyz->XJYB', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_a_cae += 1/6 * einsum('JixB,iXyz,Yxzy->XJYB', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_a_cae -= 1/4 * einsum('JixB,iXxy,Yy->XJYB', t1_xvae, t1_vaaa, rdm_ca, optimize = einsum_type)
@@ -16548,8 +16549,6 @@ def compute_trans_moments(mr_adc):
 
         t1_xxae = mr_adc.t1.xxae
 
-        t2_xxaa = mr_adc.t2.xxaa
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -16563,9 +16562,13 @@ def compute_trans_moments(mr_adc):
         ## Indices
         cvs_tril_ind = np.tril_indices(ncvs, k=-1)
 
-        T_a_cca  = einsum('JKXY->XJKY', t2_xxaa, optimize = einsum_type).copy()
-        T_a_cca -= einsum('JKYX->XJKY', t2_xxaa, optimize = einsum_type).copy()
-        T_a_cca += 1/2 * einsum('JKXa,Ya->XJKY', t1_xxae, t1_ae, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cca  = einsum('JKXY->XJKY', t2_xxaa, optimize = einsum_type).copy()
+        # T_a_cca -= einsum('JKYX->XJKY', t2_xxaa, optimize = einsum_type).copy()
+        # T_a_cca -= 1/2 * einsum('JKXx,Yx->XJKY', t2_xxaa, rdm_ca, optimize = einsum_type)
+        # T_a_cca += 1/2 * einsum('JKxX,Yx->XJKY', t2_xxaa, rdm_ca, optimize = einsum_type)
+
+        T_a_cca  = 1/2 * einsum('JKXa,Ya->XJKY', t1_xxae, t1_ae, optimize = einsum_type)
         T_a_cca += 1/2 * einsum('JKYa,Xa->XJKY', t1_xxae, t1_ae, optimize = einsum_type)
         T_a_cca -= 1/2 * einsum('JKxa,XYxa->XJKY', t1_xxae, t1_aaae, optimize = einsum_type)
         T_a_cca += 1/2 * einsum('JKxa,YXxa->XJKY', t1_xxae, t1_aaae, optimize = einsum_type)
@@ -16577,8 +16580,6 @@ def compute_trans_moments(mr_adc):
         T_a_cca -= 1/2 * einsum('KJYa,Xa->XJKY', t1_xxae, t1_ae, optimize = einsum_type)
         T_a_cca += 1/2 * einsum('KJxa,XYxa->XJKY', t1_xxae, t1_aaae, optimize = einsum_type)
         T_a_cca -= 1/2 * einsum('KJxa,YXxa->XJKY', t1_xxae, t1_aaae, optimize = einsum_type)
-        T_a_cca -= 1/2 * einsum('JKXx,Yx->XJKY', t2_xxaa, rdm_ca, optimize = einsum_type)
-        T_a_cca += 1/2 * einsum('JKxX,Yx->XJKY', t2_xxaa, rdm_ca, optimize = einsum_type)
         T_a_cca -= 1/4 * einsum('JKXa,Yxya,xy->XJKY', t1_xxae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cca += 1/2 * einsum('JKXa,xYya,xy->XJKY', t1_xxae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cca -= 1/4 * einsum('JKXa,xa,Yx->XJKY', t1_xxae, t1_ae, rdm_ca, optimize = einsum_type)
@@ -16673,14 +16674,16 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cca__aaa:f_cca__aaa] += T_a_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncas, -1)
 
-        T_a_cca  = einsum('JKXY->XJKY', t2_xxaa, optimize = einsum_type).copy()
-        T_a_cca += 1/2 * einsum('JKXa,Ya->XJKY', t1_xxae, t1_ae, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cca  = einsum('JKXY->XJKY', t2_xxaa, optimize = einsum_type).copy()
+        # T_a_cca -= 1/2 * einsum('JKXx,Yx->XJKY', t2_xxaa, rdm_ca, optimize = einsum_type)
+
+        T_a_cca  = 1/2 * einsum('JKXa,Ya->XJKY', t1_xxae, t1_ae, optimize = einsum_type)
         T_a_cca -= 1/2 * einsum('JKxa,XYxa->XJKY', t1_xxae, t1_aaae, optimize = einsum_type)
         T_a_cca += 1/2 * einsum('Jx,KxYX->XJKY', t1_xa, t1_xaaa, optimize = einsum_type)
         T_a_cca += 1/2 * einsum('JxXY,Kx->XJKY', t1_xaaa, t1_xa, optimize = einsum_type)
         T_a_cca -= 1/2 * einsum('KJYa,Xa->XJKY', t1_xxae, t1_ae, optimize = einsum_type)
         T_a_cca -= 1/2 * einsum('KJxa,YXxa->XJKY', t1_xxae, t1_aaae, optimize = einsum_type)
-        T_a_cca -= 1/2 * einsum('JKXx,Yx->XJKY', t2_xxaa, rdm_ca, optimize = einsum_type)
         T_a_cca -= 1/4 * einsum('JKXa,Yxya,xy->XJKY', t1_xxae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cca += 1/2 * einsum('JKXa,xYya,xy->XJKY', t1_xxae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cca -= 1/4 * einsum('JKXa,xa,Yx->XJKY', t1_xxae, t1_ae, rdm_ca, optimize = einsum_type)
@@ -16773,9 +16776,6 @@ def compute_trans_moments(mr_adc):
 
         t1_xvaa = mr_adc.t1.xvaa
 
-        t2_xvae = mr_adc.t2.xvae
-        t2_vxae = mr_adc.t2.vxae
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
@@ -16787,8 +16787,10 @@ def compute_trans_moments(mr_adc):
         s_cve__bab = mr_adc.h1.s_cve__bab
         f_cve__bab = mr_adc.h1.f_cve__bab
 
-        T_a_cve  = einsum('JKXB->XJKB', t2_xvae, optimize = einsum_type).copy()
-        T_a_cve -= einsum('KJXB->XJKB', t2_vxae, optimize = einsum_type).copy()
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cve  = einsum('JKXB->XJKB', t2_xvae, optimize = einsum_type).copy()
+        # T_a_cve -= einsum('KJXB->XJKB', t2_vxae, optimize = einsum_type).copy()
+
         T_a_cve -= 1/2 * einsum('JxBX,Kx->XJKB', t1_xaea, t1_va, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('JxXB,Kx->XJKB', t1_xaae, t1_va, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('KxBX,Jx->XJKB', t1_vaea, t1_xa, optimize = einsum_type)
@@ -16861,8 +16863,10 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
 
-        T_a_cve  = einsum('JKXB->XJKB', t2_xvae, optimize = einsum_type).copy()
-        T_a_cve += 1/2 * einsum('JxXB,Kx->XJKB', t1_xaae, t1_va, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cve  = einsum('JKXB->XJKB', t2_xvae, optimize = einsum_type).copy()
+
+        T_a_cve  = 1/2 * einsum('JxXB,Kx->XJKB', t1_xaae, t1_va, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('KxBX,Jx->XJKB', t1_vaea, t1_xa, optimize = einsum_type)
         T_a_cve -= 1/2 * einsum('xB,JKXx->XJKB', t1_ae, t1_xvaa, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('xyXB,JKxy->XJKB', t1_aaae, t1_xvaa, optimize = einsum_type)
@@ -16899,8 +16903,10 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cve__abb:f_cve__abb] += T_a_cve.reshape(ncas, -1)
 
-        T_a_cve =- einsum('KJXB->XJKB', t2_vxae, optimize = einsum_type).copy()
-        T_a_cve -= 1/2 * einsum('JxBX,Kx->XJKB', t1_xaea, t1_va, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cve =- einsum('KJXB->XJKB', t2_vxae, optimize = einsum_type).copy()
+
+        T_a_cve =- 1/2 * einsum('JxBX,Kx->XJKB', t1_xaea, t1_va, optimize = einsum_type)
         T_a_cve -= 1/2 * einsum('KxXB,Jx->XJKB', t1_vaae, t1_xa, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('xB,JKxX->XJKB', t1_ae, t1_xvaa, optimize = einsum_type)
         T_a_cve -= 1/2 * einsum('xyXB,JKyx->XJKB', t1_aaae, t1_xvaa, optimize = einsum_type)
@@ -16964,8 +16970,6 @@ def compute_trans_moments(mr_adc):
         t1_xvae = mr_adc.t1.xvae
         t1_vxae = mr_adc.t1.vxae
 
-        t2_xvaa = mr_adc.t2.xvaa
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -16978,9 +16982,13 @@ def compute_trans_moments(mr_adc):
         s_cva__bab = mr_adc.h1.s_cva__bab
         f_cva__bab = mr_adc.h1.f_cva__bab
 
-        T_a_cva  = einsum('JKXY->XJKY', t2_xvaa, optimize = einsum_type).copy()
-        T_a_cva -= einsum('JKYX->XJKY', t2_xvaa, optimize = einsum_type).copy()
-        T_a_cva += 1/2 * einsum('JKXa,Ya->XJKY', t1_xvae, t1_ae, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cva  = einsum('JKXY->XJKY', t2_xvaa, optimize = einsum_type).copy()
+        # T_a_cva -= einsum('JKYX->XJKY', t2_xvaa, optimize = einsum_type).copy()
+        # T_a_cva -= 1/2 * einsum('JKXx,Yx->XJKY', t2_xvaa, rdm_ca, optimize = einsum_type)
+        # T_a_cva += 1/2 * einsum('JKxX,Yx->XJKY', t2_xvaa, rdm_ca, optimize = einsum_type)
+
+        T_a_cva  = 1/2 * einsum('JKXa,Ya->XJKY', t1_xvae, t1_ae, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('JKYa,Xa->XJKY', t1_xvae, t1_ae, optimize = einsum_type)
         T_a_cva -= 1/2 * einsum('JKxa,XYxa->XJKY', t1_xvae, t1_aaae, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('JKxa,YXxa->XJKY', t1_xvae, t1_aaae, optimize = einsum_type)
@@ -16992,8 +17000,6 @@ def compute_trans_moments(mr_adc):
         T_a_cva -= 1/2 * einsum('KJYa,Xa->XJKY', t1_vxae, t1_ae, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('KJxa,XYxa->XJKY', t1_vxae, t1_aaae, optimize = einsum_type)
         T_a_cva -= 1/2 * einsum('KJxa,YXxa->XJKY', t1_vxae, t1_aaae, optimize = einsum_type)
-        T_a_cva -= 1/2 * einsum('JKXx,Yx->XJKY', t2_xvaa, rdm_ca, optimize = einsum_type)
-        T_a_cva += 1/2 * einsum('JKxX,Yx->XJKY', t2_xvaa, rdm_ca, optimize = einsum_type)
         T_a_cva -= 1/4 * einsum('JKXa,Yxya,xy->XJKY', t1_xvae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('JKXa,xYya,xy->XJKY', t1_xvae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cva -= 1/4 * einsum('JKXa,xa,Yx->XJKY', t1_xvae, t1_ae, rdm_ca, optimize = einsum_type)
@@ -17088,15 +17094,16 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cva__aaa:f_cva__aaa] += T_a_cva.reshape(ncas, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cva  = einsum('JKXY->XJKY', t2_xvaa, optimize = einsum_type).copy()
+        # T_a_cva -= 1/2 * einsum('JKXx,Yx->XJKY', t2_xvaa, rdm_ca, optimize = einsum_type)
 
-        T_a_cva  = einsum('JKXY->XJKY', t2_xvaa, optimize = einsum_type).copy()
         T_a_cva += 1/2 * einsum('JKXa,Ya->XJKY', t1_xvae, t1_ae, optimize = einsum_type)
         T_a_cva -= 1/2 * einsum('JKxa,XYxa->XJKY', t1_xvae, t1_aaae, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('Jx,KxYX->XJKY', t1_xa, t1_vaaa, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('JxXY,Kx->XJKY', t1_xaaa, t1_va, optimize = einsum_type)
         T_a_cva -= 1/2 * einsum('KJYa,Xa->XJKY', t1_vxae, t1_ae, optimize = einsum_type)
         T_a_cva -= 1/2 * einsum('KJxa,YXxa->XJKY', t1_vxae, t1_aaae, optimize = einsum_type)
-        T_a_cva -= 1/2 * einsum('JKXx,Yx->XJKY', t2_xvaa, rdm_ca, optimize = einsum_type)
         T_a_cva -= 1/4 * einsum('JKXa,Yxya,xy->XJKY', t1_xvae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('JKXa,xYya,xy->XJKY', t1_xvae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cva -= 1/4 * einsum('JKXa,xa,Yx->XJKY', t1_xvae, t1_ae, rdm_ca, optimize = einsum_type)
@@ -17152,15 +17159,16 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cva__abb:f_cva__abb] += T_a_cva.reshape(ncas, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_a_cva =- einsum('JKYX->XJKY', t2_xvaa, optimize = einsum_type).copy()
+        # T_a_cva += 1/2 * einsum('JKxX,Yx->XJKY', t2_xvaa, rdm_ca, optimize = einsum_type)
 
-        T_a_cva =- einsum('JKYX->XJKY', t2_xvaa, optimize = einsum_type).copy()
-        T_a_cva += 1/2 * einsum('JKYa,Xa->XJKY', t1_xvae, t1_ae, optimize = einsum_type)
+        T_a_cva  = 1/2 * einsum('JKYa,Xa->XJKY', t1_xvae, t1_ae, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('JKxa,YXxa->XJKY', t1_xvae, t1_aaae, optimize = einsum_type)
         T_a_cva -= 1/2 * einsum('Jx,KxXY->XJKY', t1_xa, t1_vaaa, optimize = einsum_type)
         T_a_cva -= 1/2 * einsum('JxYX,Kx->XJKY', t1_xaaa, t1_va, optimize = einsum_type)
         T_a_cva -= 1/2 * einsum('KJXa,Ya->XJKY', t1_vxae, t1_ae, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('KJxa,XYxa->XJKY', t1_vxae, t1_aaae, optimize = einsum_type)
-        T_a_cva += 1/2 * einsum('JKxX,Yx->XJKY', t2_xvaa, rdm_ca, optimize = einsum_type)
         T_a_cva -= 1/4 * einsum('JKYa,Xxya,xy->XJKY', t1_xvae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cva += 1/2 * einsum('JKYa,xXya,xy->XJKY', t1_xvae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cva -= 1/4 * einsum('JKxa,Xa,Yx->XJKY', t1_xvae, t1_ae, rdm_ca, optimize = einsum_type)
@@ -17245,9 +17253,6 @@ def compute_trans_moments(mr_adc):
 
         t2_xe = mr_adc.t2.xe
 
-        t2_xaea = mr_adc.t2.xaea
-        t2_xaae = mr_adc.t2.xaae
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -17261,12 +17266,14 @@ def compute_trans_moments(mr_adc):
         s_caa__bab = mr_adc.h1.s_caa__bab
         f_caa__bab = mr_adc.h1.f_caa__bab
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_caa  = 1/2 * einsum('JxAZ,Yx->AJYZ', t2_xaea, rdm_ca, optimize = einsum_type)
+        # T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t2_xaea, rdm_ccaa, optimize = einsum_type)
+        # T_e_caa -= 1/2 * einsum('JxZA,Yx->AJYZ', t2_xaae, rdm_ca, optimize = einsum_type)
+        # T_e_caa -= 1/6 * einsum('JxyA,YyZx->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
+        # T_e_caa += 1/6 * einsum('JxyA,YyxZ->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
+
         T_e_caa  = 1/2 * einsum('JA,YZ->AJYZ', t2_xe, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t2_xaea, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t2_xaea, rdm_ccaa, optimize = einsum_type)
-        T_e_caa -= 1/2 * einsum('JxZA,Yx->AJYZ', t2_xaae, rdm_ca, optimize = einsum_type)
-        T_e_caa -= 1/6 * einsum('JxyA,YyZx->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
-        T_e_caa += 1/6 * einsum('JxyA,YyxZ->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
         T_e_caa += 1/4 * einsum('JiZA,ix,Yx->AJYZ', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
         T_e_caa += 1/4 * einsum('JiZA,ixyz,Yxyz->AJYZ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_e_caa -= 1/4 * einsum('JixA,iZxy,Yy->AJYZ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -17446,12 +17453,13 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_caa__aaa:f_caa__aaa] += T_e_caa.reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t2_xaea, rdm_ca, optimize = einsum_type)
+        # T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t2_xaea, rdm_ccaa, optimize = einsum_type)
+        # T_e_caa -= 1/3 * einsum('JxyA,YyZx->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
+        # T_e_caa -= 1/6 * einsum('JxyA,YyxZ->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
 
         T_e_caa  = 1/2 * einsum('JA,YZ->AJYZ', t2_xe, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t2_xaea, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t2_xaea, rdm_ccaa, optimize = einsum_type)
-        T_e_caa -= 1/3 * einsum('JxyA,YyZx->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
-        T_e_caa -= 1/6 * einsum('JxyA,YyxZ->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
         T_e_caa -= 1/4 * einsum('JixA,iZxy,Yy->AJYZ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_e_caa += 1/12 * einsum('JixA,iZyz,Yxyz->AJYZ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_e_caa += 1/6 * einsum('JixA,iZyz,Yxzy->AJYZ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
@@ -17616,10 +17624,12 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_caa__abb:f_caa__abb] += T_e_caa.reshape(nextern, -1)
 
-        T_e_caa =- 1/2 * einsum('JxZA,Yx->AJYZ', t2_xaae, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/6 * einsum('JxyA,YyZx->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
-        T_e_caa += 1/3 * einsum('JxyA,YyxZ->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
-        T_e_caa += 1/4 * einsum('JiZA,ix,Yx->AJYZ', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_caa =- 1/2 * einsum('JxZA,Yx->AJYZ', t2_xaae, rdm_ca, optimize = einsum_type)
+        # T_e_caa += 1/6 * einsum('JxyA,YyZx->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
+        # T_e_caa += 1/3 * einsum('JxyA,YyxZ->AJYZ', t2_xaae, rdm_ccaa, optimize = einsum_type)
+
+        T_e_caa  = 1/4 * einsum('JiZA,ix,Yx->AJYZ', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
         T_e_caa += 1/4 * einsum('JiZA,ixyz,Yxyz->AJYZ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_e_caa += 1/4 * einsum('JixA,iZyx,Yy->AJYZ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_e_caa -= 1/6 * einsum('JixA,iZyz,Yxyz->AJYZ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
@@ -17771,9 +17781,11 @@ def compute_trans_moments(mr_adc):
         ## Indices
         cvs_tril_ind = np.tril_indices(ncvs, k=-1)
 
-        T_e_cce  = einsum('JKAB->AJKB', t2_xxee, optimize = einsum_type).copy()
-        T_e_cce -= einsum('KJAB->AJKB', t2_xxee, optimize = einsum_type).copy()
-        T_e_cce += 1/2 * einsum('JKxA,xB->AJKB', t1_xxae, t1_ae, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cce  = einsum('JKAB->AJKB', t2_xxee, optimize = einsum_type).copy()
+        # T_e_cce -= einsum('KJAB->AJKB', t2_xxee, optimize = einsum_type).copy()
+
+        T_e_cce  = 1/2 * einsum('JKxA,xB->AJKB', t1_xxae, t1_ae, optimize = einsum_type)
         T_e_cce -= 1/2 * einsum('KJxA,xB->AJKB', t1_xxae, t1_ae, optimize = einsum_type)
         T_e_cce += 1/2 * einsum('xA,JKxB->AJKB', t1_ae, t1_xxae, optimize = einsum_type)
         T_e_cce -= 1/2 * einsum('xA,KJxB->AJKB', t1_ae, t1_xxae, optimize = einsum_type)
@@ -17865,9 +17877,10 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cce  = einsum('JKAB->AJKB', t2_xxee, optimize = einsum_type).copy()
 
-        T_e_cce  = einsum('JKAB->AJKB', t2_xxee, optimize = einsum_type).copy()
-        T_e_cce -= 1/2 * einsum('KJxA,xB->AJKB', t1_xxae, t1_ae, optimize = einsum_type)
+        T_e_cce =- 1/2 * einsum('KJxA,xB->AJKB', t1_xxae, t1_ae, optimize = einsum_type)
         T_e_cce += 1/2 * einsum('xA,JKxB->AJKB', t1_ae, t1_xxae, optimize = einsum_type)
         T_e_cce -= 1/2 * einsum('JxAy,KyBz,xz->AJKB', t1_xaea, t1_xaea, rdm_ca, optimize = einsum_type)
         T_e_cce += 1/4 * einsum('JxAy,KyzB,xz->AJKB', t1_xaea, t1_xaae, rdm_ca, optimize = einsum_type)
@@ -17946,8 +17959,6 @@ def compute_trans_moments(mr_adc):
 
         t1_xaea = mr_adc.t1.xaea
         t1_xaae = mr_adc.t1.xaae
-        
-        t2_xaee = mr_adc.t2.xaee
 
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
@@ -17961,9 +17972,11 @@ def compute_trans_moments(mr_adc):
         s_cae__bab = mr_adc.h1.s_cae__bab
         f_cae__bab = mr_adc.h1.f_cae__bab
 
-        T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
-        T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
-        T_e_cae -= 1/4 * einsum('JxAy,yB,Yx->AJYB', t1_xaea, t1_ae, rdm_ca, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
+        # T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
+        
+        T_e_cae =- 1/4 * einsum('JxAy,yB,Yx->AJYB', t1_xaea, t1_ae, rdm_ca, optimize = einsum_type)
         T_e_cae -= 1/4 * einsum('JxAy,yzwB,Ywzx->AJYB', t1_xaea, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_e_cae += 1/4 * einsum('JxAy,zwxB,Yywz->AJYB', t1_xaea, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_e_cae -= 1/4 * einsum('JxAy,zywB,Ywxz->AJYB', t1_xaea, t1_aaae, rdm_ccaa, optimize = einsum_type)
@@ -18079,9 +18092,10 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
 
-        T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
-        T_e_cae -= 1/4 * einsum('JxAy,yB,Yx->AJYB', t1_xaea, t1_ae, rdm_ca, optimize = einsum_type)
+        T_e_cae =- 1/4 * einsum('JxAy,yB,Yx->AJYB', t1_xaea, t1_ae, rdm_ca, optimize = einsum_type)
         T_e_cae -= 1/4 * einsum('JxAy,yzwB,Ywzx->AJYB', t1_xaea, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_e_cae += 1/4 * einsum('JxAy,zwxB,Yywz->AJYB', t1_xaea, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_e_cae -= 1/4 * einsum('JxAy,zywB,Ywxz->AJYB', t1_xaea, t1_aaae, rdm_ccaa, optimize = einsum_type)
@@ -18158,9 +18172,10 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
 
-        T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
-        T_e_cae += 1/4 * einsum('JxyA,yB,Yx->AJYB', t1_xaae, t1_ae, rdm_ca, optimize = einsum_type)
+        T_e_cae  = 1/4 * einsum('JxyA,yB,Yx->AJYB', t1_xaae, t1_ae, rdm_ca, optimize = einsum_type)
         T_e_cae -= 1/6 * einsum('JxyA,yzwB,Ywxz->AJYB', t1_xaae, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_e_cae -= 1/12 * einsum('JxyA,yzwB,Ywzx->AJYB', t1_xaae, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_e_cae += 1/12 * einsum('JxyA,zwxB,Yywz->AJYB', t1_xaae, t1_aaae, rdm_ccaa, optimize = einsum_type)
@@ -18263,8 +18278,6 @@ def compute_trans_moments(mr_adc):
 
         t1_xxaa = mr_adc.t1.xxaa
 
-        t2_xxae = mr_adc.t2.xxae
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -18278,9 +18291,13 @@ def compute_trans_moments(mr_adc):
         ## Indices
         cvs_tril_ind = np.tril_indices(ncvs, k=-1)
 
-        T_e_cca =- einsum('JKYA->AJKY', t2_xxae, optimize = einsum_type).copy()
-        T_e_cca += einsum('KJYA->AJKY', t2_xxae, optimize = einsum_type).copy()
-        T_e_cca += 1/2 * einsum('JxAY,Kx->AJKY', t1_xaea, t1_xa, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cca =- einsum('JKYA->AJKY', t2_xxae, optimize = einsum_type).copy()
+        # T_e_cca += einsum('KJYA->AJKY', t2_xxae, optimize = einsum_type).copy()
+        # T_e_cca += 1/2 * einsum('JKxA,Yx->AJKY', t2_xxae, rdm_ca, optimize = einsum_type)
+        # T_e_cca -= 1/2 * einsum('KJxA,Yx->AJKY', t2_xxae, rdm_ca, optimize = einsum_type)
+
+        T_e_cca  = 1/2 * einsum('JxAY,Kx->AJKY', t1_xaea, t1_xa, optimize = einsum_type)
         T_e_cca -= 1/2 * einsum('JxYA,Kx->AJKY', t1_xaae, t1_xa, optimize = einsum_type)
         T_e_cca -= 1/2 * einsum('KxAY,Jx->AJKY', t1_xaea, t1_xa, optimize = einsum_type)
         T_e_cca += 1/2 * einsum('KxYA,Jx->AJKY', t1_xaae, t1_xa, optimize = einsum_type)
@@ -18288,8 +18305,6 @@ def compute_trans_moments(mr_adc):
         T_e_cca += 1/2 * einsum('xA,JKxY->AJKY', t1_ae, t1_xxaa, optimize = einsum_type)
         T_e_cca -= 1/2 * einsum('xyYA,JKxy->AJKY', t1_aaae, t1_xxaa, optimize = einsum_type)
         T_e_cca += 1/2 * einsum('xyYA,JKyx->AJKY', t1_aaae, t1_xxaa, optimize = einsum_type)
-        T_e_cca += 1/2 * einsum('JKxA,Yx->AJKY', t2_xxae, rdm_ca, optimize = einsum_type)
-        T_e_cca -= 1/2 * einsum('KJxA,Yx->AJKY', t2_xxae, rdm_ca, optimize = einsum_type)
         T_e_cca += 1/2 * einsum('JxAY,Kyxz,yz->AJKY', t1_xaea, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_e_cca -= 1/4 * einsum('JxAY,Kyzx,yz->AJKY', t1_xaea, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_e_cca -= 1/4 * einsum('JxAy,Kx,Yy->AJKY', t1_xaea, t1_xa, rdm_ca, optimize = einsum_type)
@@ -18377,13 +18392,14 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cca__aaa:f_cca__aaa] += T_e_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cca  = einsum('KJYA->AJKY', t2_xxae, optimize = einsum_type).copy()
+        # T_e_cca -= 1/2 * einsum('KJxA,Yx->AJKY', t2_xxae, rdm_ca, optimize = einsum_type)
 
-        T_e_cca  = einsum('KJYA->AJKY', t2_xxae, optimize = einsum_type).copy()
-        T_e_cca += 1/2 * einsum('JxAY,Kx->AJKY', t1_xaea, t1_xa, optimize = einsum_type)
+        T_e_cca  = 1/2 * einsum('JxAY,Kx->AJKY', t1_xaea, t1_xa, optimize = einsum_type)
         T_e_cca += 1/2 * einsum('KxYA,Jx->AJKY', t1_xaae, t1_xa, optimize = einsum_type)
         T_e_cca += 1/2 * einsum('xA,JKxY->AJKY', t1_ae, t1_xxaa, optimize = einsum_type)
         T_e_cca += 1/2 * einsum('xyYA,JKyx->AJKY', t1_aaae, t1_xxaa, optimize = einsum_type)
-        T_e_cca -= 1/2 * einsum('KJxA,Yx->AJKY', t2_xxae, rdm_ca, optimize = einsum_type)
         T_e_cca += 1/2 * einsum('JxAY,Kyxz,yz->AJKY', t1_xaea, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_e_cca -= 1/4 * einsum('JxAY,Kyzx,yz->AJKY', t1_xaea, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_e_cca -= 1/4 * einsum('JxAy,Kx,Yy->AJKY', t1_xaea, t1_xa, rdm_ca, optimize = einsum_type)
@@ -18466,9 +18482,6 @@ def compute_trans_moments(mr_adc):
         t1_xvae = mr_adc.t1.xvae
         t1_vxae = mr_adc.t1.vxae
 
-        t2_xvee = mr_adc.t2.xvee
-        t2_vxee = mr_adc.t2.vxee
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
@@ -18480,9 +18493,11 @@ def compute_trans_moments(mr_adc):
         s_cve__bab = mr_adc.h1.s_cve__bab
         f_cve__bab = mr_adc.h1.f_cve__bab
 
-        T_e_cve  = einsum('JKAB->AJKB', t2_xvee, optimize = einsum_type).copy()
-        T_e_cve -= einsum('KJAB->AJKB', t2_vxee, optimize = einsum_type).copy()
-        T_e_cve += 1/2 * einsum('JKxA,xB->AJKB', t1_xvae, t1_ae, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cve  = einsum('JKAB->AJKB', t2_xvee, optimize = einsum_type).copy()
+        # T_e_cve -= einsum('KJAB->AJKB', t2_vxee, optimize = einsum_type).copy()
+
+        T_e_cve  = 1/2 * einsum('JKxA,xB->AJKB', t1_xvae, t1_ae, optimize = einsum_type)
         T_e_cve -= 1/2 * einsum('KJxA,xB->AJKB', t1_vxae, t1_ae, optimize = einsum_type)
         T_e_cve += 1/2 * einsum('xA,JKxB->AJKB', t1_ae, t1_xvae, optimize = einsum_type)
         T_e_cve -= 1/2 * einsum('xA,KJxB->AJKB', t1_ae, t1_vxae, optimize = einsum_type)
@@ -18591,9 +18606,10 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cve  = einsum('JKAB->AJKB', t2_xvee, optimize = einsum_type).copy()
 
-        T_e_cve  = einsum('JKAB->AJKB', t2_xvee, optimize = einsum_type).copy()
-        T_e_cve -= 1/2 * einsum('KJxA,xB->AJKB', t1_vxae, t1_ae, optimize = einsum_type)
+        T_e_cve =- 1/2 * einsum('KJxA,xB->AJKB', t1_vxae, t1_ae, optimize = einsum_type)
         T_e_cve += 1/2 * einsum('xA,JKxB->AJKB', t1_ae, t1_xvae, optimize = einsum_type)
         T_e_cve -= 1/2 * einsum('JxAy,KyBz,xz->AJKB', t1_xaea, t1_vaea, rdm_ca, optimize = einsum_type)
         T_e_cve += 1/4 * einsum('JxAy,KyzB,xz->AJKB', t1_xaea, t1_vaae, rdm_ca, optimize = einsum_type)
@@ -18670,9 +18686,10 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cve__abb:f_cve__abb] += T_e_cve.reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cve =- einsum('KJAB->AJKB', t2_vxee, optimize = einsum_type).copy()
 
-        T_e_cve =- einsum('KJAB->AJKB', t2_vxee, optimize = einsum_type).copy()
-        T_e_cve += 1/2 * einsum('JKxA,xB->AJKB', t1_xvae, t1_ae, optimize = einsum_type)
+        T_e_cve  = 1/2 * einsum('JKxA,xB->AJKB', t1_xvae, t1_ae, optimize = einsum_type)
         T_e_cve -= 1/2 * einsum('xA,KJxB->AJKB', t1_ae, t1_vxae, optimize = einsum_type)
         T_e_cve -= 1/4 * einsum('JKxA,xyzB,zy->AJKB', t1_xvae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_e_cve += 1/2 * einsum('JKxA,yxzB,zy->AJKB', t1_xvae, t1_aaae, rdm_ca, optimize = einsum_type)
@@ -18779,9 +18796,6 @@ def compute_trans_moments(mr_adc):
 
         t1_xvaa = mr_adc.t1.xvaa
 
-        t2_xvae = mr_adc.t2.xvae
-        t2_vxae = mr_adc.t2.vxae
-
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -18794,9 +18808,13 @@ def compute_trans_moments(mr_adc):
         s_cva__bab = mr_adc.h1.s_cva__bab
         f_cva__bab = mr_adc.h1.f_cva__bab
 
-        T_e_cva =- einsum('JKYA->AJKY', t2_xvae, optimize = einsum_type).copy()
-        T_e_cva += einsum('KJYA->AJKY', t2_vxae, optimize = einsum_type).copy()
-        T_e_cva += 1/2 * einsum('JxAY,Kx->AJKY', t1_xaea, t1_va, optimize = einsum_type)
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cva =- einsum('JKYA->AJKY', t2_xvae, optimize = einsum_type).copy()
+        # T_e_cva += einsum('KJYA->AJKY', t2_vxae, optimize = einsum_type).copy()
+        # T_e_cva += 1/2 * einsum('JKxA,Yx->AJKY', t2_xvae, rdm_ca, optimize = einsum_type)
+        # T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t2_vxae, rdm_ca, optimize = einsum_type)
+
+        T_e_cva  = 1/2 * einsum('JxAY,Kx->AJKY', t1_xaea, t1_va, optimize = einsum_type)
         T_e_cva -= 1/2 * einsum('JxYA,Kx->AJKY', t1_xaae, t1_va, optimize = einsum_type)
         T_e_cva -= 1/2 * einsum('KxAY,Jx->AJKY', t1_vaea, t1_xa, optimize = einsum_type)
         T_e_cva += 1/2 * einsum('KxYA,Jx->AJKY', t1_vaae, t1_xa, optimize = einsum_type)
@@ -18804,8 +18822,6 @@ def compute_trans_moments(mr_adc):
         T_e_cva += 1/2 * einsum('xA,JKxY->AJKY', t1_ae, t1_xvaa, optimize = einsum_type)
         T_e_cva -= 1/2 * einsum('xyYA,JKxy->AJKY', t1_aaae, t1_xvaa, optimize = einsum_type)
         T_e_cva += 1/2 * einsum('xyYA,JKyx->AJKY', t1_aaae, t1_xvaa, optimize = einsum_type)
-        T_e_cva += 1/2 * einsum('JKxA,Yx->AJKY', t2_xvae, rdm_ca, optimize = einsum_type)
-        T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t2_vxae, rdm_ca, optimize = einsum_type)
         T_e_cva += 1/2 * einsum('JxAY,Kyxz,yz->AJKY', t1_xaea, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_e_cva -= 1/4 * einsum('JxAY,Kyzx,yz->AJKY', t1_xaea, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_e_cva -= 1/4 * einsum('JxAy,Kx,Yy->AJKY', t1_xaea, t1_va, rdm_ca, optimize = einsum_type)
@@ -18904,13 +18920,14 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cva  = einsum('KJYA->AJKY', t2_vxae, optimize = einsum_type).copy()
+        # T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t2_vxae, rdm_ca, optimize = einsum_type)
 
-        T_e_cva  = einsum('KJYA->AJKY', t2_vxae, optimize = einsum_type).copy()
-        T_e_cva += 1/2 * einsum('JxAY,Kx->AJKY', t1_xaea, t1_va, optimize = einsum_type)
+        T_e_cva  = 1/2 * einsum('JxAY,Kx->AJKY', t1_xaea, t1_va, optimize = einsum_type)
         T_e_cva += 1/2 * einsum('KxYA,Jx->AJKY', t1_vaae, t1_xa, optimize = einsum_type)
         T_e_cva += 1/2 * einsum('xA,JKxY->AJKY', t1_ae, t1_xvaa, optimize = einsum_type)
         T_e_cva += 1/2 * einsum('xyYA,JKyx->AJKY', t1_aaae, t1_xvaa, optimize = einsum_type)
-        T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t2_vxae, rdm_ca, optimize = einsum_type)
         T_e_cva += 1/2 * einsum('JxAY,Kyxz,yz->AJKY', t1_xaea, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_e_cva -= 1/4 * einsum('JxAY,Kyzx,yz->AJKY', t1_xaea, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_e_cva -= 1/4 * einsum('JxAy,Kx,Yy->AJKY', t1_xaea, t1_va, rdm_ca, optimize = einsum_type)
@@ -18968,13 +18985,14 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cva__abb:f_cva__abb] += T_e_cva.reshape(nextern, -1)
 
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_cva =- einsum('JKYA->AJKY', t2_xvae, optimize = einsum_type).copy()
+        # T_e_cva += 1/2 * einsum('JKxA,Yx->AJKY', t2_xvae, rdm_ca, optimize = einsum_type)
 
-        T_e_cva =- einsum('JKYA->AJKY', t2_xvae, optimize = einsum_type).copy()
-        T_e_cva -= 1/2 * einsum('JxYA,Kx->AJKY', t1_xaae, t1_va, optimize = einsum_type)
+        T_e_cva =- 1/2 * einsum('JxYA,Kx->AJKY', t1_xaae, t1_va, optimize = einsum_type)
         T_e_cva -= 1/2 * einsum('KxAY,Jx->AJKY', t1_vaea, t1_xa, optimize = einsum_type)
         T_e_cva -= 1/2 * einsum('xA,JKYx->AJKY', t1_ae, t1_xvaa, optimize = einsum_type)
         T_e_cva -= 1/2 * einsum('xyYA,JKxy->AJKY', t1_aaae, t1_xvaa, optimize = einsum_type)
-        T_e_cva += 1/2 * einsum('JKxA,Yx->AJKY', t2_xvae, rdm_ca, optimize = einsum_type)
         T_e_cva -= 1/2 * einsum('JxYA,Kyxz,yz->AJKY', t1_xaae, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_e_cva += 1/4 * einsum('JxYA,Kyzx,yz->AJKY', t1_xaae, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_e_cva += 1/4 * einsum('JxyA,Kx,Yy->AJKY', t1_xaae, t1_va, rdm_ca, optimize = einsum_type)
