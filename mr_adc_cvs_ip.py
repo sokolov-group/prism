@@ -6749,7 +6749,7 @@ def compute_sigma_vector(mr_adc, Xt):
 
             sigma_cve -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_veex, optimize = einsum_type)
             sigma_cve -= einsum('Kia,LBai->KLB', X_abb_chunk, v_veex, optimize = einsum_type)
-            del(v_xvee)
+            del(v_veex)
         sigma[s_cve__aaa:f_cve__aaa] += sigma_cve.reshape(-1).copy()
 
 
@@ -6770,7 +6770,7 @@ def compute_sigma_vector(mr_adc, Xt):
 
             sigma_cve -= einsum('Kia,LBai->KLB', X_aaa_chunk, v_veex, optimize = einsum_type)
             sigma_cve -= einsum('Kia,LBai->KLB', X_abb_chunk, v_veex, optimize = einsum_type)
-            del(v_xvee)
+            del(v_veex)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
 
