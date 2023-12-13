@@ -6759,11 +6759,11 @@ def compute_sigma_vector(mr_adc, Xt):
 
             ## Two-electron integrals
             v_xvee = mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk]
-            del(v_xvee)
 
             X_aaa_chunk = X_aaa[:,:,s_chunk:f_chunk]
             X_abb_chunk = X_abb[:,:,s_chunk:f_chunk]
             sigma_cve += einsum('Kia,iLBa->KLB', X_abb_chunk, v_xvee, optimize = einsum_type)
+            del(v_xvee)
 
             ## Two-electron integrals
             v_veex = mr_adc.v2e.veex[:,:,s_chunk:f_chunk]
