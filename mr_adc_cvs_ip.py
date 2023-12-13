@@ -7526,7 +7526,7 @@ def compute_sigma_vector(mr_adc, Xt):
             ## Two-electron integrals
             v_aeea = mr_adc.v2e.aeea[:,:,s_chunk:f_chunk]
 
-            sigma_cae =+ 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
+            sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_aaa_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
             sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_aaa_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
             sigma_cae -= 1/6 * einsum('Kxa,yBaz,Zzxy->KZB', X_abb_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
             sigma_cae -= 1/3 * einsum('Kxa,yBaz,Zzyx->KZB', X_abb_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
@@ -7624,7 +7624,7 @@ def compute_sigma_vector(mr_adc, Xt):
             sigma_cae += 1/3 * einsum('Kxa,yBaz,Zzxy->KZB', X_bab_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
             sigma_cae += 1/6 * einsum('Kxa,yBaz,Zzyx->KZB', X_bab_chunk, v_aeea, rdm_ccaa, optimize = einsum_type)
             sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_bab_chunk, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
-            del(v_aaee)
+            del(v_aeea)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
     def compute_sigma_vector__H1__h1_h1__CCA_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
@@ -13407,6 +13407,11 @@ def compute_trans_moments(mr_adc):
 
         T[:ncvs, s_cae__aaa:f_cae__aaa] += T_c_cae.reshape(ncvs, -1)
 
+        # Amplitudes
+        t1_xxae = mr_adc.t1.xxae
+        t1_xvae = mr_adc.t1.xvae
+
+        t1_xaae = mr_adc.t1.xaae
 
         T_c_cae  = 1/4 * einsum('JixB,Iixy,Yy->IJYB', t1_xxae, t1_xxaa, rdm_ca, optimize = einsum_type)
         T_c_cae -= 1/12 * einsum('JixB,Iiyz,Yxyz->IJYB', t1_xxae, t1_xxaa, rdm_ccaa, optimize = einsum_type)
@@ -13438,12 +13443,12 @@ def compute_trans_moments(mr_adc):
             f_chunk = s_chunk + chunk_size
 
             # Amplitudes
-            t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
+            t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
 
             t1_vxae = mr_adc.t1.vxae[:,:,:,s_chunk:f_chunk]
 
             T_c_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_vxee, t1_vxae, rdm_ca, optimize = einsum_type)
-        del(t1_xvee, t1_vxae)
+        del(t1_vxee, t1_vxae)
 
         chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
         for s_chunk in range(0, nextern, chunk_size):
@@ -13464,6 +13469,13 @@ def compute_trans_moments(mr_adc):
 
         T[:ncvs, s_cae__abb:f_cae__abb] += T_c_cae.reshape(ncvs, -1)
 
+        # Amplitudes
+        t1_xxae = mr_adc.t1.xxae
+        t1_xvae = mr_adc.t1.xvae
+        t1_vxae = mr_adc.t1.vxae
+
+        t1_xaae = mr_adc.t1.xaae
+        t1_xaea = mr_adc.t1.xaea
 
         T_c_cae =- 1/4 * einsum('JixB,Iiyx,Yy->IJYB', t1_xxae, t1_xxaa, rdm_ca, optimize = einsum_type)
         T_c_cae += 1/6 * einsum('JixB,Iiyz,Yxyz->IJYB', t1_xxae, t1_xxaa, rdm_ccaa, optimize = einsum_type)
@@ -13518,7 +13530,7 @@ def compute_trans_moments(mr_adc):
             f_chunk = s_chunk + chunk_size
 
             # Amplitudes
-            t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
+            t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
 
             t1_xvae = mr_adc.t1.xvae[:,:,:,s_chunk:f_chunk]
 
@@ -14792,6 +14804,9 @@ def compute_trans_moments(mr_adc):
         T[ncvs:ncore, s_cae__aaa:f_cae__aaa] += T_v_cae.reshape(nval, -1)
 
 
+        # Amplitudes
+        t1_xvae = mr_adc.t1.xvae
+
         T_v_cae  = 1/4 * einsum('JixB,Iixy,Yy->IJYB', t1_xxae, t1_vxaa, rdm_ca, optimize = einsum_type)
         T_v_cae -= 1/12 * einsum('JixB,Iiyz,Yxyz->IJYB', t1_xxae, t1_vxaa, rdm_ccaa, optimize = einsum_type)
         T_v_cae -= 1/6 * einsum('JixB,Iiyz,Yxzy->IJYB', t1_xxae, t1_vxaa, rdm_ccaa, optimize = einsum_type)
@@ -14822,12 +14837,11 @@ def compute_trans_moments(mr_adc):
             f_chunk = s_chunk + chunk_size
 
             # Amplitudes
-            t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
+            t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
 
             t1_vvae = mr_adc.t1.vvae[:,:,:,s_chunk:f_chunk]
 
             T_v_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_vxee, t1_vvae, rdm_ca, optimize = einsum_type)
-
         del(t1_vxee, t1_vvae)
 
         chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
@@ -14848,6 +14862,11 @@ def compute_trans_moments(mr_adc):
         del(t1_xaee, t1_ve, t1_vaae, t1_vaea)
 
         T[ncvs:ncore, s_cae__abb:f_cae__abb] += T_v_cae.reshape(nval, -1)
+
+
+        # Amplitudes
+        t1_xvae = mr_adc.t1.xvae
+        t1_vxae = mr_adc.t1.vxae
 
         T_v_cae =- 1/4 * einsum('JixB,Iiyx,Yy->IJYB', t1_xxae, t1_vxaa, rdm_ca, optimize = einsum_type)
         T_v_cae += 1/6 * einsum('JixB,Iiyz,Yxyz->IJYB', t1_xxae, t1_vxaa, rdm_ccaa, optimize = einsum_type)
@@ -15206,6 +15225,7 @@ def compute_trans_moments(mr_adc):
         ncvs = mr_adc.ncvs
         nval = mr_adc.nval
         ncore = mr_adc.ncore
+        ncas = mr_adc.ncas
 
         # Amplitudes
         t1_ve = mr_adc.t1.ve
@@ -15696,6 +15716,7 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_caa__aaa:f_caa__aaa] += T_a_caa.reshape(ncas, -1)
 
+
         ## Terms removed by neglecting T2 amplitudes
         # T_a_caa  = 1/2 * einsum('JX,YZ->XJYZ', t2_xa, rdm_ca, optimize = einsum_type)
         # T_a_caa += 1/2 * einsum('JxXZ,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
@@ -15919,6 +15940,7 @@ def compute_trans_moments(mr_adc):
             T_a_caa += 1/12 * einsum('Jxab,Xyba,YyxZ->XJYZ', t1_xaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
 
         T[ncore:nocc, s_caa__abb:f_caa__abb] += T_a_caa.reshape(ncas, -1)
+
 
         ## Terms removed by neglecting T2 amplitudes
         # T_a_caa =- 1/2 * einsum('JxZX,Yx->XJYZ', t2_xaaa, rdm_ca, optimize = einsum_type)
@@ -16167,6 +16189,11 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cce__aaa:f_cce__aaa] += T_a_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncas, -1)
 
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
+
         ## Terms removed by neglecting T2 amplitudes
         # T_a_cce  = einsum('JKXB->XJKB', t2_xxae, optimize = einsum_type).copy()
 
@@ -16363,6 +16390,11 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cae__aaa:f_cae__aaa] += T_a_cae.reshape(ncas, -1)
 
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
+
         ## Terms removed by neglecting T2 amplitudes
         # T_a_cae  = 1/2 * einsum('JxXB,Yx->XJYB', t2_xaae, rdm_ca, optimize = einsum_type)
         # T_a_cae -= 1/4 * einsum('JiXB,ix,Yx->XJYB', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
@@ -16431,6 +16463,11 @@ def compute_trans_moments(mr_adc):
         del(t1_xaee, t1_ae, t1_aaae)
 
         T[ncore:nocc, s_cae__abb:f_cae__abb] += T_a_cae.reshape(ncas, -1)
+
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
 
         ## Terms removed by neglecting T2 amplitudes
         # T_a_cae =- 1/2 * einsum('JxBX,Yx->XJYB', t2_xaea, rdm_ca, optimize = einsum_type)
@@ -16791,7 +16828,7 @@ def compute_trans_moments(mr_adc):
         # T_a_cve  = einsum('JKXB->XJKB', t2_xvae, optimize = einsum_type).copy()
         # T_a_cve -= einsum('KJXB->XJKB', t2_vxae, optimize = einsum_type).copy()
 
-        T_a_cve -= 1/2 * einsum('JxBX,Kx->XJKB', t1_xaea, t1_va, optimize = einsum_type)
+        T_a_cve =- 1/2 * einsum('JxBX,Kx->XJKB', t1_xaea, t1_va, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('JxXB,Kx->XJKB', t1_xaae, t1_va, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('KxBX,Jx->XJKB', t1_vaea, t1_xa, optimize = einsum_type)
         T_a_cve -= 1/2 * einsum('KxXB,Jx->XJKB', t1_vaae, t1_xa, optimize = einsum_type)
@@ -16863,6 +16900,11 @@ def compute_trans_moments(mr_adc):
 
         T[ncore:nocc, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
 
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
+
         ## Terms removed by neglecting T2 amplitudes
         # T_a_cve  = einsum('JKXB->XJKB', t2_xvae, optimize = einsum_type).copy()
 
@@ -16902,6 +16944,11 @@ def compute_trans_moments(mr_adc):
         del(t1_ae, t1_aaae, t1_vxee)
 
         T[ncore:nocc, s_cve__abb:f_cve__abb] += T_a_cve.reshape(ncas, -1)
+
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
 
         ## Terms removed by neglecting T2 amplitudes
         # T_a_cve =- einsum('KJXB->XJKB', t2_vxae, optimize = einsum_type).copy()
@@ -17453,6 +17500,11 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_caa__aaa:f_caa__aaa] += T_e_caa.reshape(nextern, -1)
 
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
+
         ## Terms removed by neglecting T2 amplitudes
         # T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t2_xaea, rdm_ca, optimize = einsum_type)
         # T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t2_xaea, rdm_ccaa, optimize = einsum_type)
@@ -17623,6 +17675,11 @@ def compute_trans_moments(mr_adc):
         del(t1_xaee, t1_ae, t1_aaae)
 
         T[nocc:, s_caa__abb:f_caa__abb] += T_e_caa.reshape(nextern, -1)
+
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_caa =- 1/2 * einsum('JxZA,Yx->AJYZ', t2_xaae, rdm_ca, optimize = einsum_type)
@@ -17950,7 +18007,7 @@ def compute_trans_moments(mr_adc):
         # Variables from kernel
         ncvs = mr_adc.ncvs
         nocc = mr_adc.nocc
-        ncvas = mr_adc.ncas
+        ncas = mr_adc.ncas
         nextern = mr_adc.nextern
 
         # Amplitudes
@@ -18049,7 +18106,7 @@ def compute_trans_moments(mr_adc):
 
             T_e_cae += 1/4 * einsum('iJAB,ix,Yx->AJYB', t1_vxee, t1_va, rdm_ca, optimize = einsum_type)
             T_e_cae += 1/4 * einsum('iJAB,ixyz,Yxyz->AJYB', t1_vxee, t1_vaaa, rdm_ccaa, optimize = einsum_type)
-        del(t1_xvee, t1_va, t1_vaaa)
+        del(t1_vxee, t1_va, t1_vaaa)
 
         chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, ncas, (ncas, nextern, nextern))
         for s_chunk in range(0, ncas, chunk_size):
@@ -18078,6 +18135,8 @@ def compute_trans_moments(mr_adc):
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,s_chunk:f_chunk]
+
+            t1_xa = mr_adc.t1.xa[:,s_chunk:f_chunk]
             t1_xaaa = mr_adc.t1.xaaa[:,:,:,s_chunk:f_chunk]
 
             T_e_cae -= 1/4 * einsum('xyAB,Jy,Yx->AJYB', t1_aaee, t1_xa, rdm_ca, optimize = einsum_type)
@@ -18091,6 +18150,7 @@ def compute_trans_moments(mr_adc):
         del(t1_aaee, t1_xaaa)
 
         T[nocc:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(nextern, -1)
+
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
@@ -18171,6 +18231,7 @@ def compute_trans_moments(mr_adc):
         del(t1_aaee, t1_xaaa)
 
         T[nocc:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(nextern, -1)
+
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
@@ -18391,6 +18452,11 @@ def compute_trans_moments(mr_adc):
         del(t1_xxee, t1_ae, t1_aaae)
 
         T[nocc:, s_cca__aaa:f_cca__aaa] += T_e_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
+
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cca  = einsum('KJYA->AJKY', t2_xxae, optimize = einsum_type).copy()
@@ -18774,7 +18840,7 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
-        nval = mr_adc.ncval
+        nval = mr_adc.nval
         nocc = mr_adc.nocc
         nextern = mr_adc.nextern
 
@@ -18920,6 +18986,11 @@ def compute_trans_moments(mr_adc):
 
         T[nocc:, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(nextern, -1)
 
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
+
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cva  = einsum('KJYA->AJKY', t2_vxae, optimize = einsum_type).copy()
         # T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t2_vxae, rdm_ca, optimize = einsum_type)
@@ -18984,6 +19055,11 @@ def compute_trans_moments(mr_adc):
         del(t1_xvee, t1_ae, t1_aaae)
 
         T[nocc:, s_cva__abb:f_cva__abb] += T_e_cva.reshape(nextern, -1)
+
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cva =- einsum('JKYA->AJKY', t2_xvae, optimize = einsum_type).copy()
