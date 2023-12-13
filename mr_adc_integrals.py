@@ -657,7 +657,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xeve = mr_adc.v2e.feri1.create_dataset('xeve', (ncvs, nextern, nval, nextern), 'f8',
                                                                chunks=(ncvs, 1, nval, 1))
             mr_adc.v2e.vexe = mr_adc.v2e.feri1.create_dataset('vexe', (nval, nextern, ncvs, nextern), 'f8',
-                                                               chunks=(ncvs, 1, nval, nextern))
+                                                               chunks=(nval, 1, ncvs, nextern))
             mr_adc.v2e.veve = mr_adc.v2e.feri1.create_dataset('veve', (nval, nextern, nval, nextern), 'f8',
                                                                chunks=(nval, 1, nval, nextern))
 
