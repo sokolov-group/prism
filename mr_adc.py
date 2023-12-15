@@ -144,6 +144,7 @@ class MRADC:
         # Transform one- and two-electron integrals
         mr_adc_integrals.transform_integrals_1e(self)
         if self.interface.with_df:
+            mr_adc_integrals.transform_Heff_integrals_2e_df(self)
             mr_adc_integrals.transform_integrals_2e_df(self)
         elif self.interface.v2e_ao is not None:
             mr_adc_integrals.transform_integrals_2e_incore(self)

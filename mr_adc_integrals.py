@@ -152,6 +152,104 @@ def transform_integrals_2e_incore(mr_adc):
 
     print("Time for transforming integrals:                   %f sec\n" % (time.time() - start_time))
 
+def transform_Heff_integrals_2e_df(mr_adc):
+
+    start_time = time.time()
+
+    # Import Prism interface
+    interface = mr_adc.interface
+
+    # Variables from kernel
+    ncore = mr_adc.ncore
+    ncas = mr_adc.ncas
+    nocc = mr_adc.nocc
+
+    nmo = mr_adc.nmo
+    mo = mr_adc.mo
+    mo_c = mo[:, :ncore].copy()
+    mo_a = mo[:, ncore:nocc].copy()
+
+    # Create temp file and datasets
+    mr_adc.v2e.feri0 = interface.create_HDF5_temp_file()
+    mr_adc.v2e.aaaa = mr_adc.v2e.feri0.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8',
+                                                            chunks=(ncas, ncas, ncas, ncas))
+
+    mr_adc.v2e.ccca = mr_adc.v2e.feri0.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
+
+    if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
+        if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+
+            mr_adc.v2e.ccaa = mr_adc.v2e.feri0.create_dataset('ccaa', (ncore, ncore, ncas, ncas), 'f8')
+            mr_adc.v2e.caac = mr_adc.v2e.feri0.create_dataset('caac', (ncore, ncas, ncas, ncore), 'f8')
+
+        if mr_adc.method in ("mr-adc(2)-x"):
+            mr_adc.v2e.cccc = mr_adc.v2e.feri0.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
+
+    # Atomic orbitals auxiliary basis-set
+    if interface.reference_df:
+        print("Transforming Heff 2e integrals to MO basis (density-fitting)...")
+        sys.stdout.flush()
+
+        with_df = interface.reference_df
+        with_df.max_memory = mr_adc.max_memory
+        naux = with_df.get_naoaux()
+
+        Lcc = np.empty((naux, ncore, ncore))
+        Lca = np.empty((naux, ncore, ncas))
+        Lac = np.empty((naux, ncas, ncore))
+        Laa = np.empty((naux, ncas, ncas))
+
+        ijslice = (0, nmo, 0, nmo)
+        Lpq = None
+        p1 = 0
+
+        for eri1 in with_df.loop():
+            Lpq = interface.transform_2e_pair_chem_incore(eri1, mo, ijslice, aosym='s2', out=Lpq).reshape(-1, nmo, nmo)
+
+            p0, p1 = p1, p1 + Lpq.shape[0]
+            Lcc[p0:p1] = Lpq[:, :ncore, :ncore]
+            Lca[p0:p1] = Lpq[:, :ncore, ncore:nocc]
+
+            Lac[p0:p1] = Lpq[:, ncore:nocc, :ncore]
+            Laa[p0:p1] = Lpq[:, ncore:nocc, ncore:nocc]
+
+        Lcc = Lcc.reshape(naux, ncore*ncore)
+        Lca = Lca.reshape(naux, ncore*ncas)
+
+        Lac = Lac.reshape(naux, ncas*ncore)
+        Laa = Laa.reshape(naux, ncas*ncas)
+
+        # Effective Hamiltonian 2e- integrals
+        mr_adc.v2e.aaaa[:] = np.dot(Laa.T, Laa).reshape(ncas, ncas, ncas, ncas)
+        mr_adc.v2e.ccca[:] = np.dot(Lcc.T, Lca).reshape(ncore, ncore, ncore, ncas)
+
+        if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
+            if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+                mr_adc.v2e.ccaa[:] = np.dot(Lcc.T, Laa).reshape(ncore, ncore, ncas, ncas)
+
+                mr_adc.v2e.caac[:] = np.dot(Lca.T, Lac).reshape(ncore, ncas, ncas, ncore)
+
+            if mr_adc.method in ("mr-adc(2)-x"):
+                mr_adc.v2e.cccc[:] = np.dot(Lcc.T, Lcc).reshape(ncore, ncore, ncore, ncore)
+    else:
+        print("Transforming Heff 2e integrals to MO basis...")
+        sys.stdout.flush()
+
+        # Effective Hamiltonian 2e- integrals
+        mr_adc.v2e.aaaa[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
+        mr_adc.v2e.ccca[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
+
+        if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
+            if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+                mr_adc.v2e.ccaa[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
+
+                mr_adc.v2e.caac[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
+
+            if mr_adc.method in ("mr-adc(2)-x"):
+                mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
+
+    print("Time for transforming integrals:                   %f sec\n" % (time.time() - start_time))
+
 def transform_integrals_2e_df(mr_adc):
 
     start_time = time.time()
@@ -162,7 +260,9 @@ def transform_integrals_2e_df(mr_adc):
     # Import Prism interface
     interface = mr_adc.interface
 
+    # Atomic orbitals auxiliary basis-set
     with_df = interface.with_df
+    with_df.max_memory = mr_adc.max_memory
     naux = interface.naux
 
     # Variables from kernel
@@ -175,7 +275,6 @@ def transform_integrals_2e_df(mr_adc):
     mo = mr_adc.mo
     mo_c = mo[:, :ncore].copy()
     mo_a = mo[:, ncore:nocc].copy()
-    mo_e = mo[:, nocc:].copy()
 
     mr_adc.v2e.ceee = None
     mr_adc.v2e.aeee = None
@@ -225,20 +324,32 @@ def transform_integrals_2e_df(mr_adc):
     mr_adc.v2e.Lee = mr_adc.v2e.Lee.reshape(naux, nextern*nextern)
 
     mr_adc.v2e.feri1 = interface.create_HDF5_temp_file()
+
+    # Effective Hamiltonian 2e- integrals
     mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8',
                                                               chunks=(ncas, ncas, ncas, ncas))
     mr_adc.v2e.aaaa[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
+
+    mr_adc.v2e.ccca = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
+    mr_adc.v2e.ccca[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
 
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.ccaa = mr_adc.v2e.feri1.create_dataset('ccaa', (ncore, ncore, ncas, ncas), 'f8')
             mr_adc.v2e.ccaa[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
 
-            mr_adc.v2e.ccae = mr_adc.v2e.feri1.create_dataset('ccae', (ncore, ncore, ncas, nextern), 'f8')
-            mr_adc.v2e.ccae[:] = np.dot(Lcc.T, mr_adc.v2e.Lae).reshape(ncore, ncore, ncas, nextern)
-
             mr_adc.v2e.caac = mr_adc.v2e.feri1.create_dataset('caac', (ncore, ncas, ncas, ncore), 'f8')
             mr_adc.v2e.caac[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
+
+        if mr_adc.method in ("mr-adc(2)-x"):
+            mr_adc.v2e.cccc = mr_adc.v2e.feri1.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
+            mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
+
+    # 2e- integrals
+    if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
+        if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+            mr_adc.v2e.ccae = mr_adc.v2e.feri1.create_dataset('ccae', (ncore, ncore, ncas, nextern), 'f8')
+            mr_adc.v2e.ccae[:] = np.dot(Lcc.T, mr_adc.v2e.Lae).reshape(ncore, ncore, ncas, nextern)
 
             mr_adc.v2e.caec = mr_adc.v2e.feri1.create_dataset('caec', (ncore, ncas, nextern, ncore), 'f8')
             mr_adc.v2e.caec[:] = np.dot(Lca.T, Lec).reshape(ncore, ncas, nextern, ncore)
@@ -280,9 +391,6 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.aaae[:] = np.dot(Laa.T, mr_adc.v2e.Lae).reshape(ncas, ncas, ncas, nextern)
 
         if mr_adc.method in ("mr-adc(2)-x"):
-            mr_adc.v2e.cccc = mr_adc.v2e.feri1.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
-            mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
-
             mr_adc.v2e.ccee = mr_adc.v2e.feri1.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8',
                                                                chunks=(ncore, ncore, 1, 1))
             mr_adc.v2e.ceec = mr_adc.v2e.feri1.create_dataset('ceec', (ncore, nextern, nextern, ncore), 'f8',
@@ -336,9 +444,6 @@ def transform_integrals_2e_df(mr_adc):
                                                                       Lea, nextern, ncas, chunk_size)
 
     # Effective one-electron integrals
-    mr_adc.v2e.ccca = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
-    mr_adc.v2e.ccca[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
-
     mr_adc.v2e.ccce = mr_adc.v2e.feri1.create_dataset('ccce', (ncore, ncore, ncore, nextern), 'f8')
     mr_adc.v2e.ccce[:] = np.dot(Lcc.T, mr_adc.v2e.Lce).reshape(ncore, ncore, ncore, nextern)
 
