@@ -206,18 +206,18 @@ def compute_cvs_amplitudes(mr_adc):
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             if mr_adc.outcore_amplitudes:
                 mr_adc.t1.xxee = mr_adc.t1.chk.create_dataset('xxee', (ncvs, ncvs, nextern, nextern), 'f8',
-                                                              chunks=(1, 1, 1, 1))
+                                                              chunks=(ncvs, ncvs, 1, 1))
                 mr_adc.t1.xvee = mr_adc.t1.chk.create_dataset('xvee', (ncvs, nval, nextern, nextern), 'f8',
-                                                              chunks=(ncvs, 1, 1, 1))
+                                                              chunks=(ncvs, nval, 1, 1))
                 mr_adc.t1.vxee = mr_adc.t1.chk.create_dataset('vxee', (nval, ncvs, nextern, nextern), 'f8',
-                                                              chunks=(1, ncvs, 1, 1))
+                                                              chunks=(nval, ncvs, 1, 1))
                 mr_adc.t1.vvee = mr_adc.t1.chk.create_dataset('vvee', (nval, nval, nextern, nextern), 'f8',
                                                               chunks=(nval, nval, 1, 1))
 
                 mr_adc.t1.xaee = mr_adc.t1.chk.create_dataset('xaee', (ncvs, ncas, nextern, nextern), 'f8',
-                                                              chunks=(ncvs, 1, 1, 1))
+                                                              chunks=(ncvs, ncas, 1, 1))
                 mr_adc.t1.vaee = mr_adc.t1.chk.create_dataset('vaee', (nval, ncas, nextern, nextern), 'f8',
-                                                              chunks=(nval, 1, 1, 1))
+                                                              chunks=(nval, ncas, 1, 1))
             else:
                 mr_adc.t1.xxee = np.zeros((ncvs, ncvs, nextern, nextern))
                 mr_adc.t1.xvee = np.zeros((ncvs, nval, nextern, nextern))
@@ -304,7 +304,7 @@ def compute_t1_0(mr_adc):
     chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 3)
     if mr_adc.outcore_amplitudes:
         t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8',
-                                                chunks=(ncore, ncore, 1, 1))
+                                                chunks=(ncore, 1, nextern, 1))
     else:
         t1_ccee = np.zeros((ncore, ncore, nextern, nextern))
 
@@ -313,7 +313,7 @@ def compute_t1_0(mr_adc):
         f_chunk = s_chunk + chunk_size
 
         ## Two-electron integrals
-        v_cece = mr_adc.v2e.cece[:,s_chunk:f_chunk]
+        v_cece = mr_adc.v2e.cece[:,:,:,s_chunk:f_chunk]
 
         # Compute denominators
         d_ab = e_extern[s_chunk:f_chunk][:,None] + e_extern
@@ -322,7 +322,7 @@ def compute_t1_0(mr_adc):
         temp = temp**(-1)
 
         # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
-        temp *= - einsum('IAJB->IJAB', v_cece, optimize = einsum_type)
+        temp *= - einsum('JBIA->IJAB', v_cece, optimize = einsum_type)
 
         # Compute electronic correlation energy for T[0]
         e_0 += 2 * einsum('ijab,iajb', temp, v_cece, optimize = einsum_type)
@@ -576,7 +576,6 @@ def compute_t1_m2(mr_adc):
         t1_aaee = np.zeros((ncas, ncas, nextern, nextern))
 
     e_m2 = 0.0
-    chunk_size = 1
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1165,8 +1164,6 @@ def compute_t2_0p_singles(mr_adc):
     V1 += einsum('ixyz,izIA,yx->IA', t1_caaa, v_cace, rdm_ca, optimize = einsum_type)
     V1 += einsum('xA,Ixyz,yz->IA', t1_ae, v_caaa, rdm_ca, optimize = einsum_type)
     V1 -= 1/2 * einsum('xA,Iyzx,zy->IA', t1_ae, v_caaa, rdm_ca, optimize = einsum_type)
-    V1 -= einsum('xa,IAya,xy->IA', t1_ae, v_ceae, rdm_ca, optimize = einsum_type)
-    V1 += 1/2 * einsum('xa,IayA,xy->IA', t1_ae, v_ceae, rdm_ca, optimize = einsum_type)
     V1 -= 1/2 * einsum('xyzA,Iwux,zwuy->IA', t1_aaae, v_caaa, rdm_ccaa, optimize = einsum_type)
     V1 -= 1/2 * einsum('xyzA,Iwuy,zwxu->IA', t1_aaae, v_caaa, rdm_ccaa, optimize = einsum_type)
     V1 += 1/2 * einsum('xyzA,Iwzu,yxwu->IA', t1_aaae, v_caaa, rdm_ccaa, optimize = einsum_type)
@@ -1174,8 +1171,6 @@ def compute_t2_0p_singles(mr_adc):
     V1 -= 1/2 * einsum('xyzA,Ixwy,zw->IA', t1_aaae, v_caaa, rdm_ca, optimize = einsum_type)
     V1 += einsum('xyzA,Iywu,zuxw->IA', t1_aaae, v_caaa, rdm_ccaa, optimize = einsum_type)
     V1 += einsum('xyzA,Iywx,zw->IA', t1_aaae, v_caaa, rdm_ca, optimize = einsum_type)
-    V1 -= einsum('xyza,IAwa,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
-    V1 += 1/2 * einsum('xyza,IawA,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
     V1 -= 1/4 * einsum('A,IixA,iy,xy->IA', e_extern, t1_ccae, t1_ca, rdm_ca, optimize = einsum_type)
     V1 += 1/2 * einsum('A,IixA,iyxz,zy->IA', e_extern, t1_ccae, t1_caaa, rdm_ca, optimize = einsum_type)
     V1 -= 1/4 * einsum('A,IixA,iyzw,xyzw->IA', e_extern, t1_ccae, t1_caaa, rdm_ccaa, optimize = einsum_type)
@@ -1891,6 +1886,23 @@ def compute_t2_0p_singles(mr_adc):
         V1 += 1/2 * einsum('xa,IyaA,xy->IA', t1_ae, v_caee, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('xyza,IwaA,zwxy->IA', t1_aaae, v_caee, rdm_ccaa, optimize = einsum_type)
     del(v_caee, t1_ae, t1_aaae)
+
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
+    for s_chunk in range(0, nextern, chunk_size):
+        f_chunk = s_chunk + chunk_size
+
+        ## Two-electron integrals
+        v_ceae = mr_adc.v2e.ceae[:,:,:,s_chunk:f_chunk]
+
+        ## Amplitudes
+        t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
+        t1_aaae = mr_adc.t1.aaae[:,:,:,s_chunk:f_chunk]
+
+        V1 -= einsum('xa,IAya,xy->IA', t1_ae, v_ceae, rdm_ca, optimize = einsum_type)
+        V1 += 1/2 * einsum('xa,IayA,xy->IA', t1_ae, v_ceae, rdm_ca, optimize = einsum_type)
+        V1 -= einsum('xyza,IAwa,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
+        V1 += 1/2 * einsum('xyza,IawA,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
+    del(v_ceae, t1_ae, t1_aaae)
 
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
