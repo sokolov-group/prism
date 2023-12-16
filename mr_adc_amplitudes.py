@@ -227,7 +227,7 @@ def compute_cvs_amplitudes(mr_adc):
                 mr_adc.t1.xaee = np.zeros((ncvs, ncas, nextern, nextern))
                 mr_adc.t1.vaee = np.zeros((nval, ncas, nextern, nextern))
 
-            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern))
+            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 1)
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
 
@@ -238,7 +238,7 @@ def compute_cvs_amplitudes(mr_adc):
             del(mr_adc.t1.ccee)
 
 
-            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
+            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 1)
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
 
@@ -325,8 +325,8 @@ def compute_t1_0(mr_adc):
         temp *= - einsum('JBIA->IJAB', v_cece, optimize = einsum_type)
 
         # Compute electronic correlation energy for T[0]
-        e_0 += 2 * einsum('ijab,iajb', temp, v_cece, optimize = einsum_type)
-        e_0 -= einsum('ijab,jaib', temp, v_cece, optimize = einsum_type)
+        e_0 += 2 * einsum('ijab,jbia', temp, v_cece, optimize = einsum_type)
+        e_0 -= einsum('ijab,ibja', temp, v_cece, optimize = einsum_type)
 
         t1_ccee[:,:,s_chunk:f_chunk] = temp
 
@@ -436,7 +436,7 @@ def compute_t1_m1(mr_adc):
     ## Compute denominators
     d_ix = (e_core[:,None] - evals).reshape(-1)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 3)
     if mr_adc.outcore_amplitudes:
         t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8',
                                                 chunks=(ncore, 1, 1, nextern))
@@ -568,7 +568,7 @@ def compute_t1_m2(mr_adc):
     del(SKS)
 
     # Compute R.H.S. of the equation
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern), 3)
     if mr_adc.outcore_amplitudes:
         t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8',
                                                 chunks=(ncas, ncas, 1, nextern))
