@@ -50,7 +50,7 @@ def compute_t1_amplitudes(mr_adc):
     e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8
 
     if mr_adc.outcore_amplitudes:
-        mr_adc.t1.chk = mr_adc.interface.create_HDF5_temp_file()        
+        mr_adc.t1.chk = mr_adc.interface.create_HDF5_temp_file()
 
     # First-order amplitudes
     if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
@@ -851,7 +851,7 @@ def compute_t1_p1p(mr_adc):
     ## Build T[+1'] tensors
     t1_ca = t_p1p[:, V_a_i:V_a_f].copy()
     t1_caaa = t_p1p[:,V_bba_i: V_bba_f].reshape(ncore, ncas, ncas, ncas).copy()
- 
+
     ## Transpose indices to the conventional order
     t1_caaa = t1_caaa.transpose(0,1,3,2).copy()
     del(t_p1p)
@@ -1054,9 +1054,9 @@ def compute_t2_0p_singles(mr_adc):
     v_ceee = mr_adc.v2e.ceee
     v_caee = mr_adc.v2e.caee
     v_ceea = mr_adc.v2e.ceea
-    
+
     v_aaae = mr_adc.v2e.aaae
-    
+
     v_aeee = mr_adc.v2e.aeee
     v_aaee = mr_adc.v2e.aaee
     v_aeea = mr_adc.v2e.aeea

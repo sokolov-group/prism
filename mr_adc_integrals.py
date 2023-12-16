@@ -885,13 +885,12 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.v2e.xvee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[:ncvs, ncvs:, s_chunk:f_chunk]
                 mr_adc.v2e.vxee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, :ncvs, s_chunk:f_chunk]
                 mr_adc.v2e.vvee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, ncvs:, s_chunk:f_chunk]
-                del(mr_adc.v2e.ccee)
 
                 mr_adc.v2e.xeex[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, :, s_chunk:f_chunk, :ncvs]
                 mr_adc.v2e.xeev[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, :, s_chunk:f_chunk, ncvs:]
                 mr_adc.v2e.veex[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, :, s_chunk:f_chunk, :ncvs]
                 mr_adc.v2e.veev[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, :, s_chunk:f_chunk, ncvs:]
-                del(mr_adc.v2e.ceec)
+            del(mr_adc.v2e.ccee, mr_adc.v2e.ceec)
 
             mr_adc.v2e.xaea[:] = mr_adc.v2e.caea[:ncvs, :, :, :]
             mr_adc.v2e.vaea[:] = mr_adc.v2e.caea[ncvs:, :, :, :]
@@ -905,7 +904,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.v2e.xeea[:,s_chunk:f_chunk] = mr_adc.v2e.ceea[:ncvs, s_chunk:f_chunk]
                 mr_adc.v2e.vaee[:,:,s_chunk:f_chunk] = mr_adc.v2e.caee[ncvs:, :, s_chunk:f_chunk]
                 mr_adc.v2e.veea[:,s_chunk:f_chunk] = mr_adc.v2e.ceea[ncvs:, s_chunk:f_chunk]
-                del(mr_adc.v2e.ceea)
+            del(mr_adc.v2e.ceea)
 
     # Effective one-electron integrals
     mr_adc.v2e.xxxa = mr_adc.v2e.feri1.create_dataset('xxxa', (ncvs, ncvs, ncvs, ncas), 'f8')

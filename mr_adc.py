@@ -150,7 +150,7 @@ class MRADC:
             mr_adc_integrals.transform_integrals_2e_incore(self)
         else:
             raise Exception("Out-of-core algorithm is not implemented in Prism.")
-    
+
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
 

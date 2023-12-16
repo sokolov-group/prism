@@ -309,30 +309,30 @@ def compute_M_00(mr_adc):
 
         ## Two-electron integrals
         v_aaaa = mr_adc.v2e.aaaa
-        
+
         v_xxxa = mr_adc.v2e.xxxa
         v_xxva = mr_adc.v2e.xxva
         v_vxxa = mr_adc.v2e.vxxa
-        
+
         v_xxxe = mr_adc.v2e.xxxe
         v_xxve = mr_adc.v2e.xxve
         v_vxxe = mr_adc.v2e.vxxe
-                
+
         v_xxae = mr_adc.v2e.xxae
-        
+
         v_xaex = mr_adc.v2e.xaex
-        
+
         v_xaxa = mr_adc.v2e.xaxa
         v_xava = mr_adc.v2e.xava
-        
+
         v_xaxe = mr_adc.v2e.xaxe
         v_xave = mr_adc.v2e.xave
         v_vaxe = mr_adc.v2e.vaxe
-        
+
         v_xaaa = mr_adc.v2e.xaaa
-        
+
         v_xaae = mr_adc.v2e.xaae
-        
+
         v_xeaa = mr_adc.v2e.xeaa
 
         ## Amplitudes
@@ -1891,7 +1891,7 @@ def compute_M_01(mr_adc):
 
         v_xxve = mr_adc.v2e.xxve
         v_vxxe = mr_adc.v2e.vxxe
-        
+
         v_vaae = mr_adc.v2e.vaae
         v_veaa = mr_adc.v2e.veaa
 
@@ -1975,9 +1975,9 @@ def compute_M_01(mr_adc):
 
         v_xxva = mr_adc.v2e.xxva
         v_vxxa = mr_adc.v2e.vxxa
-        
+
         v_vaaa = mr_adc.v2e.vaaa
-        
+
         ## Amplitudes
         t1_va = mr_adc.t1.va
 
@@ -2286,7 +2286,7 @@ def compute_preconditioner(mr_adc):
         precond_caa__aaa_abb += 1/6 * einsum('II,Yxyz,WxzZyX->IWZXY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caa__aaa_abb += 1/6 * einsum('II,Yxyz,WxzyXZ->IWZXY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caa__aaa_abb += 1/6 * einsum('II,Yxyz,WxzyZX->IWZXY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        
+
         ## Building C-CAA matrix
         dim_xy = ncas * ncas
         dim_c_caa = 3 * dim_xy
@@ -2334,7 +2334,7 @@ def compute_preconditioner(mr_adc):
         precond_cce =- einsum('A,AA,II,JJ->IJA', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
         precond_cce += einsum('I,AA,II,JJ->IJA', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
         precond_cce += einsum('J,AA,II,JJ->IJA', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
-    
+
         return precond_cce
 
     def compute_preconditioner__CAE(mr_adc):
@@ -2472,7 +2472,7 @@ def compute_preconditioner(mr_adc):
         precond_cva -= einsum('XYxy,II,JJ,xy->IJXY', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
         precond_cva += 1/2 * einsum('XxyY,II,JJ,yx->IJXY', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
         precond_cva += 1/2 * einsum('Xxyz,II,JJ,Yyxz->IJXY', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
-    
+
         precond_cva = einsum("IJXY,XP,YP->IJP", precond_cva, S12_cca, S12_cca, optimize = einsum_type)
 
         return precond_cva
@@ -11455,7 +11455,7 @@ def compute_trans_moments(mr_adc):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
-    
+
         # Excitation Manifolds
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
@@ -15424,7 +15424,7 @@ def compute_trans_moments(mr_adc):
         nval = mr_adc.nval
         ncas = mr_adc.ncas
         nocc = mr_adc.nocc
-        nextern = mr_adc.nextern        
+        nextern = mr_adc.nextern
 
         # Amplitudes
         t1_ae = mr_adc.t1.ae
@@ -18098,7 +18098,7 @@ def compute_trans_moments(mr_adc):
         # T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
         # T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))        
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -18228,7 +18228,7 @@ def compute_trans_moments(mr_adc):
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))        
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -18331,7 +18331,7 @@ def compute_trans_moments(mr_adc):
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))        
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -18671,7 +18671,7 @@ def compute_trans_moments(mr_adc):
         # T_e_cve  = einsum('JKAB->AJKB', t2_xvee, optimize = einsum_type).copy()
         # T_e_cve -= einsum('KJAB->AJKB', t2_vxee, optimize = einsum_type).copy()
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))        
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -18843,7 +18843,7 @@ def compute_trans_moments(mr_adc):
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cve  = einsum('JKAB->AJKB', t2_xvee, optimize = einsum_type).copy()
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))        
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -18959,7 +18959,7 @@ def compute_trans_moments(mr_adc):
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cve =- einsum('KJAB->AJKB', t2_vxee, optimize = einsum_type).copy()
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))        
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern))
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
