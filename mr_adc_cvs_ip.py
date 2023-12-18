@@ -1323,7 +1323,7 @@ def compute_M_00(mr_adc):
         M_00 += 1/4 * einsum('xyzw,iJxa,Iiua,zuwy->IJ', v_aaaa, t1_vxae, t1_xvae, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xyzw,iJxa,iIua,zuwy->IJ', v_aaaa, t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -1342,7 +1342,7 @@ def compute_M_00(mr_adc):
             M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xxee_ba, t1_xxee_ab, optimize = einsum_type)
         del(t1_xxee_ab, t1_xxee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -1375,7 +1375,7 @@ def compute_M_00(mr_adc):
             M_00 -= einsum('Jiab,Ibia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
         del(t1_xvee, v_xeve)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -1394,7 +1394,7 @@ def compute_M_00(mr_adc):
             M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_val, t1_xvee_ab, t1_xvee_ba, optimize = einsum_type)
         del(t1_xvee_ab, t1_xvee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -1415,7 +1415,7 @@ def compute_M_00(mr_adc):
             M_00 += 1/4 * einsum('J,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
         del(t1_xaee_ab, t1_xaee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -1448,7 +1448,7 @@ def compute_M_00(mr_adc):
             M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
         del(v_xexe, t1_xxee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -12900,7 +12900,7 @@ def compute_trans_moments(mr_adc):
         T_c_caa -= 1/2 * einsum('iIxa,iJxa,YZ->IJYZ', t1_vxae, t1_vxae, rdm_ca, optimize = einsum_type)
         T_c_caa += 1/4 * einsum('iIxa,iJya,YyZx->IJYZ', t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -12912,7 +12912,7 @@ def compute_trans_moments(mr_adc):
             T_c_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_xxee_ab, t1_xxee_ba, rdm_ca, optimize = einsum_type)
         del(t1_xxee_ab, t1_xxee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -12924,7 +12924,7 @@ def compute_trans_moments(mr_adc):
             T_c_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_xvee_ab, t1_xvee_ba, rdm_ca, optimize = einsum_type)
         del(t1_xvee_ab, t1_xvee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -13065,7 +13065,7 @@ def compute_trans_moments(mr_adc):
         T_c_caa -= 1/2 * einsum('iIxa,iJxa,YZ->IJYZ', t1_vxae, t1_vxae, rdm_ca, optimize = einsum_type)
         T_c_caa += 1/4 * einsum('iIxa,iJya,YyZx->IJYZ', t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncvs, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -13077,7 +13077,7 @@ def compute_trans_moments(mr_adc):
             T_c_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_xxee_ab, t1_xxee_ba, rdm_ca, optimize = einsum_type)
         del(t1_xxee_ab, t1_xxee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern), 4)
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, nval, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -13089,7 +13089,7 @@ def compute_trans_moments(mr_adc):
             T_c_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_xvee_ab, t1_xvee_ba, rdm_ca, optimize = einsum_type)
         del(t1_xvee_ab, t1_xvee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 
@@ -13230,7 +13230,7 @@ def compute_trans_moments(mr_adc):
         T_c_caa += 1/12 * einsum('iIxa,Jiya,YyZx->IJYZ', t1_vxae, t1_xvae, rdm_ccaa, optimize = einsum_type)
         T_c_caa += 1/6 * einsum('iIxa,Jiya,YyxZ->IJYZ', t1_vxae, t1_xvae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern))
+        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncvs, ncas, nextern), 2)
         for s_chunk in range(0, nextern, chunk_size):
             f_chunk = s_chunk + chunk_size
 

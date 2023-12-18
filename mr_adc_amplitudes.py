@@ -227,7 +227,7 @@ def compute_cvs_amplitudes(mr_adc):
                 mr_adc.t1.xaee = np.zeros((ncvs, ncas, nextern, nextern))
                 mr_adc.t1.vaee = np.zeros((nval, ncas, nextern, nextern))
 
-            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 1)
+            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern))
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
 
@@ -238,7 +238,7 @@ def compute_cvs_amplitudes(mr_adc):
             del(mr_adc.t1.ccee)
 
 
-            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 1)
+            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
 
@@ -301,7 +301,7 @@ def compute_t1_0(mr_adc):
     # Compute denominators
     d_ij = e_core[:,None] + e_core
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 3)
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 2)
     if mr_adc.outcore_amplitudes:
         t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8',
                                                 chunks=(ncore, 1, nextern, 1))
@@ -436,7 +436,7 @@ def compute_t1_m1(mr_adc):
     ## Compute denominators
     d_ix = (e_core[:,None] - evals).reshape(-1)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 3)
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 2)
     if mr_adc.outcore_amplitudes:
         t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8',
                                                 chunks=(ncore, 1, 1, nextern))
@@ -568,7 +568,7 @@ def compute_t1_m2(mr_adc):
     del(SKS)
 
     # Compute R.H.S. of the equation
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern), 3)
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern), 2)
     if mr_adc.outcore_amplitudes:
         t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8',
                                                 chunks=(ncas, ncas, 1, nextern))
@@ -1546,7 +1546,7 @@ def compute_t2_0p_singles(mr_adc):
     V1 -= 1/2 * einsum('xyzw,zxuA,Iw,yu->IA', v_aaaa, t1_aaae, t1_ca, rdm_ca, optimize = einsum_type)
     V1 += einsum('xyzw,zxuA,Iy,wu->IA', v_aaaa, t1_aaae, t1_ca, rdm_ca, optimize = einsum_type)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1618,7 +1618,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(t1_ccee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1731,7 +1731,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(t1_caee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1743,7 +1743,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(t1_aaee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1786,7 +1786,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(v_cece)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1803,7 +1803,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(v_aaee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1820,7 +1820,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(v_aeea)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1835,7 +1835,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(v_caee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1848,7 +1848,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(v_caee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 1)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1899,7 +1899,7 @@ def compute_t2_0p_singles(mr_adc):
         V1[:, s_chunk:f_chunk] += temp
     del(v_ceea)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, ncore, (nextern, nextern, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, ncore, (nextern, nextern, nextern), 1)
     for s_chunk in range(0, ncore, chunk_size):
         f_chunk = s_chunk + chunk_size
         if interface.with_df:
