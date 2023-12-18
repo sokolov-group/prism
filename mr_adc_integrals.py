@@ -210,6 +210,7 @@ def transform_Heff_integrals_2e_df(mr_adc):
 
             Lac[p0:p1] = Lpq[:, ncore:nocc, :ncore]
             Laa[p0:p1] = Lpq[:, ncore:nocc, ncore:nocc]
+        del(Lpq)
 
         Lcc = Lcc.reshape(naux, ncore*ncore)
         Lca = Lca.reshape(naux, ncore*ncas)
@@ -306,6 +307,7 @@ def transform_integrals_2e_df(mr_adc):
         Lec[p0:p1] = Lpq[:, nocc:, :ncore]
         Lea[p0:p1] = Lpq[:, nocc:, ncore:nocc]
         mr_adc.v2e.Lee[p0:p1] = Lpq[:, nocc:, nocc:]
+    del(Lpq)
 
     Lcc = Lcc.reshape(naux, ncore*ncore)
     Lca = Lca.reshape(naux, ncore*ncas)
@@ -320,25 +322,6 @@ def transform_integrals_2e_df(mr_adc):
     mr_adc.v2e.Lee = mr_adc.v2e.Lee.reshape(naux, nextern*nextern)
 
     mr_adc.v2e.feri1 = interface.create_HDF5_temp_file()
-
-    # Effective Hamiltonian 2e- integrals
-    mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
-    mr_adc.v2e.aaaa[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
-
-    mr_adc.v2e.ccca = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
-    mr_adc.v2e.ccca[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
-
-    if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
-        if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc.v2e.ccaa = mr_adc.v2e.feri1.create_dataset('ccaa', (ncore, ncore, ncas, ncas), 'f8')
-            mr_adc.v2e.ccaa[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
-
-            mr_adc.v2e.caac = mr_adc.v2e.feri1.create_dataset('caac', (ncore, ncas, ncas, ncore), 'f8')
-            mr_adc.v2e.caac[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
-
-        if mr_adc.method in ("mr-adc(2)-x"):
-            mr_adc.v2e.cccc = mr_adc.v2e.feri1.create_dataset('cccc', (ncore, ncore, ncore, ncore), 'f8')
-            mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
 
     # 2e- integrals
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
