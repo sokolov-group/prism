@@ -171,9 +171,7 @@ def transform_Heff_integrals_2e_df(mr_adc):
 
     # Create temp file and datasets
     mr_adc.v2e.feri0 = interface.create_HDF5_temp_file()
-    mr_adc.v2e.aaaa = mr_adc.v2e.feri0.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8',
-                                                      chunks=(ncas, ncas, ncas, ncas))
-
+    mr_adc.v2e.aaaa = mr_adc.v2e.feri0.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
     mr_adc.v2e.ccca = mr_adc.v2e.feri0.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
 
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
@@ -324,8 +322,7 @@ def transform_integrals_2e_df(mr_adc):
     mr_adc.v2e.feri1 = interface.create_HDF5_temp_file()
 
     # Effective Hamiltonian 2e- integrals
-    mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8',
-                                                      chunks=(ncas, ncas, ncas, ncas))
+    mr_adc.v2e.aaaa = mr_adc.v2e.feri1.create_dataset('aaaa', (ncas, ncas, ncas, ncas), 'f8')
     mr_adc.v2e.aaaa[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
 
     mr_adc.v2e.ccca = mr_adc.v2e.feri1.create_dataset('ccca', (ncore, ncore, ncore, ncas), 'f8')
@@ -356,7 +353,7 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.caca[:] = np.dot(Lca.T, Lca).reshape(ncore, ncas, ncore, ncas)
 
             mr_adc.v2e.cece = mr_adc.v2e.feri1.create_dataset('cece', (ncore, nextern, ncore, nextern), 'f8',
-                                                              chunks=(ncore, nextern, ncore, 1))
+                                                              chunks=(ncore, 1, ncore, nextern))
             chunk_size = calculate_chunk_size(mr_adc, ncore, (ncore, nextern, nextern), 1)
             for s_chunk in range(0, ncore, chunk_size):
                 f_chunk = s_chunk + chunk_size
@@ -377,12 +374,10 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.ceae[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, s_chunk, nextern,
                                                                        mr_adc.v2e.Lae, ncas, nextern, chunk_size)
 
-            mr_adc.v2e.caae = mr_adc.v2e.feri1.create_dataset('caae', (ncore, ncas, ncas, nextern), 'f8',
-                                                              chunks=(ncore, ncas, ncas, 1))
+            mr_adc.v2e.caae = mr_adc.v2e.feri1.create_dataset('caae', (ncore, ncas, ncas, nextern), 'f8')
             mr_adc.v2e.caae[:] = np.dot(Lca.T, mr_adc.v2e.Lae).reshape(ncore, ncas, ncas, nextern)
 
-            mr_adc.v2e.ceaa = mr_adc.v2e.feri1.create_dataset('ceaa', (ncore, nextern, ncas, ncas), 'f8',
-                                                              chunks=(ncore, 1, ncas, ncas))
+            mr_adc.v2e.ceaa = mr_adc.v2e.feri1.create_dataset('ceaa', (ncore, nextern, ncas, ncas), 'f8')
             mr_adc.v2e.ceaa[:] = np.dot(mr_adc.v2e.Lce.T, Laa).reshape(ncore, nextern, ncas, ncas)
 
             mr_adc.v2e.aaae = mr_adc.v2e.feri1.create_dataset('aaae', (ncas, ncas, ncas, nextern), 'f8')
@@ -390,9 +385,9 @@ def transform_integrals_2e_df(mr_adc):
 
         if mr_adc.method in ("mr-adc(2)-x"):
             mr_adc.v2e.ccee = mr_adc.v2e.feri1.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8',
-                                                              chunks=(ncore, ncore, nextern, 1))
+                                                              chunks=(ncore, ncore, 1, nextern))
             mr_adc.v2e.ceec = mr_adc.v2e.feri1.create_dataset('ceec', (ncore, nextern, nextern, ncore), 'f8',
-                                                              chunks=(ncore, nextern, 1, ncore))
+                                                              chunks=(ncore, 1, nextern, ncore))
 
             chunk_size = calculate_chunk_size(mr_adc, ncore, (ncore, nextern, nextern), 1)
             for s_chunk in range(0, ncore, chunk_size):
@@ -424,10 +419,10 @@ def transform_integrals_2e_df(mr_adc):
                                                               chunks=(ncas, 1, ncas, nextern))
 
             mr_adc.v2e.aaee = mr_adc.v2e.feri1.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8',
-                                                              chunks=(ncas, ncas, nextern, 1))
+                                                              chunks=(ncas, ncas, 1, 1))
 
             mr_adc.v2e.aeea = mr_adc.v2e.feri1.create_dataset('aeea', (ncas, nextern, nextern, ncas), 'f8',
-                                                              chunks=(ncas, nextern, 1, ncas))
+                                                              chunks=(ncas, 1, 1, ncas))
 
             chunk_size = calculate_chunk_size(mr_adc, ncas, (ncas, nextern, nextern), 1)
             for s_chunk in range(0, ncas, chunk_size):
@@ -803,9 +798,9 @@ def compute_cvs_integrals_2e_df(mr_adc):
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
 
-                mr_adc.v2e.xexe[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.cece[:ncvs, :, :ncvs, s_chunk:f_chunk]
-                mr_adc.v2e.xeve[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.cece[:ncvs, :, ncvs:, s_chunk:f_chunk]
-                mr_adc.v2e.veve[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.cece[ncvs:, :, ncvs:, s_chunk:f_chunk]
+                mr_adc.v2e.xexe[:,s_chunk:f_chunk] = mr_adc.v2e.cece[:ncvs, s_chunk:f_chunk, :ncvs, :]
+                mr_adc.v2e.xeve[:,s_chunk:f_chunk] = mr_adc.v2e.cece[:ncvs, s_chunk:f_chunk, ncvs:, :]
+                mr_adc.v2e.veve[:,s_chunk:f_chunk] = mr_adc.v2e.cece[ncvs:, s_chunk:f_chunk, ncvs:, :]
 
             mr_adc.v2e.xaxe[:] = mr_adc.v2e.cace[:ncvs, :, :ncvs, :]
             mr_adc.v2e.xave[:] = mr_adc.v2e.cace[:ncvs, :, ncvs:, :]
@@ -839,13 +834,13 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xvxx = mr_adc.v2e.feri1.create_dataset('xvxx', (ncvs, nval, ncvs, ncvs), 'f8')
 
             mr_adc.v2e.xxee = mr_adc.v2e.feri1.create_dataset('xxee', (ncvs, ncvs, nextern, nextern), 'f8',
-                                                               chunks=(ncvs, ncvs, 1, 1))
+                                                               chunks=(ncvs, ncvs, nextern, 1))
             mr_adc.v2e.xvee = mr_adc.v2e.feri1.create_dataset('xvee', (ncvs, nval, nextern, nextern), 'f8',
-                                                               chunks=(ncvs, nval, 1, 1))
+                                                               chunks=(ncvs, nval, nextern, 1))
             mr_adc.v2e.vxee = mr_adc.v2e.feri1.create_dataset('vxee', (nval, ncvs, nextern, nextern), 'f8',
-                                                               chunks=(nval, ncvs, 1, 1))
+                                                               chunks=(nval, ncvs, nextern, 1))
             mr_adc.v2e.vvee = mr_adc.v2e.feri1.create_dataset('vvee', (nval, nval, nextern, nextern), 'f8',
-                                                               chunks=(nval, nval, 1, 1))
+                                                               chunks=(nval, nval, nextern, 1))
 
             mr_adc.v2e.xeex = mr_adc.v2e.feri1.create_dataset('xeex', (ncvs, nextern, nextern, ncvs), 'f8',
                                                                chunks=(ncvs, nextern, 1, ncvs))
@@ -886,10 +881,10 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.v2e.vxee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, :ncvs, s_chunk:f_chunk]
                 mr_adc.v2e.vvee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, ncvs:, s_chunk:f_chunk]
 
-                mr_adc.v2e.xeex[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, :, s_chunk:f_chunk, :ncvs]
-                mr_adc.v2e.xeev[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, :, s_chunk:f_chunk, ncvs:]
-                mr_adc.v2e.veex[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, :, s_chunk:f_chunk, :ncvs]
-                mr_adc.v2e.veev[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, :, s_chunk:f_chunk, ncvs:]
+                mr_adc.v2e.xeex[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, s_chunk:f_chunk, :, :ncvs]
+                mr_adc.v2e.xeev[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, s_chunk:f_chunk, :, ncvs:]
+                mr_adc.v2e.veex[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, s_chunk:f_chunk, :, :ncvs]
+                mr_adc.v2e.veev[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, s_chunk:f_chunk, :, ncvs:]
             del(mr_adc.v2e.ccee, mr_adc.v2e.ceec)
 
             mr_adc.v2e.xaea[:] = mr_adc.v2e.caea[:ncvs, :, :, :]
