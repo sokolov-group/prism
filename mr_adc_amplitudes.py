@@ -1921,7 +1921,7 @@ def compute_t2_0p_singles(mr_adc):
         if interface.with_df:
             v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, chunk_size_eee).reshape(-1, nextern, nextern, nextern)
         else:
-            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee, nextern)
+            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee[s_v_chunk:f_v_chunk], nextern)
 
         for s_t_chunk in range(0, ncas, chunk_size_ee):
             f_t_chunk = s_t_chunk + chunk_size_ee
