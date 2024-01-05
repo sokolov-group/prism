@@ -436,7 +436,7 @@ def compute_t1_m1(mr_adc):
     ## Compute denominators
     d_ix = (e_core[:,None] - evals).reshape(-1)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 3)
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 2)
     if mr_adc.outcore_amplitudes:
         t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8',
                                                 chunks=(ncore, 1, 1, nextern))
@@ -1546,7 +1546,7 @@ def compute_t2_0p_singles(mr_adc):
     V1 -= 1/2 * einsum('xyzw,zxuA,Iw,yu->IA', v_aaaa, t1_aaae, t1_ca, rdm_ca, optimize = einsum_type)
     V1 += einsum('xyzw,zxuA,Iy,wu->IA', v_aaaa, t1_aaae, t1_ca, rdm_ca, optimize = einsum_type)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern))
+    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 3)
     for s_chunk in range(0, nextern, chunk_size):
         f_chunk = s_chunk + chunk_size
 
@@ -1904,8 +1904,9 @@ def compute_t2_0p_singles(mr_adc):
         f_chunk = s_chunk + chunk_size
         if interface.with_df:
             v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, s_chunk, chunk_size).reshape(-1, nextern, nextern, nextern)
+
         else:
-            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.ceee, nextern)
+            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.ceee[s_chunk:f_chunk], nextern)
 
         ## Amplitudes
         t1_ccee = mr_adc.t1.ccee[:,s_chunk:f_chunk]

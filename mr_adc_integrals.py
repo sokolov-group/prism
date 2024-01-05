@@ -270,8 +270,6 @@ def transform_integrals_2e_df(mr_adc):
 
     nmo = mr_adc.nmo
     mo = mr_adc.mo
-    mo_c = mo[:, :ncore].copy()
-    mo_a = mo[:, ncore:nocc].copy()
 
     mr_adc.v2e.ceee = None
     mr_adc.v2e.aeee = None
@@ -700,6 +698,36 @@ def compute_cvs_integrals_2e_df(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
+    # Remove in-core v2e integrals
+    del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+
+    # Effective one-electron integrals
+    mr_adc.v2e.xxxa = mr_adc.v2e.feri1.create_dataset('xxxa', (ncvs, ncvs, ncvs, ncas), 'f8')
+    mr_adc.v2e.xxva = mr_adc.v2e.feri1.create_dataset('xxva', (ncvs, ncvs, nval, ncas), 'f8')
+    mr_adc.v2e.vxxa = mr_adc.v2e.feri1.create_dataset('vxxa', (nval, ncvs, ncvs, ncas), 'f8')
+
+    mr_adc.v2e.xxxe = mr_adc.v2e.feri1.create_dataset('xxxe', (ncvs, ncvs, ncvs, nextern), 'f8')
+    mr_adc.v2e.xxve = mr_adc.v2e.feri1.create_dataset('xxve', (ncvs, ncvs, nval, nextern), 'f8')
+    mr_adc.v2e.vxxe = mr_adc.v2e.feri1.create_dataset('vxxe', (nval, ncvs, ncvs, nextern), 'f8')
+
+    mr_adc.v2e.xxxa[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :]
+    mr_adc.v2e.xxva[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :]
+    mr_adc.v2e.vxxa[:] = mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :]
+    del(mr_adc.v2e.ccca)
+
+    mr_adc.v2e.xxxe[:] = mr_adc.v2e.ccce[:ncvs, :ncvs, :ncvs, :]
+    mr_adc.v2e.xxve[:] = mr_adc.v2e.ccce[:ncvs, :ncvs, ncvs:, :]
+    mr_adc.v2e.vxxe[:] = mr_adc.v2e.ccce[ncvs:, :ncvs, :ncvs, :]
+    del(mr_adc.v2e.ccce)
+
+    mr_adc.h1eff.xa = np.ascontiguousarray(mr_adc.h1eff.ca[:ncvs,:])
+    mr_adc.h1eff.va = np.ascontiguousarray(mr_adc.h1eff.ca[ncvs:,:])
+    del(mr_adc.h1eff.ca)
+
+    mr_adc.h1eff.xe = np.ascontiguousarray(mr_adc.h1eff.ce[:ncvs,:])
+    mr_adc.h1eff.ve = np.ascontiguousarray(mr_adc.h1eff.ce[ncvs:,:])
+    del(mr_adc.h1eff.ce)
+
     # Compute CVS integrals
     if mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
@@ -855,6 +883,10 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xvxx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
             del(mr_adc.v2e.cccc)
 
+            mr_adc.v2e.xaea[:] = mr_adc.v2e.caea[:ncvs, :, :, :]
+            mr_adc.v2e.vaea[:] = mr_adc.v2e.caea[ncvs:, :, :, :]
+            del(mr_adc.v2e.caea)
+
             chunk_size = calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 1)
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
@@ -863,56 +895,31 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.v2e.xvee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[:ncvs, ncvs:, s_chunk:f_chunk]
                 mr_adc.v2e.vxee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, :ncvs, s_chunk:f_chunk]
                 mr_adc.v2e.vvee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, ncvs:, s_chunk:f_chunk]
+            del(mr_adc.v2e.ccee)
+
+            for s_chunk in range(0, nextern, chunk_size):
+                f_chunk = s_chunk + chunk_size
 
                 mr_adc.v2e.xeex[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, s_chunk:f_chunk, :, :ncvs]
                 mr_adc.v2e.xeev[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, s_chunk:f_chunk, :, ncvs:]
                 mr_adc.v2e.veex[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, s_chunk:f_chunk, :, :ncvs]
                 mr_adc.v2e.veev[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, s_chunk:f_chunk, :, ncvs:]
-            del(mr_adc.v2e.ccee, mr_adc.v2e.ceec)
-
-            mr_adc.v2e.xaea[:] = mr_adc.v2e.caea[:ncvs, :, :, :]
-            mr_adc.v2e.vaea[:] = mr_adc.v2e.caea[ncvs:, :, :, :]
-            del(mr_adc.v2e.caea)
+            del(mr_adc.v2e.ceec)
 
             chunk_size = calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 1)
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
 
                 mr_adc.v2e.xaee[:,:,s_chunk:f_chunk] = mr_adc.v2e.caee[:ncvs, :, s_chunk:f_chunk]
-                mr_adc.v2e.xeea[:,s_chunk:f_chunk] = mr_adc.v2e.ceea[:ncvs, s_chunk:f_chunk]
                 mr_adc.v2e.vaee[:,:,s_chunk:f_chunk] = mr_adc.v2e.caee[ncvs:, :, s_chunk:f_chunk]
+            del(mr_adc.v2e.caee)
+
+            for s_chunk in range(0, nextern, chunk_size):
+                f_chunk = s_chunk + chunk_size
+
+                mr_adc.v2e.xeea[:,s_chunk:f_chunk] = mr_adc.v2e.ceea[:ncvs, s_chunk:f_chunk]
                 mr_adc.v2e.veea[:,s_chunk:f_chunk] = mr_adc.v2e.ceea[ncvs:, s_chunk:f_chunk]
             del(mr_adc.v2e.ceea)
-
-    # Effective one-electron integrals
-    mr_adc.v2e.xxxa = mr_adc.v2e.feri1.create_dataset('xxxa', (ncvs, ncvs, ncvs, ncas), 'f8')
-    mr_adc.v2e.xxva = mr_adc.v2e.feri1.create_dataset('xxva', (ncvs, ncvs, nval, ncas), 'f8')
-    mr_adc.v2e.vxxa = mr_adc.v2e.feri1.create_dataset('vxxa', (nval, ncvs, ncvs, ncas), 'f8')
-
-    mr_adc.v2e.xxxe = mr_adc.v2e.feri1.create_dataset('xxxe', (ncvs, ncvs, ncvs, nextern), 'f8')
-    mr_adc.v2e.xxve = mr_adc.v2e.feri1.create_dataset('xxve', (ncvs, ncvs, nval, nextern), 'f8')
-    mr_adc.v2e.vxxe = mr_adc.v2e.feri1.create_dataset('vxxe', (nval, ncvs, ncvs, nextern), 'f8')
-
-    mr_adc.v2e.xxxa[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :]
-    mr_adc.v2e.xxva[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :]
-    mr_adc.v2e.vxxa[:] = mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :]
-    del(mr_adc.v2e.ccca)
-
-    mr_adc.v2e.xxxe[:] = mr_adc.v2e.ccce[:ncvs, :ncvs, :ncvs, :]
-    mr_adc.v2e.xxve[:] = mr_adc.v2e.ccce[:ncvs, :ncvs, ncvs:, :]
-    mr_adc.v2e.vxxe[:] = mr_adc.v2e.ccce[ncvs:, :ncvs, :ncvs, :]
-    del(mr_adc.v2e.ccce)
-
-    mr_adc.h1eff.xa = np.ascontiguousarray(mr_adc.h1eff.ca[:ncvs,:])
-    mr_adc.h1eff.va = np.ascontiguousarray(mr_adc.h1eff.ca[ncvs:,:])
-    del(mr_adc.h1eff.ca)
-
-    mr_adc.h1eff.xe = np.ascontiguousarray(mr_adc.h1eff.ce[:ncvs,:])
-    mr_adc.h1eff.ve = np.ascontiguousarray(mr_adc.h1eff.ce[ncvs:,:])
-    del(mr_adc.h1eff.ce)
-
-    # Remove in-core v2e integrals
-    del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
 
     # Store diagonal elements of the generalized Fock operator
     mr_adc.mo_energy.x = mr_adc.mo_energy.c[:ncvs]
