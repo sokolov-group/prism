@@ -456,13 +456,18 @@ def calculate_chunk_size(mr_adc, nmo_chunked, nmo_non_chunked, ntensors = 2):
 
 def calculate_chunk_sizes(mr_adc, nmo_chunked, nmo_non_chunked_1, nmo_non_chunked_2, ntensors = 2):
 
-    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) / ntensors
+    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0])
 
     nmo_1, nmo_2, nmo_3 = nmo_non_chunked_1
     tensor_mem_1 = (nmo_1 * nmo_2 * nmo_3) * 8/1e6
 
     nmo_1, nmo_2, nmo_3 = nmo_non_chunked_2
     tensor_mem_2 = (nmo_1 * nmo_2 * nmo_3) * 8/1e6
+
+    if tensor_mem_1 > tensor_mem_2:
+        tensor_mem_1 *= ntensors
+    else:
+        tensor_mem_2 *= ntensors
 
     chunk_size = int(avail_mem / (tensor_mem_1 + tensor_mem_2))
 
@@ -473,18 +478,19 @@ def calculate_chunk_sizes(mr_adc, nmo_chunked, nmo_non_chunked_1, nmo_non_chunke
 
     return chunk_size
 
-def calculate_chunk_size_oee_oeee(mr_adc, nocc):
+def calculate_chunk_size_oee_oeee(mr_adc, nocc, ntensors = 2):
 
-    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0]) * 0.5
+    avail_mem = (mr_adc.max_memory - mr_adc.current_memory()[0])
     eee_mem = (mr_adc.nextern**3) * 8/1e6
     ee_mem  = (nocc * mr_adc.nextern**2) * 8/1e6
 
     if eee_mem > ee_mem:
-        chunk_size_eee = int(avail_mem / (eee_mem - ee_mem))
-        chunk_size_ee = int((avail_mem - eee_mem) / eee_mem)
+        eee_mem *= ntensors
     else:
-        chunk_size_eee = 1
-        chunk_size_ee = 1
+        ee_mem *= ntensors
+
+    chunk_size_eee = int(avail_mem / (eee_mem  - ee_mem))
+    chunk_size_ee = int((avail_mem - eee_mem) / ee_mem)
 
     if chunk_size_eee <= 0 :
         chunk_size_eee = 1
@@ -755,11 +761,9 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xava = mr_adc.v2e.feri1.create_dataset('xava', (ncvs, ncas, nval, ncas), 'f8')
 
             mr_adc.v2e.xexe = mr_adc.v2e.feri1.create_dataset('xexe', (ncvs, nextern, ncvs, nextern), 'f8',
-                                                               chunks=(ncvs, 1, ncvs, 1))
+                                                               chunks=(ncvs, 1, ncvs, nextern))
             mr_adc.v2e.xeve = mr_adc.v2e.feri1.create_dataset('xeve', (ncvs, nextern, nval, nextern), 'f8',
                                                                chunks=(ncvs, 1, nval, 1))
-            mr_adc.v2e.veve = mr_adc.v2e.feri1.create_dataset('veve', (nval, nextern, nval, nextern), 'f8',
-                                                               chunks=(nval, nextern, nval, 1))
 
             mr_adc.v2e.xaxe = mr_adc.v2e.feri1.create_dataset('xaxe', (ncvs, ncas, ncvs, nextern), 'f8')
             mr_adc.v2e.xave = mr_adc.v2e.feri1.create_dataset('xave', (ncvs, ncas, nval, nextern), 'f8')
@@ -811,7 +815,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
 
                 mr_adc.v2e.xexe[:,s_chunk:f_chunk] = mr_adc.v2e.cece[:ncvs, s_chunk:f_chunk, :ncvs, :]
                 mr_adc.v2e.xeve[:,s_chunk:f_chunk] = mr_adc.v2e.cece[:ncvs, s_chunk:f_chunk, ncvs:, :]
-                mr_adc.v2e.veve[:,s_chunk:f_chunk] = mr_adc.v2e.cece[ncvs:, s_chunk:f_chunk, ncvs:, :]
 
             mr_adc.v2e.xaxe[:] = mr_adc.v2e.cace[:ncvs, :, :ncvs, :]
             mr_adc.v2e.xave[:] = mr_adc.v2e.cace[:ncvs, :, ncvs:, :]
