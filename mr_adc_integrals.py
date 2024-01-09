@@ -894,19 +894,19 @@ def compute_cvs_integrals_2e_df(mr_adc):
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
 
-                mr_adc.v2e.xxee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[:ncvs, :ncvs, s_chunk:f_chunk]
-                mr_adc.v2e.xvee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[:ncvs, ncvs:, s_chunk:f_chunk]
-                mr_adc.v2e.vxee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, :ncvs, s_chunk:f_chunk]
-                mr_adc.v2e.vvee[:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, ncvs:, s_chunk:f_chunk]
+                mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[:ncvs, :ncvs, :, s_chunk:f_chunk]
+                mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[:ncvs, ncvs:, :, s_chunk:f_chunk]
+                mr_adc.v2e.vxee[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, :ncvs, :, s_chunk:f_chunk]
+                mr_adc.v2e.vvee[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, ncvs:, :, s_chunk:f_chunk]
             del(mr_adc.v2e.ccee)
 
             for s_chunk in range(0, nextern, chunk_size):
                 f_chunk = s_chunk + chunk_size
 
-                mr_adc.v2e.xeex[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, s_chunk:f_chunk, :, :ncvs]
-                mr_adc.v2e.xeev[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, s_chunk:f_chunk, :, ncvs:]
-                mr_adc.v2e.veex[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, s_chunk:f_chunk, :, :ncvs]
-                mr_adc.v2e.veev[:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, s_chunk:f_chunk, :, ncvs:]
+                mr_adc.v2e.xeex[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, :, s_chunk:f_chunk, :ncvs]
+                mr_adc.v2e.xeev[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, :, s_chunk:f_chunk, ncvs:]
+                mr_adc.v2e.veex[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, :, s_chunk:f_chunk, :ncvs]
+                mr_adc.v2e.veev[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, :, s_chunk:f_chunk, ncvs:]
             del(mr_adc.v2e.ceec)
 
             chunk_size = calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern), 1)
