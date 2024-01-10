@@ -205,19 +205,13 @@ def compute_cvs_amplitudes(mr_adc):
 
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
             if mr_adc.outcore_amplitudes:
-                mr_adc.t1.xxee = mr_adc.t1.chk.create_dataset('xxee', (ncvs, ncvs, nextern, nextern), 'f8',
-                                                              chunks=(ncvs, ncvs, 1, 1))
-                mr_adc.t1.xvee = mr_adc.t1.chk.create_dataset('xvee', (ncvs, nval, nextern, nextern), 'f8',
-                                                              chunks=(ncvs, nval, 1, 1))
-                mr_adc.t1.vxee = mr_adc.t1.chk.create_dataset('vxee', (nval, ncvs, nextern, nextern), 'f8',
-                                                              chunks=(nval, ncvs, 1, 1))
-                mr_adc.t1.vvee = mr_adc.t1.chk.create_dataset('vvee', (nval, nval, nextern, nextern), 'f8',
-                                                              chunks=(nval, nval, 1, 1))
+                mr_adc.t1.xxee = mr_adc.t1.chk.create_dataset('xxee', (ncvs, ncvs, nextern, nextern), 'f8')
+                mr_adc.t1.xvee = mr_adc.t1.chk.create_dataset('xvee', (ncvs, nval, nextern, nextern), 'f8')
+                mr_adc.t1.vxee = mr_adc.t1.chk.create_dataset('vxee', (nval, ncvs, nextern, nextern), 'f8')
+                mr_adc.t1.vvee = mr_adc.t1.chk.create_dataset('vvee', (nval, nval, nextern, nextern), 'f8')
 
-                mr_adc.t1.xaee = mr_adc.t1.chk.create_dataset('xaee', (ncvs, ncas, nextern, nextern), 'f8',
-                                                              chunks=(ncvs, ncas, 1, 1))
-                mr_adc.t1.vaee = mr_adc.t1.chk.create_dataset('vaee', (nval, ncas, nextern, nextern), 'f8',
-                                                              chunks=(nval, ncas, 1, 1))
+                mr_adc.t1.xaee = mr_adc.t1.chk.create_dataset('xaee', (ncvs, ncas, nextern, nextern), 'f8')
+                mr_adc.t1.vaee = mr_adc.t1.chk.create_dataset('vaee', (nval, ncas, nextern, nextern), 'f8')
             else:
                 mr_adc.t1.xxee = np.zeros((ncvs, ncvs, nextern, nextern))
                 mr_adc.t1.xvee = np.zeros((ncvs, nval, nextern, nextern))
@@ -303,8 +297,7 @@ def compute_t1_0(mr_adc):
 
     chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncore, nextern), 3)
     if mr_adc.outcore_amplitudes:
-        t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8',
-                                                chunks=(ncore, 1, nextern, 1))
+        t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
     else:
         t1_ccee = np.zeros((ncore, ncore, nextern, nextern))
 
@@ -438,8 +431,7 @@ def compute_t1_m1(mr_adc):
 
     chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncore, ncas, nextern))
     if mr_adc.outcore_amplitudes:
-        t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8',
-                                                chunks=(ncore, 1, 1, nextern))
+        t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8')
     else:
         t1_caee = np.zeros((ncore, ncas, nextern, nextern))
 
@@ -570,8 +562,7 @@ def compute_t1_m2(mr_adc):
     # Compute R.H.S. of the equation
     chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, (ncas, ncas, nextern), 3)
     if mr_adc.outcore_amplitudes:
-        t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8',
-                                                chunks=(ncas, ncas, 1, nextern))
+        t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
     else:
         t1_aaee = np.zeros((ncas, ncas, nextern, nextern))
 
