@@ -37,6 +37,9 @@ An extensive and comprehensive manual of Prism will be released soon.
 ## Core-valence separation for ionization processes MR-ADC (CVS-IP-MR-ADC) method
 - Second-order perturbation order: CVS-IP-MR-ADC(2)
 
+## Core-valence separation for absorption processes MR-ADC (CVS-EE-MR-ADC) method
+- Second-order perturbation order: CVS-EE-MR-ADC(2)
+
 # Authors and Contributors
 [//]: # (To be moved to AUTHORS file)
 ## Prism Interface
@@ -49,6 +52,11 @@ An extensive and comprehensive manual of Prism will be released soon.
 
 ## CVS-IP-MR-ADC Method
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+- Carlos E. V. de Moura <carlosevmoura@gmail.com>
+
+## CVS-EE-MR-ADC Method
+- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+- Ilia Mazin <ilia.mazin@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 
 ## Contributors of Spin-Orbital Prism (Pilot code)

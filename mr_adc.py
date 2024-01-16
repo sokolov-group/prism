@@ -15,6 +15,7 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#                  Ilia M. Mazin <ilia.mazin@gmail.com>
 #
 
 import sys
@@ -83,6 +84,7 @@ class MRADC:
         self.h1 = lambda:None           # Information about h1 excitation manifold
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
+        self.dip_mom = None 
 
         # Approximations
         self.approx_trans_moments = False
@@ -98,7 +100,6 @@ class MRADC:
         self.rdm = lambda:None
         self.t1 = lambda:None
         self.t2 = lambda:None
-        self.dip_mom = None
 
         # Matrix blocks
         self.M_00 = None
@@ -136,7 +137,7 @@ class MRADC:
                 raise Exception("Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type)
 
         # TODO: Temporary check of what methods are implemented in this version
-        if self.method_type not in ("cvs-ip"):
+        if self.method_type not in ("cvs-ip", "cvs-ee"):
             raise Exception("This spin-adapted version does not currently support method type %s" % self.method_type)
 
         # Transform one- and two-electron integrals
