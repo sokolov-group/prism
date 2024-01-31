@@ -17,11 +17,11 @@
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #
 
-import sys
-import time
 import numpy as np
 import prism.mr_adc_overlap as mr_adc_overlap
-import prism.mr_adc_integrals as mr_adc_integrals
+
+import prism.lib.logger as logger
+import prism.lib.tools as tools
 
 def compute_excitation_manifolds(mr_adc):
 
@@ -34,7 +34,7 @@ def compute_excitation_manifolds(mr_adc):
     mr_adc.h0.s_c = 0
     mr_adc.h0.f_c = mr_adc.h0.s_c + mr_adc.h0.n_c
 
-    print("Dimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
+    mr_adc.log.extra("\nDimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
 
     # MR-ADC(2)
     mr_adc.h1.dim = 0
@@ -154,14 +154,14 @@ def compute_excitation_manifolds(mr_adc):
             mr_adc.h1.s_cca__abb = mr_adc.h1.f_cca__aaa
             mr_adc.h1.f_cca__abb = mr_adc.h1.s_cca__abb + mr_adc.h1.n_cca
 
-        print("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
+        mr_adc.log.extra("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
 
         # Overlap for c-caa
         mr_adc.S12.c_caa = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
         if not hasattr(mr_adc.S12, "cae"):
-            mr_adc.S12.cae = mr_adc_overlap.compute_S12_m1(mr_adc, ignore_print = True)
+            mr_adc.S12.cae = mr_adc_overlap.compute_S12_m1(mr_adc)
         if not hasattr(mr_adc.S12, "cca"):
-            mr_adc.S12.cca = mr_adc_overlap.compute_S12_p1(mr_adc, ignore_print = True)
+            mr_adc.S12.cca = mr_adc_overlap.compute_S12_p1(mr_adc)
 
         # Determine dimensions of orthogonalized excitation spaces
         mr_adc.h_orth.n_c_caa    = mr_adc.ncvs * mr_adc.S12.c_caa.shape[1]
@@ -263,9 +263,8 @@ def compute_excitation_manifolds(mr_adc):
             mr_adc.h_orth.s_cca__abb = mr_adc.h_orth.f_cca__aaa
             mr_adc.h_orth.f_cca__abb = mr_adc.h_orth.s_cca__abb + mr_adc.h_orth.n_cca
 
-    print("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
-    print("Dimension of the orthogonalized excitation manifold:       %d\n" % (mr_adc.h_orth.dim))
-    sys.stdout.flush()
+    mr_adc.log.extra("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
+    mr_adc.log.extra("Dimension of the orthogonalized excitation manifold:       %d" % (mr_adc.h_orth.dim))
 
     if (mr_adc.h_orth.dim < mr_adc.nroots):
         mr_adc.nroots = mr_adc.h_orth.dim
@@ -274,10 +273,8 @@ def compute_excitation_manifolds(mr_adc):
 
 def compute_M_00(mr_adc):
 
-    start_time = time.time()
-
-    print("Computing M(h0-h0) block...")
-    sys.stdout.flush()
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing M(h0-h0) block...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -1323,9 +1320,10 @@ def compute_M_00(mr_adc):
         M_00 += 1/4 * einsum('xyzw,iJxa,Iiua,zuwy->IJ', v_aaaa, t1_vxae, t1_xvae, rdm_ccaa, optimize = einsum_type)
         M_00 -= 1/2 * einsum('xyzw,iJxa,iIua,zuwy->IJ', v_aaaa, t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1340,11 +1338,13 @@ def compute_M_00(mr_adc):
             M_00 += 1/2 * einsum('J,Iiab,Jiba->IJ', e_cvs, t1_xxee_ab, t1_xxee_ba, optimize = einsum_type)
             M_00 -= einsum('a,Iiab,Jiba->IJ', e_extern, t1_xxee_ab, t1_xxee_ba, optimize = einsum_type)
             M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xxee_ba, t1_xxee_ab, optimize = einsum_type)
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput1)
         del(t1_xxee_ab, t1_xxee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee v2e.xeve [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1373,11 +1373,13 @@ def compute_M_00(mr_adc):
 
             M_00 -= einsum('Iiab,Jbia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
             M_00 -= einsum('Jiab,Ibia->IJ', t1_xvee, v_xeve, optimize = einsum_type)
+            mr_adc.log.timer_debug("contracting t1.xvee v2e.xeve", *cput1)
         del(t1_xvee, v_xeve)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1392,11 +1394,13 @@ def compute_M_00(mr_adc):
             M_00 -= einsum('a,Iiba,Jiab->IJ', e_extern, t1_xvee_ba, t1_xvee_ab, optimize = einsum_type)
             M_00 += 1/2 * einsum('i,Iiab,Jiba->IJ', e_val, t1_xvee_ab, t1_xvee_ba, optimize = einsum_type)
             M_00 += 1/2 * einsum('i,Jiab,Iiba->IJ', e_val, t1_xvee_ab, t1_xvee_ba, optimize = einsum_type)
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput1)
         del(t1_xvee_ab, t1_xvee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1413,11 +1417,13 @@ def compute_M_00(mr_adc):
             M_00 += 1/4 * einsum('xyzw,Jxab,Iuba,zuwy->IJ', v_aaaa, t1_xaee_ba, t1_xaee_ab, rdm_ccaa, optimize = einsum_type)
             M_00 += 1/4 * einsum('I,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
             M_00 += 1/4 * einsum('J,Ixab,Jyba,xy->IJ', e_cvs, t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput1)
         del(t1_xaee_ab, t1_xaee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee v2e.xexe [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1442,11 +1448,13 @@ def compute_M_00(mr_adc):
             e_extern = mr_adc.mo_energy.e
 
             M_00 += 2 * einsum('a,Iiba,Jiba->IJ', e_extern, t1_xxee, t1_xxee, optimize = einsum_type)
+            mr_adc.log.timer_debug("contracting t1.xxee v2e.xexe", *cput1)
         del(v_xexe, t1_xxee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee v2e.xeae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1475,25 +1483,25 @@ def compute_M_00(mr_adc):
             e_extern = mr_adc.mo_energy.e
 
             M_00 += einsum('a,Ixba,Jyba,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
+            mr_adc.log.timer_debug("contracting t1.xaee v2e.xeae", *cput1)
         del(v_xeae, t1_xaee)
 
     mr_adc.M_00 = M_00
 
-    print("Time for computing M(h0-h0) block:                 %f sec\n" % (time.time() - start_time))
-    sys.stdout.flush()
+    mr_adc.log.timer("computing M(h0-h0) block", *cput0)
 
 def compute_M_01(mr_adc):
 
-    start_time = time.time()
-
-    print("Computing M(h0-h1) blocks...")
-    sys.stdout.flush()
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing M(h0-h1) blocks...")
 
     # Variables from kernel
     nval = mr_adc.nval
 
     # Define functions to compute M_01 blocks
     def compute_M_01__C_CAA(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -1573,9 +1581,13 @@ def compute_M_01(mr_adc):
         M_c_caa[:, s_abb:f_abb] = M_c_caa__a_abb.copy()
         M_c_caa[:, s_bab:f_bab] = M_c_caa__a_bab.copy()
 
+        mr_adc.log.timer_debug("computing M_01__C_CAA", *cput1)
+
         return M_c_caa
 
     def compute_M_01__C_CCE(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -1657,9 +1669,13 @@ def compute_M_01(mr_adc):
         M_c_cce[:, s_aaa:f_aaa] = M_c_cce__a_aaa.copy()
         M_c_cce[:, s_abb:f_abb] = M_c_cce__a_abb.copy()
 
+        mr_adc.log.timer_debug("computing M_01__C_CCE", *cput1)
+
         return M_c_cce
 
     def compute_M_01__C_CAE(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -1757,9 +1773,13 @@ def compute_M_01(mr_adc):
         M_c_cae[:, s_abb:f_abb] = M_c_cae__a_abb.copy()
         M_c_cae[:, s_bab:f_bab] = M_c_cae__a_bab.copy()
 
+        mr_adc.log.timer_debug("computing M_01__C_CAE", *cput1)
+
         return M_c_cae
 
     def compute_M_01__C_CCA(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -1863,9 +1883,13 @@ def compute_M_01(mr_adc):
         M_c_cca[:, s_aaa:f_aaa] = M_c_cca__a_aaa.copy()
         M_c_cca[:, s_abb:f_abb] = M_c_cca__a_abb.copy()
 
+        mr_adc.log.timer_debug("computing M_01__C_CCA", *cput1)
+
         return M_c_cca
 
     def compute_M_01__C_CVE(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -1947,9 +1971,13 @@ def compute_M_01(mr_adc):
         M_c_cve[:, s_abb:f_abb] = M_c_cve__a_abb.copy()
         M_c_cve[:, s_bab:f_bab] = M_c_cve__a_bab.copy()
 
+        mr_adc.log.timer_debug("computing M_01__C_CVE", *cput1)
+
         return M_c_cve
 
     def compute_M_01__C_CVA(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2058,6 +2086,8 @@ def compute_M_01(mr_adc):
         M_c_cva[:, s_abb:f_abb] = M_c_cva__a_abb.copy()
         M_c_cva[:, s_bab:f_bab] = M_c_cva__a_bab.copy()
 
+        mr_adc.log.timer_debug("computing M_01__C_CVA", *cput1)
+
         return M_c_cva
 
     # Compute M_01 Matrices
@@ -2080,8 +2110,7 @@ def compute_M_01(mr_adc):
         ## C-CVA Block
         mr_adc.M_01.c_cva = compute_M_01__C_CVA(mr_adc)
 
-    print("Time for computing M(h0-h1) blocks:                %f sec\n" % (time.time() - start_time))
-    sys.stdout.flush()
+    mr_adc.log.timer("computing M(h0-h1) block", *cput0)
 
 def define_effective_hamiltonian(mr_adc):
 
@@ -2090,6 +2119,7 @@ def define_effective_hamiltonian(mr_adc):
     if mr_adc.method in ("mr-adc(0)", "mr-adc(1)"):
         # Effective Hamiltonian for MR-ADC(0) and MR-ADC(1)
         def apply_M(X):
+
             M_00 = mr_adc.M_00
 
             sigma = np.dot(M_00, X)
@@ -2120,7 +2150,8 @@ def define_effective_hamiltonian(mr_adc):
 
 def compute_preconditioner(mr_adc):
 
-    start_time = time.time()
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing preconditioner...")
 
     # Matrix Blocks
     M_00 = mr_adc.M_00
@@ -2162,6 +2193,8 @@ def compute_preconditioner(mr_adc):
 
     # Define functions to compute preconditioner diagonal blocks
     def compute_preconditioner__CAA(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2311,9 +2344,13 @@ def compute_preconditioner(mr_adc):
 
         precond_caa = einsum('IXY,XP,YP->IP', precond_caa, S12_c_caa, S12_c_caa, optimize = einsum_type)
 
+        mr_adc.log.timer_debug("computing preconditioner CAA", *cput1)
+
         return precond_caa
 
     def compute_preconditioner__CCE(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2331,9 +2368,13 @@ def compute_preconditioner(mr_adc):
         precond_cce += einsum('I,AA,II,JJ->IJA', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
         precond_cce += einsum('J,AA,II,JJ->IJA', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
 
+        mr_adc.log.timer_debug("computing preconditioner CCE", *cput1)
+
         return precond_cce
 
     def compute_preconditioner__CAE(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2367,9 +2408,13 @@ def compute_preconditioner(mr_adc):
 
         precond_cae = einsum("IAXY,XP,YP->IPA", precond_cae, S12_cae, S12_cae, optimize = einsum_type)
 
+        mr_adc.log.timer_debug("computing preconditioner CAE", *cput1)
+
         return precond_cae
 
     def compute_preconditioner__CCA(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2407,9 +2452,13 @@ def compute_preconditioner(mr_adc):
 
         precond_cca = einsum("IJXY,XP,YP->IJP", precond_cca, S12_cca, S12_cca, optimize = einsum_type)
 
+        mr_adc.log.timer_debug("computing preconditioner CCA", *cput1)
+
         return precond_cca
 
     def compute_preconditioner__CVE(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2429,9 +2478,13 @@ def compute_preconditioner(mr_adc):
         precond_cve += einsum('I,AA,II,JJ->IJA', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
         precond_cve += einsum('J,AA,II,JJ->IJA', e_val, np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
 
+        mr_adc.log.timer_debug("computing preconditioner CVE", *cput1)
+
         return precond_cve
 
     def compute_preconditioner__CVA(mr_adc):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2470,6 +2523,8 @@ def compute_preconditioner(mr_adc):
         precond_cva += 1/2 * einsum('Xxyz,II,JJ,Yyxz->IJXY', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
 
         precond_cva = einsum("IJXY,XP,YP->IJP", precond_cva, S12_cca, S12_cca, optimize = einsum_type)
+
+        mr_adc.log.timer_debug("computing preconditioner CVA", *cput1)
 
         return precond_cva
 
@@ -2537,8 +2592,7 @@ def compute_preconditioner(mr_adc):
     # Multiply by -1.0, since we are solving for -M C = -S C E
     precond *= (-1.0)
 
-    print("Time for computing preconditioner:                 %f sec\n" % (time.time() - start_time))
-    sys.stdout.flush()
+    mr_adc.log.timer("computing preconditioner", *cput0)
 
     return precond
 
@@ -2721,6 +2775,8 @@ def apply_S_12(mr_adc, X, transpose = False):
 
 def compute_sigma_vector(mr_adc, Xt):
 
+    cput0 = (logger.process_clock(), logger.perf_counter())
+
     # Variables from kernel
     ncvs = mr_adc.ncvs
     nval = mr_adc.nval
@@ -2741,6 +2797,8 @@ def compute_sigma_vector(mr_adc, Xt):
     # Define functions to compute sigma vector blocks
     ## Zeroth-order h1-h1 contributions
     def compute_sigma_vector__H0__h1_h1__CAA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2865,7 +2923,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_caa -= 1/6 * einsum('Kxy,yzwu,WzuxwZ->KWZ', X_bab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma[s_caa__bab:f_caa__bab] += sigma_caa.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H0 h1-h1 CAA", *cput1)
+
     def compute_sigma_vector__H0__h1_h1__CCE(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2894,7 +2956,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce += einsum('KLB,L->KLB', X_abb, e_cvs, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H0 h1-h1 CCE", *cput1)
+
     def compute_sigma_vector__H0__h1_h1__CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2940,7 +3006,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/2 * einsum('KxB,xyzw,Zzyw->KZB', X_bab, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H0 h1-h1 CAE", *cput1)
+
     def compute_sigma_vector__H0__h1_h1__CCA(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -2990,7 +3060,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cca += 1/2 * einsum('KLx,xyzw,Wzyw->KLW', X_abb, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cca__abb:f_cca__abb] += sigma_cca.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H0 h1-h1 CCA", *cput1)
+
     def compute_sigma_vector__H0__h1_h1__CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -3024,7 +3098,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += einsum('KLB,L->KLB', X_bab, e_val, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H0 h1-h1 CVE", *cput1)
+
     def compute_sigma_vector__H0__h1_h1__CVA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -3085,8 +3163,12 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cva += 1/2 * einsum('KLx,xyzw,Wzyw->KLW', X_bab, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cva__bab:f_cva__bab] += sigma_cva.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H0 h1-h1 CVA", *cput1)
+
     ## First-order corrections to h1-h1 block
     def compute_sigma_vector__H1__h1_h1__CAA_CAA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -3254,7 +3336,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_caa -= 1/6 * einsum('ixy,Kzwi,wz,WyxZ->KWZ', X_bab, v_xaax, rdm_ca, rdm_ccaa, optimize = einsum_type)
         sigma[s_caa__bab:f_caa__bab] += sigma_caa.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAA-CAA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CAA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -3522,7 +3608,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= 1/2 * einsum('Lxy,KyzB,zwuv,xuwv->KLB', X_bab, t1_xaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCE-CAA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CAA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -3955,7 +4045,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/3 * einsum('Kxy,yzwB,zuvs,Zwvxus->KZB', X_bab, t1_aaae, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAE-CAA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCA_CAA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -5051,7 +5145,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cca += 1/6 * einsum('Lxy,Kyzw,zuwv,Wxuv->KLW', X_bab, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cca__abb:f_cca__abb] += sigma_cca.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCA-CAA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CAA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -5257,7 +5355,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += 1/2 * einsum('Kxy,LyzB,zwuv,xuwv->KLB', X_bab, t1_vaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVE-CAA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVA_CAA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6075,7 +6177,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cva -= 1/6 * einsum('Kxy,Lyzw,zuwv,Wxuv->KLW', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cva__bab:f_cva__bab] += sigma_cva.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVA-CAA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAA_CCE(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6322,7 +6428,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_caa += 1/6 * einsum('iKa,ixya,xzwu,WzuywZ->KWZ', X_abb, t1_xaae, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma[s_caa__bab:f_caa__bab] += sigma_caa.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAA-CCE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CCE(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6360,7 +6470,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeex, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCE-CCE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CCE__V_XXEE(mr_adc, X_aaa, X_abb, sigma, v_xxee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6386,7 +6500,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce += einsum('Kia,iLBa->KLB', X_abb, v_xxee, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xxee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CCE__V_XEEX(mr_adc, X_aaa, X_abb, sigma, v_xeex):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6414,7 +6532,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeex, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xeex", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CCE(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6524,7 +6646,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cae -= 1/2 * einsum('iKa,ixBa,Zx->KZB', X_abb, v_xaee, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAE-CCE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CCE__V_XAEE(mr_adc, X_aaa, X_abb, sigma, v_xaee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6550,7 +6676,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae =- 1/2 * einsum('iKa,ixBa,Zx->KZB', X_abb, v_xaee, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xaee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CCE__V_XEEA(mr_adc, X_aaa, X_abb, sigma, v_xeea):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6573,7 +6703,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb, v_xeea, rdm_ca, optimize = einsum_type)
         sigma[s_cae__abb:f_cae__abb] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xeea", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCA_CCE(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6727,7 +6861,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cca -= 1/2 * einsum('KLa,xyza,xwuv,Wzuywv->KLW', X_abb, t1_aaae, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma[s_cca__abb:f_cca__abb] += sigma_cca.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCA-CCE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CCE(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6761,7 +6899,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cve -= einsum('iKa,iLBa->KLB', X_abb, v_xvee, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVE-CCE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CCE__V_XVEE(mr_adc, X_aaa, X_abb, sigma, v_xvee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6784,7 +6926,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve =- einsum('iKa,iLBa->KLB', X_abb, v_xvee, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xvee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CCE__V_VEEX(mr_adc, X_aaa, X_abb, sigma, v_veex):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6804,7 +6950,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve -= einsum('Kia,LBai->KLB', X_abb, v_veex, optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.veex", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVA_CCE(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -6845,7 +6995,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cva += 1/2 * einsum('iKa,iLxa,Wx->KLW', X_abb, v_xvae, rdm_ca, optimize = einsum_type)
         sigma[s_cva__bab:f_cva__bab] += sigma_cva.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVA-CCE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAA_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7278,7 +7432,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_caa += 1/3 * einsum('Kxa,yzwa,Zyuz,Wuxw->KWZ', X_bab, t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_caa__bab:f_caa__bab] -= sigma_caa.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAA-CCE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7442,7 +7600,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_xeea, rdm_ca, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCE-CAE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CAE__V_XAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xaee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7471,7 +7633,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= 1/2 * einsum('Lxa,KyaB,xy->KLB', X_bab, v_xaee, rdm_ca, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xaee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CAE__V_XEEA(mr_adc, X_aaa, X_abb, sigma, v_xeea):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7502,7 +7668,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_xeea, rdm_ca, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xeea", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7577,7 +7747,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_bab, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAE-CAE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CAE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7603,7 +7777,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae  = 1/2 * einsum('ixa,iKBa,Zx->KZB', X_bab, v_xxee, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xxee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CAE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7626,7 +7804,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/2 * einsum('ixa,KBai,Zx->KZB', X_bab, v_xeex, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xeex", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CAE__V_AAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_aaee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7656,7 +7838,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/2 * einsum('Kxa,yzBa,yz,Zx->KZB', X_bab, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.aaee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CAE__V_AEEA(mr_adc, X_aaa, X_abb, X_bab, sigma, v_aeea):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7693,7 +7879,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/4 * einsum('Kxa,yBaz,zy,Zx->KZB', X_bab, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.aeea", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCA_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7746,7 +7936,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cca += 1/6 * einsum('Lxa,Kyaz,Wxyz->KLW', X_bab, v_xaea, rdm_ccaa, optimize = einsum_type)
         sigma[s_cca__abb:f_cca__abb] += sigma_cca.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCA-CAE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7880,7 +8074,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cve += 1/2 * einsum('Kxa,LyaB,xy->KLB', X_bab, v_vaee, rdm_ca, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVE-CAE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CAE__V_VAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vaee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7906,7 +8104,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve  = 1/2 * einsum('Kxa,LyaB,xy->KLB', X_bab, v_vaee, rdm_ca, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.vaee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CAE__V_VEEA(mr_adc, X_aaa, X_abb, sigma, v_veea):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7929,7 +8131,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve -= 1/2 * einsum('Kxa,LBay,xy->KLB', X_abb, v_veea, rdm_ca, optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.veea", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVA_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -7973,7 +8179,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cva -= 1/6 * einsum('Kxa,Lyaz,Wxyz->KLW', X_bab, v_vaea, rdm_ccaa, optimize = einsum_type)
         sigma[s_cva__bab:f_cva__bab] += sigma_cva.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVA-CAE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAA_CCA(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -8782,7 +8992,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_caa -= 1/2 * einsum('iKx,iyzx,Zywu,Wwzu->KWZ', X_abb, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_caa__bab:f_caa__bab] -= sigma_caa.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAA-CCA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CCA(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -8900,7 +9114,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= 1/2 * einsum('KLx,xyzB,ywuv,zuwv->KLB', X_abb, t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCE-CCA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CCA(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -8944,7 +9162,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/2 * einsum('iKx,iyBx,Zy->KZB', X_abb, v_xaea, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAE-CCA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCA_CCA(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9038,7 +9260,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cca -= 1/4 * einsum('iLx,Kyzi,zy,Wx->KLW', X_abb, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cca__abb:f_cca__abb] += sigma_cca.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCA-CCA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CCA(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9079,7 +9305,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve += 1/2 * einsum('iKx,LiyB,xy->KLB', X_abb, v_vxae, rdm_ca, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVE-CCA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVA_CCA(mr_adc, X_aaa, X_abb, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9157,7 +9387,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cva += 1/4 * einsum('iKx,Lyzi,zy,Wx->KLW', X_abb, v_vaax, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cva__bab:f_cva__bab] += sigma_cva.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVA-CCA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAA_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9406,7 +9640,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_caa -= 1/6 * einsum('Kia,ixya,xzwu,WzuywZ->KWZ', X_bab, t1_vaae, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma[s_caa__bab:f_caa__bab] += sigma_caa.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAA-CVE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9446,7 +9684,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeev, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCE-CVE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CVE__V_VXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vxee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9472,7 +9714,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= einsum('Lia,iKBa->KLB', X_bab, v_vxee, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.vxee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CVE__V_XEEV(mr_adc, X_aaa, X_abb, sigma, v_xeev):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9500,7 +9746,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce -= einsum('Kia,LBai->KLB', X_abb, v_xeev, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xeev", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9611,7 +9861,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cae += 1/2 * einsum('Kia,ixBa,Zx->KZB', X_bab, v_vaee, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAE-CVE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CVE__V_VAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vaee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9637,7 +9891,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae  = 1/2 * einsum('Kia,ixBa,Zx->KZB', X_bab, v_vaee, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.vaee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CVE__V_VEEA(mr_adc, X_aaa, X_abb, sigma, v_veea):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9660,7 +9918,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae -= 1/2 * einsum('Kia,iaBx,Zx->KZB', X_abb, v_veea, rdm_ca, optimize = einsum_type)
         sigma[s_cae__abb:f_cae__abb] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.veea", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCA_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9709,7 +9971,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cca += 1/2 * einsum('Lia,iKxa,Wx->KLW', X_bab, v_vxae, rdm_ca, optimize = einsum_type)
         sigma[s_cca__abb:f_cca__abb] += sigma_cca.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCA-CVE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9755,7 +10021,11 @@ def compute_sigma_vector(mr_adc, Xt):
         # sigma_cve += einsum('Kia,iLBa->KLB', X_bab, v_vvee, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVE-CVE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9778,7 +10048,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve  = einsum('iLa,iKBa->KLB', X_bab, v_xxee, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xxee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9798,7 +10072,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve -= einsum('iLa,KBai->KLB', X_bab, v_xeex, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.xeex", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CVE__V_VVEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vvee):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9821,7 +10099,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve  = einsum('Kia,iLBa->KLB', X_bab, v_vvee, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.vvee", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CVE__V_VEEV(mr_adc, X_aaa, X_abb, sigma, v_veev):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -9841,7 +10123,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve -= einsum('Kia,LBai->KLB', X_abb, v_veev, optimize = einsum_type)
         sigma[s_cve__abb:f_cve__abb] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("contracting v2e.veev", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVA_CVE(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -10048,7 +10334,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cva -= 1/2 * einsum('KLa,xyza,xwuv,Wzuywv->KLW', X_bab, t1_aaae, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma[s_cva__bab:f_cva__bab] += sigma_cva.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVA-CVE", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAA_CVA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -10866,7 +11156,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_caa += 1/2 * einsum('Kix,iyzx,Zywu,Wwzu->KWZ', X_bab, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_caa__bab:f_caa__bab] -= sigma_caa.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAA-CVA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCE_CVA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -10915,7 +11209,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cce += 1/2 * einsum('Lix,KiyB,xy->KLB', X_bab, v_xvae, rdm_ca, optimize = einsum_type)
         sigma[s_cce__abb:f_cce__abb] += sigma_cce.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCE-CVA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CAE_CVA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -10959,7 +11257,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cae += 1/2 * einsum('Kix,iyBx,Zy->KZB', X_bab, v_vaea, rdm_ca, optimize = einsum_type)
         sigma[s_cae__bab:f_cae__bab] += sigma_cae.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAE-CVA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CCA_CVA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -11056,7 +11358,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cca += 1/4 * einsum('Lix,Kyzi,zy,Wx->KLW', X_bab, v_xaav, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cca__abb:f_cca__abb] += sigma_cca.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCA-CVA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVE_CVA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -11208,7 +11514,11 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cve -= 1/2 * einsum('KLx,xyzB,ywuv,zuwv->KLB', X_bab, t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma[s_cve__bab:f_cve__bab] += sigma_cve.reshape(-1).copy()
 
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVE-CVA", *cput1)
+
     def compute_sigma_vector__H1__h1_h1__CVA_CVA(mr_adc, X_aaa, X_abb, X_bab, sigma):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -11333,6 +11643,8 @@ def compute_sigma_vector(mr_adc, Xt):
         sigma_cva += 1/2 * einsum('iLx,Kiyz,yz,Wx->KLW', X_bab, v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma_cva -= 1/4 * einsum('iLx,Kyzi,zy,Wx->KLW', X_bab, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
         sigma[s_cva__bab:f_cva__bab] += sigma_cva.reshape(-1).copy()
+
+        mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVA-CVA", *cput1)
 
     # Compute sigma vector blocks
     ## (CASCI + C) -> (CASCI + C)
@@ -11538,10 +11850,11 @@ def compute_sigma_vector(mr_adc, Xt):
     ## Contractions using ooee tensors for disk read optimization
     if mr_adc.method == "mr-adc(2)-x":
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
         ### v_xxee contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_xxee = mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk]
@@ -11579,11 +11892,14 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee)
+
+            mr_adc.log.timer_debug("v2e.xxee contractions", *cput1)
         del(v_xxee)
 
         ### v_xeex contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xeex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_xeex = mr_adc.v2e.xeex[:,:,s_chunk:f_chunk]
@@ -11617,12 +11933,15 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex)
+
+            mr_adc.log.timer_debug("v2e.xeex contractions", *cput1)
         del(v_xeex)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
         ### v_xaee contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_xaee = mr_adc.v2e.xaee[:,:,:,s_chunk:f_chunk]
@@ -11639,8 +11958,11 @@ def compute_sigma_vector(mr_adc, Xt):
 
             compute_sigma_vector__H1__h1_h1__CAE_CCE__V_XAEE(mr_adc, X_aaa, X_abb, sigma, v_xaee)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("v2e.xaee contractions", *cput1)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_xaee = mr_adc.v2e.xaee[:,:,s_chunk:f_chunk]
@@ -11655,11 +11977,14 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CCE_CAE__V_XAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xaee)
+
+            mr_adc.log.timer_debug("v2e.xaee contractions", *cput1)
         del(v_xaee)
 
         ### v_xeea contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_xeea = mr_adc.v2e.xeea[:,:,s_chunk:f_chunk]
@@ -11673,8 +11998,11 @@ def compute_sigma_vector(mr_adc, Xt):
 
             compute_sigma_vector__H1__h1_h1__CCE_CAE__V_XEEA(mr_adc, X_aaa, X_abb, sigma, v_xeea)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("v2e.xeea contractions", *cput1)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_xeea = mr_adc.v2e.xeea[:,s_chunk:f_chunk]
@@ -11690,12 +12018,15 @@ def compute_sigma_vector(mr_adc, Xt):
             X_abb = X_abb[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CAE_CCE__V_XEEA(mr_adc, X_aaa, X_abb, sigma, v_xeea)
+
+            mr_adc.log.timer_debug("v2e.xeea contractions", *cput1)
         del(v_xeea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncas, ncas, nextern], 2)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
         ### v_aaee contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_aaee = mr_adc.v2e.aaee[:,:,:,s_chunk:f_chunk]
@@ -11710,11 +12041,14 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CAE_CAE__V_AAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_aaee)
+
+            mr_adc.log.timer_debug("v2e.aaee contractions", *cput1)
         del(v_aaee)
 
         ### v_aeea contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.aeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_aeea = mr_adc.v2e.aeea[:,:,s_chunk:f_chunk]
@@ -11729,12 +12063,15 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CAE_CAE__V_AEEA(mr_adc, X_aaa, X_abb, X_bab, sigma, v_aeea)
+
+            mr_adc.log.timer_debug("v2e.aeea contractions", *cput1)
         del(v_aeea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [nval, nval, nextern], 2)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nval, nextern], ntensors = 2)
         ### v_vvee contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.vvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_vvee = mr_adc.v2e.vvee[:,:,:,s_chunk:f_chunk]
@@ -11749,11 +12086,14 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CVE_CVE__V_VVEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vvee)
+
+            mr_adc.log.timer_debug("v2e.vvee contractions", *cput1)
         del(v_vvee)
 
         ### v_veev contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.veev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_veev = mr_adc.v2e.veev[:,:,s_chunk:f_chunk]
@@ -11766,12 +12106,15 @@ def compute_sigma_vector(mr_adc, Xt):
             X_abb = X_abb[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CVE_CVE__V_VEEV(mr_adc, X_aaa, X_abb, sigma, v_veev)
+
+            mr_adc.log.timer_debug("v2e.veev contractions", *cput1)
         del(v_veev)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [nval, nval, nextern], 2)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nval, nextern], ntensors = 2)
         ### v_xvee contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_xvee = mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk]
@@ -11787,11 +12130,14 @@ def compute_sigma_vector(mr_adc, Xt):
             X_abb = X_abb[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CVE_CCE__V_XVEE(mr_adc, X_aaa, X_abb, sigma, v_xvee)
+
+            mr_adc.log.timer_debug("v2e.xvee contractions", *cput1)
         del(v_xvee)
 
         ### v_veex contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.veex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_veex = mr_adc.v2e.veex[:,:,s_chunk:f_chunk]
@@ -11807,12 +12153,15 @@ def compute_sigma_vector(mr_adc, Xt):
             X_abb = X_abb[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CVE_CCE__V_VEEX(mr_adc, X_aaa, X_abb, sigma, v_veex)
+
+            mr_adc.log.timer_debug("v2e.veex contractions", *cput1)
         del(v_veex)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [nval, ncas, nextern], 2)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
         ### v_vaee contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_vaee = mr_adc.v2e.vaee[:,:,s_chunk:f_chunk]
@@ -11827,11 +12176,14 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CVE_CAE__V_VAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vaee)
+
+            mr_adc.log.timer_debug("v2e.vaee contractions", *cput1)
         del(v_vaee)
 
         ### v_veea contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.veea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_veea = mr_adc.v2e.veea[:,:,s_chunk:f_chunk]
@@ -11844,12 +12196,15 @@ def compute_sigma_vector(mr_adc, Xt):
             X_abb = X_abb[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CVE_CAE__V_VEEA(mr_adc, X_aaa, X_abb, sigma, v_veea)
+
+            mr_adc.log.timer_debug("v2e.veea contractions", *cput1)
         del(v_veea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [nval, ncvs, nextern], 2)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncvs, nextern], ntensors = 2)
         ### v_vxee contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_vxee = mr_adc.v2e.vxee[:,:,:,s_chunk:f_chunk]
@@ -11864,11 +12219,14 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CCE_CVE__V_VXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vxee)
+
+            mr_adc.log.timer_debug("v2e.vxee contractions", *cput1)
         del(v_vxee)
 
         ### v_xeev contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xeev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_xeev = mr_adc.v2e.xeev[:,:,s_chunk:f_chunk]
@@ -11881,12 +12239,15 @@ def compute_sigma_vector(mr_adc, Xt):
             X_abb = X_abb[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CCE_CVE__V_XEEV(mr_adc, X_aaa, X_abb, sigma, v_xeev)
+
+            mr_adc.log.timer_debug("v2e.xeev contractions", *cput1)
         del(v_xeev)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [nval, ncas, nextern], 2)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
         ### v_vaee contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_vaee = mr_adc.v2e.vaee[:,:,:,s_chunk:f_chunk]
@@ -11901,11 +12262,14 @@ def compute_sigma_vector(mr_adc, Xt):
             X_bab = X_bab[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CAE_CVE__V_VAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vaee)
+
+            mr_adc.log.timer_debug("v2e.vaee contractions", *cput1)
         del(v_vaee)
 
         ### v_veea contractions
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput1 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.veea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
             v_veea = mr_adc.v2e.veea[:,s_chunk:f_chunk]
@@ -11918,14 +12282,23 @@ def compute_sigma_vector(mr_adc, Xt):
             X_abb = X_abb[:,:,s_chunk:f_chunk]
 
             compute_sigma_vector__H1__h1_h1__CAE_CVE__V_VEEA(mr_adc, X_aaa, X_abb, sigma, v_veea)
+
+            mr_adc.log.timer_debug("v2e.veea contractions", *cput1)
         del(v_veea)
+
+    mr_adc.log.timer_debug("computing sigma vector", *cput0)
 
     return sigma
 
 def compute_trans_moments(mr_adc, U):
 
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing transition moments matrix...")
+
     # Define functions to compute T blocks
     def compute_T__q0_h0__C_C(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
@@ -11936,7 +12309,11 @@ def compute_trans_moments(mr_adc, U):
 
         T[:, s_c:f_c] = np.identity(ncvs)
 
+        mr_adc.log.timer_debug("computing T q0-h0 C-C", *cput1)
+
     def compute_T__q0_h1__C_CAA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -11958,7 +12335,11 @@ def compute_trans_moments(mr_adc, U):
         T[:, s_caa__aaa:f_caa__aaa] += T_c_caa.reshape(ncvs, -1)
         T[:, s_caa__abb:f_caa__abb] += T_c_caa.reshape(ncvs, -1)
 
+        mr_adc.log.timer_debug("computing T q0-h1 C-CAA", *cput1)
+
     def compute_T__q2_h0__C_C(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -12051,9 +12432,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_c -= 1/4 * einsum('iIxa,Jiya,xy->IJ', t1_vxae, t1_xvae, rdm_ca, optimize = einsum_type)
         T_c_c += 1/2 * einsum('iIxa,iJya,xy->IJ', t1_vxae, t1_vxae, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee_ab = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -12061,11 +12443,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_c -= einsum('Iiab,Jiab->IJ', t1_xxee_ab, t1_xxee_ab, optimize = einsum_type)
             T_c_c += 1/2 * einsum('Iiab,Jiba->IJ', t1_xxee_ab, t1_xxee_ba, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee_ab, t1_xxee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee_ab = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -12073,11 +12458,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_c -= einsum('Iiab,Jiab->IJ', t1_xvee_ab, t1_xvee_ab, optimize = einsum_type)
             T_c_c += 1/2 * einsum('Iiab,Jiba->IJ', t1_xvee_ab, t1_xvee_ba, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee_ab, t1_xvee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee_ab = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -12085,11 +12473,17 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_c -= 1/2 * einsum('Ixab,Jyab,xy->IJ', t1_xaee_ab, t1_xaee_ab, rdm_ca, optimize = einsum_type)
             T_c_c += 1/4 * einsum('Ixab,Jyba,xy->IJ', t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee_ab, t1_xaee_ba)
 
         T[:, s_c:f_c] += T_c_c
 
+        mr_adc.log.timer_debug("computing T q0-h0 C-C", *cput1)
+
     def compute_T__q2_h1__C_CAA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -12276,9 +12670,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_caa -= 1/2 * einsum('iIxa,iJxa,YZ->IJYZ', t1_vxae, t1_vxae, rdm_ca, optimize = einsum_type)
         T_c_caa += 1/4 * einsum('iIxa,iJya,YyZx->IJYZ', t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee_ab = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -12286,11 +12681,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_caa -= 1/2 * einsum('Iiab,Jiab,YZ->IJYZ', t1_xxee_ab, t1_xxee_ab, rdm_ca, optimize = einsum_type)
             T_c_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_xxee_ab, t1_xxee_ba, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee_ab, t1_xxee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee_ab = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -12298,11 +12696,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_caa -= 1/2 * einsum('Iiab,Jiab,YZ->IJYZ', t1_xvee_ab, t1_xvee_ab, rdm_ca, optimize = einsum_type)
             T_c_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_xvee_ab, t1_xvee_ba, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee_ab, t1_xvee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee_ab = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -12313,6 +12714,8 @@ def compute_trans_moments(mr_adc, U):
             T_c_caa -= 1/4 * einsum('Ixab,Jyab,YxZy->IJYZ', t1_xaee_ab, t1_xaee_ab, rdm_ccaa, optimize = einsum_type)
             T_c_caa += 1/12 * einsum('Ixab,Jyba,YxZy->IJYZ', t1_xaee_ab, t1_xaee_ba, rdm_ccaa, optimize = einsum_type)
             T_c_caa -= 1/12 * einsum('Ixab,Jyba,YxyZ->IJYZ', t1_xaee_ab, t1_xaee_ba, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee_ab, t1_xaee_ba)
 
         T[:, s_caa__aaa:f_caa__aaa] += T_c_caa.reshape(ncvs, -1)
@@ -12441,9 +12844,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_caa -= 1/2 * einsum('iIxa,iJxa,YZ->IJYZ', t1_vxae, t1_vxae, rdm_ca, optimize = einsum_type)
         T_c_caa += 1/4 * einsum('iIxa,iJya,YyZx->IJYZ', t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee_ab = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -12451,11 +12855,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_caa -= 1/2 * einsum('Iiab,Jiab,YZ->IJYZ', t1_xxee_ab, t1_xxee_ab, rdm_ca, optimize = einsum_type)
             T_c_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_xxee_ab, t1_xxee_ba, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee_ab, t1_xxee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 3)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee_ab = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -12463,11 +12870,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_caa -= 1/2 * einsum('Iiab,Jiab,YZ->IJYZ', t1_xvee_ab, t1_xvee_ab, rdm_ca, optimize = einsum_type)
             T_c_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_xvee_ab, t1_xvee_ba, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee_ab, t1_xvee_ba)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee_ab = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -12477,6 +12887,8 @@ def compute_trans_moments(mr_adc, U):
             T_c_caa -= 1/4 * einsum('Ixab,Jyab,YxZy->IJYZ', t1_xaee_ab, t1_xaee_ab, rdm_ccaa, optimize = einsum_type)
             T_c_caa += 1/6 * einsum('Ixab,Jyba,YxZy->IJYZ', t1_xaee_ab, t1_xaee_ba, rdm_ccaa, optimize = einsum_type)
             T_c_caa += 1/12 * einsum('Ixab,Jyba,YxyZ->IJYZ', t1_xaee_ab, t1_xaee_ba, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee_ab, t1_xaee_ba)
 
         T[:, s_caa__abb:f_caa__abb] += T_c_caa.reshape(ncvs, -1)
@@ -12606,9 +13018,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_caa += 1/12 * einsum('iIxa,Jiya,YyZx->IJYZ', t1_vxae, t1_xvae, rdm_ccaa, optimize = einsum_type)
         T_c_caa += 1/6 * einsum('iIxa,Jiya,YyxZ->IJYZ', t1_vxae, t1_xvae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee_ab = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -12617,11 +13030,17 @@ def compute_trans_moments(mr_adc, U):
             T_c_caa += 1/4 * einsum('IZab,Jxba,Yx->IJYZ', t1_xaee_ab, t1_xaee_ba, rdm_ca, optimize = einsum_type)
             T_c_caa -= 1/12 * einsum('Ixab,Jyba,YxZy->IJYZ', t1_xaee_ab, t1_xaee_ba, rdm_ccaa, optimize = einsum_type)
             T_c_caa -= 1/6 * einsum('Ixab,Jyba,YxyZ->IJYZ', t1_xaee_ab, t1_xaee_ba, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee_ab, t1_xaee_ba)
 
         T[:, s_caa__bab:f_caa__bab] += T_c_caa.reshape(ncvs, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 C-CAA", *cput1)
+
     def compute_T__q2_h1__C_CCE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -12656,9 +13075,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_cce += 1/2 * einsum('KJxB,Iyxz,yz->IJKB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_c_cce -= 1/4 * einsum('KJxB,Iyzx,yz->IJKB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -12673,6 +13093,8 @@ def compute_trans_moments(mr_adc, U):
             T_c_cce -= 1/4 * einsum('JKBa,Ixya,xy->IJKB', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
             T_c_cce -= 1/2 * einsum('KJBa,Ixay,xy->IJKB', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
             T_c_cce += 1/4 * einsum('KJBa,Ixya,xy->IJKB', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xe, t1_xxee, t1_xaae, t1_xaea)
 
         T[:, s_cce__aaa:f_cce__aaa] += T_c_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncvs, -1)
@@ -12682,8 +13104,9 @@ def compute_trans_moments(mr_adc, U):
         T_c_cce -= 1/2 * einsum('JKxB,Iyxz,yz->IJKB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_c_cce += 1/4 * einsum('JKxB,Iyzx,yz->IJKB', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -12695,11 +13118,17 @@ def compute_trans_moments(mr_adc, U):
             T_c_cce -= 1/2 * einsum('KJBa,Ia->IJKB', t1_xxee, t1_xe, optimize = einsum_type)
             T_c_cce -= 1/2 * einsum('KJBa,Ixay,xy->IJKB', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
             T_c_cce += 1/4 * einsum('KJBa,Ixya,xy->IJKB', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xe, t1_xxee, t1_xaae, t1_xaea)
 
         T[:, s_cce__abb:f_cce__abb] += T_c_cce.reshape(ncvs, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 C-CCE", *cput1)
+
     def compute_T__q2_h1__C_CAE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -12763,9 +13192,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_cae += 1/2 * einsum('iJxB,Iiyx,Yy->IJYB', t1_vxae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T_c_cae -= 1/4 * einsum('iJxB,Iiyz,Yxyz->IJYB', t1_vxae, t1_xvaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -12776,11 +13206,14 @@ def compute_trans_moments(mr_adc, U):
             T_c_cae -= 1/4 * einsum('JiBa,iIxa,Yx->IJYB', t1_xxee, t1_xxae, rdm_ca, optimize = einsum_type)
             T_c_cae -= 1/4 * einsum('iJBa,Iixa,Yx->IJYB', t1_xxee, t1_xxae, rdm_ca, optimize = einsum_type)
             T_c_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_xxee, t1_xxae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xxae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -12790,10 +13223,13 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cae += 1/2 * einsum('JiBa,Iixa,Yx->IJYB', t1_xvee, t1_xvae, rdm_ca, optimize = einsum_type)
             T_c_cae -= 1/4 * einsum('JiBa,iIxa,Yx->IJYB', t1_xvee, t1_vxae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee, t1_xvae, t1_vxae)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -12803,11 +13239,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cae -= 1/4 * einsum('iJBa,Iixa,Yx->IJYB', t1_vxee, t1_xvae, rdm_ca, optimize = einsum_type)
             T_c_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_vxee, t1_vxae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_xvae, t1_vxae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -12827,6 +13266,8 @@ def compute_trans_moments(mr_adc, U):
             T_c_cae -= 1/4 * einsum('JxaB,Iyaz,Yyxz->IJYB', t1_xaee, t1_xaea, rdm_ccaa, optimize = einsum_type)
             T_c_cae += 1/12 * einsum('JxaB,Iyza,Yyxz->IJYB', t1_xaee, t1_xaae, rdm_ccaa, optimize = einsum_type)
             T_c_cae -= 1/12 * einsum('JxaB,Iyza,Yyzx->IJYB', t1_xaee, t1_xaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xe, t1_xaee, t1_xaae, t1_xaea)
 
         T[:, s_cae__aaa:f_cae__aaa] += T_c_cae.reshape(ncvs, -1)
@@ -12850,9 +13291,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_cae += 1/6 * einsum('JxyB,Izwy,Yzxw->IJYB', t1_xaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_c_cae -= 1/4 * einsum('JxyB,Izyw,Yzxw->IJYB', t1_xaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -12860,11 +13302,14 @@ def compute_trans_moments(mr_adc, U):
             t1_xxae = mr_adc.t1.xxae[:,:,:,s_chunk:f_chunk]
 
             T_c_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_xxee, t1_xxae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xxae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -12872,11 +13317,14 @@ def compute_trans_moments(mr_adc, U):
             t1_vxae = mr_adc.t1.vxae[:,:,:,s_chunk:f_chunk]
 
             T_c_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_vxee, t1_vxae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_vxae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -12889,6 +13337,8 @@ def compute_trans_moments(mr_adc, U):
             T_c_cae -= 1/4 * einsum('JxaB,Iyaz,Yyxz->IJYB', t1_xaee, t1_xaea, rdm_ccaa, optimize = einsum_type)
             T_c_cae += 1/6 * einsum('JxaB,Iyza,Yyxz->IJYB', t1_xaee, t1_xaae, rdm_ccaa, optimize = einsum_type)
             T_c_cae += 1/12 * einsum('JxaB,Iyza,Yyzx->IJYB', t1_xaee, t1_xaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xe, t1_xaee, t1_xaae, t1_xaea)
 
         T[:, s_cae__abb:f_cae__abb] += T_c_cae.reshape(ncvs, -1)
@@ -12922,9 +13372,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_cae += 1/2 * einsum('iJxB,Iiyx,Yy->IJYB', t1_vxae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T_c_cae -= 1/4 * einsum('iJxB,Iiyz,Yxyz->IJYB', t1_vxae, t1_xvaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -12934,11 +13385,14 @@ def compute_trans_moments(mr_adc, U):
             T_c_cae += 1/2 * einsum('JiBa,Iixa,Yx->IJYB', t1_xxee, t1_xxae, rdm_ca, optimize = einsum_type)
             T_c_cae -= 1/4 * einsum('JiBa,iIxa,Yx->IJYB', t1_xxee, t1_xxae, rdm_ca, optimize = einsum_type)
             T_c_cae -= 1/4 * einsum('iJBa,Iixa,Yx->IJYB', t1_xxee, t1_xxae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xxae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -12948,22 +13402,27 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cae += 1/2 * einsum('JiBa,Iixa,Yx->IJYB', t1_xvee, t1_xvae, rdm_ca, optimize = einsum_type)
             T_c_cae -= 1/4 * einsum('JiBa,iIxa,Yx->IJYB', t1_xvee, t1_vxae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee, t1_xvae, t1_vxae)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
-
             t1_xvae = mr_adc.t1.xvae[:,:,:,s_chunk:f_chunk]
 
             T_c_cae -= 1/4 * einsum('iJBa,Iixa,Yx->IJYB', t1_vxee, t1_xvae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_xvae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -12981,11 +13440,17 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cae -= 1/12 * einsum('JxaB,Iyza,Yyxz->IJYB', t1_xaee, t1_xaae, rdm_ccaa, optimize = einsum_type)
             T_c_cae -= 1/6 * einsum('JxaB,Iyza,Yyzx->IJYB', t1_xaee, t1_xaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xe, t1_xaee, t1_xaae, t1_xaea)
 
         T[:, s_cae__bab:f_cae__bab] += T_c_cae.reshape(ncvs, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 C-CAE", *cput1)
+
     def compute_T__q2_h1__C_CCA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -13072,10 +13537,11 @@ def compute_trans_moments(mr_adc, U):
         T_c_cca += 1/12 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_xaaa, t1_xxaa, rdm_ccaa, optimize = einsum_type)
         T_c_cca -= 1/4 * einsum('Ixyz,JKzy,Yx->IJKY', t1_xaaa, t1_xxaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -13089,6 +13555,8 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cca += 1/2 * einsum('IYab,JKba->IJKY', t1_xaee, t1_xxee, optimize = einsum_type)
             T_c_cca -= 1/4 * einsum('Ixab,JKba,Yx->IJKY', t1_xaee, t1_xxee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee t1.xaee", *cput2)
         del(t1_xxee, t1_xaee)
 
         T[:, s_cca__aaa:f_cca__aaa] += T_c_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncvs, -1)
@@ -13123,10 +13591,11 @@ def compute_trans_moments(mr_adc, U):
         T_c_cca -= 1/6 * einsum('Ixyz,JKzw,Yywx->IJKY', t1_xaaa, t1_xxaa, rdm_ccaa, optimize = einsum_type)
         T_c_cca -= 1/12 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_xaaa, t1_xxaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -13134,11 +13603,17 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cca -= 1/2 * einsum('IYab,JKab->IJKY', t1_xaee, t1_xxee, optimize = einsum_type)
             T_c_cca += 1/4 * einsum('Ixab,JKab,Yx->IJKY', t1_xaee, t1_xxee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee t1.xaee", *cput2)
         del(t1_xxee, t1_xaee)
 
         T[:, s_cca__abb:f_cca__abb] += T_c_cca.reshape(ncvs, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 C-CCA", *cput1)
+
     def compute_T__q2_h1__C_CVE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -13173,9 +13648,10 @@ def compute_trans_moments(mr_adc, U):
         T_c_cve += 1/2 * einsum('KJxB,Iyxz,yz->IJKB', t1_vxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_c_cve -= 1/4 * einsum('KJxB,Iyzx,yz->IJKB', t1_vxae, t1_xaaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -13187,10 +13663,13 @@ def compute_trans_moments(mr_adc, U):
             T_c_cve += 1/2 * einsum('JKBa,Ia->IJKB', t1_xvee, t1_xe, optimize = einsum_type)
             T_c_cve += 1/2 * einsum('JKBa,Ixay,xy->IJKB', t1_xvee, t1_xaea, rdm_ca, optimize = einsum_type)
             T_c_cve -= 1/4 * einsum('JKBa,Ixya,xy->IJKB', t1_xvee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xe, t1_xvee, t1_xaae, t1_xaea)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -13202,6 +13681,8 @@ def compute_trans_moments(mr_adc, U):
             T_c_cve -= 1/2 * einsum('KJBa,Ia->IJKB', t1_vxee, t1_xe, optimize = einsum_type)
             T_c_cve -= 1/2 * einsum('KJBa,Ixay,xy->IJKB', t1_vxee, t1_xaea, rdm_ca, optimize = einsum_type)
             T_c_cve += 1/4 * einsum('KJBa,Ixya,xy->IJKB', t1_vxee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_xe, t1_vxee, t1_xaae, t1_xaea)
 
         T[:, s_cve__aaa:f_cve__aaa] += T_c_cve.reshape(ncvs, -1)
@@ -13211,8 +13692,9 @@ def compute_trans_moments(mr_adc, U):
         T_c_cve -= 1/2 * einsum('JKxB,Iyxz,yz->IJKB', t1_xvae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_c_cve += 1/4 * einsum('JKxB,Iyzx,yz->IJKB', t1_xvae, t1_xaaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -13224,6 +13706,8 @@ def compute_trans_moments(mr_adc, U):
             T_c_cve -= 1/2 * einsum('KJBa,Ia->IJKB', t1_vxee, t1_xe, optimize = einsum_type)
             T_c_cve -= 1/2 * einsum('KJBa,Ixay,xy->IJKB', t1_vxee, t1_xaea, rdm_ca, optimize = einsum_type)
             T_c_cve += 1/4 * einsum('KJBa,Ixya,xy->IJKB', t1_vxee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_xe, t1_vxee, t1_xaae, t1_xaea)
 
         T[:, s_cve__abb:f_cve__abb] += T_c_cve.reshape(ncvs, -1)
@@ -13233,8 +13717,9 @@ def compute_trans_moments(mr_adc, U):
         T_c_cve += 1/2 * einsum('KJxB,Iyxz,yz->IJKB', t1_vxae, t1_xaaa, rdm_ca, optimize = einsum_type)
         T_c_cve -= 1/4 * einsum('KJxB,Iyzx,yz->IJKB', t1_vxae, t1_xaaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -13246,11 +13731,17 @@ def compute_trans_moments(mr_adc, U):
             T_c_cve += 1/2 * einsum('JKBa,Ia->IJKB', t1_xvee, t1_xe, optimize = einsum_type)
             T_c_cve += 1/2 * einsum('JKBa,Ixay,xy->IJKB', t1_xvee, t1_xaea, rdm_ca, optimize = einsum_type)
             T_c_cve -= 1/4 * einsum('JKBa,Ixya,xy->IJKB', t1_xvee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xe, t1_xvee, t1_xaae, t1_xaea)
 
         T[:, s_cve__bab:f_cve__bab] += T_c_cve.reshape(ncvs, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 C-CVE", *cput1)
+
     def compute_T__q2_h1__C_CVA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -13338,10 +13829,11 @@ def compute_trans_moments(mr_adc, U):
         T_c_cva += 1/12 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_xaaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
         T_c_cva -= 1/4 * einsum('Ixyz,JKzy,Yx->IJKY', t1_xaaa, t1_xvaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, nval, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, nval, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -13355,9 +13847,12 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cva -= 1/4 * einsum('Ixab,JKba,Yx->IJKY', t1_xaee, t1_xvee, rdm_ca, optimize = einsum_type)
             T_c_cva += 1/2 * einsum('IYab,JKba->IJKY', t1_xaee, t1_xvee, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee t1.xaee", *cput2)
         del(t1_xvee, t1_xaee)
 
         T[:, s_cva__aaa:f_cva__aaa] += T_c_cva.reshape(ncvs, -1)
+
 
         T_c_cva =- 1/2 * einsum('IYax,KJxa->IJKY', t1_xaea, t1_vxae, optimize = einsum_type)
         T_c_cva -= 1/2 * einsum('IYxa,JKxa->IJKY', t1_xaae, t1_xvae, optimize = einsum_type)
@@ -13388,8 +13883,9 @@ def compute_trans_moments(mr_adc, U):
         T_c_cva -= 1/6 * einsum('Ixyz,JKzw,Yywx->IJKY', t1_xaaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
         T_c_cva -= 1/12 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_xaaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -13397,6 +13893,8 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cva -= 1/2 * einsum('IYab,JKab->IJKY', t1_xaee, t1_xvee, optimize = einsum_type)
             T_c_cva += 1/4 * einsum('Ixab,JKab,Yx->IJKY', t1_xaee, t1_xvee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee t1.xaee", *cput2)
         del(t1_xvee, t1_xaee)
 
         T[:, s_cva__abb:f_cva__abb] += T_c_cva.reshape(ncvs, -1)
@@ -13431,8 +13929,9 @@ def compute_trans_moments(mr_adc, U):
         T_c_cva += 1/6 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_xaaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
         T_c_cva -= 1/4 * einsum('Ixyz,JKzy,Yx->IJKY', t1_xaaa, t1_xvaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -13440,11 +13939,17 @@ def compute_trans_moments(mr_adc, U):
 
             T_c_cva += 1/2 * einsum('IYab,JKba->IJKY', t1_xaee, t1_xvee, optimize = einsum_type)
             T_c_cva -= 1/4 * einsum('Ixab,JKba,Yx->IJKY', t1_xaee, t1_xvee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee t1.xaee", *cput2)
         del(t1_xvee, t1_xaee)
 
         T[:, s_cva__bab:f_cva__bab] += T_c_cva.reshape(ncvs, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 C-CVA", *cput1)
+
     def compute_T__q2_h0__V_C(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -13545,10 +14050,11 @@ def compute_trans_moments(mr_adc, U):
         T_v_c -= 1/4 * einsum('iIxa,Jiya,xy->IJ', t1_vvae, t1_xvae, rdm_ca, optimize = einsum_type)
         T_v_c += 1/2 * einsum('iIxa,iJya,xy->IJ', t1_vvae, t1_vxae, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -13560,12 +14066,15 @@ def compute_trans_moments(mr_adc, U):
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
 
             T_v_c += 1/2 * einsum('Iiab,Jiba->IJ', t1_vxee, t1_xxee, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee t1.vxee", *cput2)
         del(t1_xxee, t1_vxee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, nval, nextern],
-                                                                             [nval, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, nval, nextern],
+                                                                           [nval, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vvee t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vvee = mr_adc.t1.vvee[:,:,s_chunk:f_chunk]
@@ -13577,12 +14086,15 @@ def compute_trans_moments(mr_adc, U):
             t1_vvee = mr_adc.t1.vvee[:,:,:,s_chunk:f_chunk]
 
             T_v_c += 1/2 * einsum('Iiab,Jiba->IJ', t1_vvee, t1_xvee, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vvee t1.xvee", *cput2)
         del(t1_vvee, t1_xvee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [nval, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [nval, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -13594,11 +14106,17 @@ def compute_trans_moments(mr_adc, U):
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
 
             T_v_c += 1/4 * einsum('Ixab,Jyba,xy->IJ', t1_vaee, t1_xaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee t1.vaee", *cput2)
         del(t1_xaee, t1_vaee)
 
         T[:, s_c:f_c] += T_v_c.copy()
 
+        mr_adc.log.timer_debug("computing T q2-h0 V-C", *cput1)
+
     def compute_T__q2_h1__V_CAA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -13794,10 +14312,11 @@ def compute_trans_moments(mr_adc, U):
         T_v_caa -= 1/2 * einsum('iIxa,iJxa,YZ->IJYZ', t1_vvae, t1_vxae, rdm_ca, optimize = einsum_type)
         T_v_caa += 1/4 * einsum('iIxa,iJya,YyZx->IJYZ', t1_vvae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [nval, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [nval, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -13812,12 +14331,15 @@ def compute_trans_moments(mr_adc, U):
             T_v_caa += 1/4 * einsum('IZab,Jxba,Yx->IJYZ', t1_vaee, t1_xaee, rdm_ca, optimize = einsum_type)
             T_v_caa += 1/12 * einsum('Ixab,Jyba,YxZy->IJYZ', t1_vaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
             T_v_caa -= 1/12 * einsum('Ixab,Jyba,YxyZ->IJYZ', t1_vaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee t1.vaee", *cput2)
         del(t1_xaee, t1_vaee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -13829,12 +14351,15 @@ def compute_trans_moments(mr_adc, U):
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
 
             T_v_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_vxee, t1_xxee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee t1.vxee", *cput2)
         del(t1_xxee, t1_vxee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [nval, nval, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [nval, nval, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vvee t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vvee = mr_adc.t1.vvee[:,:,s_chunk:f_chunk]
@@ -13846,6 +14371,8 @@ def compute_trans_moments(mr_adc, U):
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
 
             T_v_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_vvee, t1_xvee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vvee t1.xvee", *cput2)
         del(t1_vvee, t1_xvee)
 
         T[:, s_caa__aaa:f_caa__aaa] += T_v_caa.reshape(nval, -1)
@@ -13974,10 +14501,11 @@ def compute_trans_moments(mr_adc, U):
         T_v_caa -= 1/2 * einsum('iIxa,iJxa,YZ->IJYZ', t1_vvae, t1_vxae, rdm_ca, optimize = einsum_type)
         T_v_caa += 1/4 * einsum('iIxa,iJya,YyZx->IJYZ', t1_vvae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [nval, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [nval, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -13991,12 +14519,15 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_caa += 1/6 * einsum('Ixab,Jyba,YxZy->IJYZ', t1_vaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
             T_v_caa += 1/12 * einsum('Ixab,Jyba,YxyZ->IJYZ', t1_vaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee t1.vaee", *cput2)
         del(t1_xaee, t1_vaee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -14008,12 +14539,15 @@ def compute_trans_moments(mr_adc, U):
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
 
             T_v_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_vxee, t1_xxee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee t1.vxee", *cput2)
         del(t1_xxee, t1_vxee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [nval, nval, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [nval, nval, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vvee t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vvee = mr_adc.t1.vvee[:,:,s_chunk:f_chunk]
@@ -14025,6 +14559,8 @@ def compute_trans_moments(mr_adc, U):
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
 
             T_v_caa += 1/4 * einsum('Iiab,Jiba,YZ->IJYZ', t1_vvee, t1_xvee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vvee t1.xvee", *cput2)
         del(t1_vvee, t1_xvee)
 
         T[:, s_caa__abb:f_caa__abb] += T_v_caa.reshape(nval, -1)
@@ -14154,10 +14690,11 @@ def compute_trans_moments(mr_adc, U):
         T_v_caa += 1/12 * einsum('iIxa,Jiya,YyZx->IJYZ', t1_vvae, t1_xvae, rdm_ccaa, optimize = einsum_type)
         T_v_caa += 1/6 * einsum('iIxa,Jiya,YyxZ->IJYZ', t1_vvae, t1_xvae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [nval, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [nval, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -14167,9 +14704,15 @@ def compute_trans_moments(mr_adc, U):
             T_v_caa -= 1/12 * einsum('Ixab,Jyba,YxZy->IJYZ', t1_vaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
             T_v_caa -= 1/6 * einsum('Ixab,Jyba,YxyZ->IJYZ', t1_vaee, t1_xaee, rdm_ccaa, optimize = einsum_type)
 
+            mr_adc.log.timer_debug("contracting t1.xaee t1.vaee", *cput2)
+
         T[:, s_caa__bab:f_caa__bab] += T_v_caa.reshape(nval, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 V-CAA", *cput1)
+
     def compute_T__q2_h1__V_CCE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -14205,9 +14748,10 @@ def compute_trans_moments(mr_adc, U):
         T_v_cce += 1/2 * einsum('KJxB,Iyxz,yz->IJKB', t1_xxae, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_v_cce -= 1/4 * einsum('KJxB,Iyzx,yz->IJKB', t1_xxae, t1_vaaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ve = mr_adc.t1.ve[:,s_chunk:f_chunk]
@@ -14222,6 +14766,8 @@ def compute_trans_moments(mr_adc, U):
             T_v_cce -= 1/4 * einsum('JKBa,Ixya,xy->IJKB', t1_xxee, t1_vaae, rdm_ca, optimize = einsum_type)
             T_v_cce -= 1/2 * einsum('KJBa,Ixay,xy->IJKB', t1_xxee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_v_cce += 1/4 * einsum('KJBa,Ixya,xy->IJKB', t1_xxee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_ve, t1_xxee, t1_vaae, t1_vaea)
 
         T[:, s_cce__aaa:f_cce__aaa] += T_v_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nval, -1)
@@ -14231,8 +14777,9 @@ def compute_trans_moments(mr_adc, U):
         T_v_cce -= 1/2 * einsum('JKxB,Iyxz,yz->IJKB', t1_xxae, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_v_cce += 1/4 * einsum('JKxB,Iyzx,yz->IJKB', t1_xxae, t1_vaaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ve = mr_adc.t1.ve[:,s_chunk:f_chunk]
@@ -14244,11 +14791,17 @@ def compute_trans_moments(mr_adc, U):
             T_v_cce -= 1/2 * einsum('KJBa,Ia->IJKB', t1_xxee, t1_ve, optimize = einsum_type)
             T_v_cce -= 1/2 * einsum('KJBa,Ixay,xy->IJKB', t1_xxee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_v_cce += 1/4 * einsum('KJBa,Ixya,xy->IJKB', t1_xxee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_ve, t1_xxee, t1_vaae, t1_vaea)
 
         T[:, s_cce__abb:f_cce__abb] += T_v_cce.reshape(nval, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 V-CCE", *cput1)
+
     def compute_T__q2_h1__V_CAE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -14311,9 +14864,10 @@ def compute_trans_moments(mr_adc, U):
         T_v_cae += 1/2 * einsum('iJxB,Iiyx,Yy->IJYB', t1_vxae, t1_vvaa, rdm_ca, optimize = einsum_type)
         T_v_cae -= 1/4 * einsum('iJxB,Iiyz,Yxyz->IJYB', t1_vxae, t1_vvaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -14325,11 +14879,14 @@ def compute_trans_moments(mr_adc, U):
             T_v_cae -= 1/4 * einsum('JiBa,iIxa,Yx->IJYB', t1_xxee, t1_xvae, rdm_ca, optimize = einsum_type)
             T_v_cae -= 1/4 * einsum('iJBa,Iixa,Yx->IJYB', t1_xxee, t1_vxae, rdm_ca, optimize = einsum_type)
             T_v_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_xxee, t1_xvae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xvae, t1_vxae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -14338,10 +14895,13 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cae += 1/2 * einsum('JiBa,Iixa,Yx->IJYB', t1_xvee, t1_vvae, rdm_ca, optimize = einsum_type)
             T_v_cae -= 1/4 * einsum('JiBa,iIxa,Yx->IJYB', t1_xvee, t1_vvae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee, t1_vvae)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -14350,11 +14910,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cae -= 1/4 * einsum('iJBa,Iixa,Yx->IJYB', t1_vxee, t1_vvae, rdm_ca, optimize = einsum_type)
             T_v_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_vxee, t1_vvae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_vvae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -14374,6 +14937,8 @@ def compute_trans_moments(mr_adc, U):
             T_v_cae -= 1/4 * einsum('JxaB,Iyaz,Yyxz->IJYB', t1_xaee, t1_vaea, rdm_ccaa, optimize = einsum_type)
             T_v_cae += 1/12 * einsum('JxaB,Iyza,Yyxz->IJYB', t1_xaee, t1_vaae, rdm_ccaa, optimize = einsum_type)
             T_v_cae -= 1/12 * einsum('JxaB,Iyza,Yyzx->IJYB', t1_xaee, t1_vaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ve, t1_vaae, t1_vaea)
 
         T[:, s_cae__aaa:f_cae__aaa] += T_v_cae.reshape(nval, -1)
@@ -14395,9 +14960,10 @@ def compute_trans_moments(mr_adc, U):
         T_v_cae += 1/6 * einsum('JxyB,Izwy,Yzxw->IJYB', t1_xaae, t1_vaaa, rdm_ccaa, optimize = einsum_type)
         T_v_cae -= 1/4 * einsum('JxyB,Izyw,Yzxw->IJYB', t1_xaae, t1_vaaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -14405,11 +14971,14 @@ def compute_trans_moments(mr_adc, U):
             t1_xvae = mr_adc.t1.xvae[:,:,:,s_chunk:f_chunk]
 
             T_v_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_xxee, t1_xvae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xvae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -14417,11 +14986,14 @@ def compute_trans_moments(mr_adc, U):
             t1_vvae = mr_adc.t1.vvae[:,:,:,s_chunk:f_chunk]
 
             T_v_cae += 1/4 * einsum('iJBa,iIxa,Yx->IJYB', t1_vxee, t1_vvae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_vvae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -14434,6 +15006,8 @@ def compute_trans_moments(mr_adc, U):
             T_v_cae -= 1/4 * einsum('JxaB,Iyaz,Yyxz->IJYB', t1_xaee, t1_vaea, rdm_ccaa, optimize = einsum_type)
             T_v_cae += 1/6 * einsum('JxaB,Iyza,Yyxz->IJYB', t1_xaee, t1_vaae, rdm_ccaa, optimize = einsum_type)
             T_v_cae += 1/12 * einsum('JxaB,Iyza,Yyzx->IJYB', t1_xaee, t1_vaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ve, t1_vaae, t1_vaea)
 
         T[:, s_cae__abb:f_cae__abb] += T_v_cae.reshape(nval, -1)
@@ -14464,9 +15038,10 @@ def compute_trans_moments(mr_adc, U):
         T_v_cae += 1/2 * einsum('iJxB,Iiyx,Yy->IJYB', t1_vxae, t1_vvaa, rdm_ca, optimize = einsum_type)
         T_v_cae -= 1/4 * einsum('iJxB,Iiyz,Yxyz->IJYB', t1_vxae, t1_vvaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -14477,11 +15052,14 @@ def compute_trans_moments(mr_adc, U):
             T_v_cae += 1/2 * einsum('JiBa,Iixa,Yx->IJYB', t1_xxee, t1_vxae, rdm_ca, optimize = einsum_type)
             T_v_cae -= 1/4 * einsum('JiBa,iIxa,Yx->IJYB', t1_xxee, t1_xvae, rdm_ca, optimize = einsum_type)
             T_v_cae -= 1/4 * einsum('iJBa,Iixa,Yx->IJYB', t1_xxee, t1_vxae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xvae, t1_vxae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -14490,10 +15068,13 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cae += 1/2 * einsum('JiBa,Iixa,Yx->IJYB', t1_xvee, t1_vvae, rdm_ca, optimize = einsum_type)
             T_v_cae -= 1/4 * einsum('JiBa,iIxa,Yx->IJYB', t1_xvee, t1_vvae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee, t1_vvae)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -14501,11 +15082,14 @@ def compute_trans_moments(mr_adc, U):
             t1_vvae = mr_adc.t1.vvae[:,:,:,s_chunk:f_chunk]
 
             T_v_cae -= 1/4 * einsum('iJBa,Iixa,Yx->IJYB', t1_vxee, t1_vvae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_vvae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -14523,11 +15107,17 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cae -= 1/12 * einsum('JxaB,Iyza,Yyxz->IJYB', t1_xaee, t1_vaae, rdm_ccaa, optimize = einsum_type)
             T_v_cae -= 1/6 * einsum('JxaB,Iyza,Yyzx->IJYB', t1_xaee, t1_vaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ve, t1_vaae, t1_vaea)
 
         T[:, s_cae__bab:f_cae__bab] += T_v_cae.reshape(nval, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 V-CAE", *cput1)
+
     def compute_T__q2_h1__V_CCA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -14614,10 +15204,11 @@ def compute_trans_moments(mr_adc, U):
         T_v_cca += 1/12 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_vaaa, t1_xxaa, rdm_ccaa, optimize = einsum_type)
         T_v_cca -= 1/4 * einsum('Ixyz,JKzy,Yx->IJKY', t1_vaaa, t1_xxaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [nval, ncas, nextern],
-                                                                             [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [nval, ncas, nextern],
+                                                                           [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vaee t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -14631,6 +15222,8 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cca += 1/2 * einsum('IYab,JKba->IJKY', t1_vaee, t1_xxee, optimize = einsum_type)
             T_v_cca -= 1/4 * einsum('Ixab,JKba,Yx->IJKY', t1_vaee, t1_xxee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vaee t1.xxee", *cput2)
         del(t1_vaee, t1_xxee)
 
         T[:, s_cca__aaa:f_cca__aaa] += T_v_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nval, -1)
@@ -14664,8 +15257,9 @@ def compute_trans_moments(mr_adc, U):
         T_v_cca -= 1/6 * einsum('Ixyz,JKzw,Yywx->IJKY', t1_vaaa, t1_xxaa, rdm_ccaa, optimize = einsum_type)
         T_v_cca -= 1/12 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_vaaa, t1_xxaa, rdm_ccaa, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vaee t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -14673,11 +15267,17 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cca -= 1/2 * einsum('IYab,JKab->IJKY', t1_vaee, t1_xxee, optimize = einsum_type)
             T_v_cca += 1/4 * einsum('Ixab,JKab,Yx->IJKY', t1_vaee, t1_xxee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vaee t1.xxee", *cput2)
         del(t1_vaee, t1_xxee)
 
         T[:, s_cca__abb:f_cca__abb] += T_v_cca.reshape(nval, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 V-CCA", *cput1)
+
     def compute_T__q2_h1__V_CVE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -14713,9 +15313,10 @@ def compute_trans_moments(mr_adc, U):
         T_v_cve += 1/2 * einsum('KJxB,Iyxz,yz->IJKB', t1_vxae, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_v_cve -= 1/4 * einsum('KJxB,Iyzx,yz->IJKB', t1_vxae, t1_vaaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -14727,10 +15328,13 @@ def compute_trans_moments(mr_adc, U):
             T_v_cve += 1/2 * einsum('JKBa,Ia->IJKB', t1_xvee, t1_ve, optimize = einsum_type)
             T_v_cve += 1/2 * einsum('JKBa,Ixay,xy->IJKB', t1_xvee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_v_cve -= 1/4 * einsum('JKBa,Ixya,xy->IJKB', t1_xvee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee, t1_ve, t1_vaae, t1_vaea)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -14742,16 +15346,20 @@ def compute_trans_moments(mr_adc, U):
             T_v_cve -= 1/2 * einsum('KJBa,Ia->IJKB', t1_vxee, t1_ve, optimize = einsum_type)
             T_v_cve -= 1/2 * einsum('KJBa,Ixay,xy->IJKB', t1_vxee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_v_cve += 1/4 * einsum('KJBa,Ixya,xy->IJKB', t1_vxee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_ve, t1_vaae, t1_vaea)
 
         T[:, s_cve__aaa:f_cve__aaa] += T_v_cve.reshape(nval, -1)
+
 
         T_v_cve =- 1/2 * einsum('JKxB,Ix->IJKB', t1_xvae, t1_va, optimize = einsum_type)
         T_v_cve -= 1/2 * einsum('JKxB,Iyxz,yz->IJKB', t1_xvae, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_v_cve += 1/4 * einsum('JKxB,Iyzx,yz->IJKB', t1_xvae, t1_vaaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -14763,16 +15371,20 @@ def compute_trans_moments(mr_adc, U):
             T_v_cve -= 1/2 * einsum('KJBa,Ia->IJKB', t1_vxee, t1_ve, optimize = einsum_type)
             T_v_cve -= 1/2 * einsum('KJBa,Ixay,xy->IJKB', t1_vxee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_v_cve += 1/4 * einsum('KJBa,Ixya,xy->IJKB', t1_vxee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_ve, t1_vaae, t1_vaea)
 
         T[:, s_cve__abb:f_cve__abb] += T_v_cve.reshape(nval, -1)
+
 
         T_v_cve  = 1/2 * einsum('KJxB,Ix->IJKB', t1_vxae, t1_va, optimize = einsum_type)
         T_v_cve += 1/2 * einsum('KJxB,Iyxz,yz->IJKB', t1_vxae, t1_vaaa, rdm_ca, optimize = einsum_type)
         T_v_cve -= 1/4 * einsum('KJxB,Iyzx,yz->IJKB', t1_vxae, t1_vaaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -14784,11 +15396,17 @@ def compute_trans_moments(mr_adc, U):
             T_v_cve += 1/2 * einsum('JKBa,Ia->IJKB', t1_xvee, t1_ve, optimize = einsum_type)
             T_v_cve += 1/2 * einsum('JKBa,Ixay,xy->IJKB', t1_xvee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_v_cve -= 1/4 * einsum('JKBa,Ixya,xy->IJKB', t1_xvee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee, t1_ve, t1_vaae, t1_vaea)
 
         T[:, s_cve__bab:f_cve__bab] += T_v_cve.reshape(nval, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 V-CVE", *cput1)
+
     def compute_T__q2_h1__V_CVA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -14875,10 +15493,11 @@ def compute_trans_moments(mr_adc, U):
         T_v_cva += 1/12 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_vaaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
         T_v_cva -= 1/4 * einsum('Ixyz,JKzy,Yx->IJKY', t1_vaaa, t1_xvaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [nval, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [nval, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vaee t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -14892,6 +15511,8 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cva += 1/2 * einsum('IYab,JKba->IJKY', t1_vaee, t1_xvee, optimize = einsum_type)
             T_v_cva -= 1/4 * einsum('Ixab,JKba,Yx->IJKY', t1_vaee, t1_xvee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vaee t1.xvee", *cput2)
         del(t1_vaee, t1_xvee)
 
         T[:, s_cva__aaa:f_cva__aaa] += T_v_cva.reshape(nval, -1)
@@ -14926,8 +15547,9 @@ def compute_trans_moments(mr_adc, U):
         T_v_cva -= 1/6 * einsum('Ixyz,JKzw,Yywx->IJKY', t1_vaaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
         T_v_cva -= 1/12 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_vaaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vaee t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -14935,6 +15557,8 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cva -= 1/2 * einsum('IYab,JKab->IJKY', t1_vaee, t1_xvee, optimize = einsum_type)
             T_v_cva += 1/4 * einsum('Ixab,JKab,Yx->IJKY', t1_vaee, t1_xvee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vaee t1.xvee", *cput2)
         del(t1_vaee, t1_xvee)
 
         T[:, s_cva__abb:f_cva__abb] += T_v_cva.reshape(nval, -1)
@@ -14969,8 +15593,9 @@ def compute_trans_moments(mr_adc, U):
         T_v_cva += 1/6 * einsum('Ixyz,JKzw,Yyxw->IJKY', t1_vaaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
         T_v_cva -= 1/4 * einsum('Ixyz,JKzy,Yx->IJKY', t1_vaaa, t1_xvaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vaee t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -14978,11 +15603,17 @@ def compute_trans_moments(mr_adc, U):
 
             T_v_cva += 1/2 * einsum('IYab,JKba->IJKY', t1_vaee, t1_xvee, optimize = einsum_type)
             T_v_cva -= 1/4 * einsum('Ixab,JKba,Yx->IJKY', t1_vaee, t1_xvee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vaee t1.xvee", *cput2)
         del(t1_vaee, t1_xvee)
 
         T[:, s_cva__bab:f_cva__bab] += T_v_cva.reshape(nval, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 V-CVA", *cput1)
+
     def compute_T__q1_h0__A_C(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -15005,7 +15636,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_c -= 1/2 * einsum('JxyX,xy->XJ', t1_xaaa, rdm_ca, optimize = einsum_type)
         T[:, s_c:f_c] = T_a_c.copy()
 
+        mr_adc.log.timer_debug("computing T q1-h0 A-C", *cput1)
+
     def compute_T__q1_h1__A_CAA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -15051,7 +15686,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_caa += 1/3 * einsum('JxyX,YyxZ->XJYZ', t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T[:, s_caa__bab:f_caa__bab] += T_a_caa.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q1-h1 A-CAA", *cput1)
+
     def compute_T__q1_h1__A_CCE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -15080,7 +15719,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_cce  = einsum('JKXB->XJKB', t1_xxae, optimize = einsum_type).copy()
         T[:, s_cce__abb:f_cce__abb] += T_a_cce.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q1-h1 A-CCE", *cput1)
+
     def compute_T__q1_h1__A_CAE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -15114,7 +15757,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_cae =- 1/2 * einsum('JxBX,Yx->XJYB', t1_xaea, rdm_ca, optimize = einsum_type)
         T[:, s_cae__bab:f_cae__bab] += T_a_cae.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q1-h1 A-CAE", *cput1)
+
     def compute_T__q1_h1__A_CCA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -15149,7 +15796,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_cca -= 1/2 * einsum('JKXx,Yx->XJKY', t1_xxaa, rdm_ca, optimize = einsum_type)
         T[:, s_cca__abb:f_cca__abb] += T_a_cca.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q1-h1 A-CCA", *cput1)
+
     def compute_T__q1_h1__A_CVE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -15180,7 +15831,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_cve =- einsum('KJXB->XJKB', t1_vxae, optimize = einsum_type).copy()
         T[:, s_cve__bab:f_cve__bab] += T_a_cve.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q1-h1 A-CVE", *cput1)
+
     def compute_T__q1_h1__A_CVA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -15217,7 +15872,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_cva += 1/2 * einsum('JKxX,Yx->XJKY', t1_xvaa, rdm_ca, optimize = einsum_type)
         T[:, s_cva__bab:f_cva__bab] += T_a_cva.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q1-h1 A-CVA", *cput1)
+
     def compute_T__q2_h0__A_C(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -15346,10 +16005,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_c -= 1/4 * einsum('iJxa,iXay,xy->XJ', t1_vxae, t1_vaea, rdm_ca, optimize = einsum_type)
         T_a_c += 1/2 * einsum('iJxa,iXya,xy->XJ', t1_vxae, t1_vaae, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -15357,8 +16017,11 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_c += 1/2 * einsum('Jiab,iXab->XJ', t1_xxee, t1_xaee, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting t1.xxee t1.xaee", *cput2)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -15366,10 +16029,13 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_c -= einsum('Jiab,iXba->XJ', t1_xxee, t1_xaee, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, nval, nextern],
-                                                                             [nval, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting t1.xxee t1.xaee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, nval, nextern],
+                                                                           [nval, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -15377,20 +16043,26 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_c += 1/2 * einsum('Jiab,iXab->XJ', t1_xvee, t1_vaee, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting t1.xvee t1.vaee", *cput2)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
             t1_vaee = mr_adc.t1.vaee[:,:,:,s_chunk:f_chunk]
 
             T_a_c -= einsum('Jiab,iXba->XJ', t1_xvee, t1_vaee, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee t1.vaee", *cput2)
         del(t1_xvee, t1_vaee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -15398,483 +16070,28 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_c -= 1/2 * einsum('Jxab,Xyab,xy->XJ', t1_xaee, t1_aaee, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting t1.xaee t1.aaee", *cput2)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
             t1_aaee = mr_adc.t1.aaee[:,:,:,s_chunk:f_chunk]
 
             T_a_c += 1/4 * einsum('Jxab,Xyba,xy->XJ', t1_xaee, t1_aaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee t1.aaee", *cput2)
         del(t1_xaee, t1_aaee)
 
         T[:, s_c:f_c] += T_a_c.copy()
 
-    def compute_T__q1_h0__E_C(mr_adc, T):
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Amplitudes
-        t1_xe = mr_adc.t1.xe
-
-        t1_xaea = mr_adc.t1.xaea
-        t1_xaae = mr_adc.t1.xaae
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        ## Excitation Manifolds
-        s_c = mr_adc.h0.s_c
-        f_c = mr_adc.h0.f_c
-
-        T_e_c  = einsum('JA->AJ', t1_xe, optimize = einsum_type).copy()
-        T_e_c += einsum('JxAy,yx->AJ', t1_xaea, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t1_xaae, rdm_ca, optimize = einsum_type)
-        T[:, s_c:f_c] = T_e_c.copy()
-
-    def compute_T__q1_h1__E_CAA(mr_adc, T):
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Variables from kernel
-        nextern = mr_adc.nextern
-
-        # Amplitudes
-        t1_xe = mr_adc.t1.xe
-
-        t1_xaea = mr_adc.t1.xaea
-        t1_xaae = mr_adc.t1.xaae
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-        rdm_ccaa = mr_adc.rdm.ccaa
-
-        ## Excitation Manifolds
-        s_caa__aaa = mr_adc.h1.s_caa__aaa
-        f_caa__aaa = mr_adc.h1.f_caa__aaa
-        s_caa__abb = mr_adc.h1.s_caa__abb
-        f_caa__abb = mr_adc.h1.f_caa__abb
-        s_caa__bab = mr_adc.h1.s_caa__bab
-        f_caa__bab = mr_adc.h1.f_caa__bab
-
-        T_e_caa  = 1/2 * einsum('JA,YZ->AJYZ', t1_xe, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t1_xaea, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t1_xaea, rdm_ccaa, optimize = einsum_type)
-        T_e_caa -= 1/2 * einsum('JxZA,Yx->AJYZ', t1_xaae, rdm_ca, optimize = einsum_type)
-        T_e_caa -= 1/6 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
-        T_e_caa += 1/6 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
-        T[:, s_caa__aaa:f_caa__aaa] += T_e_caa.reshape(nextern, -1)
-
-        T_e_caa  = 1/2 * einsum('JA,YZ->AJYZ', t1_xe, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t1_xaea, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t1_xaea, rdm_ccaa, optimize = einsum_type)
-        T_e_caa -= 1/3 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
-        T_e_caa -= 1/6 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
-        T[:, s_caa__abb:f_caa__abb] += T_e_caa.reshape(nextern, -1)
-
-        T_e_caa =- 1/2 * einsum('JxZA,Yx->AJYZ', t1_xaae, rdm_ca, optimize = einsum_type)
-        T_e_caa += 1/6 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
-        T_e_caa += 1/3 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
-        T[:, s_caa__bab:f_caa__bab] += T_e_caa.reshape(nextern, -1)
-
-    def compute_T__q1_h1__E_CCE(mr_adc, T):
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        nocc = mr_adc.nocc
-        nextern = mr_adc.nextern
-
-        ## Excitation Manifolds
-        s_cce__aaa = mr_adc.h1.s_cce__aaa
-        f_cce__aaa = mr_adc.h1.f_cce__aaa
-        s_cce__abb = mr_adc.h1.s_cce__abb
-        f_cce__abb = mr_adc.h1.f_cce__abb
-
-        ## Indices
-        cvs_tril_ind = np.tril_indices(ncvs, k=-1)
-
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            ## Amplitudes
-            t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
-
-            T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
-            T_e_cce -= einsum('KJAB->AJKB', t1_xxee, optimize = einsum_type).copy()
-
-            dim_chunk = T_e_cce.shape[0]
-            T[:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
-
-            T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
-            T[:, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
-
-    def compute_T__q1_h1__E_CAE(mr_adc, T):
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        ncas = mr_adc.ncas
-        nocc = mr_adc.nocc
-        nextern = mr_adc.nextern
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        ## Excitation Manifolds
-        s_cae__aaa = mr_adc.h1.s_cae__aaa
-        f_cae__aaa = mr_adc.h1.f_cae__aaa
-        s_cae__abb = mr_adc.h1.s_cae__abb
-        f_cae__abb = mr_adc.h1.f_cae__abb
-        s_cae__bab = mr_adc.h1.s_cae__bab
-        f_cae__bab = mr_adc.h1.f_cae__bab
-
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            # Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
-
-            T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
-
-            # Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
-
-            T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
-
-            dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
-
-
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            # Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
-
-            T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
-
-            dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
-
-
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            s_nextern = nocc + s_chunk
-            f_nextern = s_nextern + chunk_size
-
-            # Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
-
-            T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
-
-            dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
-
-    def compute_T__q1_h1__E_CCA(mr_adc, T):
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        nextern = mr_adc.nextern
-
-        # Amplitudes
-        t1_xxae = mr_adc.t1.xxae
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        ## Excitation Manifolds
-        s_cca__aaa = mr_adc.h1.s_cca__aaa
-        f_cca__aaa = mr_adc.h1.f_cca__aaa
-        s_cca__abb = mr_adc.h1.s_cca__abb
-        f_cca__abb = mr_adc.h1.f_cca__abb
-
-        ## Indices
-        cvs_tril_ind = np.tril_indices(ncvs, k=-1)
-
-        T_e_cca =- einsum('JKYA->AJKY', t1_xxae, optimize = einsum_type).copy()
-        T_e_cca += einsum('KJYA->AJKY', t1_xxae, optimize = einsum_type).copy()
-        T_e_cca += 1/2 * einsum('JKxA,Yx->AJKY', t1_xxae, rdm_ca, optimize = einsum_type)
-        T_e_cca -= 1/2 * einsum('KJxA,Yx->AJKY', t1_xxae, rdm_ca, optimize = einsum_type)
-        T[:, s_cca__aaa:f_cca__aaa] += T_e_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
-
-        T_e_cca  = einsum('KJYA->AJKY', t1_xxae, optimize = einsum_type).copy()
-        T_e_cca -= 1/2 * einsum('KJxA,Yx->AJKY', t1_xxae, rdm_ca, optimize = einsum_type)
-        T[:, s_cca__abb:f_cca__abb] += T_e_cca.reshape(nextern, -1)
-
-    def compute_T__q1_h1__E_CVE(mr_adc, T):
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        nval = mr_adc.nval
-        nocc = mr_adc.nocc
-        nextern = mr_adc.nextern
-
-        # Amplitudes
-        t1_xvee = mr_adc.t1.xvee
-        t1_vxee = mr_adc.t1.vxee
-
-        ## Excitation Manifolds
-        s_cve__aaa = mr_adc.h1.s_cve__aaa
-        f_cve__aaa = mr_adc.h1.f_cve__aaa
-        s_cve__abb = mr_adc.h1.s_cve__abb
-        f_cve__abb = mr_adc.h1.f_cve__abb
-        s_cve__bab = mr_adc.h1.s_cve__bab
-        f_cve__bab = mr_adc.h1.f_cve__bab
-
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            # Amplitudes
-            t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
-
-            T_e_cve  = einsum('JKAB->AJKB', t1_xvee, optimize = einsum_type).copy()
-            del(t1_xvee)
-
-            # Amplitudes
-            t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
-
-            T_e_cve -= einsum('KJAB->AJKB', t1_vxee, optimize = einsum_type).copy()
-            del(t1_vxee)
-
-            dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
-
-
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            # Amplitudes
-            t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
-
-            T_e_cve  = einsum('JKAB->AJKB', t1_xvee, optimize = einsum_type).copy()
-            del(t1_xvee)
-
-            dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
-
-            # Amplitudes
-            t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
-
-            T_e_cve =- einsum('KJAB->AJKB', t1_vxee, optimize = einsum_type).copy()
-            del(t1_vxee)
-
-            T[:, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
-
-    def compute_T__q1_h1__E_CVA(mr_adc, T):
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Variables from kernel
-        nextern = mr_adc.nextern
-
-        # Amplitudes
-        t1_xvae = mr_adc.t1.xvae
-        t1_vxae = mr_adc.t1.vxae
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        ## Excitation Manifolds
-        s_cva__aaa = mr_adc.h1.s_cva__aaa
-        f_cva__aaa = mr_adc.h1.f_cva__aaa
-        s_cva__abb = mr_adc.h1.s_cva__abb
-        f_cva__abb = mr_adc.h1.f_cva__abb
-        s_cva__bab = mr_adc.h1.s_cva__bab
-        f_cva__bab = mr_adc.h1.f_cva__bab
-
-        T_e_cva =- einsum('JKYA->AJKY', t1_xvae, optimize = einsum_type).copy()
-        T_e_cva += einsum('KJYA->AJKY', t1_vxae, optimize = einsum_type).copy()
-        T_e_cva += 1/2 * einsum('JKxA,Yx->AJKY', t1_xvae, rdm_ca, optimize = einsum_type)
-        T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t1_vxae, rdm_ca, optimize = einsum_type)
-        T[:, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(nextern, -1)
-
-        T_e_cva  = einsum('KJYA->AJKY', t1_vxae, optimize = einsum_type).copy()
-        T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t1_vxae, rdm_ca, optimize = einsum_type)
-        T[:, s_cva__abb:f_cva__abb] += T_e_cva.reshape(nextern, -1)
-
-        T_e_cva =- einsum('JKYA->AJKY', t1_xvae, optimize = einsum_type).copy()
-        T_e_cva += 1/2 * einsum('JKxA,Yx->AJKY', t1_xvae, rdm_ca, optimize = einsum_type)
-        T[:, s_cva__bab:f_cva__bab] += T_e_cva.reshape(nextern, -1)
-
-    def compute_T__q2_h0__E_C(mr_adc, T):
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        nval = mr_adc.nval
-        ncas = mr_adc.ncas
-        nocc = mr_adc.nocc
-        nextern = mr_adc.nextern
-
-        # Amplitudes
-        t1_ae = mr_adc.t1.ae
-        t1_aaae = mr_adc.t1.aaae
-
-        t1_xa = mr_adc.t1.xa
-        t1_va = mr_adc.t1.va
-
-        t1_xaaa = mr_adc.t1.xaaa
-        t1_vaaa = mr_adc.t1.vaaa
-
-        t1_xxae = mr_adc.t1.xxae
-        t1_xvae = mr_adc.t1.xvae
-        t1_vxae = mr_adc.t1.vxae
-
-        t1_xe = mr_adc.t1.xe
-
-        t1_xaae = mr_adc.t1.xaae
-        t1_xaea = mr_adc.t1.xaea
-
-        t1_ve = mr_adc.t1.ve
-
-        t1_vaae = mr_adc.t1.vaae
-        t1_vaea = mr_adc.t1.vaea
-
-        t2_xe = mr_adc.t2.xe
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-        rdm_ccaa = mr_adc.rdm.ccaa
-
-        ## Excitation Manifolds
-        s_c = mr_adc.h0.s_c
-        f_c = mr_adc.h0.f_c
-
-        ## Terms removed by neglecting T2 amplitudes
-        # T_e_c  = einsum('JxAy,yx->AJ', t2_xaea, rdm_ca, optimize = einsum_type)
-        # T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t2_xaae, rdm_ca, optimize = einsum_type)
-
-        T_e_c  = einsum('JA->AJ', t2_xe, optimize = einsum_type).copy()
-        T_e_c -= 1/2 * einsum('JixA,ix->AJ', t1_xxae, t1_xa, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('JixA,ix->AJ', t1_xvae, t1_va, optimize = einsum_type)
-        T_e_c += einsum('iJxA,ix->AJ', t1_xxae, t1_xa, optimize = einsum_type)
-        T_e_c += einsum('iJxA,ix->AJ', t1_vxae, t1_va, optimize = einsum_type)
-        T_e_c += 1/2 * einsum('xA,Jx->AJ', t1_ae, t1_xa, optimize = einsum_type)
-        T_e_c += 1/4 * einsum('JixA,iy,xy->AJ', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('JixA,iyxz,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_e_c += 1/4 * einsum('JixA,iyzw,xyzw->AJ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_e_c += 1/4 * einsum('JixA,iyzx,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_e_c += 1/4 * einsum('JixA,iy,xy->AJ', t1_xvae, t1_va, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('JixA,iyxz,zy->AJ', t1_xvae, t1_vaaa, rdm_ca, optimize = einsum_type)
-        T_e_c += 1/4 * einsum('JixA,iyzw,xyzw->AJ', t1_xvae, t1_vaaa, rdm_ccaa, optimize = einsum_type)
-        T_e_c += 1/4 * einsum('JixA,iyzx,zy->AJ', t1_xvae, t1_vaaa, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('iJxA,iy,xy->AJ', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
-        T_e_c += einsum('iJxA,iyxz,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('iJxA,iyzw,xyzw->AJ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('iJxA,iyzx,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('iJxA,iy,xy->AJ', t1_vxae, t1_va, rdm_ca, optimize = einsum_type)
-        T_e_c += einsum('iJxA,iyxz,zy->AJ', t1_vxae, t1_vaaa, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('iJxA,iyzw,xyzw->AJ', t1_vxae, t1_vaaa, rdm_ccaa, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('iJxA,iyzx,zy->AJ', t1_vxae, t1_vaaa, rdm_ca, optimize = einsum_type)
-        T_e_c += 1/2 * einsum('xA,Jyxz,yz->AJ', t1_ae, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/4 * einsum('xA,Jyzx,yz->AJ', t1_ae, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/4 * einsum('xyzA,Jwux,zuwy->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_e_c -= 1/4 * einsum('xyzA,Jwuy,zuxw->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_e_c -= 1/4 * einsum('xyzA,Jwxu,zuyw->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_e_c -= 1/4 * einsum('xyzA,Jwxy,zw->AJ', t1_aaae, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_e_c += 1/2 * einsum('xyzA,Jwyu,zuxw->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T_e_c += 1/2 * einsum('xyzA,Jwyx,zw->AJ', t1_aaae, t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/4 * einsum('xyzA,Jx,zy->AJ', t1_aaae, t1_xa, rdm_ca, optimize = einsum_type)
-        T_e_c += 1/2 * einsum('xyzA,Jy,zx->AJ', t1_aaae, t1_xa, rdm_ca, optimize = einsum_type)
-        T_e_c += 1/4 * einsum('xyzA,Jzwu,yxwu->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
-        T[:, s_c:f_c] += T_e_c.copy()
-
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            # Amplitudes
-            t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
-
-            T_e_c  = einsum('JiAa,ia->AJ', t1_xxee, t1_xe, optimize = einsum_type)
-            T_e_c -= 1/2 * einsum('iJAa,ia->AJ', t1_xxee, t1_xe, optimize = einsum_type)
-            T_e_c += einsum('JiAa,ixay,yx->AJ', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
-            T_e_c -= 1/2 * einsum('JiAa,ixya,yx->AJ', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
-            T_e_c -= 1/2 * einsum('iJAa,ixay,yx->AJ', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
-            T_e_c += 1/4 * einsum('iJAa,ixya,yx->AJ', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
-
-            dim_chunk = T_e_c.shape[0]
-            T[:, s_c:f_c] += T_e_c.reshape(dim_chunk, -1)
-        del(t1_xxee)
-
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            # Amplitudes
-            t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
-
-            T_e_c  = einsum('JiAa,ia->AJ', t1_xvee, t1_ve, optimize = einsum_type)
-            T_e_c += einsum('JiAa,ixay,yx->AJ', t1_xvee, t1_vaea, rdm_ca, optimize = einsum_type)
-            T_e_c -= 1/2 * einsum('JiAa,ixya,yx->AJ', t1_xvee, t1_vaae, rdm_ca, optimize = einsum_type)
-
-            dim_chunk = T_e_c.shape[0]
-            T[:, s_c:f_c] += T_e_c.reshape(dim_chunk, -1)
-        del(t1_xvee)
-
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            # Amplitudes
-            t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
-
-            T_e_c =- 1/2 * einsum('iJAa,ia->AJ', t1_vxee, t1_ve, optimize = einsum_type)
-            T_e_c -= 1/2 * einsum('iJAa,ixay,yx->AJ', t1_vxee, t1_vaea, rdm_ca, optimize = einsum_type)
-            T_e_c += 1/4 * einsum('iJAa,ixya,yx->AJ', t1_vxee, t1_vaae, rdm_ca, optimize = einsum_type)
-
-            dim_chunk = T_e_c.shape[0]
-            T[:, s_c:f_c] += T_e_c.reshape(dim_chunk, -1)
-        del(t1_vxee)
-
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
-
-            # Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
-
-            T_e_c  = 1/2 * einsum('JxAa,ya,xy->AJ', t1_xaee, t1_ae, rdm_ca, optimize = einsum_type)
-            T_e_c += 1/2 * einsum('JxAa,yzwa,xwzy->AJ', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
-
-            # Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
-
-            T_e_c -= 1/4 * einsum('JxaA,ya,xy->AJ', t1_xaee, t1_ae, rdm_ca, optimize = einsum_type)
-            T_e_c -= 1/4 * einsum('JxaA,yzwa,xwzy->AJ', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
-
-            dim_chunk = T_e_c.shape[0]
-            T[:, s_c:f_c] += T_e_c.reshape(dim_chunk, -1)
-        del(t1_xaee)
+        mr_adc.log.timer_debug("computing T q2-h0 A-C", *cput1)
 
     def compute_T__q2_h1__A_CAA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -16122,10 +16339,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_caa -= 1/2 * einsum('iJxa,iXxa,YZ->XJYZ', t1_vxae, t1_vaae, rdm_ca, optimize = einsum_type)
         T_a_caa += 1/4 * einsum('iJxa,iXya,YxZy->XJYZ', t1_vxae, t1_vaae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -16137,12 +16355,15 @@ def compute_trans_moments(mr_adc, U):
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
 
             T_a_caa -= 1/2 * einsum('Jiab,iXba,YZ->XJYZ', t1_xxee, t1_xaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee t1.xxee", *cput2)
         del(t1_xaee, t1_xxee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [nval, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [nval, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vaee t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -16154,12 +16375,15 @@ def compute_trans_moments(mr_adc, U):
             t1_vaee = mr_adc.t1.vaee[:,:,:,s_chunk:f_chunk]
 
             T_a_caa -= 1/2 * einsum('Jiab,iXba,YZ->XJYZ', t1_xvee, t1_vaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vaee t1.xvee", *cput2)
         del(t1_vaee, t1_xvee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncas, ncas, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncas, ncas, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.aaee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -16174,6 +16398,8 @@ def compute_trans_moments(mr_adc, U):
             T_a_caa += 1/4 * einsum('Jxab,XZba,Yx->XJYZ', t1_xaee, t1_aaee, rdm_ca, optimize = einsum_type)
             T_a_caa += 1/12 * einsum('Jxab,Xyba,YyZx->XJYZ', t1_xaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
             T_a_caa -= 1/12 * einsum('Jxab,Xyba,YyxZ->XJYZ', t1_xaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.aaee t1.xaee", *cput2)
         del(t1_aaee, t1_xaee)
 
         T[:, s_caa__aaa:f_caa__aaa] += T_a_caa.reshape(ncas, -1)
@@ -16353,10 +16579,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_caa -= 1/2 * einsum('iJxa,iXxa,YZ->XJYZ', t1_vxae, t1_vaae, rdm_ca, optimize = einsum_type)
         T_a_caa += 1/4 * einsum('iJxa,iXya,YxZy->XJYZ', t1_vxae, t1_vaae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -16368,12 +16595,15 @@ def compute_trans_moments(mr_adc, U):
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
 
             T_a_caa -= 1/2 * einsum('Jiab,iXba,YZ->XJYZ', t1_xxee, t1_xaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee t1.xxee", *cput2)
         del(t1_xaee, t1_xxee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [nval, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [nval, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vaee t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -16385,12 +16615,15 @@ def compute_trans_moments(mr_adc, U):
             t1_vaee = mr_adc.t1.vaee[:,:,:,s_chunk:f_chunk]
 
             T_a_caa -= 1/2 * einsum('Jiab,iXba,YZ->XJYZ', t1_xvee, t1_vaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vaee t1.xvee", *cput2)
         del(t1_vaee, t1_xvee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncas, ncas, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncas, ncas, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.aaee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -16400,6 +16633,8 @@ def compute_trans_moments(mr_adc, U):
             T_a_caa -= 1/4 * einsum('Jxab,Xyab,YyZx->XJYZ', t1_xaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
             T_a_caa += 1/6 * einsum('Jxab,Xyba,YyZx->XJYZ', t1_xaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
             T_a_caa += 1/12 * einsum('Jxab,Xyba,YyxZ->XJYZ', t1_xaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.aaee t1.xaee", *cput2)
 
         T[:, s_caa__abb:f_caa__abb] += T_a_caa.reshape(ncas, -1)
 
@@ -16534,10 +16769,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_caa += 1/12 * einsum('iJxa,iXay,YxZy->XJYZ', t1_vxae, t1_vaea, rdm_ccaa, optimize = einsum_type)
         T_a_caa += 1/6 * einsum('iJxa,iXay,YxyZ->XJYZ', t1_vxae, t1_vaea, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncas, ncas, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncas, ncas, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.aaee t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,:,s_chunk:f_chunk]
@@ -16546,11 +16782,17 @@ def compute_trans_moments(mr_adc, U):
             T_a_caa += 1/4 * einsum('Jxab,XZba,Yx->XJYZ', t1_xaee, t1_aaee, rdm_ca, optimize = einsum_type)
             T_a_caa -= 1/12 * einsum('Jxab,Xyba,YyZx->XJYZ', t1_xaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
             T_a_caa -= 1/6 * einsum('Jxab,Xyba,YyxZ->XJYZ', t1_xaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.aaee t1.xaee", *cput2)
         del(t1_aaee, t1_xaee)
 
         T[:, s_caa__bab:f_caa__bab] += T_a_caa.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 A-CAA", *cput1)
+
     def compute_T__q2_h1__A_CCE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -16629,9 +16871,10 @@ def compute_trans_moments(mr_adc, U):
         T_a_cce -= 1/4 * einsum('xyzB,JKxX,zy->XJKB', t1_aaae, t1_xxaa, rdm_ca, optimize = einsum_type)
         T_a_cce += 1/2 * einsum('xyzB,JKyX,zx->XJKB', t1_aaae, t1_xxaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [nval, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -16645,6 +16888,8 @@ def compute_trans_moments(mr_adc, U):
             T_a_cce += 1/2 * einsum('JKBa,xXya,xy->XJKB', t1_xxee, t1_aaae, rdm_ca, optimize = einsum_type)
             T_a_cce += 1/4 * einsum('KJBa,Xxya,xy->XJKB', t1_xxee, t1_aaae, rdm_ca, optimize = einsum_type)
             T_a_cce -= 1/2 * einsum('KJBa,xXya,xy->XJKB', t1_xxee, t1_aaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_ae, t1_aaae)
 
         T[:, s_cce__aaa:f_cce__aaa] += T_a_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncas, -1)
@@ -16678,9 +16923,10 @@ def compute_trans_moments(mr_adc, U):
         T_a_cce += 1/4 * einsum('xyzB,JKXx,zy->XJKB', t1_aaae, t1_xxaa, rdm_ca, optimize = einsum_type)
         T_a_cce -= 1/2 * einsum('xyzB,JKXy,zx->XJKB', t1_aaae, t1_xxaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [nval, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -16691,11 +16937,17 @@ def compute_trans_moments(mr_adc, U):
             T_a_cce -= 1/2 * einsum('KJBa,Xa->XJKB', t1_xxee, t1_ae, optimize = einsum_type)
             T_a_cce += 1/4 * einsum('KJBa,Xxya,xy->XJKB', t1_xxee, t1_aaae, rdm_ca, optimize = einsum_type)
             T_a_cce -= 1/2 * einsum('KJBa,xXya,xy->XJKB', t1_xxee, t1_aaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_ae, t1_aaae)
 
         T[:, s_cce__abb:f_cce__abb] += T_a_cce.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 A-CCE", *cput1)
+
     def compute_T__q2_h1__A_CAE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -16780,9 +17032,10 @@ def compute_trans_moments(mr_adc, U):
         T_a_cae += 1/12 * einsum('xyzB,JzwX,Ywxy->XJYB', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_a_cae -= 1/12 * einsum('xyzB,JzwX,Ywyx->XJYB', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -16794,11 +17047,14 @@ def compute_trans_moments(mr_adc, U):
             T_a_cae -= 1/4 * einsum('JiBa,iXxa,Yx->XJYB', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
             T_a_cae -= 1/4 * einsum('iJBa,iXax,Yx->XJYB', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
             T_a_cae += 1/4 * einsum('iJBa,iXxa,Yx->XJYB', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xaae, t1_xaea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -16808,10 +17064,13 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_cae += 1/2 * einsum('JiBa,iXax,Yx->XJYB', t1_xvee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_a_cae -= 1/4 * einsum('JiBa,iXxa,Yx->XJYB', t1_xvee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee, t1_vaae, t1_vaea)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -16821,11 +17080,14 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_cae -= 1/4 * einsum('iJBa,iXax,Yx->XJYB', t1_vxee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_a_cae += 1/4 * einsum('iJBa,iXxa,Yx->XJYB', t1_vxee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_vaae, t1_vaea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -16844,6 +17106,8 @@ def compute_trans_moments(mr_adc, U):
             T_a_cae += 1/12 * einsum('JxaB,Xyza,Yyxz->XJYB', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
             T_a_cae -= 1/12 * einsum('JxaB,Xyza,Yyzx->XJYB', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
             T_a_cae -= 1/4 * einsum('JxaB,yXza,Yyxz->XJYB', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ae, t1_aaae)
 
         T[:, s_cae__aaa:f_cae__aaa] += T_a_cae.reshape(ncas, -1)
@@ -16882,31 +17146,38 @@ def compute_trans_moments(mr_adc, U):
         T_a_cae -= 1/12 * einsum('xyzB,JzwX,Ywxy->XJYB', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_a_cae -= 1/6 * einsum('xyzB,JzwX,Ywyx->XJYB', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
             t1_xaae = mr_adc.t1.xaae[:,:,:,s_chunk:f_chunk]
 
             T_a_cae += 1/4 * einsum('iJBa,iXxa,Yx->XJYB', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xaae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
             t1_vaae = mr_adc.t1.vaae[:,:,:,s_chunk:f_chunk]
 
             T_a_cae += 1/4 * einsum('iJBa,iXxa,Yx->XJYB', t1_vxee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_vaae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -16918,6 +17189,8 @@ def compute_trans_moments(mr_adc, U):
             T_a_cae += 1/6 * einsum('JxaB,Xyza,Yyxz->XJYB', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
             T_a_cae += 1/12 * einsum('JxaB,Xyza,Yyzx->XJYB', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
             T_a_cae -= 1/4 * einsum('JxaB,yXza,Yyxz->XJYB', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ae, t1_aaae)
 
         T[:, s_cae__abb:f_cae__abb] += T_a_cae.reshape(ncas, -1)
@@ -16960,9 +17233,10 @@ def compute_trans_moments(mr_adc, U):
         T_a_cae += 1/6 * einsum('xyzB,JzwX,Ywxy->XJYB', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         T_a_cae += 1/12 * einsum('xyzB,JzwX,Ywyx->XJYB', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -16973,11 +17247,14 @@ def compute_trans_moments(mr_adc, U):
             T_a_cae += 1/2 * einsum('JiBa,iXax,Yx->XJYB', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
             T_a_cae -= 1/4 * einsum('JiBa,iXxa,Yx->XJYB', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
             T_a_cae -= 1/4 * einsum('iJBa,iXax,Yx->XJYB', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xaae, t1_xaea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,:,s_chunk:f_chunk]
@@ -16987,10 +17264,13 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_cae += 1/2 * einsum('JiBa,iXax,Yx->XJYB', t1_xvee, t1_vaea, rdm_ca, optimize = einsum_type)
             T_a_cae -= 1/4 * einsum('JiBa,iXxa,Yx->XJYB', t1_xvee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee, t1_vaae)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -16999,9 +17279,12 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_cae -= 1/4 * einsum('iJBa,iXax,Yx->XJYB', t1_vxee, t1_vaea, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
+
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -17018,11 +17301,17 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_cae -= 1/12 * einsum('JxaB,Xyza,Yyxz->XJYB', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
             T_a_cae -= 1/6 * einsum('JxaB,Xyza,Yyzx->XJYB', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ae, t1_aaae)
 
         T[:, s_cae__bab:f_cae__bab] += T_a_cae.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 A-CAE", *cput1)
+
     def compute_T__q2_h1__A_CCA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -17146,10 +17435,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_cca += 1/4 * einsum('KJxa,yXxa,Yy->XJKY', t1_xxae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cca += 1/4 * einsum('KJxa,yXza,Yzxy->XJKY', t1_xxae, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -17163,6 +17453,8 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_cca += 1/2 * einsum('JKab,XYba->XJKY', t1_xxee, t1_aaee, optimize = einsum_type)
             T_a_cca -= 1/4 * einsum('JKab,Xxba,Yx->XJKY', t1_xxee, t1_aaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee t1.aaee", *cput2)
         del(t1_xxee, t1_aaee)
 
         T[:, s_cca__aaa:f_cca__aaa] += T_a_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(ncas, -1)
@@ -17220,8 +17512,9 @@ def compute_trans_moments(mr_adc, U):
         T_a_cca += 1/4 * einsum('KJxa,yXxa,Yy->XJKY', t1_xxae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cca += 1/4 * einsum('KJxa,yXza,Yzxy->XJKY', t1_xxae, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -17233,11 +17526,17 @@ def compute_trans_moments(mr_adc, U):
             t1_aaee = mr_adc.t1.aaee[:,:,:,s_chunk:f_chunk]
 
             T_a_cca += 1/4 * einsum('JKab,Xxab,Yx->XJKY', t1_xxee, t1_aaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee t1.aaee", *cput2)
         del(t1_xxee, t1_aaee)
 
         T[:, s_cca__abb:f_cca__abb] += T_a_cca.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 A-CCA", *cput1)
+
     def compute_T__q2_h1__A_CVE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -17323,9 +17622,10 @@ def compute_trans_moments(mr_adc, U):
         T_a_cve -= 1/4 * einsum('xyzB,JKxX,zy->XJKB', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('xyzB,JKyX,zx->XJKB', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -17336,10 +17636,13 @@ def compute_trans_moments(mr_adc, U):
             T_a_cve += 1/2 * einsum('JKBa,Xa->XJKB', t1_xvee, t1_ae, optimize = einsum_type)
             T_a_cve -= 1/4 * einsum('JKBa,Xxya,xy->XJKB', t1_xvee, t1_aaae, rdm_ca, optimize = einsum_type)
             T_a_cve += 1/2 * einsum('JKBa,xXya,xy->XJKB', t1_xvee, t1_aaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_ae, t1_aaae, t1_xvee)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -17350,6 +17653,8 @@ def compute_trans_moments(mr_adc, U):
             T_a_cve -= 1/2 * einsum('KJBa,Xa->XJKB', t1_vxee, t1_ae, optimize = einsum_type)
             T_a_cve += 1/4 * einsum('KJBa,Xxya,xy->XJKB', t1_vxee, t1_aaae, rdm_ca, optimize = einsum_type)
             T_a_cve -= 1/2 * einsum('KJBa,xXya,xy->XJKB', t1_vxee, t1_aaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_ae, t1_aaae, t1_vxee)
 
         T[:, s_cve__aaa:f_cve__aaa] += T_a_cve.reshape(ncas, -1)
@@ -17383,8 +17688,9 @@ def compute_trans_moments(mr_adc, U):
         T_a_cve += 1/4 * einsum('xyzB,JKXx,zy->XJKB', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T_a_cve -= 1/2 * einsum('xyzB,JKXy,zx->XJKB', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -17395,6 +17701,8 @@ def compute_trans_moments(mr_adc, U):
             T_a_cve -= 1/2 * einsum('KJBa,Xa->XJKB', t1_vxee, t1_ae, optimize = einsum_type)
             T_a_cve += 1/4 * einsum('KJBa,Xxya,xy->XJKB', t1_vxee, t1_aaae, rdm_ca, optimize = einsum_type)
             T_a_cve -= 1/2 * einsum('KJBa,xXya,xy->XJKB', t1_vxee, t1_aaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_ae, t1_aaae, t1_vxee)
 
         T[:, s_cve__abb:f_cve__abb] += T_a_cve.reshape(ncas, -1)
@@ -17428,8 +17736,9 @@ def compute_trans_moments(mr_adc, U):
         T_a_cve -= 1/4 * einsum('xyzB,JKxX,zy->XJKB', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T_a_cve += 1/2 * einsum('xyzB,JKyX,zx->XJKB', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -17440,11 +17749,17 @@ def compute_trans_moments(mr_adc, U):
             T_a_cve += 1/2 * einsum('JKBa,Xa->XJKB', t1_xvee, t1_ae, optimize = einsum_type)
             T_a_cve -= 1/4 * einsum('JKBa,Xxya,xy->XJKB', t1_xvee, t1_aaae, rdm_ca, optimize = einsum_type)
             T_a_cve += 1/2 * einsum('JKBa,xXya,xy->XJKB', t1_xvee, t1_aaae, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_ae, t1_aaae, t1_xvee)
 
         T[:, s_cve__bab:f_cve__bab] += T_a_cve.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 A-CVE", *cput1)
+
     def compute_T__q2_h1__A_CVA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -17572,10 +17887,11 @@ def compute_trans_moments(mr_adc, U):
         T_a_cva += 1/4 * einsum('KJxa,yXxa,Yy->XJKY', t1_vxae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cva += 1/4 * einsum('KJxa,yXza,Yzxy->XJKY', t1_vxae, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, nval, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, nval, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -17589,9 +17905,12 @@ def compute_trans_moments(mr_adc, U):
 
             T_a_cva += 1/2 * einsum('JKab,XYba->XJKY', t1_xvee, t1_aaee, optimize = einsum_type)
             T_a_cva -= 1/4 * einsum('JKab,Xxba,Yx->XJKY', t1_xvee, t1_aaee, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee t1.aaee", *cput2)
         del(t1_xvee, t1_aaee)
 
         T[:, s_cva__aaa:f_cva__aaa] += T_a_cva.reshape(ncas, -1)
+
 
         ## Terms removed by neglecting T2 amplitudes
         # T_a_cva  = einsum('JKXY->XJKY', t2_xvaa, optimize = einsum_type).copy()
@@ -17646,8 +17965,9 @@ def compute_trans_moments(mr_adc, U):
         T_a_cva += 1/4 * einsum('KJxa,yXxa,Yy->XJKY', t1_vxae, t1_aaae, rdm_ca, optimize = einsum_type)
         T_a_cva += 1/4 * einsum('KJxa,yXza,Yzxy->XJKY', t1_vxae, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -17656,7 +17976,10 @@ def compute_trans_moments(mr_adc, U):
             T_a_cva -= 1/2 * einsum('JKab,XYab->XJKY', t1_xvee, t1_aaee, optimize = einsum_type)
             T_a_cva += 1/4 * einsum('JKab,Xxab,Yx->XJKY', t1_xvee, t1_aaee, rdm_ca, optimize = einsum_type)
 
+            mr_adc.log.timer_debug("contracting t1.xvee t1.aaee", *cput2)
+
         T[:, s_cva__abb:f_cva__abb] += T_a_cva.reshape(ncas, -1)
+
 
         ## Terms removed by neglecting T2 amplitudes
         # T_a_cva =- einsum('JKYX->XJKY', t2_xvaa, optimize = einsum_type).copy()
@@ -17711,8 +18034,9 @@ def compute_trans_moments(mr_adc, U):
         T_a_cva += 1/12 * einsum('KJxa,Xyza,Yzxy->XJKY', t1_vxae, t1_aaae, rdm_ccaa, optimize = einsum_type)
         T_a_cva += 1/6 * einsum('KJxa,Xyza,Yzyx->XJKY', t1_vxae, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -17721,9 +18045,536 @@ def compute_trans_moments(mr_adc, U):
             T_a_cva += 1/2 * einsum('JKab,XYba->XJKY', t1_xvee, t1_aaee, optimize = einsum_type)
             T_a_cva -= 1/4 * einsum('JKab,Xxba,Yx->XJKY', t1_xvee, t1_aaee, rdm_ca, optimize = einsum_type)
 
+            mr_adc.log.timer_debug("contracting t1.xvee t1.aaee", *cput2)
+
         T[:, s_cva__bab:f_cva__bab] += T_a_cva.reshape(ncas, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 A-CVA", *cput1)
+
+    def compute_T__q1_h0__E_C(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Amplitudes
+        t1_xe = mr_adc.t1.xe
+
+        t1_xaea = mr_adc.t1.xaea
+        t1_xaae = mr_adc.t1.xaae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        ## Excitation Manifolds
+        s_c = mr_adc.h0.s_c
+        f_c = mr_adc.h0.f_c
+
+        T_e_c  = einsum('JA->AJ', t1_xe, optimize = einsum_type).copy()
+        T_e_c += einsum('JxAy,yx->AJ', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t1_xaae, rdm_ca, optimize = einsum_type)
+        T[:, s_c:f_c] = T_e_c.copy()
+
+        mr_adc.log.timer_debug("computing T q1-h0 E-C", *cput1)
+
+    def compute_T__q1_h1__E_CAA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        nextern = mr_adc.nextern
+
+        # Amplitudes
+        t1_xe = mr_adc.t1.xe
+
+        t1_xaea = mr_adc.t1.xaea
+        t1_xaae = mr_adc.t1.xaae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        ## Excitation Manifolds
+        s_caa__aaa = mr_adc.h1.s_caa__aaa
+        f_caa__aaa = mr_adc.h1.f_caa__aaa
+        s_caa__abb = mr_adc.h1.s_caa__abb
+        f_caa__abb = mr_adc.h1.f_caa__abb
+        s_caa__bab = mr_adc.h1.s_caa__bab
+        f_caa__bab = mr_adc.h1.f_caa__bab
+
+        T_e_caa  = 1/2 * einsum('JA,YZ->AJYZ', t1_xe, rdm_ca, optimize = einsum_type)
+        T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t1_xaea, rdm_ccaa, optimize = einsum_type)
+        T_e_caa -= 1/2 * einsum('JxZA,Yx->AJYZ', t1_xaae, rdm_ca, optimize = einsum_type)
+        T_e_caa -= 1/6 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_e_caa += 1/6 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T[:, s_caa__aaa:f_caa__aaa] += T_e_caa.reshape(nextern, -1)
+
+        T_e_caa  = 1/2 * einsum('JA,YZ->AJYZ', t1_xe, rdm_ca, optimize = einsum_type)
+        T_e_caa += 1/2 * einsum('JxAZ,Yx->AJYZ', t1_xaea, rdm_ca, optimize = einsum_type)
+        T_e_caa += 1/2 * einsum('JxAy,YyZx->AJYZ', t1_xaea, rdm_ccaa, optimize = einsum_type)
+        T_e_caa -= 1/3 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_e_caa -= 1/6 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T[:, s_caa__abb:f_caa__abb] += T_e_caa.reshape(nextern, -1)
+
+        T_e_caa =- 1/2 * einsum('JxZA,Yx->AJYZ', t1_xaae, rdm_ca, optimize = einsum_type)
+        T_e_caa += 1/6 * einsum('JxyA,YyZx->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T_e_caa += 1/3 * einsum('JxyA,YyxZ->AJYZ', t1_xaae, rdm_ccaa, optimize = einsum_type)
+        T[:, s_caa__bab:f_caa__bab] += T_e_caa.reshape(nextern, -1)
+
+        mr_adc.log.timer_debug("computing T q1-h1 E-CAA", *cput1)
+
+    def compute_T__q1_h1__E_CCE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nocc = mr_adc.nocc
+        nextern = mr_adc.nextern
+
+        ## Excitation Manifolds
+        s_cce__aaa = mr_adc.h1.s_cce__aaa
+        f_cce__aaa = mr_adc.h1.f_cce__aaa
+        s_cce__abb = mr_adc.h1.s_cce__abb
+        f_cce__abb = mr_adc.h1.f_cce__abb
+
+        ## Indices
+        cvs_tril_ind = np.tril_indices(ncvs, k=-1)
+
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            ## Amplitudes
+            t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
+
+            T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+            T_e_cce -= einsum('KJAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+
+            dim_chunk = T_e_cce.shape[0]
+            T[s_chunk:f_chunk, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+
+            T_e_cce  = einsum('JKAB->AJKB', t1_xxee, optimize = einsum_type).copy()
+            T[s_chunk:f_chunk, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
+
+        mr_adc.log.timer_debug("computing T q1-h1 E-CCE", *cput1)
+
+    def compute_T__q1_h1__E_CAE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
+        nextern = mr_adc.nextern
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        ## Excitation Manifolds
+        s_cae__aaa = mr_adc.h1.s_cae__aaa
+        f_cae__aaa = mr_adc.h1.f_cae__aaa
+        s_cae__abb = mr_adc.h1.s_cae__abb
+        f_cae__abb = mr_adc.h1.f_cae__abb
+        s_cae__bab = mr_adc.h1.s_cae__bab
+        f_cae__bab = mr_adc.h1.f_cae__bab
+
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
+
+            T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
+
+            T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+
+            dim_chunk = T_e_cae.shape[0]
+            T[s_chunk:f_chunk, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
+
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
+
+            T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+
+            dim_chunk = T_e_cae.shape[0]
+            T[s_chunk:f_chunk, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
+
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
+
+            T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t1_xaee, rdm_ca, optimize = einsum_type)
+
+            dim_chunk = T_e_cae.shape[0]
+            T[s_chunk:f_chunk, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
+
+        mr_adc.log.timer_debug("computing T q1-h1 E-CAE", *cput1)
+
+    def compute_T__q1_h1__E_CCA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nextern = mr_adc.nextern
+
+        # Amplitudes
+        t1_xxae = mr_adc.t1.xxae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        ## Excitation Manifolds
+        s_cca__aaa = mr_adc.h1.s_cca__aaa
+        f_cca__aaa = mr_adc.h1.f_cca__aaa
+        s_cca__abb = mr_adc.h1.s_cca__abb
+        f_cca__abb = mr_adc.h1.f_cca__abb
+
+        ## Indices
+        cvs_tril_ind = np.tril_indices(ncvs, k=-1)
+
+        T_e_cca =- einsum('JKYA->AJKY', t1_xxae, optimize = einsum_type).copy()
+        T_e_cca += einsum('KJYA->AJKY', t1_xxae, optimize = einsum_type).copy()
+        T_e_cca += 1/2 * einsum('JKxA,Yx->AJKY', t1_xxae, rdm_ca, optimize = einsum_type)
+        T_e_cca -= 1/2 * einsum('KJxA,Yx->AJKY', t1_xxae, rdm_ca, optimize = einsum_type)
+        T[:, s_cca__aaa:f_cca__aaa] += T_e_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
+
+        T_e_cca  = einsum('KJYA->AJKY', t1_xxae, optimize = einsum_type).copy()
+        T_e_cca -= 1/2 * einsum('KJxA,Yx->AJKY', t1_xxae, rdm_ca, optimize = einsum_type)
+        T[:, s_cca__abb:f_cca__abb] += T_e_cca.reshape(nextern, -1)
+
+        mr_adc.log.timer_debug("computing T q1-h1 E-CCA", *cput1)
+
+    def compute_T__q1_h1__E_CVE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nval = mr_adc.nval
+        nocc = mr_adc.nocc
+        nextern = mr_adc.nextern
+
+        # Amplitudes
+        t1_xvee = mr_adc.t1.xvee
+        t1_vxee = mr_adc.t1.vxee
+
+        ## Excitation Manifolds
+        s_cve__aaa = mr_adc.h1.s_cve__aaa
+        f_cve__aaa = mr_adc.h1.f_cve__aaa
+        s_cve__abb = mr_adc.h1.s_cve__abb
+        f_cve__abb = mr_adc.h1.f_cve__abb
+        s_cve__bab = mr_adc.h1.s_cve__bab
+        f_cve__bab = mr_adc.h1.f_cve__bab
+
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
+
+            T_e_cve  = einsum('JKAB->AJKB', t1_xvee, optimize = einsum_type).copy()
+            del(t1_xvee)
+
+            # Amplitudes
+            t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
+
+            T_e_cve -= einsum('KJAB->AJKB', t1_vxee, optimize = einsum_type).copy()
+            del(t1_vxee)
+
+            dim_chunk = T_e_cve.shape[0]
+            T[s_chunk:f_chunk, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
+
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
+
+            T_e_cve  = einsum('JKAB->AJKB', t1_xvee, optimize = einsum_type).copy()
+            del(t1_xvee)
+
+            dim_chunk = T_e_cve.shape[0]
+            T[s_chunk:f_chunk, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
+
+            # Amplitudes
+            t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
+
+            T_e_cve =- einsum('KJAB->AJKB', t1_vxee, optimize = einsum_type).copy()
+            del(t1_vxee)
+
+            T[s_chunk:f_chunk, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
+
+        mr_adc.log.timer_debug("computing T q1-h1 E-CVE", *cput1)
+
+    def compute_T__q1_h1__E_CVA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        nextern = mr_adc.nextern
+
+        # Amplitudes
+        t1_xvae = mr_adc.t1.xvae
+        t1_vxae = mr_adc.t1.vxae
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
+        ## Excitation Manifolds
+        s_cva__aaa = mr_adc.h1.s_cva__aaa
+        f_cva__aaa = mr_adc.h1.f_cva__aaa
+        s_cva__abb = mr_adc.h1.s_cva__abb
+        f_cva__abb = mr_adc.h1.f_cva__abb
+        s_cva__bab = mr_adc.h1.s_cva__bab
+        f_cva__bab = mr_adc.h1.f_cva__bab
+
+        T_e_cva =- einsum('JKYA->AJKY', t1_xvae, optimize = einsum_type).copy()
+        T_e_cva += einsum('KJYA->AJKY', t1_vxae, optimize = einsum_type).copy()
+        T_e_cva += 1/2 * einsum('JKxA,Yx->AJKY', t1_xvae, rdm_ca, optimize = einsum_type)
+        T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t1_vxae, rdm_ca, optimize = einsum_type)
+        T[:, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(nextern, -1)
+
+        T_e_cva  = einsum('KJYA->AJKY', t1_vxae, optimize = einsum_type).copy()
+        T_e_cva -= 1/2 * einsum('KJxA,Yx->AJKY', t1_vxae, rdm_ca, optimize = einsum_type)
+        T[:, s_cva__abb:f_cva__abb] += T_e_cva.reshape(nextern, -1)
+
+        T_e_cva =- einsum('JKYA->AJKY', t1_xvae, optimize = einsum_type).copy()
+        T_e_cva += 1/2 * einsum('JKxA,Yx->AJKY', t1_xvae, rdm_ca, optimize = einsum_type)
+        T[:, s_cva__bab:f_cva__bab] += T_e_cva.reshape(nextern, -1)
+
+        mr_adc.log.timer_debug("computing T q1-h1 E-CVA", *cput1)
+
+    def compute_T__q2_h0__E_C(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nval = mr_adc.nval
+        ncas = mr_adc.ncas
+        nextern = mr_adc.nextern
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
+
+        t1_xa = mr_adc.t1.xa
+        t1_va = mr_adc.t1.va
+
+        t1_xaaa = mr_adc.t1.xaaa
+        t1_vaaa = mr_adc.t1.vaaa
+
+        t1_xxae = mr_adc.t1.xxae
+        t1_xvae = mr_adc.t1.xvae
+        t1_vxae = mr_adc.t1.vxae
+
+        t1_xe = mr_adc.t1.xe
+
+        t1_xaae = mr_adc.t1.xaae
+        t1_xaea = mr_adc.t1.xaea
+
+        t1_ve = mr_adc.t1.ve
+
+        t1_vaae = mr_adc.t1.vaae
+        t1_vaea = mr_adc.t1.vaea
+
+        t2_xe = mr_adc.t2.xe
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        ## Excitation Manifolds
+        s_c = mr_adc.h0.s_c
+        f_c = mr_adc.h0.f_c
+
+        ## Terms removed by neglecting T2 amplitudes
+        # T_e_c  = einsum('JxAy,yx->AJ', t2_xaea, rdm_ca, optimize = einsum_type)
+        # T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t2_xaae, rdm_ca, optimize = einsum_type)
+
+        T_e_c  = einsum('JA->AJ', t2_xe, optimize = einsum_type).copy()
+        T_e_c -= 1/2 * einsum('JixA,ix->AJ', t1_xxae, t1_xa, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JixA,ix->AJ', t1_xvae, t1_va, optimize = einsum_type)
+        T_e_c += einsum('iJxA,ix->AJ', t1_xxae, t1_xa, optimize = einsum_type)
+        T_e_c += einsum('iJxA,ix->AJ', t1_vxae, t1_va, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xA,Jx->AJ', t1_ae, t1_xa, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('JixA,iy,xy->AJ', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JixA,iyxz,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('JixA,iyzw,xyzw->AJ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('JixA,iyzx,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('JixA,iy,xy->AJ', t1_xvae, t1_va, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JixA,iyxz,zy->AJ', t1_xvae, t1_vaaa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('JixA,iyzw,xyzw->AJ', t1_xvae, t1_vaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('JixA,iyzx,zy->AJ', t1_xvae, t1_vaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('iJxA,iy,xy->AJ', t1_xxae, t1_xa, rdm_ca, optimize = einsum_type)
+        T_e_c += einsum('iJxA,iyxz,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('iJxA,iyzw,xyzw->AJ', t1_xxae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('iJxA,iyzx,zy->AJ', t1_xxae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('iJxA,iy,xy->AJ', t1_vxae, t1_va, rdm_ca, optimize = einsum_type)
+        T_e_c += einsum('iJxA,iyxz,zy->AJ', t1_vxae, t1_vaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('iJxA,iyzw,xyzw->AJ', t1_vxae, t1_vaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('iJxA,iyzx,zy->AJ', t1_vxae, t1_vaaa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xA,Jyxz,yz->AJ', t1_ae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xA,Jyzx,yz->AJ', t1_ae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyzA,Jwux,zuwy->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyzA,Jwuy,zuxw->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyzA,Jwxu,zuyw->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyzA,Jwxy,zw->AJ', t1_aaae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xyzA,Jwyu,zuxw->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xyzA,Jwyx,zw->AJ', t1_aaae, t1_xaaa, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/4 * einsum('xyzA,Jx,zy->AJ', t1_aaae, t1_xa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/2 * einsum('xyzA,Jy,zx->AJ', t1_aaae, t1_xa, rdm_ca, optimize = einsum_type)
+        T_e_c += 1/4 * einsum('xyzA,Jzwu,yxwu->AJ', t1_aaae, t1_xaaa, rdm_ccaa, optimize = einsum_type)
+        T[:, s_c:f_c] += T_e_c.copy()
+
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
+
+            T_e_c  = einsum('JiAa,ia->AJ', t1_xxee, t1_xe, optimize = einsum_type)
+            T_e_c -= 1/2 * einsum('iJAa,ia->AJ', t1_xxee, t1_xe, optimize = einsum_type)
+            T_e_c += einsum('JiAa,ixay,yx->AJ', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
+            T_e_c -= 1/2 * einsum('JiAa,ixya,yx->AJ', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
+            T_e_c -= 1/2 * einsum('iJAa,ixay,yx->AJ', t1_xxee, t1_xaea, rdm_ca, optimize = einsum_type)
+            T_e_c += 1/4 * einsum('iJAa,ixya,yx->AJ', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
+
+            dim_chunk = T_e_c.shape[0]
+            T[s_chunk:f_chunk, s_c:f_c] += T_e_c.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
+        del(t1_xxee)
+
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
+
+            T_e_c  = einsum('JiAa,ia->AJ', t1_xvee, t1_ve, optimize = einsum_type)
+            T_e_c += einsum('JiAa,ixay,yx->AJ', t1_xvee, t1_vaea, rdm_ca, optimize = einsum_type)
+            T_e_c -= 1/2 * einsum('JiAa,ixya,yx->AJ', t1_xvee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            dim_chunk = T_e_c.shape[0]
+            T[s_chunk:f_chunk, s_c:f_c] += T_e_c.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
+        del(t1_xvee)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
+
+            T_e_c =- 1/2 * einsum('iJAa,ia->AJ', t1_vxee, t1_ve, optimize = einsum_type)
+            T_e_c -= 1/2 * einsum('iJAa,ixay,yx->AJ', t1_vxee, t1_vaea, rdm_ca, optimize = einsum_type)
+            T_e_c += 1/4 * einsum('iJAa,ixya,yx->AJ', t1_vxee, t1_vaae, rdm_ca, optimize = einsum_type)
+
+            dim_chunk = T_e_c.shape[0]
+            T[s_chunk:f_chunk, s_c:f_c] += T_e_c.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
+        del(t1_vxee)
+
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
+
+            T_e_c  = 1/2 * einsum('JxAa,ya,xy->AJ', t1_xaee, t1_ae, rdm_ca, optimize = einsum_type)
+            T_e_c += 1/2 * einsum('JxAa,yzwa,xwzy->AJ', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+
+            # Amplitudes
+            t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
+
+            T_e_c -= 1/4 * einsum('JxaA,ya,xy->AJ', t1_xaee, t1_ae, rdm_ca, optimize = einsum_type)
+            T_e_c -= 1/4 * einsum('JxaA,yzwa,xwzy->AJ', t1_xaee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+
+            dim_chunk = T_e_c.shape[0]
+            T[s_chunk:f_chunk, s_c:f_c] += T_e_c.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
+        del(t1_xaee)
+
+        mr_adc.log.timer_debug("computing T q2-h0 E-C", *cput1)
+
     def compute_T__q2_h1__E_CAA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -17860,9 +18711,10 @@ def compute_trans_moments(mr_adc, U):
         T_e_caa += 1/12 * einsum('xyzA,Jzwu,YwuZyx->AJYZ', t1_aaae, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
         T_e_caa -= 1/12 * einsum('xyzA,Jzwu,YwuyZx->AJYZ', t1_aaae, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -17882,11 +18734,14 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa -= 1/4 * einsum('iJAa,ixay,YxZy->AJYZ', t1_xxee, t1_xaea, rdm_ccaa, optimize = einsum_type)
             T_e_caa += 1/12 * einsum('iJAa,ixya,YxZy->AJYZ', t1_xxee, t1_xaae, rdm_ccaa, optimize = einsum_type)
             T_e_caa -= 1/12 * einsum('iJAa,ixya,YxyZ->AJYZ', t1_xxee, t1_xaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xe, t1_xxee, t1_xaae, t1_xaea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ve = mr_adc.t1.ve[:,s_chunk:f_chunk]
@@ -17900,10 +18755,13 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa += 1/2 * einsum('JiAa,ia,YZ->AJYZ', t1_xvee, t1_ve, rdm_ca, optimize = einsum_type)
             T_e_caa += 1/2 * einsum('JiAa,ixay,YxZy->AJYZ', t1_xvee, t1_vaea, rdm_ccaa, optimize = einsum_type)
             T_e_caa -= 1/4 * einsum('JiAa,ixya,YxZy->AJYZ', t1_xvee, t1_vaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_ve, t1_xvee, t1_vaae, t1_vaea)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ve = mr_adc.t1.ve[:,s_chunk:f_chunk]
@@ -17918,11 +18776,14 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa -= 1/4 * einsum('iJAa,ixay,YxZy->AJYZ', t1_vxee, t1_vaea, rdm_ccaa, optimize = einsum_type)
             T_e_caa += 1/12 * einsum('iJAa,ixya,YxZy->AJYZ', t1_vxee, t1_vaae, rdm_ccaa, optimize = einsum_type)
             T_e_caa -= 1/12 * einsum('iJAa,ixya,YxyZ->AJYZ', t1_vxee, t1_vaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_ve, t1_vxee, t1_vaae, t1_vaea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -17947,6 +18808,8 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa += 1/12 * einsum('JxaA,ya,YyxZ->AJYZ', t1_xaee, t1_ae, rdm_ccaa, optimize = einsum_type)
             T_e_caa -= 1/12 * einsum('JxaA,yzwa,YzyZxw->AJYZ', t1_xaee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
             T_e_caa += 1/12 * einsum('JxaA,yzwa,YzyxZw->AJYZ', t1_xaee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ae, t1_aaae)
 
         T[:, s_caa__aaa:f_caa__aaa] += T_e_caa.reshape(nextern, -1)
@@ -18041,9 +18904,10 @@ def compute_trans_moments(mr_adc, U):
         T_e_caa += 1/6 * einsum('xyzA,Jzwu,YwuZyx->AJYZ', t1_aaae, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
         T_e_caa += 1/12 * einsum('xyzA,Jzwu,YwuyZx->AJYZ', t1_aaae, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xe = mr_adc.t1.xe[:,s_chunk:f_chunk]
@@ -18062,11 +18926,14 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa -= 1/4 * einsum('iJAa,ixay,YxZy->AJYZ', t1_xxee, t1_xaea, rdm_ccaa, optimize = einsum_type)
             T_e_caa += 1/6 * einsum('iJAa,ixya,YxZy->AJYZ', t1_xxee, t1_xaae, rdm_ccaa, optimize = einsum_type)
             T_e_caa += 1/12 * einsum('iJAa,ixya,YxyZ->AJYZ', t1_xxee, t1_xaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xe, t1_xxee, t1_xaae, t1_xaea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ve = mr_adc.t1.ve[:,s_chunk:f_chunk]
@@ -18080,10 +18947,13 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa += 1/2 * einsum('JiAa,ia,YZ->AJYZ', t1_xvee, t1_ve, rdm_ca, optimize = einsum_type)
             T_e_caa += 1/2 * einsum('JiAa,ixay,YxZy->AJYZ', t1_xvee, t1_vaea, rdm_ccaa, optimize = einsum_type)
             T_e_caa -= 1/4 * einsum('JiAa,ixya,YxZy->AJYZ', t1_xvee, t1_vaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_ve, t1_xvee, t1_vaae, t1_vaea)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ve = mr_adc.t1.ve[:,s_chunk:f_chunk]
@@ -18097,11 +18967,14 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa -= 1/4 * einsum('iJAa,ixay,YxZy->AJYZ', t1_vxee, t1_vaea, rdm_ccaa, optimize = einsum_type)
             T_e_caa += 1/6 * einsum('iJAa,ixya,YxZy->AJYZ', t1_vxee, t1_vaae, rdm_ccaa, optimize = einsum_type)
             T_e_caa += 1/12 * einsum('iJAa,ixya,YxyZ->AJYZ', t1_vxee, t1_vaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_ve, t1_vxee, t1_vaae, t1_vaea)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -18124,9 +18997,12 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa -= 1/12 * einsum('JxaA,ya,YyxZ->AJYZ', t1_xaee, t1_ae, rdm_ccaa, optimize = einsum_type)
             T_e_caa -= 1/6 * einsum('JxaA,yzwa,YzyZxw->AJYZ', t1_xaee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
             T_e_caa -= 1/12 * einsum('JxaA,yzwa,YzyxZw->AJYZ', t1_xaee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ae, t1_aaae)
 
         T[:, s_caa__abb:f_caa__abb] += T_e_caa.reshape(nextern, -1)
+
 
         # Amplitudes
         t1_ae = mr_adc.t1.ae
@@ -18204,9 +19080,10 @@ def compute_trans_moments(mr_adc, U):
         T_e_caa -= 1/12 * einsum('xyzA,Jzwu,YwuyZx->AJYZ', t1_aaae, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
         T_e_caa += 1/12 * einsum('xyzA,Jzwu,YwuyxZ->AJYZ', t1_aaae, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,:,s_chunk:f_chunk]
@@ -18216,11 +19093,14 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa += 1/4 * einsum('iJAa,iZxa,Yx->AJYZ', t1_xxee, t1_xaae, rdm_ca, optimize = einsum_type)
             T_e_caa -= 1/12 * einsum('iJAa,ixya,YxZy->AJYZ', t1_xxee, t1_xaae, rdm_ccaa, optimize = einsum_type)
             T_e_caa -= 1/6 * einsum('iJAa,ixya,YxyZ->AJYZ', t1_xxee, t1_xaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_xaae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,:,s_chunk:f_chunk]
@@ -18229,11 +19109,14 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa -= 1/4 * einsum('iJAa,iZxa,Yx->AJYZ', t1_vxee, t1_vaae, rdm_ca, optimize = einsum_type)
             T_e_caa -= 1/12 * einsum('iJAa,ixya,YxZy->AJYZ', t1_vxee, t1_vaae, rdm_ccaa, optimize = einsum_type)
             T_e_caa -= 1/6 * einsum('iJAa,ixya,YxyZ->AJYZ', t1_vxee, t1_vaae, rdm_ccaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee, t1_vaae)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -18252,11 +19135,17 @@ def compute_trans_moments(mr_adc, U):
             T_e_caa -= 1/12 * einsum('JxaA,yzwa,YzywxZ->AJYZ', t1_xaee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
             T_e_caa += 1/12 * einsum('JxaA,yzwa,YzyxZw->AJYZ', t1_xaee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
             T_e_caa -= 1/12 * einsum('JxaA,yzwa,YzyxwZ->AJYZ', t1_xaee, t1_aaae, rdm_cccaaa, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("contracting t1.xaee", *cput2)
         del(t1_xaee, t1_ae, t1_aaae)
 
         T[:, s_caa__bab:f_caa__bab] += T_e_caa.reshape(nextern, -1)
 
+        mr_adc.log.timer_debug("computing T q2-h1 E-CAA", *cput1)
+
     def compute_T__q2_h1__E_CCE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -18264,7 +19153,6 @@ def compute_trans_moments(mr_adc, U):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
-        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
         nextern = mr_adc.nextern
 
@@ -18290,9 +19178,10 @@ def compute_trans_moments(mr_adc, U):
         # T_e_cce  = einsum('JKAB->AJKB', t2_xxee, optimize = einsum_type).copy()
         # T_e_cce -= einsum('KJAB->AJKB', t2_xxee, optimize = einsum_type).copy()
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cce [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -18354,12 +19243,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cce -= 1/2 * einsum('KxAy,JzBx,yz->AJKB', t1_xaea_a, t1_xaea, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cce.shape[0]
-            T[:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cce", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cce t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -18383,13 +19275,16 @@ def compute_trans_moments(mr_adc, U):
             T_e_cce += 1/2 * einsum('KxBA,Jyxz,yz->AJKB', t1_xaee, t1_xaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cce.shape[0]
-            T[:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cce t1.xaee", *cput2)
         del(t1_xaee)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cce t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -18402,13 +19297,16 @@ def compute_trans_moments(mr_adc, U):
             T_e_cce += 1/4 * einsum('xyAB,JKyz,xz->AJKB', t1_aaee, t1_xxaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cce.shape[0]
-            T[:, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cce__aaa:f_cce__aaa] += T_e_cce[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cce t1.aaee", *cput2)
         del(t1_aaee)
 
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cce [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -18455,12 +19353,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cce -= 1/4 * einsum('JxAy,KzxB,yz->AJKB', t1_xaea_a, t1_xaae, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cce.shape[0]
-            T[:, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cce", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                             [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cce t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -18478,14 +19379,17 @@ def compute_trans_moments(mr_adc, U):
             T_e_cce += 1/2 * einsum('KxBA,Jyxz,yz->AJKB', t1_xaee, t1_xaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cce.shape[0]
-            T[:, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cce t1.xaee", *cput2)
         del(t1_xaee)
 
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncvs, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncvs, nextern],
+                                                                             [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cce t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -18495,10 +19399,16 @@ def compute_trans_moments(mr_adc, U):
             T_e_cce -= 1/4 * einsum('xyAB,JKzy,xz->AJKB', t1_aaee, t1_xxaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cce.shape[0]
-            T[:, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cce__abb:f_cce__abb] += T_e_cce.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cce t1.aaee", *cput2)
         del(t1_aaee)
 
+        mr_adc.log.timer_debug("computing T q2-h1 E-CCE", *cput1)
+
     def compute_T__q2_h1__E_CAE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -18507,7 +19417,6 @@ def compute_trans_moments(mr_adc, U):
         # Variables from kernel
         ncvs = mr_adc.ncvs
         nval = mr_adc.nval
-        nocc = mr_adc.nocc
         ncas = mr_adc.ncas
         nextern = mr_adc.nextern
 
@@ -18534,9 +19443,10 @@ def compute_trans_moments(mr_adc, U):
         # T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
         # T_e_cae -= 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -18584,12 +19494,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae -= 1/12 * einsum('xyzA,JzwB,Ywyx->AJYB', t1_aaae, t1_xaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -18600,12 +19513,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae += 1/4 * einsum('iJAB,ixyz,Yxyz->AJYB', t1_xxee, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae t1.xxee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -18614,10 +19530,13 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae -= 1/4 * einsum('JiAB,ixyz,Yxyz->AJYB', t1_xvee, t1_vaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae t1.xvee", *cput2)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
@@ -18626,12 +19545,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae += 1/4 * einsum('iJAB,ixyz,Yxyz->AJYB', t1_vxee, t1_vaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae t1.vxee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -18648,15 +19570,18 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae -= 1/4 * einsum('xyAB,Jzyw,Ywxz->AJYB', t1_aaee, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__aaa:f_cae__aaa] += T_e_cae.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cae t1.aaee", *cput2)
 
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cae  = 1/2 * einsum('JxAB,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -18696,12 +19621,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae += 1/12 * einsum('xyzA,JzwB,Ywyx->AJYB', t1_aaae, t1_xaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -18710,12 +19638,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae -= 1/4 * einsum('JiAB,ixyz,Yxyz->AJYB', t1_xxee, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae t1.xxee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -18724,12 +19655,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae -= 1/4 * einsum('JiAB,ixyz,Yxyz->AJYB', t1_xvee, t1_vaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae t1.xvee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -18743,15 +19677,18 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae -= 1/6 * einsum('xyAB,Jzwy,Ywzx->AJYB', t1_aaee, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__abb:f_cae__abb] += T_e_cae.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cae t1.aaee", *cput2)
 
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cae =- 1/2 * einsum('JxBA,Yx->AJYB', t2_xaee, rdm_ca, optimize = einsum_type)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -18787,12 +19724,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae -= 1/6 * einsum('xyzA,JzwB,Ywyx->AJYB', t1_aaae, t1_xaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -18801,12 +19741,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae += 1/4 * einsum('iJAB,ixyz,Yxyz->AJYB', t1_xxee, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae t1.xxee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -18815,12 +19758,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae += 1/4 * einsum('iJAB,ixyz,Yxyz->AJYB', t1_vxee, t1_vaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cae t1.xvee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cae t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -18834,9 +19780,13 @@ def compute_trans_moments(mr_adc, U):
             T_e_cae -= 1/4 * einsum('xyAB,Jzyw,Ywxz->AJYB', t1_aaee, t1_xaaa, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cae.shape[0]
-            T[:, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cae__bab:f_cae__bab] += T_e_cae.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cae t1.aaee", *cput2)
 
     def compute_T__q2_h1__E_CCA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -18951,9 +19901,10 @@ def compute_trans_moments(mr_adc, U):
         T_e_cca -= 1/4 * einsum('xyzA,JKyx,Yz->AJKY', t1_aaae, t1_xxaa, rdm_ca, optimize = einsum_type)
         T[:, s_cca__aaa:f_cca__aaa] += T_e_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(nextern, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -18970,7 +19921,9 @@ def compute_trans_moments(mr_adc, U):
             T_e_cca += 1/4 * einsum('KJAa,xyza,Yzyx->AJKY', t1_xxee, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cca.shape[0]
-            T[:, s_cca__aaa:f_cca__aaa] += T_e_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cca__aaa:f_cca__aaa] += T_e_cca[:, cvs_tril_ind[0], cvs_tril_ind[1]].reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_ae, t1_aaae)
 
 
@@ -19025,9 +19978,10 @@ def compute_trans_moments(mr_adc, U):
         T_e_cca -= 1/4 * einsum('xyzA,JKyx,Yz->AJKY', t1_aaae, t1_xxaa, rdm_ca, optimize = einsum_type)
         T[:, s_cca__abb:f_cca__abb] += T_e_cca.reshape(nextern, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, ncvs, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xxee = mr_adc.t1.xxee[:,:,s_chunk:f_chunk]
@@ -19039,10 +19993,16 @@ def compute_trans_moments(mr_adc, U):
             T_e_cca -= 1/4 * einsum('JKAa,xyza,Yzyx->AJKY', t1_xxee, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cca.shape[0]
-            T[:, s_cca__abb:f_cca__abb] += T_e_cca.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cca__abb:f_cca__abb] += T_e_cca.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xxee", *cput2)
         del(t1_xxee, t1_ae, t1_aaae)
 
+        mr_adc.log.timer_debug("computing T q2-h1 E-CCA", *cput1)
+
     def compute_T__q2_h1__E_CVE(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -19079,9 +20039,10 @@ def compute_trans_moments(mr_adc, U):
         # T_e_cve  = einsum('JKAB->AJKB', t2_xvee, optimize = einsum_type).copy()
         # T_e_cve -= einsum('KJAB->AJKB', t2_vxee, optimize = einsum_type).copy()
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -19159,12 +20120,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve -= 1/2 * einsum('xyzA,KJyB,zx->AJKB', t1_aaae, t1_vxae, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -19174,10 +20138,13 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve += 1/2 * einsum('JxAB,Kyxz,yz->AJKB', t1_xaee, t1_vaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve t1.xaee", *cput2)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -19187,12 +20154,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve -= 1/2 * einsum('JxBA,Kyxz,yz->AJKB', t1_xaee, t1_vaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [nval, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve t1.xaee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [nval, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -19202,10 +20172,13 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve -= 1/2 * einsum('KxAB,Jyxz,yz->AJKB', t1_vaee, t1_xaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve t1.vaee", *cput2)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,:,s_chunk:f_chunk]
@@ -19215,12 +20188,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve += 1/2 * einsum('KxBA,Jyxz,yz->AJKB', t1_vaee, t1_xaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve t1.vaee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -19233,15 +20209,18 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve += 1/4 * einsum('xyAB,JKyz,xz->AJKB', t1_aaee, t1_xvaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__aaa:f_cve__aaa] += T_e_cve.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cve t1.aaee", *cput2)
 
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cve  = einsum('JKAB->AJKB', t2_xvee, optimize = einsum_type).copy()
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -19297,12 +20276,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve -= 1/2 * einsum('KJxA,yxzB,zy->AJKB', t1_vxae, t1_aaae, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, nval, nextern],
-                                                                             [ncvs, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, nval, nextern],
+                                                                           [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,s_chunk:f_chunk]
@@ -19312,12 +20294,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve += 1/2 * einsum('JxAB,Kyxz,yz->AJKB', t1_xaee, t1_vaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, nval, nextern],
-                                                                             [nval, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve t1.xaee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, nval, nextern],
+                                                                           [nval, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,:,s_chunk:f_chunk]
@@ -19327,12 +20312,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve += 1/2 * einsum('KxBA,Jyxz,yz->AJKB', t1_vaee, t1_xaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, nval, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve t1.vaee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, nval, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -19342,15 +20330,18 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve -= 1/4 * einsum('xyAB,JKxz,yz->AJKB', t1_aaee, t1_xvaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__abb:f_cve__abb] += T_e_cve.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cve t1.aaee", *cput2)
 
 
         ## Terms removed by neglecting T2 amplitudes
         # T_e_cve =- einsum('KJAB->AJKB', t2_vxee, optimize = einsum_type).copy()
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_ae = mr_adc.t1.ae[:,s_chunk:f_chunk]
@@ -19404,12 +20395,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve -= 1/2 * einsum('xyzA,KJyB,zx->AJKB', t1_aaae, t1_vxae, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xaee = mr_adc.t1.xaee[:,:,:,s_chunk:f_chunk]
@@ -19419,12 +20413,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve -= 1/2 * einsum('JxBA,Kyxz,yz->AJKB', t1_xaee, t1_vaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [nval, ncas, nextern],
-                                                                             [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve t1.xaee", *cput2)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [nval, ncas, nextern],
+                                                                           [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vaee = mr_adc.t1.vaee[:,:,s_chunk:f_chunk]
@@ -19434,12 +20431,16 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve -= 1/2 * einsum('KxAB,Jyxz,yz->AJKB', t1_vaee, t1_xaaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, nextern, [ncvs, ncas, nextern],
-                                                                             [ncas, ncas, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+            mr_adc.log.timer_debug("contracting T_e_cve t1.vaee", *cput2)
+
+
+        chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncvs, ncas, nextern],
+                                                                           [ncas, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("T_e_cve t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -19449,9 +20450,15 @@ def compute_trans_moments(mr_adc, U):
             T_e_cve += 1/4 * einsum('xyAB,JKyz,xz->AJKB', t1_aaee, t1_xvaa, rdm_ca, optimize = einsum_type)
 
             dim_chunk = T_e_cve.shape[0]
-            T[:, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cve__bab:f_cve__bab] += T_e_cve.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting T_e_cve t1.aaee", *cput2)
+
+        mr_adc.log.timer_debug("computing T q2-h1 E-CVE", *cput1)
 
     def compute_T__q2_h1__E_CVA(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
@@ -19571,9 +20578,10 @@ def compute_trans_moments(mr_adc, U):
         T_e_cva -= 1/4 * einsum('xyzA,JKyx,Yz->AJKY', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T[:, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(nextern, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -19585,11 +20593,14 @@ def compute_trans_moments(mr_adc, U):
             T_e_cva -= 1/4 * einsum('JKAa,xyza,Yzyx->AJKY', t1_xvee, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cva.shape[0]
-            T[:, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee)
 
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
@@ -19601,7 +20612,9 @@ def compute_trans_moments(mr_adc, U):
             T_e_cva += 1/4 * einsum('KJAa,xyza,Yzyx->AJKY', t1_vxee, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cva.shape[0]
-            T[:, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cva__aaa:f_cva__aaa] += T_e_cva.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
         del(t1_vxee)
 
 
@@ -19652,9 +20665,10 @@ def compute_trans_moments(mr_adc, U):
         T_e_cva -= 1/4 * einsum('xyzA,JKyx,Yz->AJKY', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T[:, s_cva__abb:f_cva__abb] += T_e_cva.reshape(nextern, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_xvee = mr_adc.t1.xvee[:,:,s_chunk:f_chunk]
@@ -19666,7 +20680,9 @@ def compute_trans_moments(mr_adc, U):
             T_e_cva -= 1/4 * einsum('JKAa,xyza,Yzyx->AJKY', t1_xvee, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cva.shape[0]
-            T[:, s_cva__abb:f_cva__abb] += T_e_cva.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cva__abb:f_cva__abb] += T_e_cva.reshape(dim_chunk, -1)
+
+            mr_adc.log.timer_debug("contracting t1.xvee", *cput2)
         del(t1_xvee)
 
 
@@ -19717,9 +20733,10 @@ def compute_trans_moments(mr_adc, U):
         T_e_cva += 1/4 * einsum('xyzA,JKxy,Yz->AJKY', t1_aaae, t1_xvaa, rdm_ca, optimize = einsum_type)
         T[:, s_cva__bab:f_cva__bab] += T_e_cva.reshape(nextern, -1)
 
-        chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncvs, nval, nextern], 2)
-        for s_chunk in range(0, nextern, chunk_size):
-            f_chunk = s_chunk + chunk_size
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nval, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             # Amplitudes
             t1_vxee = mr_adc.t1.vxee[:,:,s_chunk:f_chunk]
@@ -19731,8 +20748,11 @@ def compute_trans_moments(mr_adc, U):
             T_e_cva += 1/4 * einsum('KJAa,xyza,Yzyx->AJKY', t1_vxee, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
             dim_chunk = T_e_cva.shape[0]
-            T[:, s_cva__bab:f_cva__bab] += T_e_cva.reshape(dim_chunk, -1)
+            T[s_chunk:f_chunk, s_cva__bab:f_cva__bab] += T_e_cva.reshape(dim_chunk, -1)
 
+            mr_adc.log.timer_debug("contracting t1.vxee", *cput2)
+
+        mr_adc.log.timer_debug("computing T q2-h1 E-CVA", *cput1)
 
     # Variables from kernel
     nmo = mr_adc.nmo
@@ -19978,15 +20998,16 @@ def compute_trans_moments(mr_adc, U):
 
     X[nocc:, :] = np.dot(T, U.T)
 
+    mr_adc.log.timer("computing transition moments matrix", *cput0)
+
     return X
 
 def analyze_spec_factor(mr_adc, X, spec_intensity):
 
-    print("\nSpectroscopic Factors Analysis:\n")
+    print("\nSpectroscopic Factors Analysis:")
 
     print_thresh = mr_adc.spec_factor_print_tol
-
-    print("Print spectroscopic factors > %e" %  print_thresh)
+    mr_adc.log.extra("Print spectroscopic factors > %e" %  print_thresh)
 
     X_2 = 2.0 * (X.T)**2
 
@@ -20025,12 +21046,10 @@ def analyze_spec_factor(mr_adc, X, spec_intensity):
                                                                             spec_Contribution[c],
                                                                             partial_Contribution[c]))
 
-    print("\n*************************************************************")
-
 def compute_dyson_mo(mr_adc, X):
 
-    print("\nComputing Dyson molecular orbitals...")
+    mr_adc.log.note("\nComputing Dyson molecular orbitals...")
     mo_dyson = np.dot(mr_adc.mo, X)
-    print("Done!\n")
+    mr_adc.log.note("Done!\n")
 
     return mo_dyson

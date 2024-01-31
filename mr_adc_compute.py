@@ -18,43 +18,49 @@
 #
 
 import sys
-import time
 import numpy as np
+from functools import reduce
+
 import prism.mr_adc_amplitudes as mr_adc_amplitudes
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
-from functools import reduce
+
+import prism.lib.logger as logger
 
 def kernel(mr_adc):
 
-    start_time = time.time()
-
-    print("Computing MR-ADC excitation energies...\n")
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
 
     # Print general information
-    print("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
-    print("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
-    print("Ground-state active-space energy:            %20.12f" % mr_adc.e_cas)
-    print("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
-    print("Number of basis functions:                         %d" % mr_adc.nmo)
-    print("Number of core orbitals:                           %d" % mr_adc.ncore)
-    print("Number of active orbitals:                         %d" % mr_adc.ncas)
-    print("Number of external orbitals:                       %d" % mr_adc.nextern)
-    print("Number of electrons:                               %d" % mr_adc.nelec)
-    print("Number of active electrons:                        %s" % str(mr_adc.nelecas))
+    mr_adc.log.info("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
+    mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
+    mr_adc.log.info("Ground-state active-space energy:            %20.12f" % mr_adc.e_cas)
+    mr_adc.log.info("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
+    mr_adc.log.info("Number of basis functions:                         %d" % mr_adc.nmo)
+    mr_adc.log.info("Number of core orbitals:                           %d" % mr_adc.ncore)
+    mr_adc.log.info("Number of active orbitals:                         %d" % mr_adc.ncas)
+    mr_adc.log.info("Number of external orbitals:                       %d" % mr_adc.nextern)
+    mr_adc.log.info("Number of electrons:                               %d" % mr_adc.nelec)
+    mr_adc.log.info("Number of active electrons:                        %s" % str(mr_adc.nelecas))
     if mr_adc.ncvs is not None:
-        print("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
-        print("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
+        mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
+        mr_adc.log.info("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
-    print("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
+    mr_adc.log.extra("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
+    mr_adc.log.extra("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
 
     # Print info about CASCI states
-    print("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
-    print("Number of CASCI states:                            %d\n" % mr_adc.ncasci)
+    mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
 
     if mr_adc.e_cas_ci is not None:
-        print("CASCI excitation energies (eV):                    %s\n" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
-    sys.stdout.flush()
+        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
+
+    mr_adc.log.debug("Temporary directory path: %s" % mr_adc.temp_dir)
+
+    davidson_verbose = 3
+    if mr_adc.verbose > 3:
+        davidson_verbose = 6
 
     # Compute amplitudes
     mr_adc_amplitudes.compute_amplitudes(mr_adc)
@@ -86,17 +92,20 @@ def kernel(mr_adc):
     apply_M, precond, x0 = setup_davidson(mr_adc)
 
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
+    cput1 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.info("")
     conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
                                            nroots = mr_adc.nroots,
-                                           verbose = 6,
+                                           verbose = davidson_verbose,
                                            max_space = mr_adc.max_space,
                                            max_cycle = mr_adc.max_cycle,
                                            tol = mr_adc.tol_e,
                                            tol_residual = mr_adc.tol_davidson)
+    mr_adc.log.timer("solving eigenvalue problem", *cput1)
 
-    print("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
+    mr_adc.log.note("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
     print(E.reshape(-1, 1))
-    print("\n%s-%s excitation energies (eV):" % (mr_adc.method_type, mr_adc.method))
+    mr_adc.log.note("\n%s-%s excitation energies (eV):" % (mr_adc.method_type, mr_adc.method))
     E_ev = E * 27.2114
     print(E_ev.reshape(-1, 1))
     sys.stdout.flush()
@@ -105,7 +114,8 @@ def kernel(mr_adc):
     U = np.array(U)
     spec_intensity, X = compute_trans_properties(mr_adc, E, U)
 
-    print("\nTotal time:                                       %f sec" % (time.time() - start_time))
+    mr_adc.log.info("\n------------------------------------------------------------------------------")
+    mr_adc.log.timer0("total MR-ADC calculation", *cput0)
 
     return E_ev, spec_intensity, X
 
@@ -205,11 +215,6 @@ def compute_guess_vectors(mr_adc, precond, ascending = True):
 
 def compute_trans_properties(mr_adc, E, U):
 
-    start_time = time.time()
-
-    print("\nComputing transition moments matrix...\n")
-    sys.stdout.flush()
-
     X = None
 
     if mr_adc.method_type == "ip":
@@ -223,24 +228,23 @@ def compute_trans_properties(mr_adc, E, U):
     elif mr_adc.method_type == "cvs-ee":
         X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
     else:
-        raise Exception("Unknown Method Type ...")
+        msg = "Unknown Method Type ..."
+        mr_adc.log.error(msg)
+        raise Exception(msg)
 
     spec_intensity = 2.0 * np.sum(X**2, axis=0)
 
-    print("%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
+    mr_adc.log.note("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
     print(spec_intensity.reshape(-1, 1))
 
     if mr_adc.method_type in ("cvs-ee", "ee"):
         osc_strength = (2.0/3.0) * E * spec_intensity
 
-        print("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
+        mr_adc.log.note("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
         print(osc_strength.reshape(-1, 1))
 
-    if mr_adc.analyze_spec_factor and (mr_adc.method_type == "cvs-ip"):
+    if (mr_adc.analyze_spec_factor or mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
         mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
-
-    print("\nTime for computing transition moments matrix:     %f sec\n" % (time.time() - start_time))
-    sys.stdout.flush()
 
     return spec_intensity, X
 

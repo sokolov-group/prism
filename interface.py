@@ -17,17 +17,26 @@
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #
 
-import sys
+import os
+import tempfile
 import numpy as np
 
+import prism.lib.logger as logger
 class PYSCF:
 
     def __init__(self, mf, mc = None, opt_einsum = False):
 
-        print_header()
+        if mc is None:
+            self.stdout = mf.stdout
+            self.verbose = mf.verbose
+        else:
+            self.stdout = mf.stdout
+            self.verbose = mc.verbose
 
-        print("\nImporting Pyscf objects...")
-        sys.stdout.flush()
+        log = logger.Logger(self.stdout, self.verbose)
+        log.prism_header()
+
+        log.info("Importing Pyscf objects...")
 
         from pyscf import lib
         self.type = "pyscf"
@@ -39,6 +48,7 @@ class PYSCF:
         self.enuc = mf.mol.energy_nuc()
         self.e_scf = mf.e_tot
         self.mf = mf
+        self.log = log
 
         # Maximum S^2 value of CASCI roots to keep; default to only singlet calculations
         self.spin_sq_thresh = 0
@@ -76,7 +86,6 @@ class PYSCF:
             self.nelecas = mc.nelecas
             self.e_casscf = mc.e_tot
             self.e_cas = mc.e_cas
-            self.print_level = mc.verbose
             self.davidson_only = mc.fcisolver.davidson_only
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
@@ -120,7 +129,10 @@ class PYSCF:
         self.current_memory = lib.current_memory
 
         # HDF5 Files
-        self.create_HDF5_temp_file = lib.H5TmpFile
+        if os.environ.get('PYSCF_TMPDIR'):
+            self.temp_dir = os.environ.get('PYSCF_TMPDIR', tempfile.gettempdir())
+        else:
+            self.temp_dir = os.environ.get('TMPDIR', tempfile.gettempdir())
 
         # Integrals
         self.h1e_ao = mf.get_hcore()
@@ -155,7 +167,7 @@ class PYSCF:
 
     def density_fit(self, auxbasis=None, with_df = None):
         if with_df is None:
-            print("\nImporting Pyscf density-fitting objects...\n")
+            self.log.info("Importing Pyscf density-fitting objects...")
             from pyscf import df
 
             self.with_df = df.DF(self.mol, auxbasis)
@@ -197,28 +209,3 @@ class PYSCF:
         rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))
 
         return rdm1, rdm2, rdm3, rdm4
-
-def print_header():
-
-    print("""\n
-----------------------------------------------------------------------
-        PRISM: Open-Source implementation of ab initio methods
-                for excited states and spectroscopy
-
-                           Version 0.4
-
-               Copyright (C) 2023 Alexander Sokolov
-                                  Carlos E. V. de Moura
-
-        Unless required by applicable law or agreed to in
-        writing, software distributed under the GNU General
-        Public License v3.0 and is distributed on an "AS IS"
-        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-        either express or implied.
-
-        See the License for the specific language governing
-        permissions and limitations.
-
-        Available at https://github.com/sokolov-group/prism
-
-----------------------------------------------------------------------""")

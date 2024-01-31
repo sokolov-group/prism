@@ -17,7 +17,6 @@
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #
 
-import sys
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_rdms as mr_adc_rdms
 import prism.mr_adc_compute as mr_adc_compute
@@ -25,18 +24,24 @@ import prism.mr_adc_compute as mr_adc_compute
 class MRADC:
     def __init__(self, interface):
 
-        print("Initializing MR-ADC...\n")
-        sys.stdout.flush()
-
-        if (interface.reference != "casscf"):
-            raise Exception("MR-ADC requires CASSCF reference")
-
         # General info
         self.interface = interface
+        self.log = interface.log
+        log = self.log
 
-        self.print_level = interface.print_level
+        log.info("\nInitializing MR-ADC...")
+
+        if (interface.reference != "casscf"):
+            log.info("MR-ADC requires CASSCF reference")
+            raise Exception("MR-ADC requires CASSCF reference")
+
+        self.stdout = interface.stdout
+        self.verbose = interface.verbose
         self.max_memory = interface.max_memory
         self.current_memory = interface.current_memory
+
+        self.temp_dir = interface.temp_dir
+        self.tmpfile = lambda:None
 
         self.mo = interface.mo
         self.mo_hf = interface.mo_hf
@@ -74,7 +79,7 @@ class MRADC:
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
 
-        self.analyze_spec_factor = True
+        self.analyze_spec_factor = False
         self.spec_factor_print_tol = 0.1
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
@@ -85,7 +90,7 @@ class MRADC:
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
 
-        self.outcore_expensive_tensors = False # Store expensive integrals and amplitudes in disk
+        self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
 
         # Approximations
         self.approx_trans_moments = False
@@ -109,50 +114,69 @@ class MRADC:
 
     def kernel(self):
 
+        log = self.log
         self.method = self.method.lower()
         self.method_type = self.method_type.lower()
 
         if self.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            raise Exception("Unknown method %s" % self.method)
+            msg = "Unknown method %s" % self.method
+            log.error(msg)
+            raise Exception(msg)
 
         if self.method_type not in ("ee", "ip", "ea", "cvs-ip", "cvs-ee"):
-            raise Exception("Unknown method type %s" % self.method_type)
+            msg = "Unknown method type %s" % self.method_type
+            log.error(msg)
+            raise Exception(msg)
 
         if self.interface.with_df and self.method_type not in ('cvs-ip'):
-            raise Exception("Density-fitting currently only compatible with CVS-IP method type.")
+            msg = "Density-fitting currently only compatible with CVS-IP method type."
+            log.error(msg)
+            raise Exception(msg)
 
         if self.spin > 0:
-            raise Exception("This program currently does not work for open-shell molecules")
+            msg = "This program currently does not work for open-shell molecules"
+            log.error(msg)
+            raise Exception(msg)
 
         if self.method_type == "cvs-ip" and self.ncvs is None:
-            raise Exception("Method type %s requires setting the ncvs parameter" % self.method_type)
+            msg = "Method type %s requires setting the ncvs parameter" % self.method_type
+            log.error(msg)
+            raise Exception(msg)
 
         if self.method_type in ("cvs-ip", "cvs-ee"):
 
             if isinstance (self.ncvs, int):
                 if self.ncvs < 1 or self.ncvs > self.ncore:
-                    raise Exception("Method type %s requires setting the ncvs parameter as a positive integer that is smaller than ncore" % self.method_type)
+                    msg = '''Method type %s requires setting the ncvs parameter as a
+                             positive integer that is smaller than ncore''' % self.method_type
+                    log.error(msg)
+                    raise Exception(msg)
 
                 self.nval = self.ncore - self.ncvs
 
             else:
-                raise Exception("Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type)
+                msg = "Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type
+                log.error(msg)
+                raise Exception(msg)
 
         # TODO: Temporary check of what methods are implemented in this version
         if self.method_type not in ("cvs-ip"):
-            raise Exception("This spin-adapted version does not currently support method type %s" % self.method_type)
+            msg = "This spin-adapted version does not currently support method type %s" % self.method_type
+            log.error(msg)
+            raise Exception(msg)
 
         # Transform one- and two-electron integrals
+        log.info("\nTransforming integrals to MO basis...")
         mr_adc_integrals.transform_integrals_1e(self)
         if self.interface.with_df:
-            self.outcore_expensive_tensors = True
-
             mr_adc_integrals.transform_Heff_integrals_2e_df(self)
             mr_adc_integrals.transform_integrals_2e_df(self)
         elif self.interface.v2e_ao is not None:
             mr_adc_integrals.transform_integrals_2e_incore(self)
         else:
-            raise Exception("Out-of-core algorithm is not implemented in Prism.")
+            msg = "Out-of-core algorithm is not implemented in Prism."
+            log.error(msg)
+            raise Exception(msg)
 
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)
@@ -164,3 +188,11 @@ class MRADC:
         ee, spec_factors, X = mr_adc_compute.kernel(self)
 
         return ee, spec_factors, X
+
+    @property
+    def verbose(self):
+        return self._verbose
+    @verbose.setter
+    def verbose(self, obj):
+        self._verbose = obj
+        self.log.verbose = obj

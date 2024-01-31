@@ -17,17 +17,20 @@
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #
 
-import sys
-import time
 import numpy as np
 from functools import reduce
+
 import prism.mr_adc_intermediates as mr_adc_intermediates
 import prism.mr_adc_overlap as mr_adc_overlap
 import prism.mr_adc_integrals as mr_adc_integrals
 
+import prism.lib.logger as logger
+import prism.lib.tools as tools
+
 def compute_amplitudes(mr_adc):
 
-    start_time = time.time()
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.info("\nComputing NEVPT2 amplitudes...")
 
     # First-order amplitudes
     compute_t1_amplitudes(mr_adc)
@@ -39,7 +42,7 @@ def compute_amplitudes(mr_adc):
     if mr_adc.method_type == "cvs-ip":
         compute_cvs_amplitudes(mr_adc)
 
-    print("Time for computing amplitudes:                     %f sec\n" % (time.time() - start_time))
+    mr_adc.log.timer("computing amplitudes", *cput0)
 
 def compute_t1_amplitudes(mr_adc):
 
@@ -49,44 +52,31 @@ def compute_t1_amplitudes(mr_adc):
 
     e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8
 
+    # Create temporary files
     if mr_adc.outcore_expensive_tensors:
-        mr_adc.t1.chk = mr_adc.interface.create_HDF5_temp_file()
+        mr_adc.tmpfile.t1 = tools.create_temp_file(mr_adc) # Non-core indices' amplitudes
+        mr_adc.tmpfile.ct1 = tools.create_temp_file(mr_adc) # Core indices' amplitudes
+    else:
+        mr_adc.tmpfile.t1 = None
+        mr_adc.tmpfile.ct1 = None
 
     # First-order amplitudes
     if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
         if ncore > 0 and nextern > 0 and ncas > 0:
-            print("Computing T[0']^(1) amplitudes...")
-            sys.stdout.flush()
             e_0p, mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae = compute_t1_0p(mr_adc)
-
-            print("Norm of T[0']^(1):                           %20.12f" % (np.linalg.norm(mr_adc.t1.ce) +
-                                                                            np.linalg.norm(mr_adc.t1.caea)))
-            print("Correlation energy [0']:                     %20.12f\n" % e_0p)
         else:
             mr_adc.t1.ce = np.zeros((ncore, nextern))
             mr_adc.t1.caea = np.zeros((ncore, ncas, nextern, ncas))
             mr_adc.t1.caae = np.zeros((ncore, ncas, ncas, nextern))
 
         if ncore > 0 and ncas > 0:
-            print("Computing T[+1']^(1) amplitudes...")
-            sys.stdout.flush()
             e_p1p, mr_adc.t1.ca, mr_adc.t1.caaa = compute_t1_p1p(mr_adc)
-
-            print("Norm of T[+1']^(1):                          %20.12f" % (np.linalg.norm(mr_adc.t1.ca) +
-                                                                            np.linalg.norm(mr_adc.t1.caaa)))
-            print("Correlation energy [+1']:                    %20.12f\n" % e_p1p)
         else:
             mr_adc.t1.ca = np.zeros((ncore, ncas))
             mr_adc.t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
 
         if nextern > 0 and ncas > 0:
-            print("Computing T[-1']^(1) amplitudes...")
-            sys.stdout.flush()
             e_m1p, mr_adc.t1.ae, mr_adc.t1.aaae = compute_t1_m1p(mr_adc)
-
-            print("Norm of T[-1']^(1):                          %20.12f" % (np.linalg.norm(mr_adc.t1.ae) +
-                                                                            np.linalg.norm(mr_adc.t1.aaae)))
-            print("Correlation energy [-1']:                    %20.12f\n" % e_m1p)
         else:
             mr_adc.t1.ae = np.zeros((ncas, nextern))
             mr_adc.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
@@ -104,45 +94,24 @@ def compute_t1_amplitudes(mr_adc):
         (mr_adc.method == "mr-adc(1)" and mr_adc.method_type in ("ee", "cvs-ee"))):
 
         if ncore > 0 and nextern > 0:
-            print("Computing T[0]^(1) amplitudes...")
-            sys.stdout.flush()
             e_0, mr_adc.t1.ccee = compute_t1_0(mr_adc)
-            print("Norm of T[0]^(1):                            %20.12f" % np.linalg.norm(mr_adc.t1.ccee))
-            print("Correlation energy [0]:                      %20.12f\n" % e_0)
         else:
             mr_adc.t1.ccee = np.zeros((ncore, ncore, nextern, nextern))
 
         if ncore > 0 and nextern > 0 and ncas > 0:
-            print("Computing T[+1]^(1) amplitudes...")
-            sys.stdout.flush()
             e_p1, mr_adc.t1.ccae = compute_t1_p1(mr_adc)
-            print("Norm of T[+1]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.ccae))
-            print("Correlation energy [+1]:                     %20.12f\n" % e_p1)
-
-            print("Computing T[-1]^(1) amplitudes...")
-            sys.stdout.flush()
             e_m1, mr_adc.t1.caee = compute_t1_m1(mr_adc)
-            print("Norm of T[-1]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.caee))
-            print("Correlation energy [-1]:                     %20.12f\n" % e_m1)
         else:
             mr_adc.t1.ccae = np.zeros((ncore, ncore, ncas, nextern))
             mr_adc.t1.caee = np.zeros((ncore, ncas, nextern, nextern))
 
         if ncore > 0 and ncas > 0:
-            print("Computing T[+2]^(1) amplitudes...")
-            sys.stdout.flush()
             e_p2, mr_adc.t1.ccaa = compute_t1_p2(mr_adc)
-            print("Norm of T[+2]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.ccaa))
-            print("Correlation energy [+2]:                     %20.12f\n" % e_p2)
         else:
             mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
         if nextern > 0 and ncas > 0:
-            print("Computing T[-2]^(1) amplitudes...")
-            sys.stdout.flush()
             e_m2, mr_adc.t1.aaee = compute_t1_m2(mr_adc)
-            print("Norm of T[-2]^(1):                           %20.12f" % np.linalg.norm(mr_adc.t1.aaee))
-            print("Correlation energy [-2]:                     %20.12f\n" % e_m2)
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
@@ -156,9 +125,9 @@ def compute_t1_amplitudes(mr_adc):
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_casscf + e_corr
 
-    print("CASSCF reference energy:                     %20.12f" % mr_adc.e_casscf)
-    print("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
-    print("Total PC-NEVPT2 energy:                      %20.12f\n" % e_tot)
+    mr_adc.log.log("\nCASSCF reference energy:                     %20.12f" % mr_adc.e_casscf)
+    mr_adc.log.info("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
+    mr_adc.log.log("Total PC-NEVPT2 energy:                      %20.12f" % e_tot)
 
 def compute_t2_amplitudes(mr_adc):
 
@@ -172,11 +141,7 @@ def compute_t2_amplitudes(mr_adc):
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
         if (ncore > 0) and (nextern > 0) and not (approx_trans_moments):
-            print("Computing T[0']^(2) amplitudes...")
-            sys.stdout.flush()
             mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)
-            print("Norm of T[0']^(2):                           %20.12f\n" % np.linalg.norm(mr_adc.t2.ce))
-            sys.stdout.flush()
 
         else:
             mr_adc.t2.ce = np.zeros((ncore, nextern))
@@ -187,10 +152,14 @@ def compute_t2_amplitudes(mr_adc):
 def compute_cvs_amplitudes(mr_adc):
     'Create CVS amplitudes tensors and remove core integrals, core amplitudes and RDMs not used in CVS calculations'
 
-    start_time = time.time()
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing CVS amplitudes...")
 
-    print("Computing CVS amplitudes...")
-    sys.stdout.flush()
+    if mr_adc.outcore_expensive_tensors:
+        mr_adc.tmpfile.xt1 = tools.create_temp_file(mr_adc)
+    else:
+        mr_adc.tmpfile.xt1 = None
+    tmpfile = mr_adc.tmpfile.xt1
 
     if mr_adc.method_type == "cvs-ip":
 
@@ -204,42 +173,6 @@ def compute_cvs_amplitudes(mr_adc):
         del(mr_adc.rdm.ccccaaaa)
 
         if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            if mr_adc.outcore_expensive_tensors:
-                mr_adc.t1.xxee = mr_adc.t1.chk.create_dataset('xxee', (ncvs, ncvs, nextern, nextern), 'f8')
-                mr_adc.t1.xvee = mr_adc.t1.chk.create_dataset('xvee', (ncvs, nval, nextern, nextern), 'f8')
-                mr_adc.t1.vxee = mr_adc.t1.chk.create_dataset('vxee', (nval, ncvs, nextern, nextern), 'f8')
-                mr_adc.t1.vvee = mr_adc.t1.chk.create_dataset('vvee', (nval, nval, nextern, nextern), 'f8')
-
-                mr_adc.t1.xaee = mr_adc.t1.chk.create_dataset('xaee', (ncvs, ncas, nextern, nextern), 'f8')
-                mr_adc.t1.vaee = mr_adc.t1.chk.create_dataset('vaee', (nval, ncas, nextern, nextern), 'f8')
-            else:
-                mr_adc.t1.xxee = np.zeros((ncvs, ncvs, nextern, nextern))
-                mr_adc.t1.xvee = np.zeros((ncvs, nval, nextern, nextern))
-                mr_adc.t1.vxee = np.zeros((nval, ncvs, nextern, nextern))
-                mr_adc.t1.vvee = np.zeros((nval, nval, nextern, nextern))
-
-                mr_adc.t1.xaee = np.zeros((ncvs, ncas, nextern, nextern))
-                mr_adc.t1.vaee = np.zeros((nval, ncas, nextern, nextern))
-
-            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncore, ncore, nextern])
-            for s_chunk in range(0, nextern, chunk_size):
-                f_chunk = s_chunk + chunk_size
-
-                mr_adc.t1.xxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, :ncvs, s_chunk:f_chunk, :]
-                mr_adc.t1.xvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, ncvs:, s_chunk:f_chunk, :]
-                mr_adc.t1.vxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, :ncvs, s_chunk:f_chunk, :]
-                mr_adc.t1.vvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, ncvs:, s_chunk:f_chunk, :]
-            del(mr_adc.t1.ccee)
-
-
-            chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncore, ncas, nextern])
-            for s_chunk in range(0, nextern, chunk_size):
-                f_chunk = s_chunk + chunk_size
-
-                mr_adc.t1.xaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[:ncvs, :, s_chunk:f_chunk]
-                mr_adc.t1.vaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[ncvs:, :, s_chunk:f_chunk]
-            del(mr_adc.t1.caee)
-
             mr_adc.t1.xe = np.ascontiguousarray(mr_adc.t1.ce[:ncvs, :])
             mr_adc.t1.ve = np.ascontiguousarray(mr_adc.t1.ce[ncvs:, :])
             del(mr_adc.t1.ce)
@@ -276,13 +209,82 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
             del(mr_adc.t2.ce)
 
-    print("Time for computing CVS amplitudes:                 %f sec\n" % (time.time() - start_time))
+
+            mr_adc.t1.xxee = tools.create_dataset('xxee', tmpfile, (ncvs, ncvs, nextern, nextern))
+            mr_adc.t1.xvee = tools.create_dataset('xvee', tmpfile, (ncvs, nval, nextern, nextern))
+            mr_adc.t1.vxee = tools.create_dataset('vxee', tmpfile, (nval, ncvs, nextern, nextern))
+            mr_adc.t1.vvee = tools.create_dataset('vvee', tmpfile, (nval, nval, nextern, nextern))
+
+            mr_adc.t1.xaee = tools.create_dataset('xaee', tmpfile, (ncvs, ncas, nextern, nextern))
+            mr_adc.t1.vaee = tools.create_dataset('vaee', tmpfile, (nval, ncas, nextern, nextern))
+
+            chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern])
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.t1.xxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, :ncvs, s_chunk:f_chunk, :]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS t1.xxee", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.t1.xvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, ncvs:, s_chunk:f_chunk, :]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS t1.xvee", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.t1.vxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, :ncvs, s_chunk:f_chunk, :]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS t1.vxee", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("t1.vvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.t1.vvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, ncvs:, s_chunk:f_chunk, :]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS t1.vvee", *cput1)
+            del(mr_adc.t1.ccee)
+
+            chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern])
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.t1.xaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[:ncvs, :, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS t1.xaee", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.t1.vaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[ncvs:, :, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS t1.vaee", *cput1)
+            del(mr_adc.t1.caee)
+
+    if mr_adc.outcore_expensive_tensors:
+        mr_adc.tmpfile.ct1.close()
+
+    mr_adc.log.timer("computing CVS amplitudes", *cput0)
 
 def compute_t1_0(mr_adc):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing T[0]^(1) amplitudes...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
+
+    ctmpfile = mr_adc.tmpfile.ct1
 
     # Variables from kernel
     ncore = mr_adc.ncore
@@ -295,15 +297,13 @@ def compute_t1_0(mr_adc):
     # Compute denominators
     d_ij = e_core[:,None] + e_core
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncore, ncore, nextern], 3)
-    if mr_adc.outcore_expensive_tensors:
-        t1_ccee = mr_adc.t1.chk.create_dataset('ccee', (ncore, ncore, nextern, nextern), 'f8')
-    else:
-        t1_ccee = np.zeros((ncore, ncore, nextern, nextern))
+    t1_ccee = tools.create_dataset('ccee', ctmpfile, (ncore, ncore, nextern, nextern))
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern], ntensors = 3)
 
     e_0 = 0.0
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_cece = mr_adc.v2e.cece[:,s_chunk:f_chunk]
@@ -322,10 +322,19 @@ def compute_t1_0(mr_adc):
         e_0 -= einsum('ijab,jaib', temp, v_cece, optimize = einsum_type)
 
         t1_ccee[:,:,s_chunk:f_chunk] = temp
+        tools.flush(ctmpfile)
+        mr_adc.log.timer_debug("computing t1.ccee", *cput1)
+
+    mr_adc.log.extra("Norm of T[0]^(1):                            %20.12f" % np.linalg.norm(t1_ccee))
+    mr_adc.log.info("Correlation energy [0]:                      %20.12f" % e_0)
+    mr_adc.log.timer("computing T[0]^(1) amplitudes", *cput0)
 
     return e_0, t1_ccee
 
 def compute_t1_p1(mr_adc):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing T[+1]^(1) amplitudes...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -388,13 +397,22 @@ def compute_t1_p1(mr_adc):
     e_p1 += einsum('ijxa,jyia,xy', t1_ccae, v_cace, rdm_ca, optimize = einsum_type)
     e_p1 -= 2 * einsum('ijxa,iyja,xy', t1_ccae, v_cace, rdm_ca, optimize = einsum_type)
 
+    mr_adc.log.extra("Norm of T[+1]^(1):                           %20.12f" % np.linalg.norm(t1_ccae))
+    mr_adc.log.info("Correlation energy [+1]:                     %20.12f" % e_p1)
+    mr_adc.log.timer("computing T[+1]^(1) amplitudes", *cput0)
+
     return e_p1, t1_ccae
 
 def compute_t1_m1(mr_adc):
 
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing T[-1]^(1) amplitudes...")
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
+
+    ctmpfile = mr_adc.tmpfile.ct1
 
     # Variables from kernel
     ncore = mr_adc.ncore
@@ -429,15 +447,13 @@ def compute_t1_m1(mr_adc):
     ## Compute denominators
     d_ix = (e_core[:,None] - evals).reshape(-1)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncore, ncas, nextern], 2)
-    if mr_adc.outcore_expensive_tensors:
-        t1_caee = mr_adc.t1.chk.create_dataset('caee', (ncore, ncas, nextern, nextern), 'f8')
-    else:
-        t1_caee = np.zeros((ncore, ncas, nextern, nextern))
+    t1_caee = tools.create_dataset('caee', ctmpfile, (ncore, ncas, nextern, nextern))
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern], ntensors = 2)
 
     e_m1 = 0.0
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Compute denominators
         d_ab = (e_extern[s_chunk:f_chunk][:,None] + e_extern).reshape(-1)
@@ -463,10 +479,19 @@ def compute_t1_m1(mr_adc):
         e_m1 -= einsum('ixab,ibya,xy', temp, v_ceae[:,:,:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
 
         t1_caee[:,:,s_chunk:f_chunk] = temp
+        tools.flush(ctmpfile)
+        mr_adc.log.timer_debug("computing t1.caee", *cput1)
+
+    mr_adc.log.extra("Norm of T[-1]^(1):                           %20.12f" % np.linalg.norm(t1_caee))
+    mr_adc.log.info("Correlation energy [-1]:                     %20.12f" % e_m1)
+    mr_adc.log.timer("computing T[-1]^(1) amplitudes", *cput0)
 
     return e_m1, t1_caee
 
 def compute_t1_p2(mr_adc):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing T[+2]^(1) amplitudes...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -530,13 +555,22 @@ def compute_t1_p2(mr_adc):
     e_p2 += einsum('ijxy,iyjz,xz', t1_ccaa, v_caca, rdm_ca, optimize = einsum_type)
     e_p2 -= 2 * einsum('ijxy,ixjz,yz', t1_ccaa, v_caca, rdm_ca, optimize = einsum_type)
 
+    mr_adc.log.extra("Norm of T[+2]^(1):                           %20.12f" % np.linalg.norm(t1_ccaa))
+    mr_adc.log.info("Correlation energy [+2]:                     %20.12f" % e_p2)
+    mr_adc.log.timer("computing T[+2]^(1) amplitudes", *cput0)
+
     return e_p2, t1_ccaa
 
 def compute_t1_m2(mr_adc):
 
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing T[-2]^(1) amplitudes...")
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
+
+    tmpfile = mr_adc.tmpfile.t1
 
     # Variables from kernel
     ncas = mr_adc.ncas
@@ -560,15 +594,13 @@ def compute_t1_m2(mr_adc):
     del(SKS)
 
     # Compute R.H.S. of the equation
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncas, ncas, nextern], 3)
-    if mr_adc.outcore_expensive_tensors:
-        t1_aaee = mr_adc.t1.chk.create_dataset('aaee', (ncas, ncas, nextern, nextern), 'f8')
-    else:
-        t1_aaee = np.zeros((ncas, ncas, nextern, nextern))
+    t1_aaee = tools.create_dataset('aaee', tmpfile, (ncas, ncas, nextern, nextern))
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 3)
 
     e_m2 = 0.0
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_aeae = mr_adc.v2e.aeae[:,s_chunk:f_chunk]
@@ -599,10 +631,19 @@ def compute_t1_m2(mr_adc):
         e_m2 += 1/2 * einsum('xyab,zawb,xyzw', temp, v_aeae, rdm_ccaa, optimize = einsum_type)
 
         t1_aaee[:,:,s_chunk:f_chunk] = temp
+        tools.flush(tmpfile)
+        mr_adc.log.timer_debug("computing t1.aaee", *cput1)
+
+    mr_adc.log.extra("Norm of T[-2]^(1):                           %20.12f" % np.linalg.norm(t1_aaee))
+    mr_adc.log.info("Correlation energy [-2]:                     %20.12f" % e_m2)
+    mr_adc.log.timer("computing T[-2]^(1) amplitudes", *cput0)
 
     return e_m2, t1_aaee
 
 def compute_t1_0p(mr_adc):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing T[0']^(1) amplitudes...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -720,9 +761,17 @@ def compute_t1_0p(mr_adc):
     e_0p -= einsum('ixya,izwa,ywzx', t1_caae, v_caae, rdm_ccaa, optimize = einsum_type)
     e_0p += 2 * einsum('ixya,iyza,xz', t1_caae, v_caae, rdm_ca, optimize = einsum_type)
 
+    mr_adc.log.extra("Norm of T[0']^(1):                           %20.12f" % (np.linalg.norm(t1_ce) +
+                                                                              np.linalg.norm(t1_caea)))
+    mr_adc.log.info("Correlation energy [0']:                     %20.12f" % e_0p)
+    mr_adc.log.timer("computing T[0']^(1) amplitudes", *cput0)
+
     return e_0p, t1_ce, t1_caea, t1_caae
 
 def compute_t1_p1p(mr_adc):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing T[+1']^(1) amplitudes...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -869,9 +918,17 @@ def compute_t1_p1p(mr_adc):
     e_p1p += 2 * einsum('ixyz,iywu,zwxu', t1_caaa, v_caaa, rdm_ccaa, optimize = einsum_type)
     e_p1p += 2 * einsum('ixyz,iywz,xw', t1_caaa, v_caaa, rdm_ca, optimize = einsum_type)
 
+    mr_adc.log.extra("Norm of T[+1']^(1):                          %20.12f" % (np.linalg.norm(t1_ca) +
+                                                                              np.linalg.norm(t1_caaa)))
+    mr_adc.log.info("Correlation energy [+1']:                    %20.12f" % e_p1p)
+    mr_adc.log.timer("computing T[+1']^(1) amplitudes", *cput0)
+
     return e_p1p, t1_ca, t1_caaa
 
 def compute_t1_m1p(mr_adc):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("\nComputing T[-1']^(1) amplitudes...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -993,9 +1050,17 @@ def compute_t1_m1p(mr_adc):
     e_m1p -= 1/3 * einsum('xyza,wuva,zvwyxu', t1_aaae, v_aaae, rdm_cccaaa, optimize = einsum_type)
     e_m1p += einsum('xyza,wzua,xywu', t1_aaae, v_aaae, rdm_ccaa, optimize = einsum_type)
 
+    mr_adc.log.extra("Norm of T[-1']^(1):                          %20.12f" % (np.linalg.norm(t1_ae) +
+                                                                              np.linalg.norm(t1_aaae)))
+    mr_adc.log.info("Correlation energy [-1']:                    %20.12f" % e_m1p)
+    mr_adc.log.timer("computing T[-1']^(1) amplitudes", *cput0)
+
     return e_m1p, t1_ae, t1_aaae
 
 def compute_t2_0p_singles(mr_adc):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.extra("Computing T[0']^(2) amplitudes...")
 
     # Import Prism interface
     interface = mr_adc.interface
@@ -1523,9 +1588,10 @@ def compute_t2_0p_singles(mr_adc):
     V1 -= 1/2 * einsum('xyzw,zxuA,Iw,yu->IA', v_aaaa, t1_aaae, t1_ca, rdm_ca, optimize = einsum_type)
     V1 += einsum('xyzw,zxuA,Iy,wu->IA', v_aaaa, t1_aaae, t1_ca, rdm_ca, optimize = einsum_type)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncore, ncore, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Molecular Orbitals Energies
         e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1593,11 +1659,13 @@ def compute_t2_0p_singles(mr_adc):
         temp += 1/4 * einsum('i,ixya,iIAa,xy->IA', e_core, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting t1.ccee", *cput1)
     del(t1_ccee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncore, ncas, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Molecular Orbitals Energies
         e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1644,10 +1712,12 @@ def compute_t2_0p_singles(mr_adc):
         temp += 1/2 * einsum('IxaA,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting t1.caee", *cput1)
     del(t1_caee)
 
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Molecular Orbitals Energies
         e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
@@ -1695,10 +1765,12 @@ def compute_t2_0p_singles(mr_adc):
         temp += 1/2 * einsum('xyzw,zxua,IvAa,ywvu->IA', v_aaaa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting t1.caee", *cput1)
     del(t1_caee)
 
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Amplitudes
         t1_caee = mr_adc.t1.caee[:,:,:,s_chunk:f_chunk]
@@ -1706,11 +1778,13 @@ def compute_t2_0p_singles(mr_adc):
         temp =- 1/4 * einsum('xy,zxwa,IuaA,yzuw->IA', h_aa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting t1.caee", *cput1)
     del(t1_caee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncas, ncas, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Amplitudes
         t1_aaee = mr_adc.t1.aaee[:,:,s_chunk:f_chunk]
@@ -1718,11 +1792,13 @@ def compute_t2_0p_singles(mr_adc):
         temp  = 1/2 * einsum('xyAa,Izaw,xyzw->IA', t1_aaee, v_caea, rdm_ccaa, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting t1.aaee", *cput1)
     del(t1_aaee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncore, ncore, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_ccee = mr_adc.v2e.ccee[:,:,s_chunk:f_chunk]
@@ -1732,10 +1808,12 @@ def compute_t2_0p_singles(mr_adc):
         temp += einsum('ixay,iIAa,xy->IA', t1_caea, v_ccee, rdm_ca, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ccee", *cput1)
     del(v_ccee)
 
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceec [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_ceec = mr_adc.v2e.ceec[:,s_chunk:f_chunk]
@@ -1745,10 +1823,12 @@ def compute_t2_0p_singles(mr_adc):
         temp -= 2 * einsum('ixay,IAai,xy->IA', t1_caea, v_ceec, rdm_ca, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceec", *cput1)
     del(v_ceec)
 
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.cece [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_cece = mr_adc.v2e.cece[:,s_chunk:f_chunk]
@@ -1761,11 +1841,13 @@ def compute_t2_0p_singles(mr_adc):
         temp -= 2 * einsum('ixay,IAia,yx->IA', t1_caea, v_cece, rdm_ca, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.cece", *cput1)
     del(v_cece)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncas, ncas, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_aaee = mr_adc.v2e.aaee[:,:,s_chunk:f_chunk]
@@ -1778,11 +1860,13 @@ def compute_t2_0p_singles(mr_adc):
         temp += einsum('Ixay,zwAa,zw,xy->IA', t1_caea, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.aaee", *cput1)
     del(v_aaee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncas, ncas, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.aeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_aeea = mr_adc.v2e.aeea[:,s_chunk:f_chunk]
@@ -1795,11 +1879,13 @@ def compute_t2_0p_singles(mr_adc):
         temp -= 1/2 * einsum('Ixay,zAaw,wz,xy->IA', t1_caea, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.aeea", *cput1)
     del(v_aeea)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncas, ncas, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_caee = mr_adc.v2e.caee[:,:,s_chunk:f_chunk]
@@ -1810,11 +1896,13 @@ def compute_t2_0p_singles(mr_adc):
         temp += einsum('iIxa,iyAa,xy->IA', t1_ccae, v_caee, rdm_ca, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.caee", *cput1)
     del(v_caee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncas, ncas, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunk_size = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_caee = mr_adc.v2e.caee[:,:,:,s_chunk:f_chunk]
@@ -1823,11 +1911,13 @@ def compute_t2_0p_singles(mr_adc):
         temp += 1/2 * einsum('xyza,IwaA,zwxy->IA', t1_aaae, v_caee, rdm_ccaa, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.caee", *cput1)
     del(v_caee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_size(mr_adc, nextern, [ncas, ncas, nextern], 2)
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_ceae = mr_adc.v2e.ceae[:,s_chunk:f_chunk]
@@ -1836,10 +1926,12 @@ def compute_t2_0p_singles(mr_adc):
         temp -= einsum('xyza,IAwa,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
     del(v_ceae)
 
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_ceae = mr_adc.v2e.ceae[:,:,:,s_chunk:f_chunk]
@@ -1848,10 +1940,12 @@ def compute_t2_0p_singles(mr_adc):
         temp += 1/2 * einsum('xyza,IawA,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
     del(v_ceae)
 
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_ceea = mr_adc.v2e.ceea[:,:,s_chunk:f_chunk]
@@ -1862,10 +1956,12 @@ def compute_t2_0p_singles(mr_adc):
         temp -= 1/2 * einsum('iIxa,iaAy,xy->IA', t1_ccae, v_ceea, rdm_ca, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceea", *cput1)
     del(v_ceea)
 
-    for s_chunk in range(0, nextern, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
         v_ceea = mr_adc.v2e.ceea[:,s_chunk:f_chunk]
@@ -1874,36 +1970,42 @@ def compute_t2_0p_singles(mr_adc):
         temp -= einsum('xyza,IAaw,zwxy->IA', t1_aaae, v_ceea, rdm_ccaa, optimize = einsum_type)
 
         V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceea", *cput1)
     del(v_ceea)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, ncore, [nextern, nextern, nextern],
-                                                                       [ncore, nextern, nextern])
-    for s_chunk in range(0, ncore, chunk_size):
-        f_chunk = s_chunk + chunk_size
+    chunks = tools.calculate_double_chunks(mr_adc, ncore, [nextern, nextern, nextern],
+                                                                     [ncore, nextern, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
         if interface.with_df:
-            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, s_chunk, chunk_size)
+            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, s_chunk, f_chunk)
 
         else:
-            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.ceee[s_chunk:f_chunk], nextern)
+            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee[s_chunk:f_chunk])
 
         ## Amplitudes
         t1_ccee = mr_adc.t1.ccee[:,s_chunk:f_chunk]
 
         V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
         V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
-    del(v_ceee, t1_ccee)
 
-    chunk_size = mr_adc_integrals.calculate_chunk_sizes(mr_adc, ncas, [nextern, nextern, nextern],
-                                                                      [ncore, nextern, nextern])
-    for s_v_chunk in range(0, ncas, chunk_size):
-        f_v_chunk = s_v_chunk + chunk_size
+        del(v_ceee, t1_ccee)
+        mr_adc.log.timer_debug("contracting v2e.ceee", *cput1)
+
+    chunks = tools.calculate_double_chunks(mr_adc, ncas, [nextern, nextern, nextern],
+                                                                    [ncore, nextern, nextern], ntensors = 2)
+    for i_v_chunk, (s_v_chunk, f_v_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_v_chunk + 1, len(chunks), s_v_chunk, f_v_chunk)
+
         if interface.with_df:
-            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, chunk_size)
+            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, f_v_chunk)
         else:
-            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee[s_v_chunk:f_v_chunk], nextern)
+            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_v_chunk:f_v_chunk])
 
-        for s_t_chunk in range(0, ncas, chunk_size):
-            f_t_chunk = s_t_chunk + chunk_size
+        for s_t_chunk, f_t_chunk in chunks:
 
             ## Amplitudes
             t1_caee = mr_adc.t1.caee[:,s_t_chunk:f_t_chunk]
@@ -1913,7 +2015,9 @@ def compute_t2_0p_singles(mr_adc):
 
             V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
             V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
-    del(v_aeee, t1_caee, rdm_ca)
+
+        del(v_aeee, t1_caee, rdm_ca)
+        mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
 
     ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
@@ -1924,5 +2028,8 @@ def compute_t2_0p_singles(mr_adc):
 
     # Compute T2[0'] t2_ce amplitudes
     t2_ce = einsum("ai,ia->ia", d_ai, V1, optimize = einsum_type)
+
+    mr_adc.log.extra("Norm of T[0']^(2):                          %20.12f" % np.linalg.norm(t2_ce))
+    mr_adc.log.timer("computing T[0']^(2) amplitudes", *cput0)
 
     return t2_ce
