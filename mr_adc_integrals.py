@@ -230,25 +230,24 @@ def transform_Heff_integrals_2e_df(mr_adc):
             Lac[p0:p1] = Lpq[:, ncore:nocc, :ncore]
             Laa[p0:p1] = Lpq[:, ncore:nocc, ncore:nocc]
         del(Lpq)
-        with_df.reset()
 
         # Effective Hamiltonian 2e- integrals
-        mr_adc.v2e.aaaa[:] = get_v2e_df(Laa, Laa, 'aaaa')
+        mr_adc.v2e.aaaa[:] = get_v2e_df(mr_adc, Laa, Laa, 'aaaa')
         tools.flush(tmpfile)
 
-        mr_adc.v2e.ccca[:] = get_v2e_df(Lcc, Lca, 'ccca')
+        mr_adc.v2e.ccca[:] = get_v2e_df(mr_adc, Lcc, Lca, 'ccca')
         tools.flush(ctmpfile)
 
         if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
             if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-                mr_adc.v2e.ccaa[:] = get_v2e_df(Lcc, Laa, 'ccaa')
+                mr_adc.v2e.ccaa[:] = get_v2e_df(mr_adc, Lcc, Laa, 'ccaa')
                 tools.flush(ctmpfile)
 
-                mr_adc.v2e.caac[:] = get_v2e_df(Lca, Lac, 'caac')
+                mr_adc.v2e.caac[:] = get_v2e_df(mr_adc, Lca, Lac, 'caac')
                 tools.flush(ctmpfile)
 
             if mr_adc.method in ("mr-adc(2)-x"):
-                mr_adc.v2e.cccc[:] = get_v2e_df(Lcc, Lcc, 'cccc')
+                mr_adc.v2e.cccc[:] = get_v2e_df(mr_adc, Lcc, Lcc, 'cccc')
                 tools.flush(ctmpfile)
     else:
         mr_adc.log.extra("\nTransforming Heff 2e integrals to MO basis (in-core)...")
@@ -340,7 +339,6 @@ def transform_integrals_2e_df(mr_adc):
         mr_adc.v2e.Lee[p0:p1] = Lpq[:, nocc:, nocc:]
         tools.flush(tmpfile)
     del(Lpq)
-    with_df.reset()
 
     # 2e- integrals
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":

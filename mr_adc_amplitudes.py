@@ -48,6 +48,7 @@ def compute_t1_amplitudes(mr_adc):
 
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
+    nelecas = mr_adc.nelecas
     nextern = mr_adc.nextern
 
     e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8
@@ -100,9 +101,12 @@ def compute_t1_amplitudes(mr_adc):
 
         if ncore > 0 and nextern > 0 and ncas > 0:
             e_p1, mr_adc.t1.ccae = compute_t1_p1(mr_adc)
-            e_m1, mr_adc.t1.caee = compute_t1_m1(mr_adc)
         else:
             mr_adc.t1.ccae = np.zeros((ncore, ncore, ncas, nextern))
+
+        if ncore > 0 and nextern > 0 and ncas > 0 and sum(nelecas) > 0:
+            e_m1, mr_adc.t1.caee = compute_t1_m1(mr_adc)
+        else:
             mr_adc.t1.caee = np.zeros((ncore, ncas, nextern, nextern))
 
         if ncore > 0 and ncas > 0:
@@ -110,7 +114,7 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
-        if nextern > 0 and ncas > 0:
+        if nextern > 0 and ncas > 0 and sum(nelecas) > 0:
             e_m2, mr_adc.t1.aaee = compute_t1_m2(mr_adc)
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
