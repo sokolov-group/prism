@@ -11882,16 +11882,17 @@ def compute_sigma_vector(mr_adc, Xt):
 
             compute_sigma_vector__H1__h1_h1__CAE_CAE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee)
 
-            ### CVE block
-            X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-            X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
-            X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
+            if nval > 0:
+                ### CVE block
+                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
+                X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
-            X_bab = X_bab[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_bab = X_bab[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee)
+                compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee)
 
             mr_adc.log.timer_debug("v2e.xxee contractions", *cput1)
         del(v_xxee)
@@ -11925,14 +11926,15 @@ def compute_sigma_vector(mr_adc, Xt):
 
             compute_sigma_vector__H1__h1_h1__CAE_CAE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex)
 
-            ### CVE block
-            X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-            X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
+            if nval > 0:
+                ### CVE block
+                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_bab = X_bab[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_bab = X_bab[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex)
+                compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex)
 
             mr_adc.log.timer_debug("v2e.xeex contractions", *cput1)
         del(v_xeex)
@@ -12067,224 +12069,225 @@ def compute_sigma_vector(mr_adc, Xt):
             mr_adc.log.timer_debug("v2e.aeea contractions", *cput1)
         del(v_aeea)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nval, nextern], ntensors = 2)
-        ### v_vvee contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.vvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+        if nval > 0:
+            chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nval, nextern], ntensors = 2)
+            ### v_vvee contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.vvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_vvee = mr_adc.v2e.vvee[:,:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_vvee = mr_adc.v2e.vvee[:,:,:,s_chunk:f_chunk]
 
-            ### CVE block
-            X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-            X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
-            X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
+                ### CVE block
+                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
+                X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
-            X_bab = X_bab[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_bab = X_bab[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CVE_CVE__V_VVEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vvee)
+                compute_sigma_vector__H1__h1_h1__CVE_CVE__V_VVEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vvee)
 
-            mr_adc.log.timer_debug("v2e.vvee contractions", *cput1)
-        del(v_vvee)
+                mr_adc.log.timer_debug("v2e.vvee contractions", *cput1)
+            del(v_vvee)
 
-        ### v_veev contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.veev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            ### v_veev contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_veev = mr_adc.v2e.veev[:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_veev = mr_adc.v2e.veev[:,:,s_chunk:f_chunk]
 
-            ### CVE block
-            X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-            X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
+                ### CVE block
+                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CVE_CVE__V_VEEV(mr_adc, X_aaa, X_abb, sigma, v_veev)
+                compute_sigma_vector__H1__h1_h1__CVE_CVE__V_VEEV(mr_adc, X_aaa, X_abb, sigma, v_veev)
 
-            mr_adc.log.timer_debug("v2e.veev contractions", *cput1)
-        del(v_veev)
+                mr_adc.log.timer_debug("v2e.veev contractions", *cput1)
+            del(v_veev)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nval, nextern], ntensors = 2)
-        ### v_xvee contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nval, nextern], ntensors = 2)
+            ### v_xvee contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_xvee = mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_xvee = mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk]
 
-            ### CCE block
-            X_aaa = np.zeros((ncvs, ncvs, nextern))
-            X_aaa[cvs_tril_ind[0], cvs_tril_ind[1]] =  Xt[s_cce__aaa:f_cce__aaa].reshape(-1, nextern).copy()
-            X_aaa[cvs_tril_ind[1], cvs_tril_ind[0]] =- Xt[s_cce__aaa:f_cce__aaa].reshape(-1, nextern).copy()
+                ### CCE block
+                X_aaa = np.zeros((ncvs, ncvs, nextern))
+                X_aaa[cvs_tril_ind[0], cvs_tril_ind[1]] =  Xt[s_cce__aaa:f_cce__aaa].reshape(-1, nextern).copy()
+                X_aaa[cvs_tril_ind[1], cvs_tril_ind[0]] =- Xt[s_cce__aaa:f_cce__aaa].reshape(-1, nextern).copy()
 
-            X_abb = Xt[s_cce__abb:f_cce__abb].reshape(ncvs, ncvs, nextern)
+                X_abb = Xt[s_cce__abb:f_cce__abb].reshape(ncvs, ncvs, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CVE_CCE__V_XVEE(mr_adc, X_aaa, X_abb, sigma, v_xvee)
+                compute_sigma_vector__H1__h1_h1__CVE_CCE__V_XVEE(mr_adc, X_aaa, X_abb, sigma, v_xvee)
 
-            mr_adc.log.timer_debug("v2e.xvee contractions", *cput1)
-        del(v_xvee)
+                mr_adc.log.timer_debug("v2e.xvee contractions", *cput1)
+            del(v_xvee)
 
-        ### v_veex contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.veex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            ### v_veex contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_veex = mr_adc.v2e.veex[:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_veex = mr_adc.v2e.veex[:,:,s_chunk:f_chunk]
 
-            ### CCE block
-            X_aaa = np.zeros((ncvs, ncvs, nextern))
-            X_aaa[cvs_tril_ind[0], cvs_tril_ind[1]] =  Xt[s_cce__aaa:f_cce__aaa].reshape(-1, nextern).copy()
-            X_aaa[cvs_tril_ind[1], cvs_tril_ind[0]] =- Xt[s_cce__aaa:f_cce__aaa].reshape(-1, nextern).copy()
+                ### CCE block
+                X_aaa = np.zeros((ncvs, ncvs, nextern))
+                X_aaa[cvs_tril_ind[0], cvs_tril_ind[1]] =  Xt[s_cce__aaa:f_cce__aaa].reshape(-1, nextern).copy()
+                X_aaa[cvs_tril_ind[1], cvs_tril_ind[0]] =- Xt[s_cce__aaa:f_cce__aaa].reshape(-1, nextern).copy()
 
-            X_abb = Xt[s_cce__abb:f_cce__abb].reshape(ncvs, ncvs, nextern)
+                X_abb = Xt[s_cce__abb:f_cce__abb].reshape(ncvs, ncvs, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CVE_CCE__V_VEEX(mr_adc, X_aaa, X_abb, sigma, v_veex)
+                compute_sigma_vector__H1__h1_h1__CVE_CCE__V_VEEX(mr_adc, X_aaa, X_abb, sigma, v_veex)
 
-            mr_adc.log.timer_debug("v2e.veex contractions", *cput1)
-        del(v_veex)
+                mr_adc.log.timer_debug("v2e.veex contractions", *cput1)
+            del(v_veex)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
-        ### v_vaee contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
+            ### v_vaee contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_vaee = mr_adc.v2e.vaee[:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_vaee = mr_adc.v2e.vaee[:,:,s_chunk:f_chunk]
 
-            ### CAE block
-            X_aaa = Xt[s_cae__aaa:f_cae__aaa].reshape(ncvs, ncas, nextern)
-            X_abb = Xt[s_cae__abb:f_cae__abb].reshape(ncvs, ncas, nextern)
-            X_bab = Xt[s_cae__bab:f_cae__bab].reshape(ncvs, ncas, nextern)
+                ### CAE block
+                X_aaa = Xt[s_cae__aaa:f_cae__aaa].reshape(ncvs, ncas, nextern)
+                X_abb = Xt[s_cae__abb:f_cae__abb].reshape(ncvs, ncas, nextern)
+                X_bab = Xt[s_cae__bab:f_cae__bab].reshape(ncvs, ncas, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
-            X_bab = X_bab[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_bab = X_bab[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CVE_CAE__V_VAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vaee)
+                compute_sigma_vector__H1__h1_h1__CVE_CAE__V_VAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vaee)
 
-            mr_adc.log.timer_debug("v2e.vaee contractions", *cput1)
-        del(v_vaee)
+                mr_adc.log.timer_debug("v2e.vaee contractions", *cput1)
+            del(v_vaee)
 
-        ### v_veea contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.veea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            ### v_veea contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_veea = mr_adc.v2e.veea[:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_veea = mr_adc.v2e.veea[:,:,s_chunk:f_chunk]
 
-            ### CAE block
-            X_aaa = Xt[s_cae__aaa:f_cae__aaa].reshape(ncvs, ncas, nextern)
-            X_abb = Xt[s_cae__abb:f_cae__abb].reshape(ncvs, ncas, nextern)
+                ### CAE block
+                X_aaa = Xt[s_cae__aaa:f_cae__aaa].reshape(ncvs, ncas, nextern)
+                X_abb = Xt[s_cae__abb:f_cae__abb].reshape(ncvs, ncas, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CVE_CAE__V_VEEA(mr_adc, X_aaa, X_abb, sigma, v_veea)
+                compute_sigma_vector__H1__h1_h1__CVE_CAE__V_VEEA(mr_adc, X_aaa, X_abb, sigma, v_veea)
 
-            mr_adc.log.timer_debug("v2e.veea contractions", *cput1)
-        del(v_veea)
+                mr_adc.log.timer_debug("v2e.veea contractions", *cput1)
+            del(v_veea)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncvs, nextern], ntensors = 2)
-        ### v_vxee contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncvs, nextern], ntensors = 2)
+            ### v_vxee contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_vxee = mr_adc.v2e.vxee[:,:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_vxee = mr_adc.v2e.vxee[:,:,:,s_chunk:f_chunk]
 
-            ### CVE block
-            X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-            X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
-            X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
+                ### CVE block
+                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
+                X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
-            X_bab = X_bab[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_bab = X_bab[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CCE_CVE__V_VXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vxee)
+                compute_sigma_vector__H1__h1_h1__CCE_CVE__V_VXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vxee)
 
-            mr_adc.log.timer_debug("v2e.vxee contractions", *cput1)
-        del(v_vxee)
+                mr_adc.log.timer_debug("v2e.vxee contractions", *cput1)
+            del(v_vxee)
 
-        ### v_xeev contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.xeev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            ### v_xeev contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xeev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_xeev = mr_adc.v2e.xeev[:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_xeev = mr_adc.v2e.xeev[:,:,s_chunk:f_chunk]
 
-            ### CVE block
-            X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-            X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
+                ### CVE block
+                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CCE_CVE__V_XEEV(mr_adc, X_aaa, X_abb, sigma, v_xeev)
+                compute_sigma_vector__H1__h1_h1__CCE_CVE__V_XEEV(mr_adc, X_aaa, X_abb, sigma, v_xeev)
 
-            mr_adc.log.timer_debug("v2e.xeev contractions", *cput1)
-        del(v_xeev)
+                mr_adc.log.timer_debug("v2e.xeev contractions", *cput1)
+            del(v_xeev)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
-        ### v_vaee contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
+            ### v_vaee contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_vaee = mr_adc.v2e.vaee[:,:,:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_vaee = mr_adc.v2e.vaee[:,:,:,s_chunk:f_chunk]
 
-            ### CVE block
-            X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-            X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
-            X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
+                ### CVE block
+                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
+                X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
-            X_bab = X_bab[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_bab = X_bab[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CAE_CVE__V_VAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vaee)
+                compute_sigma_vector__H1__h1_h1__CAE_CVE__V_VAEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_vaee)
 
-            mr_adc.log.timer_debug("v2e.vaee contractions", *cput1)
-        del(v_vaee)
+                mr_adc.log.timer_debug("v2e.vaee contractions", *cput1)
+            del(v_vaee)
 
-        ### v_veea contractions
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.veea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            ### v_veea contractions
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_veea = mr_adc.v2e.veea[:,s_chunk:f_chunk]
+                ## Two-electron integrals
+                v_veea = mr_adc.v2e.veea[:,s_chunk:f_chunk]
 
-            ### CVE block
-            X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-            X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
+                ### CVE block
+                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
 
-            X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-            X_abb = X_abb[:,:,s_chunk:f_chunk]
+                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                X_abb = X_abb[:,:,s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h1__CAE_CVE__V_VEEA(mr_adc, X_aaa, X_abb, sigma, v_veea)
+                compute_sigma_vector__H1__h1_h1__CAE_CVE__V_VEEA(mr_adc, X_aaa, X_abb, sigma, v_veea)
 
-            mr_adc.log.timer_debug("v2e.veea contractions", *cput1)
-        del(v_veea)
+                mr_adc.log.timer_debug("v2e.veea contractions", *cput1)
+            del(v_veea)
 
     mr_adc.log.timer_debug("computing sigma vector", *cput0)
 
