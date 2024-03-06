@@ -16,6 +16,9 @@
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #
+# Tests prepared for Prism 0.4, PySCF 2.5.0 and NumPy 1.26.4
+# Results can deviate according to their versions
+#
 
 import unittest
 import numpy as np
@@ -68,20 +71,32 @@ mr_adc.method = "mr-adc(2)-x"
 
 class KnownValues(unittest.TestCase):
 
-    def test_cvs_ip_mr_adc_2(self):
+    def test_pyscf(self):
+        self.assertAlmostEqual(mc.e_tot, -76.0585829208873, 6)
+        self.assertAlmostEqual(mc.e_cas,  -6.55621478196028, 6)
+
+    def test_prism(self):
 
         e, p, x = mr_adc.kernel()
 
-        self.assertAlmostEqual(e[0], 541.46811298, 4)
-        self.assertAlmostEqual(e[1], 572.29726670, 4)
-        self.assertAlmostEqual(e[2], 572.62486305, 4)
-        self.assertAlmostEqual(e[3], 573.13842920, 4)
+        self.assertAlmostEqual(e[0], 541.46808076, 4)
+        self.assertAlmostEqual(e[1], 572.29686455, 4)
+        self.assertAlmostEqual(e[2], 572.62455226, 4)
+        self.assertAlmostEqual(e[3], 573.13592067, 4)
+        self.assertAlmostEqual(e[4], 574.27228857, 4)
+        self.assertAlmostEqual(e[5], 574.31136061, 4)
+        self.assertAlmostEqual(e[6], 574.87500099, 4)
+        self.assertAlmostEqual(e[7], 575.13849491, 4)
 
-        self.assertAlmostEqual(p[0], 1.55313121, 4)
+        self.assertAlmostEqual(p[0], 1.55312705, 4)
         self.assertAlmostEqual(p[1], 0.00000000, 4)
         self.assertAlmostEqual(p[2], 0.00000000, 4)
-        self.assertAlmostEqual(p[3], 0.01404335, 4)
+        self.assertAlmostEqual(p[3], 0.01404991, 4)
+        self.assertAlmostEqual(p[4], 0.00000323, 4)
+        self.assertAlmostEqual(p[5], 0.00000000, 4)
+        self.assertAlmostEqual(p[6], 0.00000134, 4)
+        self.assertAlmostEqual(p[7], 0.00000186, 4)
 
 if __name__ == "__main__":
-    print("IP calculations for different IP-MR-ADC methods")
+    print("CVS-IP calculations for different CVS-IP-MR-ADC methods")
     unittest.main()

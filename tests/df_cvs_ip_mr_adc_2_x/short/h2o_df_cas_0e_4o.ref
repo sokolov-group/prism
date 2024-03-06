@@ -1,0 +1,29 @@
+converged SCF energy = -76.0412364867249
+SCF energy: -76.041236
+
+CASSCF energy = -76.0412364867249
+CASCI E = -76.0412364867249  E(CI) = 0.00000000000000  S^2 = 0.0000000
+CASSCF energy: -76.041236
+
+CVS-IP calculations for different CVS-IP-MR-ADC methods
+
+CASSCF reference energy:                         -76.041236486725
+Total PC-NEVPT2 energy:                          -76.263063019354
+
+cvs-ip-mr-adc(2)-x excitation energies (a.u.):
+[[19.87627596]
+ [21.16837425]
+ [21.25716255]
+ [21.28632629]]
+
+cvs-ip-mr-adc(2)-x excitation energies (eV):
+[[540.86129559]
+ [576.0210991 ]
+ [578.43715307]
+ [579.2307391 ]]
+
+cvs-ip-mr-adc(2)-x spectroscopic intensity:
+[[1.56908976]
+ [0.        ]
+ [0.0000012 ]
+ [0.0000033 ]]

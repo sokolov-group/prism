@@ -1,200 +1,29 @@
 converged SCF energy = -100.033466082098
 SCF energy: -100.033466
 
-CASSCF energy = -100.036765659825
-CASCI E = -100.036765659825  E(CI) = -7.44248855477147  S^2 = 0.0000000
+CASSCF energy = -100.036765659824
+CASCI E = -100.036765659824  E(CI) = -7.44248856525867  S^2 = 0.0000000
 CASSCF energy: -100.036766
 
+CVS-IP calculations for different CVS-IP-MR-ADC methods
 
-
-----------------------------------------------------------------------
-        PRISM: Open-Source implementation of ab initio methods
-                for excited states and spectroscopy
-
-                           Version 0.2.1
-
-               Copyright (C) 2023 Alexander Sokolov
-                                  Carlos E. V. de Moura
-
-        Unless required by applicable law or agreed to in
-        writing, software distributed under the GNU General
-        Public License v3.0 and is distributed on an "AS IS"
-        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-        either express or implied.
-
-        See the License for the specific language governing
-        permissions and limitations.
-
-        Available at https://github.com/sokolov-group/prism
-
-----------------------------------------------------------------------
-
-Importing Pyscf objects...
-
-Initializing MR-ADC...
-
-IP calculations for different IP-MR-ADC methods
-Transforming 1e integrals to MO basis...
-Time for transforming 1e integrals:                0.000116 sec
-
-Transforming 2e integrals to MO basis (in-core)...
-Time for transforming integrals:                   0.024165 sec
-
-Computing CVS integrals to MO basis (in-core)...
-Time for computing integrals:                      0.000212 sec
-
-Computing ground-state RDMs...
-Time for computing ground-state RDMs:              0.013857 sec
-
-Computing MR-ADC excitation energies...
-
-Method:                                            cvs-ip-mr-adc(2)-x
-Number of MR-ADC roots requested:                  4
-Ground-state active-space energy:                 -7.442488554771
-Nuclear repulsion energy:                          5.193669463773
-Number of basis functions:                         32
-Number of core orbitals:                           3
-Number of active orbitals:                         4
-Number of external orbitals:                       25
-Number of electrons:                               10
-Number of active electrons:                        (2, 2)
-Number of CVS orbitals:                            1
-Number of valence (non-CVS) orbitals:              2
-Overlap truncation parameter (singles):            1.000000e-06
-Overlap truncation parameter (doubles):            1.000000e-10
-Number of CASCI states:                            6
-
-Computing T[0']^(1) amplitudes...
-Dimension of the [0'] orthonormalized subspace:    16
-Smallest eigenvalue of the [0'] overlap metric:    6.935636e-04
-Norm of T[0']^(1):                                 0.049766743962
-Correlation energy [0']:                          -0.051028118185
-
-Computing T[+1']^(1) amplitudes...
-Dimension of the [+1'] orthonormalized subspace:   22
-Smallest eigenvalue of the [+1'] overlap metric:   2.758880e-04
-Norm of T[+1']^(1):                                0.017241858588
-Correlation energy [+1']:                         -0.000002269038
-
-Computing T[-1']^(1) amplitudes...
-Dimension of the [-1'] orthonormalized subspace:   23
-Smallest eigenvalue of the [-1'] overlap metric:   1.169392e-06
-Norm of T[-1']^(1):                                0.046142159066
-Correlation energy [-1']:                         -0.006622227070
-
-Computing T[0]^(1) amplitudes...
-Norm of T[0]^(1):                                  0.060752154128
-Correlation energy [0]:                           -0.022474845499
-
-Computing T[+1]^(1) amplitudes...
-Dimension of the [+1] orthonormalized subspace:    4
-Smallest eigenvalue of the [+1] overlap metric:    5.072559e-04
-Norm of T[+1]^(1):                                 0.040087818603
-Correlation energy [+1]:                          -0.014408297643
-
-Computing T[-1]^(1) amplitudes...
-Dimension of the [-1] orthonormalized subspace:    4
-Smallest eigenvalue of the [-1] overlap metric:    2.758880e-04
-Norm of T[-1]^(1):                                 0.069655647376
-Correlation energy [-1]:                          -0.057349375028
-
-Computing T[+2]^(1) amplitudes...
-Dimension of the [+2] orthonormalized subspace:    16
-Smallest eigenvalue of the [+2] overlap metric:    2.000875e-07
-Norm of T[+2]^(1):                                 0.122787919053
-Correlation energy [+2]:                          -0.008464419846
-
-Computing T[-2]^(1) amplitudes...
-Dimension of the [-2] orthonormalized subspace:    16
-Smallest eigenvalue of the [-2] overlap metric:    7.601822e-08
-Norm of T[-2]^(1):                                 0.176259219838
-Correlation energy [-2]:                          -0.054224639852
-
-CASSCF reference energy:                        -100.036765659825
-PC-NEVPT2 correlation energy:                     -0.214574192160
-Total PC-NEVPT2 energy:                         -100.251339851985
-
-Computing T[0']^(2) amplitudes...
-Norm of T[0']^(2):                                 0.009742250610
-
-Computing CVS amplitudes...
-Time for computing amplitudes:                     0.000069 sec
-
-Time for computing amplitudes:                     0.427005 sec
-
-Dimension of h0 excitation manifold:                       1
-Dimension of h1 excitation manifold:                       551
-Total dimension of the excitation manifold:                552
-Dimension of the orthogonalized excitation manifold:       525
-
-Computing M(h0-h0) block...
-Time for computing M(h0-h0) block:                 0.300991 sec
-
-Computing M(h0-h1) blocks...
-Time for computing M(h0-h1) blocks:                0.051400 sec
-
-Time for computing preconditioner:                 0.023981 sec
-
-tol 1e-08  toloose 1e-05
-max_cycle 50  max_space 109  max_memory 2000  incore True
-davidson 0 4  |r|= 1.66  e= [26.31266785 27.87319527 27.87364579 27.95009365]  max|de|=   28  lindep=    1
-davidson 1 8  |r|= 0.649  e= [25.60782504 27.67826613 27.68877647 27.75669173]  max|de|= -0.705  lindep= 0.957
-davidson 2 12  |r|= 0.73  e= [25.55817649 27.21895628 27.35444939 27.36285407]  max|de|= -0.459  lindep= 0.954
-davidson 3 16  |r|= 0.35  e= [25.55421762 27.08095854 27.18272535 27.21279394]  max|de|= -0.172  lindep= 0.959
-davidson 4 20  |r|= 0.281  e= [25.55398426 27.03972302 27.13685073 27.17061916]  max|de|= -0.0459  lindep= 0.878
-davidson 5 24  |r|= 0.131  e= [25.5539742  27.0297242  27.12542254 27.15862974]  max|de|= -0.012  lindep= 0.704
-davidson 6 28  |r|= 0.0254  e= [25.55397333 27.02897612 27.12301879 27.15624881]  max|de|= -0.0024  lindep= 0.831
-davidson 7 32  |r|= 0.00866  e= [25.55397325 27.0288804  27.12280504 27.15603251]  max|de|= -0.000216  lindep= 0.955
-davidson 8 36  |r|= 0.0029  e= [25.55397324 27.02887121 27.12277468 27.15600409]  max|de|= -3.04e-05  lindep= 0.944
-davidson 9 40  |r|= 0.00113  e= [25.55397324 27.02887069 27.12277238 27.15600164]  max|de|= -2.45e-06  lindep= 0.905
-root 0 converged  |r|= 3.66e-06  e= 25.553973235651355  max|de|= -5.95e-11
-davidson 10 44  |r|= 0.00334  e= [25.55397324 27.0288705  27.12277212 27.15600019]  max|de|= -1.45e-06  lindep= 0.779
-Old state -> New state
-    3     ->     2 
-    2     ->     3 
-davidson 11 47  |r|= 0.507  e= [25.55397324 27.02887045 27.09719289 27.12277545]  max|de|= -0.0588  lindep= 0.816
-davidson 12 50  |r|= 0.115  e= [25.55397324 27.02887038 27.0336857  27.12277317]  max|de|= -0.0635  lindep= 0.864
-davidson 13 53  |r|= 0.0585  e= [25.55397324 27.02887031 27.03050113 27.1227731 ]  max|de|= -0.00318  lindep= 0.861
-davidson 14 56  |r|= 0.0428  e= [25.55397324 27.0288703  27.02985002 27.12277306]  max|de|= -0.000651  lindep= 0.831
-davidson 15 59  |r|= 0.0235  e= [25.55397324 27.0288703  27.02953394 27.12277306]  max|de|= -0.000316  lindep= 0.781
-root 1 converged  |r|= 4.75e-06  e= 27.02887029683379  max|de|= -7.94e-11
-davidson 16 62  |r|= 0.0201  e= [25.55397324 27.0288703  27.02925153 27.12277306]  max|de|= -0.000282  lindep= 0.856
-root 3 converged  |r|= 4.58e-06  e= 27.12277305892034  max|de|= -2.96e-11
-davidson 17 64  |r|= 0.0145  e= [25.55397324 27.0288703  27.02895022 27.12277306]  max|de|= -0.000301  lindep= 0.908
-davidson 18 65  |r|= 0.00464  e= [25.55397324 27.0288703  27.02887638 27.12277306]  max|de|= -7.38e-05  lindep= 0.95
-davidson 19 66  |r|= 0.00196  e= [25.55397324 27.0288703  27.02887082 27.12277306]  max|de|= -5.56e-06  lindep= 0.911
-davidson 20 67  |r|= 0.000733  e= [25.55397324 27.0288703  27.0288704  27.12277306]  max|de|= -4.2e-07  lindep= 0.791
-davidson 21 68  |r|= 0.000229  e= [25.55397324 27.0288703  27.02887031 27.12277306]  max|de|= -8.69e-08  lindep= 0.829
-davidson 22 69  |r|= 7.99e-05  e= [25.55397324 27.0288703  27.0288703  27.12277306]  max|de|= -1.44e-08  lindep= 0.862
-davidson 23 70  |r|= 2.19e-05  e= [25.55397324 27.0288703  27.0288703  27.12277306]  max|de|= -1.56e-09  lindep= 0.928
-Old state -> New state
-    2     ->     1 
-    1     ->     2 
-davidson 24 71  |r|= 1.04e-05  e= [25.55397324 27.0288703  27.0288703  27.12277306]  max|de|= -1.59e-10  lindep= 0.94
-root 1 converged  |r|= 6.49e-06  e= 27.02887029677341  max|de|= -2.29e-11
-converged 25 72  |r|= 6.49e-06  e= [25.55397324 27.0288703  27.0288703  27.12277306]  max|de|= -2.29e-11
+CASSCF reference energy:                        -100.036765659824
+Total PC-NEVPT2 energy:                         -100.251339909062
 
 cvs-ip-mr-adc(2)-x excitation energies (a.u.):
 [[25.55397324]
- [27.0288703 ]
- [27.0288703 ]
- [27.12277306]]
+ [27.02887004]
+ [27.02887004]
+ [27.12277274]]
 
 cvs-ip-mr-adc(2)-x excitation energies (eV):
-[[695.3593873 ]
- [735.49340119]
- [735.4934012 ]
- [738.04862682]]
-
-Computing transition moments matrix...
+[[695.35938746]
+ [735.4933941 ]
+ [735.49339412]
+ [738.04861811]]
 
 cvs-ip-mr-adc(2)-x spectroscopic intensity:
-[[1.60962968]
+[[1.60962966]
  [0.        ]
  [0.        ]
  [0.00000174]]
-
-Time for computing transition moments matrix:     0.988034 sec
-
-
-Total time:                                       154.069021 sec
