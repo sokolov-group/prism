@@ -22,3 +22,14 @@ Prism 0.3 (2023-09-15)
 * Added
   - Support to density-fitting 2e- integrals
   - Spectroscopic factors analysis for CVS-IP-MR-ADC
+
+Prism 0.3.1 (2023-12-12)
+------------------------
+* Added
+  - Effective Hamiltonian integrals consistent with CASSCF/CASCI reference
+  - Support to store expensive amplitudes (t1_ccee and t1_caee) on disk
+  - Efficient calculation of contractions containing v_ooee and t_ooee tensors
+
+Prism 0.4 (2024-01-22)
+* Added
+  - Memory efficient procedures to read H5PY files

@@ -20,7 +20,7 @@
 import numpy as np
 from functools import reduce
 
-def compute_S12_p1(mr_adc, ignore_print = False):
+def compute_S12_p1(mr_adc):
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -47,14 +47,13 @@ def compute_S12_p1(mr_adc, ignore_print = False):
 
     S_p1_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
-    if (not ignore_print) or (mr_adc.print_level > 4):
-        print("Dimension of the [+1] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
-        if len(S_ind_nonzero) > 0:
-            print("Smallest eigenvalue of the [+1] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
+    mr_adc.log.debug("Dimension of the [+1] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
+    if len(S_ind_nonzero) > 0:
+        mr_adc.log.debug("Smallest eigenvalue of the [+1] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1_12_inv
 
-def compute_S12_m1(mr_adc, ignore_print = False):
+def compute_S12_m1(mr_adc):
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -78,10 +77,9 @@ def compute_S12_m1(mr_adc, ignore_print = False):
 
     S_m1_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
-    if (not ignore_print) or (mr_adc.print_level > 4):
-        print("Dimension of the [-1] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
-        if len(S_ind_nonzero) > 0:
-            print("Smallest eigenvalue of the [-1] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
+    mr_adc.log.debug("Dimension of the [-1] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
+    if len(S_ind_nonzero) > 0:
+        mr_adc.log.debug("Smallest eigenvalue of the [-1] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m1_12_inv
 
@@ -117,9 +115,9 @@ def compute_S12_p2(mr_adc):
 
     S_p2_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
-    print("Dimension of the [+2] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
+    mr_adc.log.extra("Dimension of the [+2] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [+2] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
+        mr_adc.log.extra("Smallest eigenvalue of the [+2] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p2_12_inv
 
@@ -149,9 +147,9 @@ def compute_S12_m2(mr_adc):
 
     S_m2_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
-    print("Dimension of the [-2] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
+    mr_adc.log.extra("Dimension of the [-2] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [-2] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
+        mr_adc.log.extra("Smallest eigenvalue of the [-2] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m2_12_inv
 
@@ -253,10 +251,9 @@ def compute_S12_0p_projector(mr_adc):
     S_0p_12_inv[0,0] = 1.0
     S_0p_12_inv[1:,1:] = S22_12_inv.copy()
 
-    if mr_adc.print_level > 4:
-        print("Dimension of the [0'] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
-        if len(S_ind_nonzero) > 0:
-            print("Smallest eigenvalue of the [0'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
+    mr_adc.log.debug("Dimension of the [0'] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
+    if len(S_ind_nonzero) > 0:
+        mr_adc.log.debug("Smallest eigenvalue of the [0'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_0p_12_inv
 
@@ -335,9 +332,9 @@ def compute_S12_0p_gno_projector(mr_adc):
 
     S_0p_12_inv = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
-    print("Dimension of the [0'] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
+    mr_adc.log.extra("Dimension of the [0'] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [0'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
+        mr_adc.log.extra("Smallest eigenvalue of the [0'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_0p_12_inv
 
@@ -479,9 +476,9 @@ def compute_S12_p1p_gno_projector(mr_adc):
 
     S_p1p_12_inv_act = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
-    print("Dimension of the [+1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+    mr_adc.log.extra("Dimension of the [+1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+        mr_adc.log.extra("Smallest eigenvalue of the [+1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_p1p_12_inv_act
 
@@ -609,10 +606,10 @@ def compute_S12_m1p_gno_projector(mr_adc):
 
     S_m1p_12_inv_act = reduce(np.dot, (Y, S_evec, np.diag(S_inv_eval)))
 
-    print("Dimension of the [-1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
+    mr_adc.log.extra("Dimension of the [-1'] orthonormalized subspace:   %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        print("Smallest eigenvalue of the [-1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
+        mr_adc.log.extra("Smallest eigenvalue of the [-1'] overlap metric:   %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_m1p_12_inv_act
 
-  
+

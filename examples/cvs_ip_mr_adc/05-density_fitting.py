@@ -19,19 +19,38 @@ mol.basis = {'N':'aug-cc-pvdz'}
 mol.verbose = 4
 mol.build()
 
-# RHF calculation as guess for CASSCF
+## RHF calculation as guess for CASSCF
 mf = pyscf.scf.RHF(mol)
 mf.kernel()
 
-# CASSCF(6e,6o) calculation
+## CASSCF(6e,6o) calculation
 mc = pyscf.mcscf.CASSCF(mf, 6, 6)
 emc = mc.mc1step()[0]
 
-# CVS-IP-MR-ADC calculation
+## CVS-IP-MR-ADC calculation
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ip"
-mr_adc.method = "mr-adc(2)-x"
+mr_adc.method = "mr-adc(2)"
+mr_adc.ncvs = 2
+mr_adc.nroots = 8
+
+e, p, x = mr_adc.kernel()
+
+# Using JK fitted CASSCF
+## RHF calculation as guess for CASSCF
+mf = pyscf.scf.RHF(mol)
+mf.kernel()
+
+## CASSCF(6e,6o) calculation
+mc = pyscf.mcscf.CASSCF(mf, 6, 6).density_fit('aug-cc-pvdz-jkfit')
+emc = mc.mc1step()[0]
+
+## CVS-IP-MR-ADC calculation
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
+mr_adc = prism.mr_adc.MRADC(interface)
+mr_adc.method_type = "cvs-ip"
+mr_adc.method = "mr-adc(2)"
 mr_adc.ncvs = 2
 mr_adc.nroots = 8
 
