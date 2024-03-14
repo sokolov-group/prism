@@ -16,12 +16,14 @@
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <odhiambo.donna@gmail.com>
 #
 
 import sys
 import time
 import numpy as np
 import prism.mr_adc_overlap as mr_adc_overlap
+import prism.mr_adc_integrals as mr_adc_integrals
 
 def compute_excitation_manifolds(mr_adc):
 
@@ -43,7 +45,7 @@ def compute_excitation_manifolds(mr_adc):
     mr_adc.h0.s_ca_bb = mr_adc.h0.f_ca_aa
     mr_adc.h0.f_ca_bb = mr_adc.h0.s_ca_bb + mr_adc.h0.n_ca
 
-    print("Dimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
+    print("Dimension of h0 excitation manifold:               %d" % mr_adc.h0.dim)
 
     # Orthogonalized zeroth-order manifold
     mr_adc.S12.ca = mr_adc_overlap.compute_S12_p1(mr_adc, ignore_print = True)
@@ -64,12 +66,299 @@ def compute_excitation_manifolds(mr_adc):
     mr_adc.h_orth.s_ca_caaa_bb = mr_adc.h_orth.f_ca_caaa_aa
     mr_adc.h_orth.f_ca_caaa_bb = mr_adc.h_orth.s_ca_caaa_bb + mr_adc.h_orth.n_ca_caaa
 
-    mr_adc.h1.dim = 0
-
     # MR-ADC(2) and MR-ADC(2)-X
-#    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-#        raise Exception("Only implemented up to first-order. Second-order is a WIP")
+    mr_adc.h1.dim = 0
+    mr_adc.h_orth.dim = mr_adc.h0.dim
 
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        ## First-order manifold
+        # double-core excitations
+        mr_adc.h1.n_ccaa_tril = (mr_adc.ncvs * (mr_adc.ncvs - 1) // 2) * (mr_adc.ncas * (mr_adc.ncas - 1) // 2)
+        mr_adc.h1.n_ccea_tril = (mr_adc.ncvs * (mr_adc.ncvs - 1) // 2) * mr_adc.ncas * mr_adc.nextern
+        mr_adc.h1.n_ccee_tril = (mr_adc.ncvs * (mr_adc.ncvs - 1) // 2) * (mr_adc.nextern * (mr_adc.nextern - 1) // 2)
+        mr_adc.h1.n_ccaa = mr_adc.ncvs * mr_adc.ncvs * mr_adc.ncas * mr_adc.ncas
+        mr_adc.h1.n_ccea = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern * mr_adc.ncas
+        mr_adc.h1.n_ccee = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern * mr_adc.nextern
+
+        mr_adc.h1.dim_ccaa = mr_adc.h1.n_ccaa + 2 * mr_adc.h1.n_ccaa_tril
+        mr_adc.h1.dim_ccea = mr_adc.h1.n_ccea + 2 * mr_adc.h1.n_ccea_tril
+        mr_adc.h1.dim_ccee = mr_adc.h1.n_ccee + mr_adc.h1.n_ccee_tril
+
+        if mr_adc.nval is not None:
+            mr_adc.h1.n_cvaa = mr_adc.ncvs * mr_adc.nval * mr_adc.ncas * mr_adc.ncas
+#            mr_adc.h1.n_cvaa_tril = (mr_adc.ncvs * mr_adc.nval) * (mr_adc.ncas * (mr_adc.ncas - 1) // 2)
+            mr_adc.h1.n_cvea = (mr_adc.ncvs * mr_adc.nval) * mr_adc.ncas * mr_adc.nextern
+            mr_adc.h1.n_cvee_tril = mr_adc.ncvs * mr_adc.nval * (mr_adc.nextern * (mr_adc.nextern - 1) // 2)
+            mr_adc.h1.n_cvee = mr_adc.ncvs * mr_adc.nval * mr_adc.nextern * mr_adc.nextern 
+
+            mr_adc.h1.dim_cvaa = 3 * mr_adc.h1.n_cvaa
+            mr_adc.h1.dim_cvea = 3 * mr_adc.h1.n_cvea
+            mr_adc.h1.dim_cvee = mr_adc.h1.n_cvee + mr_adc.h1.n_cvee_tril
+
+        # single-core excitations
+        mr_adc.h1.n_caee_tril = mr_adc.ncvs * mr_adc.ncas * (mr_adc.nextern * (mr_adc.nextern - 1) // 2)
+        mr_adc.h1.n_caee = mr_adc.ncvs * mr_adc.ncas * mr_adc.nextern * mr_adc.nextern
+        mr_adc.h1.n_caaa = mr_adc.ncvs * mr_adc.ncas * mr_adc.ncas * mr_adc.ncas
+        mr_adc.h1.n_caea = mr_adc.ncvs * mr_adc.ncas * mr_adc.nextern * mr_adc.ncas
+
+        mr_adc.h1.dim_caee = mr_adc.h1.n_caee + 2 * mr_adc.h1.n_caee_tril
+        mr_adc.h1.dim_caaa = 3 * mr_adc.h1.n_caaa
+        mr_adc.h1.dim_caea = 3 * mr_adc.h1.n_caea
+
+        # Total dimension
+        mr_adc.h1.dim    = mr_adc.h1.dim_ccaa + mr_adc.h1.dim_ccea + mr_adc.h1.dim_ccee + mr_adc.h1.dim_caee + mr_adc.h1.dim_caaa + mr_adc.h1.dim_caea
+        if mr_adc.nval is not None:
+            mr_adc.h1.dim    += mr_adc.h1.dim_cvaa + mr_adc.h1.dim_cvea + mr_adc.h1.dim_cvee
+
+        ## Indices
+        if mr_adc.nval is None:
+            mr_adc.h1.s_ccaa = mr_adc.h0.dim
+            mr_adc.h1.f_ccaa = mr_adc.h1.s_ccaa + mr_adc.h1.dim_ccaa
+            mr_adc.h1.s_ccea = mr_adc.h1.f_ccaa
+            mr_adc.h1.f_ccea = mr_adc.h1.s_ccea + mr_adc.h1.dim_ccea
+            mr_adc.h1.s_ccee = mr_adc.h1.f_ccea
+            mr_adc.h1.f_ccee = mr_adc.h1.s_ccee + mr_adc.h1.dim_ccee
+            mr_adc.h1.s_caee = mr_adc.h1.f_ccee 
+            mr_adc.h1.f_caee = mr_adc.h1.s_caee + mr_adc.h1.dim_caee
+            mr_adc.h1.s_caaa = mr_adc.h1.f_caee
+            mr_adc.h1.f_caaa = mr_adc.h1.s_caaa + mr_adc.h1.dim_caaa
+            mr_adc.h1.s_caea = mr_adc.h1.f_caaa
+            mr_adc.h1.f_caea = mr_adc.h1.s_caea + mr_adc.h1.dim_caea
+        else:
+            mr_adc.h1.s_ccaa = mr_adc.h0.dim
+            mr_adc.h1.f_ccaa = mr_adc.h1.s_ccaa + mr_adc.h1.dim_ccaa
+            mr_adc.h1.s_cvaa = mr_adc.h1.f_ccaa
+            mr_adc.h1.f_cvaa = mr_adc.h1.s_cvaa + mr_adc.h1.dim_cvaa
+            mr_adc.h1.s_ccea = mr_adc.h1.f_cvaa
+            mr_adc.h1.f_ccea = mr_adc.h1.s_ccea + mr_adc.h1.dim_ccea
+            mr_adc.h1.s_cvea = mr_adc.h1.f_ccea
+            mr_adc.h1.f_cvea = mr_adc.h1.s_cvea + mr_adc.h1.dim_cvea
+            mr_adc.h1.s_ccee = mr_adc.h1.f_cvea
+            mr_adc.h1.f_ccee = mr_adc.h1.s_ccee + mr_adc.h1.dim_ccee
+            mr_adc.h1.s_cvee = mr_adc.h1.f_ccee
+            mr_adc.h1.f_cvee = mr_adc.h1.s_cvee + mr_adc.h1.dim_cvee
+            mr_adc.h1.s_caee = mr_adc.h1.f_cvee 
+            mr_adc.h1.f_caee = mr_adc.h1.s_caee + mr_adc.h1.dim_caee
+            mr_adc.h1.s_caaa = mr_adc.h1.f_caee
+            mr_adc.h1.f_caaa = mr_adc.h1.s_caaa + mr_adc.h1.dim_caaa
+            mr_adc.h1.s_caea = mr_adc.h1.f_caaa
+            mr_adc.h1.f_caea = mr_adc.h1.s_caea + mr_adc.h1.dim_caea
+                   
+        ## Spin-Case Indices
+        # CCAA (CVAA)
+        mr_adc.h1.s_ccaa__aaaa = mr_adc.h1.s_ccaa
+        mr_adc.h1.f_ccaa__aaaa = mr_adc.h1.s_ccaa__aaaa + mr_adc.h1.n_ccaa_tril
+        mr_adc.h1.s_ccaa__abab = mr_adc.h1.f_ccaa__aaaa
+        mr_adc.h1.f_ccaa__abab = mr_adc.h1.s_ccaa__abab + mr_adc.h1.n_ccaa
+        mr_adc.h1.s_ccaa__bbbb = mr_adc.h1.f_ccaa__abab
+        mr_adc.h1.f_ccaa__bbbb = mr_adc.h1.s_ccaa__bbbb + mr_adc.h1.n_ccaa_tril
+         
+        if mr_adc.nval is not None:
+            mr_adc.h1.s_cvaa__aaaa = mr_adc.h1.f_ccaa
+            mr_adc.h1.f_cvaa__aaaa = mr_adc.h1.s_cvaa__aaaa + mr_adc.h1.n_cvaa
+            mr_adc.h1.s_cvaa__abab = mr_adc.h1.f_cvaa__aaaa
+            mr_adc.h1.f_cvaa__abab = mr_adc.h1.s_cvaa__abab + mr_adc.h1.n_cvaa
+            mr_adc.h1.s_cvaa__bbbb = mr_adc.h1.f_cvaa__abab
+            mr_adc.h1.f_cvaa__bbbb = mr_adc.h1.s_cvaa__bbbb + mr_adc.h1.n_cvaa
+
+        # CCEA (CVEA)
+        mr_adc.h1.s_ccea__aaaa = mr_adc.h1.s_ccea
+        mr_adc.h1.f_ccea__aaaa = mr_adc.h1.s_ccea__aaaa + mr_adc.h1.n_ccea_tril
+        mr_adc.h1.s_ccea__abab = mr_adc.h1.f_ccea__aaaa
+        mr_adc.h1.f_ccea__abab = mr_adc.h1.s_ccea__abab + mr_adc.h1.n_ccea
+        mr_adc.h1.s_ccea__bbbb = mr_adc.h1.s_ccea
+        mr_adc.h1.f_ccea__bbbb = mr_adc.h1.s_ccea__bbbb + mr_adc.h1.n_ccea_tril
+ 
+        if mr_adc.nval is not None:
+            mr_adc.h1.s_cvea__aaaa = mr_adc.h1.s_cvea
+            mr_adc.h1.f_cvea__aaaa = mr_adc.h1.s_cvea__aaaa + mr_adc.h1.n_cvea
+            mr_adc.h1.s_cvea__abab = mr_adc.h1.f_cvea__aaaa
+            mr_adc.h1.f_cvea__abab = mr_adc.h1.s_cvea__abab + mr_adc.h1.n_cvea
+            mr_adc.h1.s_cvea__bbbb = mr_adc.h1.f_cvea__abab
+            mr_adc.h1.f_cvea__bbbb = mr_adc.h1.s_cvea__bbbb + mr_adc.h1.n_cvea
+
+        # CCEE (CVEE)
+        mr_adc.h1.s_ccee__aaaa = mr_adc.h1.s_ccee
+        mr_adc.h1.f_ccee__aaaa = mr_adc.h1.s_ccee__aaaa + mr_adc.h1.n_ccee_tril
+        mr_adc.h1.s_ccee__abab = mr_adc.h1.f_ccee__aaaa
+        mr_adc.h1.f_ccee__abab = mr_adc.h1.s_ccee__abab + mr_adc.h1.n_ccee
+
+        if mr_adc.nval is not None:
+            mr_adc.h1.s_cvee__aaaa = mr_adc.h1.s_cvee
+            mr_adc.h1.f_cvee__aaaa = mr_adc.h1.s_cvee__aaaa + mr_adc.h1.n_cvee_tril
+            mr_adc.h1.s_cvee__abab = mr_adc.h1.f_cvee__aaaa
+            mr_adc.h1.f_cvee__abab = mr_adc.h1.s_cvee__abab + mr_adc.h1.n_cvee
+
+        # CAEE  
+        mr_adc.h1.s_caee__aaaa = mr_adc.h1.s_caee
+        mr_adc.h1.f_caee__aaaa = mr_adc.h1.s_caee__aaaa + mr_adc.h1.n_caee_tril
+        mr_adc.h1.s_caee__abab = mr_adc.h1.f_caee__aaaa
+        mr_adc.h1.f_caee__abab = mr_adc.h1.s_caee__abab + mr_adc.h1.n_caee
+        mr_adc.h1.s_caee__bbbb = mr_adc.h1.f_caee__abab
+        mr_adc.h1.f_caee__bbbb = mr_adc.h1.s_caee__bbbb + mr_adc.h1.n_caee_tril
+
+        # CAAA
+        mr_adc.h1.s_caaa__aaaa = mr_adc.h1.f_caaa
+        mr_adc.h1.f_caaa__aaaa = mr_adc.h1.s_caaa__aaaa + mr_adc.h1.n_caaa
+        mr_adc.h1.s_caaa__abab = mr_adc.h1.f_caaa__aaaa
+        mr_adc.h1.f_caaa__abab = mr_adc.h1.s_caaa__abab + mr_adc.h1.n_caaa
+        mr_adc.h1.s_caaa__bbbb = mr_adc.h1.f_caaa__abab
+        mr_adc.h1.f_caaa__bbbb = mr_adc.h1.s_caaa__bbbb + mr_adc.h1.n_caaa
+
+        # CAEA
+        mr_adc.h1.s_caea__aaaa = mr_adc.h1.f_caea
+        mr_adc.h1.f_caea__aaaa = mr_adc.h1.s_caea__aaaa + mr_adc.h1.n_caea
+        mr_adc.h1.s_caea__abab = mr_adc.h1.f_caea__aaaa
+        mr_adc.h1.f_caea__abab = mr_adc.h1.s_caea__abab + mr_adc.h1.n_caea
+        mr_adc.h1.s_caea__bbbb = mr_adc.h1.f_caea__abab
+        mr_adc.h1.f_caea__bbbb = mr_adc.h1.s_caea__bbbb + mr_adc.h1.n_caea
+
+        print ("Dimension of h1 excitation manifold:               %d\n" %  mr_adc.h1.dim)
+        
+        ### WIP ###
+        # Orthogonalized zeroth- and first-order manifold
+        mr_adc.S12.ccaa = mr_adc_overlap.compute_S12_p2(mr_adc)
+        mr_adc.S12.ccea = mr_adc_overlap.compute_S12_p1(mr_adc)
+        mr_adc.S12.caee = mr_adc_overlap.compute_S12_m1(mr_adc)
+        mr_adc.S12.ca_caaa = mr_adc_overlap.compute_S12_p1p_gno_projector(mr_adc)
+        mr_adc.S12.ce_caea = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
+
+        # double-core excitations
+        mr_adc.h_orth.n_ccaa_tril = (mr_adc.ncvs * (mr_adc.ncvs - 1) // 2) * mr_adc.S12.ccaa.shape[1]
+        mr_adc.h_orth.n_ccea_tril = (mr_adc.ncvs * (mr_adc.ncvs - 1) // 2) * mr_adc.nextern * mr_adc.S12.ccea.shape[1]
+        mr_adc.h_orth.n_ccee_tril =  mr_adc.h1.n_ccee_tril
+        mr_adc.h_orth.n_ccaa = mr_adc.ncvs * mr_adc.ncvs * mr_adc.S12.ccaa.shape[1]
+        mr_adc.h_orth.n_ccea = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern * mr_adc.S12.ccea.shape[1]
+        mr_adc.h_orth.n_ccee = mr_adc.h1.n_ccee
+        if mr_adc.nval is not None:
+           mr_adc.h_orth.n_cvaa = (mr_adc.ncvs * mr_adc.nval) * mr_adc.S12.ccaa.shape[1]
+           mr_adc.h_orth.n_cvea = (mr_adc.ncvs * mr_adc.nval) * mr_adc.nextern * mr_adc.S12.ccea.shape[1]
+           mr_adc.h_orth.n_cvee = mr_adc.h1.n_cvee 
+           mr_adc.h_orth.n_cvee_tril = mr_adc.h1.n_cvee_tril
+
+        # single-core excitations
+        mr_adc.h_orth.n_caee_tril = mr_adc.ncvs * (mr_adc.nextern * (mr_adc.nextern - 1) // 2) * mr_adc.S12.caee.shape[1]
+        mr_adc.h_orth.n_caee = mr_adc.ncvs * mr_adc.nextern * mr_adc.nextern * mr_adc.S12.caee.shape[1]
+        mr_adc.h_orth.n_ca_caaa = mr_adc.ncvs * mr_adc.S12.ca_caaa.shape[1]
+        mr_adc.h_orth.n_ce_caea = mr_adc.ncvs * mr_adc.nextern * mr_adc.S12.ce_caea.shape[1]
+
+        # Total dimension
+        mr_adc.h_orth.h0_dim = mr_adc.h_orth.n_ca_caaa + mr_adc.h_orth.n_ce_caea
+        mr_adc.h_orth.dim_caee = mr_adc.h_orth.n_caee + 2 * mr_adc.h_orth.n_caee_tril
+        mr_adc.h_orth.dim_ccaa = mr_adc.h_orth.n_ccaa + 2 * mr_adc.h_orth.n_ccaa_tril
+        mr_adc.h_orth.dim_ccea = mr_adc.h_orth.n_ccea + 2 * mr_adc.h_orth.n_ccea_tril
+        mr_adc.h_orth.dim_ccee = mr_adc.h1.dim_ccee
+
+        mr_adc.h_orth.dim = mr_adc.h_orth.h0_dim + mr_adc.h_orth.dim_caee + mr_adc.h_orth.dim_ccaa + mr_adc.h_orth.dim_ccea + mr_adc.h_orth.dim_ccee
+        if mr_adc.nval is not None:
+            mr_adc.h_orth.dim_cvaa = 3 * mr_adc.h_orth.n_cvaa
+            mr_adc.h_orth.dim_cvea = 3 * mr_adc.h_orth.n_cvea
+            mr_adc.h_orth.dim_cvee = mr_adc.h1.dim_cvee
+            mr_adc.h_orth.dim += mr_adc.h_orth.dim_cvaa + mr_adc.h_orth.dim_cvea + mr_adc.h_orth.dim_cvee
+
+        ## Indices
+        if mr_adc.nval is None:
+            mr_adc.h_orth.s_ca_caaa = 0
+            mr_adc.h_orth.f_ca_caaa = mr_adc.h_orth.s_ca_caaa + mr_adc.h_orth.n_ca_caaa
+            mr_adc.h_orth.s_ce_caea = mr_adc.h_orth.f_ca_caaa
+            mr_adc.h_orth.f_ce_caea = mr_adc.h_orth.s_ca_caea + mr_adc.h_orth.n_ce_caea
+            mr_adc.h_orth.s_ccaa = mr_adc.h_orth.f_ce_caea
+            mr_adc.h_orth.f_ccaa = mr_adc.h_orth.s_ccaa + mr_adc.h_orth.dim_ccaa
+            mr_adc.h_orth.s_ccea = mr_adc.h_orth.f_ccaa
+            mr_adc.h_orth.f_ccea = mr_adc.h_orth.s_ccea + mr_adc.h_orth.dim_ccea
+            mr_adc.h_orth.s_ccee = mr_adc.h_orth.f_ccea
+            mr_adc.h_orth.f_ccee = mr_adc.h_orth.s_ccee + mr_adc.h_orth.dim_ccee
+            mr_adc.h_orth.s_caee = mr_adc.h_orth.f_ccee
+            mr_adc.h_orth.f_caee = mr_adc.h_orth.s_caee + mr_adc.h_orth.dim_caee
+        else:
+            mr_adc.h_orth.s_ca_caaa = 0
+            mr_adc.h_orth.f_ca_caaa = mr_adc.h_orth.s_ca_caaa + mr_adc.h_orth.n_ca_caaa
+            mr_adc.h_orth.s_ce_caea = mr_adc.h_orth.f_ca_caaa
+            mr_adc.h_orth.f_ce_caea = mr_adc.h_orth.s_ce_caea + mr_adc.h_orth.n_ce_caea
+            mr_adc.h_orth.s_ccaa = mr_adc.h_orth.f_ce_caea
+            mr_adc.h_orth.f_ccaa = mr_adc.h_orth.s_ccaa + mr_adc.h_orth.dim_ccaa
+            mr_adc.h_orth.s_cvaa = mr_adc.h_orth.f_ccaa
+            mr_adc.h_orth.f_cvaa = mr_adc.h_orth.s_cvaa + mr_adc.h_orth.dim_cvaa
+            mr_adc.h_orth.s_ccea = mr_adc.h_orth.f_cvaa
+            mr_adc.h_orth.f_ccea = mr_adc.h_orth.s_ccea + mr_adc.h_orth.dim_ccea
+            mr_adc.h_orth.s_cvea = mr_adc.h_orth.f_ccea
+            mr_adc.h_orth.f_cvea = mr_adc.h_orth.s_cvea + mr_adc.h_orth.dim_cvea 
+            mr_adc.h_orth.s_ccee = mr_adc.h_orth.f_cvea
+            mr_adc.h_orth.f_ccee = mr_adc.h_orth.s_ccee + mr_adc.h_orth.dim_ccee
+            mr_adc.h_orth.s_cvee = mr_adc.h_orth.f_ccee
+            mr_adc.h_orth.f_cvee = mr_adc.h_orth.s_cvee + mr_adc.h_orth.dim_cvee
+            mr_adc.h_orth.s_caee = mr_adc.h_orth.f_cvee
+            mr_adc.h_orth.f_caee = mr_adc.h_orth.s_caee + mr_adc.h_orth.dim_caee
+
+        ## Spin-Case Indices
+        # CA - CAAA
+        mr_adc.h_orth.s_ca_caaa = 0
+        mr_adc.h_orth.f_ca_caaa = mr_adc.h_orth.s_ca_caaa + mr_adc.h_orth.n_ca_caaa
+
+        # CE - CAEA
+        mr_adc.h_orth.s_ce_caea = mr_adc.h_orth.s_ce_caea
+        mr_adc.h_orth.f_ce_caea = mr_adc.h_orth.s_ce_caea + mr_adc.h_orth.n_ce_caea
+
+        # CCAA (CVAA)
+        mr_adc.h_orth.s_ccaa__aaaa = mr_adc.h_orth.s_ccaa
+        mr_adc.h_orth.f_ccaa__aaaa = mr_adc.h_orth.s_ccaa__aaaa + mr_adc.h_orth.n_ccaa_tril
+        mr_adc.h_orth.s_ccaa__abab = mr_adc.h_orth.f_ccaa__aaaa
+        mr_adc.h_orth.f_ccaa__abab = mr_adc.h_orth.s_ccaa__abab + mr_adc.h_orth.n_ccaa
+        mr_adc.h_orth.s_ccaa__bbbb = mr_adc.h_orth.f_ccaa__abab
+        mr_adc.h_orth.f_ccaa__bbbb = mr_adc.h_orth.s_ccaa__bbbb + mr_adc.h_orth.n_ccaa_tril
+ 
+        if mr_adc.nval is not None:
+            mr_adc.h_orth.s_cvaa__aaaa = mr_adc.h_orth.s_cvaa
+            mr_adc.h_orth.f_cvaa__aaaa = mr_adc.h_orth.s_cvaa__aaaa + mr_adc.h_orth.n_cvaa
+            mr_adc.h_orth.s_cvaa__abab = mr_adc.h_orth.f_cvaa__aaaa
+            mr_adc.h_orth.f_cvaa__abab = mr_adc.h_orth.s_cvaa__abab + mr_adc.h_orth.n_cvaa
+            mr_adc.h_orth.s_cvaa__bbbb = mr_adc.h_orth.f_cvaa__abab
+            mr_adc.h_orth.f_cvaa__bbbb = mr_adc.h_orth.s_cvaa__bbbb + mr_adc.h_orth.n_cvaa
+
+        # CCEA (CVEA)
+        mr_adc.h_orth.s_ccea__aaaa = mr_adc.h_orth.s_ccea
+        mr_adc.h_orth.f_ccea__aaaa = mr_adc.h_orth.s_ccea__aaaa + mr_adc.h_orth.n_ccea_tril
+        mr_adc.h_orth.s_ccea__abab = mr_adc.h_orth.f_ccea__aaaa
+        mr_adc.h_orth.f_ccea__abab = mr_adc.h_orth.s_ccea__abab + mr_adc.h_orth.n_ccea
+        mr_adc.h_orth.s_ccea__bbbb = mr_adc.h_orth.s_ccea
+        mr_adc.h_orth.f_ccea__bbbb = mr_adc.h_orth.s_ccea__bbbb + mr_adc.h_orth.n_ccea_tril
+ 
+        if mr_adc.nval is not None:
+            mr_adc.h_orth.s_cvea__aaaa = mr_adc.h_orth.s_cvea
+            mr_adc.h_orth.f_cvea__aaaa = mr_adc.h_orth.s_cvea__aaaa + mr_adc.h_orth.n_cvea
+            mr_adc.h_orth.s_cvea__abab = mr_adc.h_orth.f_cvea__aaaa
+            mr_adc.h_orth.f_cvea__abab = mr_adc.h_orth.s_cvea__abab + mr_adc.h_orth.n_cvea
+            mr_adc.h_orth.s_cvea__bbbb = mr_adc.h_orth.f_cvea__abab
+            mr_adc.h_orth.f_cvea__bbbb = mr_adc.h_orth.s_cvea__bbbb + mr_adc.h_orth.n_cvea
+
+        # CCEE (CVEE)
+        mr_adc.h_orth.s_ccee__aaaa = mr_adc.h_orth.s_ccee
+        mr_adc.h_orth.f_ccee__aaaa = mr_adc.h_orth.s_ccee__aaaa + mr_adc.h_orth.n_ccee_tril
+        mr_adc.h_orth.s_ccee__abab = mr_adc.h_orth.f_ccee__aaaa
+        mr_adc.h_orth.f_ccee__abab = mr_adc.h_orth.s_ccee__abab + mr_adc.h_orth.n_ccee
+
+        if mr_adc.nval is not None:
+            mr_adc.h_orth.s_cvee__aaaa = mr_adc.h_orth.s_cvee
+            mr_adc.h_orth.f_cvee__aaaa = mr_adc.h_orth.s_cvee__aaaa + mr_adc.h_orth.n_cvee_tril
+            mr_adc.h_orth.s_cvee__abab = mr_adc.h_orth.f_cvee__aaaa
+            mr_adc.h_orth.f_cvee__abab = mr_adc.h_orth.s_cvee__abab + mr_adc.h_orth.n_cvee
+
+        # CAEE
+        mr_adc.h_orth.s_caee__aaaa = mr_adc.h_orth.s_caee
+        mr_adc.h_orth.f_caee__aaaa = mr_adc.h_orth.s_caee__aaaa + mr_adc.h_orth.n_caee_tril
+        mr_adc.h_orth.s_caee__abab = mr_adc.h_orth.f_caee__aaaa
+        mr_adc.h_orth.f_caee__abab = mr_adc.h_orth.s_caee__abab + mr_adc.h_orth.n_caee
+        mr_adc.h_orth.s_caee__bbbb = mr_adc.h_orth.f_caee__abab
+        mr_adc.h_orth.f_caee__bbbb = mr_adc.h_orth.s_caee__bbbb + mr_adc.h_orth.n_caee_tril
+
+    print ("\nTotal dimension of the excitation manifold:        %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
+    print ("Dim. of orthogonalized excitation manifold:        %d\n" % (mr_adc.h_orth.dim))
+    sys.stdout.flush()
+
+    if (mr_adc.h_orth.dim < mr_adc.nroots):
+        mr_adc.nroots = mr_adc.h_orth.dim
+
+#    ### WIP ###
     return mr_adc
 
 
@@ -77,7 +366,7 @@ def compute_M_00(mr_adc):
 
     start_time = time.time()
 
-    print("\nComputing M(h0-h0) block...")
+    print("Computing M(h0-h0) block...\n")
     sys.stdout.flush()
 
     # Einsum definition from kernel
@@ -96,28 +385,11 @@ def compute_M_00(mr_adc):
 
     ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
-    h_ae = mr_adc.h1eff.ae
         
     ## Two-electron integrals
     v_aaaa = mr_adc.v2e.aaaa
-    v_aaae = mr_adc.v2e.aaae
-    v_xxaa = mr_adc.v2e.xxaa
-    v_xaax = mr_adc.v2e.xaax
-    v_xxae = mr_adc.v2e.xxae
-    v_xaex = mr_adc.v2e.xaex
-    v_xxee = mr_adc.v2e.xxee
-    v_xeex = mr_adc.v2e.xeex
 
-    ## Amplitudes
-    t1_ae = mr_adc.t1.ae
-
-    t1_aaae = mr_adc.t1.aaae
-
-    n_ce = mr_adc.h0.n_ce
-    n_ca = mr_adc.h0.n_ca
-
-    dim = mr_adc.h0.dim
-
+    ## Dimensions
     s_ce_aa = mr_adc.h0.s_ce_aa
     f_ce_aa = mr_adc.h0.f_ce_aa
     s_ce_bb = mr_adc.h0.s_ce_bb
@@ -127,10 +399,14 @@ def compute_M_00(mr_adc):
     s_ca_bb = mr_adc.h0.s_ca_bb
     f_ca_bb = mr_adc.h0.f_ca_bb
 
+    n_ce = mr_adc.h0.n_ce
+    n_ca = mr_adc.h0.n_ca
+
+    dim = mr_adc.h0.dim
+
     # Reduced Density Matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
-    rdm_cccaaa = mr_adc.rdm.cccaaa
 
     M_00 = np.zeros((dim, dim))
 
@@ -143,6 +419,10 @@ def compute_M_00(mr_adc):
     temp.shape = (n_ce, n_ce)
     M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
     M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
+
+    print ("Asymmetry of ce - ce (0) sublock:                 %.5e" % np.linalg.norm(temp-temp.T))
+    print ("Norm of subblock:                               %f\n" % (np.linalg.norm(temp))) 
+
     del temp
 
     # CA - CA
@@ -158,112 +438,133 @@ def compute_M_00(mr_adc):
     temp.shape = (n_ca, n_ca)
     M_00[s_ca_aa:f_ca_aa, s_ca_aa:f_ca_aa] += temp
     M_00[s_ca_bb:f_ca_bb, s_ca_bb:f_ca_bb] += temp
-    del temp
+
+    print ("Asymmetry of ca - ca (0) sublock:                 %.5e" % np.linalg.norm(temp-temp.T))
+    print ("Norm of subblock:                                %f\n" % (np.linalg.norm(temp))) 
     
+    del temp
+
     ## First-order terms
-    # CE - CE
-    ## aa,aa || bb,bb
-    temp  = einsum('IABJ->IAJB', v_xeex, optimize = einsum_type).copy()
-    temp -= einsum('JIAB->IAJB', v_xxee, optimize = einsum_type).copy()
-    
-    temp.shape = (n_ce, n_ce)
-    M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
-    M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
-    del temp
+    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"): 
+        ## One-electron integrals
+        h_ae = mr_adc.h1eff.ae
+            
+        ## Two-electron integrals
+        v_aaae = mr_adc.v2e.aaae
+        v_xxaa = mr_adc.v2e.xxaa
+        v_xaax = mr_adc.v2e.xaax
+        v_xxae = mr_adc.v2e.xxae
+        v_xaex = mr_adc.v2e.xaex
+        v_xxee = mr_adc.v2e.xxee
+        v_xeex = mr_adc.v2e.xeex
 
-    ## aa,bb || bb,aa
-    temp  = einsum('IABJ->IAJB', v_xeex, optimize = einsum_type).copy()
-    
-    temp.shape = (n_ce, n_ce)
-    M_00[s_ce_aa:f_ce_aa, s_ce_bb:f_ce_bb] += temp
-    M_00[s_ce_bb:f_ce_bb, s_ce_aa:f_ce_aa] += temp
-    del temp
+        ## Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
 
-    # CA - CA
-    ## aa,aa || bb,bb
-    temp =- einsum('IJYX->IXJY', v_xxaa, optimize = einsum_type).copy()
-    temp += einsum('IXYJ->IXJY', v_xaax, optimize = einsum_type).copy()
-    temp += 1/2 * einsum('IJYx,Xx->IXJY', v_xxaa, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('IJxX,Yx->IXJY', v_xxaa, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('IJxy,XxYy->IXJY', v_xxaa, rdm_ccaa, optimize = einsum_type)
-    temp -= 1/2 * einsum('IXxJ,Yx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
-    temp -= 1/2 * einsum('IxYJ,Xx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
-    temp -= 1/6 * einsum('IxyJ,XyYx->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
-    temp += 1/6 * einsum('IxyJ,XyxY->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
-    temp -= 1/2 * einsum('IJxy,xy,XY->IXJY', v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
-    temp += 1/4 * einsum('IxyJ,yx,XY->IXJY', v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
+        # CE - CE
+        ## aa,aa || bb,bb
+        temp  = einsum('IABJ->IAJB', v_xeex, optimize = einsum_type).copy()
+        temp -= einsum('JIAB->IAJB', v_xxee, optimize = einsum_type).copy()
 
-    temp.shape = (n_ca, n_ca)
-    M_00[s_ca_aa:f_ca_aa, s_ca_aa:f_ca_aa] += temp
-    M_00[s_ca_bb:f_ca_bb, s_ca_bb:f_ca_bb] += temp
-    del temp
+        temp.shape = (n_ce, n_ce)
+        M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
+        M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
+        del temp
 
-    ## aa,bb || bb,aa
-    temp  = einsum('IXYJ->IXJY', v_xaax, optimize = einsum_type).copy()
-    temp -= 1/2 * einsum('IXxJ,Yx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
-    temp -= 1/2 * einsum('IxYJ,Xx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
-    temp += 1/6 * einsum('IxyJ,XyYx->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
-    temp += 1/3 * einsum('IxyJ,XyxY->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
+        ## aa,bb || bb,aa
+        temp  = einsum('IABJ->IAJB', v_xeex, optimize = einsum_type).copy()
+        
+        temp.shape = (n_ce, n_ce)
+        M_00[s_ce_aa:f_ce_aa, s_ce_bb:f_ce_bb] += temp
+        M_00[s_ce_bb:f_ce_bb, s_ce_aa:f_ce_aa] += temp
+        del temp
 
-    temp.shape = (n_ca, n_ca)
-    M_00[s_ca_aa:f_ca_aa, s_ca_bb:f_ca_bb] += temp
-    M_00[s_ca_bb:f_ca_bb, s_ca_aa:f_ca_aa] += temp
-    del temp
+        # CA - CA
+        ## aa,aa || bb,bb
+        temp =- einsum('IJYX->IXJY', v_xxaa, optimize = einsum_type).copy()
+        temp += einsum('IXYJ->IXJY', v_xaax, optimize = einsum_type).copy()
+        temp += 1/2 * einsum('IJYx,Xx->IXJY', v_xxaa, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('IJxX,Yx->IXJY', v_xxaa, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('IJxy,XxYy->IXJY', v_xxaa, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/2 * einsum('IXxJ,Yx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('IxYJ,Xx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
+        temp -= 1/6 * einsum('IxyJ,XyYx->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
+        temp += 1/6 * einsum('IxyJ,XyxY->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/2 * einsum('IJxy,xy,XY->IXJY', v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
+        temp += 1/4 * einsum('IxyJ,yx,XY->IXJY', v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
 
-    # CE - CA
-    ## aa,aa || bb,bb
-    temp =- einsum('IJXA->IAJX', v_xxae, optimize = einsum_type).copy()
-    temp += einsum('JXAI->IAJX', v_xaex, optimize = einsum_type).copy()
-    temp += einsum('XA,IJ->IAJX', h_ae, np.identity(ncvs), optimize = einsum_type)
-    temp += 1/2 * einsum('IJxA,Xx->IAJX', v_xxae, rdm_ca, optimize = einsum_type)
-    temp -= 1/2 * einsum('JxAI,Xx->IAJX', v_xaex, rdm_ca, optimize = einsum_type)
-    temp += einsum('A,IJ,XA->IAJX', e_extern, np.identity(ncvs), t1_ae, optimize = einsum_type)
-    temp -= einsum('Xx,IJ,xA->IAJX', h_aa, np.identity(ncvs), t1_ae, optimize = einsum_type)
-    temp -= 1/2 * einsum('IJ,XxyA,xy->IAJX', np.identity(ncvs), v_aaae, rdm_ca, optimize = einsum_type)
-    temp += einsum('IJ,xyXA,yx->IAJX', np.identity(ncvs), v_aaae, rdm_ca, optimize = einsum_type)
-    temp -= 1/2 * einsum('A,IJ,XxyA,yx->IAJX', e_extern, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
-    temp += einsum('A,IJ,xXyA,yx->IAJX', e_extern, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('Xx,IJ,xyzA,zy->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
-    temp -= einsum('Xx,IJ,yxzA,zy->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('xy,IJ,XxzA,yz->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
-    temp -= 1/2 * einsum('xy,IJ,XzxA,yz->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
-    temp -= einsum('xy,IJ,xXzA,yz->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
-    temp += einsum('xy,IJ,zXxA,yz->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('IJ,XxyA,xzwu,ywzu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp -= 1/2 * einsum('IJ,XxyA,yzwu,xwzu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp -= einsum('IJ,xA,Xxyz,yz->IAJX', np.identity(ncvs), t1_ae, v_aaaa, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('IJ,xA,Xyzx,zy->IAJX', np.identity(ncvs), t1_ae, v_aaaa, rdm_ca, optimize = einsum_type)
-    temp -= einsum('IJ,xXyA,xzwu,ywzu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += einsum('IJ,xXyA,yzwu,xwzu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += 1/2 * einsum('IJ,xyzA,Xwux,zwuy->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += 1/2 * einsum('IJ,xyzA,Xwuy,zwxu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp -= 1/2 * einsum('IJ,xyzA,Xwzu,yxwu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += 1/2 * einsum('IJ,xyzA,Xxwu,zuyw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp += 1/2 * einsum('IJ,xyzA,Xxwy,zw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ca, optimize = einsum_type)
-    temp -= einsum('IJ,xyzA,Xywu,zuxw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    temp -= einsum('IJ,xyzA,Xywx,zw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ca, optimize = einsum_type)
+        temp.shape = (n_ca, n_ca)
+        M_00[s_ca_aa:f_ca_aa, s_ca_aa:f_ca_aa] += temp
+        M_00[s_ca_bb:f_ca_bb, s_ca_bb:f_ca_bb] += temp
+        del temp
 
-    temp.shape = (n_ce, n_ca)
-    M_00[s_ce_aa:f_ce_aa, s_ca_aa:f_ca_aa] += temp
-    M_00[s_ce_bb:f_ce_bb, s_ca_bb:f_ca_bb] += temp
+        ## aa,bb || bb,aa
+        temp  = einsum('IXYJ->IXJY', v_xaax, optimize = einsum_type).copy()
+        temp -= 1/2 * einsum('IXxJ,Yx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('IxYJ,Xx->IXJY', v_xaax, rdm_ca, optimize = einsum_type)
+        temp += 1/6 * einsum('IxyJ,XyYx->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
+        temp += 1/3 * einsum('IxyJ,XyxY->IXJY', v_xaax, rdm_ccaa, optimize = einsum_type)
 
-    # Add temp matrix to bottom triangle
-    M_00[s_ca_aa:f_ca_aa, s_ce_aa:f_ce_aa] += temp.T
-    M_00[s_ca_bb:f_ca_bb, s_ce_bb:f_ce_bb] += temp.T
-    del temp
+        temp.shape = (n_ca, n_ca)
+        M_00[s_ca_aa:f_ca_aa, s_ca_bb:f_ca_bb] += temp
+        M_00[s_ca_bb:f_ca_bb, s_ca_aa:f_ca_aa] += temp
+        del temp
 
-    ## aa,bb || bb,aa
-    temp  = einsum('JXAI->IAJX', v_xaex, optimize = einsum_type).copy()
-    temp -= 1/2 * einsum('JxAI,Xx->IAJX', v_xaex, rdm_ca, optimize = einsum_type)
+        # CE - CA
+        ## aa,aa || bb,bb
+        temp =- einsum('IJXA->IAJX', v_xxae, optimize = einsum_type).copy()
+        temp += einsum('JXAI->IAJX', v_xaex, optimize = einsum_type).copy()
+        temp += einsum('XA,IJ->IAJX', h_ae, np.identity(ncvs), optimize = einsum_type)
+        temp += 1/2 * einsum('IJxA,Xx->IAJX', v_xxae, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('JxAI,Xx->IAJX', v_xaex, rdm_ca, optimize = einsum_type)
+        temp += einsum('A,IJ,XA->IAJX', e_extern, np.identity(ncvs), t1_ae, optimize = einsum_type)
+        temp -= einsum('Xx,IJ,xA->IAJX', h_aa, np.identity(ncvs), t1_ae, optimize = einsum_type)
+        temp -= 1/2 * einsum('IJ,XxyA,xy->IAJX', np.identity(ncvs), v_aaae, rdm_ca, optimize = einsum_type)
+        temp += einsum('IJ,xyXA,yx->IAJX', np.identity(ncvs), v_aaae, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('A,IJ,XxyA,yx->IAJX', e_extern, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
+        temp += einsum('A,IJ,xXyA,yx->IAJX', e_extern, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('Xx,IJ,xyzA,zy->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
+        temp -= einsum('Xx,IJ,yxzA,zy->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('xy,IJ,XxzA,yz->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('xy,IJ,XzxA,yz->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
+        temp -= einsum('xy,IJ,xXzA,yz->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
+        temp += einsum('xy,IJ,zXxA,yz->IAJX', h_aa, np.identity(ncvs), t1_aaae, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('IJ,XxyA,xzwu,ywzu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/2 * einsum('IJ,XxyA,yzwu,xwzu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp -= einsum('IJ,xA,Xxyz,yz->IAJX', np.identity(ncvs), t1_ae, v_aaaa, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('IJ,xA,Xyzx,zy->IAJX', np.identity(ncvs), t1_ae, v_aaaa, rdm_ca, optimize = einsum_type)
+        temp -= einsum('IJ,xXyA,xzwu,ywzu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp += einsum('IJ,xXyA,yzwu,xwzu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('IJ,xyzA,Xwux,zwuy->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('IJ,xyzA,Xwuy,zwxu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/2 * einsum('IJ,xyzA,Xwzu,yxwu->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('IJ,xyzA,Xxwu,zuyw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('IJ,xyzA,Xxwy,zw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ca, optimize = einsum_type)
+        temp -= einsum('IJ,xyzA,Xywu,zuxw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        temp -= einsum('IJ,xyzA,Xywx,zw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ca, optimize = einsum_type)
 
-    temp.shape = (n_ce, n_ca)
-    M_00[s_ce_aa:f_ce_aa, s_ca_bb:f_ca_bb] += temp
-    M_00[s_ce_bb:f_ce_bb, s_ca_aa:f_ca_aa] += temp
+        temp.shape = (n_ce, n_ca)
+        M_00[s_ce_aa:f_ce_aa, s_ca_aa:f_ca_aa] += temp
+        M_00[s_ce_bb:f_ce_bb, s_ca_bb:f_ca_bb] += temp
 
-    # Add temp matrix to bottom triangle
-    M_00[s_ca_bb:f_ca_bb, s_ce_aa:f_ce_aa] += temp.T
-    M_00[s_ca_aa:f_ca_aa, s_ce_bb:f_ce_bb] += temp.T
-    del temp
+        # Add temp matrix to bottom triangle
+        M_00[s_ca_aa:f_ca_aa, s_ce_aa:f_ce_aa] += temp.T
+        M_00[s_ca_bb:f_ca_bb, s_ce_bb:f_ce_bb] += temp.T
+        del temp
+
+        ## aa,bb || bb,aa
+        temp  = einsum('JXAI->IAJX', v_xaex, optimize = einsum_type).copy()
+        temp -= 1/2 * einsum('JxAI,Xx->IAJX', v_xaex, rdm_ca, optimize = einsum_type)
+
+        temp.shape = (n_ce, n_ca)
+        M_00[s_ce_aa:f_ce_aa, s_ca_bb:f_ca_bb] += temp
+        M_00[s_ce_bb:f_ce_bb, s_ca_aa:f_ca_aa] += temp
+
+        # Add temp matrix to bottom triangle
+        M_00[s_ca_bb:f_ca_bb, s_ce_aa:f_ce_aa] += temp.T
+        M_00[s_ca_aa:f_ca_aa, s_ce_bb:f_ce_bb] += temp.T
+        del temp
 
     ## Second-order terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
@@ -370,7 +671,8 @@ def compute_M_00(mr_adc):
 
         t2_aaae = mr_adc.t1.aaae
         
-        # Reduced Density Matrix
+        # Reduced Density Matrices
+        rdm_cccaaa = mr_adc.rdm.cccaaa
         rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
         # CE - CE
@@ -3023,7 +3325,7 @@ def compute_M_00(mr_adc):
         M_00[s_ce_aa:f_ce_aa, s_ce_bb:f_ce_bb] += temp
         M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
         del temp
-     
+
         ## aa,bb || bb,aa
         temp  = einsum('Ia,JBAa->IAJB', t1_xe, v_xeee, optimize = einsum_type)
         temp += 2 * einsum('IiAa,JBia->IAJB', t1_xxee, v_xexe, optimize = einsum_type)
@@ -30583,10 +30885,369 @@ def compute_M_00(mr_adc):
 
     mr_adc.M_00 = np.ascontiguousarray(M_00)
 
-    print("Time for computing M(h0-h0) block:                 %f sec\n" % (time.time() - start_time))
+    print("Time for computing M(h0-h0) block:              %f sec\n" % (time.time() - start_time))
     sys.stdout.flush()
 
     return M_00
+
+def compute_preconditioner(mr_adc, M_00):
+
+    start_time = time.time()
+
+    print ("Computing pre-conditioner...")
+    sys.stdout.flush()
+ 
+    # Matrix Blocks
+    M_00 = mr_adc.M_00
+    
+    # Variables from kernel
+    ncvs    = mr_adc.ncvs
+    nval    = mr_adc.nval
+    ncas    = mr_adc.ncas
+    nextern = mr_adc.nextern
+
+    ## Non-orthogonal Excitation Manifolds
+    s_ce__aa = mr_adc.h0.s_ce_aa 
+    f_ce__aa = mr_adc.h0.f_ce_aa 
+    s_ce__bb = mr_adc.h0.s_ce_bb 
+    f_ce__bb = mr_adc.h0.f_ce_bb 
+    s_ca__aa = mr_adc.h0.s_ca_aa 
+    f_ca__aa = mr_adc.h0.f_ca_aa 
+    s_ca__bb = mr_adc.h0.s_ca_bb 
+    f_ca__bb = mr_adc.h0.f_ca_bb 
+
+    ## Indices
+    cc_tril_ind = np.tril_indices(ncvs, k = -1)
+    ee_tril_ind = np.tril_indices(nextern, k = -1)
+
+    # Build the empty preconditioner
+    precond = np.zeros(mr_adc.h_orth.dim) 
+
+    # Define functions to compute preconditioner diagonal blocks
+    ## CA
+    def compute_preconditioner__CA(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        ## Overlap Matrices
+        S12_ca = mr_adc.S12.ca
+
+        precond_ca  = einsum('XY,IJ->IXJY', h_aa, np.identity(ncvs), optimize = einsum_type)
+        precond_ca -= einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ca += 1/2 * einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ca -= 1/2 * einsum('Yx,IJ,Xx->IXJY', h_aa, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ca += einsum('IJ,XYxy,xy->IXJY', np.identity(ncvs), v_aaaa, rdm_ca, optimize = einsum_type)
+        precond_ca -= 1/2 * einsum('IJ,XxyY,yx->IXJY', np.identity(ncvs), v_aaaa, rdm_ca, optimize = einsum_type)
+        precond_ca -= 1/2 * einsum('IJ,Yxyz,Xyxz->IXJY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
+
+        precond_ca = einsum('IXIY,XP,YP->IP', precond_ca, S12_ca, S12_ca, optimize = einsum_type)
+
+        return precond_ca
+
+    ## CE
+    def compute_preconditioner__CE(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nextern = mr_adc.nextern
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_extern = mr_adc.mo_energy.e
+
+        precond_ce  = einsum('A,AA,II->IA', e_extern, np.identity(nextern), np.identity(ncvs), optimize = einsum_type)
+        precond_ce -= einsum('I,AA,II->IA', e_cvs, np.identity(nextern), np.identity(ncvs), optimize = einsum_type)
+ 
+        return precond_ce
+
+    ## CCAA
+    ## CVAA
+
+    ## CCEA
+    def compute_preconditioner__CCEA(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
+        nextern = mr_adc.nextern
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_extern = mr_adc.mo_energy.e
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        precond_ccea  = einsum('XX,AA,II,JJ->IJAX', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type) 
+        precond_ccea += einsum('A,AA,II,JJ,XX->IJAX', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ccea -= einsum('I,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ccea -= einsum('J,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ccea -= 1/2 * einsum('A,AA,II,JJ,XX->IJAX', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea += 1/2 * einsum('I,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea += 1/2 * einsum('J,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea -= 1/2 * einsum('Xx,AA,II,JJ,Xx->IJAX', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea += einsum('XXxy,AA,II,JJ,xy->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea -= 1/2 * einsum('XxyX,AA,II,JJ,yx->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea -= 1/2 * einsum('Xxyz,AA,II,JJ,Xyxz->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+
+        return precond_ccea
+
+    ## CVEA
+    def compute_preconditioner__CVEA(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nval = mr_adc.nval
+        ncas = mr_adc.ncas
+        nextern = mr_adc.nextern
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_val = mr_adc.mo_energy.v
+        e_extern = mr_adc.mo_energy.e
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        precond_cvea  = einsum('XX,AA,II,JJ->IJAX', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
+        precond_cvea += einsum('A,AA,II,JJ,XX->IJAX', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
+        precond_cvea -= einsum('I,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
+        precond_cvea -= einsum('J,AA,II,JJ,XX->IJAX', e_val, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
+        precond_cvea -= 1/2 * einsum('A,AA,II,JJ,XX->IJAX', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea += 1/2 * einsum('I,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea += 1/2 * einsum('J,AA,II,JJ,XX->IJAX', e_val, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea -= 1/2 * einsum('Xx,AA,II,JJ,Xx->IJAX', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea += einsum('XXxy,AA,II,JJ,xy->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea -= 1/2 * einsum('XxyX,AA,II,JJ,yx->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea -= 1/2 * einsum('Xxyz,AA,II,JJ,Xyxz->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+
+        return precond_cvea
+    
+
+    ## CCEE
+    def compute_preconditioner__CCEE(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nextern = mr_adc.nextern
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_extern = mr_adc.mo_energy.e
+
+        precond_ccee  = einsum('A,AB,BA,II,JJ->IJAB', e_extern, np.identity(nextern), np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
+        precond_ccee += einsum('B,AB,BA,II,JJ->IJAB', e_extern, np.identity(nextern), np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
+        precond_ccee -= einsum('I,AB,BA,II,JJ->IJAB', e_cvs, np.identity(nextern), np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
+        precond_ccee -= einsum('J,AB,BA,II,JJ->IJAB', e_cvs, np.identity(nextern), np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
+    
+        return precond_ccee
+
+    ## CVEE
+    def compute_preconditioner__CVEE(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nval = mr_adc.nval
+        nextern = mr_adc.nextern
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_val = mr_adc.mo_energy.v
+        e_extern = mr_adc.mo_energy.e
+
+        precond_cvee  = einsum('A,AB,BA,II,JJ->IJAB', e_extern, np.identity(nextern), np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
+        precond_cvee += einsum('B,AB,BA,II,JJ->IJAB', e_extern, np.identity(nextern), np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
+        precond_cvee -= einsum('I,AB,BA,II,JJ->IJAB', e_cvs, np.identity(nextern), np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
+        precond_cvee -= einsum('J,AB,BA,II,JJ->IJAB', e_val, np.identity(nextern), np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
+
+        return precond_cvee
+
+    ## CAEE
+    ## CAAA
+    ## CAEA
+ 
+    # Compute preconditioner diagonal blocks
+    ## Zeroeth-order manifold
+    if mr_adc.method in ("mr-adc(0)", "mr-adc(1)"):
+
+        # Orthogonal excitation manifolds
+        ho_s_ce_caea__aa = mr_adc.h_orth.s_ce_caea_aa  
+        ho_f_ce_caea__aa = mr_adc.h_orth.f_ce_caea_aa
+        ho_s_ce_caea__bb = mr_adc.h_orth.s_ce_caea_bb  
+        ho_f_ce_caea__bb = mr_adc.h_orth.f_ce_caea_bb
+        ho_s_ca_caaa__aa = mr_adc.h_orth.s_ca_caaa_aa
+        ho_f_ca_caaa__aa = mr_adc.h_orth.f_ca_caaa_aa
+        ho_s_ca_caaa__bb = mr_adc.h_orth.s_ca_caaa_bb
+        ho_f_ca_caaa__bb = mr_adc.h_orth.f_ca_caaa_bb
+
+        # Fill preconditioner matrix
+        ## CA preconditioner 
+        precond_ca = compute_preconditioner__CA(mr_adc)
+        precond[ho_s_ca_caaa__aa:ho_f_ca_caaa__aa] = precond_ca.reshape(-1).copy() 
+        precond[ho_s_ca_caaa__bb:ho_f_ca_caaa__bb] = precond_ca.reshape(-1).copy()
+
+        ## CE preconditioner
+        precond_ce = compute_preconditioner__CE(mr_adc)
+        precond[ho_s_ce_caea__aa:ho_f_ce_caea__aa] = precond_ce.reshape(-1).copy() 
+        precond[ho_s_ce_caea__bb:ho_f_ce_caea__bb] = precond_ce.reshape(-1).copy()
+
+    ## Zeroeth- and first-order manifolds
+    elif mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+
+        ## Excitation manifolds
+        ho_s_ccee__aaaa = mr_adc.h_orth.s_ccee__aaaa
+        ho_f_ccee__aaaa = mr_adc.h_orth.f_ccee__aaaa
+        ho_s_ccee__abab = mr_adc.h_orth.s_ccee__abab
+        ho_f_ccee__abab = mr_adc.h_orth.f_ccee__abab
+        ho_s_ccea__aaaa = mr_adc.h_orth.s_ccea__aaaa
+        ho_f_ccea__aaaa = mr_adc.h_orth.f_ccea__aaaa
+        ho_s_ccea__abab = mr_adc.h_orth.s_ccea__abab
+        ho_f_ccea__abab = mr_adc.h_orth.f_ccea__abab
+        ho_s_ccea__bbbb = mr_adc.h_orth.s_ccea__bbbb
+        ho_f_ccea__bbbb = mr_adc.h_orth.f_ccea__bbbb
+
+        ## CCAA preconditioner (WiP)
+    
+        ## CCEA preconditioner
+        precond_ccea = compute_preconditioner__CCEA(mr_adc)
+        precond[ho_s_ccea__aaaa:ho_f_ccea__aaaa] = precond_ccea[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1)
+        precond[ho_s_ccea__abab:ho_f_ccea__abab] = precond_ccea.reshape(-1)
+        precond[ho_s_ccea__bbbb:ho_f_ccea__bbbb] = precond_ccea[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1)
+
+        ## CCEE preconditioner
+        precond_ccee = compute_preconditioner__CCEE(mr_adc)
+        d_ccee = precond_ccee[:, :, ee_tril_ind[0], ee_tril_ind[1]]
+        precond[ho_s_ccee__aaaa:ho_f_ccee__aaaa] = d_ccee[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1)
+        precond[ho_s_ccee__abab:ho_f_ccee__abab] = precond_ccee.reshape(-1)
+
+        ## CAEE preconditioner
+        ## CAAA preconditioner
+        ## CAEA preconditioner
+
+        if nval > 0:
+            ## Excitation Manifolds
+            ho_s_cvee__aaaa = mr_adc.h_orth.s_cvee__aaaa
+            ho_f_cvee__aaaa = mr_adc.h_orth.f_cvee__aaaa 
+            ho_s_cvee__abab = mr_adc.h_orth.s_cvee__abab 
+            ho_f_cvee__abab = mr_adc.h_orth.f_cvee__abab 
+            
+            ho_s_cvea__aaaa = mr_adc.h_orth.s_cvea__aaaa
+            ho_f_cvea__aaaa = mr_adc.h_orth.f_cvea__aaaa 
+            ho_s_cvea__abab = mr_adc.h_orth.s_cvea__abab
+            ho_f_cvea__abab = mr_adc.h_orth.f_cvea__abab 
+            ho_s_cvea__bbbb = mr_adc.h_orth.s_cvea__bbbb
+            ho_f_cvea__bbbb = mr_adc.h_orth.f_cvea__bbbb 
+    
+            # Compute preconditioner diagonal blocks
+#            ## CVAA preconditioner
+#            precond_cvaa = compute_preconditioner__CVAA(mr_adc)
+
+            ## CVEA preconditioner
+            precond_cvea = compute_preconditioner__CVEA(mr_adc)
+            precond[ho_s_cvea__aaaa:ho_f_cvea__aaaa] = precond_cvea.reshape(-1)
+            precond[ho_s_cvea__abab:ho_f_cvea__abab] = precond_cvea.reshape(-1)
+            precond[ho_s_cvea__bbbb:ho_f_cvea__bbbb] = precond_cvea.reshape(-1)
+
+            ## CVEE preconditioner
+            precond_cvee = compute_preconditioner__CVEE(mr_adc)
+            precond[ho_s_cvee__aaaa:ho_f_cvee__aaaa] = precond_cvee[:, :, ee_tril_ind[0], ee_tril_ind[1]].reshape(-1)
+            precond[ho_s_cvee__abab:ho_f_cvee__abab] = precond_cvee.reshape(-1)
+    
+    print("Time for computing preconditioner:                 %f sec\n" % (time.time() - start_time))
+    sys.stdout.flush()
+
+    return np.ascontiguousarray(precond)
+
+def define_effective_hamiltonian(mr_adc, M_00):
+
+    apply_M = None
+
+    if mr_adc.method in ("mr-adc(0)", "mr-adc(1)"):
+        # Effective Hamiltonian for MR-ADC(0) and MR-ADC(1)
+        def apply_M(X):
+            
+            # Xt = S_12 X
+            Xt = apply_S_12(mr_adc, X)            
+
+            # Apply M: Sigma = M Xt
+            sigma = np.dot(M_00, X)
+
+            # X_new = S_12.T Sigma
+            X_new = apply_S_12(mr_adc, sigma, transpose = True)
+
+            return X_new
+
+    else:
+        # Effective Hamiltonian for MR-ADC(2) and MR-ADC(2)-X
+
+#        ## Create intermediates for MR-ADC(2)-X
+#        ints = None
+#
+#        if mr_adc.method == 'mr-adc(2)-x':
+#            ints = compute_sigma_vector_intermediates(mr_adc, t_amp)
+#        else:
+#            ints = mr_adc_intermediates.compute_4rdm_v_3ind_int(mr_adc)
+
+        def apply_M(X):
+            ## Xt = S_12 X
+            Xt = apply_S_12(mr_adc, X)
+
+            ## Apply M: Sigma = M Xt
+            sigma = compute_sigma_vector(mr_adc, Xt)
+
+            ## X_new = S_12.T Sigma
+            X_new = apply_S_12(mr_adc, sigma, transpose = True)
+
+            return X_new
+
+    return apply_M
 
 def apply_S_12(mr_adc, X, transpose = False):
 
@@ -30599,39 +31260,38 @@ def apply_S_12(mr_adc, X, transpose = False):
 
     # Variables from kernel
     ncvs    = mr_adc.ncvs
+    nval    = mr_adc.nval
     ncas    = mr_adc.ncas
-    nextern = mr_adc.nextern
+    nextern = mr_adc.nextern    
 
     # Compound indices
     n_ce = mr_adc.h0.n_ce
     n_ca = mr_adc.h0.n_ca
 
     # Non-orthogonal dimension indices
-    s_ce_aa = mr_adc.h0.s_ce_aa
-    f_ce_aa = mr_adc.h0.f_ce_aa
-    s_ce_bb = mr_adc.h0.s_ce_bb
-    f_ce_bb = mr_adc.h0.f_ce_bb
-    s_ca_aa = mr_adc.h0.s_ca_aa
-    f_ca_aa = mr_adc.h0.f_ca_aa
-    s_ca_bb = mr_adc.h0.s_ca_bb
-    f_ca_bb = mr_adc.h0.f_ca_bb
+    s_ce__aa = mr_adc.h0.s_ce_aa
+    f_ce__aa = mr_adc.h0.f_ce_aa
+    s_ce__bb = mr_adc.h0.s_ce_bb
+    f_ce__bb = mr_adc.h0.f_ce_bb
+    s_ca__aa = mr_adc.h0.s_ca_aa
+    f_ca__aa = mr_adc.h0.f_ca_aa
+    s_ca__bb = mr_adc.h0.s_ca_bb
+    f_ca__bb = mr_adc.h0.f_ca_bb
 
     Xt = None
 
     # MR-ADC(0) and MR-ADC(1)
-#    if mr_adc.method in ("mr-adc(0)", "mr-adc(1)"):
-    # Allow for diagonalizing M_00 w/ second-order MR-ADC
-    if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)"):
+    if mr_adc.method in ("mr-adc(0)", "mr-adc(1)"):
 
         # Orthogonal dimension indices
-        ho_s_ce_caea_aa = mr_adc.h_orth.s_ce_caea_aa
-        ho_f_ce_caea_aa = mr_adc.h_orth.f_ce_caea_aa
-        ho_s_ce_caea_bb = mr_adc.h_orth.s_ce_caea_bb
-        ho_f_ce_caea_bb = mr_adc.h_orth.f_ce_caea_bb
-        ho_s_ca_caaa_aa = mr_adc.h_orth.s_ca_caaa_aa
-        ho_f_ca_caaa_aa = mr_adc.h_orth.f_ca_caaa_aa
-        ho_s_ca_caaa_bb = mr_adc.h_orth.s_ca_caaa_bb
-        ho_f_ca_caaa_bb = mr_adc.h_orth.f_ca_caaa_bb
+        ho_s_ce_caea__aa = mr_adc.h_orth.s_ce_caea_aa
+        ho_f_ce_caea__aa = mr_adc.h_orth.f_ce_caea_aa
+        ho_s_ce_caea__bb = mr_adc.h_orth.s_ce_caea_bb
+        ho_f_ce_caea__bb = mr_adc.h_orth.f_ce_caea_bb
+        ho_s_ca_caaa__aa = mr_adc.h_orth.s_ca_caaa_aa
+        ho_f_ca_caaa__aa = mr_adc.h_orth.f_ca_caaa_aa
+        ho_s_ca_caaa__bb = mr_adc.h_orth.s_ca_caaa_bb
+        ho_f_ca_caaa__bb = mr_adc.h_orth.f_ca_caaa_bb
 
         # Overlap matrix
         S12_ca = mr_adc.S12.ca
@@ -30645,15 +31305,15 @@ def apply_S_12(mr_adc, X, transpose = False):
 
             # CA
             # aa,aa
-            temp = X[s_ca_aa:f_ca_aa].reshape(ncvs, ncas).copy()
-            Xt[ho_s_ca_caaa_aa:ho_f_ca_caaa_aa] = np.dot(temp, S12_ca).reshape(-1)
+            temp = X[s_ca__aa:f_ca__aa].reshape(ncvs, ncas).copy()
+            Xt[ho_s_ca_caaa__aa:ho_f_ca_caaa__aa] = np.dot(temp, S12_ca).reshape(-1)
 
             # bb,bb
-            temp = X[s_ca_bb:f_ca_bb].reshape(ncvs, ncas).copy()
-            Xt[ho_s_ca_caaa_bb:ho_f_ca_caaa_bb] = np.dot(temp, S12_ca).reshape(-1)
+            temp = X[s_ca__bb:f_ca__bb].reshape(ncvs, ncas).copy()
+            Xt[ho_s_ca_caaa__bb:ho_f_ca_caaa__bb] = np.dot(temp, S12_ca).reshape(-1)
 
             # CE
-            Xt[ho_s_ce_caea_aa:ho_f_ce_caea_bb] = X[s_ce_aa:f_ce_bb].copy()
+            Xt[ho_s_ce_caea__aa:ho_f_ce_caea__bb] = X[s_ce__aa:f_ce__bb].copy()
 
         # Transformation to non-orthogonal basis
         else:
@@ -30664,21 +31324,948 @@ def apply_S_12(mr_adc, X, transpose = False):
 
             # CA
             # aa,aa
-            temp = X[ho_s_ca_caaa_aa:ho_f_ca_caaa_aa].reshape(ncvs, S12_ca.shape[1]).copy()
-            Xt[s_ca_aa:f_ca_aa] = np.dot(temp, S12_ca.T).reshape(-1)
+            temp = X[ho_s_ca_caaa__aa:ho_f_ca_caaa__aa].reshape(ncvs, S12_ca.shape[1]).copy()
+            Xt[s_ca__aa:f_ca__aa] = np.dot(temp, S12_ca.T).reshape(-1)
 
             # bb,bb
-            temp = X[ho_s_ca_caaa_bb:ho_f_ca_caaa_bb].reshape(ncvs, S12_ca.shape[1]).copy()
-            Xt[s_ca_bb:f_ca_bb] = np.dot(temp, S12_ca.T).reshape(-1)
+            temp = X[ho_s_ca_caaa__bb:ho_f_ca_caaa__bb].reshape(ncvs, S12_ca.shape[1]).copy()
+            Xt[s_ca__bb:f_ca__bb] = np.dot(temp, S12_ca.T).reshape(-1)
 
             # CE
-            Xt[s_ce_aa:f_ce_bb] = X[ho_s_ce_caea_aa:ho_f_ce_caea_bb].copy()
+            Xt[s_ce__aa:f_ce__bb] = X[ho_s_ce_caea__aa:ho_f_ce_caea__bb].copy()
 
     # MR-ADC(2) and MR-ADC(2)-X
     else:
-        raise Exception("Only implemented up to first-order. Second-order is a WIP")
+        # Compound Indices
+        n_aa = ncas * (ncas - 1) // 2
+        n_cc = ncvs * (ncvs - 1) // 2
+        n_ee = nextern * (nextern - 1) // 2
+
+        # Excitation Quantities
+        n_caee = mr_adc.h1.n_caee
+        n_caaa = mr_adc.h1.n_caaa
+        n_caea = mr_adc.h1.n_caea    
+
+        # Non-orthogonal Excitation Manifolds
+        s_ccaa__aaaa = mr_adc.h1.s_ccaa__aaaa      
+        f_ccaa__aaaa = mr_adc.h1.f_ccaa__aaaa
+        s_ccaa__abab = mr_adc.h1.s_ccaa__abab
+        f_ccaa__abab = mr_adc.h1.f_ccaa__abab
+        s_ccaa__bbbb = mr_adc.h1.s_ccaa__bbbb
+        f_ccaa__bbbb = mr_adc.h1.f_ccaa__bbbb
+
+        s_ccea__aaaa =  mr_adc.h1.s_ccea__aaaa
+        f_ccea__aaaa =  mr_adc.h1.f_ccea__aaaa
+        s_ccea__abab =  mr_adc.h1.s_ccea__abab
+        f_ccea__abab =  mr_adc.h1.f_ccea__abab
+        s_ccea__bbbb =  mr_adc.h1.s_ccea__bbbb
+        f_ccea__bbbb =  mr_adc.h1.f_ccea__bbbb
+        
+        s_ccee__aaaa =  mr_adc.h1.s_ccee__aaaa
+        f_ccee__aaaa =  mr_adc.h1.f_ccee__aaaa
+        s_ccee__abab =  mr_adc.h1.s_ccee__abab
+        f_ccee__abab =  mr_adc.h1.f_ccee__abab
+        
+        s_caee__aaaa = mr_adc.h1.s_caee__aaaa
+        f_caee__aaaa = mr_adc.h1.f_caee__aaaa
+        s_caee__abab = mr_adc.h1.s_caee__abab
+        f_caee__abab = mr_adc.h1.f_caee__abab
+        s_caee__bbbb = mr_adc.h1.s_caee__bbbb
+        f_caee__bbbb = mr_adc.h1.f_caee__bbbb
+        
+        s_caaa__aaaa = mr_adc.h1.s_caaa__aaaa
+        f_caaa__aaaa = mr_adc.h1.f_caaa__aaaa
+        s_caaa__abab = mr_adc.h1.s_caaa__abab
+        f_caaa__abab = mr_adc.h1.f_caaa__abab
+        s_caaa__bbbb = mr_adc.h1.s_caaa__bbbb
+        f_caaa__bbbb = mr_adc.h1.f_caaa__bbbb
+        
+        s_caea__aaaa = mr_adc.h1.s_caea__aaaa
+        f_caea__aaaa = mr_adc.h1.f_caea__aaaa
+        s_caea__abab = mr_adc.h1.s_caea__abab
+        f_caea__abab = mr_adc.h1.f_caea__abab
+        s_caea__bbbb = mr_adc.h1.s_caea__bbbb
+        f_caea__bbbb = mr_adc.h1.f_caea__bbbb
+
+        if nval is not None:
+            s_cvaa__aaaa = mr_adc.h1.s_cvaa__aaaa      
+            f_cvaa__aaaa = mr_adc.h1.f_cvaa__aaaa
+            s_cvaa__abab = mr_adc.h1.s_cvaa__abab
+            f_cvaa__abab = mr_adc.h1.f_cvaa__abab
+            s_cvaa__bbbb = mr_adc.h1.s_cvaa__bbbb
+            f_cvaa__bbbb = mr_adc.h1.f_cvaa__bbbb
+    
+            s_cvea__aaaa = mr_adc.h1.s_cvea__aaaa
+            f_cvea__aaaa = mr_adc.h1.f_cvea__aaaa
+            s_cvea__abab = mr_adc.h1.s_cvea__abab
+            f_cvea__abab = mr_adc.h1.f_cvea__abab
+            s_cvea__bbbb = mr_adc.h1.s_cvea__bbbb
+            f_cvea__bbbb = mr_adc.h1.f_cvea__bbbb
+            
+            s_cvee__aaaa = mr_adc.h1.s_cvee__aaaa
+            f_cvee__aaaa = mr_adc.h1.f_cvee__aaaa
+            s_cvee__abab = mr_adc.h1.s_cvee__abab
+            f_cvee__abab = mr_adc.h1.f_cvee__abab
+ 
+        # Orthogonal Excitation Manifolds
+        ho_s_ca_caaa = mr_adc.h_orth.s_ca_caaa
+        ho_f_ca_caaa = mr_adc.h_orth.f_ca_caaa
+        ho_s_ce_caea = mr_adc.h_orth.s_ce_caea
+        ho_f_ce_caea = mr_adc.h_orth.f_ce_caea
+
+        ho_s_ccaa__aaaa = mr_adc.h_orth.s_ccaa__aaaa      
+        ho_f_ccaa__aaaa = mr_adc.h_orth.f_ccaa__aaaa
+        ho_s_ccaa__abab = mr_adc.h_orth.s_ccaa__abab
+        ho_f_ccaa__abab = mr_adc.h_orth.f_ccaa__abab
+        ho_s_ccaa__bbbb = mr_adc.h_orth.s_ccaa__bbbb
+        ho_f_ccaa__bbbb = mr_adc.h_orth.f_ccaa__bbbb
+
+        ho_s_ccea__aaaa = mr_adc.h_orth.s_ccea__aaaa
+        ho_f_ccea__aaaa = mr_adc.h_orth.f_ccea__aaaa
+        ho_s_ccea__abab = mr_adc.h_orth.s_ccea__abab
+        ho_f_ccea__abab = mr_adc.h_orth.f_ccea__abab
+        ho_s_ccea__bbbb = mr_adc.h_orth.s_ccea__bbbb
+        ho_f_ccea__bbbb = mr_adc.h_orth.f_ccea__bbbb
+        
+        ho_s_ccee__aaaa = mr_adc.h_orth.s_ccee__aaaa
+        ho_f_ccee__aaaa = mr_adc.h_orth.f_ccee__aaaa
+        ho_s_ccee__abab = mr_adc.h_orth.s_ccee__abab
+        ho_f_ccee__abab = mr_adc.h_orth.f_ccee__abab
+    
+        ho_s_caee__aaaa = mr_adc.h_orth.s_caee__aaaa
+        ho_f_caee__aaaa = mr_adc.h_orth.f_caee__aaaa
+        ho_s_caee__abab = mr_adc.h_orth.s_caee__abab
+        ho_f_caee__abab = mr_adc.h_orth.f_caee__abab
+        ho_s_caee__bbbb = mr_adc.h_orth.s_caee__bbbb
+        ho_f_caee__bbbb = mr_adc.h_orth.f_caee__bbbb
+
+        if nval is not None:
+            ho_s_cvaa__aaaa = mr_adc.h_orth.s_cvaa__aaaa      
+            ho_f_cvaa__aaaa = mr_adc.h_orth.f_cvaa__aaaa
+            ho_s_cvaa__abab = mr_adc.h_orth.s_cvaa__abab
+            ho_f_cvaa__abab = mr_adc.h_orth.f_cvaa__abab
+            ho_s_cvaa__bbbb = mr_adc.h_orth.s_cvaa__bbbb
+            ho_f_cvaa__bbbb = mr_adc.h_orth.f_cvaa__bbbb
+    
+            ho_s_cvea__aaaa = mr_adc.h_orth.s_cvea__aaaa
+            ho_f_cvea__aaaa = mr_adc.h_orth.f_cvea__aaaa
+            ho_s_cvea__abab = mr_adc.h_orth.s_cvea__abab
+            ho_f_cvea__abab = mr_adc.h_orth.f_cvea__abab
+            ho_s_cvea__bbbb = mr_adc.h_orth.s_cvea__bbbb
+            ho_f_cvea__bbbb = mr_adc.h_orth.f_cvea__bbbb
+            
+            ho_s_cvee__aaaa = mr_adc.h_orth.s_cvee__aaaa
+            ho_f_cvee__aaaa = mr_adc.h_orth.f_cvee__aaaa
+            ho_s_cvee__abab = mr_adc.h_orth.s_cvee__abab
+            ho_f_cvee__abab = mr_adc.h_orth.f_cvee__abab
+         
+        # Overlap matrices
+        S12_ccaa = mr_adc.S12.ccaa
+        S12_ccea = mr_adc.S12.ccea
+        S12_caee = mr_adc.S12.caee
+        S12_ca_caaa = mr_adc.S12.ca_caaa
+        S12_ce_caea = mr_adc.S12.ce_caea
+
+        # Transformation to orthonormal basis
+        if transpose:
+            if (X.shape[0] != (mr_adc.h0.dim + mr_adc.h1.dim)):
+                raise Exception("Dimensions do not match when applying S_12 transpose")
+
+            Xt = np.zeros(mr_adc.h_orth.dim)
+           
+#            # CCAA
+#            if ncvs_so > 0:
+#
+#                temp = X[s_ccaa:f_ccaa].reshape(n_cc, -1).copy()
+#                Xt[ho_s_ccaa:ho_f_ccaa] = np.einsum("IX,XP->IP", temp, S12_ccaa).reshape(-1)
+# 
+#            # CVAA
+#            if nval_so > 0 and ncore_so > 0:
+#
+#                temp = X[s_cvaa:f_cvaa].reshape(ncvs_so * nval_so, -1).copy()
+#                Xt[ho_s_cvaa:ho_f_cvaa] = np.einsum("IX,XP->IP", temp, S12_ccaa).reshape(-1)
+ 
+            # CCEA
+            if nextern > 0 and ncas > 0:
+    
+                temp = X[s_ccea__aaaa:f_ccea__aaaa].reshape(-1, nextern, S12_ccea.shape[0]).copy()
+                Xt[ho_s_ccea__aaaa:ho_f_ccea__aaaa] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
+
+                temp = X[s_ccea__abab:f_ccea__abab].reshape(-1, nextern, S12_ccea.shape[0]).copy()
+                Xt[ho_s_ccea__abab:ho_f_ccea__abab] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
+
+                temp = X[s_ccea__bbbb:f_ccea__bbbb].reshape(-1, nextern, S12_ccea.shape[0]).copy()
+                Xt[ho_s_ccea__bbbb:ho_f_ccea__bbbb] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
+
+            # CVEA
+            if nval > 0 and nextern > 0 and ncas > 0:
+
+                temp = X[s_cvea__aaaa:f_cvea__aaaa].reshape(-1, nextern, S12_ccea.shape[0]).copy()
+                Xt[ho_s_cvea__aaaa:ho_f_cvea__aaaa] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
+
+                temp = X[s_cvea__abab:f_cvea__abab].reshape(-1, nextern, S12_ccea.shape[0]).copy()
+                Xt[ho_s_cvea__abab:ho_f_cvea__abab] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
+
+                temp = X[s_cvea__bbbb:f_cvea__bbbb].reshape(-1, nextern, S12_ccea.shape[0]).copy()
+                Xt[ho_s_cvea__bbbb:ho_f_cvea__bbbb] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
+
+            # CCEE
+            Xt[ho_s_ccee__aaaa:ho_f_ccee__aaaa] = X[s_ccee__aaaa:f_ccee__aaaa].copy()
+            Xt[ho_s_ccee__abab:ho_f_ccee__abab] = X[s_ccee__abab:f_ccee__abab].copy()
+
+            # CVEE
+            if nval > 0:
+
+                Xt[ho_s_cvee__aaaa:ho_f_cvee__aaaa] = X[s_cvee__aaaa:f_cvee__aaaa].copy()
+                Xt[ho_s_cvee__abab:ho_f_cvee__abab] = X[s_cvee__abab:f_cvee__abab].copy()
+
+#            # CAEE
+#            if ncvs_so > 0 and ncas_so > 0 and nextern_so > 0:
+#
+#                temp = X[s_caee:f_caee].reshape(ncvs_so, S12_caee.shape[0], -1).copy()
+#                Xt[ho_s_caee:ho_f_caee] = np.einsum("IXA,XP->IPA", temp, S12_caee).reshape(-1)
+#
+#            # CE and CAEA -> CE_CAEA
+#            if ncvs_so > 0 and nextern_so > 0:
+#
+#                temp = np.zeros((ncvs_so, nextern_so, S12_ce_caea.shape[0]))
+#                temp[:,:,0] = X[s_ce:f_ce].reshape(ncvs_so, nextern_so)
+#                temp[:,:,1:] = X[s_caea:f_caea].reshape(ncvs_so, ncas_so, nextern_so, ncas_so).transpose(0,2,1,3).reshape(ncvs_so, nextern_so, -1)
+#                Xt[ho_s_ce_caea:ho_f_ce_caea] = np.einsum("IAX,XP->IPA", temp, S12_ce_caea).reshape(-1)
+#
+#            # CA and CAAA -> CA_CAAA
+#            if ncvs_so > 0 and ncas_so > 0:
+#
+#                temp = np.zeros((ncvs_so, n_xy))
+#                temp[:,:ncas_so] = X[s_ca:f_ca].reshape(ncvs_so, ncas_so)
+#                temp[:,ncas_so:] = X[s_caaa:f_caaa].reshape(ncvs_so, ncas_so, -1).reshape(ncvs_so, -1)
+#                Xt[ho_s_ca_caaa:ho_f_ca_caaa] = np.dot(temp, S12_ca_caaa).reshape(-1)
+
+
+        # Transformation to non-orthogonal basis
+        else:
+            if (X.shape[0] != (mr_adc.h_orth.dim)):
+                raise Exception("Dimensions do not match when applying S_12")
+
+            Xt = np.zeros(mr_adc.h0.dim + mr_adc.h1.dim)
+            
+#            # CCAA
+#            if ncvs_so > 0:            
+#
+#                temp = X[ho_s_ccaa:ho_f_ccaa].reshape(n_cc, -1).copy()
+#                Xt[s_ccaa:f_ccaa] = np.einsum("IP,XP->IX", temp, S12_ccaa).reshape(-1)
+#            
+#            # CVAA
+#            if nval_so > 0 and ncore_so > 0:            
+#
+#                temp = X[ho_s_cvaa:ho_f_cvaa].reshape(ncvs_so * nval_so, -1).copy()
+#                Xt[s_cvaa:f_cvaa] = np.einsum("IP,XP->IX", temp, S12_ccaa).reshape(-1)
+            
+            # CCEA
+            if nextern > 0 and ncas > 0:            
+
+                temp = X[ho_s_ccea__aaaa:ho_f_ccea__aaaa].reshape(-1, S12_ccea.shape[1], nextern).copy()
+                Xt[s_ccea__aaaa:f_ccea__aaaa] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
+
+                temp = X[ho_s_ccea__abab:ho_f_ccea__abab].reshape(-1, S12_ccea.shape[1], nextern).copy()
+                Xt[s_ccea__abab:f_ccea__abab] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
+
+                temp = X[ho_s_ccea__bbbb:ho_f_ccea__bbbb].reshape(-1, S12_ccea.shape[1], nextern).copy()
+                Xt[s_ccea__bbbb:f_ccea__bbbb] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
+
+            # CVEA
+            if nval > 0 and nextern > 0 and ncas > 0:            
+            
+                temp = X[ho_s_cvea__aaaa:ho_f_cvea__aaaa].reshape(-1, S12_ccea.shape[1], nextern).copy()
+                Xt[s_cvea__aaaa:f_cvea__aaaa] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
+
+                temp = X[ho_s_cvea__abab:ho_f_cvea__abab].reshape(-1, S12_ccea.shape[1], nextern).copy()
+                Xt[s_cvea__abab:f_cvea__abab] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
+
+                temp = X[ho_s_cvea__bbbb:ho_f_cvea__bbbb].reshape(-1, S12_ccea.shape[1], nextern).copy()
+                Xt[s_cvea__bbbb:f_cvea__bbbb] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
+
+            # CCEE
+            Xt[s_ccee__aaaa:f_ccee__aaaa] = X[ho_s_ccee__aaaa:ho_f_ccee__aaaa].copy()
+            Xt[s_ccee__abab:f_ccee__abab] = X[ho_s_ccee__abab:ho_f_ccee__abab].copy()
+
+            # CVEE
+            if nval > 0:
+
+                Xt[s_cvee__aaaa:f_cvee__aaaa] = X[ho_s_cvee__aaaa:ho_f_cvee__aaaa].copy()
+                Xt[s_cvee__abab:f_cvee__abab] = X[ho_s_cvee__abab:ho_f_cvee__abab].copy()
+
+
+#            # CAEE
+#            if ncvs_so > 0 and ncas_so > 0:            
+#
+#                temp = X[ho_s_caee:ho_f_caee].reshape(ncvs_so, S12_caee.shape[1], -1).copy()
+#                Xt[s_caee:f_caee] = np.einsum("IPA,XP->IXA", temp, S12_caee).reshape(-1)
+#
+#            # CE and CAEA -> CE_CAEA
+#            temp = X[ho_s_ce_caea:ho_f_ce_caea].reshape(ncvs_so, S12_ce_caea.shape[1], nextern_so)
+#            temp = np.einsum("IPA,XP->IAX", temp, S12_ce_caea)
+#            Xt[s_ce:f_ce] = temp[:, :, 0].reshape(-1)
+#            Xt[s_caea:f_caea] = temp[:, :, 1:].reshape(ncvs_so, nextern_so, ncas_so, ncas_so).transpose(0,2,1,3).reshape(-1)
+#
+#            # CA and CAAA -> CA_CAAA
+#            if ncvs_so > 0 and ncas_so > 0:            
+#
+#                temp = X[ho_s_ca_caaa:ho_f_ca_caaa].reshape(ncvs_so, -1)
+#                temp = np.dot(temp, S12_ca_caaa.T)
+#                Xt[s_ca:f_ca] = temp[:, :ncas_so].reshape(ncvs_so, ncas_so).reshape(-1)
+#                Xt[s_caaa:f_caaa] = temp[:, ncas_so:].reshape(ncvs_so, ncas_so, -1).reshape(-1)
 
     return Xt
+
+def compute_sigma_vector(mr_adc, Xt):
+
+    # Variables from kernel
+    ncvs = mr_adc.ncvs
+    nval = mr_adc.nval
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+
+    # Compound Indices
+    n_aa = ncas * (ncas - 1) // 2
+    n_cc = ncvs * (ncvs - 1) // 2
+    n_ee = nextern * (nextern - 1) // 2
+
+    ## Indices
+    aa_tril_ind = np.tril_indices(ncas, k = -1)
+    cc_tril_ind = np.tril_indices(ncvs, k = -1)
+    ee_tril_ind = np.tril_indices(nextern, k = -1)
+
+    # Matrix Block
+    M_00 = mr_adc.M_00
+ 
+    ## Amplitudes
+    #t1_ce, t1_ca, t1_ae, t1_caea, t1_caaa, t1_aaea, t1_ccee, t1_ccea, t1_caee, t1_ccaa, t1_aaee, t2_ce, t2_ca, t2_ae, t2_caea, t2_caaa, t2_aaea, t2_ccee, t2_ccea, t2_caee, t2_ccaa, t2_aaee, t2_aa = t_amp
+    #
+    ## Intermediate tensor(s)
+    #if mr_adc.method == 'mr-adc(2)':
+    #    gen_int = ints
+    #elif mr_adc.method == 'mr-adc(2)-x':
+    #    gen_int, t_caaa_int1, t_caaa_int2, t_caaa_int3, t_caaa_int4, t_aaea_int1, t_aaea_int2, t_aaea_int3, t_aaea_int4 = ints
+   
+    ## MO Energies
+    #e_core_so   = mr_adc.mo_energy_so.c
+    #e_extern_so = mr_adc.mo_energy_so.e
+    #
+    ## Integrals
+    #h_ca_so = mr_adc.h1eff_so[:ncore_so,ncore_so:nocc_so].copy()
+    #h_ce_so = mr_adc.h1eff_so[:ncore_so,nocc_so:].copy()
+    #h_ae_so = mr_adc.h1eff_so[ncore_so:nocc_so,nocc_so:].copy()
+    #h_aa_so = mr_adc.h1eff_act_so
+    #
+    #v_aaaa_so =  mr_adc.v2e_so.aaaa
+    #v_caae_so =  mr_adc.v2e_so.caae
+    #v_caaa_so =  mr_adc.v2e_so.caaa
+    #v_aaae_so =  mr_adc.v2e_so.aaae
+    #v_caca_so =  mr_adc.v2e_so.caca
+    #v_aaee_so =  mr_adc.v2e_so.aaee
+    #v_caee_so =  mr_adc.v2e_so.caee
+    #v_cace_so =  mr_adc.v2e_so.cace
+    #v_cece_so =  mr_adc.v2e_so.cece
+    #v_aeae_so =  mr_adc.v2e_so.aeae
+    #v_ceae_so =  mr_adc.v2e_so.ceae
+    #v_ceaa_so =  mr_adc.v2e_so.ceaa
+    #v_ceee_so =  mr_adc.v2e_so.ceee
+    #v_aeee_so =  mr_adc.v2e_so.aeee
+    #v_ccae_so =  mr_adc.v2e_so.ccae
+    #v_ccaa_so =  mr_adc.v2e_so.ccaa
+    #v_ccca_so =  mr_adc.v2e_so.ccca
+    #v_ccce_so =  mr_adc.v2e_so.ccce
+
+    #if mr_adc.method == "mr-adc(2)-x":
+    #    v_cccc_so =  mr_adc.v2e_so.cccc
+    #    v_caaa_so =  mr_adc.v2e_so.caaa
+    #    if mr_adc.use_df:
+    #        v_eeL_so =  mr_adc.v2e_so.eeL
+    #        v_Lee_so =  mr_adc.v2e_so.Lee
+    #    else:
+    #        v_eeee_so =  mr_adc.v2e_so.eeee
+
+    ## RDMs
+    #rdm_ca_so       = mr_adc.rdm_so.ca
+    #rdm_ccaa_so     = mr_adc.rdm_so.ccaa
+    #rdm_cccaaa_so   = mr_adc.rdm_so.cccaaa
+
+    ## h0 <- h1 coupling contributions
+    # CA <- CCAA
+    # CE <- CCAA
+    ###
+    # CA <- CVAA
+    # CE <- CVAA
+    ###
+    # CA <- CCEA
+    
+
+    # CE <- CCEA
+    ###
+    # CA <- CVEA
+    # CE <- CVEA 
+    ###
+    # CA <- CCEE
+    # CE <- CCEE
+    ###
+    # CA <- CVEE
+    # CE <- CVEE
+    ###
+    # CA <- CAEE
+    # CE <- CAEE
+    ###
+    # CA <- CAAA
+    # CE <- CAAA
+    ###
+    # CA <- CAEA
+    # CE <- CAEA
+
+    ## h1 <- h0 coupling contributions
+    ## WiP
+
+    ## h1_h1 block
+    # CCAA <- CCAA
+    def compute_sigma_vector__H0__h1_h1__CCAA(mr_adc, X_aaaa, X_abab, sigma):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+
+        ## Excitation Manifolds
+        s_ccaa__aaaa = mr_adc.h1.s_ccaa__aaaa
+        f_ccaa__aaaa = mr_adc.h1.f_ccaa__aaaa
+        s_ccaa__abab = mr_adc.h1.s_ccaa__abab
+        f_ccaa__abab = mr_adc.h1.f_ccaa__abab
+#        s_ccaa__bbbb = mr_adc.h1.s_ccaa__bbbb
+#        f_ccaa__bbbb = mr_adc.h1.f_ccaa__bbbb
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+        rdm_cccaaa = mr_adc.rdm.cccaaa
+
+        ## Indices
+        cc_tril_ind = np.tril_indices(ncvs, k=-1) 
+        aa_tril_ind = np.tril_indices(ncas, k=-1) 
+
+        sigma_ccaa =- einsum('KLWZ,K->KLWZ', X_aaaa, e_cvs, optimize = einsum_type)
+        sigma_ccaa -= einsum('KLWZ,L->KLWZ', X_aaaa, e_cvs, optimize = einsum_type)
+        sigma_ccaa += einsum('KLWx,Zx->KLWZ', X_aaaa, h_aa, optimize = einsum_type)
+        sigma_ccaa -= einsum('KLZx,Wx->KLWZ', X_aaaa, h_aa, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLWx,K,Zx->KLWZ', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLWx,L,Zx->KLWZ', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLZx,K,Wx->KLWZ', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLZx,L,Wx->KLWZ', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLWx,xy,Zy->KLWZ', X_aaaa, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLZx,xy,Wy->KLWZ', X_aaaa, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,Wy,Zx->KLWZ', X_aaaa, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,Zy,Wx->KLWZ', X_aaaa, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/6 * einsum('KLxy,yz,WZxz->KLWZ', X_aaaa, h_aa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/6 * einsum('KLxy,yz,WZzx->KLWZ', X_aaaa, h_aa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa += einsum('KLWx,Zxyz,yz->KLWZ', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLWx,Zyzx,zy->KLWZ', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLWx,xyzw,Zzyw->KLWZ', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= einsum('KLZx,Wxyz,yz->KLWZ', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLZx,Wyzx,zy->KLWZ', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLZx,xyzw,Wzyw->KLWZ', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,WyZz,zx->KLWZ', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,Wyzw,Zwxz->KLWZ', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,WzZy,zx->KLWZ', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/6 * einsum('KLxy,Wzwy,Zzwx->KLWZ', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/6 * einsum('KLxy,Wzwy,Zzxw->KLWZ', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,Zyzw,Wwxz->KLWZ', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/6 * einsum('KLxy,Zzwy,Wzwx->KLWZ', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa += 1/6 * einsum('KLxy,Zzwy,Wzxw->KLWZ', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/24 * einsum('KLxy,yzwu,WZwuxz->KLWZ', X_aaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa -= 1/24 * einsum('KLxy,yzwu,WZwuzx->KLWZ', X_aaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa -= 1/24 * einsum('KLxy,yzwu,WZwxuz->KLWZ', X_aaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa += 1/8 * einsum('KLxy,yzwu,WZwxzu->KLWZ', X_aaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa -= 1/24 * einsum('KLxy,yzwu,WZwzux->KLWZ', X_aaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa -= 5/24 * einsum('KLxy,yzwu,WZwzxu->KLWZ', X_aaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        d_ccaa = sigma_ccaa[:, :, aa_tril_ind[0], aa_tril_ind[1]].copy()
+        sigma[s_ccaa__aaaa:f_ccaa__aaaa] += d_ccaa[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1).copy()
+
+        sigma_ccaa =- einsum('KLWZ,K->KLWZ', X_abab, e_cvs, optimize = einsum_type)
+        sigma_ccaa -= einsum('KLWZ,L->KLWZ', X_abab, e_cvs, optimize = einsum_type)
+        sigma_ccaa += einsum('KLWx,Zx->KLWZ', X_abab, h_aa, optimize = einsum_type)
+        sigma_ccaa += einsum('KLxZ,Wx->KLWZ', X_abab, h_aa, optimize = einsum_type)
+        sigma_ccaa += einsum('KLxy,WxZy->KLWZ', X_abab, v_aaaa, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLWx,K,Zx->KLWZ', X_abab, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLWx,L,Zx->KLWZ', X_abab, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxZ,K,Wx->KLWZ', X_abab, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxZ,L,Wx->KLWZ', X_abab, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,K,WZyx->KLWZ', X_abab, e_cvs, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,L,WZyx->KLWZ', X_abab, e_cvs, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLWx,xy,Zy->KLWZ', X_abab, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxZ,xy,Wy->KLWZ', X_abab, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,Wx,Zy->KLWZ', X_abab, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,Zy,Wx->KLWZ', X_abab, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,xz,WZzy->KLWZ', X_abab, h_aa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,yz,WZxz->KLWZ', X_abab, h_aa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa += einsum('KLWx,Zxyz,yz->KLWZ', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLWx,Zyzx,zy->KLWZ', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLWx,xyzw,Zzyw->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa += einsum('KLxZ,Wxyz,yz->KLWZ', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxZ,Wyzx,zy->KLWZ', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxZ,xyzw,Wzyw->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,WxZz,zy->KLWZ', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,Wxzw,Zwyz->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,Wxzy,Zz->KLWZ', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,WzZy,zx->KLWZ', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,Wzwx,Zzyw->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,Wzwy,Zzwx->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,Zyzw,Wwxz->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/2 * einsum('KLxy,Zyzx,Wz->KLWZ', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,Zzwx,Wzwy->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,Zzwy,Wzxw->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_ccaa -= 1/12 * einsum('KLxy,xzwu,WZwuyz->KLWZ', X_abab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa -= 1/12 * einsum('KLxy,xzwu,WZwzuy->KLWZ', X_abab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa += 5/12 * einsum('KLxy,xzwu,WZwzyu->KLWZ', X_abab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa -= 1/12 * einsum('KLxy,yzwu,WZwuzx->KLWZ', X_abab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa -= 1/12 * einsum('KLxy,yzwu,WZwxuz->KLWZ', X_abab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa += 5/12 * einsum('KLxy,yzwu,WZwxzu->KLWZ', X_abab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_ccaa += 1/2 * einsum('KLxy,yzxw,WZwz->KLWZ', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_ccaa__abab:f_ccaa__abab] += sigma_ccaa.reshape(-1).copy()
+
+    # CVAA <- CVAA
+    # CCEA <- CCEA
+    def compute_sigma_vector__H0__h1_h1__CCEA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_extern = mr_adc.mo_energy.e
+
+        ## Excitation Manifolds
+        s_ccea__aaaa = mr_adc.h1.s_ccea__aaaa
+        f_ccea__aaaa = mr_adc.h1.f_ccea__aaaa
+        s_ccea__abab = mr_adc.h1.s_ccea__abab
+        f_ccea__abab = mr_adc.h1.f_ccea__abab
+        s_ccea__bbbb = mr_adc.h1.s_ccea__bbbb
+        f_ccea__bbbb = mr_adc.h1.f_ccea__bbbb
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        ## Indices
+        cc_tril_ind = np.tril_indices(ncvs, k=-1) 
+
+
+        sigma_ccea  = einsum('KLCW,C->KLCW', X_aaaa, e_extern, optimize = einsum_type)
+        sigma_ccea -= einsum('KLCW,K->KLCW', X_aaaa, e_cvs, optimize = einsum_type)
+        sigma_ccea -= einsum('KLCW,L->KLCW', X_aaaa, e_cvs, optimize = einsum_type)
+        sigma_ccea += einsum('KLCx,Wx->KLCW', X_aaaa, h_aa, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,C,Wx->KLCW', X_aaaa, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_ccea += 1/2 * einsum('KLCx,K,Wx->KLCW', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccea += 1/2 * einsum('KLCx,L,Wx->KLCW', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,xy,Wy->KLCW', X_aaaa, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccea += einsum('KLCx,Wxyz,yz->KLCW', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,Wyzx,zy->KLCW', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,xyzw,Wzyw->KLCW', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_ccea__aaaa:f_ccea__aaaa] += sigma_ccea[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1).copy()
+
+        sigma_ccea  = einsum('KLCW,C->KLCW', X_bbbb, e_extern, optimize = einsum_type)
+        sigma_ccea -= einsum('KLCW,K->KLCW', X_bbbb, e_cvs, optimize = einsum_type)
+        sigma_ccea -= einsum('KLCW,L->KLCW', X_bbbb, e_cvs, optimize = einsum_type)
+        sigma_ccea += einsum('KLCx,Wx->KLCW', X_bbbb, h_aa, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,C,Wx->KLCW', X_bbbb, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_ccea += 1/2 * einsum('KLCx,K,Wx->KLCW', X_bbbb, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccea += 1/2 * einsum('KLCx,L,Wx->KLCW', X_bbbb, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,xy,Wy->KLCW', X_bbbb, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccea += einsum('KLCx,Wxyz,yz->KLCW', X_bbbb, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,Wyzx,zy->KLCW', X_bbbb, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,xyzw,Wzyw->KLCW', X_bbbb, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_ccea__bbbb:f_ccea__bbbb] += sigma_ccea[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1).copy()
+
+        sigma_ccea  = einsum('KLCW,C->KLCW', X_abab, e_extern, optimize = einsum_type)
+        sigma_ccea -= einsum('KLCW,K->KLCW', X_abab, e_cvs, optimize = einsum_type)
+        sigma_ccea -= einsum('KLCW,L->KLCW', X_abab, e_cvs, optimize = einsum_type)
+        sigma_ccea += einsum('KLCx,Wx->KLCW', X_abab, h_aa, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,C,Wx->KLCW', X_abab, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_ccea += 1/2 * einsum('KLCx,K,Wx->KLCW', X_abab, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccea += 1/2 * einsum('KLCx,L,Wx->KLCW', X_abab, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,xy,Wy->KLCW', X_abab, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_ccea += einsum('KLCx,Wxyz,yz->KLCW', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,Wyzx,zy->KLCW', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_ccea -= 1/2 * einsum('KLCx,xyzw,Wzyw->KLCW', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_ccea__abab:f_ccea__abab] += sigma_ccea.reshape(-1).copy()
+
+  
+    # CVEA <- CVEA
+    def compute_sigma_vector__H0__h1_h1__CVEA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_val = mr_adc.mo_energy.v
+        e_extern = mr_adc.mo_energy.e
+
+        ## Excitation Manifolds
+        s_cvea__aaaa = mr_adc.h1.s_cvea__aaaa
+        f_cvea__aaaa = mr_adc.h1.f_cvea__aaaa
+        s_cvea__abab = mr_adc.h1.s_cvea__abab
+        f_cvea__abab = mr_adc.h1.f_cvea__abab
+        s_cvea__bbbb = mr_adc.h1.s_cvea__bbbb
+        f_cvea__bbbb = mr_adc.h1.f_cvea__bbbb
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        sigma_cvea  = einsum('KLCa,C->KLCW', X_aaaa, e_extern, optimize = einsum_type)
+        sigma_cvea -= einsum('KLCa,K->KLCW', X_aaaa, e_cvs, optimize = einsum_type)
+        sigma_cvea -= einsum('KLCa,L->KLCW', X_aaaa, e_val, optimize = einsum_type)
+        sigma_cvea += einsum('KLCa,Wx->KLCW', X_aaaa, h_aa, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,C,Wx->KLCW', X_aaaa, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_cvea += 1/2 * einsum('KLCa,K,Wx->KLCW', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_cvea += 1/2 * einsum('KLCa,L,Wx->KLCW', X_aaaa, e_val, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,xy,Wy->KLCW', X_aaaa, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_cvea += einsum('KLCa,Wxyz,yz->KLCW', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,Wxyz,yx->KLCW', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,xyzw,Wzyw->KLCW', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_cvea__aaaa:f_cvea__aaaa] += sigma_cvea.reshape(-1).copy()
+
+        sigma_cvea  = einsum('KLCa,C->KLCW', X_abab, e_extern, optimize = einsum_type)
+        sigma_cvea -= einsum('KLCa,K->KLCW', X_abab, e_cvs, optimize = einsum_type)
+        sigma_cvea -= einsum('KLCa,L->KLCW', X_abab, e_val, optimize = einsum_type)
+        sigma_cvea += einsum('KLCa,Wx->KLCW', X_abab, h_aa, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,C,Wx->KLCW', X_abab, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_cvea += 1/2 * einsum('KLCa,K,Wx->KLCW', X_abab, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_cvea += 1/2 * einsum('KLCa,L,Wx->KLCW', X_abab, e_val, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,xy,Wy->KLCW', X_abab, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_cvea += einsum('KLCa,Wxyz,yz->KLCW', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,Wxyz,yx->KLCW', X_abab, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,xyzw,Wzyw->KLCW', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_cvea__abab:f_cvea__abab] += sigma_cvea.reshape(-1).copy()
+
+        sigma_cvea  = einsum('KLCa,C->KLCW', X_bbbb, e_extern, optimize = einsum_type)
+        sigma_cvea -= einsum('KLCa,K->KLCW', X_bbbb, e_cvs, optimize = einsum_type)
+        sigma_cvea -= einsum('KLCa,L->KLCW', X_bbbb, e_val, optimize = einsum_type)
+        sigma_cvea += einsum('KLCa,Wx->KLCW', X_bbbb, h_aa, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,C,Wx->KLCW', X_bbbb, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_cvea += 1/2 * einsum('KLCa,K,Wx->KLCW', X_bbbb, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_cvea += 1/2 * einsum('KLCa,L,Wx->KLCW', X_bbbb, e_val, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,xy,Wy->KLCW', X_bbbb, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_cvea += einsum('KLCa,Wxyz,yz->KLCW', X_bbbb, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,Wxyz,yx->KLCW', X_bbbb, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_cvea -= 1/2 * einsum('KLCa,xyzw,Wzyw->KLCW', X_bbbb, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_cvea__bbbb:f_cvea__bbbb] += sigma_cvea.reshape(-1).copy()
+
+    # CCEE <- CCEE
+    def compute_sigma_vector__H0__h1_h1__CCEE(mr_adc, X_aaaa, X_abab, sigma):
+        
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_extern = mr_adc.mo_energy.e
+
+        ## Excitation Manifolds
+        s_ccee__aaaa = mr_adc.h1.s_ccee__aaaa
+        f_ccee__aaaa = mr_adc.h1.f_ccee__aaaa
+        s_ccee__abab = mr_adc.h1.s_ccee__abab
+        f_ccee__abab = mr_adc.h1.f_ccee__abab
+
+        ## Indices
+        cc_tril_ind = np.tril_indices(ncvs, k=-1)
+        ee_tril_ind = np.tril_indices(nextern, k=-1) 
+
+        sigma_ccee  = einsum('KLCD,C->KLCD', X_aaaa, e_extern, optimize = einsum_type)
+        sigma_ccee += einsum('KLCD,D->KLCD', X_aaaa, e_extern, optimize = einsum_type)
+        sigma_ccee -= einsum('KLCD,K->KLCD', X_aaaa, e_cvs, optimize = einsum_type)
+        sigma_ccee -= einsum('KLCD,L->KLCD', X_aaaa, e_cvs, optimize = einsum_type)
+        d_ccee = sigma_ccee[:, :, ee_tril_ind[0], ee_tril_ind[1]].copy()
+        sigma[s_ccee__aaaa:f_ccee__aaaa] += d_ccee[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1).copy()
+
+        sigma_ccee  = einsum('KLCD,C->KLCD', X_abab, e_extern, optimize = einsum_type)
+        sigma_ccee += einsum('KLCD,D->KLCD', X_abab, e_extern, optimize = einsum_type)
+        sigma_ccee -= einsum('KLCD,K->KLCD', X_abab, e_cvs, optimize = einsum_type)
+        sigma_ccee -= einsum('KLCD,L->KLCD', X_abab, e_cvs, optimize = einsum_type)
+        sigma[s_ccee__abab:f_ccee__abab] += sigma_ccee.reshape(-1).copy() 
+
+    # CVEE <- CVEE
+    def compute_sigma_vector__H0__h1_h1__CVEE(mr_adc, X_aaaa, X_abab, sigma):
+        
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_val = mr_adc.mo_energy.v
+        e_extern = mr_adc.mo_energy.e
+
+        ## Excitation Manifolds
+        s_cvee__aaaa = mr_adc.h1.s_cvee__aaaa
+        f_cvee__aaaa = mr_adc.h1.f_cvee__aaaa
+        s_cvee__abab = mr_adc.h1.s_cvee__abab
+        f_cvee__abab = mr_adc.h1.f_cvee__abab
+
+        ## Indices
+        ee_tril_ind = np.tril_indices(nextern, k=-1) 
+
+        sigma_cvee  = einsum('KLCD,C->KLCD', X_aaaa, e_extern, optimize = einsum_type)
+        sigma_cvee += einsum('KLCD,D->KLCD', X_aaaa, e_extern, optimize = einsum_type)
+        sigma_cvee -= einsum('KLCD,K->KLCD', X_aaaa, e_cvs, optimize = einsum_type)
+        sigma_cvee -= einsum('KLCD,L->KLCD', X_aaaa, e_val, optimize = einsum_type)
+        sigma[s_cvee__aaaa:f_cvee__aaaa] += sigma_cvee[:, :, ee_tril_ind[0], ee_tril_ind[1]].reshape(-1).copy()
+
+        sigma_cvee  = einsum('KLCD,C->KLCD', X_abab, e_extern, optimize = einsum_type)
+        sigma_cvee += einsum('KLCD,D->KLCD', X_abab, e_extern, optimize = einsum_type)
+        sigma_cvee -= einsum('KLCD,K->KLCD', X_abab, e_cvs, optimize = einsum_type)
+        sigma_cvee -= einsum('KLCD,L->KLCD', X_abab, e_val, optimize = einsum_type)
+        sigma[s_cvee__abab:f_cvee__abab] += sigma_cvee.reshape(-1).copy() 
+
+    # CAEE <- CAEE
+    def compute_sigma_vector__H0__h1_h1__CAEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma):
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_extern = mr_adc.mo_energy.e
+
+        ## Excitation Manifolds
+        s_caee__aaaa = mr_adc.h1.s_caee__aaaa
+        f_caee__aaaa = mr_adc.h1.f_caee__aaaa
+        s_caee__abab = mr_adc.h1.s_caee__abab
+        f_caee__abab = mr_adc.h1.f_caee__abab
+        s_caee__bbbb = mr_adc.h1.s_caee__bbbb
+        f_caee__bbbb = mr_adc.h1.f_caee__bbbb
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        sigma_caee  = 1/2 * einsum('KxCD,C,Wx->KWCD', X_aaaa, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_caee += 1/2 * einsum('KxCD,D,Wx->KWCD', X_aaaa, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,K,Wx->KWCD', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,yz,Wz->KWCD', X_aaaa, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,yzwu,Wwzu->KWCD', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_caee__aaaa:f_caee__aaaa] += sigma_caee[:, :, ee_tril_ind[0], ee_tril_ind[1]].reshape(-1).copy()
+
+        sigma_caee  = 1/2 * einsum('KxCD,C,Wx->KWCD', X_abab, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_caee += 1/2 * einsum('KxCD,D,Wx->KWCD', X_abab, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,K,Wx->KWCD', X_abab, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,yz,Wz->KWCD', X_abab, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,yzwu,Wwzu->KWCD', X_abab, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_caee__abab:f_caee__abab] += sigma_caee.reshape(-1).copy()
+
+        sigma_caee  = 1/2 * einsum('KxCD,C,Wx->KWCD', X_bbbb, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_caee += 1/2 * einsum('KxCD,D,Wx->KWCD', X_bbbb, e_extern, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,K,Wx->KWCD', X_bbbb, e_cvs, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,yz,Wz->KWCD', X_bbbb, h_aa, rdm_ca, optimize = einsum_type)
+        sigma_caee -= 1/2 * einsum('KxCD,yzwu,Wwzu->KWCD', X_bbbb, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma[s_caee__bbbb:f_caee__bbbb] += sigma_caee[:, :, ee_tril_ind[0], ee_tril_ind[1]].reshape(-1).copy()
+
+
+    # CAAA <- CAAA
+    # CAEA <- CAEA
+
+    if mr_adc.method == "mr-adc(2)-x": 
+        print("sigma h1-h1 for 1st-order hamiltonian has not been implemented.")
+        exit()
+
+    # Compute sigma vector blocks
+    ## Create empty sigma vector
+    sigma = np.zeros_like(Xt)
+
+    ## h0-h0 contributions
+    sigma[:mr_adc.h0.dim] = np.dot(M_00, Xt[:mr_adc.h0.dim])
+
+    # Non-orthogonal dimension indices
+    s_ca__aa = mr_adc.h0.s_ca_aa
+    f_ca__aa = mr_adc.h0.f_ca_aa
+    s_ca__bb = mr_adc.h0.s_ca_bb
+    f_ca__bb = mr_adc.h0.f_ca_bb
+    s_ce__aa = mr_adc.h0.s_ce_aa
+    f_ce__aa = mr_adc.h0.f_ce_aa
+    s_ce__bb = mr_adc.h0.s_ce_bb
+    f_ce__bb = mr_adc.h0.f_ce_bb
+
+    s_ccaa__aaaa = mr_adc.h1.s_ccaa__aaaa
+    f_ccaa__aaaa = mr_adc.h1.f_ccaa__aaaa
+    s_ccaa__abab = mr_adc.h1.s_ccaa__abab
+    f_ccaa__abab = mr_adc.h1.f_ccaa__abab
+    s_ccaa__bbbb = mr_adc.h1.s_ccaa__bbbb
+    f_ccaa__bbbb = mr_adc.h1.f_ccaa__bbbb
+    
+    s_ccea__aaaa = mr_adc.h1.s_ccea__aaaa
+    f_ccea__aaaa = mr_adc.h1.f_ccea__aaaa
+    s_ccea__abab = mr_adc.h1.s_ccea__abab
+    f_ccea__abab = mr_adc.h1.f_ccea__abab
+    s_ccea__bbbb = mr_adc.h1.s_ccea__bbbb
+    f_ccea__bbbb = mr_adc.h1.f_ccea__bbbb
+    
+    s_ccee__aaaa = mr_adc.h1.s_ccee__aaaa
+    f_ccee__aaaa = mr_adc.h1.f_ccee__aaaa
+    s_ccee__abab = mr_adc.h1.s_ccee__abab
+    f_ccee__abab = mr_adc.h1.f_ccee__abab
+    
+    s_caee__aaaa = mr_adc.h1.s_caee__aaaa
+    f_caee__aaaa = mr_adc.h1.f_caee__aaaa
+    s_caee__abab = mr_adc.h1.s_caee__abab
+    f_caee__abab = mr_adc.h1.f_caee__abab
+    s_caee__bbbb = mr_adc.h1.s_caee__bbbb
+    f_caee__bbbb = mr_adc.h1.f_caee__bbbb
+                          
+    s_caaa__aaaa = mr_adc.h1.s_caaa__aaaa
+    f_caaa__aaaa = mr_adc.h1.f_caaa__aaaa
+    s_caaa__abab = mr_adc.h1.s_caaa__abab
+    f_caaa__abab = mr_adc.h1.f_caaa__abab
+    s_caaa__bbbb = mr_adc.h1.s_caaa__bbbb
+    f_caaa__bbbb = mr_adc.h1.f_caaa__bbbb
+                                         
+    s_caea__aaaa = mr_adc.h1.s_caea__aaaa
+    f_caea__aaaa = mr_adc.h1.f_caea__aaaa
+    s_caea__abab = mr_adc.h1.s_caea__abab
+    f_caea__abab = mr_adc.h1.f_caea__abab
+    s_caea__bbbb = mr_adc.h1.s_caea__bbbb
+    f_caea__bbbb = mr_adc.h1.f_caea__bbbb
+
+    if nval is not None:
+        s_cvaa__aaaa = mr_adc.h1.s_cvaa__aaaa
+        f_cvaa__aaaa = mr_adc.h1.f_cvaa__aaaa
+        s_cvaa__abab = mr_adc.h1.s_cvaa__abab
+        f_cvaa__abab = mr_adc.h1.f_cvaa__abab
+        s_cvaa__bbbb = mr_adc.h1.s_cvaa__bbbb
+        f_cvaa__bbbb = mr_adc.h1.f_cvaa__bbbb
+    
+        s_cvea__aaaa = mr_adc.h1.s_cvea__aaaa
+        f_cvea__aaaa = mr_adc.h1.f_cvea__aaaa
+        s_cvea__abab = mr_adc.h1.s_cvea__abab
+        f_cvea__abab = mr_adc.h1.f_cvea__abab
+        s_cvea__bbbb = mr_adc.h1.s_cvea__bbbb
+        f_cvea__bbbb = mr_adc.h1.f_cvea__bbbb
+        
+        s_cvee__aaaa = mr_adc.h1.s_cvee__aaaa
+        f_cvee__aaaa = mr_adc.h1.f_cvee__aaaa
+        s_cvee__abab = mr_adc.h1.s_cvee__abab
+        f_cvee__abab = mr_adc.h1.f_cvee__abab
+ 
+
+    ## h0-h1 and h1-h0 contributions
+    ##WiP: all
+
+    ## h1-h1 contributions
+    ## WiP: CAEE, CAAA, CAEA
+    # CCAA
+    X_aaaa = np.zeros((ncvs, ncvs, ncas, ncas))
+    temp = np.zeros((n_cc, ncas, ncas)) 
+
+    temp[:,aa_tril_ind[0], aa_tril_ind[1]] +=  Xt[s_ccaa__aaaa:f_ccaa__aaaa].reshape(n_cc, n_aa)
+    temp[:,aa_tril_ind[1], aa_tril_ind[0]] += -Xt[s_ccaa__aaaa:f_ccaa__aaaa].reshape(n_cc, n_aa)
+
+    X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] +=  temp
+    X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] += -temp
+
+    X_abab = np.ascontiguousarray(Xt[s_ccaa__abab:f_ccaa__abab].reshape(ncvs, ncvs, ncas, ncas))
+
+    compute_sigma_vector__H0__h1_h1__CCAA(mr_adc, X_aaaa, X_abab, sigma)
+
+#    if mr_adc.method == "mr-adc(2)-x":
+#        compute_sigma_vector__H1__h1_h1__CCAA_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CCEA_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CCEE_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAEE_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAAA_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAEA_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#        if nval is not None:
+#            compute_sigma_vector__H1__h1_h1__CVAA_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVEA_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVEE_CCAA(mr_adc, X_aaaa, X_abab, sigma)
+ 
+    # CCEA
+    X_aaaa = np.zeros((ncvs, ncvs, nextern, ncas))
+    X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] =   Xt[s_ccea__aaaa:f_ccea__aaaa].reshape(-1, nextern, ncas).copy()
+    X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] =-  Xt[s_ccea__aaaa:f_ccea__aaaa].reshape(-1, nextern, ncas).copy()
+   
+    X_bbbb = np.zeros((ncvs, ncvs, nextern, ncas))
+    X_bbbb[cc_tril_ind[0], cc_tril_ind[1]] =   Xt[s_ccea__bbbb:f_ccea__bbbb].reshape(-1, nextern, ncas).copy()
+    X_bbbb[cc_tril_ind[1], cc_tril_ind[0]] =-  Xt[s_ccea__bbbb:f_ccea__bbbb].reshape(-1, nextern, ncas).copy()
+ 
+    X_abab = np.ascontiguousarray(Xt[s_ccea__abab:f_ccea__abab].reshape(ncvs, ncvs, nextern, ncas))
+
+    compute_sigma_vector__H0__h1_h1__CCEA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
+
+#    if mr_adc.method == "mr-adc(2)-x":
+#        compute_sigma_vector__H1__h1_h1__CCAA_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CCEA_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CCEE_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAEE_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAAA_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAEA_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+#        if nval is not None:
+#            compute_sigma_vector__H1__h1_h1__CVAA_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVEA_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVEE_CCEA(mr_adc, X_aaaa, X_abab, sigma)
+ 
+    # CCEE
+    X_aaaa = np.zeros((ncvs, ncvs, nextern, nextern))
+    temp = np.zeros((n_cc, nextern, nextern)) 
+
+    temp[:,ee_tril_ind[0], ee_tril_ind[1]] +=  Xt[s_ccee__aaaa:f_ccee__aaaa].reshape(n_cc, n_ee)
+    temp[:,ee_tril_ind[1], ee_tril_ind[0]] += -Xt[s_ccee__aaaa:f_ccee__aaaa].reshape(n_cc, n_ee)
+
+    X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] +=  temp
+    X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] += -temp
+
+    X_abab = np.ascontiguousarray(Xt[s_ccee__abab:f_ccee__abab].reshape(ncvs, ncvs, nextern, nextern))
+ 
+    compute_sigma_vector__H0__h1_h1__CCEE(mr_adc, X_aaaa, X_abab, sigma)
+
+#    if mr_adc.method == "mr-adc(2)-x":
+#        compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAEE_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAAA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+#        compute_sigma_vector__H1__h1_h1__CAEA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+#        if nval is not None:
+#            compute_sigma_vector__H1__h1_h1__CVAA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVEA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVEE_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+             
+    return sigma
 
 def compute_trans_moments(mr_adc):
 

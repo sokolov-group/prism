@@ -214,7 +214,6 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
             del(mr_adc.t2.ce)
 
-
             mr_adc.t1.xxee = tools.create_dataset('xxee', tmpfile, (ncvs, ncvs, nextern, nextern))
             mr_adc.t1.xvee = tools.create_dataset('xvee', tmpfile, (ncvs, nval, nextern, nextern))
             mr_adc.t1.vxee = tools.create_dataset('vxee', tmpfile, (nval, ncvs, nextern, nextern))
@@ -2045,7 +2044,6 @@ def compute_t2_m1p_singles(mr_adc):
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
 
-    # Variables from kernel
     ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
     e_extern = mr_adc.mo_energy.e
@@ -2160,8 +2158,33 @@ def compute_t2_m1p_singles(mr_adc):
     V1 += 1/2 * einsum('ixAy,izwy,Xwzx->XA', t1_caea, v_caaa, rdm_ccaa, optimize = einsum_type)
     V1 -= einsum('ixaA,iayz,Xyxz->XA', t1_caee, v_ceaa, rdm_ccaa, optimize = einsum_type)
     V1 += 1/2 * einsum('ixaA,iyza,Xzxy->XA', t1_caee, v_caae, rdm_ccaa, optimize = einsum_type)
+
     V1 -= einsum('ixab,iaAb,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
     V1 += 1/2 * einsum('ixab,ibAa,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
+
+#    ###WiP### 
+#    ## need to add DF
+#    if isinstance(v_ceee, type(None)):
+#        chnk_size = mr_adc_integrals.calculate_chunk_size(mr_adc)
+#    else:
+#        chnk_size = ncore
+#
+#    a = 0
+#    for p in range(0, ncore, chnk_size):
+#        if interface.with_df:
+#            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
+#        else:
+#            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.ceee, nextern)
+#    
+#        k = v_ceee.shape[0]
+#
+#        V1 -= einsum('ixab,iaAb,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
+#        V1 += 1/2 * einsum('ixab,ibAa,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
+# 
+#        del v_ceee
+#        a += k
+#    ###WiP###
+ 
     V1 += 1/2 * einsum('ixay,iAza,Xxzy->XA', t1_caea, v_ceae, rdm_ccaa, optimize = einsum_type)
     V1 -= einsum('ixay,iaAy,Xx->XA', t1_caea, v_ceea, rdm_ca, optimize = einsum_type)
     V1 -= einsum('ixay,iaAz,Xyzx->XA', t1_caea, v_ceea, rdm_ccaa, optimize = einsum_type)
@@ -2214,7 +2237,28 @@ def compute_t2_m1p_singles(mr_adc):
     V1 -= 3/8 * einsum('xyAa,zwua,Xuzxyw->XA', t1_aaee, v_aaae, rdm_cccaaa, optimize = einsum_type)
     V1 += 1/8 * einsum('xyAa,zwua,Xuzywx->XA', t1_aaee, v_aaae, rdm_cccaaa, optimize = einsum_type)
     V1 += 1/8 * einsum('xyAa,zwua,Xuzyxw->XA', t1_aaee, v_aaae, rdm_cccaaa, optimize = einsum_type)
+
     V1 -= 1/2 * einsum('xyab,zbAa,Xzxy->XA', t1_aaee, v_aeee, rdm_ccaa, optimize = einsum_type)
+#    ###WiP###
+#    ## TODO: add DF 
+#    if not isinstance(v_aeee, type(None)):
+#        chnk_size = ncas
+#
+#    a = 0
+#    for p in range(0, ncas, chnk_size):
+#        if interface.with_df:
+#            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, p, chnk_size).reshape(-1, nextern, nextern, nextern)
+#        else:
+#            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc.v2e.aeee, nextern)
+#
+#        k = v_aeee.shape[0]
+#
+#        V1 -= 1/2 * einsum('xyab,zbAa,Xzxy->XA', t1_aaee, v_aeee, rdm_ccaa[:,a:a+k], optimize = einsum_type)
+#
+#        del v_aeee
+#        a += k
+#    ###WiP### 
+
     V1 -= 1/3 * einsum('xyza,wAau,Xzuwxy->XA', t1_aaae, v_aeea, rdm_cccaaa, optimize = einsum_type)
     V1 += 1/6 * einsum('xyza,wAau,Xzuwyx->XA', t1_aaae, v_aeea, rdm_cccaaa, optimize = einsum_type)
     V1 += 1/6 * einsum('xyza,wAau,Xzuxwy->XA', t1_aaae, v_aeea, rdm_cccaaa, optimize = einsum_type)

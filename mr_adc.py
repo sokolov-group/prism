@@ -178,6 +178,15 @@ class MRADC:
             msg = "Out-of-core algorithm is not implemented in Prism."
             log.error(msg)
             raise Exception(msg)
+    
+###WiP - remove after checking over the rebase changes
+#        # Compute CVS integrals
+#        if self.method_type in ("cvs-ip", "cvs-ee"):
+#            if self.interface.with_df:
+#                mr_adc_integrals.compute_cvs_integrals_2e_df(self)
+#            else:
+#                mr_adc_integrals.compute_cvs_integrals_2e_incore(self)
+###WiP
 
         # Compute CASCI energies and reduced density matrices
         mr_adc_rdms.compute_gs_rdms(self)

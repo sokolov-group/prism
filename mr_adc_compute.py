@@ -16,6 +16,7 @@
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <odhiambo.donna@gmail.com>
 #
 
 import sys
@@ -73,7 +74,6 @@ def kernel(mr_adc):
             mr_adc_integrals.compute_cvs_integrals_2e_df(mr_adc)
         else:
             mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
-        mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
     if mr_adc.method_type == "ip":
@@ -163,61 +163,61 @@ def setup_davidson(mr_adc):
         # Compute h0-h0 block of the effective Hamiltonian matrix
         M_00 = mr_adc_cvs_ee.compute_M_00(mr_adc)
 
-        # Transform to orthogonal basis
-        M_00_horth = np.zeros((mr_adc.h0.dim, mr_adc.h_orth.dim))
-        M_00_forth = np.zeros((mr_adc.h_orth.dim, mr_adc.h_orth.dim))
-
-        for i in range(mr_adc.h0.dim):
-            M_00_horth[i, :] = mr_adc_cvs_ee.apply_S_12(mr_adc, M_00[i, :], transpose = True)
-
-        # Delete used matrix
-        del M_00
-
-        for i in range(mr_adc.h0.dim):
-            M_00_forth[:, i] = mr_adc_cvs_ee.apply_S_12(mr_adc, M_00_horth[:, i], transpose = True)
-
-        # Delete used matrix
-        del M_00_horth
-
-        # Diagonalize M matrix
-        val, vec = np.linalg.eigh(M_00_forth)
-
-        # Delete used matrix
-        del M_00_forth
-
-        # Print excitation energies in a.u. and eV
-        print ("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
-        print(val.reshape(-1,1)[:mr_adc.nroots])
-        print ("\n%s-%s excitation energies (eV):" % (mr_adc.method_type, mr_adc.method))
-        val_ev = val * 27.2114
-        print (val_ev.reshape(-1, 1)[:mr_adc.nroots])
-        sys.stdout.flush()
-
-        # Zeroth order T matrix
-        T = mr_adc_cvs_ee.compute_trans_moments(mr_adc)
-
-        dip_mom = mr_adc.dip_mom
-        dip_mom = dip_mom.reshape(dip_mom.shape[0], dip_mom.shape[1] * dip_mom.shape[2])
-
-        X = np.dot(T, vec[:,:mr_adc.nroots])
-
-        # Delete used matrix
-        del T
-
-        dX = np.dot(dip_mom, X)
-        
-        spec_intensity = np.sum(dX**2, axis=0)
-        print ("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
-        print(spec_intensity.reshape(-1,1))
-
-        osc_strength = (2.0/3.0) * val[:mr_adc.nroots] * spec_intensity
-        print ("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
-        print(osc_strength.reshape(-1,1))
-
-        # Not producing physically meaningful results, Will try with full first-order T matrix
-        ##mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, val, spec_intensity, X)
-
-        exit()
+#        # Transform to orthogonal basis
+#        M_00_horth = np.zeros((mr_adc.h0.dim, mr_adc.h_orth.dim))
+#        M_00_forth = np.zeros((mr_adc.h_orth.dim, mr_adc.h_orth.dim))
+#
+#        for i in range(mr_adc.h0.dim):
+#            M_00_horth[i, :] = mr_adc_cvs_ee.apply_S_12(mr_adc, M_00[i, :], transpose = True)
+#
+#        # Delete used matrix
+#        del M_00
+#
+#        for i in range(mr_adc.h0.dim):
+#            M_00_forth[:, i] = mr_adc_cvs_ee.apply_S_12(mr_adc, M_00_horth[:, i], transpose = True)
+#
+#        # Delete used matrix
+#        del M_00_horth
+#
+#        # Diagonalize M matrix
+#        val, vec = np.linalg.eigh(M_00_forth)
+#
+#        # Delete used matrix
+#        del M_00_forth
+#
+#        # Print excitation energies in a.u. and eV
+#        print ("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
+#        print(val.reshape(-1,1)[:mr_adc.nroots])
+#        print ("\n%s-%s excitation energies (eV):" % (mr_adc.method_type, mr_adc.method))
+#        val_ev = val * 27.2114
+#        print (val_ev.reshape(-1, 1)[:mr_adc.nroots])
+#        sys.stdout.flush()
+#
+#        # Zeroth order T matrix
+#        T = mr_adc_cvs_ee.compute_trans_moments(mr_adc)
+#
+#        dip_mom = mr_adc.dip_mom
+#        dip_mom = dip_mom.reshape(dip_mom.shape[0], dip_mom.shape[1] * dip_mom.shape[2])
+#
+#        X = np.dot(T, vec[:,:mr_adc.nroots])
+#
+#        # Delete used matrix
+#        del T
+#
+#        dX = np.dot(dip_mom, X)
+#        
+#        spec_intensity = np.sum(dX**2, axis=0)
+#        print ("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
+#        print(spec_intensity.reshape(-1,1))
+#
+#        osc_strength = (2.0/3.0) * val[:mr_adc.nroots] * spec_intensity
+#        print ("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
+#        print(osc_strength.reshape(-1,1))
+#
+#        # Not producing physically meaningful results, Will try with full first-order T matrix
+#        ##mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, val, spec_intensity, X)
+#
+#        exit()
 
     # Compute diagonal of the M matrix
     if mr_adc.method_type == "ip":
