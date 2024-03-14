@@ -33,8 +33,8 @@ Detailed examples of the implemented methods can be found [here](examples/).
 An extensive and comprehensive manual of Prism will be released soon.
 
 ## Available Methods
-- [Multireference Algebraic Diagrammatic Construction (MR-ADC) Theory](#multireference-algebraic-diagrammatic-construction-(mr-adc)-theory)
-- [Density Fitting](#density-fitting-(df))
+- [Multireference Algebraic Diagrammatic Construction (MR-ADC) Theory](#multireference-algebraic-diagrammatic-construction-mr-adc-theory)
+- [Density Fitting](#density-fitting-df)
 - [Dyson Molecular Orbitals](#dyson-molecular-orbitals)
 
 ## Multireference Algebraic Diagrammatic Construction (MR-ADC) Theory
