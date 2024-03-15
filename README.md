@@ -70,21 +70,21 @@ Other important parameters are:
  - ```max_cycle``` (integer): The maximum number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix.
  - ```tol_e``` (float): Convergence tolerance for the excitation energies in the Davidson diagonalization.
  - ```tol_davidson``` (float): Convergence tolerance for the residual in the Davidson diagonalization.
- - ```analyze_spec_factor``` (boolean): Request the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol```.
+ - ```analyze_spec_factor``` (boolean): Request the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol``` (float).
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single excitations. For experts only.
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent double excitations. For experts only.
 
-Additionally, the memory and disk usage can be greatly reduced by approximating the two-electron integrals with density-fitting (DF). 
+Additionally, the memory and disk usage can be greatly reduced by approximating the two-electron integrals with density fitting (DF). 
 An example of MR-ADC calculation with density fitting can be found [here](https://github.com/sokolov-group/prism/blob/main/examples/cvs_ip_mr_adc/05-density_fitting.py). 
 DF is not used by default but can be invoked using the ```density_fit()``` function call. 
-One can overwrite the default choice of the auxiliary basis with a specified one (for example, ```density_fit('cc-pvdz-ri')```. 
+One can overwrite the default auxiliary basis with a specified one (for example, ```density_fit('cc-pvdz-ri')```. 
 More details about setting up calculations with density fitting can be found on the [Pyscf website](https://pyscf.org/user/df.html).
 Please note that DF is an approximation, which accuracy depends on the quality of the auxiliary basis set.
 Provided that a good auxiliary basis set is used, the DF errors are usually less than 0.01 eV in excitation energy.
 We recommend to use the RI- (or RIFIT-) auxiliary basis sets to approximate the integrals in the MR-ADC calculations.
 The reference CASSCF calculations can be run either using the exact or density-fitted two-electron integrals approximated using the JKFIT-type auxiliary basis sets.
 
-The excited states with large spectroscopic factors can be visualized by generating the Dyson molecular orbitals (MOs):
+The excited states with large spectroscopic factors can be visualized by generating the Dyson molecular orbitals:
 
 ```python
 from prism.mr_adc_cvs_ip import compute_dyson_mo
@@ -98,10 +98,10 @@ Here, ```mr_adc_dyson_mos.molden``` is the molden file that can be processed usi
 # Short list of features:
 
 ## CVS-IP-MR-ADC
-- Calculation excitation energies up to MR-ADC(2)-X
+- Excitation energies up to MR-ADC(2)-X
 - Photoelectron transition intensities (spectroscopic factors) up to MR-ADC(2)-X
-- Dyson Orbitals:
-- Orbital analysis or contributions to spectroscopic factors
+- Dyson orbitals
+- Orbital analysis of contributions to spectroscopic factors
 
 # Authors and contributors
 [//]: # (To be moved to AUTHORS file)
