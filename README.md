@@ -1,21 +1,14 @@
 # Prism
-Python-based implementation of electronic structure theories for simulating spectroscopic properties
+Prism is a Python implementation of electronic structure theories for simulating spectroscopic properties.
+Currently, Prism features methods of multireference algebraic diagrammatic construction theory (MR-ADC) for simulating core-ionized states (CVS-IP).
 
-2023-04-01
-
-- [Installation](#installation)
-  - [Dependencies](#dependencies)
-- [How to use](#how-to-use)
-- [Features](#features)
-- [Authors and Contributors](#authors-and-contributors)
-
-# Installation
+# How to install
 ## Requirements
 - Python 3.7 or older;
 - [PySCF 2.2 or older](https://github.com/pyscf/pyscf/), including its [dependencies](https://pyscf.org/install.html);
 - Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions
 
-## How to install
+## Installation
 1) Install [PySCF](https://github.com/pyscf/pyscf/) and make sure it is included in the ``$PYTHONPATH`` environment variable
 2) Clone the Prism repository:
 ```python
@@ -26,8 +19,9 @@ git clone https://github.com/sokolov-group/prism.git
 5) Run tests to make sure the code is working properly
 
 # How to use
-
-Prism is dependent on PySCF, and MR-ADC calculations are based on both SCF and MCSCF calculations. Thus to run an MR-ADC calculation in the Python3 interpreter or in a Python3 script, the following will need to be imported:
+The Prism calculations are run by means of creating and executing a Python script, which serves as the input file.
+The electronic structure methods implemented in Prism require one- and two-electron integrals, molecular orbitals, and reference wavefunctions, which must be computed using PySCF.
+To set up a calculation with Prism, import the following modules (in addition to any others you may need):
 
 ```python
 from pyscf import gto, scf, mcscf
@@ -35,7 +29,8 @@ import prism.interface
 import prism.mr_adc
 ```
 
-Then, as explained in the [PySCF user guide](https://pyscf.org/user.html), a mole object needs to be created along with running both an SCF and MCSCF calculation:
+Next, as described in the [PySCF user guide](https://pyscf.org/user.html), specify molecular geometry, then run reference Hartree-Fock and complete active space self-consistent field (CASSCF) calculations.
+Below is an example of reference CASSCF calculation for the hydrogen fluoride (HF) molecule with the cc-pvdz basis set and 6 electrons in 6 orbitals (6e, 6o) active space.
 
 ```python
 mol = gto.M(atom = 'H 0 0 0; F 0 0 0.91', basis = 'cc-pvdz')
@@ -43,19 +38,22 @@ mf = scf.RHF(mol).run()
 mc = mcscf.CASSCF(mf, 6, 6).run()
 ```
 
-Finally the prism calculation can be done. First the interface and object for the calculation are created, followed by customizations. Then the actual calculation can be run with the ```kernel()``` function. For example, a CVS-IP-MR-ADC calculation can be run with the general format as follows:
+Once the reference calculation is successfully completed, the objects of Hartree-Fock and CASSCF classes (```mf``` and ```mc```) are passed to Prism and the spectroscopic properties are calculated:
 
 ```python
-interface = prism.interface.PYSCF(mf, mc, pot_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method = "mr-adc(2)"
 mr_adc.method_type = "cvs-ip"
+mr_adc.nroots = 10
 mr_adc.ncvs = 1
 e, p, x = mr_adc.kernel()
 ```
 
+In the example above, a calculation using CVS-IP-MR-ADC(2) for 10 excited states (roots) is set up. 
+The parameter ```ncvs``` controls the number of core orbitals in the hydrogen fluoride molecule, for which excited states are calculated.
+For example, setting ```ncvs = 1``` corresponds to exciting electrons from the 1s orbitals of fluorine atoms, while ```ncvs = 2``` would correspond to probing the 2s excitations.
 Detailed examples of the implemented methods can be found [here](examples/).
-An extensive and comprehensive manual of Prism will be released soon.
 
 # Methods and Algorithms
 ## Core-Valence Separation for Ionization Processes of Multireference Algebraic Diagrammatic Construction (CVS-IP-MR-ADC) Theory
