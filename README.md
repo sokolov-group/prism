@@ -40,7 +40,7 @@ mf = scf.RHF(mol).run()
 mc = mcscf.CASSCF(mf, 6, 6).run()
 ```
 
-Finally the prism calculation can be done. First the interface and object for the calculation are created, followed by customizing the claculation. Then the actual calculation can be run with the ```kernel()``` function. For example, a CVS-IP-MR-ADC calculation can be run with the general format as follows:
+Finally the prism calculation can be done. First the interface and object for the calculation are created, followed by customizations. Then the actual calculation can be run with the ```kernel()``` function. For example, a CVS-IP-MR-ADC calculation can be run with the general format as follows:
 
 ```python
 interface = prism.interface.PYSCF(mf, mc, pot_einsum = True)
@@ -54,10 +54,24 @@ e, p, x = mr_adc.kernel()
 Detailed examples of the implemented methods can be found [here](examples/).
 An extensive and comprehensive manual of Prism will be released soon.
 
+# Methods and Algorithms
+## Core-Valence Separation for Ionization Processes of Multireference Algebraic Diagrammatic Construction (CVS-IP-MR-ADC) Theory
+CVS-IP-MR-ADC has the following adjustable parameters:
+ - ```method```: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x 
+ - ```method_type```: cvs-ip
+ - ```ncvs``` : the number of core orbitals 
+ - ```nroots```: the number of toots 
 
+Additionally, the memory and disk usage can be greatly reduced by approximating the two-electron integrals with density-fitting. One can see an example of density fitting in a MR-ADC calculation in [this example](https://github.com/sokolov-group/prism/blob/main/examples/cvs_ip_mr_adc/05-density_fitting.py). DF is not used by default but can be invoked via the ```density_fit()``` method. One can overwrite the default choice of the auxiliary basis (for example, ```density_fit('cc-pvdz-jkfit')``` The more detail is in the [Pyscf website](https://pyscf.org/user/df.html) Besides, after running a MR-ADC calculation, one can generate the Dyson molecular orbitals (MOs):
 
-[//]: # (Methods and algorithms) - Nick
+```python
+from prism.mr_adc_cvs_ip import compute_dyson_mo
+from pyscf.tools import molden
+dyson_mos = compute_dyson_mo(mr_adc, x)
+molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
+```
 
+Where mr_adc_dyson_mos.molden is the molden file name.
 
 [//]: # (Features and capabilities) - Alex
 
