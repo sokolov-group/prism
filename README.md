@@ -137,10 +137,14 @@ molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 
-## Contributors of Spin-Orbital Prism (Pilot code)
+## Contributors to the spin-orbital Prism (pilot implementation)
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 - Koushik Chatterjee <koushikchatterjee7@gmail.com>
 - Ilia Mazin <ilia.mazin@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 
-[//]: # (Citation)
+# How to cite
+If you include results from Prism in your publication, please cite:
+- ``[Simulating X-ray photoelectron spectra with strong electron correlation using multireference algebraic diagrammatic construction theory](https://doi.org/10.1039/d1cp05476g)'', C.E.V. de Moura and A.Yu. Sokolov, Phys. Chem. Chem. Phys. 24, 4769 – 4784 (2022).
+- ``[Multi-reference algebraic diagrammatic construction theory for excited states: General formulation and first-order implementation](https://doi.org/10.1063/1.5055380)'', A.Yu. Sokolov, J. Chem. Phys. 149(20), 204113 (2018).
+
