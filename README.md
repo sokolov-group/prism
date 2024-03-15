@@ -52,7 +52,7 @@ e, p, x = mr_adc.kernel()
 
 In the example above, a calculation using CVS-IP-MR-ADC(2) for 10 excited states (roots) is set up. 
 The parameter ```ncvs``` controls the number of core orbitals in the hydrogen fluoride molecule, for which excited states are calculated.
-For example, setting ```ncvs = 1``` corresponds to exciting electrons from the 1s orbitals of fluorine atoms, while ```ncvs = 2``` would correspond to probing the 2s excitations.
+For example, setting ```ncvs = 1``` corresponds to exciting electrons from the 1s orbitals of fluorine atoms, while ```ncvs = 2``` corresponds to probing the 2s excitations.
 Other examples can be found [here](examples/).
 
 # Methods and algorithms
@@ -65,12 +65,12 @@ These excitations are simulated by introducing core-valence separation approxima
 The CVS-IP-MR-ADC calculations can be performed at four different levels of theory that are specified using the ```method``` parameter: ```mr-adc(0)```, ```mr-adc(1)```, ```mr-adc(2)```, ```mr-adc(2)-x```.
 
 Other important parameters are:
- - ```ncvs``` : The number of core orbitals to be included in the simulation. This number should ideally correspond to the index of higheest-energy occupied orbital, from which electrons are allowed to be excited from. E.g., probing the 1s orbital of C in CO can be done by setting ``ncvs = 2```.
+ - ```ncvs``` : The number of core orbitals to be included in the simulation. This number should ideally correspond to the index of highest-energy occupied orbital, from which electrons are allowed to be excited from. E.g., probing the 1s orbital of C in CO can be done by setting ```ncvs = 2```.
  - ```nroots```: The number of excited states (or transitions) to be calculated. 
- - ```max_cycle```: The number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix.
- - ```tol_e```: Convergence tolerance for the excitation energies in the Davidson diagonalization
- - ```tol_davidson```: Convergence tolerance for the residual in the Davidson diagonalization
- - ```analyze_spec_factor```: Request the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol```
+ - ```max_cycle```: The maximum number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix.
+ - ```tol_e```: Convergence tolerance for the excitation energies in the Davidson diagonalization.
+ - ```tol_davidson```: Convergence tolerance for the residual in the Davidson diagonalization.
+ - ```analyze_spec_factor```: Request the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol```.
  - ```s_thresh_singles```: Parameter for removing linearly dependent single excitations. For experts only.
  - ```s_thresh_doubles```: Parameter for removing linearly dependent double excitations. For experts only.
 
