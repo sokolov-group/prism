@@ -75,12 +75,25 @@ molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
 
 Where mr_adc_dyson_mos.molden is the molden file name.
 
-[//]: # (Features and capabilities) - Alex
+# Features and capabilities
 
+## CVS-IP-MR-ADC
+Data produced by default:
+- Number of CASCI states and their excitation energies (a.u., eV)
+- spectroscopic intensities
 
-
-
-
+Data produced if requested
+- Dyson Orbitals:
+  - ```python
+    from prism.mr_adc_cvs_ip import compute_dyson_mo
+    from pyscf.tools import molden
+    dyson_mos = compute_dyson_mo(mr_adc, x)
+    molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
+    ```
+- Spectral Analysis:
+  - ```python
+    mr_adc.analyze_spec_factor = True
+    ``` 
 
 # OLD:
 
