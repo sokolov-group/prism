@@ -16,13 +16,14 @@ Python-based implementation of electronic structure theories for simulating spec
 - Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions
 
 ## How to install
-1) Install [PySCF](https://github.com/pyscf/pyscf/) and make sure it is included in the ``$PYTHONPATH`` environment variable`
+1) Install [PySCF](https://github.com/pyscf/pyscf/) and make sure it is included in the ``$PYTHONPATH`` environment variable
 2) Clone the Prism repository:
 ```python
 git clone https://github.com/sokolov-group/prism.git
 ```
 3) Include the path to the folder where Prism is located in the ```$PYTHONPATH``` environment variable
-4) Run tests to make sure the code is working properly
+4) Optional: download [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) and include it in the ``$PYTHONPATH`` environment variable
+5) Run tests to make sure the code is working properly
 
 # How to use
 
