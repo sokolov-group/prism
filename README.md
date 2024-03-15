@@ -62,17 +62,17 @@ The type of excited states is controled by the ```method_type``` parameter of MR
 Currently, the only excited states that can be simulated using MR-ADC in Prism are core-ionized states probed in photoelectron spectroscopy.
 These excitations are simulated by introducing core-valence separation approximation (CVS) and the resulting method is abbreviated as CVS-IP-MR-ADC.
 
-The CVS-IP-MR-ADC calculations can be performed at four different levels of theory that are specified using the ```method``` parameter: ```mr-adc(0)```, ```mr-adc(1)```, ```mr-adc(2)```, ```mr-adc(2)-x```.
+The CVS-IP-MR-ADC calculations can be performed at four different levels of theory that are specified using the ```method``` parameter: ```'mr-adc(0)'```, ```'mr-adc(1)'```, ```'mr-adc(2)'```, ```'mr-adc(2)-x'```.
 
 Other important parameters are:
- - ```ncvs``` : The number of core orbitals to be included in the simulation. This number should ideally correspond to the index of highest-energy occupied orbital, from which electrons are allowed to be excited from. E.g., probing the 1s orbital of C in CO can be done by setting ```ncvs = 2```.
- - ```nroots```: The number of excited states (or transitions) to be calculated. 
- - ```max_cycle```: The maximum number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix.
- - ```tol_e```: Convergence tolerance for the excitation energies in the Davidson diagonalization.
- - ```tol_davidson```: Convergence tolerance for the residual in the Davidson diagonalization.
- - ```analyze_spec_factor```: Request the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol```.
- - ```s_thresh_singles```: Parameter for removing linearly dependent single excitations. For experts only.
- - ```s_thresh_doubles```: Parameter for removing linearly dependent double excitations. For experts only.
+ - ```ncvs``` (integer): The number of core orbitals to be included in the simulation. This number should ideally correspond to the index of highest-energy occupied orbital, from which electrons are allowed to be excited from. E.g., probing the 1s orbital of C in CO can be done by setting ```ncvs = 2```.
+ - ```nroots``` (integer): The number of excited states (or transitions) to be calculated. 
+ - ```max_cycle``` (integer): The maximum number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix.
+ - ```tol_e``` (float): Convergence tolerance for the excitation energies in the Davidson diagonalization.
+ - ```tol_davidson``` (float): Convergence tolerance for the residual in the Davidson diagonalization.
+ - ```analyze_spec_factor``` (boolean): Request the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol```.
+ - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single excitations. For experts only.
+ - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent double excitations. For experts only.
 
 Additionally, the memory and disk usage can be greatly reduced by approximating the two-electron integrals with density-fitting (DF). 
 An example of MR-ADC calculation with density fitting can be found [here](https://github.com/sokolov-group/prism/blob/main/examples/cvs_ip_mr_adc/05-density_fitting.py). 
