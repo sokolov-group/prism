@@ -55,7 +55,7 @@ The parameter ```ncvs``` controls the number of core orbitals in the hydrogen fl
 For example, setting ```ncvs = 1``` corresponds to exciting electrons from the 1s orbitals of fluorine atoms, while ```ncvs = 2``` would correspond to probing the 2s excitations.
 Other examples can be found [here](examples/).
 
-# Methods and Algorithms
+# Methods and algorithms
 ## Multireference algebraic diagrammatic construction theory
 Multireference algebraic diagrammatic construction theory can simulate a variety of excited electronic states (neutral excitations, ionization, electron attachment, core excitation and ionization).
 The type of excited states is controled by the ```method_type``` parameter of MR-ADC class.
@@ -103,25 +103,25 @@ Here, ```mr_adc_dyson_mos.molden``` is the molden file that can be processed usi
 - Dyson Orbitals:
 - Orbital analysis or contributions to spectroscopic factors
 
-# Authors and Contributors
+# Authors and contributors
 [//]: # (To be moved to AUTHORS file)
 ## Prism Interface
-- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
+- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 
 ## pc-NEVPT2 Amplitudes
-- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
+- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 
 ## CVS-IP-MR-ADC Method
-- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
+- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 
 ## Contributors to the spin-orbital Prism (pilot implementation)
-- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 - Koushik Chatterjee <koushikchatterjee7@gmail.com>
 - Ilia Mazin <ilia.mazin@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
+- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 
 # How to cite
 If you include results from Prism in your publication, please cite:
