@@ -1,6 +1,6 @@
 # Prism
 Prism is a Python implementation of electronic structure theories for simulating spectroscopic properties.
-Currently, Prism features methods of multireference algebraic diagrammatic construction theory (MR-ADC) for simulating core-ionized states (CVS-IP).
+Currently, Prism features the methods of multireference algebraic diagrammatic construction theory (MR-ADC) for simulating core-ionized states (CVS-IP).
 
 # How to install
 ## Requirements
@@ -53,17 +53,38 @@ e, p, x = mr_adc.kernel()
 In the example above, a calculation using CVS-IP-MR-ADC(2) for 10 excited states (roots) is set up. 
 The parameter ```ncvs``` controls the number of core orbitals in the hydrogen fluoride molecule, for which excited states are calculated.
 For example, setting ```ncvs = 1``` corresponds to exciting electrons from the 1s orbitals of fluorine atoms, while ```ncvs = 2``` would correspond to probing the 2s excitations.
-Detailed examples of the implemented methods can be found [here](examples/).
+Other examples can be found [here](examples/).
 
 # Methods and Algorithms
-## Core-Valence Separation for Ionization Processes of Multireference Algebraic Diagrammatic Construction (CVS-IP-MR-ADC) Theory
-CVS-IP-MR-ADC has the following adjustable parameters:
- - ```method```: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x 
- - ```method_type```: cvs-ip
- - ```ncvs``` : the number of core orbitals 
- - ```nroots```: the number of toots 
+## Multireference algebraic diagrammatic construction theory
+Multireference algebraic diagrammatic construction theory can simulate a variety of excited electronic states (neutral excitations, ionization, electron attachment, core excitation and ionization).
+The type of excited states is controled by the ```method_type``` parameter of MR-ADC class.
+Currently, the only excited states that can be simulated using MR-ADC in Prism are core-ionized states probed in photoelectron spectroscopy.
+These excitations are simulated by introducing core-valence separation approximation (CVS) and the resulting method is abbreviated as CVS-IP-MR-ADC.
 
-Additionally, the memory and disk usage can be greatly reduced by approximating the two-electron integrals with density-fitting. One can see an example of density fitting in a MR-ADC calculation in [this example](https://github.com/sokolov-group/prism/blob/main/examples/cvs_ip_mr_adc/05-density_fitting.py). DF is not used by default but can be invoked via the ```density_fit()``` method. One can overwrite the default choice of the auxiliary basis (for example, ```density_fit('cc-pvdz-jkfit')``` The more detail is in the [Pyscf website](https://pyscf.org/user/df.html) Besides, after running a MR-ADC calculation, one can generate the Dyson molecular orbitals (MOs):
+The CVS-IP-MR-ADC calculations can be performed at four different levels of theory that are specified using the ```method``` parameter: ```mr-adc(0)```, ```mr-adc(1)```, ```mr-adc(2)```, ```mr-adc(2)-x```.
+
+Other important parameters are:
+ - ```ncvs``` : The number of core orbitals to be included in the simulation. This number should ideally correspond to the index of higheest-energy occupied orbital, from which electrons are allowed to be excited from. E.g., probing the 1s orbital of C in CO can be done by setting ``ncvs = 2```.
+ - ```nroots```: The number of excited states (or transitions) to be calculated. 
+ - ```max_cycle```: The number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix.
+ - ```tol_e```: Convergence tolerance for the excitation energies in the Davidson diagonalization
+ - ```tol_davidson```: Convergence tolerance for the residual in the Davidson diagonalization
+ - ```analyze_spec_factor```: Request the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol```
+ - ```s_thresh_singles```: Parameter for removing linearly dependent single excitations. For experts only.
+ - ```s_thresh_doubles```: Parameter for removing linearly dependent double excitations. For experts only.
+
+Additionally, the memory and disk usage can be greatly reduced by approximating the two-electron integrals with density-fitting (DF). 
+An example of MR-ADC calculation with density fitting can be found [here](https://github.com/sokolov-group/prism/blob/main/examples/cvs_ip_mr_adc/05-density_fitting.py). 
+DF is not used by default but can be invoked using the ```density_fit()``` function call. 
+One can overwrite the default choice of the auxiliary basis with a specified one (for example, ```density_fit('cc-pvdz-ri')```. 
+More details about setting up calculations with density fitting can be found on the [Pyscf website](https://pyscf.org/user/df.html).
+Please note that DF is an approximation, which accuracy depends on the quality of the auxiliary basis set.
+Provided that a good auxiliary basis set is used, the DF errors are usually less than 0.01 eV in excitation energy.
+We recommend to use the RI- (or RIFIT-) auxiliary basis sets to approximate the integrals in the MR-ADC calculations.
+The reference CASSCF calculations can be run either using the exact or density-fitted two-electron integrals approximated using the JKFIT-type auxiliary basis sets.
+
+The excited states with large spectroscopic factors can be visualized by generating the Dyson molecular orbitals (MOs):
 
 ```python
 from prism.mr_adc_cvs_ip import compute_dyson_mo
@@ -72,103 +93,15 @@ dyson_mos = compute_dyson_mo(mr_adc, x)
 molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
 ```
 
-Where mr_adc_dyson_mos.molden is the molden file name.
+Here, ```mr_adc_dyson_mos.molden``` is the molden file that can be processed using a variety of orbital visualization software (e.g., JMOL).
 
-# Features and capabilities
+# Short list of features:
 
 ## CVS-IP-MR-ADC
-Data produced by default:
-- Number of CASCI states and their excitation energies (a.u., eV)
-- spectroscopic intensities
-
-Data produced if requested
+- Calculation excitation energies up to MR-ADC(2)-X
+- Photoelectron transition intensities (spectroscopic factors) up to MR-ADC(2)-X
 - Dyson Orbitals:
-  - ```python
-    from prism.mr_adc_cvs_ip import compute_dyson_mo
-    from pyscf.tools import molden
-    dyson_mos = compute_dyson_mo(mr_adc, x)
-    molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
-    ```
-- Spectral Analysis:
-  - ```python
-    mr_adc.analyze_spec_factor = True
-    ``` 
-
-# OLD:
-
-# Available Methods
-[//]: # (Description of method types, levels of theory)
-
-- [Multireference Algebraic Diagrammatic Construction (MR-ADC) Theory](#multireference-algebraic-diagrammatic-construction-mr-adc-theory)
-- [Density Fitting](#density-fitting-df)
-- [Dyson Molecular Orbitals](#dyson-molecular-orbitals)
-
-An example of a core-valence separation for ionization processes (CVS-IP) computation using the default MR-ADC method (MR-ADC(2)) is shown below:
-
-```python
-from pyscf import gto, scf, mcscf
-import prism.interface
-import prism.mr_adc
-mol = gto.M(atom = 'H 0 0 0; F 0 0 0.91', basis = 'cc-pvdz')
-mf = scf.RHF(mol).run()
-mc = mcscf.CASSCF(mf, 6, 6).run()
-interface = prism.interface.PYSCF(mf, mc, pot_einsum = True)
-mr_adc = prism.mr_adc.MRADC(interface)
-mr_adc.method_type = "cvs-ip"
-mr_adc.ncvs = 1
-e, p, x = mr_adc.kernel()
-```
-
-The MR-ADC calculation is based on both the SCF and MCSCF calculations. The number of core orbitals that are being probed in the calculation is controlled by ```ncvs```.
-
-One can specify the order and the number of roots of the desired MR-ADC computation:
-
-```python
-mr_adc.method = "mr-adc(2)-x"
-mr_adc.nroots = 8
-```
-
-Additionally, the memory and disk usage can be greatly reduced by approximating the two-electron integrals with density-fitting. One can see an example of density fitting in a MR-ADC calculation in [this example](https://github.com/sokolov-group/prism/blob/main/examples/cvs_ip_mr_adc/05-density_fitting.py).
-
-## Density Fitting (DF)
-[//]: # (Description of integrals to be used)
-
-DF is not used by default but can be invoked via the ```density_fit()``` method. Here is an example of using DF in a SCF and MCSCF calculation:
-
-```python
-from pyscf import gto, scf, mcscf
-mol = gto.M(atom = 'H 0 0 0; F 0 0 0.91, basis = 'def2-tzvp')
-mf = scf.RHF(mol).density_fit().run()
-mc = mcscf.CASSCF(mf, 6, 6).density_fit().run()
-```
-
-One can overwrite the default choice of the auxiliary basis:
-
-```python
-from pyscf import gto, scf, mcscf
-import prism.interface
-import prism.mr_adc
-mol = gto.M(atom = 'H 0 0 0; F 0 0 0.91', basis = 'cc-pvdz')
-mf = scf.RHF(mol).run()
-mc = mcscf.CASSCF(mf, 6, 6).density_fit('cc-pvdz-jkfit').run()
-interface = prism.interface.PYSCF(mf, mc, pot_einsum = True)
-mr_adc = prism.mr_adc.MRADC(interface).density_fit('cc-pvdz-ri')
-mr_adc.method_type = "cvs-ip"
-mr_adc.ncvs = 1
-e, p, x = mr_adc.kernel()
-```
-
-## Dyson Molecular Orbitals
-[//]: # (Capabilities / Features)
-
-After running a MR-ADC calculation, one can generate the Dyson molecular orbitals (MOs):
-
-```python
-from prism.mr_adc_cvs_ip import compute_dyson_mo
-from pyscf.tools import molden
-dyson_mos = compute_dyson_mo(mr_adc, x)
-molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
-```
+- Orbital analysis or contributions to spectroscopic factors
 
 # Authors and Contributors
 [//]: # (To be moved to AUTHORS file)
