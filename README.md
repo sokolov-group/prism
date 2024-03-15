@@ -10,17 +10,19 @@ Python-based implementation of electronic structure theories for simulating spec
 - [Authors and Contributors](#authors-and-contributors)
 
 # Installation
-Copy the actual Prism repository using ```git```:
+## Requirements
+- Python 3.7 or older;
+- [PySCF 2.2 or older](https://github.com/pyscf/pyscf/), including its [dependencies](https://pyscf.org/install.html);
+- Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions
 
+## How to install
+1) Install [PySCF](https://github.com/pyscf/pyscf/) and make sure it is included in the ``$PYTHONPATH`` environment variable`
+2) Clone the Prism repository:
 ```python
 git clone https://github.com/sokolov-group/prism.git
 ```
-
-To use it, be sure that your ```$PYTHONPATH``` variable includes this directory.
-
-## Dependencies
-- [PySCF quantum-chemistry framework](https://github.com/pyscf/pyscf/);
-- [NumPy scientific computation package](https://numpy.org/);
+3) Include the path to the folder where Prism is located in the ```$PYTHONPATH``` environment variable
+4) Run tests to make sure the code is working properly
 
 # How to use
 
