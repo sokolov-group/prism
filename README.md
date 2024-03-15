@@ -23,6 +23,9 @@ To use it, be sure that your ```$PYTHONPATH``` variable includes this directory.
 - [NumPy scientific computation package](https://numpy.org/);
 
 # How to use
+
+[//]: # (Input file structure) - Mallard
+
 In the Python3 interpreter or in a Python3 script, import the Prism interface using:
 
 ```python
@@ -32,12 +35,27 @@ import prism.interface
 Detailed examples of the implemented methods can be found [here](examples/).
 An extensive and comprehensive manual of Prism will be released soon.
 
-## Available Methods
+
+
+[//]: # (Methods and algorithms) - Nick
+
+
+[//]: # (Features and capabilities) - Alex
+
+
+
+
+
+
+# OLD:
+
+# Available Methods
+[//]: # (Description of method types, levels of theory)
+
 - [Multireference Algebraic Diagrammatic Construction (MR-ADC) Theory](#multireference-algebraic-diagrammatic-construction-mr-adc-theory)
 - [Density Fitting](#density-fitting-df)
 - [Dyson Molecular Orbitals](#dyson-molecular-orbitals)
 
-## Multireference Algebraic Diagrammatic Construction (MR-ADC) Theory
 An example of a core-valence separation for ionization processes (CVS-IP) computation using the default MR-ADC method (MR-ADC(2)) is shown below:
 
 ```python
@@ -66,6 +84,7 @@ mr_adc.nroots = 8
 Additionally, the memory and disk usage can be greatly reduced by approximating the two-electron integrals with density-fitting. One can see an example of density fitting in a MR-ADC calculation in [this example](https://github.com/sokolov-group/prism/blob/main/examples/cvs_ip_mr_adc/05-density_fitting.py).
 
 ## Density Fitting (DF)
+[//]: # (Description of integrals to be used)
 
 DF is not used by default but can be invoked via the ```density_fit()``` method. Here is an example of using DF in a SCF and MCSCF calculation:
 
@@ -93,6 +112,7 @@ e, p, x = mr_adc.kernel()
 ```
 
 ## Dyson Molecular Orbitals
+[//]: # (Capabilities / Features)
 
 After running a MR-ADC calculation, one can generate the Dyson molecular orbitals (MOs):
 
@@ -102,11 +122,6 @@ from pyscf.tools import molden
 dyson_mos = compute_dyson_mo(mr_adc, x)
 molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
 ```
-
-# Features
-[//]: # (To be moved to FEATURES file)
-## Core-valence separation for ionization processes MR-ADC (CVS-IP-MR-ADC) method
-- Second-order perturbation order: CVS-IP-MR-ADC(2)
 
 # Authors and Contributors
 [//]: # (To be moved to AUTHORS file)
@@ -127,3 +142,5 @@ molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
 - Koushik Chatterjee <koushikchatterjee7@gmail.com>
 - Ilia Mazin <ilia.mazin@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
+
+[//]: # (Citation)
