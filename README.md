@@ -109,11 +109,11 @@ Here, ```mr_adc_dyson_mos.molden``` is the molden file that can be processed usi
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 
-## pc-NEVPT2 Amplitudes
+## NEVPT2 amplitudes
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 
-## CVS-IP-MR-ADC Method
+## CVS-IP-MR-ADC method
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 
