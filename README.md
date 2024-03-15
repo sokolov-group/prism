@@ -26,12 +26,31 @@ git clone https://github.com/sokolov-group/prism.git
 
 # How to use
 
-[//]: # (Input file structure) - Mallard
-
-In the Python3 interpreter or in a Python3 script, import the Prism interface using:
+Prism is dependent on PySCF, and MR-ADC calculations are based on both SCF and MCSCF calculations. Thus to run an MR-ADC calculation in the Python3 interpreter or in a Python3 script, the following will need to be imported:
 
 ```python
+from pyscf import gto, scf, mcscf
 import prism.interface
+import prism.mr_adc
+```
+
+Then, as explained in the [PySCF user guide](https://pyscf.org/user.html), a mole object needs to be created along with running both an SCF and MCSCF calculation:
+
+```python
+mol = gto.M(atom = 'H 0 0 0; F 0 0 0.91', basis = 'cc-pvdz')
+mf = scf.RHF(mol).run()
+mc = mcscf.CASSCF(mf, 6, 6).run()
+```
+
+Finally the prism calculation can be done. First the interface and object for the calculation are created, followed by customizing the claculation. Then the actual calculation can be run with the ```kernel()``` function. For example, a CVS-IP-MR-ADC calculation can be run with the general format as follows:
+
+```python
+interface = prism.interface.PYSCF(mf, mc, pot_einsum = True)
+mr_adc = prism.mr_adc.MRADC(interface)
+mr_adc.method = "mr-adc(2)"
+mr_adc.method_type = "cvs-ip"
+mr_adc.ncvs = 1
+e, p, x = mr_adc.kernel()
 ```
 
 Detailed examples of the implemented methods can be found [here](examples/).
