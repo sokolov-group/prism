@@ -16,7 +16,6 @@
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #                  Ilia M. Mazin <ilia.mazin@gmail.com>
-#              Donna H. Odhiambo <odhiambo.donna@gmail.com>
 #
 
 import sys
@@ -285,6 +284,10 @@ def compute_trans_properties(mr_adc, E, U):
     elif mr_adc.method_type == "ee":
         X = mr_adc_ee.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "cvs-ee":
+###
+        print("\n*** Transition properties are currently under construction! ***")
+        exit()
+###
         X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
     else:
         msg = "Unknown Method Type ..."

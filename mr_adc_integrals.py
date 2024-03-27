@@ -153,42 +153,53 @@ def transform_integrals_2e_incore(mr_adc):
     # EE and CVS-EE
     elif mr_adc.method_type == "ee" or mr_adc.method_type == "cvs-ee":
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+            mr_adc.v2e.ccaa = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
+            mr_adc.v2e.ccae = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_e)
+
             mr_adc.v2e.ccca = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
             mr_adc.v2e.ccce = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_e)
 
-            mr_adc.v2e.ccaa = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
-            mr_adc.v2e.caca = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_a)
             mr_adc.v2e.caac = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
-            mr_adc.v2e.cace = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_e)
-            mr_adc.v2e.ccae = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_e)
             mr_adc.v2e.caec = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_c)
-            mr_adc.v2e.ccee = transform_2e_chem_incore(interface, mo_c, mo_c, mo_e, mo_e)
-            mr_adc.v2e.cece = transform_2e_chem_incore(interface, mo_c, mo_e, mo_c, mo_e)
-            mr_adc.v2e.ceec = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_c)
+
+            mr_adc.v2e.caca = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_a)
+            mr_adc.v2e.cace = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_e)
+
+            mr_adc.v2e.ccee = tools.create_dataset('ccee', tmpfile, (ncore, ncore, nextern, nextern))
+            mr_adc.v2e.ceec = tools.create_dataset('ceec', tmpfile, (ncore, nextern, nextern, ncore))
+            mr_adc.v2e.ccee[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_e, mo_e)
+            mr_adc.v2e.ceec[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_c)
+
+            mr_adc.v2e.cece = tools.create_dataset('cece', tmpfile, (ncore, nextern, ncore, nextern))
+            mr_adc.v2e.ceae = tools.create_dataset('ceae', tmpfile, (ncore, nextern, ncas, nextern))
+            mr_adc.v2e.cece[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_c, mo_e)
+            mr_adc.v2e.ceae[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_e)
 
             mr_adc.v2e.caaa = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_a)
             mr_adc.v2e.caae = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_e)
             mr_adc.v2e.ceaa = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_a)
-            mr_adc.v2e.ceae = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_e)
 
             mr_adc.v2e.aaae = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_e)
-            mr_adc.v2e.aeae = transform_2e_chem_incore(interface, mo_a, mo_e, mo_a, mo_e)
-
+            mr_adc.v2e.aeae = tools.create_dataset('aeae', tmpfile, (ncas, nextern, ncas, nextern))
+            mr_adc.v2e.aeae[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_a, mo_e)
+ 
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.ccca = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
             mr_adc.v2e.ccce = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_e)
 
             mr_adc.v2e.caea = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_a)
 
-            mr_adc.v2e.ceea = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_a)
-            mr_adc.v2e.caee = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_e)
+            mr_adc.v2e.caee = tools.create_dataset('caee', tmpfile, (ncore, ncas, nextern, nextern))
+            mr_adc.v2e.ceea = tools.create_dataset('ceea', tmpfile, (ncore, nextern, nextern, ncas))
+            mr_adc.v2e.caee[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_e)
+            mr_adc.v2e.ceea[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_a)
+
+            mr_adc.v2e.aaee = tools.create_dataset('aaee', tmpfile, (ncas, ncas, nextern, nextern))
+            mr_adc.v2e.aeea = tools.create_dataset('aeea', tmpfile, (ncas, nextern, nextern, ncas))
+            mr_adc.v2e.aaee[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_e, mo_e)
+            mr_adc.v2e.aeea[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
 
             mr_adc.v2e.ceee = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_e, compacted = True)
-
-
-            mr_adc.v2e.aaee = transform_2e_chem_incore(interface, mo_a, mo_a, mo_e, mo_e)
-            mr_adc.v2e.aeea = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
-
             mr_adc.v2e.aeee = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_e, compacted = True)
 
     # Effective one-electron integrals
@@ -801,6 +812,12 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.vaav = np.ascontiguousarray(mr_adc.v2e.caac[ncvs:, :, :, ncvs:])
             del(mr_adc.v2e.caac)
 
+            mr_adc.v2e.xaex = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs, :, :, :ncvs])
+            mr_adc.v2e.xaev = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs, :, :, ncvs:])
+            mr_adc.v2e.vaex = np.ascontiguousarray(mr_adc.v2e.caec[ncvs:, :, :, :ncvs])
+            mr_adc.v2e.vaev = np.ascontiguousarray(mr_adc.v2e.caec[ncvs:, :, :, ncvs:])
+            del(mr_adc.v2e.caec)
+
             mr_adc.v2e.xaxe = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs, :, :ncvs, :])
             mr_adc.v2e.xave = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs, :, ncvs:, :])
             mr_adc.v2e.vaxe = np.ascontiguousarray(mr_adc.v2e.cace[ncvs:, :, :ncvs, :])
@@ -812,12 +829,6 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.vxae = np.ascontiguousarray(mr_adc.v2e.ccae[ncvs:, :ncvs, :, :])
             mr_adc.v2e.vvae = np.ascontiguousarray(mr_adc.v2e.ccae[ncvs:, ncvs:, :, :])
             del(mr_adc.v2e.ccae)
-
-            mr_adc.v2e.xaex = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs, :, :, :ncvs])
-            mr_adc.v2e.xaev = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs, :, :, ncvs:])
-            mr_adc.v2e.vaex = np.ascontiguousarray(mr_adc.v2e.caec[ncvs:, :, :, :ncvs])
-            mr_adc.v2e.vaev = np.ascontiguousarray(mr_adc.v2e.caec[ncvs:, :, :, ncvs:])
-            del(mr_adc.v2e.caec)
 
             mr_adc.v2e.xxee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, :ncvs, :, :])
             mr_adc.v2e.xvee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, ncvs:, :, :])
@@ -832,9 +843,6 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             del(mr_adc.v2e.cece)
 
             mr_adc.v2e.xeex = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs, :, :, :ncvs])
-            mr_adc.v2e.xeev = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs, :, :, ncvs:])
-            mr_adc.v2e.veex = np.ascontiguousarray(mr_adc.v2e.ceec[ncvs:, :, :, :ncvs])
-            mr_adc.v2e.veev = np.ascontiguousarray(mr_adc.v2e.ceec[ncvs:, :, :, ncvs:])
             del(mr_adc.v2e.ceec)
 
             mr_adc.v2e.xaaa = np.ascontiguousarray(mr_adc.v2e.caaa[:ncvs, :, :, :])
@@ -854,17 +862,29 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             del(mr_adc.v2e.ceae)
             
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :])
-            mr_adc.v2e.xxva = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :])
-            mr_adc.v2e.vxxa = np.ascontiguousarray(mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :])
-            del(mr_adc.v2e.ccca)
 
+            ###WiP: use the non-efficient oeee integrals until cvs-ee blocks are fully implemented
+            mo = mr_adc.mo
+            ncore = mr_adc.ncore
+            nocc = mr_adc.nocc
+            mo_c = mo[:, :ncore].copy()
+            mo_a = mo[:, ncore:nocc].copy()
+            mo_e = mo[:, nocc:].copy()
+            mr_adc.v2e.ceee = transform_2e_chem_incore(mr_adc.interface, mo_c, mo_e, mo_e, mo_e)
+            mr_adc.v2e.aeee = transform_2e_chem_incore(mr_adc.interface, mo_a, mo_e, mo_e, mo_e)
+            ###
             mr_adc.v2e.xeee = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs, :, :, :])
             mr_adc.v2e.veee = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:, :, :, :])
             del(mr_adc.v2e.ceee)
 
-            mr_adc.v2e.xeea = np.ascontiguousarray(mr_adc.v2e.ceea[:ncvs, :, :, :])
-            mr_adc.v2e.veea = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:, :, :, :])
+            mr_adc.v2e.xeea = tools.create_dataset('xeea', tmpfile, (ncvs, nextern, nextern, ncas))
+            mr_adc.v2e.veea = tools.create_dataset('veea', tmpfile, (nval, nextern, nextern, ncas))
+
+            mr_adc.v2e.xeea[:] = np.ascontiguousarray(mr_adc.v2e.ceea[:ncvs, :, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veea[:] = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:, :, :, :])
+            tools.flush(tmpfile)
             del(mr_adc.v2e.ceea)
 
             mr_adc.v2e.xaea = np.ascontiguousarray(mr_adc.v2e.caea[:ncvs, :, :, :])
@@ -874,11 +894,6 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.xaee = np.ascontiguousarray(mr_adc.v2e.caee[:ncvs, :, :, :])
             mr_adc.v2e.vaee = np.ascontiguousarray(mr_adc.v2e.caee[ncvs:, :, :, :])
             del(mr_adc.v2e.caee)
-
-            mr_adc.v2e.xxxe = np.ascontiguousarray(mr_adc.v2e.ccce[:ncvs, :ncvs, :ncvs, :])
-            mr_adc.v2e.xxve = np.ascontiguousarray(mr_adc.v2e.ccce[:ncvs, :ncvs, ncvs:, :])
-            mr_adc.v2e.vxxe = np.ascontiguousarray(mr_adc.v2e.ccce[ncvs:, :ncvs, :ncvs, :])
-            del(mr_adc.v2e.ccce)
 
     # Effective one-electron integrals
     mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :])

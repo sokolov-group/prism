@@ -23,7 +23,6 @@ import sys
 import time
 import numpy as np
 import prism.mr_adc_overlap as mr_adc_overlap
-import prism.mr_adc_integrals as mr_adc_integrals
 
 def compute_excitation_manifolds(mr_adc):
 
@@ -48,7 +47,7 @@ def compute_excitation_manifolds(mr_adc):
     print("Dimension of h0 excitation manifold:               %d" % mr_adc.h0.dim)
 
     # Orthogonalized zeroth-order manifold
-    mr_adc.S12.ca = mr_adc_overlap.compute_S12_p1(mr_adc, ignore_print = True)
+    mr_adc.S12.ca = mr_adc_overlap.compute_S12_p1(mr_adc)
 
     mr_adc.h_orth.n_ce_caea = mr_adc.h0.n_ce
     mr_adc.h_orth.n_ca_caaa = mr_adc.ncvs * mr_adc.S12.ca.shape[1]
@@ -420,9 +419,6 @@ def compute_M_00(mr_adc):
     M_00[s_ce_aa:f_ce_aa, s_ce_aa:f_ce_aa] += temp
     M_00[s_ce_bb:f_ce_bb, s_ce_bb:f_ce_bb] += temp
 
-    print ("Asymmetry of ce - ce (0) sublock:                 %.5e" % np.linalg.norm(temp-temp.T))
-    print ("Norm of subblock:                               %f\n" % (np.linalg.norm(temp))) 
-
     del temp
 
     # CA - CA
@@ -439,9 +435,6 @@ def compute_M_00(mr_adc):
     M_00[s_ca_aa:f_ca_aa, s_ca_aa:f_ca_aa] += temp
     M_00[s_ca_bb:f_ca_bb, s_ca_bb:f_ca_bb] += temp
 
-    print ("Asymmetry of ca - ca (0) sublock:                 %.5e" % np.linalg.norm(temp-temp.T))
-    print ("Norm of subblock:                                %f\n" % (np.linalg.norm(temp))) 
-    
     del temp
 
     ## First-order terms
@@ -30918,6 +30911,7 @@ def compute_preconditioner(mr_adc, M_00):
 
     ## Indices
     cc_tril_ind = np.tril_indices(ncvs, k = -1)
+    aa_tril_ind = np.tril_indices(ncas, k = -1)
     ee_tril_ind = np.tril_indices(nextern, k = -1)
 
     # Build the empty preconditioner
@@ -30982,7 +30976,183 @@ def compute_preconditioner(mr_adc, M_00):
         return precond_ce
 
     ## CCAA
+    def compute_preconditioner__CCAA(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+        rdm_cccaaa = mr_adc.rdm.cccaaa
+
+        ## Overlap Matrices
+        S12_ccaa = mr_adc.S12.ccaa
+
+        ## abab
+        precond_ccaa__abab  = einsum('WXZY,II,JJ->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
+        precond_ccaa__abab -= 1/3 * einsum('I,II,JJ,WZXY->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/6 * einsum('I,II,JJ,WZYX->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/3 * einsum('J,II,JJ,WZXY->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/6 * einsum('J,II,JJ,WZYX->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += einsum('WX,II,JJ,YZ->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ccaa__abab += einsum('YZ,II,JJ,WX->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('WX,II,JJ,YZ->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab += 1/6 * einsum('Xx,II,JJ,WZYx->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/3 * einsum('Xx,II,JJ,WZxY->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('YZ,II,JJ,WX->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab += 1/3 * einsum('Yx,II,JJ,WZXx->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/6 * einsum('Yx,II,JJ,WZxX->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('WXZx,II,JJ,Yx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('WXxY,II,JJ,Zx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('WXxy,II,JJ,YxZy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('WxZY,II,JJ,Xx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab += 1/3 * einsum('WxyX,II,JJ,YyZx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/6 * einsum('WxyX,II,JJ,YyxZ->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/6 * einsum('WxyY,II,JJ,XyZx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/3 * einsum('WxyY,II,JJ,XyxZ->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('XxYZ,II,JJ,Wx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab += 1/3 * einsum('XxYy,II,JJ,WZxy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/6 * einsum('XxYy,II,JJ,WZyx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/6 * einsum('XxyZ,II,JJ,WyYx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/3 * einsum('XxyZ,II,JJ,WyxY->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/8 * einsum('Xxyz,II,JJ,WZyYxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/24 * einsum('Xxyz,II,JJ,WZyYzx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab += 7/24 * einsum('Xxyz,II,JJ,WZyxYz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/24 * einsum('Xxyz,II,JJ,WZyxzY->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/24 * einsum('Xxyz,II,JJ,WZyzYx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/24 * einsum('Xxyz,II,JJ,WZyzxY->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('YZxy,II,JJ,WxXy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/3 * einsum('YxyZ,II,JJ,WyXx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/6 * einsum('YxyZ,II,JJ,WyxX->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += 7/24 * einsum('Yxyz,II,JJ,WZyXxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/24 * einsum('Yxyz,II,JJ,WZyXzx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab += 1/8 * einsum('Yxyz,II,JJ,WZyxXz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/24 * einsum('Yxyz,II,JJ,WZyxzX->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/24 * einsum('Yxyz,II,JJ,WZyzXx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= 1/24 * einsum('Yxyz,II,JJ,WZyzxX->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), rdm_cccaaa, optimize = einsum_type)
+        precond_ccaa__abab -= einsum('I,II,JJ,WX,YZ->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), np.identity(ncas), optimize = einsum_type)
+        precond_ccaa__abab -= einsum('J,II,JJ,WX,YZ->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), np.identity(ncas), optimize = einsum_type)
+        precond_ccaa__abab += 1/2 * einsum('I,II,JJ,WX,YZ->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab += 1/2 * einsum('I,II,JJ,YZ,WX->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab += 1/2 * einsum('J,II,JJ,WX,YZ->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab += 1/2 * einsum('J,II,JJ,YZ,WX->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('Xx,II,JJ,YZ,Wx->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('Yx,II,JJ,WX,Zx->IJXYWZ', h_aa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab += einsum('WXxy,II,JJ,YZ,xy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('WxyX,II,JJ,YZ,yx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('Xxyz,II,JJ,YZ,Wyxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+        precond_ccaa__abab += einsum('YZxy,II,JJ,WX,xy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('YxyZ,II,JJ,WX,yx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_ccaa__abab -= 1/2 * einsum('Yxyz,II,JJ,WX,Zyxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+       
+        precond_ccaa__abab = precond_ccaa__abab.reshape(ncvs, ncvs, ncas**2, ncas**2)
+        precond_ccaa__abab = einsum('IJXY,XP,YP->IJP', precond_ccaa__abab, S12_ccaa, S12_ccaa, optimize = einsum_type) 
+
+        return precond_ccaa__abab
+
     ## CVAA
+    def compute_preconditioner__CVAA(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nval = mr_adc.nval
+        ncas = mr_adc.ncas
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_val = mr_adc.mo_energy.v
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+        rdm_cccaaa = mr_adc.rdm.cccaaa
+
+        ## Overlap Matrices
+        S12_ccaa = mr_adc.S12.ccaa
+
+        precond_cvaa  = einsum('WXZY,II,JJ->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), optimize = einsum_type)
+        precond_cvaa -= 1/3 * einsum('I,II,JJ,WZXY->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa -= 1/6 * einsum('I,II,JJ,WZYX->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa -= 1/3 * einsum('J,II,JJ,WZXY->IJXYWZ', e_val, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa -= 1/6 * einsum('J,II,JJ,WZYX->IJXYWZ', e_val, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += einsum('WX,II,JJ,YZ->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
+        precond_cvaa += einsum('YZ,II,JJ,WX->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('WX,II,JJ,YZ->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvaa += 1/6 * einsum('Xx,II,JJ,WZYx->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/3 * einsum('Xx,II,JJ,WZxY->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('YZ,II,JJ,WX->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvaa += 1/3 * einsum('Yx,II,JJ,WZXx->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/6 * einsum('Yx,II,JJ,WZxX->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('WXZx,II,JJ,Yx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('WXxY,II,JJ,Zx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('WXxy,II,JJ,YxZy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('WxZY,II,JJ,Xx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvaa += 1/3 * einsum('WxyX,II,JJ,YyZx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/6 * einsum('WxyX,II,JJ,YyxZ->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/6 * einsum('WxyY,II,JJ,XyZx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/3 * einsum('WxyY,II,JJ,XyxZ->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('XxYZ,II,JJ,Wx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvaa += 1/3 * einsum('XxYy,II,JJ,WZxy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/6 * einsum('XxYy,II,JJ,WZyx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/6 * einsum('XxyZ,II,JJ,WyYx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/3 * einsum('XxyZ,II,JJ,WyxY->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/8 * einsum('Xxyz,II,JJ,WZyYxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/24 * einsum('Xxyz,II,JJ,WZyYzx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa += 7/24 * einsum('Xxyz,II,JJ,WZyxYz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/24 * einsum('Xxyz,II,JJ,WZyxzY->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/24 * einsum('Xxyz,II,JJ,WZyzYx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/24 * einsum('Xxyz,II,JJ,WZyzxY->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('YZxy,II,JJ,WxXy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/3 * einsum('YxyZ,II,JJ,WyXx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 1/6 * einsum('YxyZ,II,JJ,WyxX->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += 7/24 * einsum('Yxyz,II,JJ,WZyXxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/24 * einsum('Yxyz,II,JJ,WZyXzx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa += 1/8 * einsum('Yxyz,II,JJ,WZyxXz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/24 * einsum('Yxyz,II,JJ,WZyxzX->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/24 * einsum('Yxyz,II,JJ,WZyzXx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= 1/24 * einsum('Yxyz,II,JJ,WZyzxX->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), rdm_cccaaa, optimize = einsum_type)
+        precond_cvaa -= einsum('I,II,JJ,WX,YZ->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(nval), np.identity(ncas), np.identity(ncas), optimize = einsum_type)
+        precond_cvaa -= einsum('J,II,JJ,WX,YZ->IJXYWZ', e_val, np.identity(ncvs), np.identity(nval), np.identity(ncas), np.identity(ncas), optimize = einsum_type)
+        precond_cvaa += 1/2 * einsum('I,II,JJ,WX,YZ->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa += 1/2 * einsum('I,II,JJ,YZ,WX->IJXYWZ', e_cvs, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa += 1/2 * einsum('J,II,JJ,WX,YZ->IJXYWZ', e_val, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa += 1/2 * einsum('J,II,JJ,YZ,WX->IJXYWZ', e_val, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('Xx,II,JJ,YZ,Wx->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('Yx,II,JJ,WX,Zx->IJXYWZ', h_aa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa += einsum('WXxy,II,JJ,YZ,xy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('WxyX,II,JJ,YZ,yx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('Xxyz,II,JJ,YZ,Wyxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+        precond_cvaa += einsum('YZxy,II,JJ,WX,xy->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('YxyZ,II,JJ,WX,yx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
+        precond_cvaa -= 1/2 * einsum('Yxyz,II,JJ,WX,Zyxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+
+        precond_cvaa = precond_cvaa.reshape(ncvs, nval, ncas**2, ncas**2)
+        precond_cvaa = einsum('IJXY,XP,YP->IJP', precond_cvaa, S12_ccaa, S12_ccaa, optimize = einsum_type) 
+
+        return precond_cvaa
 
     ## CCEA
     def compute_preconditioner__CCEA(mr_adc):
@@ -31009,17 +31179,22 @@ def compute_preconditioner(mr_adc, M_00):
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
 
-        precond_ccea  = einsum('XX,AA,II,JJ->IJAX', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type) 
-        precond_ccea += einsum('A,AA,II,JJ,XX->IJAX', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
-        precond_ccea -= einsum('I,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
-        precond_ccea -= einsum('J,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
-        precond_ccea -= 1/2 * einsum('A,AA,II,JJ,XX->IJAX', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
-        precond_ccea += 1/2 * einsum('I,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
-        precond_ccea += 1/2 * einsum('J,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
-        precond_ccea -= 1/2 * einsum('Xx,AA,II,JJ,Xx->IJAX', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
-        precond_ccea += einsum('XXxy,AA,II,JJ,xy->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
-        precond_ccea -= 1/2 * einsum('XxyX,AA,II,JJ,yx->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
-        precond_ccea -= 1/2 * einsum('Xxyz,AA,II,JJ,Xyxz->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+        ## Overlap Matrices
+        S12_ccea = mr_adc.S12.ccea
+
+        precond_ccea  = einsum('WX,AA,II,JJ->IJAXW', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), optimize = einsum_type)
+        precond_ccea += einsum('A,AA,II,JJ,WX->IJAXW', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ccea -= einsum('I,AA,II,JJ,WX->IJAXW', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ccea -= einsum('J,AA,II,JJ,WX->IJAXW', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        precond_ccea -= 1/2 * einsum('A,AA,II,JJ,WX->IJAXW', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea += 1/2 * einsum('I,AA,II,JJ,WX->IJAXW', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea += 1/2 * einsum('J,AA,II,JJ,WX->IJAXW', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea -= 1/2 * einsum('Xx,AA,II,JJ,Wx->IJAXW', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea += einsum('WXxy,AA,II,JJ,xy->IJAXW', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea -= 1/2 * einsum('WxyX,AA,II,JJ,yx->IJAXW', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_ccea -= 1/2 * einsum('Xxyz,AA,II,JJ,Wyxz->IJAXW', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+
+        precond_ccea = einsum("IJAXW,XP,WP->IJAP", precond_ccea, S12_ccea, S12_ccea, optimize = einsum_type)
 
         return precond_ccea
 
@@ -31050,21 +31225,25 @@ def compute_preconditioner(mr_adc, M_00):
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
 
-        precond_cvea  = einsum('XX,AA,II,JJ->IJAX', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
-        precond_cvea += einsum('A,AA,II,JJ,XX->IJAX', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
-        precond_cvea -= einsum('I,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
-        precond_cvea -= einsum('J,AA,II,JJ,XX->IJAX', e_val, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
-        precond_cvea -= 1/2 * einsum('A,AA,II,JJ,XX->IJAX', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
-        precond_cvea += 1/2 * einsum('I,AA,II,JJ,XX->IJAX', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
-        precond_cvea += 1/2 * einsum('J,AA,II,JJ,XX->IJAX', e_val, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
-        precond_cvea -= 1/2 * einsum('Xx,AA,II,JJ,Xx->IJAX', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
-        precond_cvea += einsum('XXxy,AA,II,JJ,xy->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
-        precond_cvea -= 1/2 * einsum('XxyX,AA,II,JJ,yx->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
-        precond_cvea -= 1/2 * einsum('Xxyz,AA,II,JJ,Xyxz->IJAX', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+        ## Overlap Matrices
+        S12_ccea = mr_adc.S12.ccea
+
+        precond_cvea  = einsum('WX,AA,II,JJ->IJAXW', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(nval), optimize = einsum_type)
+        precond_cvea += einsum('A,AA,II,JJ,WX->IJAXW', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
+        precond_cvea -= einsum('I,AA,II,JJ,WX->IJAXW', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
+        precond_cvea -= einsum('J,AA,II,JJ,WX->IJAXW', e_val, np.identity(nextern), np.identity(ncvs), np.identity(nval), np.identity(ncas), optimize = einsum_type)
+        precond_cvea -= 1/2 * einsum('A,AA,II,JJ,WX->IJAXW', e_extern, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea += 1/2 * einsum('I,AA,II,JJ,WX->IJAXW', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea += 1/2 * einsum('J,AA,II,JJ,WX->IJAXW', e_val, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea -= 1/2 * einsum('Xx,AA,II,JJ,Wx->IJAXW', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea += einsum('WXxy,AA,II,JJ,xy->IJAXW', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea -= 1/2 * einsum('WxyX,AA,II,JJ,yx->IJAXW', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ca, optimize = einsum_type)
+        precond_cvea -= 1/2 * einsum('Xxyz,AA,II,JJ,Wyxz->IJAXW', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(nval), rdm_ccaa, optimize = einsum_type)
+
+        precond_cvea = einsum("IJAXW,XP,WP->IJAP", precond_ccea, S12_ccea, S12_ccea, optimize = einsum_type)
 
         return precond_cvea
     
-
     ## CCEE
     def compute_preconditioner__CCEE(mr_adc):
         # Einsum definition from kernel
@@ -31110,11 +31289,47 @@ def compute_preconditioner(mr_adc, M_00):
         return precond_cvee
 
     ## CAEE
+    def compute_preconditioner__CAEE(mr_adc):
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nextern = mr_adc.nextern
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_extern = mr_adc.mo_energy.e
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+
+        ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        ## Overlap Matrices
+        S12_caee = mr_adc.S12.caee
+
+        precond_caee  = 1/2 * einsum('A,AA,BB,II,WX->IABXW', e_extern, np.identity(nextern), np.identity(nextern), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_caee += 1/2 * einsum('B,AA,BB,II,WX->IABXW', e_extern, np.identity(nextern), np.identity(nextern), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_caee -= 1/2 * einsum('I,AA,BB,II,WX->IABXW', e_cvs, np.identity(nextern), np.identity(nextern), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_caee -= 1/2 * einsum('Xx,AA,BB,II,Wx->IABXW', h_aa, np.identity(nextern), np.identity(nextern), np.identity(ncvs), rdm_ca, optimize = einsum_type)
+        precond_caee -= 1/2 * einsum('Xxyz,AA,BB,II,Wyxz->IABXW', v_aaaa, np.identity(nextern), np.identity(nextern), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
+
+        precond_caee = einsum("IABXW,XP,WP->IPAB", precond_caee, S12_caee, S12_caee, optimize = einsum_type)
+
+        return precond_caee
+
     ## CAAA
     ## CAEA
  
     # Compute preconditioner diagonal blocks
-    ## Zeroeth-order manifold
+    ## Zeroeth- and first-order manifolds
     if mr_adc.method in ("mr-adc(0)", "mr-adc(1)"):
 
         # Orthogonal excitation manifolds
@@ -31135,26 +31350,43 @@ def compute_preconditioner(mr_adc, M_00):
 
         ## CE preconditioner
         precond_ce = compute_preconditioner__CE(mr_adc)
+
         precond[ho_s_ce_caea__aa:ho_f_ce_caea__aa] = precond_ce.reshape(-1).copy() 
         precond[ho_s_ce_caea__bb:ho_f_ce_caea__bb] = precond_ce.reshape(-1).copy()
 
-    ## Zeroeth- and first-order manifolds
+    ## Second-order manifolds
     elif mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
         ## Excitation manifolds
-        ho_s_ccee__aaaa = mr_adc.h_orth.s_ccee__aaaa
-        ho_f_ccee__aaaa = mr_adc.h_orth.f_ccee__aaaa
-        ho_s_ccee__abab = mr_adc.h_orth.s_ccee__abab
-        ho_f_ccee__abab = mr_adc.h_orth.f_ccee__abab
+        ho_s_ccaa__aaaa = mr_adc.h_orth.s_ccaa__aaaa
+        ho_f_ccaa__aaaa = mr_adc.h_orth.f_ccaa__aaaa
+        ho_s_ccaa__abab = mr_adc.h_orth.s_ccaa__abab
+        ho_f_ccaa__abab = mr_adc.h_orth.f_ccaa__abab
+        ho_s_ccaa__bbbb = mr_adc.h_orth.s_ccaa__bbbb
+        ho_f_ccaa__bbbb = mr_adc.h_orth.f_ccaa__bbbb
         ho_s_ccea__aaaa = mr_adc.h_orth.s_ccea__aaaa
         ho_f_ccea__aaaa = mr_adc.h_orth.f_ccea__aaaa
         ho_s_ccea__abab = mr_adc.h_orth.s_ccea__abab
         ho_f_ccea__abab = mr_adc.h_orth.f_ccea__abab
         ho_s_ccea__bbbb = mr_adc.h_orth.s_ccea__bbbb
         ho_f_ccea__bbbb = mr_adc.h_orth.f_ccea__bbbb
+        ho_s_ccee__aaaa = mr_adc.h_orth.s_ccee__aaaa
+        ho_f_ccee__aaaa = mr_adc.h_orth.f_ccee__aaaa 
+        ho_s_ccee__abab = mr_adc.h_orth.s_ccee__abab
+        ho_f_ccee__abab = mr_adc.h_orth.f_ccee__abab
+        ho_s_caee__aaaa = mr_adc.h_orth.s_caee__aaaa
+        ho_f_caee__aaaa = mr_adc.h_orth.f_caee__aaaa
+        ho_s_caee__abab = mr_adc.h_orth.s_caee__abab
+        ho_f_caee__abab = mr_adc.h_orth.f_caee__abab
+        ho_s_caee__bbbb = mr_adc.h_orth.s_caee__bbbb
+        ho_f_caee__bbbb = mr_adc.h_orth.f_caee__bbbb
 
-        ## CCAA preconditioner (WiP)
-    
+        ## CCAA preconditioner
+        precond_ccaa = compute_preconditioner__CCAA(mr_adc)
+        precond[ho_s_ccaa__aaaa:ho_f_ccaa__aaaa] = precond_ccaa[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1)
+        precond[ho_s_ccaa__abab:ho_f_ccaa__abab] = precond_ccaa.reshape(-1)
+        precond[ho_s_ccaa__bbbb:ho_f_ccaa__bbbb] = precond_ccaa[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1)
+
         ## CCEA preconditioner
         precond_ccea = compute_preconditioner__CCEA(mr_adc)
         precond[ho_s_ccea__aaaa:ho_f_ccea__aaaa] = precond_ccea[cc_tril_ind[0], cc_tril_ind[1]].reshape(-1)
@@ -31168,26 +31400,39 @@ def compute_preconditioner(mr_adc, M_00):
         precond[ho_s_ccee__abab:ho_f_ccee__abab] = precond_ccee.reshape(-1)
 
         ## CAEE preconditioner
+        precond_caee = compute_preconditioner__CAEE(mr_adc)
+        precond[ho_s_caee__aaaa:ho_f_caee__aaaa] = precond_ccee[:, :, ee_tril_ind[0], ee_tril_ind[1]].reshape(-1)
+        precond[ho_s_caee__abab:ho_f_caee__abab] = precond_caee.reshape(-1)
+        precond[ho_s_caee__bbbb:ho_f_caee__bbbb] = precond_ccee[:, :, ee_tril_ind[0], ee_tril_ind[1]].reshape(-1)
+
         ## CAAA preconditioner
         ## CAEA preconditioner
 
         if nval > 0:
             ## Excitation Manifolds
-            ho_s_cvee__aaaa = mr_adc.h_orth.s_cvee__aaaa
-            ho_f_cvee__aaaa = mr_adc.h_orth.f_cvee__aaaa 
-            ho_s_cvee__abab = mr_adc.h_orth.s_cvee__abab 
-            ho_f_cvee__abab = mr_adc.h_orth.f_cvee__abab 
-            
+            ho_s_cvaa__aaaa = mr_adc.h_orth.s_cvea__aaaa
+            ho_f_cvaa__aaaa = mr_adc.h_orth.f_cvea__aaaa 
+            ho_s_cvaa__abab = mr_adc.h_orth.s_cvea__abab
+            ho_f_cvaa__abab = mr_adc.h_orth.f_cvea__abab 
+            ho_s_cvaa__bbbb = mr_adc.h_orth.s_cvea__bbbb
+            ho_f_cvaa__bbbb = mr_adc.h_orth.f_cvea__bbbb 
             ho_s_cvea__aaaa = mr_adc.h_orth.s_cvea__aaaa
             ho_f_cvea__aaaa = mr_adc.h_orth.f_cvea__aaaa 
             ho_s_cvea__abab = mr_adc.h_orth.s_cvea__abab
             ho_f_cvea__abab = mr_adc.h_orth.f_cvea__abab 
             ho_s_cvea__bbbb = mr_adc.h_orth.s_cvea__bbbb
-            ho_f_cvea__bbbb = mr_adc.h_orth.f_cvea__bbbb 
-    
+            ho_f_cvea__bbbb = mr_adc.h_orth.f_cvea__bbbb  
+            ho_s_cvee__aaaa = mr_adc.h_orth.s_cvee__aaaa
+            ho_f_cvee__aaaa = mr_adc.h_orth.f_cvee__aaaa 
+            ho_s_cvee__abab = mr_adc.h_orth.s_cvee__abab 
+            ho_f_cvee__abab = mr_adc.h_orth.f_cvee__abab 
+   
             # Compute preconditioner diagonal blocks
-#            ## CVAA preconditioner
-#            precond_cvaa = compute_preconditioner__CVAA(mr_adc)
+            ## CVAA preconditioner
+            precond_cvaa = compute_preconditioner__CVAA(mr_adc)
+            precond[ho_s_cvaa__aaaa:ho_f_cvaa__aaaa] = precond_cvaa.reshape(-1)
+            precond[ho_s_cvaa__abab:ho_f_cvaa__abab] = precond_cvaa.reshape(-1)
+            precond[ho_s_cvaa__bbbb:ho_f_cvaa__bbbb] = precond_cvaa.reshape(-1)
 
             ## CVEA preconditioner
             precond_cvea = compute_preconditioner__CVEA(mr_adc)
@@ -31217,7 +31462,7 @@ def define_effective_hamiltonian(mr_adc, M_00):
             Xt = apply_S_12(mr_adc, X)            
 
             # Apply M: Sigma = M Xt
-            sigma = np.dot(M_00, X)
+            sigma = np.dot(M_00, Xt)
 
             # X_new = S_12.T Sigma
             X_new = apply_S_12(mr_adc, sigma, transpose = True)
@@ -31360,9 +31605,9 @@ def apply_S_12(mr_adc, X, transpose = False):
         f_ccea__abab =  mr_adc.h1.f_ccea__abab
         s_ccea__bbbb =  mr_adc.h1.s_ccea__bbbb
         f_ccea__bbbb =  mr_adc.h1.f_ccea__bbbb
-        
+
         s_ccee__aaaa =  mr_adc.h1.s_ccee__aaaa
-        f_ccee__aaaa =  mr_adc.h1.f_ccee__aaaa
+        f_ccee__aaaa =  mr_adc.h1.f_ccee__aaaa       
         s_ccee__abab =  mr_adc.h1.s_ccee__abab
         f_ccee__abab =  mr_adc.h1.f_ccee__abab
         
@@ -31519,12 +31764,18 @@ def apply_S_12(mr_adc, X, transpose = False):
                 Xt[ho_s_cvee__aaaa:ho_f_cvee__aaaa] = X[s_cvee__aaaa:f_cvee__aaaa].copy()
                 Xt[ho_s_cvee__abab:ho_f_cvee__abab] = X[s_cvee__abab:f_cvee__abab].copy()
 
-#            # CAEE
-#            if ncvs_so > 0 and ncas_so > 0 and nextern_so > 0:
-#
-#                temp = X[s_caee:f_caee].reshape(ncvs_so, S12_caee.shape[0], -1).copy()
-#                Xt[ho_s_caee:ho_f_caee] = np.einsum("IXA,XP->IPA", temp, S12_caee).reshape(-1)
-#
+            # CAEE
+            if ncvs > 0 and ncas > 0 and nextern > 0:
+
+                temp = X[s_caee__aaaa:f_caee__aaaa].reshape(ncvs, S12_caee.shape[0], -1).copy()
+                Xt[ho_s_caee__aaaa:ho_f_caee__aaaa] = np.einsum("IXA,XP->IPA", temp, S12_caee).reshape(-1)
+
+                temp = X[s_caee__abab:f_caee__abab].reshape(ncvs, S12_caee.shape[0], -1).copy()
+                Xt[ho_s_caee__abab:ho_f_caee__abab] = np.einsum("IXA,XP->IPA", temp, S12_caee).reshape(-1)
+
+                temp = X[s_caee__bbbb:f_caee__bbbb].reshape(ncvs, S12_caee.shape[0], -1).copy()
+                Xt[ho_s_caee__bbbb:ho_f_caee__bbbb] = np.einsum("IXA,XP->IPA", temp, S12_caee).reshape(-1)
+
 #            # CE and CAEA -> CE_CAEA
 #            if ncvs_so > 0 and nextern_so > 0:
 #
@@ -31596,12 +31847,19 @@ def apply_S_12(mr_adc, X, transpose = False):
                 Xt[s_cvee__abab:f_cvee__abab] = X[ho_s_cvee__abab:ho_f_cvee__abab].copy()
 
 
-#            # CAEE
-#            if ncvs_so > 0 and ncas_so > 0:            
-#
-#                temp = X[ho_s_caee:ho_f_caee].reshape(ncvs_so, S12_caee.shape[1], -1).copy()
-#                Xt[s_caee:f_caee] = np.einsum("IPA,XP->IXA", temp, S12_caee).reshape(-1)
-#
+            # CAEE
+            if ncvs > 0 and ncas > 0:            
+
+                temp = X[ho_s_caee__aaaa:ho_f_caee__aaaa].reshape(ncvs, S12_caee.shape[1], -1).copy()
+                Xt[s_caee__aaaa:f_caee__aaaa] = np.einsum("IPA,XP->IXA", temp, S12_caee).reshape(-1)
+
+                temp = X[ho_s_caee__abab:ho_f_caee__abab].reshape(ncvs, S12_caee.shape[1], -1).copy()
+                Xt[s_caee__abab:f_caee__abab] = np.einsum("IPA,XP->IXA", temp, S12_caee).reshape(-1)
+
+                temp = X[ho_s_caee__bbbb:ho_f_caee__bbbb].reshape(ncvs, S12_caee.shape[1], -1).copy()
+                Xt[s_caee__bbbb:f_caee__bbbb] = np.einsum("IPA,XP->IXA", temp, S12_caee).reshape(-1)
+
+
 #            # CE and CAEA -> CE_CAEA
 #            temp = X[ho_s_ce_caea:ho_f_ce_caea].reshape(ncvs_so, S12_ce_caea.shape[1], nextern_so)
 #            temp = np.einsum("IPA,XP->IAX", temp, S12_ce_caea)
@@ -32135,9 +32393,9 @@ def compute_sigma_vector(mr_adc, Xt):
     f_ccea__abab = mr_adc.h1.f_ccea__abab
     s_ccea__bbbb = mr_adc.h1.s_ccea__bbbb
     f_ccea__bbbb = mr_adc.h1.f_ccea__bbbb
-    
+ 
     s_ccee__aaaa = mr_adc.h1.s_ccee__aaaa
-    f_ccee__aaaa = mr_adc.h1.f_ccee__aaaa
+    f_ccee__aaaa = mr_adc.h1.f_ccee__aaaa    
     s_ccee__abab = mr_adc.h1.s_ccee__abab
     f_ccee__abab = mr_adc.h1.f_ccee__abab
     
@@ -32200,7 +32458,7 @@ def compute_sigma_vector(mr_adc, Xt):
 
     X_abab = np.ascontiguousarray(Xt[s_ccaa__abab:f_ccaa__abab].reshape(ncvs, ncvs, ncas, ncas))
 
-    compute_sigma_vector__H0__h1_h1__CCAA(mr_adc, X_aaaa, X_abab, sigma)
+#    compute_sigma_vector__H0__h1_h1__CCAA(mr_adc, X_aaaa, X_abab, sigma)
 
 #    if mr_adc.method == "mr-adc(2)-x":
 #        compute_sigma_vector__H1__h1_h1__CCAA_CCAA(mr_adc, X_aaaa, X_abab, sigma)
@@ -32225,7 +32483,7 @@ def compute_sigma_vector(mr_adc, Xt):
  
     X_abab = np.ascontiguousarray(Xt[s_ccea__abab:f_ccea__abab].reshape(ncvs, ncvs, nextern, ncas))
 
-    compute_sigma_vector__H0__h1_h1__CCEA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
+#    compute_sigma_vector__H0__h1_h1__CCEA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
 
 #    if mr_adc.method == "mr-adc(2)-x":
 #        compute_sigma_vector__H1__h1_h1__CCAA_CCEA(mr_adc, X_aaaa, X_abab, sigma)
@@ -32253,6 +32511,11 @@ def compute_sigma_vector(mr_adc, Xt):
  
     compute_sigma_vector__H0__h1_h1__CCEE(mr_adc, X_aaaa, X_abab, sigma)
 
+    print ("\nSIGMA CCEE BLOCK")
+    print (sigma[s_ccee__aaaa:f_ccee__aaaa])     
+    print (sigma[s_ccee__abab:f_ccee__abab])     
+
+    #exit()    
 #    if mr_adc.method == "mr-adc(2)-x":
 #        compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
 #        compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
@@ -32264,6 +32527,29 @@ def compute_sigma_vector(mr_adc, Xt):
 #            compute_sigma_vector__H1__h1_h1__CVAA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
 #            compute_sigma_vector__H1__h1_h1__CVEA_CCEE(mr_adc, X_aaaa, X_abab, sigma)
 #            compute_sigma_vector__H1__h1_h1__CVEE_CCEE(mr_adc, X_aaaa, X_abab, sigma)
+
+    if nval > 0:
+        # CVAA
+        # CVAE
+        # CVEE
+        X_aaaa = np.zeros((ncvs, nval, nextern, nextern))
+        X_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]] =   Xt[s_cvee__aaaa:f_cvee__aaaa].reshape(ncvs, nval, -1).copy()
+        X_aaaa[:, :, ee_tril_ind[1], ee_tril_ind[0]] =-  Xt[s_cvee__aaaa:f_cvee__aaaa].reshape(ncvs, nval, -1).copy()
+     
+        X_abab = np.ascontiguousarray(Xt[s_cvee__abab:f_cvee__abab].reshape(ncvs, nval, nextern, nextern))
+
+        compute_sigma_vector__H0__h1_h1__CVEE(mr_adc, X_aaaa, X_abab, sigma)
+
+#        if mr_adc.method == "mr-adc(2)-x":
+#            compute_sigma_vector__H1__h1_h1__CCAA_CVEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CCEA_CVEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CCEE_CVEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CAEE_CVEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CAAA_CVEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CAEA_CVEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVAA_CVEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVEA_CVEE(mr_adc, X_aaaa, X_abab, sigma)
+#            compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X_aaaa, X_abab, sigma)        
              
     return sigma
 
