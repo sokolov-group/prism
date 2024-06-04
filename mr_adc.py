@@ -50,7 +50,6 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
-        self.spin = interface.spin
 
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
@@ -64,6 +63,9 @@ class MRADC:
         self.e_casscf = interface.e_casscf      # Total CASSCF energy
         self.e_cas = interface.e_cas            # Active-space CASSCF energy
         self.wfn_casscf = interface.wfn_casscf  # Ground-state CASSCF wavefunction
+        self.wfn_casscf_spin_square = interface.wfn_casscf_spin_square
+        self.wfn_casscf_spin = interface.wfn_casscf_spin
+        self.wfn_casscf_spin_mult = interface.wfn_casscf_spin_mult
 
         # MR-ADC specific variables
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
@@ -133,10 +135,10 @@ class MRADC:
             log.error(msg)
             raise Exception(msg)
 
-        if self.spin > 0:
-            msg = "This program currently does not work for open-shell molecules"
-            log.error(msg)
-            raise Exception(msg)
+#        if self.spin > 0:
+#            msg = "This program currently does not work for open-shell molecules"
+#            log.error(msg)
+#            raise Exception(msg)
 
         if self.method_type == "cvs-ip" and self.ncvs is None:
             msg = "Method type %s requires setting the ncvs parameter" % self.method_type
@@ -158,6 +160,8 @@ class MRADC:
                 msg = "Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type
                 log.error(msg)
                 raise Exception(msg)
+
+            self.ncasci = 0
 
         # TODO: Temporary check of what methods are implemented in this version
         if self.method_type not in ("cvs-ip"):

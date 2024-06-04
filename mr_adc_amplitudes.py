@@ -94,6 +94,12 @@ def compute_t1_amplitudes(mr_adc):
     if ((mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x")) or
         (mr_adc.method == "mr-adc(1)" and mr_adc.method_type in ("ee", "cvs-ee"))):
 
+        nelecas_total = 0
+        if isinstance(nelecas, (list)):
+            nelecas_total = sum(nelecas[0])
+        else:
+            nelecas_total = sum(nelecas)
+
         if ncore > 0 and nextern > 0:
             e_0, mr_adc.t1.ccee = compute_t1_0(mr_adc)
         else:
@@ -104,7 +110,7 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.ccae = np.zeros((ncore, ncore, ncas, nextern))
 
-        if ncore > 0 and nextern > 0 and ncas > 0 and sum(nelecas) > 0:
+        if ncore > 0 and nextern > 0 and ncas > 0 and nelecas_total > 0:
             e_m1, mr_adc.t1.caee = compute_t1_m1(mr_adc)
         else:
             mr_adc.t1.caee = np.zeros((ncore, ncas, nextern, nextern))
@@ -114,7 +120,7 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
-        if nextern > 0 and ncas > 0 and sum(nelecas) > 0:
+        if nextern > 0 and ncas > 0 and nelecas_total > 0:
             e_m2, mr_adc.t1.aaee = compute_t1_m2(mr_adc)
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))

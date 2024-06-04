@@ -161,7 +161,11 @@ def compute_S12_0p_projector(mr_adc):
 
     # Variables from kernel
     ncas = mr_adc.ncas
-    nelecas = sum(mr_adc.nelecas)
+    nelecas = mr_adc.nelecas
+    if isinstance(nelecas, (list)):
+        nelecas = sum(nelecas[0])
+    else:
+        nelecas = sum(nelecas)
 
     s_thresh = mr_adc.s_thresh_singles
 
