@@ -49,8 +49,8 @@ def kernel(mr_adc):
         mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
         mr_adc.log.info("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
-    mr_adc.log.extra("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    mr_adc.log.extra("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
+    mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
+    mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
 
     # Print info about CASCI states
     mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)

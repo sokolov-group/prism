@@ -34,7 +34,7 @@ def compute_excitation_manifolds(mr_adc):
     mr_adc.h0.s_c = 0
     mr_adc.h0.f_c = mr_adc.h0.s_c + mr_adc.h0.n_c
 
-    mr_adc.log.extra("\nDimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
+    mr_adc.log.info("\nDimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
 
     # MR-ADC(2)
     mr_adc.h1.dim = 0
@@ -154,7 +154,7 @@ def compute_excitation_manifolds(mr_adc):
             mr_adc.h1.s_cca__abb = mr_adc.h1.f_cca__aaa
             mr_adc.h1.f_cca__abb = mr_adc.h1.s_cca__abb + mr_adc.h1.n_cca
 
-        mr_adc.log.extra("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
+        mr_adc.log.info("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
 
         # Overlap for c-caa
         mr_adc.S12.c_caa = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
@@ -263,8 +263,8 @@ def compute_excitation_manifolds(mr_adc):
             mr_adc.h_orth.s_cca__abb = mr_adc.h_orth.f_cca__aaa
             mr_adc.h_orth.f_cca__abb = mr_adc.h_orth.s_cca__abb + mr_adc.h_orth.n_cca
 
-    mr_adc.log.extra("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
-    mr_adc.log.extra("Dimension of the orthogonalized excitation manifold:       %d" % (mr_adc.h_orth.dim))
+    mr_adc.log.info("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
+    mr_adc.log.info("Dimension of the orthogonalized excitation manifold:       %d" % (mr_adc.h_orth.dim))
 
     if (mr_adc.h_orth.dim < mr_adc.nroots):
         mr_adc.nroots = mr_adc.h_orth.dim
