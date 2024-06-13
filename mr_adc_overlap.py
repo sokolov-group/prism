@@ -454,6 +454,7 @@ def compute_S12_p1p_gno_projector(mr_adc):
     # Compute projector to the GNO operator basis
     Y = np.identity(S_p1p_act.shape[0])
 
+# DEBUG
     Y_a_aaa =- 0.5 * einsum("XZ,YW->XYWZ", np.identity(ncas), rdm_ca, optimize = einsum_type)
     Y_a_aaa += 0.5 * einsum("XW,YZ->XYWZ", np.identity(ncas), rdm_ca, optimize = einsum_type)
 
@@ -463,6 +464,33 @@ def compute_S12_p1p_gno_projector(mr_adc):
 
     Y_a_aaa = Y_a_aaa.reshape(dim_x, dim_tril_wzy)
     Y_a_bba = Y_a_bba.reshape(dim_x, dim_wzy)
+#    New = True
+#
+#    if not New:
+#        Y_a_aaa =- 0.5 * einsum("XZ,YW->XYWZ", np.identity(ncas),
+#rdm_a, optimize = einsum_type)
+#        Y_a_aaa += 0.5 * einsum("XW,YZ->XYWZ", np.identity(ncas),
+#rdm_a, optimize = einsum_type)
+#
+#        Y_a_bba =- 0.5 * einsum("XZ,YW->XYWZ", np.identity(ncas),
+#rdm_a, optimize = einsum_type)
+#
+#        Y_a_aaa = Y_a_aaa[:, :, tril_ind[0], tril_ind[1]]
+#
+#        Y_a_aaa = Y_a_aaa.reshape(dim_x, dim_tril_wzy)
+#        Y_a_bba = Y_a_bba.reshape(dim_x, dim_wzy)
+#    else:
+#        # print("testing new projector")
+#        # inverse of S11_a_a
+#        S_eval,S_evec = np.linalg.eigh(S11_a_a)
+#        S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+#        S_inv_eval = 1.0/(S_eval[S_ind_nonzero])
+#        S_evec = S_evec[:, S_ind_nonzero]
+#        S11inv = reduce(np.dot, (S_evec,np.diag(S_inv_eval),S_evec.T))
+#
+#        Y_a_aaa = -np.matmul(S11inv, S12_a_aaa)
+#        Y_a_bba = -np.matmul(S11inv, S12_a_bba)
+# DEBUG
 
     Y[s_a:f_a, s_aaa:f_aaa] = Y_a_aaa
     Y[s_a:f_a, s_bba:f_bba] = Y_a_bba
@@ -585,6 +613,7 @@ def compute_S12_m1p_gno_projector(mr_adc):
     # Compute projector to the GNO operator basis
     Y = np.identity(S_m1p_act.shape[0])
 
+# DEBUG
     Y_a_aaa =- 0.5 * einsum("XY,ZW->XYZW", np.identity(ncas), rdm_ca, optimize = einsum_type)
     Y_a_aaa += 0.5 * einsum("XZ,YW->XYZW", np.identity(ncas), rdm_ca, optimize = einsum_type)
 
@@ -594,6 +623,33 @@ def compute_S12_m1p_gno_projector(mr_adc):
 
     Y_a_aaa = Y_a_aaa.reshape(dim_x, dim_tril_wzy)
     Y_a_abb = Y_a_abb.reshape(dim_x, dim_wzy)
+#    New = True
+#
+#    if not New:
+#        Y_a_aaa =- 0.5 * einsum("XY,ZW->XYZW", np.identity(ncas),
+#rdm_a, optimize = einsum_type)
+#        Y_a_aaa += 0.5 * einsum("XZ,YW->XYZW", np.identity(ncas),
+#rdm_a, optimize = einsum_type)
+#
+#        Y_a_abb =- 0.5 * einsum("XY,ZW->XYZW", np.identity(ncas),
+#rdm_a, optimize = einsum_type)
+#
+#        Y_a_aaa = Y_a_aaa[:,tril_ind[0],tril_ind[1]]
+#
+#        Y_a_aaa = Y_a_aaa.reshape(dim_x, dim_tril_wzy)
+#        Y_a_abb = Y_a_abb.reshape(dim_x, dim_wzy)
+#    else:
+#        # print("testing new projector")
+#        # inverse of S11_a_a
+#        S_eval,S_evec = np.linalg.eigh(S11_a_a)
+#        S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+#        S_inv_eval = 1.0/(S_eval[S_ind_nonzero])
+#        S_evec = S_evec[:, S_ind_nonzero]
+#        S11inv = reduce(np.dot, (S_evec,np.diag(S_inv_eval),S_evec.T))
+#
+#        Y_a_aaa = -np.matmul(S11inv, S12_a_aaa)
+#        Y_a_abb = -np.matmul(S11inv, S12_a_abb)
+# DEBUG
 
     Y[s_a:f_a, s_aaa:f_aaa] = Y_a_aaa
     Y[s_a:f_a, s_abb:f_abb] = Y_a_abb
