@@ -11735,6 +11735,23 @@ def compute_sigma_vector(mr_adc, Xt):
     s_cca__abb = mr_adc.h1.s_cca__abb
     f_cca__abb = mr_adc.h1.f_cca__abb
 
+    ## Excitation Manifolds
+    if nval > 0:
+        s_cve__aaa = mr_adc.h1.s_cve__aaa
+        f_cve__aaa = mr_adc.h1.f_cve__aaa
+        s_cve__abb = mr_adc.h1.s_cve__abb
+        f_cve__abb = mr_adc.h1.f_cve__abb
+        s_cve__bab = mr_adc.h1.s_cve__bab
+        f_cve__bab = mr_adc.h1.f_cve__bab
+
+        s_cva__aaa = mr_adc.h1.s_cva__aaa
+        f_cva__aaa = mr_adc.h1.f_cva__aaa
+        s_cva__abb = mr_adc.h1.s_cva__abb
+        f_cva__abb = mr_adc.h1.f_cva__abb
+        s_cva__bab = mr_adc.h1.s_cva__bab
+        f_cva__bab = mr_adc.h1.f_cva__bab
+
+
     ### CAA block
     if ncvs > 0 and ncas > 0:
         X_aaa = Xt[s_caa__aaa:f_caa__aaa].reshape(ncvs, ncas, ncas)
@@ -11812,21 +11829,6 @@ def compute_sigma_vector(mr_adc, Xt):
             compute_sigma_vector__H1__h1_h1__CVE_CCA(mr_adc, X_aaa, X_abb, sigma)
 
     if nval > 0:
-        ## Excitation Manifolds
-        s_cve__aaa = mr_adc.h1.s_cve__aaa
-        f_cve__aaa = mr_adc.h1.f_cve__aaa
-        s_cve__abb = mr_adc.h1.s_cve__abb
-        f_cve__abb = mr_adc.h1.f_cve__abb
-        s_cve__bab = mr_adc.h1.s_cve__bab
-        f_cve__bab = mr_adc.h1.f_cve__bab
-
-        s_cva__aaa = mr_adc.h1.s_cva__aaa
-        f_cva__aaa = mr_adc.h1.f_cva__aaa
-        s_cva__abb = mr_adc.h1.s_cva__abb
-        f_cva__abb = mr_adc.h1.f_cva__abb
-        s_cva__bab = mr_adc.h1.s_cva__bab
-        f_cva__bab = mr_adc.h1.f_cva__bab
-
         ### CVE block
         if ncvs > 0 and nval > 0 and nextern > 0:
             X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
@@ -11896,15 +11898,16 @@ def compute_sigma_vector(mr_adc, Xt):
                 compute_sigma_vector__H1__h1_h1__CAE_CAE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee)
 
                 ### CVE block
-                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-                X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
-                X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
+                if nval > 0:
+                    X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                    X_abb = Xt[s_cve__abb:f_cve__abb].reshape(ncvs, nval, nextern)
+                    X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
 
-                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-                X_abb = X_abb[:,:,s_chunk:f_chunk]
-                X_bab = X_bab[:,:,s_chunk:f_chunk]
+                    X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                    X_abb = X_abb[:,:,s_chunk:f_chunk]
+                    X_bab = X_bab[:,:,s_chunk:f_chunk]
 
-                compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee)
+                    compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XXEE(mr_adc, X_aaa, X_abb, X_bab, sigma, v_xxee)
 
                 mr_adc.log.timer_debug("v2e.xxee contractions", *cput1)
                 del(v_xxee)
@@ -11939,13 +11942,14 @@ def compute_sigma_vector(mr_adc, Xt):
                 compute_sigma_vector__H1__h1_h1__CAE_CAE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex)
 
                 ### CVE block
-                X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
-                X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
+                if nval > 0:
+                    X_aaa = Xt[s_cve__aaa:f_cve__aaa].reshape(ncvs, nval, nextern)
+                    X_bab = Xt[s_cve__bab:f_cve__bab].reshape(ncvs, nval, nextern)
 
-                X_aaa = X_aaa[:,:,s_chunk:f_chunk]
-                X_bab = X_bab[:,:,s_chunk:f_chunk]
+                    X_aaa = X_aaa[:,:,s_chunk:f_chunk]
+                    X_bab = X_bab[:,:,s_chunk:f_chunk]
 
-                compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex)
+                    compute_sigma_vector__H1__h1_h1__CVE_CVE__V_XEEX(mr_adc, X_aaa, X_bab, sigma, v_xeex)
 
                 mr_adc.log.timer_debug("v2e.xeex contractions", *cput1)
                 del(v_xeex)
