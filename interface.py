@@ -49,9 +49,6 @@ class PYSCF:
         self.mf = mf
         self.log = log
 
-#        # Maximum S^2 value of CASCI roots to keep; default to only singlet calculations
-#        self.spin_sq_thresh = 0
-
         if mc is None:
             self.reference = "scf"
             self.max_memory = mf.max_memory
@@ -125,13 +122,6 @@ class PYSCF:
             self.mo_energy = mo_energy.copy()
             self.wfn_casscf = ci
             self.nelecas = ref_nelecas
-
-# DEBUG
-#            for ind, wfn in enumerate(self.wfn_casscf):
-#                mc_casci = mf.CASCI(mc.ncas, self.nelecas[ind])
-#                mc_casci.kernel(mo_coeff = mc.mo_coeff, ci0=wfn)
-#            exit()
-# DEBUG
 
             # TODO: Check if this is done correctly when canonicalization changes the order of orbitals
             self.symmetry = mc.mol.symmetry
@@ -219,13 +209,8 @@ class PYSCF:
         #Initialize spin up and spin down projection generators:
         spin_multiplet = []
         spin_multiplet_ne = []
-#DEBUG
         spin_multiplet.append(wfn)
         spin_multiplet_ne.append(nelecas)
-#        if (nelecas[0] == nelecas[1]):
-#            spin_multiplet.append(wfn)
-#            spin_multiplet_ne.append(nelecas)
-#DEBUG
 
         spin_wf_plus = wfn.copy()
         spin_wf_minus = wfn.copy()
@@ -241,13 +226,8 @@ class PYSCF:
             # Normalize the wfn
             spin_wf_plus = spin_wf_plus/(np.sqrt(spin_sq - msz_plus*(msz_plus + 1)))
             # Add spin states to list
-#DEBUG
-#            if (spin_nelec_plus[0] == spin_nelec_plus[1]):
-#                spin_multiplet.append(spin_wf_plus)
-#                spin_multiplet_ne.append(spin_nelec_plus)
             spin_multiplet.append(spin_wf_plus)
             spin_multiplet_ne.append(spin_nelec_plus)
-#DEBUG
         
         for I in range(len(minus_op_list)):
             # Apply spin operators for finding ms values
@@ -258,15 +238,10 @@ class PYSCF:
             # Normalize the wfn
             spin_wf_minus = spin_wf_minus/(np.sqrt(spin_sq - msz_minus*(msz_minus - 1)))
             # Add spin states to list
-#DEBUG
-#            if (spin_nelec_minus[0] == spin_nelec_minus[1]):
-#                spin_multiplet.append(spin_wf_minus)
-#                spin_multiplet_ne.append(spin_nelec_minus)
             spin_multiplet.append(spin_wf_minus)
             spin_multiplet_ne.append(spin_nelec_minus)
 
-#        assert(len(spin_multiplet) == multiplicity), 'ncasci should be equal to the number of casci states requested'
-#DEBUG
+        assert(len(spin_multiplet) == multiplicity), 'ncasci should be equal to the number of casci states requested'
 
         return spin_multiplet, spin_multiplet_ne
 
