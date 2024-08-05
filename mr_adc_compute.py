@@ -116,9 +116,6 @@ def kernel(mr_adc):
     U = np.array(U)
     spec_intensity, X = compute_trans_properties(mr_adc, E, U)
 
-###    if mr_adc.method_type == "cvs-ip":
-###        mr_adc_cvs_ip.analyze_eigenvector(mr_adc, U, E_ev)
-###
     mr_adc.log.info("\n------------------------------------------------------------------------------")
     mr_adc.log.timer0("total MR-ADC calculation", *cput0)
 

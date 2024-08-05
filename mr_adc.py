@@ -135,11 +135,6 @@ class MRADC:
             log.error(msg)
             raise Exception(msg)
 
-#        if self.spin > 0:
-#            msg = "This program currently does not work for open-shell molecules"
-#            log.error(msg)
-#            raise Exception(msg)
-
         if self.method_type == "cvs-ip" and self.ncvs is None:
             msg = "Method type %s requires setting the ncvs parameter" % self.method_type
             log.error(msg)

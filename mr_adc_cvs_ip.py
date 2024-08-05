@@ -21081,54 +21081,6 @@ def analyze_spec_factor(mr_adc, X, spec_intensity):
                                                                             spec_Contribution[c],
                                                                             partial_Contribution[c]))
 
-###def analyze_eigenvector(mr_adc, U, E_ev):
-###
-###    print("\nEigenvector Analysis:")
-###
-###    print_thresh = mr_adc.spec_factor_print_tol
-###
-###    s_c_caa = mr_adc.h_orth.s_c_caa
-###    f_c_caa = mr_adc.h_orth.f_c_caa
-###    s_cce   = mr_adc.h_orth.s_cce
-###    f_cce   = mr_adc.h_orth.f_cce
-###    s_cae   = mr_adc.h_orth.s_cae
-###    f_cae   = mr_adc.h_orth.f_cae
-###    s_cca   = mr_adc.h_orth.s_cca
-###    f_cca   = mr_adc.h_orth.f_cca
-###    if mr_adc.nval > 0:
-###        s_cve   = mr_adc.h_orth.s_cve
-###        f_cve   = mr_adc.h_orth.f_cve
-###        s_cva   = mr_adc.h_orth.s_cva
-###        f_cva   = mr_adc.h_orth.f_cva
-###
-###    for i in range(U.shape[0]):
-###        print("\n%s | root %d | E (eV) = %16.8f\n" % (mr_adc.method, i, E_ev[i]))
-###        print("  Excitation Type          Contribution ")
-###        print("---------------------------------------------------")
-###
-###        norm_c_caa = np.linalg.norm(U[i, s_c_caa:f_c_caa])
-###        norm_cce   = np.linalg.norm(U[i, s_cce:f_cce])
-###        norm_cae   = np.linalg.norm(U[i, s_cae:f_cae])
-###        norm_cca   = np.linalg.norm(U[i, s_cca:f_cca])
-###        if mr_adc.nval > 0:
-###            norm_cve = np.linalg.norm(U[i, s_cve:f_cve])
-###            norm_cva = np.linalg.norm(U[i, s_cva:f_cva])
-###
-###        if norm_c_caa > print_thresh:
-###            print("       C_CAA               %10.8f                  " % (norm_c_caa))
-###        if norm_cce > print_thresh:
-###            print("       CCE                 %10.8f                  " % (norm_cce))
-###        if norm_cae > print_thresh:
-###            print("       CAE                 %10.8f                  " % (norm_cae))
-###        if norm_cca > print_thresh:
-###            print("       CCA                 %10.8f                  " % (norm_cca))
-###        if mr_adc.nval > 0:
-###            if norm_cve > print_thresh:
-###                print("       CVE                 %10.8f                  " % (norm_cve))
-###            if norm_cva > print_thresh:
-###                print("       CVA                 %10.8f                  " % (norm_cva))
-###        print("---------------------------------------------------\n")
-
 
 def compute_dyson_mo(mr_adc, X):
 
