@@ -1,0 +1,442 @@
+#INFO: **** input file is /home/sokolov.8/Programming/prism/tests/df_cvs_ip_mr_adc_2_x/short/no_cas_7e_6o.py ****
+# Copyright 2023 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#
+# Tests prepared for Prism 0.4, PySCF 2.5.0 and NumPy 1.26.4
+# Results can deviate according to their versions
+#
+
+import unittest
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.mr_adc
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+
+r = 1.1508
+
+mol = pyscf.gto.Mole()
+mol.atom = [
+            ['N', (0.0, 0.0, 0.0)],
+            ['O', (0.0, 0.0,   r)]]
+mol.basis = 'cc-pcvdz'
+mol.symmetry = True
+mol.verbose = 4
+mol.spin = 0
+mol.charge = +1
+mol.build()
+
+# RHF calculation
+mf = pyscf.scf.RHF(mol)
+mf.max_cycle = 250
+mf.conv_tol = 1e-12
+
+ehf = mf.scf()
+print("SCF energy: %f\n" % ehf)
+
+mol.spin = 1
+mol.charge = 0
+mol.build()
+
+# CASSCF calculation
+mc = pyscf.mcscf.CASSCF(mf, 6, 7)
+mc.max_cycle = 150
+mc.conv_tol = 1e-8
+mc.conv_tol_grad = 1e-5
+mc.fcisolver.wfnsym = 'E1x'
+
+emc = mc.mc1step()[0]
+print("CASSCF energy: %f\n" % emc)
+
+# MR-ADC calculation
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('cc-pvdz-ri')
+mr_adc = prism.mr_adc.MRADC(interface)
+mr_adc.ncvs = 2
+mr_adc.nroots = 12
+mr_adc.max_space = 200
+mr_adc.s_thresh_singles = 1e-6
+mr_adc.s_thresh_doubles = 1e-10
+mr_adc.method_type = "cvs-ip"
+mr_adc.method = "mr-adc(2)-x"
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mc.e_tot, -129.36667950334, 5)
+        self.assertAlmostEqual(mc.e_cas, -17.558540145851, 4)
+
+    def test_prism(self):
+
+        e, p, x = mr_adc.kernel()
+
+        self.assertAlmostEqual(e[0],  413.3006804, 3)
+        self.assertAlmostEqual(e[1],  426.3383714, 3)
+        self.assertAlmostEqual(e[2],  426.3548291, 3)
+        self.assertAlmostEqual(e[3],  428.3019226, 3)
+        self.assertAlmostEqual(e[4],  428.5778823, 3)
+        self.assertAlmostEqual(e[5],  428.5778829, 3)
+
+        self.assertAlmostEqual(p[0],  1.6233819, 4)
+        self.assertAlmostEqual(p[1],  0.       , 4)
+        self.assertAlmostEqual(p[2],  0.0019217, 4)
+        self.assertAlmostEqual(p[3],  0.0000001, 4)
+        self.assertAlmostEqual(p[4],  0.0000006, 4)
+        self.assertAlmostEqual(p[5],  0.0000003, 4)
+
+if __name__ == "__main__":
+    print("CVS-IP calculations for different CVS-IP-MR-ADC methods")
+    unittest.main()
+
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc206185.asc.ohio-state.edu', release='4.18.0-553.5.1.el8_10.x86_64', version='#1 SMP Tue May 21 03:13:04 EDT 2024', machine='x86_64')  Threads 24
+Python 3.9.17 (main, Jul  5 2023, 20:41:20) 
+[GCC 11.2.0]
+numpy 1.22.3  scipy 1.7.3  h5py 3.7.0
+Date: Wed Aug  7 11:21:52 2024
+PySCF version 2.6.2
+PySCF path  /home/sokolov.8/Programming/pyscf
+GIT ORIG_HEAD db7cb02aa22bdbd61fc1c88c26b7640fd7ede90c
+GIT HEAD (branch master) 52a690e17d10cd80054600fa31cf2c0dd30c0bad
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 14
+[INPUT] charge = 1
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry True subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 N      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 O      0.000000000000   0.000000000000   1.150800000000 AA    0.000000000000   0.000000000000   2.174696824149 Bohr   0.0
+
+nuclear repulsion = 25.750715859854
+point group symmetry = Coov
+symmetry origin: [0.         0.         1.15983831]
+symmetry axis x: [1. 0. 0.]
+symmetry axis y: [0. 1. 0.]
+symmetry axis z: [0. 0. 1.]
+num. orbitals of irrep A1 = 16
+num. orbitals of irrep E1x = 8
+num. orbitals of irrep E1y = 8
+num. orbitals of irrep E2x = 2
+num. orbitals of irrep E2y = 2
+number of shells = 14
+number of NR pGTOs = 60
+number of NR cGTOs = 36
+basis = cc-pcvdz
+ecp = {}
+CPU time:         0.90
+
+
+******** <class 'pyscf.scf.hf_symm.SymAdaptedRHF'> ********
+method = SymAdaptedRHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 250
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/tmphk08vbfq
+max_memory 4000 MB (current use 107 MB)
+Freeze 0 electrons in irreps []
+    14 free electrons in irreps A1 E1x E1y E2x E2y
+Set gradient conv threshold to 1e-06
+Initial guess from minao.
+init E= -129.30484001526
+HOMO (A1) = -0.483393712166841  LUMO (E1y) = -0.0432991497549639
+cycle= 1 E= -128.755157358803  delta_E= 0.55  |g|= 0.783  |ddm|=  1.7
+HOMO (E1y) = -1.16905347159799  LUMO (E1y) = -0.447878830625251
+cycle= 2 E= -128.81119378884  delta_E= -0.056  |g|= 0.663  |ddm|= 0.854
+HOMO (E1y) = -1.14541719674275  LUMO (E1y) = -0.365085677669117
+cycle= 3 E= -128.881374434518  delta_E= -0.0702  |g|= 0.193  |ddm|= 0.407
+HOMO (E1y) = -1.09808377842306  LUMO (E1y) = -0.32953881961901
+cycle= 4 E= -128.887379543397  delta_E= -0.00601  |g|= 0.0123  |ddm|= 0.0901
+HOMO (E1y) = -1.098853125771  LUMO (E1y) = -0.327230563966833
+cycle= 5 E= -128.887429378547  delta_E= -4.98e-05  |g|= 0.00276  |ddm|= 0.0126
+HOMO (E1y) = -1.09898020569108  LUMO (E1y) = -0.327638818428157
+cycle= 6 E= -128.887431534196  delta_E= -2.16e-06  |g|= 0.000439  |ddm|= 0.00344
+HOMO (E1y) = -1.09901447715223  LUMO (E1y) = -0.327670436916375
+cycle= 7 E= -128.887431592315  delta_E= -5.81e-08  |g|= 0.0002  |ddm|= 0.000534
+HOMO (E1y) = -1.09901013943427  LUMO (E1y) = -0.327665321012503
+cycle= 8 E= -128.88743160844  delta_E= -1.61e-08  |g|= 2.39e-05  |ddm|= 0.00035
+HOMO (E1y) = -1.09900810574498  LUMO (E1y) = -0.327667754903762
+cycle= 9 E= -128.887431608626  delta_E= -1.87e-10  |g|= 1.56e-06  |ddm|= 3.35e-05
+HOMO (E1y) = -1.09900822028642  LUMO (E1y) = -0.327667632933794
+cycle= 10 E= -128.887431608627  delta_E= -9.66e-13  |g|= 1.66e-07  |ddm|= 2.59e-06
+HOMO (E1y) = -1.09900816927137  LUMO (E1y) = -0.32766760824367
+Extra cycle  E= -128.887431608627  delta_E= 1.14e-13  |g|= 8.72e-08  |ddm|= 1.54e-07
+converged SCF energy = -128.887431608627
+SCF energy: -128.887432
+
+
+******** <class 'pyscf.mcscf.mc1step_symm.SymAdaptedCASSCF'> ********
+CAS (4e+3e, 6o), ncore = 4, nvir = 26
+max_cycle_macro = 150
+max_cycle_micro = 4
+conv_tol = 1e-08
+conv_tol_grad = 1e-05
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /scratch/local/tmphk08vbfq
+max_memory 4000 MB (current use 153 MB)
+internal_rotation = False
+******** <class 'pyscf.fci.direct_spin1_symm.FCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 1
+pspace_size = 400
+spin = None
+Input CI wfn symmetry = E1x
+Symmetries of active orbitals: A1 E1x E1y E1x E1y A1
+Active space CI wfn symmetry = E1x
+CASCI E = -129.286146610845  S^2 = 0.7500000
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -129.342046687942  dE = -5.59000771e-02  S^2 = 0.7500000
+               |grad[o]|=0.374  |grad[c]|=0.0917  |ddm|=0.0228  |maxRot[o]|=0.305
+macro iter   2 ( 21 JK    4 micro), CASSCF E = -129.363067843365  dE = -2.10211554e-02  S^2 = 0.7500000
+               |grad[o]|=0.165  |grad[c]|=0.0486  |ddm|=0.0119  |maxRot[o]|=0.306
+macro iter   3 ( 21 JK    4 micro), CASSCF E = -129.366156729794  dE = -3.08888643e-03  S^2 = 0.7500000
+               |grad[o]|=0.0667  |grad[c]|=0.0258  |ddm|=0.00765  |maxRot[o]|=0.225
+macro iter   4 ( 14 JK    4 micro), CASSCF E = -129.366606947423  dE = -4.50217629e-04  S^2 = 0.7500000
+               |grad[o]|=0.0173  |grad[c]|=0.00702  |ddm|=0.00269  |maxRot[o]|=0.0971
+macro iter   5 ( 14 JK    4 micro), CASSCF E = -129.366670997210  dE = -6.40497873e-05  S^2 = 0.7500000
+               |grad[o]|=0.00665  |grad[c]|=0.00167  |ddm|=0.00161  |maxRot[o]|=0.0436
+macro iter   6 ( 12 JK    4 micro), CASSCF E = -129.366679469706  dE = -8.47249535e-06  S^2 = 0.7500000
+               |grad[o]|=0.00142  |grad[c]|=0.000159  |ddm|=0.000206  |maxRot[o]|=0.0124
+macro iter   7 ( 13 JK    4 micro), CASSCF E = -129.366679503323  dE = -3.36176242e-08  S^2 = 0.7500000
+               |grad[o]|=0.000107  |grad[c]|=1.34e-05  |ddm|=3.89e-05  |maxRot[o]|=0.000829
+macro iter   8 (  3 JK    1 micro), CASSCF E = -129.366679503346  dE = -2.27942110e-11  S^2 = 0.7500000
+               |grad[o]|=1.78e-06  |grad[c]|=4.7e-06  |ddm|=4.34e-06  |maxRot[o]|=6.71e-06
+1-step CASSCF converged in   8 macro (119 JK  29 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.97499973 1.97649977 1.92738004 1.02239915 0.0732476  0.02547371]
+CASSCF energy = -129.366679503346
+CASCI E = -129.366679503346  E(CI) = -17.5585401458509  S^2 = 0.7500000
+CASSCF energy: -129.366680
+
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.4
+
+                   Copyright (C) 2023 Alexander Sokolov
+                                      Carlos E. V. de Moura
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+Importing Pyscf density-fitting objects...
+
+Initializing MR-ADC...
+CVS-IP calculations for different CVS-IP-MR-ADC methods
+
+Transforming integrals to MO basis...
+******** <class 'pyscf.df.df.DF'> ********
+auxbasis = cc-pvdz-ri
+max_memory = 4000
+
+Computing ground-state RDMs...
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)-x
+Number of MR-ADC roots requested:                  12
+Reference state active-space energy:             -17.558540145851
+Nuclear repulsion energy:                         25.750715859854
+Reference state S^2:                               0.750000000002
+Reference state 2S+1:                              2.000000000000
+Number of basis functions:                         36
+Number of core orbitals:                           4
+Number of active orbitals:                         6
+Number of external orbitals:                       26
+Number of electrons:                               15
+Number of active electrons:                        [(4, 3), (3, 4)]
+Number of CVS orbitals:                            2
+Number of valence (non-CVS) orbitals:              2
+Overlap truncation parameter (singles):            1.000000e-06
+Overlap truncation parameter (doubles):            1.000000e-10
+Number of CASCI states:                            0
+
+Computing NEVPT2 amplitudes...
+Correlation energy [0']:                          -0.057923874498
+Correlation energy [+1']:                         -0.001969189608
+Correlation energy [-1']:                         -0.027861495429
+Correlation energy [0]:                           -0.075689493271
+Correlation energy [+1]:                          -0.008586676369
+Correlation energy [-1]:                          -0.039922203345
+Correlation energy [+2]:                          -0.003354788790
+Correlation energy [-2]:                          -0.061458587007
+
+CASSCF reference energy:                        -129.366679503346
+PC-NEVPT2 correlation energy:                     -0.276766308318
+Total PC-NEVPT2 energy:                         -129.643445811664
+
+Dimension of h0 excitation manifold:                       2
+Dimension of h1 excitation manifold:                       1696
+Total dimension of the excitation manifold:                1698
+Dimension of the orthogonalized excitation manifold:       1696
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 244  max_memory 2000  incore True
+davidson 0 12  |r|=  1.5  e= [15.5647163  15.57157369 15.61663647 15.63668011 15.78631525 15.83677883 15.9101062  15.92316613 15.95810164 16.04363012 16.04617817 16.08414488]  max|de|= 16.1  lindep=    1
+Old state -> New state
+    3     ->     0 
+    0     ->     1 
+    1     ->     3 
+    9     ->     6 
+    8     ->     7 
+   10     ->     8 
+    6     ->     9 
+    7     ->    10 
+davidson 1 24  |r|= 0.457  e= [15.17881316 15.40187158 15.42960551 15.44087165 15.45008809 15.50210378 15.70272378 15.76832955 15.78886375 15.7935882  15.82160645 15.83299979]  max|de|= -0.458  lindep= 0.986
+Old state -> New state
+    4     ->     2 
+    2     ->     3 
+    3     ->     4 
+    9     ->     8 
+    8     ->     9 
+davidson 2 36  |r|= 0.133  e= [15.14621661 15.3977039  15.4181753  15.42235435 15.43780245 15.48309017 15.69363623 15.74980856 15.7760119  15.77941709 15.80887181 15.82513724]  max|de|= -0.0326  lindep= 0.923
+davidson 3 48  |r|= 0.197  e= [15.1396735  15.39753444 15.4152023  15.42182831 15.4375482  15.48157041 15.68441956 15.7390937  15.77365863 15.77579872 15.78922002 15.82229644]  max|de|= -0.0197  lindep= 0.93
+Old state -> New state
+    9     ->     6 
+    6     ->     7 
+    7     ->     8 
+    7     ->     9 
+   10     ->    11 
+davidson 4 60  |r|= 0.407  e= [15.13878459 15.39752067 15.41438601 15.4217884  15.4375084  15.48123267 15.64228399 15.67742221 15.71769246 15.74406609 15.74551445 15.75930515]  max|de|= -0.134  lindep= 0.942
+Old state -> New state
+    8     ->     7 
+    7     ->     8 
+   11     ->     9 
+    9     ->    10 
+   10     ->    11 
+davidson 5 72  |r|= 0.161  e= [15.13872662 15.39751905 15.41429765 15.42178589 15.43749994 15.48121246 15.59092601 15.66547943 15.6769749  15.70826361 15.7290905  15.74884184]  max|de|= -0.0522  lindep= 0.898
+davidson 6 84  |r|= 0.0543  e= [15.13872387 15.397519   15.41429175 15.42178577 15.43749955 15.48121146 15.58829695 15.6624995  15.6769025  15.70182064 15.72833217 15.74866672]  max|de|= -0.00644  lindep= 0.737
+davidson 7 96  |r|= 0.0119  e= [15.13872374 15.39751899 15.41429157 15.42178577 15.43749952 15.48121142 15.58811164 15.66218062 15.67689847 15.70137531 15.72828423 15.74865572]  max|de|= -0.000445  lindep= 0.801
+root 3 converged  |r|= 3.74e-06  e= 15.421785767755162  max|de|= -6.38e-11
+davidson 8 108  |r|= 0.00326  e= [15.13872373 15.39751899 15.41429157 15.42178577 15.43749952 15.48121142 15.58809506 15.66215741 15.67689836 15.70136332 15.72827911 15.74865518]  max|de|= -2.32e-05  lindep= 0.63
+root 1 converged  |r|= 3.26e-06  e= 15.397518991545248  max|de|= -3.22e-11
+root 2 converged  |r|= 2.23e-06  e= 15.414291566657726  max|de|= -3.88e-11
+root 4 converged  |r|= 6.88e-06  e= 15.437499521930082  max|de|= -1.27e-10
+root 5 converged  |r|= 2.72e-06  e= 15.48121141824452  max|de|= -3.92e-11
+davidson 9 119  |r|= 0.00107  e= [15.13872373 15.39751899 15.41429157 15.42178577 15.43749952 15.48121142 15.58809258 15.66215531 15.67689835 15.70136294 15.72827875 15.74865516]  max|de|= -2.47e-06  lindep= 0.817
+root 0 converged  |r|= 3.69e-06  e= 15.13872373346227  max|de|= -3.2e-11
+root 8 converged  |r|= 5.31e-06  e= 15.676898354578306  max|de|= -1.07e-10
+davidson 10 126  |r|= 0.000344  e= [15.13872373 15.39751899 15.41429157 15.42178577 15.43749952 15.48121142 15.58809212 15.66215516 15.67689835 15.70136293 15.72827872 15.74865515]  max|de|= -4.67e-07  lindep= 0.654
+root 11 converged  |r|= 3.26e-06  e= 15.748655154840453  max|de|= -2.75e-11
+davidson 11 131  |r|= 8.63e-05  e= [15.13872373 15.39751899 15.41429157 15.42178577 15.43749952 15.48121142 15.58809208 15.66215515 15.67689835 15.70136293 15.72827871 15.74865515]  max|de|= -3.77e-08  lindep= 0.713
+root 9 converged  |r|= 2.25e-06  e= 15.701362927146942  max|de|= -1.24e-11
+davidson 12 135  |r|= 2.85e-05  e= [15.13872373 15.39751899 15.41429157 15.42178577 15.43749952 15.48121142 15.58809208 15.66215514 15.67689835 15.70136293 15.72827871 15.74865515]  max|de|= -1.67e-09  lindep= 0.657
+root 10 converged  |r|= 6.64e-06  e= 15.728278713806725  max|de|= -5.47e-11
+davidson 13 138  |r|= 1.2e-05  e= [15.13872373 15.39751899 15.41429157 15.42178577 15.43749952 15.48121142 15.58809208 15.66215514 15.67689835 15.70136293 15.72827871 15.74865515]  max|de|= -1.08e-10  lindep= 0.307
+root 6 converged  |r|= 8.31e-06  e= 15.588092076331135  max|de|= -8.44e-12
+root 7 converged  |r|= 9.16e-06  e= 15.662155144025643  max|de|= -1.12e-11
+converged 14 140  |r|= 9.16e-06  e= [15.13872373 15.39751899 15.41429157 15.42178577 15.43749952 15.48121142 15.58809208 15.66215514 15.67689835 15.70136293 15.72827871 15.74865515]  max|de|= -1.12e-11
+
+cvs-ip-mr-adc(2)-x excitation energies (a.u.):
+[[15.13872373]
+ [15.39751899]
+ [15.41429157]
+ [15.42178577]
+ [15.43749952]
+ [15.48121142]
+ [15.58809208]
+ [15.66215514]
+ [15.67689835]
+ [15.70136293]
+ [15.72827871]
+ [15.74865515]]
+
+cvs-ip-mr-adc(2)-x excitation energies (eV):
+[[411.945867  ]
+ [418.98804829]
+ [419.44445354]
+ [419.64838124]
+ [420.07597449]
+ [421.26543639]
+ [424.17380873]
+ [426.18916849]
+ [426.59035189]
+ [427.25606716]
+ [427.98848339]
+ [428.54295488]]
+
+cvs-ip-mr-adc(2)-x spectroscopic intensity:
+[[1.50994879]
+ [0.00000074]
+ [0.00000002]
+ [0.        ]
+ [0.00407045]
+ [0.00000064]
+ [0.00000018]
+ [0.00853956]
+ [0.        ]
+ [0.        ]
+ [0.00334318]
+ [0.00000304]]
+
+------------------------------------------------------------------------------
+> CPU time for total MR-ADC calculation   8837.81 sec, wall time   1047.05 sec
