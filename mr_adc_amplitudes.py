@@ -28,6 +28,10 @@ import prism.mr_adc_integrals as mr_adc_integrals
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
+### warning import for t2_aa
+import warnings
+###
+
 def compute_amplitudes(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -144,6 +148,7 @@ def compute_t2_amplitudes(mr_adc):
 
     # Approximate second-order amplitudes
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+#    if mr_adc.method in ("mr-adc(1)"): ##checking M_00 block
 
         if (ncore > 0) and (nextern > 0) and not (approx_trans_moments):
             mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)
@@ -153,7 +158,9 @@ def compute_t2_amplitudes(mr_adc):
 
         if mr_adc.method_type == "cvs-ee":
             mr_adc.t2.ae = compute_t2_m1p_singles(mr_adc)
-            ###WiP - t2_aa must be properly implemented!! but for now, it is being set to 0
+            ###TODO - Make a compute_t2_0pp function!
+            msg = 'CAUTION: t2_aa has been set to zero!'
+            warnings.warn(msg, category = UserWarning)
             mr_adc.t2.aa = np.zeros((ncas, ncas))
             ###WiP
     else:
@@ -199,11 +206,9 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t1.xa = np.ascontiguousarray(mr_adc.t1.ca[:ncvs, :])
             mr_adc.t1.va = np.ascontiguousarray(mr_adc.t1.ca[ncvs:, :])
             del(mr_adc.t1.ca)
-
             mr_adc.t1.xaaa = np.ascontiguousarray(mr_adc.t1.caaa[:ncvs, :, :, :])
             mr_adc.t1.vaaa = np.ascontiguousarray(mr_adc.t1.caaa[ncvs:, :, :, :])
             del(mr_adc.t1.caaa)
-
             mr_adc.t1.xxae = np.ascontiguousarray(mr_adc.t1.ccae[:ncvs, :ncvs, :, :])
             mr_adc.t1.xvae = np.ascontiguousarray(mr_adc.t1.ccae[:ncvs, ncvs:, :, :])
             mr_adc.t1.vxae = np.ascontiguousarray(mr_adc.t1.ccae[ncvs:, :ncvs, :, :])
@@ -2045,8 +2050,6 @@ def compute_t2_0p_singles(mr_adc):
     return t2_ce
 
 def compute_t2_m1p_singles(mr_adc):
-    ###WiP: change over v_ceee and v_aeee integrals in lines (2177, 2178, and 2231) to match Carlos' work
-    ### check error source for t2_ae (ilia's branch)
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing T[-1']^(2) amplitudes...")
@@ -3191,8 +3194,6 @@ def compute_t2_m1p_singles(mr_adc):
     V1 += 11/48 * einsum('xyzw,zxua,vsAa,Xywvsu->XA', v_aaaa, t1_aaae, t1_aaee, rdm_cccaaa, optimize = einsum_type)
     V1 -= 1/48 * einsum('xyzw,zxua,vsAa,Xywvus->XA', v_aaaa, t1_aaae, t1_aaee, rdm_cccaaa, optimize = einsum_type)
 
-#######
-
     chunks = tools.calculate_double_chunks(mr_adc, ncore, [nextern, nextern, nextern],
                                                                      [ncas, nextern, nextern], ntensors = 2)
 
@@ -3206,10 +3207,7 @@ def compute_t2_m1p_singles(mr_adc):
             v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee[s_chunk:f_chunk])
 
         ## Amplitudes
-        t1_caee = mr_adc.t1.caee[:, s_chunk:f_chunk]
-
-        ## Reduced density matrix
-        rdm_ca = mr_adc.rdm.ca[:, s_chunk:f_chunk]
+        t1_caee = mr_adc.t1.caee[s_chunk:f_chunk]
 
         V1 -= einsum('ixab,iaAb,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
         V1 += 1/2 * einsum('ixab,ibAa,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
@@ -3217,36 +3215,26 @@ def compute_t2_m1p_singles(mr_adc):
     del(v_ceee)
     mr_adc.log.timer_debug("contracting v2e.ceee", *cput1)
 
-######
-
     chunks = tools.calculate_double_chunks(mr_adc, ncas, [nextern, nextern, nextern],
                                                                      [ncas, nextern, nextern], ntensors = 2)
 
-    for i_v_chunk, (s_v_chunk, f_v_chunk) in enumerate(chunks):
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_v_chunk + 1, len(chunks), s_v_chunk, f_v_chunk)
+        mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         if interface.with_df:
-            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, f_v_chunk)
+            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_chunk, f_chunk)
         else:
-            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_v_chunk:f_v_chunk])
+            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_chunk:f_chunk])
 
-        for s_t_chunk, f_t_chunk in chunks:
+        ##Amplitudes
+        t1_aaee = mr_adc.t1.aaee[s_chunk:f_chunk]
+        rdm_ccaa = rdm_ccaa[:, s_chunk:f_chunk]
     
-            ##Amplitudes
-            t1_aaee = mr_adc.t1.aaee[s_t_chunk:f_t_chunk]
-
-            ## Reduced density matrices
-            rdm_ccaa = mr_adc.rdm.ccaa[:, s_v_chunk:f_v_chunk, s_t_chunk:f_t_chunk]
-
-            V1 -= 1/2 * einsum('xyab,zbAa,Xzxy->XA', t1_aaee, v_aeee, rdm_ccaa, optimize = einsum_type) 
+        V1 -= 1/2 * einsum('xyab,zbAa,Xzxy->XA', t1_aaee, v_aeee, rdm_ccaa, optimize = einsum_type) 
     
     del(v_aaee)
     mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
-
-    print('\nnote: t_ae set to zero\n')
-    #exit()
-######
 
     S_12_V = np.einsum("Pa,Pm->ma", V1, S_m1_12_inv_act)
     S_12_V = np.einsum("mp,ma->pa", evecs, S_12_V)
@@ -3263,14 +3251,5 @@ def compute_t2_m1p_singles(mr_adc):
 
     mr_adc.log.extra("Norm of T[-1']^(2):                          %20.12f" % np.linalg.norm(t2_ae))
     mr_adc.log.timer("computing T[-1']^(2) amplitudes", *cput0)
-
-    #print(t2_ae)
-    #print(t2_ae.shape)
-    #print(np.nonzero(t2_ae.round(8)))
-    #print(t2_ae[np.nonzero(t2_ae.round(8))])
-    #exit()
-
-    ###setting t2_ae to zero until bug is fixed
-    t2_ae = np.zeros((ncas, nextern))
 
     return t2_ae

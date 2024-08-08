@@ -183,7 +183,7 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.aeae = tools.create_dataset('aeae', tmpfile, (ncas, nextern, ncas, nextern))
             mr_adc.v2e.aeae[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_a, mo_e)
  
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"): ##comment out if checking M_00 block
             mr_adc.v2e.ccca = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
             mr_adc.v2e.ccce = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_e)
 
@@ -861,17 +861,11 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.veae = np.ascontiguousarray(mr_adc.v2e.ceae[ncvs:, :, :, :])
             del(mr_adc.v2e.ceae)
             
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"): ##comment out if checking M_00 block
 
-            ###WiP: use the non-efficient oeee integrals until cvs-ee blocks are fully implemented
-            mo = mr_adc.mo
-            ncore = mr_adc.ncore
-            nocc = mr_adc.nocc
-            mo_c = mo[:, :ncore].copy()
-            mo_a = mo[:, ncore:nocc].copy()
-            mo_e = mo[:, nocc:].copy()
-            mr_adc.v2e.ceee = transform_2e_chem_incore(mr_adc.interface, mo_c, mo_e, mo_e, mo_e)
-            mr_adc.v2e.aeee = transform_2e_chem_incore(mr_adc.interface, mo_a, mo_e, mo_e, mo_e)
+            ###WiP: use the inefficient oeee integrals until cvs-ee blocks are fully implemented
+            mr_adc.v2e.ceee = unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee)
+            mr_adc.v2e.aeee = unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee)
             ###
             mr_adc.v2e.xeee = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs, :, :, :])
             mr_adc.v2e.veee = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:, :, :, :])

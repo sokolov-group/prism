@@ -114,7 +114,16 @@ def kernel(mr_adc):
 
     # Compute transition moments and spectroscopic factors
     U = np.array(U)
-    spec_intensity, X = compute_trans_properties(mr_adc, E, U)
+
+    ###WiP
+    if mr_adc.method_type == "cvs-ee" and mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E_ev)
+        print("\n*** Transition properties are currently under construction! ***")
+    else:
+        spec_intensity, X = compute_trans_properties(mr_adc, E, U)
+
+    #mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, E, spec_intensity, X) 
+    ###WiP
 
     mr_adc.log.info("\n------------------------------------------------------------------------------")
     mr_adc.log.timer0("total MR-ADC calculation", *cput0)
@@ -230,7 +239,7 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "cvs-ip":
         precond = mr_adc_cvs_ip.compute_preconditioner(mr_adc)
     elif mr_adc.method_type == "cvs-ee":
-        precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc, M_00)
+        precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc)
 
     # Compute guess vectors
     x0 = compute_guess_vectors(mr_adc, precond)
@@ -246,7 +255,7 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "cvs-ip":
         apply_M = mr_adc_cvs_ip.define_effective_hamiltonian(mr_adc)
     elif mr_adc.method_type == "cvs-ee":
-        apply_M = mr_adc_cvs_ee.define_effective_hamiltonian(mr_adc, M_00)
+        apply_M = mr_adc_cvs_ee.define_effective_hamiltonian(mr_adc)
 
     return apply_M, precond, x0
 
@@ -284,17 +293,20 @@ def compute_trans_properties(mr_adc, E, U):
     elif mr_adc.method_type == "ee":
         X = mr_adc_ee.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "cvs-ee":
-###
-        print("\n*** Transition properties are currently under construction! ***")
-        exit()
-###
-        X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
+        X = mr_adc_cvs_ee.compute_trans_moments(mr_adc)
     else:
         msg = "Unknown Method Type ..."
         mr_adc.log.error(msg)
         raise Exception(msg)
 
-    spec_intensity = 2.0 * np.sum(X**2, axis=0)
+
+    if mr_adc.method_type == "cvs-ip":
+        spec_intensity = 2.0 * np.sum(X**2, axis=0)
+    ###WiP
+    elif mr_adc.method_type == "cvs_ee":
+        X = np.dot(X, U.T)
+        spec_intensity = np.sum(X**2, axis=0)
+    ###WiP
 
     mr_adc.log.note("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
     print(spec_intensity.reshape(-1, 1))

@@ -16,6 +16,7 @@
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
 import numpy as np
@@ -86,6 +87,8 @@ def compute_S12_m1(mr_adc):
 
 def compute_S12_p2(mr_adc):
 
+    ###spin relation: S_p2__aa_aa = S_p2__ab_ab - S_p2__ab_ab.transpose(0,1,3,2)
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -104,7 +107,8 @@ def compute_S12_p2(mr_adc):
     S_p2 += 1/6 * einsum('WZYX->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
     S_p2 += einsum('WX,YZ->XYWZ', np.identity(ncas), np.identity(ncas), optimize = einsum_type)
     S_p2 -= 1/2 * einsum('WX,YZ->XYWZ', np.identity(ncas), rdm_ca, optimize = einsum_type)
-    S_p2 -= 1/2 * einsum('YZ,WX->XYWZ', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S_p2 -= 1/2 * einsum('YZ,WX->XYWZ', np.identity(ncas), rdm_ca, optimize = einsum_type) 
+
     S_p2 = S_p2.reshape(ncas**2, ncas**2)
 
     # Compute S^{-1/2} matrix
@@ -338,6 +342,183 @@ def compute_S12_0p_gno_projector(mr_adc):
         mr_adc.log.extra("Smallest eigenvalue of the [0'] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_0p_12_inv
+
+def compute_S12_p1p_projector(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    ncas = mr_adc.ncas
+
+    s_thresh = mr_adc.s_thresh_singles
+
+    ## Reduced density matrices
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+    rdm_cccaaa = mr_adc.rdm.cccaaa
+
+    # Compute S matrix
+    ## S11 block: < Psi_0 | a_X a^{\dag}_Y | Psi_0 >
+    S11_a_a  = einsum('XY->XY', np.identity(ncas), optimize = einsum_type).copy()
+    S11_a_a -= 1/2 * einsum('YX->XY', rdm_ca, optimize = einsum_type).copy()
+
+    ## S22 block: < Psi_0 | a^{\dag}_U a_V a_X a^{\dag}_Y a^{\dag}_Z a_W | Psi_0 >
+    S22_aaa_aaa =- 1/12 * einsum('UYZVXW->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa -= 1/12 * einsum('UYZWVX->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa -= 1/12 * einsum('UYZXWV->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_aaa_aaa += 1/6 * einsum('VY,UZWX->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/6 * einsum('VY,UZXW->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/6 * einsum('VZ,UYWX->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa += 1/6 * einsum('VZ,UYXW->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa += 1/6 * einsum('XY,UZVW->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/6 * einsum('XY,UZWV->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/6 * einsum('XZ,UYVW->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa += 1/6 * einsum('XZ,UYWV->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_aaa_aaa -= 1/2 * einsum('VY,XZ,UW->UVXWZY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_aaa_aaa += 1/2 * einsum('VZ,XY,UW->UVXWZY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+
+    S22_bba_bba =- 1/12 * einsum('UYZVXW->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_bba_bba += 1/12 * einsum('UYZWVX->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_bba_bba += 1/6 * einsum('UYZWXV->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_bba_bba += 1/12 * einsum('UYZXWV->UVXWZY', rdm_cccaaa, optimize = einsum_type).copy()
+    S22_bba_bba -= 1/3 * einsum('VZ,UYWX->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_bba_bba -= 1/6 * einsum('VZ,UYXW->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_bba_bba += 1/6 * einsum('XY,UZVW->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_bba_bba -= 1/6 * einsum('XY,UZWV->UVXWZY', np.identity(ncas), rdm_ccaa, optimize = einsum_type)
+    S22_bba_bba += 1/2 * einsum('VZ,XY,UW->UVXWZY', np.identity(ncas), np.identity(ncas), rdm_ca, optimize = einsum_type)
+
+    S22_aaa_bba = np.ascontiguousarray(S22_aaa_aaa -
+                                       S22_bba_bba.transpose(0,2,1,3,5,4) +
+                                       S22_bba_bba.transpose(0,1,2,3,5,4))
+
+    S22_bba_aaa = np.ascontiguousarray(S22_aaa_bba.transpose(3,4,5,0,1,2))
+
+#    S22_aba_aba = S22_bba_bba.transpose(0,2,1,3,5,4).copy() ## can use S22_aaa_bba = S22_aaa_aaa - S22_aba_aba + S22_aba_aba.transpose(0,2,1,3,4,5)
+
+    # Diagonalize the singles block
+    S11_eval, S11_evec = np.linalg.eigh(S11_a_a)
+
+    S11_ind_nonzero = np.where(S11_eval > s_thresh)[0]
+    S11_inv_eval = 1.0/np.sqrt(S11_eval[S11_ind_nonzero])
+    S11_evec = S11_evec[:, S11_ind_nonzero]
+
+    S11_12_inv_act = np.dot(S11_evec, np.diag(S11_inv_eval))
+    
+    # Compute projector
+    ##p_ten_aaa  = np.einsum('ZX,YP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
+    ##p_ten_aaa -= np.einsum('ZY,XP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
+    p_ten_bab  = np.einsum('ZX,YP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
+    p_ten_aaa = p_ten_bab - p_ten_bab.transpose(1,0,2,3)
+
+    nelecas = sum(mr_adc.nelecas)
+    if nelecas > 0:
+       p_ten_aaa *= 1.0 / nelecas
+       p_ten_bab *= 1.0 / nelecas
+
+    ###WiP: p_rdm must be tested for open-shell...
+    p_rdm_aaa  = np.einsum('vxuP,uvxWZY->PYZW', p_ten_aaa, S22_aaa_aaa)
+    p_rdm_aaa += 2 * np.einsum('vxuP,uvxWZY->PYZW', p_ten_bab, S22_bba_aaa)
+
+    p_rdm_abb  = np.einsum('vxuP,uvxWZY->PYZW', p_ten_aaa, S22_aaa_bba)
+    p_rdm_abb += 2 * np.einsum('vxuP,uvxWZY->PYZW', p_ten_bab, S22_bba_bba)
+
+    #p_rdm_aaa = p_rdm_abb - p_rdm_abb.transpose(0,2,1,3)
+
+    Q_aaa_aaa = np.einsum('XZ,YV,WU->UVXWYZ', np.identity(ncas), np.identity(ncas), np.identity(ncas))
+    Q_aaa_aaa -= np.einsum('XY,ZV,WU->UVXWYZ', np.identity(ncas), np.identity(ncas), np.identity(ncas))
+    Q_aaa_aaa -= 0.5 * np.einsum('VXUP,PZYW->UVXWYZ', p_ten_aaa, p_rdm_aaa)
+
+    Q_aaa_bba =- 0.5 * np.einsum('VXUP,PZYW->UVXWYZ', p_ten_aaa, p_rdm_abb) ##can use the same symm relationship for S22_aaa_bba to get Q_aaa_bba
+
+    Q_bba_bba = np.einsum('XZ,YV,WU->UVXWYZ', np.identity(ncas), np.identity(ncas), np.identity(ncas))
+    Q_bba_bba -= 0.5 * np.einsum('VXUP,PZYW->UVXWYZ', p_ten_bab, p_rdm_abb)
+
+    Q_bba_aaa =- 0.5 * np.einsum('VXUP,PZYW->UVXWYZ', p_ten_bab, p_rdm_aaa) ##NOT equal to tranpose of Q_aaa_bba
+
+    ## Reshape tensors to matrix form
+    dim_wzy = ncas * ncas * ncas
+    dim_tril_wzy = ncas * ncas * (ncas - 1) // 2
+
+    dim_S22 = dim_wzy + dim_tril_wzy
+
+    tril_ind = np.tril_indices(ncas, k=-1)
+
+    S22_aaa_aaa = S22_aaa_aaa[:, :, :, :, tril_ind[0], tril_ind[1]]
+    S22_aaa_aaa = S22_aaa_aaa[:, tril_ind[0], tril_ind[1]]
+
+    S22_aaa_bba = S22_aaa_bba[:, tril_ind[0], tril_ind[1]]
+    S22_bba_aaa = S22_bba_aaa[:, :, :, :, tril_ind[0], tril_ind[1]]
+
+    S22_aaa_aaa = S22_aaa_aaa.reshape(dim_tril_wzy, dim_tril_wzy)
+    S22_aaa_bba = S22_aaa_bba.reshape(dim_tril_wzy, dim_wzy)
+
+    S22_bba_aaa = S22_bba_aaa.reshape(dim_wzy, dim_tril_wzy)
+    S22_bba_bba = S22_bba_bba.reshape(dim_wzy, dim_wzy)
+
+    Q_aaa_aaa = Q_aaa_aaa[:, :, :, :, tril_ind[0], tril_ind[1]]
+    Q_aaa_aaa = Q_aaa_aaa[:, tril_ind[0], tril_ind[1]]
+
+    Q_aaa_bba = Q_aaa_bba[:, tril_ind[0], tril_ind[1]]
+    Q_bba_aaa = Q_bba_aaa[:, :, :, :, tril_ind[0], tril_ind[1]]
+
+    Q_aaa_aaa = Q_aaa_aaa.reshape(dim_tril_wzy, dim_tril_wzy)
+    Q_aaa_bba = Q_aaa_bba.reshape(dim_tril_wzy, dim_wzy)
+
+    Q_bba_aaa = Q_bba_aaa.reshape(dim_wzy, dim_tril_wzy)
+    Q_bba_bba = Q_bba_bba.reshape(dim_wzy, dim_wzy)
+
+    # Build S_p1p_act and Q matrix
+    s_aaa = 0
+    f_aaa = s_aaa + dim_tril_wzy
+    s_bba = f_aaa
+    f_bba = s_bba + dim_wzy
+
+    S22 = np.zeros((dim_S22, dim_S22))
+
+    Q = np.identity(dim_S22)
+
+    S22[s_aaa:f_aaa, s_aaa:f_aaa] = S22_aaa_aaa
+    S22[s_aaa:f_aaa, s_bba:f_bba] = S22_aaa_bba
+
+    S22[s_bba:f_bba, s_aaa:f_aaa] = S22_bba_aaa
+    S22[s_bba:f_bba, s_bba:f_bba] = S22_bba_bba
+
+    Q[s_aaa:f_aaa, s_aaa:f_aaa] = Q_aaa_aaa
+    Q[s_aaa:f_aaa, s_bba:f_bba] = Q_aaa_bba
+
+    Q[s_bba:f_bba, s_aaa:f_aaa] = Q_bba_aaa
+    Q[s_bba:f_bba, s_bba:f_bba] = Q_bba_bba
+
+    # Diagonalize the semi-internal doubles block in projected space
+    S22 = np.dot(S22, Q)
+
+    aaa_aaa = S22[s_aaa:f_aaa, s_aaa:f_aaa] 
+    aaa_bba = S22[s_aaa:f_aaa, s_bba:f_bba] 
+
+    bba_aaa = S22[s_bba:f_bba, s_aaa:f_aaa] 
+    bba_bba = S22[s_bba:f_bba, s_bba:f_bba] 
+
+    S22_eval, S22_evec = np.linalg.eigh(S22)
+
+    S22_ind_nonzero = np.where(S22_eval > s_thresh)[0]
+    S22_inv_eval = 1.0/np.sqrt(S22_eval[S22_ind_nonzero])
+    S22_evec = S22_evec[:, S22_ind_nonzero]
+
+    # Compute S^{-1/2} matrix
+    S22_12_inv_act = reduce(np.dot, (Q, S22_evec, np.diag(S22_inv_eval)))
+
+    S_p1p_12_inv_act = np.zeros((S11_12_inv_act.shape[0] + S22_12_inv_act.shape[0], S11_12_inv_act.shape[1] + S22_12_inv_act.shape[1]))
+
+    S_p1p_12_inv_act[:S11_12_inv_act.shape[0], :S11_12_inv_act.shape[1]] = S11_12_inv_act.copy()
+    S_p1p_12_inv_act[S11_12_inv_act.shape[0]:, S11_12_inv_act.shape[1]:] = S22_12_inv_act.copy()
+
+    mr_adc.log.extra("Dimension of the [+1'] orthonormalized subspace:   %d" % (S11_inv_eval.shape[0] + S22_inv_eval.shape[0]))
+    if S22_eval[S22_ind_nonzero].shape[0] > 0:
+        mr_adc.log.extra("Smallest eigenvalue of the [+1'] overlap metric:   %e" % min(np.amin(S11_eval[S11_ind_nonzero]), np.amin(S22_eval[S22_ind_nonzero])))
+
+    return S_p1p_12_inv_act
 
 def compute_S12_p1p_gno_projector(mr_adc):
 
