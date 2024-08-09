@@ -91,7 +91,6 @@ class MRADC:
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
         self.dip_mom = None 
-
         self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
 
         # Approximations

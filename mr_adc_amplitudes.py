@@ -156,13 +156,17 @@ def compute_t2_amplitudes(mr_adc):
         else:
             mr_adc.t2.ce = np.zeros((ncore, nextern))
 
+        # EE and CVS-EE amplitudes 
         if mr_adc.method_type == "cvs-ee":
             mr_adc.t2.ae = compute_t2_m1p_singles(mr_adc)
             ###TODO - Make a compute_t2_0pp function!
             msg = 'CAUTION: t2_aa has been set to zero!'
             warnings.warn(msg, category = UserWarning)
             mr_adc.t2.aa = np.zeros((ncas, ncas))
-            ###WiP
+            ###TODO - Make a compute_t2_p1p_singles function
+            mr_adc.t2.ca = np.zeros((ncore, ncas)) ##only shows up in transition moments
+
+        mr_adc.t2.aaae = np.zeros((ncas, ncas, ncas, nextern))
     else:
         mr_adc.t2.ce = np.zeros((ncore, nextern))
 
