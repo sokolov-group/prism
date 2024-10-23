@@ -26,6 +26,7 @@ class MRADC:
     def __init__(self, interface):
 
         # General info
+        ###include versioning information 'self.version (__version__ ?) = x.x.x'
         self.interface = interface
         self.log = interface.log
         log = self.log

@@ -293,7 +293,7 @@ def compute_trans_properties(mr_adc, E, U):
     elif mr_adc.method_type == "ee":
         X = mr_adc_ee.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "cvs-ee":
-        X = mr_adc_cvs_ee.compute_trans_moments(mr_adc)
+        X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
     else:
         msg = "Unknown Method Type ..."
         mr_adc.log.error(msg)
