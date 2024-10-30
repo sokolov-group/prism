@@ -113,6 +113,9 @@ class MRADC:
         self.M_00 = None
         self.M_01 = lambda:None
 
+        # Debugging Flags
+        self.caaa_excitation = True
+
     def kernel(self):
 
         log = self.log

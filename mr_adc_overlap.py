@@ -1050,9 +1050,5 @@ def compute_S12_p1p_projector_alt(mr_adc):
     S_p1p_12_inv_act[:S11_12_inv_act.shape[0], :S11_12_inv_act.shape[1]] = S11_12_inv_act.copy()
     S_p1p_12_inv_act[S11_12_inv_act.shape[0]:, S11_12_inv_act.shape[1]:] = S22_12_inv_act.copy()
 
-    mr_adc.log.extra("Dimension of the [+1'] orthonormalized subspace:   %d" % (S11_inv_eval.shape[0] + S22_inv_eval.shape[0]))
-    if S22_eval[S22_ind_nonzero].shape[0] > 0:
-        mr_adc.log.extra("Smallest eigenvalue of the [+1'] overlap metric:   %e" % min(np.amin(S11_eval[S11_ind_nonzero]), np.amin(S22_eval[S22_ind_nonzero])))
-
     return S_p1p_12_inv_act
 

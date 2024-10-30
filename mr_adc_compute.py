@@ -299,15 +299,12 @@ def compute_trans_properties(mr_adc, E, U):
         mr_adc.log.error(msg)
         raise Exception(msg)
 
-
     if mr_adc.method_type == "cvs-ip":
         spec_intensity = 2.0 * np.sum(X**2, axis=0)
-    ###WiP
-    elif mr_adc.method_type == "cvs_ee":
-        X = np.dot(X, U.T)
+    elif mr_adc.method_type in ("cvs-ee", "ee"):
         spec_intensity = np.sum(X**2, axis=0)
-    ###WiP
-
+        ##using a prefac of 4 returns the correct singlet intensities & strengths for mr-adc-1, but does not correct triplets showing up with nonzero intensities
+        
     mr_adc.log.note("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
     print(spec_intensity.reshape(-1, 1))
 
