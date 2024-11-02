@@ -58,6 +58,7 @@ An extensive and comprehensive manual of Prism will be released soon.
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 - Ilia Mazin <ilia.mazin@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
+- Donna Odhiambo <donna.odhiambo@proton.me>
 
 ## Contributors of Spin-Orbital Prism (Pilot code)
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>

@@ -293,7 +293,7 @@ def compute_trans_properties(mr_adc, E, U):
     elif mr_adc.method_type == "ee":
         X = mr_adc_ee.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "cvs-ee":
-        X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
+        X, dX = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
     else:
         msg = "Unknown Method Type ..."
         mr_adc.log.error(msg)
@@ -302,8 +302,7 @@ def compute_trans_properties(mr_adc, E, U):
     if mr_adc.method_type == "cvs-ip":
         spec_intensity = 2.0 * np.sum(X**2, axis=0)
     elif mr_adc.method_type in ("cvs-ee", "ee"):
-        spec_intensity = np.sum(X**2, axis=0)
-        ##using a prefac of 4 returns the correct singlet intensities & strengths for mr-adc-1, but does not correct triplets showing up with nonzero intensities
+        spec_intensity = np.sum(dX**2, axis=0)
         
     mr_adc.log.note("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
     print(spec_intensity.reshape(-1, 1))
