@@ -287,6 +287,11 @@ def compute_cvs_amplitudes(mr_adc):
                 mr_adc.log.timer_debug("storing CVS t1.vaee", *cput1)
             del(mr_adc.t1.caee)
 
+            if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x") and mr_adc.method_type == "cvs-ee": 
+                mr_adc.t2.xa = np.ascontiguousarray(mr_adc.t2.ca[:ncvs, :])
+                mr_adc.t2.va = np.ascontiguousarray(mr_adc.t2.ca[ncvs:, :])
+                del(mr_adc.t2.ca)
+
     if mr_adc.outcore_expensive_tensors:
         mr_adc.tmpfile.ct1.close()
 
@@ -846,21 +851,6 @@ def compute_t1_p1p(mr_adc):
     V2_aa_aa -= 1/6 * einsum('IxyZ,XxyY->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
     V2_aa_aa += 1/6 * einsum('Ixyz,XxzYZy->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
     V2_aa_aa -= 1/6 * einsum('Ixyz,XxzZYy->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
-    
-##    NEW_V2_aa_aa =- 1/2 * einsum('IY,XZ->IXYZ', h_ca, rdm_ca, optimize = einsum_type)
-##    NEW_V2_aa_aa += 1/2 * einsum('IZ,XY->IXYZ', h_ca, rdm_ca, optimize = einsum_type)
-##    NEW_V2_aa_aa -= 1/6 * einsum('Ix,XxYZ->IXYZ', h_ca, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_aa_aa += 1/6 * einsum('Ix,XxZY->IXYZ', h_ca, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_aa_aa -= 1/2 * einsum('IYxZ,Xx->IXYZ', v_caaa, rdm_ca, optimize = einsum_type)
-##    NEW_V2_aa_aa -= 1/2 * einsum('IYxy,XyZx->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_aa_aa += 1/2 * einsum('IZxY,Xx->IXYZ', v_caaa, rdm_ca, optimize = einsum_type)
-##    NEW_V2_aa_aa += 1/2 * einsum('IZxy,XyYx->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_aa_aa += 1/6 * einsum('IxyY,XxZy->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_aa_aa -= 1/6 * einsum('IxyY,XxyZ->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_aa_aa -= 1/6 * einsum('IxyZ,XxYy->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_aa_aa += 1/6 * einsum('IxyZ,XxyY->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_aa_aa -= 1/6 * einsum('Ixyz,XxzYZy->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
-##    NEW_V2_aa_aa += 1/6 * einsum('Ixyz,XxzZYy->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
 
     V2_ab_ba =- 1/2 * einsum('IZ,XY->IXYZ', h_ca, rdm_ca, optimize = einsum_type)
     V2_ab_ba += 1/3 * einsum('Ix,XxYZ->IXYZ', h_ca, rdm_ccaa, optimize = einsum_type)
@@ -873,25 +863,6 @@ def compute_t1_p1p(mr_adc):
     V2_ab_ba += 1/6 * einsum('IxyZ,XxyY->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
     V2_ab_ba += 1/3 * einsum('Ixyz,XxzYZy->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
     V2_ab_ba += 1/6 * einsum('Ixyz,XxzZYy->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
-
-##    NEW_V2_ab_ba =- 1/2 * einsum('IY,XZ->IXYZ', h_ca, rdm_ca, optimize = einsum_type)
-##    NEW_V2_ab_ba += 1/6 * einsum('Ix,XxYZ->IXYZ', h_ca, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_ab_ba += 1/3 * einsum('Ix,XxZY->IXYZ', h_ca, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_ab_ba -= 1/2 * einsum('IYxZ,Xx->IXYZ', v_caaa, rdm_ca, optimize = einsum_type)
-##    NEW_V2_ab_ba -= 1/2 * einsum('IYxy,XyZx->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_ab_ba += 1/3 * einsum('IxyY,XxZy->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_ab_ba += 1/6 * einsum('IxyY,XxyZ->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_ab_ba += 1/6 * einsum('IxyZ,XxYy->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_ab_ba += 1/3 * einsum('IxyZ,XxyY->IXYZ', v_caaa, rdm_ccaa, optimize = einsum_type)
-##    NEW_V2_ab_ba -= 1/6 * einsum('Ixyz,XxzYyZ->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
-##    NEW_V2_ab_ba += 1/6 * einsum('Ixyz,XxzZYy->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
-##    NEW_V2_ab_ba -= 1/6 * einsum('Ixyz,XxzZyY->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
-##    NEW_V2_ab_ba -= 1/6 * einsum('Ixyz,XxzyYZ->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
-##    NEW_V2_ab_ba -= 1/6 * einsum('Ixyz,XxzyZY->IXYZ', v_caaa, rdm_cccaaa, optimize = einsum_type)
-##
-##    print('V2_t1_p1p check! does the reindex affect things strongly?')
-##    print('V2_aa_aa: ', np.linalg.norm(-NEW_V2_aa_aa - V2_aa_aa)) ##NEW_aa_aa is the negative of Carlos' aa_aa
-##    print('V2_ab_ba: ', np.linalg.norm(NEW_V2_ab_ba - V2_ab_ba))
 
     ## Reshape tensors to matrix form
     tril_ind = np.tril_indices(ncas, k=-1)
@@ -3291,7 +3262,7 @@ def compute_t2_m1p_singles(mr_adc):
     return t2_ae
 
 def compute_t2_p1p_singles(mr_adc):
-    ##TODO: finish tests for correctness
+    ##TODO: finish tests for correctness, use chunks for ee v&t
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing T[+1']^(2) amplitudes...")
@@ -3324,7 +3295,7 @@ def compute_t2_p1p_singles(mr_adc):
     v_ccce = mr_adc.v2e.ccce
     v_ccca = mr_adc.v2e.ccca
     
-    v_cece = mr_adc.v2e.cece
+    v_cece = mr_adc.v2e.cece  ## chunk
     v_caca = mr_adc.v2e.caca    
     v_ccaa = mr_adc.v2e.ccaa
     v_caac = mr_adc.v2e.caac    
@@ -3335,7 +3306,7 @@ def compute_t2_p1p_singles(mr_adc):
     
     v_caaa = mr_adc.v2e.caaa
 
-    v_ceae = mr_adc.v2e.ceae
+    v_ceae = mr_adc.v2e.ceae  ## chunk
     v_aeae = mr_adc.v2e.aeae
 
     v_caae = mr_adc.v2e.caae
@@ -3354,12 +3325,12 @@ def compute_t2_p1p_singles(mr_adc):
 
     t1_ae   = mr_adc.t1.ae
     t1_aaae = mr_adc.t1.aaae
-    t1_aaee = mr_adc.t1.aaee
+    t1_aaee = mr_adc.t1.aaee  ## chunk
 
-    t1_ccee = mr_adc.t1.ccee
+    t1_ccee = mr_adc.t1.ccee  ## chunk
     t1_ccae = mr_adc.t1.ccae
     t1_ccaa = mr_adc.t1.ccaa
-    t1_caee = mr_adc.t1.caee
+    t1_caee = mr_adc.t1.caee  ## chunk
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
