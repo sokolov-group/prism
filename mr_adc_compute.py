@@ -96,7 +96,14 @@ def kernel(mr_adc):
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     cput1 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("")
-    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
+#    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
+#                                           nroots = mr_adc.nroots,
+#                                           verbose = davidson_verbose,
+#                                           max_space = mr_adc.max_space,
+#                                           max_cycle = mr_adc.max_cycle,
+#                                           tol = mr_adc.tol_e,
+#                                           tol_residual = mr_adc.tol_davidson)
+    conv, E, U = mr_adc.interface.davidson_nosym(lambda xs: [apply_M(x) for x in xs], x0, precond,
                                            nroots = mr_adc.nroots,
                                            verbose = davidson_verbose,
                                            max_space = mr_adc.max_space,

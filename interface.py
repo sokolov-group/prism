@@ -122,6 +122,7 @@ class PYSCF:
         #    self.trans_rdm12s = fci.direct_spin1.trans_rdm12s
 
             self.davidson = lib.linalg_helper.davidson1
+            self.davidson_nosym = lib.linalg_helper.davidson_nosym1
 
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
             self.select_casci = None
