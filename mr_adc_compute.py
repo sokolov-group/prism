@@ -96,20 +96,21 @@ def kernel(mr_adc):
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     cput1 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("")
-#    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
-#                                           nroots = mr_adc.nroots,
-#                                           verbose = davidson_verbose,
-#                                           max_space = mr_adc.max_space,
-#                                           max_cycle = mr_adc.max_cycle,
-#                                           tol = mr_adc.tol_e,
-#                                           tol_residual = mr_adc.tol_davidson)
-    conv, E, U = mr_adc.interface.davidson_nosym(lambda xs: [apply_M(x) for x in xs], x0, precond,
+    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
                                            nroots = mr_adc.nroots,
                                            verbose = davidson_verbose,
                                            max_space = mr_adc.max_space,
                                            max_cycle = mr_adc.max_cycle,
                                            tol = mr_adc.tol_e,
                                            tol_residual = mr_adc.tol_davidson)
+
+#    conv, E, U = mr_adc.interface.davidson_nosym(lambda xs: [apply_M(x) for x in xs], x0, precond,
+#                                           nroots = mr_adc.nroots,
+#                                           verbose = davidson_verbose,
+#                                           max_space = mr_adc.max_space,
+#                                           max_cycle = mr_adc.max_cycle,
+#                                           tol = mr_adc.tol_e,
+#                                           tol_residual = mr_adc.tol_davidson)
     mr_adc.log.timer("solving eigenvalue problem", *cput1)
 
     mr_adc.log.note("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
@@ -123,14 +124,15 @@ def kernel(mr_adc):
     U = np.array(U)
 
     ###WiP
-    if mr_adc.method_type == "cvs-ee" and mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-        mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E_ev)
-        print("\n*** Transition properties are currently under construction! ***")
-    else:
-        spec_intensity, X = compute_trans_properties(mr_adc, E, U)
-
-    #mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, E, spec_intensity, X) 
+#    if mr_adc.method_type == "cvs-ee" and mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+#        mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E_ev)
+#        print("\n*** Transition properties are currently under construction! ***")
+#    else:
+#        spec_intensity, X = compute_trans_properties(mr_adc, E, U)
+#
+#    #mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, E, spec_intensity, X) 
     ###WiP
+    spec_intensity, X = None, None
 
     mr_adc.log.info("\n------------------------------------------------------------------------------")
     mr_adc.log.timer0("total MR-ADC calculation", *cput0)

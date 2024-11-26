@@ -898,39 +898,27 @@ def compute_K_0pp(mr_adc):
     K_caca_aa_bb += 1/3 * einsum('YxZy,WXyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
     K_caca_aa_bb += 1/6 * einsum('YxyZ,WxXy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
     K_caca_aa_bb += 1/3 * einsum('YxyZ,WxyX->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    
-    K_caca_ba_ba  = 1/2 * einsum('WX,YZ->XYWZ', h_aa, rdm_ca, optimize = einsum_type)
-    K_caca_ba_ba += 1/2 * einsum('YZ,WX->XYWZ', h_aa, rdm_ca, optimize = einsum_type)
-    K_caca_ba_ba += 1/2 * einsum('WXxy,YyZx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba += 1/3 * einsum('WxYy,XZxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba += 1/6 * einsum('WxYy,XZyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba -= 1/3 * einsum('WxyX,YxZy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba -= 1/6 * einsum('WxyX,YxyZ->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba += 1/3 * einsum('XxZy,WYxy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba += 1/6 * einsum('XxZy,WYyx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba += 1/2 * einsum('YZxy,WyXx->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba -= 1/3 * einsum('YxyZ,WxXy->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba -= 1/6 * einsum('YxyZ,WxyX->XYWZ', v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba -= 1/2 * einsum('Wx,YZ,Xx->XYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    K_caca_ba_ba -= 1/2 * einsum('Zx,WX,Yx->XYWZ', h_aa, np.identity(ncas), rdm_ca, optimize = einsum_type)
-    K_caca_ba_ba -= 1/2 * einsum('WX,Zxyz,Yyxz->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
-    K_caca_ba_ba -= 1/2 * einsum('YZ,Wxyz,Xyxz->XYWZ', np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
+
+    ##NOTE: K_caca_aa_aa & K_caca_aa_bb can be formed from K_caca function using the same transpose relations 
+    ##      for forming S22_0pp spin cases from S22_0p
 
     ## Reshape tensors to matrix form
-    dim_wz = ncas * ncas
-    dim_K_0pp = 3 * dim_wz
+    dim_tril_wz = ncas * (ncas - 1) // 2
+    dim_K_0pp = 2 * dim_tril_wz
 
-    K_caca_aa_aa = K_caca_aa_aa.reshape(dim_wz, dim_wz)
-    K_caca_aa_bb = K_caca_aa_bb.reshape(dim_wz, dim_wz)
-    K_caca_ba_ba = K_caca_ba_ba.reshape(dim_wz, dim_wz)
+    tril_ind = np.tril_indices(ncas, k=-1)
+
+    K_caca_aa_aa = K_caca_aa_aa[:, :, tril_ind[0], tril_ind[1]]
+    K_caca_aa_aa = K_caca_aa_aa[tril_ind[0], tril_ind[1]]
+
+    K_caca_aa_bb = K_caca_aa_bb[:, :, tril_ind[0], tril_ind[1]]
+    K_caca_aa_bb = K_caca_aa_bb[tril_ind[0], tril_ind[1]]
 
     # Building K_0pp matrix
     s_aa = 0
-    f_aa = s_aa + dim_wz
+    f_aa = s_aa + dim_tril_wz
     s_bb = f_aa
-    f_bb = s_bb + dim_wz
-    s_ba = f_bb
-    f_ba = s_ba + dim_wz
+    f_bb = s_bb + dim_tril_wz
 
     K_0pp = np.zeros((dim_K_0pp, dim_K_0pp))
 
@@ -939,7 +927,5 @@ def compute_K_0pp(mr_adc):
 
     K_0pp[s_aa:f_aa, s_bb:f_bb] = K_caca_aa_bb.copy()
     K_0pp[s_bb:f_bb, s_aa:f_aa] = K_caca_aa_bb.T.copy()
-
-    K_0pp[s_ba:f_ba, s_ba:f_ba] = K_caca_ba_ba.copy()
-
+  
     return K_0pp
