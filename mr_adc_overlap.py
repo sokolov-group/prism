@@ -167,7 +167,7 @@ def compute_S12_0pp(mr_adc):
 
     # Variables from kernel
     ncas = mr_adc.ncas
-    s_thresh = mr_adc.s_thresh_doubles
+    s_thresh = mr_adc.s_thresh_singles
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
