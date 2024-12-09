@@ -161,6 +161,10 @@ def compute_t2_amplitudes(mr_adc):
             mr_adc.t2.ae = compute_t2_m1p_singles(mr_adc)
             ###TODO - finish_t2_0pp function!
             mr_adc.t2.aa = compute_t2_0pp_singles(mr_adc)  
+
+            #print('\n###           CAUTION: t2_aa has been zeroed out!           ###\n')
+            #mr_adc.t2.aa = np.zeros((ncas, ncas))
+
             ###TODO - testing for t2_ca (SKS correct, but slight difference in V makes t2_ca not an exact match to SO code)
             mr_adc.t2.ca = compute_t2_p1p_singles(mr_adc) 
 
@@ -9972,12 +9976,12 @@ def compute_t2_0pp_singles(mr_adc):
     compute_V1__t1_p1(mr_adc, V1)
     ## T - T^{\dag}: CCAA
     compute_V1__t1_p2(mr_adc, V1) 
-    ## T - T^{\dag}: CE-CAEA
-    compute_V1__t1_0p(mr_adc, V1)
-    ## T - T^{\dag}: AE-AAEA
-    compute_V1__t1_m1p(mr_adc, V1)
-    ## T - T^{\dag}: CA-CAAA
-    compute_V1__t1_p1p(mr_adc, V1)
+#    ## T - T^{\dag}: CE-CAEA
+#    compute_V1__t1_0p(mr_adc, V1)
+#    ## T - T^{\dag}: AE-AAEA
+#    compute_V1__t1_m1p(mr_adc, V1)
+#    ## T - T^{\dag}: CA-CAAA
+#    compute_V1__t1_p1p(mr_adc, V1)
  
     # V1 block: - 1/2 < Psi_0 | (a^{\dag}_X a_Y - a^{\dag}_Y a_X) [V + H^{(1)}, T - T^\dag] | Psi_0 > 
     V1 -= V1.T
@@ -10009,13 +10013,11 @@ def compute_t2_0pp_singles(mr_adc):
 
 ### DEBUG
     print('T2_AA:')
-    print('############ 4RDMs have been zeroed out (0p, p1p, m1p, p2, m2) ############') 
+    print('\n###           CAUTION: t2_aa has no contributions from semi-internals (p1p, m1p, or 0p)           ###\n')
+ 
     print('shape', t2_aa.shape)
     print('matrix', '\n', t2_aa)
 ### DEBUG
-
-    #print('\n###           CAUTION: t2_aa has no contributions from p1p, m1p, or 0p!           ###\n')
-    #t2_aa = np.zeros((ncas, ncas))
  
     mr_adc.log.extra("Norm of T[0'']^(2):                          %20.12f" % np.linalg.norm(t2_aa))
     mr_adc.log.timer("computing T[0'']^(2) amplitudes", *cput0)
