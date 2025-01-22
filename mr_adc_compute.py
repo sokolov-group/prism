@@ -132,9 +132,9 @@ def kernel(mr_adc):
 #
 #    #mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, E, spec_intensity, X) 
     ###WiP
-#    spec_intensity, X = None, None
+    spec_intensity, X = None, None
 
-    spec_intensity, X = compute_trans_properties(mr_adc, E, U)
+#    spec_intensity, X = compute_trans_properties(mr_adc, E, U)
 
     mr_adc.log.info("\n------------------------------------------------------------------------------")
     mr_adc.log.timer0("total MR-ADC calculation", *cput0)
