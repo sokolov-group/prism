@@ -16,6 +16,7 @@
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
 import numpy as np
@@ -28,9 +29,6 @@ import prism.mr_adc_integrals as mr_adc_integrals
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
-### warning import for t2_aa
-import warnings
-###
 
 def compute_amplitudes(mr_adc):
 
@@ -3018,17 +3016,13 @@ def compute_t2_m1p_singles(mr_adc):
     # Compute T2[-1'] t2_ae amplitudes
     t2_ae = np.einsum("Pm,ma->Pa", S_m1_12_inv_act, S_12_V)
 
-### DEBUG
-    print('T2_AE\n', t2_ae)
-### DEBUG
- 
     mr_adc.log.extra("Norm of T[-1']^(2):                          %20.12f" % np.linalg.norm(t2_ae))
     mr_adc.log.timer("computing T[-1']^(2) amplitudes", *cput0)
 
     return t2_ae
 
 def compute_t2_p1p_singles(mr_adc):
-    ##TODO: finish tests for correctness, use chunks for ee v&t
+    ##TODO: use chunks for ee v&t
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing T[+1']^(2) amplitudes...")
@@ -5036,10 +5030,6 @@ def compute_t2_p1p_singles(mr_adc):
     mr_adc.log.extra("Norm of T[+1']^(2):                          %20.12f" % np.linalg.norm(t2_ca))
     mr_adc.log.timer("computing T[+1']^(2) amplitudes", *cput0)
 
-### DEBUG
-    print('T2_CA\n', t2_ca)
-### DEBUG
- 
     return t2_ca
 
 def compute_t2_0pp_singles(mr_adc):
@@ -9704,10 +9694,6 @@ def compute_t2_0pp_singles(mr_adc):
     t2_aa = np.zeros((ncas, ncas)) 
     t2_aa[tril_ind[0], tril_ind[1]] += t_0p
     t2_aa[tril_ind[1], tril_ind[0]] -= t_0p
-
-### DEBUG
-    print('T2_AA\n', t2_aa)
-### DEBUG
  
     mr_adc.log.extra("Norm of T[0'']^(2):                          %20.12f" % np.linalg.norm(t2_aa))
     mr_adc.log.timer("computing T[0'']^(2) amplitudes", *cput0)
