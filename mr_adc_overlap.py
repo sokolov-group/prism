@@ -126,6 +126,46 @@ def compute_S12_p2(mr_adc):
 
     return S_p2_12_inv
 
+def compute_S12_p2_aa(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    ncas = mr_adc.ncas
+
+    ## Reduced density matrices
+    rdm_ca = mr_adc.rdm.ca
+    rdm_ccaa = mr_adc.rdm.ccaa
+
+    s_thresh = mr_adc.s_thresh_doubles
+
+    # Compute S matrix: < Psi_0 | a_X a_Y a^{\dag}_Z a^{\dag}_W | Psi_0 >
+    S22_ab_ba  = 1/3 * einsum('WZXY->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+    S22_ab_ba += 1/6 * einsum('WZYX->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+    S22_ab_ba += einsum('WX,YZ->XYWZ', np.identity(ncas), np.identity(ncas), optimize = einsum_type)
+    S22_ab_ba -= 1/2 * einsum('WX,YZ->XYWZ', np.identity(ncas), rdm_ca, optimize = einsum_type)
+    S22_ab_ba -= 1/2 * einsum('YZ,WX->XYWZ', np.identity(ncas), rdm_ca, optimize = einsum_type) 
+    S22_aa_aa = S22_ab_ba - S22_ab_ba.transpose(0,1,3,2)
+
+    ## Reshape tensor to matrix form 
+    tril_ind = np.tril_indices(ncas, k=-1)
+
+    S22_aa_aa = S22_aa_aa[:, :, tril_ind[0], tril_ind[1]]
+    S22_aa_aa = S22_aa_aa[tril_ind[0], tril_ind[1]]
+
+    # Compute S^{-1/2} matrix
+    S_eval, S_evec = np.linalg.eigh(S22_aa_aa)
+    S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+
+    S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
+    S_evec = S_evec[:, S_ind_nonzero]
+
+    S_p2_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
+
+    return S_p2_12_inv
+
 def compute_S12_m2(mr_adc):
 
     # Einsum definition from kernel
