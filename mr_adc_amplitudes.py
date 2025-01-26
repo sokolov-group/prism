@@ -134,7 +134,7 @@ def compute_t1_amplitudes(mr_adc):
 
     mr_adc.log.log("\nCASSCF reference energy:                     %20.12f" % mr_adc.e_casscf)
     mr_adc.log.info("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
-    mr_adc.log.log("Total PC-NEVPT2 energy:                      %20.12f" % e_tot)
+    mr_adc.log.log("Total PC-NEVPT2 energy:                      %20.12f\n" % e_tot)
 
 def compute_t2_amplitudes(mr_adc):
 
