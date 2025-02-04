@@ -114,7 +114,7 @@ class MRADC:
         self.M_01 = lambda:None
 
         # Debugging Flags
-        self.caaa_excitation = True
+        self.semiinternals = True
 
     def kernel(self):
 
