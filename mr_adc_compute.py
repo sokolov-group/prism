@@ -123,15 +123,6 @@ def kernel(mr_adc):
     # Compute transition moments and spectroscopic factors
     U = np.array(U)
 
-    ###WiP
-#    if mr_adc.method_type == "cvs-ee" and mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-#        mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E_ev)
-#        print("\n*** Transition properties are currently under construction! ***")
-#    else:
-#        spec_intensity, X = compute_trans_properties(mr_adc, E, U)
-#
-#    #mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, E, spec_intensity, X) 
-    ###WiP
 #    spec_intensity, X = None, None
     spec_intensity, X = compute_trans_properties(mr_adc, E, U)
 
@@ -322,6 +313,8 @@ def compute_trans_properties(mr_adc, E, U):
 
         mr_adc.log.note("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
         print(osc_strength.reshape(-1, 1))
+
+        #mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E, osc_strength)
 
     if (mr_adc.analyze_spec_factor or mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
         mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)

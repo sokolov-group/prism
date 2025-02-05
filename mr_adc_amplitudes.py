@@ -156,12 +156,8 @@ def compute_t2_amplitudes(mr_adc):
         # EE and CVS-EE amplitudes 
         if mr_adc.method_type == "cvs-ee":
             mr_adc.t2.ae = compute_t2_m1p_singles(mr_adc)
-
             mr_adc.t2.aa = compute_t2_0pp_singles(mr_adc)  
-
             mr_adc.t2.ca = compute_t2_p1p_singles(mr_adc) 
-
-        mr_adc.t2.aaae = np.zeros((ncas, ncas, ncas, nextern))
     else:
         mr_adc.t2.ce = np.zeros((ncore, nextern))
 
