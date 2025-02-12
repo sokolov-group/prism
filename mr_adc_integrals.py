@@ -912,9 +912,14 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             ###WiP: use the inefficient oeee integrals until cvs-ee blocks are fully implemented
             mr_adc.v2e.ceee = unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee)
             mr_adc.v2e.aeee = unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee)
-            ###
+
             mr_adc.v2e.xeee = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs, :, :, :])
             mr_adc.v2e.veee = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:, :, :, :])
+            ###
+            ### use the following when chunking is implemented
+            #mr_adc.v2e.xeee = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs, :, :])
+            #mr_adc.v2e.veee = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:, :, :])
+            ###
             del(mr_adc.v2e.ceee)
 
             mr_adc.v2e.xeea = tools.create_dataset('xeea', tmpfile, (ncvs, nextern, nextern, ncas))
