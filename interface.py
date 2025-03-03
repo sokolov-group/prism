@@ -65,7 +65,10 @@ class PYSCF:
 
             if self.symmetry:
                 from pyscf import symm
-                self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf._scf.mo_coeff.orbsym]
+                if hasattr(mf._scf.mo_coeff, 'orbsym'):
+                    self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf._scf.mo_coeff.orbsym]
+                else:
+                    self.group_repr_symm = None
             else:
                 self.group_repr_symm = None
         else:
@@ -127,7 +130,10 @@ class PYSCF:
             self.symmetry = mc.mol.symmetry
             if self.symmetry:
                 from pyscf import symm
-                self.group_repr_symm = [symm.irrep_id2name(mc.mol.groupname, x) for x in mc.mo_coeff.orbsym]
+                if hasattr(mc._scf.mo_coeff, 'orbsym'):
+                    self.group_repr_symm = [symm.irrep_id2name(mc.mol.groupname, x) for x in mc._scf.mo_coeff.orbsym]
+                else:
+                    self.group_repr_symm = None
             else:
                 self.group_repr_symm = None
 
