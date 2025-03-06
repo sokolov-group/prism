@@ -76,7 +76,7 @@ class PYSCF:
             self.max_memory = mc.max_memory
 
             self.mo = mc.mo_coeff.copy()
-            self.mo_hf = mf.mo_coeff.copy()
+            self.mo_scf = mf.mo_coeff.copy()
             self.ovlp = mf.get_ovlp(mf.mol)
             self.nmo = self.mo.shape[1]
             self.ncore = mc.ncore

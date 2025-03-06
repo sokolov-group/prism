@@ -20,19 +20,19 @@
 import numpy as np
 import prism.lib.logger as logger
 
-def compute_reference_rdms(mr_adc):
+def compute_reference_rdms(nevpt):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    mr_adc.log.info("\nComputing ground-state RDMs...")
+    nevpt.log.info("\nComputing ground-state RDMs...")
 
     # Compute reference-state RDMs
-    if mr_adc.ncas != 0:
-        mr_adc.rdm.ca, mr_adc.rdm.ccaa, mr_adc.rdm.cccaaa, mr_adc.rdm.ccccaaaa = mr_adc.interface.compute_rdm1234(mr_adc.wfn_casscf,
-                                                                                                                  mr_adc.wfn_casscf,
-                                                                                                                  mr_adc.nelecas)
+    if nevpt.ncas != 0:
+        nevpt.rdm.ca, nevpt.rdm.ccaa, nevpt.rdm.cccaaa, nevpt.rdm.ccccaaaa = nevpt.interface.compute_rdm1234(nevpt.wfn_casscf,
+                                                                                                                  nevpt.wfn_casscf,
+                                                                                                                  nevpt.nelecas)
     else:
-        mr_adc.rdm.ca = np.zeros((mr_adc.ncas, mr_adc.ncas))
-        mr_adc.rdm.ccaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
-        mr_adc.rdm.cccaaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
+        nevpt.rdm.ca = np.zeros((nevpt.ncas, nevpt.ncas))
+        nevpt.rdm.ccaa =  np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
+        nevpt.rdm.cccaaa =  np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
 
-    mr_adc.log.timer("transforming RDMs", *cput0)
+    nevpt.log.timer("transforming RDMs", *cput0)

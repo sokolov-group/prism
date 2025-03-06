@@ -44,7 +44,7 @@ class MRADC:
         self.tmpfile = lambda:None
 
         self.mo = interface.mo
-        self.mo_hf = interface.mo_hf
+        self.mo_scf = interface.mo_scf
         self.ovlp = interface.ovlp
         self.nmo = interface.nmo
         self.nelec = interface.nelec
@@ -60,9 +60,9 @@ class MRADC:
         self.nextern = interface.nextern
         self.nocc = self.ncas + self.ncore
         self.nelecas = interface.nelecas
-        self.e_casscf = interface.e_casscf      # Total CASSCF energy
-        self.e_cas = interface.e_cas            # Active-space CASSCF energy
-        self.wfn_casscf = interface.wfn_casscf  # Ground-state CASSCF wavefunction
+        self.e_casscf = interface.e_casscf      # Total reference CASSCF energy
+        self.e_cas = interface.e_cas            # Reference active-space CASSCF energy
+        self.wfn_casscf = interface.wfn_casscf  # Reference CASSCF wavefunction
         self.wfn_casscf_spin_square = interface.wfn_casscf_spin_square
         self.wfn_casscf_spin = interface.wfn_casscf_spin
         self.wfn_casscf_spin_mult = interface.wfn_casscf_spin_mult
@@ -170,15 +170,12 @@ class MRADC:
         if self.interface.with_df:
             mr_adc_integrals.transform_Heff_integrals_2e_df(self)
             mr_adc_integrals.transform_integrals_2e_df(self)
-        elif self.interface.v2e_ao is not None:
+        else: 
+            # TODO: this actually handles out-of-core integrals too, rename the function
             mr_adc_integrals.transform_integrals_2e_incore(self)
-        else:
-            msg = "Out-of-core algorithm is not implemented in Prism."
-            log.error(msg)
-            raise Exception(msg)
 
         # Compute CASCI energies and reduced density matrices
-        mr_adc_rdms.compute_gs_rdms(self)
+        mr_adc_rdms.compute_reference_rdms(self)
 
         # TODO: Compute CASCI wavefunctions for excited states in the active space
         # mr_adc_rdms.compute_es_rdms(self)
