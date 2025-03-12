@@ -20,8 +20,8 @@
 import numpy as np
 from functools import reduce
 
-import prism.mr_adc_intermediates as nevpt_intermediates
-import prism.mr_adc_overlap as nevpt_overlap
+import prism.nevpt_intermediates as nevpt_intermediates
+import prism.nevpt_overlap as nevpt_overlap
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
