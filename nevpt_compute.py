@@ -44,6 +44,9 @@ def kernel(nevpt):
     nevpt.log.info("Number of active electrons:                        %s" % str(nevpt.nelecas))
     nevpt.log.info("Overlap truncation parameter (singles):            %e" % nevpt.s_thresh_singles)
     nevpt.log.info("Overlap truncation parameter (doubles):            %e" % nevpt.s_thresh_doubles)
+    nevpt.log.info("Compute singles amplitudes?                        %s" % str(nevpt.compute_singles_amplitudes))
+    if nevpt.compute_singles_amplitudes:
+        nevpt.log.info("Projector for the semi-internal ampltiudes:        %s" % nevpt.semi_internal_projector)
 
 #    # Print info about CASCI states
 #    nevpt.log.info("Number of CASCI states:                            %d" % nevpt.ncasci)

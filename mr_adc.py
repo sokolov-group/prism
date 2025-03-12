@@ -80,6 +80,7 @@ class MRADC:
         self.s_thresh_singles = 1e-5
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
+        self.semi_internal_projector = "gno" # Possible values: gno, gs
 
         self.analyze_spec_factor = False
         self.spec_factor_print_tol = 0.1

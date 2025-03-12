@@ -51,6 +51,7 @@ def kernel(mr_adc):
 
     mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
     mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
+    mr_adc.log.info("Projector for the semi-internal ampltiudes:        %s" % mr_adc.semi_internal_projector)
 
     # Print info about CASCI states
     mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)

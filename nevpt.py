@@ -69,6 +69,8 @@ class NEVPT:
 
         # NEVPT specific variables
         self.method = "nevpt2"          # Possible methods: nevpt2
+        self.compute_singles_amplitudes = False
+        self.semi_internal_projector = "gno" # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
         self.s_thresh_singles = 1e-10
         self.s_thresh_doubles = 1e-10
 

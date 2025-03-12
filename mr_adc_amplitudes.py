@@ -811,7 +811,10 @@ def compute_t1_p1p(mr_adc):
     K_p1p = mr_adc_intermediates.compute_K_p1p(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_gno_projector(mr_adc)
+    if mr_adc.semi_internal_projector == "gno":
+        S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_gno_projector(mr_adc)
+    else:
+        S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_gs_projector(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
@@ -968,7 +971,10 @@ def compute_t1_m1p(mr_adc):
     K_m1p = mr_adc_intermediates.compute_K_m1p(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gno_projector(mr_adc)
+    if mr_adc.semi_internal_projector == "gno":
+        S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gno_projector(mr_adc)
+    else:
+        S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gs_projector(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
