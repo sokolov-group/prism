@@ -532,10 +532,10 @@ def compute_S12_p1p_projector(mr_adc):
     S11_12_inv_act = np.dot(S11_evec, np.diag(S11_inv_eval))
     
     # Compute projector
-    ##p_ten_aaa  = np.einsum('ZX,YP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
-    ##p_ten_aaa -= np.einsum('ZY,XP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
-    p_ten_bab  = np.einsum('ZX,YP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
-    p_ten_aaa = p_ten_bab - p_ten_bab.transpose(1,0,2,3)
+    ##p_ten_aaa  = einsum('ZX,YP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
+    ##p_ten_aaa -= einsum('ZY,XP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
+    p_ten_bab  = einsum('ZX,YP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
+    p_ten_aaa = p_ten_bab - p_ten_bab.transpose(1,0,2,3).copy()
 
     nelecas = sum(mr_adc.nelecas)
     if nelecas > 0:
@@ -543,11 +543,11 @@ def compute_S12_p1p_projector(mr_adc):
        p_ten_bab *= 1.0 / nelecas
 
     ###WiP: p_rdm must be tested for open-shell...
-    p_rdm_aaa  = np.einsum('vxuP,uvxWZY->PYZW', p_ten_aaa, S22_aaa_aaa)
-    p_rdm_aaa += 2 * np.einsum('vxuP,uvxWZY->PYZW', p_ten_bab, S22_bba_aaa)
+    p_rdm_aaa  = einsum('vxuP,uvxWZY->PYZW', p_ten_aaa, S22_aaa_aaa, optimize = einsum_type)
+    p_rdm_aaa += 2 * einsum('vxuP,uvxWZY->PYZW', p_ten_bab, S22_bba_aaa, optimize = einsum_type)
 
-    p_rdm_abb  = np.einsum('vxuP,uvxWZY->PYZW', p_ten_aaa, S22_aaa_bba)
-    p_rdm_abb += 2 * np.einsum('vxuP,uvxWZY->PYZW', p_ten_bab, S22_bba_bba)
+    p_rdm_abb  = einsum('vxuP,uvxWZY->PYZW', p_ten_aaa, S22_aaa_bba, optimize = einsum_type)
+    p_rdm_abb += 2 * einsum('vxuP,uvxWZY->PYZW', p_ten_bab, S22_bba_bba, optimize = einsum_type)
 
     #p_rdm_aaa = p_rdm_abb - p_rdm_abb.transpose(0,2,1,3)
 
@@ -618,12 +618,6 @@ def compute_S12_p1p_projector(mr_adc):
 
     # Diagonalize the semi-internal doubles block in projected space
     S22 = np.dot(S22, Q)
-
-    ##aaa_aaa = S22[s_aaa:f_aaa, s_aaa:f_aaa] 
-    ##aaa_bba = S22[s_aaa:f_aaa, s_bba:f_bba] 
-
-    ##bba_aaa = S22[s_bba:f_bba, s_aaa:f_aaa] 
-    ##bba_bba = S22[s_bba:f_bba, s_bba:f_bba] 
 
     S22_eval, S22_evec = np.linalg.eigh(S22)
 
