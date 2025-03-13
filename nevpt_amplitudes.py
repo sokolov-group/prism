@@ -126,11 +126,11 @@ def compute_t1_amplitudes(nevpt):
         nevpt.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
-    e_tot = nevpt.e_casscf + e_corr
+    e_tot = nevpt.e_ref + e_corr
 
-    nevpt.log.log("\nCASSCF reference energy:                     %20.12f" % nevpt.e_casscf)
+    nevpt.log.info("\nReference energy:                            %20.12f" % nevpt.e_ref)
     nevpt.log.info("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
-    nevpt.log.log("Total PC-NEVPT2 energy:                      %20.12f" % e_tot)
+    nevpt.log.info("Total PC-NEVPT2 energy:                      %20.12f" % e_tot)
 
     return e_tot, e_corr
 

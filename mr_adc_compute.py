@@ -36,7 +36,7 @@ def kernel(mr_adc):
     mr_adc.log.info("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
     mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
     mr_adc.log.info("Reference wavefunction type:                       %s" % mr_adc.interface.reference)
-    mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_cas)
+    mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_ref_cas)
     mr_adc.log.info("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
     mr_adc.log.info("Reference state spin multiplicity:                 %s" % str(mr_adc.ref_wfn_spin_mult))
     mr_adc.log.info("Number of basis functions:                         %d" % mr_adc.nmo)

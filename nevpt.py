@@ -31,9 +31,9 @@ class NEVPT:
 
         log.info("Initializing state-specific fully internally contracted NEVPT...")
 
-        if (interface.reference not in ("casscf", "sa-casscf")):
-            log.info("NEVPT requires CASSCF reference")
-            raise Exception("NEVPT requires CASSCF reference")
+        if (interface.reference not in ("casscf", "casci", "sa-casscf", "ms-casci")):
+            log.info("The NEVPT code does not support %s reference" % interface.reference)
+            raise Exception("The NEVPT code does not support %s reference" % interface.reference)
 
         self.stdout = interface.stdout
         self.verbose = interface.verbose
@@ -60,9 +60,9 @@ class NEVPT:
         self.nextern = interface.nextern
         self.nocc = self.ncas + self.ncore
         self.ref_nelecas = interface.ref_nelecas
-        self.e_casscf = interface.e_casscf      # Total reference CASSCF energy
-        self.e_cas = interface.e_cas            # Reference active-space CASSCF energy
-        self.ref_wfn = interface.ref_wfn  # Reference CASSCF wavefunction
+        self.e_ref = interface.e_ref            # Total reference energy
+        self.e_ref_cas = interface.e_ref_cas    # Reference active-space energy
+        self.ref_wfn = interface.ref_wfn        # Reference wavefunction
         self.ref_wfn_spin_mult = interface.ref_wfn_spin_mult
 
         # NEVPT specific variables
@@ -90,7 +90,7 @@ class NEVPT:
 
         if self.method not in ("nevpt2"):
             msg = "Unknown method %s" % self.method
-            log.error(msg)
+            log.info(msg)
             raise Exception(msg)
 
         # Transform one- and two-electron integrals

@@ -60,6 +60,7 @@ class PYSCF:
             self.nmo = self.mo.shape[1]
             self.mo_energy = mf.mo_energy.copy()
             self.symmetry = mf.mol.symmetry
+            self.e_ref = mf.e_tot
 
             if getattr(mf, 'with_df', None):
                 self.reference_df = mf.with_df
@@ -92,6 +93,22 @@ class PYSCF:
 
             log.info("Reference wavefunction: %s\n" % self.reference)
 
+            e_ref = mc.e_tot
+            e_cas = mc.e_cas
+            ci = mc.ci
+
+            # If the reference is sa-casscf, run a CASCI calculation to get energies of each state
+            if self.reference == "sa-casscf":
+                log.info("SA-CASSCF reference is detected, running CASCI to compute reference wavefunctions...")
+                mc_casci = CASCI(mf, mc.ncas, mc.nelecas)
+                mc_casci.verbose = mf.mol.verbose
+                mc_casci.canonicalization = False
+                mc_casci.fcisolver.nroots = len(mc.ci)
+                mc_results = mc_casci.casci(mo_coeff=mc.mo_coeff, ci0=mc.ci)
+                e_ref = mc_results[0]
+                e_cas = mc_results[1]
+                ci = mc_results[2]
+
             self.max_memory = mc.max_memory
             self.mo = mc.mo_coeff.copy()
             self.mo_scf = mf.mo_coeff.copy()
@@ -101,8 +118,8 @@ class PYSCF:
             self.ncas = mc.ncas
             self.nextern = self.nmo - self.ncore - self.ncas
             self.ref_nelecas = mc.nelecas
-            self.e_casscf = mc.e_tot
-            self.e_cas = mc.e_cas
+            self.e_ref = e_ref
+            self.e_ref_cas = e_cas
             self.davidson_only = mc.fcisolver.davidson_only
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
@@ -114,7 +131,7 @@ class PYSCF:
 
             # Check spin symmetry of the reference wavefunction and, if necessary, generate complete reference spin manifold
             # TODO: make sure this is working with SA-CASSCF and MS-CASCI references that have states with different symmetries
-            ref_ci, ref_nelecas, ref_spin_degeneracy = self.compute_ref_spin_manifold(mc)
+            ref_ci, ref_nelecas, ref_spin_degeneracy = self.compute_ref_spin_manifold(ci, self.ncas, self.ref_nelecas, e_ref, e_cas)
 
             # Compute state-averaged 1-RDM with respect to the spin manifold
             ref_rdm1 = np.zeros((mc.ncas, mc.ncas))
@@ -123,6 +140,7 @@ class PYSCF:
             ref_rdm1 /= len(ref_ci)
 
             # Canonicalize the orbitals
+            log.info("Canonicalizing molecular orbitals using reference wavefunction manifold...\n")
             mo, ci, mo_energy = mc.canonicalize(casdm1 = ref_rdm1, ci = ref_ci, cas_natorb = False)
             del ref_rdm1
 
@@ -193,46 +211,47 @@ class PYSCF:
             self.get_naux = obj.get_naoaux
 
 
-    def compute_ref_spin_manifold(self, mc):
+    def compute_ref_spin_manifold(self, mc_ci, ncas, nelecas, e_ref, e_cas):
 
         ref_wfn_spin_square = []
         ref_wfn_spin = []
         ref_wfn_spin_mult = []
 
         # Check spin symmetry of the reference wavefunction and, if necessary, generate complete reference spin manifold
-        if self.reference in ("casci", "casscf"):
-            ref_wfn_spin_square.append(abs(self.compute_spin_square(mc.ci, mc.ncas, mc.nelecas)))
-            ref_wfn_spin.append(((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[0]))) / 2)
-            ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[0]) + 1)))
-            mc_ci = [mc.ci]
-        else:
-            for p in range(len(mc.ci)):
-                ref_wfn_spin_square.append(abs(self.compute_spin_square(mc.ci[p], mc.ncas, mc.nelecas)))
+        if isinstance(mc_ci, (list)):
+            for p in range(len(mc_ci)):
+                ref_wfn_spin_square.append(abs(self.compute_spin_square(mc_ci[p], ncas, nelecas)))
                 ref_wfn_spin.append(((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[p]))) / 2)
                 ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[p]) + 1)))
-            mc_ci = mc.ci
+        else:
+            ref_wfn_spin_square.append(abs(self.compute_spin_square(mc_ci, ncas, nelecas)))
+            ref_wfn_spin.append(((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[0]))) / 2)
+            ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[0]) + 1)))
+            mc_ci = [mc_ci]
+            e_ref = [e_ref]
+            e_cas = [e_cas]
 
         # Compute all CASCI states for the reference spin manifold
         ref_ci = []
         ref_nelecas = []
         ref_spin_degeneracy = []
         for p in range(len(ref_wfn_spin_square)):
-            wfn_ci, wfn_nelecas = self.compute_state_spin_manifold(mc_ci[p], mc.ncas, mc.nelecas, ref_wfn_spin_square[p], ref_wfn_spin[p], ref_wfn_spin_mult[p])
+            wfn_ci, wfn_nelecas = self.compute_state_spin_manifold(mc_ci[p], ncas, nelecas, ref_wfn_spin_square[p], ref_wfn_spin[p], ref_wfn_spin_mult[p])
             ref_ci += wfn_ci
             ref_nelecas += wfn_nelecas
             ref_spin_degeneracy.append(len(wfn_ci))
 
-        self.log.info("Summary of reference wavefunction manifold:")
+        self.log.info("\nSummary of reference wavefunction manifold:")
         self.log.info("Total number of reference states: %d" % len(ref_spin_degeneracy))
         self.log.info("Total number of reference microstates: %d\n" % sum(ref_spin_degeneracy))
 
-        self.log.info("  State       S^2        S      (2S+1)")
-        self.log.info("--------------------------------------")
+        self.log.info("  State       S^2        S      (2S+1)        E(total)              E(CAS)")
+        self.log.info("-----------------------------------------------------------------------------------")
 
         for p in range(len(ref_wfn_spin_square)):
-            self.log.info("%5d       %2.5f     %2d        %2d" % ((p+1), ref_wfn_spin_square[p], ref_wfn_spin[p], ref_wfn_spin_mult[p]))
+            self.log.info("%5d       %2.5f     %2d        %2d  %20.12f %20.12f" % ((p+1), ref_wfn_spin_square[p], ref_wfn_spin[p], ref_wfn_spin_mult[p], e_ref[p], e_cas[p]))
 
-        self.log.info("--------------------------------------\n")
+        self.log.info("-----------------------------------------------------------------------------------\n")
 
         return ref_ci, ref_nelecas, ref_spin_degeneracy
 

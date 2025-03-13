@@ -33,7 +33,7 @@ def kernel(nevpt):
     nevpt.log.info("Method:                                            %s" % nevpt.method)
 #    nevpt.log.info("Number of MR-ADC roots requested:                  %d" % nevpt.nroots)
     nevpt.log.info("Reference wavefunction type:                       %s" % nevpt.interface.reference)
-    nevpt.log.info("Reference state active-space energy:         %20.12f" % nevpt.e_cas)
+    nevpt.log.info("Reference state active-space energy:         %20.12f" % nevpt.e_ref_cas)
     nevpt.log.info("Nuclear repulsion energy:                    %20.12f" % nevpt.enuc)
     nevpt.log.info("Reference state spin multiplicity:                 %s" % str(nevpt.ref_wfn_spin_mult))
     nevpt.log.info("Number of basis functions:                         %d" % nevpt.nmo)
