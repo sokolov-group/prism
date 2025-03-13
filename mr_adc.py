@@ -59,13 +59,11 @@ class MRADC:
         self.ncas = interface.ncas
         self.nextern = interface.nextern
         self.nocc = self.ncas + self.ncore
-        self.nelecas = interface.nelecas
+        self.ref_nelecas = interface.ref_nelecas
         self.e_casscf = interface.e_casscf      # Total reference CASSCF energy
         self.e_cas = interface.e_cas            # Reference active-space CASSCF energy
-        self.wfn_casscf = interface.wfn_casscf  # Reference CASSCF wavefunction
-        self.wfn_casscf_spin_square = interface.wfn_casscf_spin_square
-        self.wfn_casscf_spin = interface.wfn_casscf_spin
-        self.wfn_casscf_spin_mult = interface.wfn_casscf_spin_mult
+        self.ref_wfn = interface.ref_wfn  # Reference CASSCF wavefunction
+        self.ref_wfn_spin_mult = interface.ref_wfn_spin_mult
 
         # MR-ADC specific variables
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x

@@ -48,7 +48,7 @@ def compute_t1_amplitudes(mr_adc):
 
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
-    nelecas = mr_adc.nelecas
+    nelecas = mr_adc.ref_nelecas
     nextern = mr_adc.nextern
 
     e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8

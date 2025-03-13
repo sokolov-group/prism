@@ -27,12 +27,13 @@ def compute_reference_rdms(mr_adc):
 
     # Compute reference-state RDMs
     if mr_adc.ncas != 0:
-        mr_adc.rdm.ca, mr_adc.rdm.ccaa, mr_adc.rdm.cccaaa, mr_adc.rdm.ccccaaaa = mr_adc.interface.compute_rdm1234(mr_adc.wfn_casscf,
-                                                                                                                  mr_adc.wfn_casscf,
-                                                                                                                  mr_adc.nelecas)
+        mr_adc.rdm.ca, mr_adc.rdm.ccaa, mr_adc.rdm.cccaaa, mr_adc.rdm.ccccaaaa = mr_adc.interface.compute_rdm1234(mr_adc.ref_wfn,
+                                                                                                                  mr_adc.ref_wfn,
+                                                                                                                  mr_adc.ref_nelecas)
     else:
         mr_adc.rdm.ca = np.zeros((mr_adc.ncas, mr_adc.ncas))
         mr_adc.rdm.ccaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
         mr_adc.rdm.cccaaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
+        mr_adc.rdm.ccccaaaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
 
     mr_adc.log.timer("transforming RDMs", *cput0)

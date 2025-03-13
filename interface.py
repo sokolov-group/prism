@@ -36,7 +36,7 @@ class PYSCF:
         log = logger.Logger(self.stdout, self.verbose)
         log.prism_header()
 
-        log.info("Importing Pyscf objects...")
+        log.info("Importing Pyscf objects...\n")
 
         from pyscf import lib
         self.type = "pyscf"
@@ -49,8 +49,11 @@ class PYSCF:
         self.mf = mf
         self.log = log
 
+        log.info("Collecting reference wavefunction information...")
         if mc is None:
             self.reference = "scf"
+            log.info("Reference wavefunction: %s\n" % self.reference)
+
             self.max_memory = mf.max_memory
 
             self.mo = mf.mo_coeff.copy()
@@ -59,7 +62,7 @@ class PYSCF:
             self.symmetry = mf.mol.symmetry
 
             if getattr(mf, 'with_df', None):
-                self.reference_df = mc.with_df
+                self.reference_df = mf.with_df
             else:
                 self.reference_df = None
 
@@ -72,9 +75,24 @@ class PYSCF:
             else:
                 self.group_repr_symm = None
         else:
-            self.reference = "casscf"
-            self.max_memory = mc.max_memory
+            # Determine reference type
+            from pyscf.mcscf.casci import CASCI
 
+            if isinstance(mc, CASCI):
+                if isinstance(mc.ci, (list)):
+                    self.reference = "ms-casci"
+                else:
+                    self.reference = "casci"
+            else:
+                if(hasattr(mc, 'weights') == True and isinstance(mc.ci, (list))):
+                    self.weights = mc.weights
+                    self.reference = "sa-casscf"
+                else:
+                    self.reference = "casscf"
+
+            log.info("Reference wavefunction: %s\n" % self.reference)
+
+            self.max_memory = mc.max_memory
             self.mo = mc.mo_coeff.copy()
             self.mo_scf = mf.mo_coeff.copy()
             self.ovlp = mf.get_ovlp(mf.mol)
@@ -82,7 +100,7 @@ class PYSCF:
             self.ncore = mc.ncore
             self.ncas = mc.ncas
             self.nextern = self.nmo - self.ncore - self.ncas
-            self.nelecas = mc.nelecas
+            self.ref_nelecas = mc.nelecas
             self.e_casscf = mc.e_tot
             self.e_cas = mc.e_cas
             self.davidson_only = mc.fcisolver.davidson_only
@@ -95,36 +113,24 @@ class PYSCF:
                 self.reference_df = None
 
             # Check spin symmetry of the reference wavefunction and, if necessary, generate complete reference spin manifold
-            self.wfn_casscf_spin_square = self.compute_spin_square(mc.ci, mc.ncas, mc.nelecas)
-            self.wfn_casscf_spin = ((-1) + (np.sqrt(1 + 4 * self.wfn_casscf_spin_square))) / 2
-            self.wfn_casscf_spin_mult = int(round((2 * self.wfn_casscf_spin) + 1))
+            # TODO: make sure this is working with SA-CASSCF and MS-CASCI references that have states with different symmetries
+            ref_ci, ref_nelecas, ref_spin_degeneracy = self.compute_ref_spin_manifold(mc)
 
-            ref_ci = None
-            ref_nelecas = None
-            mo = None
-            ci = None
-            mo_energy = None
-            if self.wfn_casscf_spin_square > 0.01:
-                # Compute all CASCI states for the reference spin manifold
-                ref_ci, ref_nelecas = self.compute_ref_spin_manifold(mc.ci, mc.ncas, mc.nelecas)
-                # Canonicalize the orbitals
-                # Compute state-averaged 1-RDM with respect to the spin manifold
-                rdm1 = np.zeros((mc.ncas, mc.ncas))
-                for p in range(len(ref_ci)):
-                    rdm1 += mc.fcisolver.make_rdm1(ref_ci[p], mc.ncas, ref_nelecas[p])
-                rdm1 /= len(ref_ci)
-                mo, ci, mo_energy = mc.canonicalize(casdm1 = rdm1, ci = ref_ci, cas_natorb = False)
+            # Compute state-averaged 1-RDM with respect to the spin manifold
+            ref_rdm1 = np.zeros((mc.ncas, mc.ncas))
+            for p in range(len(ref_ci)):
+                ref_rdm1 += mc.fcisolver.make_rdm1(ref_ci[p], mc.ncas, ref_nelecas[p])
+            ref_rdm1 /= len(ref_ci)
 
-            else:
-
-                # Make sure that the orbitals are canonicalized
-                mo, ci, mo_energy = mc.canonicalize(mo_coeff=mc.mo_coeff, ci=ref_ci)
-                ref_nelecas = mc.nelecas
+            # Canonicalize the orbitals
+            mo, ci, mo_energy = mc.canonicalize(casdm1 = ref_rdm1, ci = ref_ci, cas_natorb = False)
+            del ref_rdm1
 
             self.mo = mo.copy()
             self.mo_energy = mo_energy.copy()
-            self.wfn_casscf = ci
-            self.nelecas = ref_nelecas
+            self.ref_wfn = ci
+            self.ref_wfn_spin_mult = ref_spin_degeneracy
+            self.ref_nelecas = ref_nelecas
 
             # TODO: Check if this is done correctly when canonicalization changes the order of orbitals
             self.symmetry = mc.mol.symmetry
@@ -187,6 +193,50 @@ class PYSCF:
             self.get_naux = obj.get_naoaux
 
 
+    def compute_ref_spin_manifold(self, mc):
+
+        ref_wfn_spin_square = []
+        ref_wfn_spin = []
+        ref_wfn_spin_mult = []
+
+        # Check spin symmetry of the reference wavefunction and, if necessary, generate complete reference spin manifold
+        if self.reference in ("casci", "casscf"):
+            ref_wfn_spin_square.append(abs(self.compute_spin_square(mc.ci, mc.ncas, mc.nelecas)))
+            ref_wfn_spin.append(((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[0]))) / 2)
+            ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[0]) + 1)))
+            mc_ci = [mc.ci]
+        else:
+            for p in range(len(mc.ci)):
+                ref_wfn_spin_square.append(abs(self.compute_spin_square(mc.ci[p], mc.ncas, mc.nelecas)))
+                ref_wfn_spin.append(((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[p]))) / 2)
+                ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[p]) + 1)))
+            mc_ci = mc.ci
+
+        # Compute all CASCI states for the reference spin manifold
+        ref_ci = []
+        ref_nelecas = []
+        ref_spin_degeneracy = []
+        for p in range(len(ref_wfn_spin_square)):
+            wfn_ci, wfn_nelecas = self.compute_state_spin_manifold(mc_ci[p], mc.ncas, mc.nelecas, ref_wfn_spin_square[p], ref_wfn_spin[p], ref_wfn_spin_mult[p])
+            ref_ci += wfn_ci
+            ref_nelecas += wfn_nelecas
+            ref_spin_degeneracy.append(len(wfn_ci))
+
+        self.log.info("Summary of reference wavefunction manifold:")
+        self.log.info("Total number of reference states: %d" % len(ref_spin_degeneracy))
+        self.log.info("Total number of reference microstates: %d\n" % sum(ref_spin_degeneracy))
+
+        self.log.info("  State       S^2        S      (2S+1)")
+        self.log.info("--------------------------------------")
+
+        for p in range(len(ref_wfn_spin_square)):
+            self.log.info("%5d       %2.5f     %2d        %2d" % ((p+1), ref_wfn_spin_square[p], ref_wfn_spin[p], ref_wfn_spin_mult[p]))
+
+        self.log.info("--------------------------------------\n")
+
+        return ref_ci, ref_nelecas, ref_spin_degeneracy
+
+
     def compute_spin_square(self, wfn, ncas, nelecas):
 
         from pyscf import fci
@@ -195,11 +245,7 @@ class PYSCF:
         return spin_sq
 
 
-    def compute_ref_spin_manifold(self, wfn, ncas, nelecas):
-
-        spin_sq = self.wfn_casscf_spin_square
-        s_value = self.wfn_casscf_spin
-        multiplicity = self.wfn_casscf_spin_mult
+    def compute_state_spin_manifold(self, wfn, ncas, nelecas, spin_sq, s_value, multiplicity):
 
         msz_wfn = self.apply_S_z(wfn, ncas, nelecas)
         msz_value = np.dot(wfn.ravel(), msz_wfn.ravel())

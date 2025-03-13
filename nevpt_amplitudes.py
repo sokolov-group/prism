@@ -42,7 +42,7 @@ def compute_t1_amplitudes(nevpt):
 
     ncore = nevpt.ncore
     ncas = nevpt.ncas
-    nelecas = nevpt.nelecas
+    nelecas = nevpt.ref_nelecas
     nextern = nevpt.nextern
 
     e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8

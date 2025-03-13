@@ -161,7 +161,7 @@ def compute_S12_0p_projector(nevpt):
 
     # Variables from kernel
     ncas = nevpt.ncas
-    nelecas = nevpt.nelecas
+    nelecas = nevpt.ref_nelecas
     if isinstance(nelecas, (list)):
         nelecas = sum(nelecas[0])
     else:

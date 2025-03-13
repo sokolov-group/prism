@@ -27,12 +27,13 @@ def compute_reference_rdms(nevpt):
 
     # Compute reference-state RDMs
     if nevpt.ncas != 0:
-        nevpt.rdm.ca, nevpt.rdm.ccaa, nevpt.rdm.cccaaa, nevpt.rdm.ccccaaaa = nevpt.interface.compute_rdm1234(nevpt.wfn_casscf,
-                                                                                                                  nevpt.wfn_casscf,
-                                                                                                                  nevpt.nelecas)
+        nevpt.rdm.ca, nevpt.rdm.ccaa, nevpt.rdm.cccaaa, nevpt.rdm.ccccaaaa = nevpt.interface.compute_rdm1234(nevpt.ref_wfn,
+                                                                                                                  nevpt.ref_wfn,
+                                                                                                                  nevpt.ref_nelecas)
     else:
         nevpt.rdm.ca = np.zeros((nevpt.ncas, nevpt.ncas))
         nevpt.rdm.ccaa =  np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
         nevpt.rdm.cccaaa =  np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
+        mr_adc.rdm.ccccaaaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
 
     nevpt.log.timer("transforming RDMs", *cput0)

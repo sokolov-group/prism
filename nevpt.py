@@ -29,7 +29,7 @@ class NEVPT:
         self.log = interface.log
         log = self.log
 
-        log.info("\nInitializing state-specific fully internally contracted NEVPT...")
+        log.info("Initializing state-specific fully internally contracted NEVPT...")
 
         if (interface.reference not in ("casscf", "sa-casscf")):
             log.info("NEVPT requires CASSCF reference")
@@ -59,13 +59,11 @@ class NEVPT:
         self.ncas = interface.ncas
         self.nextern = interface.nextern
         self.nocc = self.ncas + self.ncore
-        self.nelecas = interface.nelecas
+        self.ref_nelecas = interface.ref_nelecas
         self.e_casscf = interface.e_casscf      # Total reference CASSCF energy
         self.e_cas = interface.e_cas            # Reference active-space CASSCF energy
-        self.wfn_casscf = interface.wfn_casscf  # Reference CASSCF wavefunction
-        self.wfn_casscf_spin_square = interface.wfn_casscf_spin_square
-        self.wfn_casscf_spin = interface.wfn_casscf_spin
-        self.wfn_casscf_spin_mult = interface.wfn_casscf_spin_mult
+        self.ref_wfn = interface.ref_wfn  # Reference CASSCF wavefunction
+        self.ref_wfn_spin_mult = interface.ref_wfn_spin_mult
 
         # NEVPT specific variables
         self.method = "nevpt2"          # Possible methods: nevpt2
@@ -84,7 +82,6 @@ class NEVPT:
         self.v2e = lambda:None
         self.rdm = lambda:None
         self.t1 = lambda:None
-
 
     def kernel(self):
 
