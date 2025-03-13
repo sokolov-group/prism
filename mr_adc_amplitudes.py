@@ -1990,51 +1990,39 @@ def compute_t2_0p_singles(mr_adc):
         mr_adc.log.timer_debug("contracting v2e.ceea", *cput1)
     del(v_ceea)
 
-    chunks = tools.calculate_double_chunks(mr_adc, ncore, [nextern, nextern, nextern],
-                                                                     [ncore, nextern, nextern], ntensors = 2)
+    ## Amplitudes
+    t1_ccee = mr_adc.t1.ccee
+    t1_caee = mr_adc.t1.caee
+
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.ceee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-        if interface.with_df:
-            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, s_chunk, f_chunk)
+        ## Two-electron integral
+        v_ceee = mr_adc.v2e.ceee[:, :, s_chunk:f_chunk]
 
-        else:
-            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee[s_chunk:f_chunk])
+        temp = einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
+        temp -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
 
-        ## Amplitudes
-        t1_ccee = mr_adc.t1.ccee[:,s_chunk:f_chunk]
-
-        V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
-        V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
-
-        del(v_ceee, t1_ccee)
+        V1[:, s_chunk:f_chunk] += temp
         mr_adc.log.timer_debug("contracting v2e.ceee", *cput1)
+    del(v_ceee)
 
-    chunks = tools.calculate_double_chunks(mr_adc, ncas, [nextern, nextern, nextern],
-                                                                    [ncore, nextern, nextern], ntensors = 2)
-    for i_v_chunk, (s_v_chunk, f_v_chunk) in enumerate(chunks):
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_v_chunk + 1, len(chunks), s_v_chunk, f_v_chunk)
+        mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+        
+        ## Two-electron integral
+        v_aeee = mr_adc.v2e.aeee[:, :, s_chunk:f_chunk]
 
-        if interface.with_df:
-            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, f_v_chunk)
-        else:
-            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_v_chunk:f_v_chunk])
+        temp  = 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
+        temp -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
 
-        for s_t_chunk, f_t_chunk in chunks:
-
-            ## Amplitudes
-            t1_caee = mr_adc.t1.caee[:,s_t_chunk:f_t_chunk]
-
-            ## Reduced density matrices
-            rdm_ca = mr_adc.rdm.ca[s_t_chunk:f_t_chunk,s_v_chunk:f_v_chunk]
-
-            V1 += 1/2 * einsum('Ixab,yaAb,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
-            V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
-
-        del(v_aeee, t1_caee, rdm_ca)
+        V1[:, s_chunk:f_chunk] += temp
         mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
+    del(v_aeee)
 
     ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
@@ -2957,47 +2945,34 @@ def compute_t2_m1p_singles(mr_adc):
     V1 += 3/16 * einsum('xyzw,zxua,vsAa,Xywvsu->XA', v_aaaa, t1_aaae, t1_aaee, rdm_cccaaa, optimize = einsum_type)
     V1 -= 1/16 * einsum('xyzw,zxua,vsAa,Xywvus->XA', v_aaaa, t1_aaae, t1_aaee, rdm_cccaaa, optimize = einsum_type)
 
-    chunks = tools.calculate_double_chunks(mr_adc, ncore, [nextern, nextern, nextern],
-                                                                     [ncas, nextern, nextern], ntensors = 2)
-
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.ceee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-        if interface.with_df:
-            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, s_chunk, f_chunk)
-        else:
-            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee[s_chunk:f_chunk])
+        ## Two-electron integrals
+        v_ceee = mr_adc.v2e.ceee[:, :, s_chunk:f_chunk]
 
-        ## Amplitudes
-        t1_caee = mr_adc.t1.caee[s_chunk:f_chunk]
+        temp =- einsum('ixab,iaAb,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('ixab,ibAa,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
 
-        V1 -= einsum('ixab,iaAb,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
-        V1 += 1/2 * einsum('ixab,ibAa,Xx->XA', t1_caee, v_ceee, rdm_ca, optimize = einsum_type)
+        V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceee", *cput1)
+    del(v_ceee)
 
-    del(v_ceee, t1_caee, rdm_ca)
-    mr_adc.log.timer_debug("contracting v2e.ceee", *cput1)
-
-    chunks = tools.calculate_double_chunks(mr_adc, ncas, [nextern, nextern, nextern],
-                                                                     [ncas, nextern, nextern], ntensors = 2)
-
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-        if interface.with_df:
-            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_chunk, f_chunk)
-        else:
-            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_chunk:f_chunk])
-
-        ##Amplitudes
-        t1_aaee = mr_adc.t1.aaee[s_chunk:f_chunk]
-        rdm_ccaa = rdm_ccaa[:, s_chunk:f_chunk]
+        ## Two-electron integrals
+        v_aeee = mr_adc.v2e.aeee[:, :, s_chunk:f_chunk]
     
-        V1 -= 1/2 * einsum('xyab,zbAa,Xzxy->XA', t1_aaee, v_aeee, rdm_ccaa, optimize = einsum_type) 
+        temp =- 1/2 * einsum('xyab,zbAa,Xzxy->XA', t1_aaee, v_aeee, rdm_ccaa, optimize = einsum_type) 
 
-    del(v_aeee, rdm_ccaa)
-    mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
+        V1[:, s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
+    del(v_aeee)
 
     S_12_V = np.einsum("Pa,Pm->ma", V1, S_m1_12_inv_act)
     S_12_V = np.einsum("mp,ma->pa", evecs, S_12_V)
@@ -3018,7 +2993,6 @@ def compute_t2_m1p_singles(mr_adc):
     return t2_ae
 
 def compute_t2_p1p_singles(mr_adc):
-    ##TODO: use chunks for ee v&t
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing T[+1']^(2) amplitudes...")
@@ -3051,7 +3025,7 @@ def compute_t2_p1p_singles(mr_adc):
     v_ccce = mr_adc.v2e.ccce
     v_ccca = mr_adc.v2e.ccca
     
-    v_cece = mr_adc.v2e.cece  ## chunk
+    v_cece = mr_adc.v2e.cece
     v_caca = mr_adc.v2e.caca    
     v_ccaa = mr_adc.v2e.ccaa
     v_caac = mr_adc.v2e.caac    
@@ -3062,7 +3036,7 @@ def compute_t2_p1p_singles(mr_adc):
     
     v_caaa = mr_adc.v2e.caaa
 
-    v_ceae = mr_adc.v2e.ceae  ## chunk
+    v_ceae = mr_adc.v2e.ceae
     v_aeae = mr_adc.v2e.aeae
 
     v_caae = mr_adc.v2e.caae
@@ -3081,12 +3055,12 @@ def compute_t2_p1p_singles(mr_adc):
 
     t1_ae   = mr_adc.t1.ae
     t1_aaae = mr_adc.t1.aaae
-    t1_aaee = mr_adc.t1.aaee  ## chunk
+    t1_aaee = mr_adc.t1.aaee  
 
-    t1_ccee = mr_adc.t1.ccee  ## chunk
+    t1_ccee = mr_adc.t1.ccee  
     t1_ccae = mr_adc.t1.ccae
     t1_ccaa = mr_adc.t1.ccaa
-    t1_caee = mr_adc.t1.caee  ## chunk
+    t1_caee = mr_adc.t1.caee  
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca

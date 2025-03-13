@@ -131,8 +131,8 @@ class MRADC:
             log.error(msg)
             raise Exception(msg)
 
-        if self.interface.with_df and self.method_type not in ('cvs-ip'):
-            msg = "Density-fitting currently only compatible with CVS-IP method type."
+        if self.interface.with_df and not (self.method_type == 'cvs-ip' or self.method_type == 'cvs-ee'):
+            msg = "Density-fitting currently only compatible with CVS-IP/-EE method types."
             log.error(msg)
             raise Exception(msg)
 

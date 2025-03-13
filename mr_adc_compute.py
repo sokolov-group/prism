@@ -68,7 +68,7 @@ def kernel(mr_adc):
     mr_adc_amplitudes.compute_amplitudes(mr_adc)
 
     # Compute CVS integrals
-    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
+    if mr_adc.method_type == "cvs-ip" or mr_adc.method_type == "cvs-ee":
         if mr_adc.interface.with_df:
             mr_adc_integrals.compute_cvs_integrals_2e_df(mr_adc)
         else:
@@ -141,7 +141,7 @@ def setup_davidson(mr_adc):
         M_00 = mr_adc_ip.compute_M_00(mr_adc)
 
         # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
             M_01 = mr_adc_ip.compute_M_01(mr_adc)
 
     elif mr_adc.method_type == "ea":
@@ -149,7 +149,7 @@ def setup_davidson(mr_adc):
         M_00 = mr_adc_ea.compute_M_00(mr_adc)
 
         # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
             M_01 = mr_adc_ea.compute_M_01(mr_adc)
 
     elif mr_adc.method_type == "ee":
@@ -157,7 +157,7 @@ def setup_davidson(mr_adc):
         M_00   = mr_adc_ee.compute_M_00(mr_adc)
 
         # Compute parts of the h0-h1 and h1-h1 blocks of the effective Hamiltonian matrix
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
             M_01 = mr_adc_ee.compute_M_01(mr_adc)
 
     elif mr_adc.method_type == "cvs-ip":
@@ -165,7 +165,7 @@ def setup_davidson(mr_adc):
         mr_adc_cvs_ip.compute_M_00(mr_adc)
 
         # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
             mr_adc_cvs_ip.compute_M_01(mr_adc)
 
     elif mr_adc.method_type == "cvs-ee":
@@ -302,13 +302,13 @@ def compute_trans_properties(mr_adc, E, U):
 
     if mr_adc.method_type == "cvs-ip":
         spec_intensity = 2.0 * np.sum(X**2, axis=0)
-    elif mr_adc.method_type in ("cvs-ee", "ee"):
+    elif mr_adc.method_type == "ee" or mr_adc.method_type == "cvs-ee":
         spec_intensity = np.sum(dX**2, axis=0)
         
     mr_adc.log.note("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
     print(spec_intensity.reshape(-1, 1))
 
-    if mr_adc.method_type in ("cvs-ee", "ee"):
+    if mr_adc.method_type == "ee" or mr_adc.method_type == "cvs-ee":
         osc_strength = (2.0/3.0) * E * spec_intensity
 
         mr_adc.log.note("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
