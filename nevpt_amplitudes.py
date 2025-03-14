@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import numpy as np
@@ -29,14 +29,14 @@ import prism.lib.tools as tools
 def compute_amplitudes(nevpt):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    nevpt.log.info("\nComputing NEVPT2 amplitudes...")
+    nevpt.log.extra("Computing correlation energy and amplitudes...")
 
     # First-order amplitudes
-    e_tot, e_corr = compute_t1_amplitudes(nevpt)
+    e_corr = compute_t1_amplitudes(nevpt)
 
     nevpt.log.timer("computing amplitudes", *cput0)
 
-    return e_tot, e_corr
+    return e_corr
 
 def compute_t1_amplitudes(nevpt):
 
@@ -126,13 +126,8 @@ def compute_t1_amplitudes(nevpt):
         nevpt.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
-    e_tot = nevpt.e_ref + e_corr
 
-    nevpt.log.info("\nReference energy:                            %20.12f" % nevpt.e_ref)
-    nevpt.log.info("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
-    nevpt.log.info("Total PC-NEVPT2 energy:                      %20.12f" % e_tot)
-
-    return e_tot, e_corr
+    return e_corr
 
 
 def compute_t1_0(nevpt):

@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import prism.mr_adc_integrals as mr_adc_integrals

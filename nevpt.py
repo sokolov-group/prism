@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,12 +13,11 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import prism.nevpt_integrals as nevpt_integrals
-import prism.nevpt_rdms as nevpt_rdms
 import prism.nevpt_compute as nevpt_compute
 
 class NEVPT:
@@ -102,9 +101,6 @@ class NEVPT:
         else:
             # TODO: this actually handles out-of-core integrals too, rename the function
             nevpt_integrals.transform_integrals_2e_incore(self)
-
-        # Compute CASCI energies and reduced density matrices
-        nevpt_rdms.compute_reference_rdms(self)
 
         # Run NEVPT computation
         e_tot, e_corr = nevpt_compute.kernel(self)

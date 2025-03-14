@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import os
@@ -49,6 +49,10 @@ class PYSCF:
         self.mf = mf
         self.log = log
 
+        # Unit conversions
+        self.hartree_to_ev = 27.2113862459817
+        self.hartree_to_inv_cm = 219474.63136314
+
         log.info("Collecting reference wavefunction information...")
         if mc is None:
             self.reference = "scf"
@@ -60,7 +64,7 @@ class PYSCF:
             self.nmo = self.mo.shape[1]
             self.mo_energy = mf.mo_energy.copy()
             self.symmetry = mf.mol.symmetry
-            self.e_ref = mf.e_tot
+            self.e_ref = [mf.e_tot]
 
             if getattr(mf, 'with_df', None):
                 self.reference_df = mf.with_df
@@ -91,7 +95,7 @@ class PYSCF:
                 else:
                     self.reference = "casscf"
 
-            log.info("Reference wavefunction: %s\n" % self.reference)
+            log.info("Reference wavefunction: %s" % self.reference)
 
             e_ref = mc.e_tot
             e_cas = mc.e_cas
@@ -118,8 +122,8 @@ class PYSCF:
             self.ncas = mc.ncas
             self.nextern = self.nmo - self.ncore - self.ncas
             self.ref_nelecas = mc.nelecas
-            self.e_ref = e_ref
-            self.e_ref_cas = e_cas
+            self.e_ref = [e_ref]
+            self.e_ref_cas = [e_cas]
             self.davidson_only = mc.fcisolver.davidson_only
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
@@ -135,6 +139,8 @@ class PYSCF:
 
             # Compute state-averaged 1-RDM with respect to the spin manifold
             ref_rdm1 = np.zeros((mc.ncas, mc.ncas))
+            print(ref_nelecas)
+            print(len(ref_ci))
             for p in range(len(ref_ci)):
                 ref_rdm1 += mc.fcisolver.make_rdm1(ref_ci[p], mc.ncas, ref_nelecas[p])
             ref_rdm1 /= len(ref_ci)
@@ -221,7 +227,7 @@ class PYSCF:
         if isinstance(mc_ci, (list)):
             for p in range(len(mc_ci)):
                 ref_wfn_spin_square.append(abs(self.compute_spin_square(mc_ci[p], ncas, nelecas)))
-                ref_wfn_spin.append(((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[p]))) / 2)
+                ref_wfn_spin.append(int(round((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[p]))) / 2))
                 ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[p]) + 1)))
         else:
             ref_wfn_spin_square.append(abs(self.compute_spin_square(mc_ci, ncas, nelecas)))

@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import sys
@@ -32,32 +32,36 @@ def kernel(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
 
+    h2ev = mr_adc.interface.hartree_to_ev
+    h2cm = mr_adc.interface.hartree_to_inv_cm
+
     # Print general information
     mr_adc.log.info("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
-    mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
-    mr_adc.log.info("Reference wavefunction type:                       %s" % mr_adc.interface.reference)
-    mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_ref_cas)
     mr_adc.log.info("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
-    mr_adc.log.info("Reference state spin multiplicity:                 %s" % str(mr_adc.ref_wfn_spin_mult))
+    mr_adc.log.info("Number of electrons:                               %d" % mr_adc.nelec)
     mr_adc.log.info("Number of basis functions:                         %d" % mr_adc.nmo)
+    mr_adc.log.info("Reference wavefunction type:                       %s" % mr_adc.interface.reference)
     mr_adc.log.info("Number of core orbitals:                           %d" % mr_adc.ncore)
     mr_adc.log.info("Number of active orbitals:                         %d" % mr_adc.ncas)
     mr_adc.log.info("Number of external orbitals:                       %d" % mr_adc.nextern)
-    mr_adc.log.info("Number of electrons:                               %d" % mr_adc.nelec)
     mr_adc.log.info("Number of active electrons:                        %s" % str(mr_adc.ref_nelecas))
+    mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_ref_cas[0])
+    mr_adc.log.info("Reference state spin multiplicity:                 %s" % str(mr_adc.ref_wfn_spin_mult))
+    mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
     if mr_adc.ncvs is not None:
         mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
         mr_adc.log.info("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
     mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
     mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
-    mr_adc.log.info("Projector for the semi-internal ampltiudes:        %s" % mr_adc.semi_internal_projector)
+    mr_adc.log.info("Projector for the semi-internal amplitudes:        %s" % mr_adc.semi_internal_projector)
 
     # Print info about CASCI states
-    mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
+    if mr_adc.ncasci > 0:
+        mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
 
     if mr_adc.e_cas_ci is not None:
-        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
+        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas)))
 
     mr_adc.log.debug("Temporary directory path: %s" % mr_adc.temp_dir)
 
@@ -109,7 +113,7 @@ def kernel(mr_adc):
     mr_adc.log.note("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
     print(E.reshape(-1, 1))
     mr_adc.log.note("\n%s-%s excitation energies (eV):" % (mr_adc.method_type, mr_adc.method))
-    E_ev = E * 27.2114
+    E_ev = E * h2ev
     print(E_ev.reshape(-1, 1))
     sys.stdout.flush()
 

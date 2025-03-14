@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import numpy as np
@@ -33,7 +33,7 @@ def compute_amplitudes(mr_adc):
     mr_adc.log.info("\nComputing NEVPT2 amplitudes...")
 
     # First-order amplitudes
-    compute_t1_amplitudes(mr_adc)
+    e_corr = compute_t1_amplitudes(mr_adc)
 
     # Second-order amplitudes
     compute_t2_amplitudes(mr_adc)
@@ -41,6 +41,12 @@ def compute_amplitudes(mr_adc):
     # Compute CVS amplitudes and remove non-CVS core integrals, amplitudes and unnecessary RDMs
     if mr_adc.method_type == "cvs-ip":
         compute_cvs_amplitudes(mr_adc)
+
+    e_tot = mr_adc.e_ref[0] + e_corr
+
+    mr_adc.log.info("\nReference energy:                            %20.12f" % mr_adc.e_ref[0])
+    mr_adc.log.info("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
+    mr_adc.log.info("Total PC-NEVPT2 energy:                      %20.12f" % e_tot)
 
     mr_adc.log.timer("computing amplitudes", *cput0)
 
@@ -133,11 +139,8 @@ def compute_t1_amplitudes(mr_adc):
         mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
-    e_tot = mr_adc.e_ref + e_corr
 
-    mr_adc.log.info("\nReference energy:                            %20.12f" % mr_adc.e_ref)
-    mr_adc.log.info("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
-    mr_adc.log.info("Total PC-NEVPT2 energy:                      %20.12f" % e_tot)
+    return e_corr
 
 def compute_t2_amplitudes(mr_adc):
 
