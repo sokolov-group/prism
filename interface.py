@@ -101,17 +101,16 @@ class PYSCF:
             e_cas = mc.e_cas
             ci = mc.ci
 
-            # If the reference is sa-casscf, run a CASCI calculation to get energies of each state
             if self.reference == "sa-casscf":
-                log.info("SA-CASSCF reference is detected, running CASCI to compute reference wavefunctions...")
-                mc_casci = CASCI(mf, mc.ncas, mc.nelecas)
-                mc_casci.verbose = mf.mol.verbose
-                mc_casci.canonicalization = False
-                mc_casci.fcisolver.nroots = len(mc.ci)
-                mc_results = mc_casci.casci(mo_coeff=mc.mo_coeff, ci0=mc.ci)
-                e_ref = mc_results[0]
-                e_cas = mc_results[1]
-                ci = mc_results[2]
+                e_fzc = e_ref - e_cas
+                e_ref = mc.e_states
+                e_cas = []
+                for p in range(len(e_ref)):
+                    e_cas.append(e_ref[p]-e_fzc)
+            elif self.reference in ("casscf", "casci"):
+                e_ref = [e_ref]
+                e_cas = [e_cas]
+                ci = [ci]
 
             self.max_memory = mc.max_memory
             self.mo = mc.mo_coeff.copy()
@@ -122,8 +121,8 @@ class PYSCF:
             self.ncas = mc.ncas
             self.nextern = self.nmo - self.ncore - self.ncas
             self.ref_nelecas = mc.nelecas
-            self.e_ref = [e_ref]
-            self.e_ref_cas = [e_cas]
+            self.e_ref = e_ref
+            self.e_ref_cas = e_cas
             self.davidson_only = mc.fcisolver.davidson_only
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
@@ -139,11 +138,15 @@ class PYSCF:
 
             # Compute state-averaged 1-RDM with respect to the spin manifold
             ref_rdm1 = np.zeros((mc.ncas, mc.ncas))
-            print(ref_nelecas)
-            print(len(ref_ci))
-            for p in range(len(ref_ci)):
-                ref_rdm1 += mc.fcisolver.make_rdm1(ref_ci[p], mc.ncas, ref_nelecas[p])
-            ref_rdm1 /= len(ref_ci)
+            if self.reference == "sa-casscf":
+                mc_casci = CASCI(mf, mc.ncas, mc.nelecas)
+                for p in range(len(ref_ci)):
+                    ref_rdm1 += mc_casci.fcisolver.make_rdm1(ref_ci[p], mc.ncas, ref_nelecas[p])
+                ref_rdm1 /= len(ref_ci)
+            else:
+                for p in range(len(ref_ci)):
+                    ref_rdm1 += mc.fcisolver.make_rdm1(ref_ci[p], mc.ncas, ref_nelecas[p])
+                ref_rdm1 /= len(ref_ci)
 
             # Canonicalize the orbitals
             log.info("Canonicalizing molecular orbitals using reference wavefunction manifold...\n")
@@ -152,6 +155,8 @@ class PYSCF:
 
             self.mo = mo.copy()
             self.mo_energy = mo_energy.copy()
+
+            # Store wavefunctions and their degeneracy for all microstate 
             self.ref_wfn = ci
             self.ref_wfn_spin_mult = ref_spin_degeneracy
             self.ref_nelecas = ref_nelecas
@@ -224,18 +229,10 @@ class PYSCF:
         ref_wfn_spin_mult = []
 
         # Check spin symmetry of the reference wavefunction and, if necessary, generate complete reference spin manifold
-        if isinstance(mc_ci, (list)):
-            for p in range(len(mc_ci)):
-                ref_wfn_spin_square.append(abs(self.compute_spin_square(mc_ci[p], ncas, nelecas)))
-                ref_wfn_spin.append(int(round((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[p]))) / 2))
-                ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[p]) + 1)))
-        else:
-            ref_wfn_spin_square.append(abs(self.compute_spin_square(mc_ci, ncas, nelecas)))
-            ref_wfn_spin.append(((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[0]))) / 2)
-            ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[0]) + 1)))
-            mc_ci = [mc_ci]
-            e_ref = [e_ref]
-            e_cas = [e_cas]
+        for p in range(len(mc_ci)):
+            ref_wfn_spin_square.append(abs(self.compute_spin_square(mc_ci[p], ncas, nelecas)))
+            ref_wfn_spin.append(int(round((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[p]))) / 2))
+            ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[p]) + 1)))
 
         # Compute all CASCI states for the reference spin manifold
         ref_ci = []

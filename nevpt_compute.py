@@ -93,7 +93,7 @@ def kernel(nevpt):
         h2ev = nevpt.interface.hartree_to_ev
         h2cm = nevpt.interface.hartree_to_inv_cm
 
-        nevpt.log.info("\nSummary of results for a calculation with multiple states:")
+        nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method.upper(), nevpt.interface.reference.upper()))
 
         nevpt.log.info("------------------------------------------------------------------------------------------------")
         nevpt.log.info("  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)")
