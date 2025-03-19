@@ -24,7 +24,7 @@ import numpy as np
 import prism.lib.logger as logger
 class PYSCF:
 
-    def __init__(self, mf, mc = None, opt_einsum = False):
+    def __init__(self, mf, mc = None, opt_einsum = False, select_reference = None):
 
         if mc is None:
             self.stdout = mf.stdout
@@ -83,8 +83,12 @@ class PYSCF:
             # Determine reference type
             from pyscf.mcscf.casci import CASCI
 
+            e_ref = mc.e_tot.copy() 
+            e_cas = mc.e_cas.copy()
+            ci = mc.ci.copy()
+
             if isinstance(mc, CASCI):
-                if isinstance(mc.ci, (list)):
+                if isinstance(ci, (list)):
                     self.reference = "ms-casci"
                 else:
                     self.reference = "casci"
@@ -97,10 +101,6 @@ class PYSCF:
 
             log.info("Reference wavefunction: %s" % self.reference)
 
-            e_ref = mc.e_tot
-            e_cas = mc.e_cas
-            ci = mc.ci
-
             if self.reference == "sa-casscf":
                 e_fzc = e_ref - e_cas
                 e_ref = mc.e_states
@@ -111,6 +111,19 @@ class PYSCF:
                 e_ref = [e_ref]
                 e_cas = [e_cas]
                 ci = [ci]
+
+            if select_reference is not None:
+                e_ref_copy = []
+                e_cas_copy = []
+                ci_copy = []
+                for state in select_reference:
+                    e_ref_copy.append(e_ref[state-1])
+                    e_cas_copy.append(e_cas[state-1])
+                    ci_copy.append(ci[state-1])
+                e_ref = e_ref_copy
+                e_cas = e_cas_copy
+                ci = ci_copy
+                log.info("\nReference states selected: %s" % str(select_reference))
 
             self.max_memory = mc.max_memory
             self.mo = mc.mo_coeff.copy()

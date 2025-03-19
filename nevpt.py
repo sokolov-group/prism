@@ -59,21 +59,21 @@ class NEVPT:
         self.nextern = interface.nextern
         self.nocc = self.ncas + self.ncore
         self.ref_nelecas = interface.ref_nelecas
-        self.e_ref = interface.e_ref            # Total reference energy
-        self.e_ref_cas = interface.e_ref_cas    # Reference active-space energy
-        self.ref_wfn = interface.ref_wfn        # Reference wavefunction
+        self.e_ref = interface.e_ref              # Total reference energy
+        self.e_ref_cas = interface.e_ref_cas      # Reference active-space energy
+        self.ref_wfn = interface.ref_wfn          # Reference wavefunction
         self.ref_wfn_spin_mult = interface.ref_wfn_spin_mult
 
         # NEVPT specific variables
-        self.method = "nevpt2"          # Possible methods: nevpt2
-        self.compute_singles_amplitudes = False
-        self.semi_internal_projector = "gno" # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
+        self.method = "nevpt2"                    # Possible methods: nevpt2
+        self.compute_singles_amplitudes = False   # Include singles amplitudes in the NEVPT2 energy?
+        self.semi_internal_projector = "gno"      # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
         self.s_thresh_singles = 1e-10
         self.s_thresh_doubles = 1e-10
 
-        self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
+        self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
 
-        self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
+        self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk
 
         # Integrals
         self.mo_energy = lambda:None
