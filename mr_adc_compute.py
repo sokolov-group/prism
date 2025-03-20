@@ -254,9 +254,11 @@ def compute_trans_properties(mr_adc, E, U):
         #mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E, osc_strength)
 
     if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4):
-        #mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
-        analyze_trans_properties(mr_adc, X)
-        analyze_spec_factor(mr_adc, X, spec_intensity) ##dX for cvs-ee?
+        analyze_trans_properties(mr_adc)
+        if mr_adc.method_type == "cvs-ip":
+            analyze_spec_factor(mr_adc, X, spec_intensity)
+        elif mr_adc.method_type == "cvs-ee":
+            analyze_spec_factor(mr_adc, dX, spec_intensity)
 
     return spec_intensity, X
 
@@ -308,7 +310,7 @@ def analyze_spec_factor(mr_adc, X, spec_intensity):
                                                                             spec_Contribution[c],
                                                                             partial_Contribution[c]))
 
-def analyze_trans_properties(mr_adc, T):
+def analyze_trans_properties(mr_adc):
 
     print ("\nOverlap of CASSCF and HF spatial MO's:")
 
