@@ -2024,6 +2024,10 @@ def compute_t2_0p_singles(mr_adc):
         mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
     del(v_aeee)
 
+    if mr_adc.method_type == "cvs-ip":
+        del mr_adc.v2e.ceee
+        del mr_adc.v2e.aeee
+
     ## Molecular Orbitals Energies
     e_core = mr_adc.mo_energy.c
 

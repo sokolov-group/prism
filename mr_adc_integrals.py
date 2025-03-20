@@ -121,9 +121,7 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.cece[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_c, mo_e)
             mr_adc.v2e.ceae[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_e)
 
-        if mr_adc.method == "mr-adc(2)-x":
-            mr_adc.v2e.cccc = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
-
+        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.caea = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_a)
 
             mr_adc.v2e.ccee = tools.create_dataset('ccee', tmpfile, (ncore, ncore, nextern, nextern))
@@ -146,9 +144,12 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.aaee[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_e, mo_e)
             mr_adc.v2e.aeea[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
 
+        if mr_adc.method == "mr-adc(2)-x":
+            mr_adc.v2e.cccc = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
+
         if (mr_adc.method == "mr-adc(2)-x") or (mr_adc.method == "mr-adc(2)" and not mr_adc.approx_trans_moments):
-            mr_adc.v2e.ceee = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_e, compacted = True)
-            mr_adc.v2e.aeee = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_e, compacted = True)
+            mr_adc.v2e.ceee = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_e)
+            mr_adc.v2e.aeee = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_e)
 
     # EE and CVS-EE
     elif mr_adc.method_type == "ee" or mr_adc.method_type == "cvs-ee":
@@ -608,6 +609,7 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.ceea[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, Lea, s_chunk, f_chunk)
                 tools.flush(ctmpfile)
 
+            chunks = tools.calculate_chunks(mr_adc, ncas, [ncas, nextern, nextern], ntensors = 2)
             for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
                 mr_adc.log.debug("v2e.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
                 mr_adc.v2e.aaee[s_chunk:f_chunk] = get_ooee_df(mr_adc, Laa, mr_adc.v2e.Lee, s_chunk, f_chunk)
