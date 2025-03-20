@@ -81,7 +81,7 @@ class MRADC:
         self.s_thresh_doubles = 1e-10
 
         self.analyze_spec_factor = False
-        self.spec_factor_print_tol = 0.1
+        self.spec_factor_print_tol = 1e-5
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states

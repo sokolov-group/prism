@@ -316,10 +316,80 @@ def compute_trans_properties(mr_adc, E, U):
 
         #mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E, osc_strength)
 
-    if (mr_adc.analyze_spec_factor or mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
-        mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
+    if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4):
+        #mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
+        analyze_trans_properties(mr_adc, X)
+        analyze_spec_factor(mr_adc, X, spec_intensity) ##dX for cvs-ee?
 
     return spec_intensity, X
+
+
+def analyze_spec_factor(mr_adc, X, spec_intensity):
+
+    print("\nSpectroscopic Factors Analysis:")
+
+    print_thresh = mr_adc.spec_factor_print_tol
+    mr_adc.log.extra("Print spectroscopic factors > %e" %  print_thresh)
+
+    if mr_adc.method_type == "cvs-ee":
+        X_2 = (X.T)**2
+    elif mr_adc.method_type == "cvs-ip":
+        X_2 = 2.0 * (X.T)**2
+
+    for i in range(X_2.shape[0]):
+
+        sort = np.argsort(-X_2[i,:])
+        X_2_row = X_2[i,:]
+        X_2_row = X_2_row[sort]
+
+        if not mr_adc.symmetry:
+            group_repr_symm = np.repeat(['A'], X_2_row.shape[0])
+        else:
+            group_repr_symm = mr_adc.group_repr_symm
+            group_repr_symm = np.array(group_repr_symm)
+
+            group_repr_symm = group_repr_symm[sort]
+
+        spec_Contribution = X_2_row[X_2_row > print_thresh]
+        index_orb = sort[X_2_row > print_thresh] + 1
+
+        if np.sum(spec_Contribution) <= print_thresh:
+            continue
+
+        partial_Contribution = spec_Contribution / spec_intensity[i]
+
+        spec_Contribution = spec_Contribution[partial_Contribution > 1e-6]
+        index_orb = index_orb[partial_Contribution > 1e-6]
+        partial_Contribution = partial_Contribution[partial_Contribution > 1e-6]
+
+        print("\n%s | root %d \n" % (mr_adc.method, i))
+        print("  MO          Spec. Contribution       Partial Contribution")
+        print("-------------------------------------------------------------")
+
+        for c in range(index_orb.shape[0]):
+            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c],
+                                                                            spec_Contribution[c],
+                                                                            partial_Contribution[c]))
+
+def analyze_trans_properties(mr_adc, T):
+
+    print ("\nOverlap of CASSCF and HF spatial MO's:")
+
+    print_thresh = 0.01
+    mr_adc.log.extra("Print HF MO contributions > %e" %  print_thresh)
+
+    cas_hf_ovlp = reduce(np.dot, (mr_adc.mo.T, mr_adc.ovlp, mr_adc.mo_hf))
+    for p in range(mr_adc.mo.shape[1]):
+
+        hf_ovlp = cas_hf_ovlp[p]**2
+        hf_ovlp_ind = np.argsort(hf_ovlp)[::-1]
+        hf_ovlp_sorted = hf_ovlp[hf_ovlp_ind]
+
+        print ("\nCASSCF MO #%d:" % (p + 1))
+
+        for hf_p in range(mr_adc.mo_hf.shape[1]):
+            if (hf_ovlp_sorted[hf_p] > print_thresh):
+                print ("%.3f HF MO #%d" % (hf_ovlp_sorted[hf_p], hf_ovlp_ind[hf_p] + 1))
 
 def dyall_hamiltonian(mr_adc):
     """Zeroth Order Dyall Hamiltonian"""
