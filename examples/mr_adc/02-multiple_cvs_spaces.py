@@ -35,6 +35,7 @@ mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 1
 mr_adc.nroots = 4
+mr_adc.max_cycle = 4 * mr_adc.nroots
 
 e, p, x = mr_adc.kernel()
 
@@ -45,5 +46,6 @@ mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 2
 mr_adc.nroots = 4
+mr_adc.max_cycle = 4 * mr_adc.nroots
 
 e, p, x = mr_adc.kernel()

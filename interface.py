@@ -51,6 +51,7 @@ class PYSCF:
 
         # Unit conversions
         self.hartree_to_ev = 27.2113862459817
+#        self.hartree_to_ev = 27.2114
         self.hartree_to_inv_cm = 219474.63136314
 
         log.info("Collecting reference wavefunction information...")

@@ -34,6 +34,8 @@ mr_adc.method_type = "cvs-ip"
 mr_adc.method = "mr-adc(2)"
 mr_adc.ncvs = 2
 mr_adc.nroots = 8
+mr_adc.max_space = mr_adc.nroots * 4
+mr_adc.max_cycle = 100
 
 e, p, x = mr_adc.kernel()
 
@@ -53,5 +55,7 @@ mr_adc.method_type = "cvs-ip"
 mr_adc.method = "mr-adc(2)"
 mr_adc.ncvs = 2
 mr_adc.nroots = 8
+mr_adc.max_space = mr_adc.nroots * 4
+mr_adc.max_cycle = 100
 
 e, p, x = mr_adc.kernel()
