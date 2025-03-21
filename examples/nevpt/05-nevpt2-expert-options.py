@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+Expert options for NEVPT2
+'''
+
 import numpy as np
 import pyscf.gto
 import pyscf.scf

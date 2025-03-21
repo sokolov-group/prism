@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+Using density fitting with NEVPT2 for N2
+'''
+
 import numpy as np
 import pyscf.gto
 import pyscf.scf

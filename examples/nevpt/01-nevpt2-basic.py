@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+Basic NEVPT2 calculation for H2O
+'''
+
 import numpy as np
 import math
 import pyscf.gto

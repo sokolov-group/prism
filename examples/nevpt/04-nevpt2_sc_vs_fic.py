@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+Comparing the results of FIC-NEVPT2 and SC-NEVPT2 for N2
+'''
+
 import numpy as np
 import pyscf.gto
 import pyscf.scf

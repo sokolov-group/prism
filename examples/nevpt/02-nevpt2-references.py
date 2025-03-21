@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+Using different reference wavefunctions to run NEVPT2 for N2
+'''
+
 import numpy as np
 import pyscf.gto
 import pyscf.scf
