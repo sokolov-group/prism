@@ -45,8 +45,8 @@ def compute_amplitudes(mr_adc):
     e_tot = mr_adc.e_ref[0] + e_corr
 
     mr_adc.log.info("\nReference energy:                            %20.12f" % mr_adc.e_ref[0])
-    mr_adc.log.info("PC-NEVPT2 correlation energy:                %20.12f" % e_corr)
-    mr_adc.log.info("Total PC-NEVPT2 energy:                      %20.12f" % e_tot)
+    mr_adc.log.info("NEVPT2 correlation energy:                   %20.12f" % e_corr)
+    mr_adc.log.info("Total NEVPT2 energy:                         %20.12f" % e_tot)
 
     mr_adc.log.timer("computing amplitudes", *cput0)
 
