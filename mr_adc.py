@@ -109,6 +109,9 @@ class MRADC:
         self.t2 = lambda:None
         self.dip_mom = None
 
+        self.mo_energy.c = interface.mo_energy[:self.ncore]
+        self.mo_energy.e = interface.mo_energy[self.nocc:]
+
         # Matrix blocks
         self.M_00 = None
         self.M_01 = lambda:None

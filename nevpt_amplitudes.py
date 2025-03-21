@@ -40,7 +40,7 @@ def compute_amplitudes(nevpt):
 
 def compute_t1_amplitudes(nevpt):
 
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
     nelecas = nevpt.ref_nelecas
     nextern = nevpt.nextern
@@ -142,7 +142,7 @@ def compute_t1_0(nevpt):
     ctmpfile = nevpt.tmpfile.ct1
 
     # Variables from kernel
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     nextern = nevpt.nextern
 
     ## Molecular Orbitals Energies
@@ -196,7 +196,7 @@ def compute_t1_p1(nevpt):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     nextern = nevpt.nextern
 
     ## Molecular Orbitals Energies
@@ -270,7 +270,7 @@ def compute_t1_m1(nevpt):
     ctmpfile = nevpt.tmpfile.ct1
 
     # Variables from kernel
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
@@ -353,7 +353,7 @@ def compute_t1_p2(nevpt):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
 
     ## Molecular Orbitals Energies
@@ -505,7 +505,7 @@ def compute_t1_0p(nevpt):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
@@ -633,7 +633,7 @@ def compute_t1_p1p(nevpt):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
 
     ## Molecular Orbitals Energies
@@ -928,7 +928,7 @@ def compute_t1_0p_no_singles(nevpt):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
@@ -1043,7 +1043,7 @@ def compute_t1_p1p_no_singles(nevpt):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore
+    ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
 
     ## Molecular Orbitals Energies

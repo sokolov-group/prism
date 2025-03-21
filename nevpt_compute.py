@@ -48,6 +48,7 @@ def kernel(nevpt):
     nevpt.log.info("Reference wavefunction type:                       %s" % nevpt.interface.reference)
     nevpt.log.info("Number of reference states:                        %d" % n_states)
     nevpt.log.info("Number of reference microstates:                   %d" % n_micro_states)
+    nevpt.log.info("Number of frozen orbitals:                         %d" % nevpt.nfrozen)
     nevpt.log.info("Number of core orbitals:                           %d" % nevpt.ncore)
     nevpt.log.info("Number of active orbitals:                         %d" % nevpt.ncas)
     nevpt.log.info("Number of external orbitals:                       %d" % nevpt.nextern)

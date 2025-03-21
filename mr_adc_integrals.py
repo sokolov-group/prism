@@ -166,10 +166,6 @@ def transform_integrals_2e_incore(mr_adc):
     mr_adc.h1eff.aa = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, ncore:nocc], mr_adc.v2e.ccaa, mr_adc.v2e.caac)
     mr_adc.h1eff.ae = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, nocc:], mr_adc.v2e.ccae, mr_adc.v2e.caec)
 
-    # Store diagonal elements of the generalized Fock operator
-    mr_adc.mo_energy.c = mr_adc.interface.mo_energy[:ncore]
-    mr_adc.mo_energy.e = mr_adc.interface.mo_energy[nocc:]
-
     mr_adc.log.timer("transforming 1e integrals", *cput0)
 
 def transform_Heff_integrals_2e_df(mr_adc):
@@ -470,10 +466,6 @@ def transform_integrals_2e_df(mr_adc):
     mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, mr_adc.v2e.ccec)
     mr_adc.h1eff.aa = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, ncore:nocc], mr_adc.v2e.ccaa, mr_adc.v2e.caac)
     mr_adc.h1eff.ae = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, nocc:], mr_adc.v2e.ccae, mr_adc.v2e.caec)
-
-    # Store diagonal elements of the generalized Fock operator
-    mr_adc.mo_energy.c = mr_adc.interface.mo_energy[:ncore]
-    mr_adc.mo_energy.e = mr_adc.interface.mo_energy[nocc:]
 
     mr_adc.log.timer("transforming 2e integrals", *cput0)
 

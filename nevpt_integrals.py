@@ -78,13 +78,16 @@ def transform_integrals_2e_incore(nevpt):
     interface = nevpt.interface
 
     # Variables from kernel
+    nfrozen = nevpt.nfrozen
     ncore = nevpt.ncore
+    ncore_wof = ncore - nfrozen
     nocc = nevpt.nocc
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
     mo = nevpt.mo
     mo_c = mo[:, :ncore].copy()
+    mo_c_wof = mo[:, nfrozen:ncore].copy()
     mo_a = mo[:, ncore:nocc].copy()
     mo_e = mo[:, nocc:].copy()
 
@@ -94,54 +97,11 @@ def transform_integrals_2e_incore(nevpt):
         nevpt.tmpfile.feri1 = None
     tmpfile = nevpt.tmpfile.feri1
 
-    nevpt.v2e.aaaa = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
-
+    # Effective one-electron integrals
     nevpt.v2e.ccaa = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
     nevpt.v2e.ccae = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_e)
-
     nevpt.v2e.caac = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
     nevpt.v2e.caec = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_c)
-
-    nevpt.v2e.caca = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_a)
-    nevpt.v2e.cace = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_e)
-
-    nevpt.v2e.caaa = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_a)
-    nevpt.v2e.caae = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_e)
-    nevpt.v2e.ceaa = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_a)
-
-    nevpt.v2e.aaae = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_e)
-
-    nevpt.v2e.cece = tools.create_dataset('cece', tmpfile, (ncore, nextern, ncore, nextern))
-    nevpt.v2e.ceae = tools.create_dataset('ceae', tmpfile, (ncore, nextern, ncas, nextern))
-
-    nevpt.v2e.cece[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_c, mo_e)
-    nevpt.v2e.ceae[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_e)
-
-    nevpt.v2e.cccc = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
-
-    nevpt.v2e.caea = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_a)
-
-    nevpt.v2e.ccee = tools.create_dataset('ccee', tmpfile, (ncore, ncore, nextern, nextern))
-    nevpt.v2e.ceec = tools.create_dataset('ceec', tmpfile, (ncore, nextern, nextern, ncore))
-
-    nevpt.v2e.caee = tools.create_dataset('caee', tmpfile, (ncore, ncas, nextern, nextern))
-    nevpt.v2e.ceea = tools.create_dataset('ceea', tmpfile, (ncore, nextern, nextern, ncas))
-
-    nevpt.v2e.aeae = tools.create_dataset('aeae', tmpfile, (ncas, nextern, ncas, nextern))
-    nevpt.v2e.aaee = tools.create_dataset('aaee', tmpfile, (ncas, ncas, nextern, nextern))
-    nevpt.v2e.aeea = tools.create_dataset('aeea', tmpfile, (ncas, nextern, nextern, ncas))
-
-    nevpt.v2e.ccee[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_e, mo_e)
-    nevpt.v2e.ceec[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_c)
-
-    nevpt.v2e.caee[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_e)
-    nevpt.v2e.ceea[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_a)
-
-    nevpt.v2e.aeae[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_a, mo_e)
-    nevpt.v2e.aaee[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_e, mo_e)
-    nevpt.v2e.aeea[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
-
-    # Effective one-electron integrals
     nevpt.v2e.ccca = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
     nevpt.v2e.ccce = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_e)
 
@@ -153,9 +113,52 @@ def transform_integrals_2e_incore(nevpt):
     nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, ncore:nocc], nevpt.v2e.ccaa, nevpt.v2e.caac)
     nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, nocc:], nevpt.v2e.ccae, nevpt.v2e.caec)
 
-    # Store diagonal elements of the generalized Fock operator
-    nevpt.mo_energy.c = nevpt.interface.mo_energy[:ncore]
-    nevpt.mo_energy.e = nevpt.interface.mo_energy[nocc:]
+    if nfrozen > 0:
+        nevpt.h1eff.ca = nevpt.h1eff.ca[nfrozen:,:].copy()
+        nevpt.h1eff.ce = nevpt.h1eff.ce[nfrozen:,:].copy()
+        nevpt.mo_energy.c = nevpt.mo_energy.c[nfrozen:]
+
+    # Other integrals
+    nevpt.v2e.aaaa = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
+
+    nevpt.v2e.caca = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_c_wof, mo_a)
+    nevpt.v2e.cace = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_c_wof, mo_e)
+
+    nevpt.v2e.caaa = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_a, mo_a)
+    nevpt.v2e.caae = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_a, mo_e)
+    nevpt.v2e.ceaa = transform_2e_chem_incore(interface, mo_c_wof, mo_e, mo_a, mo_a)
+
+    nevpt.v2e.aaae = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_e)
+
+    nevpt.v2e.cece = tools.create_dataset('cece', tmpfile, (ncore_wof, nextern, ncore_wof, nextern))
+    nevpt.v2e.ceae = tools.create_dataset('ceae', tmpfile, (ncore_wof, nextern, ncas, nextern))
+
+    nevpt.v2e.cece[:] = transform_2e_chem_incore(interface, mo_c_wof, mo_e, mo_c_wof, mo_e)
+    nevpt.v2e.ceae[:] = transform_2e_chem_incore(interface, mo_c_wof, mo_e, mo_a, mo_e)
+
+    nevpt.v2e.cccc = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_c_wof, mo_c_wof)
+
+    nevpt.v2e.caea = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_e, mo_a)
+
+    nevpt.v2e.ccee = tools.create_dataset('ccee', tmpfile, (ncore_wof, ncore_wof, nextern, nextern))
+    nevpt.v2e.ceec = tools.create_dataset('ceec', tmpfile, (ncore_wof, nextern, nextern, ncore_wof))
+
+    nevpt.v2e.caee = tools.create_dataset('caee', tmpfile, (ncore_wof, ncas, nextern, nextern))
+    nevpt.v2e.ceea = tools.create_dataset('ceea', tmpfile, (ncore_wof, nextern, nextern, ncas))
+
+    nevpt.v2e.aeae = tools.create_dataset('aeae', tmpfile, (ncas, nextern, ncas, nextern))
+    nevpt.v2e.aaee = tools.create_dataset('aaee', tmpfile, (ncas, ncas, nextern, nextern))
+    nevpt.v2e.aeea = tools.create_dataset('aeea', tmpfile, (ncas, nextern, nextern, ncas))
+
+    nevpt.v2e.ccee[:] = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_e, mo_e)
+    nevpt.v2e.ceec[:] = transform_2e_chem_incore(interface, mo_c_wof, mo_e, mo_e, mo_c_wof)
+
+    nevpt.v2e.caee[:] = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_e, mo_e)
+    nevpt.v2e.ceea[:] = transform_2e_chem_incore(interface, mo_c_wof, mo_e, mo_e, mo_a)
+
+    nevpt.v2e.aeae[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_a, mo_e)
+    nevpt.v2e.aaee[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_e, mo_e)
+    nevpt.v2e.aeea[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
 
     nevpt.log.timer("transforming 1e integrals", *cput0)
 
@@ -262,7 +265,9 @@ def transform_integrals_2e_df(nevpt):
     naux = interface.get_naux()
 
     # Variables from kernel
+    nfrozen = nevpt.nfrozen
     ncore = nevpt.ncore
+    ncore_wof = ncore - nfrozen
     ncas = nevpt.ncas
     nocc = nevpt.nocc
     nextern = nevpt.nextern
@@ -312,28 +317,53 @@ def transform_integrals_2e_df(nevpt):
         tools.flush(tmpfile)
     del(Lpq)
 
-    # 2e- integrals
+    # Effective one-electron integrals
     nevpt.v2e.ccae = tools.create_dataset('ccae', ctmpfile, (ncore, ncore, ncas, nextern))
-    nevpt.v2e.caec = tools.create_dataset('caec', ctmpfile, (ncore, ncas, nextern, ncore))
-    nevpt.v2e.cace = tools.create_dataset('cace', ctmpfile, (ncore, ncas, ncore, nextern))
-
-    nevpt.v2e.caca = tools.create_dataset('caca', ctmpfile, (ncore, ncas, ncore, ncas))
-
-    nevpt.v2e.caae = tools.create_dataset('caae', ctmpfile, (ncore, ncas, ncas, nextern))
-    nevpt.v2e.ceaa = tools.create_dataset('ceaa', ctmpfile, (ncore, nextern, ncas, ncas))
-
-    nevpt.v2e.caaa = tools.create_dataset('caaa', ctmpfile, (ncore, ncas, ncas, ncas))
-    nevpt.v2e.aaae = tools.create_dataset('aaae', tmpfile, (ncas, ncas, ncas, nextern))
-
-    nevpt.v2e.cece = tools.create_dataset('cece', ctmpfile, (ncore, nextern, ncore, nextern))
-    nevpt.v2e.ceae = tools.create_dataset('ceae', ctmpfile, (ncore, nextern, ncas, nextern))
-
-
     nevpt.v2e.ccae[:] = get_v2e_df(nevpt, Lcc, nevpt.v2e.Lae, 'ccae')
     tools.flush(ctmpfile)
 
+    nevpt.v2e.caec = tools.create_dataset('caec', ctmpfile, (ncore, ncas, nextern, ncore))
     nevpt.v2e.caec[:] = get_v2e_df(nevpt, Lca, Lec, 'caec')
     tools.flush(ctmpfile)
+
+    nevpt.v2e.ccce = tools.create_dataset('ccce', ctmpfile, (ncore, ncore, ncore, nextern))
+    nevpt.v2e.ccce[:] = get_v2e_df(nevpt, Lcc, nevpt.v2e.Lce, 'ccce')
+    tools.flush(ctmpfile)
+
+    nevpt.v2e.ccac = tools.create_dataset('ccac', ctmpfile, (ncore, ncore, ncas, ncore))
+    nevpt.v2e.ccac[:] = get_v2e_df(nevpt, Lcc, Lac, 'ccac')
+    tools.flush(ctmpfile)
+
+    nevpt.v2e.ccec = tools.create_dataset('ccec', ctmpfile, (ncore, ncore, nextern, ncore))
+    nevpt.v2e.ccec[:] = get_v2e_df(nevpt, Lcc, Lec, 'ccec')
+    tools.flush(ctmpfile)
+
+    nevpt.h1eff.ca = compute_effective_1e(nevpt, nevpt.h1e[:ncore, ncore:nocc], nevpt.v2e.ccca, nevpt.v2e.ccac)
+    nevpt.h1eff.ce = compute_effective_1e(nevpt, nevpt.h1e[:ncore, nocc:], nevpt.v2e.ccce, nevpt.v2e.ccec)
+    nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, ncore:nocc], nevpt.v2e.ccaa, nevpt.v2e.caac)
+    nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, nocc:], nevpt.v2e.ccae, nevpt.v2e.caec)
+
+    if nfrozen > 0:
+        nevpt.h1eff.ca = nevpt.h1eff.ca[nfrozen:,:].copy()
+        nevpt.h1eff.ce = nevpt.h1eff.ce[nfrozen:,:].copy()
+        nevpt.mo_energy.c = nevpt.mo_energy.c[nfrozen:]
+        Lcc = Lcc[:, nfrozen:, nfrozen:].copy()
+        Lca = Lca[:, nfrozen:, :].copy()
+        nevpt.v2e.Lce = nevpt.v2e.Lce[:, nfrozen:, :].copy()
+        Lec = Lec[:, :, nfrozen:].copy()
+
+    # Other integrals
+    nevpt.v2e.caca = tools.create_dataset('caca', ctmpfile, (ncore_wof, ncas, ncore_wof, ncas))
+    nevpt.v2e.cace = tools.create_dataset('cace', ctmpfile, (ncore_wof, ncas, ncore_wof, nextern))
+
+    nevpt.v2e.caae = tools.create_dataset('caae', ctmpfile, (ncore_wof, ncas, ncas, nextern))
+    nevpt.v2e.ceaa = tools.create_dataset('ceaa', ctmpfile, (ncore_wof, nextern, ncas, ncas))
+
+    nevpt.v2e.caaa = tools.create_dataset('caaa', ctmpfile, (ncore_wof, ncas, ncas, ncas))
+    nevpt.v2e.aaae = tools.create_dataset('aaae', tmpfile, (ncas, ncas, ncas, nextern))
+
+    nevpt.v2e.cece = tools.create_dataset('cece', ctmpfile, (ncore_wof, nextern, ncore_wof, nextern))
+    nevpt.v2e.ceae = tools.create_dataset('ceae', ctmpfile, (ncore_wof, nextern, ncas, nextern))
 
     nevpt.v2e.cace[:] = get_v2e_df(nevpt, Lca, nevpt.v2e.Lce, 'cace')
     tools.flush(ctmpfile)
@@ -353,25 +383,25 @@ def transform_integrals_2e_df(nevpt):
     nevpt.v2e.aaae[:] = get_v2e_df(nevpt, Laa, nevpt.v2e.Lae, 'aaae')
     tools.flush(tmpfile)
 
-    chunks = tools.calculate_chunks(nevpt, ncore, [ncore, nextern, nextern], ntensors = 2)
+    chunks = tools.calculate_chunks(nevpt, ncore_wof, [ncore_wof, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         nevpt.log.debug("v2e.cece [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
         nevpt.v2e.cece[s_chunk:f_chunk] = get_ooee_df(nevpt, nevpt.v2e.Lce, nevpt.v2e.Lce, s_chunk, f_chunk)
         tools.flush(ctmpfile)
 
-    chunks = tools.calculate_chunks(nevpt, ncore, [ncas, nextern, nextern], ntensors = 2)
+    chunks = tools.calculate_chunks(nevpt, ncore_wof, [ncas, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         nevpt.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
         nevpt.v2e.ceae[s_chunk:f_chunk] = get_ooee_df(nevpt, nevpt.v2e.Lce, nevpt.v2e.Lae, s_chunk, f_chunk)
         tools.flush(ctmpfile)
 
-    nevpt.v2e.caea = tools.create_dataset('caea', ctmpfile, (ncore, ncas, nextern, ncas))
+    nevpt.v2e.caea = tools.create_dataset('caea', ctmpfile, (ncore_wof, ncas, nextern, ncas))
 
-    nevpt.v2e.ccee = tools.create_dataset('ccee', ctmpfile, (ncore, ncore, nextern, nextern))
-    nevpt.v2e.ceec = tools.create_dataset('ceec', ctmpfile, (ncore, nextern, nextern, ncore))
+    nevpt.v2e.ccee = tools.create_dataset('ccee', ctmpfile, (ncore_wof, ncore_wof, nextern, nextern))
+    nevpt.v2e.ceec = tools.create_dataset('ceec', ctmpfile, (ncore_wof, nextern, nextern, ncore_wof))
 
-    nevpt.v2e.caee = tools.create_dataset('caee', ctmpfile, (ncore, ncas, nextern, nextern))
-    nevpt.v2e.ceea = tools.create_dataset('ceea', ctmpfile, (ncore, nextern, nextern, ncas))
+    nevpt.v2e.caee = tools.create_dataset('caee', ctmpfile, (ncore_wof, ncas, nextern, nextern))
+    nevpt.v2e.ceea = tools.create_dataset('ceea', ctmpfile, (ncore_wof, nextern, nextern, ncas))
 
     nevpt.v2e.aeae = tools.create_dataset('aeae', tmpfile, (ncas, nextern, ncas, nextern))
     nevpt.v2e.aaee = tools.create_dataset('aaee', tmpfile, (ncas, ncas, nextern, nextern))
@@ -380,7 +410,7 @@ def transform_integrals_2e_df(nevpt):
     nevpt.v2e.caea[:] = get_v2e_df(nevpt, Lca, Lea, 'caea')
     tools.flush(ctmpfile)
 
-    chunks = tools.calculate_chunks(nevpt, ncore, [ncore, nextern, nextern], ntensors = 2)
+    chunks = tools.calculate_chunks(nevpt, ncore_wof, [ncore_wof, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         nevpt.log.debug("v2e.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
         nevpt.v2e.ccee[s_chunk:f_chunk] = get_ooee_df(nevpt, Lcc, nevpt.v2e.Lee, s_chunk, f_chunk)
@@ -391,7 +421,7 @@ def transform_integrals_2e_df(nevpt):
         nevpt.v2e.ceec[s_chunk:f_chunk] = get_ooee_df(nevpt, nevpt.v2e.Lce, Lec, s_chunk, f_chunk)
         tools.flush(ctmpfile)
 
-    chunks = tools.calculate_chunks(nevpt, ncore, [ncas, nextern, nextern], ntensors = 2)
+    chunks = tools.calculate_chunks(nevpt, ncore_wof, [ncas, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         nevpt.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
         nevpt.v2e.caee[s_chunk:f_chunk] = get_ooee_df(nevpt, Lca, nevpt.v2e.Lee, s_chunk, f_chunk)
@@ -417,28 +447,6 @@ def transform_integrals_2e_df(nevpt):
         nevpt.log.debug("v2e.aeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
         nevpt.v2e.aeea[s_chunk:f_chunk] = get_ooee_df(nevpt, nevpt.v2e.Lae, Lea, s_chunk, f_chunk)
         tools.flush(tmpfile)
-
-    # Effective one-electron integrals
-    nevpt.v2e.ccce = tools.create_dataset('ccce', ctmpfile, (ncore, ncore, ncore, nextern))
-    nevpt.v2e.ccce[:] = get_v2e_df(nevpt, Lcc, nevpt.v2e.Lce, 'ccce')
-    tools.flush(ctmpfile)
-
-    nevpt.v2e.ccac = tools.create_dataset('ccac', ctmpfile, (ncore, ncore, ncas, ncore))
-    nevpt.v2e.ccac[:] = get_v2e_df(nevpt, Lcc, Lac, 'ccac')
-    tools.flush(ctmpfile)
-
-    nevpt.v2e.ccec = tools.create_dataset('ccec', ctmpfile, (ncore, ncore, nextern, ncore))
-    nevpt.v2e.ccec[:] = get_v2e_df(nevpt, Lcc, Lec, 'ccec')
-    tools.flush(ctmpfile)
-
-    nevpt.h1eff.ca = compute_effective_1e(nevpt, nevpt.h1e[:ncore, ncore:nocc], nevpt.v2e.ccca, nevpt.v2e.ccac)
-    nevpt.h1eff.ce = compute_effective_1e(nevpt, nevpt.h1e[:ncore, nocc:], nevpt.v2e.ccce, nevpt.v2e.ccec)
-    nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, ncore:nocc], nevpt.v2e.ccaa, nevpt.v2e.caac)
-    nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, nocc:], nevpt.v2e.ccae, nevpt.v2e.caec)
-
-    # Store diagonal elements of the generalized Fock operator
-    nevpt.mo_energy.c = nevpt.interface.mo_energy[:ncore]
-    nevpt.mo_energy.e = nevpt.interface.mo_energy[nocc:]
 
     nevpt.log.timer("transforming 2e integrals", *cput0)
 
