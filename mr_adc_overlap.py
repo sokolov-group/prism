@@ -291,7 +291,11 @@ def compute_S12_0p_projector(mr_adc):
 
     # Variables from kernel
     ncas = mr_adc.ncas
-    nelecas = sum(mr_adc.nelecas)
+    nelecas = mr_adc.nelecas
+    if isinstance(nelecas, (list)):
+        nelecas = sum(nelecas[0])
+    else:
+        nelecas = sum(nelecas)
 
     s_thresh = mr_adc.s_thresh_singles
 
@@ -346,10 +350,13 @@ def compute_S12_0p_projector(mr_adc):
     S22_aa_bb = S22_aa_bb.reshape(ncas, ncas, ncas, ncas)
 
     Q_aa_aa  = einsum("XW,YZ->XYWZ", np.identity(ncas), np.identity(ncas), optimize = einsum_type).copy()
-    Q_aa_aa -= 2.0 * einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_aa, optimize = einsum_type) / (nelecas ** 2)
+    Q_aa_aa -= einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_aa, optimize = einsum_type) / (nelecas ** 2)
+    Q_aa_aa -= einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb.transpose(2,3,0,1), optimize = einsum_type) / (nelecas ** 2)
 
-    Q_aa_bb =- 2.0 * einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb, optimize = einsum_type) / (nelecas ** 2)
-    Q_bb_aa =- 2.0 * einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb.T, optimize = einsum_type) / (nelecas ** 2)
+    Q_aa_bb =- einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb, optimize = einsum_type) / (nelecas ** 2)
+    Q_aa_bb -= einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_aa, optimize = einsum_type) / (nelecas ** 2)
+    Q_bb_aa =- einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_bb.transpose(2,3,0,1), optimize = einsum_type) / (nelecas ** 2)
+    Q_bb_aa -= einsum("XY,uuWZ->XYWZ", np.identity(ncas), S22_aa_aa, optimize = einsum_type) / (nelecas ** 2)
 
     Q_aa_aa = Q_aa_aa.reshape(dim_wz, dim_wz)
     Q_aa_bb = Q_aa_bb.reshape(dim_wz, dim_wz)
@@ -476,6 +483,11 @@ def compute_S12_p1p_projector(mr_adc):
 
     # Variables from kernel
     ncas = mr_adc.ncas
+    nelecas = mr_adc.nelecas
+    if isinstance(nelecas, (list)):
+        nelecas = sum(nelecas[0])
+    else:
+        nelecas = sum(nelecas)
 
     s_thresh = mr_adc.s_thresh_singles
 
@@ -537,7 +549,6 @@ def compute_S12_p1p_projector(mr_adc):
     p_ten_bab  = einsum('ZX,YP->XYZP', np.identity(ncas), S11_12_inv_act, optimize = einsum_type)
     p_ten_aaa = p_ten_bab - p_ten_bab.transpose(1,0,2,3).copy()
 
-    nelecas = sum(mr_adc.nelecas)
     if nelecas > 0:
        p_ten_aaa *= 1.0 / nelecas
        p_ten_bab *= 1.0 / nelecas

@@ -38,8 +38,10 @@ def kernel(mr_adc):
     # Print general information
     mr_adc.log.info("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
     mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
-    mr_adc.log.info("Ground-state active-space energy:            %20.12f" % mr_adc.e_cas)
+    mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_cas)
     mr_adc.log.info("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
+    mr_adc.log.info("Reference state S^2:                         %20.12f" % mr_adc.wfn_casscf_spin_square)
+    mr_adc.log.info("Reference state 2S+1:                        %20.12f" % mr_adc.wfn_casscf_spin_mult)
     mr_adc.log.info("Number of basis functions:                         %d" % mr_adc.nmo)
     mr_adc.log.info("Number of core orbitals:                           %d" % mr_adc.ncore)
     mr_adc.log.info("Number of active orbitals:                         %d" % mr_adc.ncas)
@@ -50,8 +52,8 @@ def kernel(mr_adc):
         mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
         mr_adc.log.info("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
-    mr_adc.log.extra("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    mr_adc.log.extra("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
+    mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
+    mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
 
     # Print info about CASCI states
     mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)

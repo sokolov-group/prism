@@ -26,7 +26,6 @@ class MRADC:
     def __init__(self, interface):
 
         # General info
-        ###include versioning information 'self.version (__version__ ?) = x.x.x'
         self.interface = interface
         self.log = interface.log
         log = self.log
@@ -52,7 +51,6 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
-        self.spin = interface.spin
 
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
@@ -66,6 +64,9 @@ class MRADC:
         self.e_casscf = interface.e_casscf      # Total CASSCF energy
         self.e_cas = interface.e_cas            # Active-space CASSCF energy
         self.wfn_casscf = interface.wfn_casscf  # Ground-state CASSCF wavefunction
+        self.wfn_casscf_spin_square = interface.wfn_casscf_spin_square
+        self.wfn_casscf_spin = interface.wfn_casscf_spin
+        self.wfn_casscf_spin_mult = interface.wfn_casscf_spin_mult
 
         # MR-ADC specific variables
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
@@ -90,7 +91,6 @@ class MRADC:
         self.h1 = lambda:None           # Information about h1 excitation manifold
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
-        self.dip_mom = None 
         self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
 
         # Approximations
@@ -107,6 +107,7 @@ class MRADC:
         self.rdm = lambda:None
         self.t1 = lambda:None
         self.t2 = lambda:None
+        self.dip_mom = None
 
         # Matrix blocks
         self.M_00 = None
@@ -131,13 +132,8 @@ class MRADC:
             log.error(msg)
             raise Exception(msg)
 
-        if self.interface.with_df and not (self.method_type == 'cvs-ip' or self.method_type == 'cvs-ee'):
-            msg = "Density-fitting currently only compatible with CVS-IP/-EE method types."
-            log.error(msg)
-            raise Exception(msg)
-
-        if self.spin > 0:
-            msg = "This program currently does not work for open-shell molecules"
+        if self.interface.with_df and self.method_type not in ('cvs-ip', 'cvs-ee'):
+            msg = "Density-fitting currently only compatible with CVS method types."
             log.error(msg)
             raise Exception(msg)
 
@@ -162,8 +158,10 @@ class MRADC:
                 log.error(msg)
                 raise Exception(msg)
 
+            self.ncasci = 0
+
         # TODO: Temporary check of what methods are implemented in this version
-        if self.method_type not in ("cvs-ip, cvs-ee"):
+        if self.method_type not in ("cvs-ip", "cvs-ee"):
             msg = "This spin-adapted version does not currently support method type %s" % self.method_type
             log.error(msg)
             raise Exception(msg)

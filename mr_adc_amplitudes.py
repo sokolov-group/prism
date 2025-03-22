@@ -97,6 +97,12 @@ def compute_t1_amplitudes(mr_adc):
     if ((mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x")) or
         (mr_adc.method == "mr-adc(1)" and mr_adc.method_type in ("ee", "cvs-ee"))):
 
+        nelecas_total = 0
+        if isinstance(nelecas, (list)):
+            nelecas_total = sum(nelecas[0])
+        else:
+            nelecas_total = sum(nelecas)
+
         if ncore > 0 and nextern > 0:
             e_0, mr_adc.t1.ccee = compute_t1_0(mr_adc)
         else:
@@ -107,7 +113,7 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.ccae = np.zeros((ncore, ncore, ncas, nextern))
 
-        if ncore > 0 and nextern > 0 and ncas > 0 and sum(nelecas) > 0:
+        if ncore > 0 and nextern > 0 and ncas > 0 and nelecas_total > 0:
             e_m1, mr_adc.t1.caee = compute_t1_m1(mr_adc)
         else:
             mr_adc.t1.caee = np.zeros((ncore, ncas, nextern, nextern))
@@ -117,7 +123,7 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
-        if nextern > 0 and ncas > 0 and sum(nelecas) > 0:
+        if nextern > 0 and ncas > 0 and nelecas_total > 0:
             e_m2, mr_adc.t1.aaee = compute_t1_m2(mr_adc)
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
@@ -234,58 +240,59 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t1.xaee = tools.create_dataset('xaee', tmpfile, (ncvs, ncas, nextern, nextern))
             mr_adc.t1.vaee = tools.create_dataset('vaee', tmpfile, (nval, ncas, nextern, nextern))
 
-            chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern])
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            if ncore > 0 and nextern > 0:
+                chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern])
+                for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                    cput1 = (logger.process_clock(), logger.perf_counter())
+                    mr_adc.log.debug("t1.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-                mr_adc.t1.xxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, :ncvs, s_chunk:f_chunk, :]
-                tools.flush(tmpfile)
-                mr_adc.log.timer_debug("storing CVS t1.xxee", *cput1)
+                    mr_adc.t1.xxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, :ncvs, s_chunk:f_chunk, :]
+                    tools.flush(tmpfile)
+                    mr_adc.log.timer_debug("storing CVS t1.xxee", *cput1)
 
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                    cput1 = (logger.process_clock(), logger.perf_counter())
+                    mr_adc.log.debug("t1.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-                mr_adc.t1.xvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, ncvs:, s_chunk:f_chunk, :]
-                tools.flush(tmpfile)
-                mr_adc.log.timer_debug("storing CVS t1.xvee", *cput1)
+                    mr_adc.t1.xvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[:ncvs, ncvs:, s_chunk:f_chunk, :]
+                    tools.flush(tmpfile)
+                    mr_adc.log.timer_debug("storing CVS t1.xvee", *cput1)
 
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                    cput1 = (logger.process_clock(), logger.perf_counter())
+                    mr_adc.log.debug("t1.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-                mr_adc.t1.vxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, :ncvs, s_chunk:f_chunk, :]
-                tools.flush(tmpfile)
-                mr_adc.log.timer_debug("storing CVS t1.vxee", *cput1)
+                    mr_adc.t1.vxee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, :ncvs, s_chunk:f_chunk, :]
+                    tools.flush(tmpfile)
+                    mr_adc.log.timer_debug("storing CVS t1.vxee", *cput1)
 
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("t1.vvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                    cput1 = (logger.process_clock(), logger.perf_counter())
+                    mr_adc.log.debug("t1.vvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-                mr_adc.t1.vvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, ncvs:, s_chunk:f_chunk, :]
-                tools.flush(tmpfile)
-                mr_adc.log.timer_debug("storing CVS t1.vvee", *cput1)
+                    mr_adc.t1.vvee[:,:,s_chunk:f_chunk] = mr_adc.t1.ccee[ncvs:, ncvs:, s_chunk:f_chunk, :]
+                    tools.flush(tmpfile)
+                    mr_adc.log.timer_debug("storing CVS t1.vvee", *cput1)
             del(mr_adc.t1.ccee)
 
-            chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern])
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            if ncore > 0 and nextern > 0 and ncas > 0:
+                chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern])
+                for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                    cput1 = (logger.process_clock(), logger.perf_counter())
+                    mr_adc.log.debug("t1.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-                mr_adc.t1.xaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[:ncvs, :, s_chunk:f_chunk]
-                tools.flush(tmpfile)
-                mr_adc.log.timer_debug("storing CVS t1.xaee", *cput1)
+                    mr_adc.t1.xaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[:ncvs, :, s_chunk:f_chunk]
+                    tools.flush(tmpfile)
+                    mr_adc.log.timer_debug("storing CVS t1.xaee", *cput1)
 
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                    cput1 = (logger.process_clock(), logger.perf_counter())
+                    mr_adc.log.debug("t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-                mr_adc.t1.vaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[ncvs:, :, s_chunk:f_chunk]
-                tools.flush(tmpfile)
-                mr_adc.log.timer_debug("storing CVS t1.vaee", *cput1)
+                    mr_adc.t1.vaee[:,:,s_chunk:f_chunk] = mr_adc.t1.caee[ncvs:, :, s_chunk:f_chunk]
+                    tools.flush(tmpfile)
+                    mr_adc.log.timer_debug("storing CVS t1.vaee", *cput1)
             del(mr_adc.t1.caee)
-
 
     if mr_adc.outcore_expensive_tensors:
         mr_adc.tmpfile.ct1.close()

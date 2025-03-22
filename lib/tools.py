@@ -40,7 +40,7 @@ def calculate_chunks(mr_adc, nmo_chunked, nmo_non_chunked, ntensors = 1, extra_t
 
     if chunk_size > nmo_chunked:
         chunk_size = nmo_chunked
-    elif chunk_size <= 0 :
+    if chunk_size <= 0:
         chunk_size = 1
 
     mr_adc.log.debug("avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]", avail_mem, mr_adc.max_memory,
@@ -74,7 +74,7 @@ def calculate_double_chunks(mr_adc, nmo_chunked, nmo_non_chunked_1, nmo_non_chun
 
     if chunk_size > nmo_chunked:
         chunk_size = nmo_chunked
-    elif chunk_size <= 0 :
+    if chunk_size <= 0:
         chunk_size = 1
 
     mr_adc.log.debug("avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]", avail_mem, mr_adc.max_memory,
