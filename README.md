@@ -1,11 +1,11 @@
 # Prism
 Prism is a Python implementation of electronic structure theories for simulating spectroscopic properties.
-Currently, Prism features the methods of multireference algebraic diagrammatic construction theory (MR-ADC) for simulating core-ionized states (CVS-IP).
+Currently, Prism features the methods of N-electron valence perturbation theory (NEVPT) and multireference algebraic diagrammatic construction theory (MR-ADC).
 
 # How to install
 ## Requirements
 - Python 3.7 or older;
-- [PySCF 2.2 or older](https://github.com/pyscf/pyscf/), including its [dependencies](https://pyscf.org/install.html);
+- [PySCF 2.7 or older](https://github.com/pyscf/pyscf/), including its [dependencies](https://pyscf.org/install.html);
 - Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions
 
 ## Installation
@@ -26,7 +26,8 @@ To set up a calculation with Prism, import the following modules (in addition to
 ```python
 from pyscf import gto, scf, mcscf
 import prism.interface
-import prism.mr_adc
+import prism.mr_adc # For MR-ADC calculations
+import prism.nevpt  # For NEVPT calculations
 ```
 
 Next, as described in the [PySCF user guide](https://pyscf.org/user.html), specify molecular geometry, then run reference Hartree-Fock and complete active space self-consistent field (CASSCF) calculations.
@@ -38,7 +39,8 @@ mf = scf.RHF(mol).run()
 mc = mcscf.CASSCF(mf, 6, 6).run()
 ```
 
-Once the reference calculation is successfully completed, the objects of Hartree-Fock and CASSCF classes (```mf``` and ```mc```) are passed to Prism and the spectroscopic properties are calculated:
+Once the reference calculation is successfully completed, the objects of Hartree-Fock and CASSCF classes (```mf``` and ```mc```) are passed to Prism. 
+For example, the CVS-IP-MR-ADC calculation can be performed using an example below:
 
 ```python
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
@@ -50,7 +52,7 @@ mr_adc.ncvs = 1
 e, p, x = mr_adc.kernel()
 ```
 
-In the example above, a calculation using CVS-IP-MR-ADC(2) for 10 excited states (roots) is set up. 
+Here, a calculation using CVS-IP-MR-ADC(2) for 10 excited states (roots) is set up. 
 The parameter ```ncvs``` controls the number of core orbitals in the hydrogen fluoride molecule, for which excited states are calculated.
 For example, setting ```ncvs = 1``` corresponds to exciting electrons from the 1s orbitals of fluorine atoms, while ```ncvs = 2``` corresponds to probing the 2s excitations.
 Other examples can be found [here](examples/).
