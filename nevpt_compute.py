@@ -109,7 +109,7 @@ def kernel(nevpt):
             de = e_tot[p] - e_gs
             de_ev = de * h2ev
             de_cm = de * h2cm
-            if p == 0:
+            if p == 0 or abs(de) < 1e-5:
                 nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f" % ((p+1), nevpt.ref_wfn_spin_mult[p], e_tot[p], de, de_ev, " ", de_cm))
             else:
                 de_nm = 10000000 / de_cm

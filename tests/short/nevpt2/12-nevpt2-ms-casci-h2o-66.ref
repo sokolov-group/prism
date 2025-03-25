@@ -1,0 +1,200 @@
+converged SCF energy = -76.0412566941278
+SCF energy: -76.041257
+
+
+WARN: Mulitple states found in CASCI solver. First state is used to compute the Fock matrix and natural orbitals in active space.
+
+CASCI state   0  E = -76.0416783372576  E(CI) = -12.9969982062835  S^2 = 0.0000000
+CASCI state   1  E = -75.6244274698262  E(CI) = -12.5797473388521  S^2 = 2.0000000
+CASCI state   2  E = -75.6147308447999  E(CI) = -12.5700507138258  S^2 = 0.0000000
+CASCI state   3  E = -75.5083800718727  E(CI) = -12.4636999408986  S^2 = 2.0000000
+CASCI state   4  E = -75.4917263897341  E(CI) = -12.4470462587600  S^2 = 0.0000000
+CASCI state   5  E = -75.4284853679674  E(CI) = -12.3838052369933  S^2 = 2.0000000
+CASCI state   6  E = -75.4231449561817  E(CI) = -12.3784648252076  S^2 = 0.0000000
+CASCI state   7  E = -74.8920998737286  E(CI) = -11.8474197427545  S^2 = 0.0000000
+CASCI state   8  E = -74.8081434103929  E(CI) = -11.7634632794188  S^2 = 2.0000000
+NEVPT2 test
+
+Transforming integrals to MO basis...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Nuclear repulsion energy:                          9.168193300756
+Number of electrons:                               10
+Number of basis functions:                         41
+Reference wavefunction type:                       ms-casci
+Number of reference states:                        9
+Number of reference microstates:                   17
+Number of frozen orbitals:                         0
+Number of core orbitals:                           2
+Number of active orbitals:                         6
+Number of external orbitals:                       33
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /scratch/local
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.000000e-10
+Overlap truncation parameter (doubles):            1.000000e-10
+
+Computing energy of state #1...
+Reference state active-space energy:             -12.996998206283
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(3, 3)]
+Correlation energy [0']:                          -0.005110628770
+Correlation energy [+1']:                         -0.000156773804
+Correlation energy [-1']:                         -0.010035120050
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.000588847108
+Correlation energy [-1]:                          -0.052803783767
+Correlation energy [+2]:                          -0.000031363775
+Correlation energy [-2]:                          -0.157775748043
+MS-CASCI reference state total energy:           -76.041678337258
+NEVPT2 correlation energy:                        -0.235583149139
+Total NEVPT2 energy:                             -76.277261486397
+
+Computing energy of state #2...
+Reference state active-space energy:             -12.579747338852
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.030781891500
+Correlation energy [+1']:                         -0.001208825133
+Correlation energy [-1']:                         -0.125756820890
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.000999587563
+Correlation energy [-1]:                          -0.042269449691
+Correlation energy [+2]:                          -0.000036435044
+Correlation energy [-2]:                          -0.093800449649
+MS-CASCI reference state total energy:           -75.624427469826
+NEVPT2 correlation energy:                        -0.303934343290
+Total NEVPT2 energy:                             -75.928361813116
+
+Computing energy of state #3...
+Reference state active-space energy:             -12.570050713826
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(3, 3)]
+Correlation energy [0']:                          -0.030818969913
+Correlation energy [+1']:                         -0.001258875942
+Correlation energy [-1']:                         -0.119087292509
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.001005234314
+Correlation energy [-1]:                          -0.042365555513
+Correlation energy [+2]:                          -0.000063164571
+Correlation energy [-2]:                          -0.094611665376
+MS-CASCI reference state total energy:           -75.614730844800
+NEVPT2 correlation energy:                        -0.298291641960
+Total NEVPT2 energy:                             -75.913022486760
+
+Computing energy of state #4...
+Reference state active-space energy:             -12.463699940899
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.030981606519
+Correlation energy [+1']:                         -0.001790626335
+Correlation energy [-1']:                         -0.111337185099
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.001142753034
+Correlation energy [-1]:                          -0.041866860176
+Correlation energy [+2]:                          -0.000040768335
+Correlation energy [-2]:                          -0.091549614389
+MS-CASCI reference state total energy:           -75.508380071873
+NEVPT2 correlation energy:                        -0.287790297708
+Total NEVPT2 energy:                             -75.796170369581
+
+Computing energy of state #5...
+Reference state active-space energy:             -12.447046258760
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(3, 3)]
+Correlation energy [0']:                          -0.030672058634
+Correlation energy [+1']:                         -0.001517697920
+Correlation energy [-1']:                         -0.119765303834
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.001095543676
+Correlation energy [-1]:                          -0.042607354162
+Correlation energy [+2]:                          -0.000093878173
+Correlation energy [-2]:                          -0.096634671374
+MS-CASCI reference state total energy:           -75.491726389734
+NEVPT2 correlation energy:                        -0.301467391593
+Total NEVPT2 energy:                             -75.793193781327
+
+Computing energy of state #6...
+Reference state active-space energy:             -12.383805236993
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.033253542272
+Correlation energy [+1']:                         -0.002181580681
+Correlation energy [-1']:                         -0.085535835049
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.001629501802
+Correlation energy [-1]:                          -0.039499725004
+Correlation energy [+2]:                          -0.000028047480
+Correlation energy [-2]:                          -0.085883354387
+MS-CASCI reference state total energy:           -75.428485367967
+NEVPT2 correlation energy:                        -0.257092470497
+Total NEVPT2 energy:                             -75.685577838464
+
+Computing energy of state #7...
+Reference state active-space energy:             -12.378464825208
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(3, 3)]
+Correlation energy [0']:                          -0.033208212112
+Correlation energy [+1']:                         -0.002076631805
+Correlation energy [-1']:                         -0.070802052268
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.001610643858
+Correlation energy [-1]:                          -0.039728451560
+Correlation energy [+2]:                          -0.000059180198
+Correlation energy [-2]:                          -0.087548125299
+MS-CASCI reference state total energy:           -75.423144956182
+NEVPT2 correlation energy:                        -0.244114180920
+Total NEVPT2 energy:                             -75.667259137102
+
+Computing energy of state #8...
+Reference state active-space energy:             -11.847419742754
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(3, 3)]
+Correlation energy [0']:                          -0.081714323997
+Correlation energy [+1']:                         -0.001580703799
+Correlation energy [-1']:                         -0.387046013023
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.001760872745
+Correlation energy [-1]:                          -0.032357704631
+Correlation energy [+2]:                          -0.002846503858
+Correlation energy [-2]:                          -0.061188593446
+MS-CASCI reference state total energy:           -74.892099873729
+NEVPT2 correlation energy:                        -0.577575599321
+Total NEVPT2 energy:                             -75.469675473049
+
+Computing energy of state #9...
+Reference state active-space energy:             -11.763463279419
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.080640592791
+Correlation energy [+1']:                         -0.004914347551
+Correlation energy [-1']:                         -0.330023645131
+Correlation energy [0]:                           -0.009080883821
+Correlation energy [+1]:                          -0.001921882019
+Correlation energy [-1]:                          -0.031856878146
+Correlation energy [+2]:                          -0.002789309719
+Correlation energy [-2]:                          -0.054899421354
+MS-CASCI reference state total energy:           -74.808143410393
+NEVPT2 correlation energy:                        -0.516126960532
+Total NEVPT2 energy:                             -75.324270370925
+
+Summary of results for the NEVPT2 calculation with the MS-CASCI reference:
+------------------------------------------------------------------------------------------------
+  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)
+------------------------------------------------------------------------------------------------
+    1        1          -76.277261486397     0.00000000       0.0000                      0.0000
+    2        3          -75.928361813116     0.34889967       9.4940     130.5916     76574.6272
+    3        1          -75.913022486760     0.36423900       9.9114     125.0919     79941.2202
+    4        3          -75.796170369581     0.48109112      13.0912      94.7084    105587.2955
+    5        1          -75.793193781327     0.48406771      13.1722      94.1260    106240.5811
+    6        3          -75.685577838464     0.59168365      16.1005      77.0063    129859.5505
+    7        1          -75.667259137102     0.61000235      16.5990      74.6937    133880.0407
+    8        1          -75.469675473049     0.80758601      21.9755      56.4192    177244.6426
+    9        3          -75.324270370925     0.95299112      25.9322      47.8109    209157.3738
+------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation    120.16 sec, wall time      9.27 sec
