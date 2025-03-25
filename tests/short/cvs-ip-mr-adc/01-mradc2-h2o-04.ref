@@ -1,0 +1,85 @@
+converged SCF energy = -76.0412566941277
+SCF energy: -76.041257
+
+CASSCF energy = -76.0412566941277
+CASCI E = -76.0412566941277  E(CI) = 0.00000000000000  S^2 = 0.0000000
+CASSCF energy: -76.041257
+
+CVS-IP calculations for different CVS-IP-MR-ADC methods
+
+Transforming integrals to MO basis...
+
+Computing reference wavefunction RDMs...
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)
+Nuclear repulsion energy:                          9.168193300756
+Number of electrons:                               10
+Number of basis functions:                         41
+Reference wavefunction type:                       casscf
+Number of core orbitals:                           5
+Number of active orbitals:                         4
+Number of external orbitals:                       32
+Number of active electrons:                        [(0, 0)]
+Reference state active-space energy:               0.000000000000
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  4
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              4
+
+Overlap truncation parameter (singles):            1.000000e-06
+Overlap truncation parameter (doubles):            1.000000e-10
+Projector for the semi-internal amplitudes:        gno
+
+Computing NEVPT2 amplitudes...
+Correlation energy [0']:                          -0.000000000000
+Correlation energy [+1']:                         -0.000000000000
+Correlation energy [-1']:                          0.000000000000
+Correlation energy [0]:                           -0.196350554854
+Correlation energy [+1]:                          -0.023663037155
+Correlation energy [+2]:                          -0.001830308185
+
+Reference energy:                                -76.041256694128
+NEVPT2 correlation energy:                        -0.221843900195
+Total NEVPT2 energy:                             -76.263100594323
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       900
+Total dimension of the excitation manifold:                901
+Dimension of the orthogonalized excitation manifold:       469
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 112  max_memory 2000  incore True
+Drop eigenvector 1, norm=7.76e-10
+Drop eigenvector 2, norm=7.76e-10
+Drop eigenvector 3, norm=7.76e-10
+davidson 0 4  |r|= 1.45  e= [20.5792064  21.12233748 21.12233748 21.12233748]  max|de|= 21.1  lindep=    1
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+root 1 converged  |r|= 7.76e-10  e= 21.12233747868906  max|de|= -7.11e-15
+root 2 converged  |r|= 7.76e-10  e= 21.12233747868907  max|de|=    0
+root 3 converged  |r|= 7.76e-10  e= 21.12233747868907  max|de|=    0
+davidson 1 5  |r|= 0.228  e= [19.85340387 21.12233748 21.12233748 21.12233748]  max|de|= -0.726  lindep= 0.95
+Old state -> New state
+    3     ->     1 
+    1     ->     3 
+davidson 2 6  |r|= 0.000882  e= [19.83826197 21.12233748 21.12233748 21.12233748]  max|de|= -0.0151  lindep= 0.912
+Old state -> New state
+    3     ->     1 
+    1     ->     3 
+Drop eigenvector 0, norm=1.49e-11
+davidson 3 7  |r|= 7.76e-10  e= [19.83826189 21.12233748 21.12233748 21.12233748]  max|de|= -8.23e-08  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0. 0. 0. 0.]
+
+Summary of results for the CVS-IP-MR-ADC(2) calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        19.83826189      539.8266     2.2967    4353995.2158      1.519745
+    2        21.12233748      574.7681     2.1571    4635817.2317      0.000000
+    3        21.12233748      574.7681     2.1571    4635817.2317      0.000000
+    4        21.12233748      574.7681     2.1571    4635817.2317      0.000000
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2) calculation     11.29 sec, wall time      1.10 sec

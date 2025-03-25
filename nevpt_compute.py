@@ -52,16 +52,17 @@ def kernel(nevpt):
     nevpt.log.info("Number of core orbitals:                           %d" % nevpt.ncore)
     nevpt.log.info("Number of active orbitals:                         %d" % nevpt.ncas)
     nevpt.log.info("Number of external orbitals:                       %d" % nevpt.nextern)
-    if nevpt.compute_singles_amplitudes:
-        nevpt.log.info("Projector for the semi-internal amplitudes:        %s" % nevpt.semi_internal_projector)
+
     nevpt.log.info("Reference density fitting?                         %s" % ref_df)
     nevpt.log.info("Correlation density fitting?                       %s" % df)
     nevpt.log.info("Temporary directory path:                          %s" % nevpt.temp_dir)
 
-    nevpt.log.info("\nInternal contraction:                              %s" % "Full (equivalent to partial)")
+    nevpt.log.info("\nInternal contraction:                              %s" % "Full (= Partial)")
     nevpt.log.info("Compute singles amplitudes?                        %s" % str(nevpt.compute_singles_amplitudes))
     nevpt.log.info("Overlap truncation parameter (singles):            %e" % nevpt.s_thresh_singles)
     nevpt.log.info("Overlap truncation parameter (doubles):            %e" % nevpt.s_thresh_doubles)
+    if nevpt.compute_singles_amplitudes:
+        nevpt.log.info("Projector for the semi-internal amplitudes:        %s" % nevpt.semi_internal_projector)
 
     e_tot = []
     e_corr = []

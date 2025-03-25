@@ -1,0 +1,1520 @@
+#INFO: **** input file is /home/sokolov.8/Programming/prism/examples/nevpt/04-nevpt2_sc_vs_fic.py ****
+#!/usr/bin/env python
+
+import numpy as np
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import pyscf.mrpt
+import prism.interface
+import prism.mr_adc
+import prism.nevpt
+
+mol = pyscf.gto.Mole()
+r = 1.098
+mol.atom = [
+    ['N', ( 0., 0.    , -r/2)],
+    ['N', ( 0., 0.    ,  r/2)],]
+mol.basis = {'N':'aug-cc-pvdz'}
+mol.verbose = 4
+mol.build()
+
+# RHF calculation as guess for CASSCF
+mf = pyscf.scf.RHF(mol)
+mf.kernel()
+
+# SA-CASSCF reference
+n_states = 9
+weights = np.ones(n_states)/n_states
+mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
+emc = mc.mc1step()[0]
+
+# FIC-NEVPT2 calculation using Prism
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+nevpt = prism.nevpt.NEVPT(interface)
+nevpt.compute_singles_amplitudes = False
+nevpt.s_thresh_singles = 1e-10
+nevpt.s_thresh_doubles = 1e-10
+nevpt.method = "nevpt2"
+e_tot, e_corr = nevpt.kernel()
+
+# SC-NEVPT2 calculation using PySCF
+mo = mc.mo_coeff.copy()
+weights = np.ones(n_states)/n_states
+mc = pyscf.mcscf.CASCI(mf, 6, 6)
+mc.fcisolver.nroots = n_states
+emc = mc.casci(mo)[0]
+
+energies = []
+for state in range(n_states):
+    e_corr = pyscf.mrpt.NEVPT(mc,root=state).kernel()
+    e_tot = mc.e_tot[state] + e_corr
+    energies.append(e_tot)
+    print('Total sc-NEVPT2 energy:', e_tot)
+
+print('Summary of the sc-NEVPT2 calculation:')
+for state in range(len(energies)):
+    de = energies[state] - energies[0]
+    print("%5d   %20.12f %14.8f %12.4f" % (state+1, energies[state], de, de*interface.hartree_to_ev))
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc206185.asc.ohio-state.edu', release='4.18.0-553.44.1.el8_10.x86_64', version='#1 SMP Wed Mar 5 10:48:41 EST 2025', machine='x86_64')  Threads 24
+Python 3.9.19 (main, May  6 2024, 19:43:03) 
+[GCC 11.2.0]
+numpy 1.22.3  scipy 1.7.3  h5py 3.7.0
+Date: Fri Mar 21 17:14:56 2025
+PySCF version 2.6.2
+PySCF path  /home/sokolov.8/Programming/pyscf
+GIT ORIG_HEAD 9c3d70bebd90720581bbd27425fb5de843ebbe4c
+GIT HEAD (branch ee_adc_merge) 4a5a453bf931ada8d76073db249bf28e741b5951
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 14
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 N      0.000000000000   0.000000000000  -0.549000000000 AA    0.000000000000   0.000000000000  -1.037459642386 Bohr   0.0
+[INPUT]  2 N      0.000000000000   0.000000000000   0.549000000000 AA    0.000000000000   0.000000000000   1.037459642386 Bohr   0.0
+
+nuclear repulsion = 23.6153764436066
+number of shells = 16
+number of NR pGTOs = 70
+number of NR cGTOs = 46
+basis = {'N': 'aug-cc-pvdz'}
+ecp = {}
+CPU time:         0.57
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/tmpj4wylg56
+max_memory 4000 MB (current use 98 MB)
+Set gradient conv threshold to 3.16228e-05
+Initial guess from minao.
+init E= -108.997365976287
+  HOMO = -0.383394863650675  LUMO = 0.052760514834714
+cycle= 1 E= -108.938371912804  delta_E= 0.059  |g|= 0.292  |ddm|= 1.69
+  HOMO = -0.667440590652668  LUMO = 0.0959074131140581
+cycle= 2 E= -108.959124150663  delta_E= -0.0208  |g|= 0.0773  |ddm|= 0.446
+  HOMO = -0.61413590246224  LUMO = 0.103850078544444
+cycle= 3 E= -108.96052045917  delta_E= -0.0014  |g|= 0.0147  |ddm|= 0.0743
+  HOMO = -0.615371970638086  LUMO = 0.103817157894074
+cycle= 4 E= -108.960607977205  delta_E= -8.75e-05  |g|= 0.00121  |ddm|= 0.0563
+  HOMO = -0.615311473909266  LUMO = 0.103828098400307
+cycle= 5 E= -108.960608490355  delta_E= -5.13e-07  |g|= 0.000172  |ddm|= 0.00327
+  HOMO = -0.615315360390609  LUMO = 0.10382213765198
+cycle= 6 E= -108.960608506598  delta_E= -1.62e-08  |g|= 3.2e-05  |ddm|= 0.000482
+  HOMO = -0.615307686837613  LUMO = 0.103821253142073
+cycle= 7 E= -108.960608507242  delta_E= -6.44e-10  |g|= 3.01e-06  |ddm|= 0.000174
+  HOMO = -0.615307964143234  LUMO = 0.103821216566218
+Extra cycle  E= -108.960608507245  delta_E= -2.96e-12  |g|= 7.72e-07  |ddm|= 1.33e-05
+converged SCF energy = -108.960608507245
+
+******** <class 'pyscf.mcscf.addons.StateAverageCASSCF'> ********
+CAS (3e+3e, 6o), ncore = 4, nvir = 36
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-07
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /scratch/local/tmpj4wylg56
+max_memory 4000 MB (current use 150 MB)
+internal_rotation = False
+******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 9
+pspace_size = 400
+spin = None
+State-average over 9 states with weights [0.11111111 0.11111111 0.11111111 0.11111111 0.11111111 0.11111111
+ 0.11111111 0.11111111 0.11111111]
+CASCI E = -108.605038060811  S^2 = 1.3333333
+Set conv_tol_grad to 0.000316228
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -108.700612708725  dE = -9.55746479e-02  S^2 = 1.3333333
+               |grad[o]|=0.243  |ddm|=0.0219  |maxRot[o]|=0.314
+macro iter   2 ( 21 JK    4 micro), CASSCF E = -108.733561999091  dE = -3.29492904e-02  S^2 = 1.3333333
+               |grad[o]|=0.137  |ddm|=0.0186  |maxRot[o]|=0.237
+macro iter   3 ( 21 JK    4 micro), CASSCF E = -108.742487422541  dE = -8.92542345e-03  S^2 = 1.3333333
+               |grad[o]|=0.0493  |ddm|=0.00498  |maxRot[o]|=0.312
+macro iter   4 ( 21 JK    4 micro), CASSCF E = -108.749908849085  dE = -7.42142654e-03  S^2 = 1.3333333
+               |grad[o]|=0.0329  |ddm|=0.0034  |maxRot[o]|=0.311
+macro iter   5 ( 19 JK    4 micro), CASSCF E = -108.752417109907  dE = -2.50826082e-03  S^2 = 1.3333333
+               |grad[o]|=0.0171  |ddm|=0.00125  |maxRot[o]|=0.274
+macro iter   6 (  8 JK    3 micro), CASSCF E = -108.752424022257  dE = -6.91235073e-06  S^2 = 1.3333333
+               |grad[o]|=0.00143  |ddm|=6.38e-05  |maxRot[o]|=0.0123
+macro iter   7 (  1 JK    1 micro), CASSCF E = -108.752424022279  dE = -2.18136620e-11  S^2 = 1.3333333
+               |grad[o]|=1.33e-05  |ddm|=6.43e-07  |maxRot[o]|=    0
+1-step CASSCF converged in   7 macro (112 JK  24 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.7652196  1.63752312 1.63752312 0.01080575 0.47446421 0.47446421]
+CASSCF energy = -108.752424022279
+CASCI E = -108.752424022279  E(CI) = -11.3763327780052  S^2 = 1.3333333
+CASCI state-averaged energy = -108.752424022279
+CASCI energy for each state
+  State 0 weight 0.111111  E = -109.068998267932 S^2 = 0.0000000
+  State 1 weight 0.111111  E = -108.78149965507 S^2 = 2.0000000
+  State 2 weight 0.111111  E = -108.732867784168 S^2 = 2.0000000
+  State 3 weight 0.111111  E = -108.732867784167 S^2 = 2.0000000
+  State 4 weight 0.111111  E = -108.712373994498 S^2 = 2.0000000
+  State 5 weight 0.111111  E = -108.712373994498 S^2 = 2.0000000
+  State 6 weight 0.111111  E = -108.686426525875 S^2 = 2.0000000
+  State 7 weight 0.111111  E = -108.686386872967 S^2 = 0.0000000
+  State 8 weight 0.111111  E = -108.658021321337 S^2 = 0.0000000
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.6
+
+                   Copyright (C) 2025 Carlos E. V. de Moura
+                                      Alexander Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: sa-casscf
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 9
+Total number of reference microstates: 21
+
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.00000      0         1     -109.068998267932     -11.692907023658
+    2       2.00000      1         3     -108.781499655070     -11.405408410796
+    3       2.00000      1         3     -108.732867784168     -11.356776539894
+    4       2.00000      1         3     -108.732867784167     -11.356776539893
+    5       2.00000      1         3     -108.712373994498     -11.336282750224
+    6       2.00000      1         3     -108.712373994498     -11.336282750224
+    7       2.00000      1         3     -108.686426525875     -11.310335281601
+    8       0.00000      0         1     -108.686386872967     -11.310295628693
+    9       0.00000      0         1     -108.658021321337     -11.281930077063
+-----------------------------------------------------------------------------------
+
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Initializing state-specific fully internally contracted NEVPT...
+
+Transforming integrals to MO basis...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Nuclear repulsion energy:                         23.615376443607
+Number of electrons:                               14
+Number of basis functions:                         46
+Reference wavefunction type:                       sa-casscf
+Number of reference states:                        9
+Number of reference microstates:                   21
+Number of frozen orbitals:                         0
+Number of core orbitals:                           4
+Number of active orbitals:                         6
+Number of external orbitals:                       36
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /scratch/local
+
+Internal contraction:                              Full (equivalent to partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.000000e-10
+Overlap truncation parameter (doubles):            1.000000e-10
+
+Computing energy of state #1...
+Reference state active-space energy:             -11.692907023658
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(3, 3)]
+Correlation energy [0']:                          -0.066849204425
+Correlation energy [+1']:                         -0.009401587382
+Correlation energy [-1']:                         -0.018534741255
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.007496588861
+Correlation energy [-1]:                          -0.036711224779
+Correlation energy [+2]:                          -0.005172183533
+Correlation energy [-2]:                          -0.046643092217
+SA-CASSCF reference state total energy:         -109.068998267932
+NEVPT2 correlation energy:                        -0.204611437718
+Total NEVPT2 energy:                            -109.273609705650
+
+Computing energy of state #2...
+Reference state active-space energy:             -11.405408410796
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.069084563717
+Correlation energy [+1']:                         -0.009231631086
+Correlation energy [-1']:                         -0.021372972742
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.007907810653
+Correlation energy [-1]:                          -0.037973154863
+Correlation energy [+2]:                          -0.003580872455
+Correlation energy [-2]:                          -0.041765656724
+SA-CASSCF reference state total energy:         -108.781499655070
+NEVPT2 correlation energy:                        -0.204719477507
+Total NEVPT2 energy:                            -108.986219132577
+
+Computing energy of state #3...
+Reference state active-space energy:             -11.356776539894
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.070085003260
+Correlation energy [+1']:                         -0.006425056062
+Correlation energy [-1']:                         -0.024175625474
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.007936325995
+Correlation energy [-1]:                          -0.038142557097
+Correlation energy [+2]:                          -0.003728724196
+Correlation energy [-2]:                          -0.043540728200
+SA-CASSCF reference state total energy:         -108.732867784168
+NEVPT2 correlation energy:                        -0.207836835549
+Total NEVPT2 energy:                            -108.940704619717
+
+Computing energy of state #4...
+Reference state active-space energy:             -11.356776539893
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.070085002323
+Correlation energy [+1']:                         -0.006425054660
+Correlation energy [-1']:                         -0.024175628971
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.007936325933
+Correlation energy [-1]:                          -0.038142557081
+Correlation energy [+2]:                          -0.003728725217
+Correlation energy [-2]:                          -0.043540728658
+SA-CASSCF reference state total energy:         -108.732867784167
+NEVPT2 correlation energy:                        -0.207836838109
+Total NEVPT2 energy:                            -108.940704622277
+
+Computing energy of state #5...
+Reference state active-space energy:             -11.336282750224
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.074564964620
+Correlation energy [+1']:                         -0.031714727295
+Correlation energy [-1']:                         -0.028556394694
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.012274612436
+Correlation energy [-1]:                          -0.039054979536
+Correlation energy [+2]:                          -0.005448360392
+Correlation energy [-2]:                          -0.048415084206
+SA-CASSCF reference state total energy:         -108.712373994498
+NEVPT2 correlation energy:                        -0.253831938445
+Total NEVPT2 energy:                            -108.966205932943
+
+Computing energy of state #6...
+Reference state active-space energy:             -11.336282750224
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.074564964620
+Correlation energy [+1']:                         -0.031714727295
+Correlation energy [-1']:                         -0.028556394694
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.012274612436
+Correlation energy [-1]:                          -0.039054979536
+Correlation energy [+2]:                          -0.005448360392
+Correlation energy [-2]:                          -0.048415084206
+SA-CASSCF reference state total energy:         -108.712373994498
+NEVPT2 correlation energy:                        -0.253831938445
+Total NEVPT2 energy:                            -108.966205932943
+
+Computing energy of state #7...
+Reference state active-space energy:             -11.310335281601
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(3, 3), (4, 2), (2, 4)]
+Correlation energy [0']:                          -0.058852203708
+Correlation energy [+1']:                         -0.010515653561
+Correlation energy [-1']:                         -0.025847373716
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.007962797703
+Correlation energy [-1]:                          -0.038308992473
+Correlation energy [+2]:                          -0.009541922817
+Correlation energy [-2]:                          -0.049941979020
+SA-CASSCF reference state total energy:         -108.686426525875
+NEVPT2 correlation energy:                        -0.214773738265
+Total NEVPT2 energy:                            -108.901200264140
+
+Computing energy of state #8...
+Reference state active-space energy:             -11.310295628693
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(3, 3)]
+Correlation energy [0']:                          -0.071068667691
+Correlation energy [+1']:                         -0.005372156915
+Correlation energy [-1']:                         -0.027270580072
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.007965965856
+Correlation energy [-1]:                          -0.038309700605
+Correlation energy [+2]:                          -0.004552728647
+Correlation energy [-2]:                          -0.045514564652
+SA-CASSCF reference state total energy:         -108.686386872967
+NEVPT2 correlation energy:                        -0.213857179705
+Total NEVPT2 energy:                            -108.900244052672
+
+Computing energy of state #9...
+Reference state active-space energy:             -11.281930077063
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(3, 3)]
+Correlation energy [0']:                          -0.061797094352
+Correlation energy [+1']:                         -0.009408788324
+Correlation energy [-1']:                         -0.029053025004
+Correlation energy [0]:                           -0.013802815266
+Correlation energy [+1]:                          -0.007979359920
+Correlation energy [-1]:                          -0.038412386856
+Correlation energy [+2]:                          -0.008696887478
+Correlation energy [-2]:                          -0.050681277642
+SA-CASSCF reference state total energy:         -108.658021321337
+NEVPT2 correlation energy:                        -0.219831634842
+Total NEVPT2 energy:                            -108.877852956179
+
+Summary of results for the NEVPT2 calculation with the SA-CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)
+------------------------------------------------------------------------------------------------
+    1        1         -109.273609705650     0.00000000       0.0000                      0.0000
+    2        3         -108.986219132577     0.28739057       7.8203     158.5416     63074.9401
+    3        3         -108.940704619717     0.33290509       9.0588     136.8659     73064.2210
+    4        3         -108.940704622277     0.33290508       9.0588     136.8659     73064.2205
+    5        3         -108.966205932943     0.30740377       8.3649     148.2199     67467.3297
+    6        3         -108.966205932943     0.30740377       8.3649     148.2199     67467.3297
+    7        3         -108.901200264140     0.37240944      10.1338     122.3475     81734.4249
+    8        1         -108.900244052672     0.37336565      10.1598     122.0341     81944.2891
+    9        1         -108.877852956179     0.39575675      10.7691     115.1297     86858.5667
+------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation    118.52 sec, wall time      6.61 sec
+
+******** CASCI flags ********
+CAS (3e+3e, 6o), ncore = 4, nvir = 36
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+max_memory 4000 (MB)
+******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
+max. cycles = 200
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 9
+pspace_size = 400
+spin = None
+
+WARN: Mulitple states found in CASCI solver. First state is used to compute the Fock matrix and natural orbitals in active space.
+
+Density matrix diagonal elements [1.98268957 1.93848838 1.93848838 0.0136404  0.06334664 0.06334664]
+CASCI converged
+CASCI state   0  E = -109.068998267943  E(CI) = -11.6929070236692  S^2 = 0.0000000
+CASCI state   1  E = -108.781499655071  E(CI) = -11.4054084107970  S^2 = 2.0000000
+CASCI state   2  E = -108.732867784168  E(CI) = -11.3567765398937  S^2 = 2.0000000
+CASCI state   3  E = -108.732867784168  E(CI) = -11.3567765398937  S^2 = 2.0000000
+CASCI state   4  E = -108.712373994498  E(CI) = -11.3362827502238  S^2 = 2.0000000
+CASCI state   5  E = -108.712373994498  E(CI) = -11.3362827502238  S^2 = 2.0000000
+CASCI state   6  E = -108.686426525876  E(CI) = -11.3103352816015  S^2 = 2.0000000
+CASCI state   7  E = -108.686386872970  E(CI) = -11.3102956286956  S^2 = 0.0000000
+CASCI state   8  E = -108.658021321338  E(CI) = -11.2819300770635  S^2 = 0.0000000
+Natural occ [1.98268957 1.93848838 1.93848838 0.06334664 0.06334664 0.0136404 ]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s           0.00334   0.00000  -0.00000  -0.00000  -0.00000
+0 N 2s           0.31445   0.00000  -0.00000  -0.00000   0.00000
+0 N 3s           0.09256   0.00000  -0.00000   0.00000  -0.00000
+0 N 4s           0.00308   0.00000   0.00000   0.00000  -0.00000
+0 N 2px         -0.00000  -0.24793   0.65956  -0.70064  -0.03318
+0 N 2py         -0.00000   0.65956   0.24793   0.03318  -0.70064
+0 N 2pz         -0.62164   0.00000   0.00000  -0.00000  -0.00000
+0 N 3px         -0.00000   0.00730  -0.01943  -0.07059  -0.00334
+0 N 3py         -0.00000  -0.01943  -0.00730   0.00334  -0.07059
+0 N 3pz          0.04160   0.00000  -0.00000   0.00000  -0.00000
+0 N 4px          0.00000   0.00362  -0.00963   0.00638   0.00030
+0 N 4py          0.00000  -0.00963  -0.00362  -0.00030   0.00638
+0 N 4pz          0.00219   0.00000   0.00000  -0.00000  -0.00000
+0 N 3dxy        -0.00000  -0.00000   0.00000   0.00000   0.00000
+0 N 3dyz        -0.00000   0.05020   0.01887  -0.00157   0.03325
+0 N 3dz^2       -0.06413   0.00000  -0.00000   0.00000  -0.00000
+0 N 3dxz        -0.00000  -0.01887   0.05020   0.03325   0.00157
+0 N 3dx2-y2     -0.00000   0.00000  -0.00000  -0.00000  -0.00000
+0 N 4dxy         0.00000   0.00000  -0.00000   0.00000  -0.00000
+0 N 4dyz        -0.00000  -0.00969  -0.00364  -0.00204   0.04305
+0 N 4dz^2       -0.01583   0.00000   0.00000   0.00000  -0.00000
+0 N 4dxz        -0.00000   0.00364  -0.00969   0.04305   0.00204
+0 N 4dx2-y2      0.00000   0.00000  -0.00000   0.00000  -0.00000
+1 N 1s           0.00334   0.00000  -0.00000  -0.00000   0.00000
+1 N 2s           0.31444  -0.00000   0.00000   0.00000   0.00000
+1 N 3s           0.09256  -0.00000   0.00000  -0.00000   0.00000
+1 N 4s           0.00308  -0.00000   0.00000  -0.00000   0.00000
+1 N 2px          0.00000  -0.24793   0.65956   0.70064   0.03318
+1 N 2py         -0.00000   0.65956   0.24793  -0.03318   0.70064
+1 N 2pz          0.62164   0.00000  -0.00000  -0.00000   0.00000
+1 N 3px          0.00000   0.00730  -0.01943   0.07059   0.00334
+1 N 3py          0.00000  -0.01943  -0.00730  -0.00334   0.07059
+1 N 3pz         -0.04160   0.00000  -0.00000   0.00000  -0.00000
+1 N 4px          0.00000   0.00362  -0.00963  -0.00638  -0.00030
+1 N 4py         -0.00000  -0.00963  -0.00362   0.00030  -0.00638
+1 N 4pz         -0.00219  -0.00000   0.00000  -0.00000  -0.00000
+1 N 3dxy        -0.00000  -0.00000   0.00000  -0.00000   0.00000
+1 N 3dyz        -0.00000  -0.05020  -0.01887  -0.00157   0.03325
+1 N 3dz^2       -0.06413  -0.00000   0.00000  -0.00000   0.00000
+1 N 3dxz        -0.00000   0.01887  -0.05020   0.03325   0.00157
+1 N 3dx2-y2      0.00000   0.00000  -0.00000  -0.00000  -0.00000
+1 N 4dxy         0.00000  -0.00000   0.00000   0.00000   0.00000
+1 N 4dyz        -0.00000   0.00969   0.00364  -0.00204   0.04305
+1 N 4dz^2       -0.01583  -0.00000   0.00000  -0.00000   0.00000
+1 N 4dxz        -0.00000  -0.00364   0.00969   0.04305   0.00204
+1 N 4dx2-y2      0.00000   0.00000  -0.00000  -0.00000  -0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px         -0.00000
+0 N 2py          0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py         -0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz        -0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy         0.00000
+0 N 4dyz        -0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz        -0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38223
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px          0.00000
+1 N 2py         -0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz        -0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz         0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy        -0.00000
+1 N 4dyz        -0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz        -0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      5        0.99322746
+<CAS-nat-orb|mo-hf>  6      6        0.83305169
+<CAS-nat-orb|mo-hf>  6      7       -0.55268085
+<CAS-nat-orb|mo-hf>  7      6        0.55268085
+<CAS-nat-orb|mo-hf>  7      7        0.83305169
+<CAS-nat-orb|mo-hf>  8      9        0.79800242
+<CAS-nat-orb|mo-hf>  8      15       0.56635805
+<CAS-nat-orb|mo-hf>  9      10       0.79800242
+<CAS-nat-orb|mo-hf>  9      16       0.56635805
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.01791179704034
+Si    (+1)',   E = -0.00911832378282
+Sijrs (0)  ,   E = -0.01377839584618
+Sijr  (+1) ,   E = -0.00749680400492
+Srsi  (-1) ,   E = -0.03660867116038
+Srs   (-2) ,   E = -0.04644477455310
+Sij   (+2) ,   E = -0.00495365867087
+Sir   (0)' ,   E = -0.06584207983846
+Nevpt2 Energy = -0.202154504897077
+Total sc-NEVPT2 energy: -109.27115277284034
+Natural occ [1.98723779 1.46783563 1.46783563 0.53312357 0.53312357 0.0108438 ]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s           0.00334  -0.00000  -0.00000   0.00000   0.00000
+0 N 2s           0.31445  -0.00000  -0.00000  -0.00000   0.00000
+0 N 3s           0.09256  -0.00000  -0.00000   0.00000   0.00000
+0 N 4s           0.00308  -0.00000  -0.00000   0.00000  -0.00000
+0 N 2px          0.00000   0.62677   0.32193  -0.32719  -0.62044
+0 N 2py          0.00000  -0.32193   0.62677  -0.62044   0.32719
+0 N 2pz         -0.62164   0.00000   0.00000  -0.00000  -0.00000
+0 N 3px          0.00000  -0.01846  -0.00948  -0.03296  -0.06251
+0 N 3py          0.00000   0.00948  -0.01846  -0.06251   0.03296
+0 N 3pz          0.04160  -0.00000  -0.00000   0.00000   0.00000
+0 N 4px         -0.00000  -0.00916  -0.00470   0.00298   0.00565
+0 N 4py         -0.00000   0.00470  -0.00916   0.00565  -0.00298
+0 N 4pz          0.00219   0.00000  -0.00000   0.00000  -0.00000
+0 N 3dxy        -0.00000   0.00000  -0.00000   0.00000  -0.00000
+0 N 3dyz         0.00000  -0.02450   0.04770   0.02944  -0.01553
+0 N 3dz^2       -0.06413  -0.00000  -0.00000   0.00000   0.00000
+0 N 3dxz         0.00000   0.04770   0.02450   0.01553   0.02944
+0 N 3dx2-y2     -0.00000  -0.00000   0.00000  -0.00000   0.00000
+0 N 4dxy         0.00000  -0.00000  -0.00000   0.00000   0.00000
+0 N 4dyz         0.00000   0.00473  -0.00921   0.03813  -0.02011
+0 N 4dz^2       -0.01583  -0.00000  -0.00000   0.00000  -0.00000
+0 N 4dxz         0.00000  -0.00921  -0.00473   0.02011   0.03813
+0 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000   0.00000
+1 N 1s           0.00334  -0.00000  -0.00000   0.00000   0.00000
+1 N 2s           0.31444  -0.00000  -0.00000   0.00000   0.00000
+1 N 3s           0.09256   0.00000   0.00000  -0.00000  -0.00000
+1 N 4s           0.00308   0.00000   0.00000  -0.00000   0.00000
+1 N 2px          0.00000   0.62677   0.32193   0.32719   0.62044
+1 N 2py          0.00000  -0.32193   0.62677   0.62044  -0.32719
+1 N 2pz          0.62164  -0.00000  -0.00000  -0.00000   0.00000
+1 N 3px         -0.00000  -0.01846  -0.00948   0.03296   0.06251
+1 N 3py         -0.00000   0.00948  -0.01846   0.06251  -0.03296
+1 N 3pz         -0.04160  -0.00000  -0.00000   0.00000   0.00000
+1 N 4px         -0.00000  -0.00916  -0.00470  -0.00298  -0.00565
+1 N 4py          0.00000   0.00470  -0.00916  -0.00565   0.00298
+1 N 4pz         -0.00219   0.00000  -0.00000   0.00000  -0.00000
+1 N 3dxy         0.00000  -0.00000   0.00000   0.00000  -0.00000
+1 N 3dyz         0.00000   0.02450  -0.04770   0.02944  -0.01553
+1 N 3dz^2       -0.06413   0.00000   0.00000  -0.00000  -0.00000
+1 N 3dxz        -0.00000  -0.04770  -0.02450   0.01553   0.02944
+1 N 3dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 4dxy         0.00000   0.00000   0.00000   0.00000   0.00000
+1 N 4dyz         0.00000  -0.00473   0.00921   0.03813  -0.02011
+1 N 4dz^2       -0.01583   0.00000   0.00000  -0.00000  -0.00000
+1 N 4dxz         0.00000   0.00921   0.00473   0.02011   0.03813
+1 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000   0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px         -0.00000
+0 N 2py         -0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py         -0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz         0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy         0.00000
+0 N 4dyz         0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz         0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38223
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px          0.00000
+1 N 2py          0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz         0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz         0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy        -0.00000
+1 N 4dyz         0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz         0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      5        0.99322746
+<CAS-nat-orb|mo-hf>  6      7        0.96905871
+<CAS-nat-orb|mo-hf>  7      6        0.96905871
+<CAS-nat-orb|mo-hf>  8      9        0.41005644
+<CAS-nat-orb|mo-hf>  8      10       0.68914246
+<CAS-nat-orb|mo-hf>  8      16       0.57013753
+<CAS-nat-orb|mo-hf>  9      9        0.68914246
+<CAS-nat-orb|mo-hf>  9      10      -0.41005644
+<CAS-nat-orb|mo-hf>  9      15       0.57013753
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.02060195814050
+Si    (+1)',   E = -0.00879636161788
+Sijrs (0)  ,   E = -0.01376486457800
+Sijr  (+1) ,   E = -0.00788318512556
+Srsi  (-1) ,   E = -0.03791427518809
+Srs   (-2) ,   E = -0.04176224120813
+Sij   (+2) ,   E = -0.00340827700886
+Sir   (0)' ,   E = -0.06780919771658
+Nevpt2 Energy = -0.201940360583593
+Total sc-NEVPT2 energy: -108.98344001565464
+Natural occ [1.98614097 1.47729246 1.47729246 0.52389248 0.52389248 0.01148916]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s           0.00334   0.00000   0.00000   0.00000  -0.00000
+0 N 2s           0.31445   0.00000   0.00000   0.00000   0.00000
+0 N 3s           0.09256  -0.00000   0.00000  -0.00000   0.00000
+0 N 4s           0.00308  -0.00000   0.00000  -0.00000   0.00000
+0 N 2px         -0.00000   0.48223   0.51374  -0.69650   0.08302
+0 N 2py          0.00000   0.51374  -0.48223  -0.08302  -0.69650
+0 N 2pz         -0.62164  -0.00000  -0.00000   0.00000   0.00000
+0 N 3px          0.00000  -0.01420  -0.01513  -0.07017   0.00836
+0 N 3py          0.00000  -0.01513   0.01420  -0.00836  -0.07017
+0 N 3pz          0.04160  -0.00000   0.00000  -0.00000   0.00000
+0 N 4px          0.00000  -0.00704  -0.00750   0.00634  -0.00076
+0 N 4py         -0.00000  -0.00750   0.00704   0.00076   0.00634
+0 N 4pz          0.00219  -0.00000   0.00000  -0.00000   0.00000
+0 N 3dxy         0.00000  -0.00000   0.00000   0.00000   0.00000
+0 N 3dyz         0.00000   0.03910  -0.03670   0.00394   0.03305
+0 N 3dz^2       -0.06413  -0.00000  -0.00000   0.00000   0.00000
+0 N 3dxz        -0.00000   0.03670   0.03910   0.03305  -0.00394
+0 N 3dx2-y2     -0.00000   0.00000  -0.00000   0.00000  -0.00000
+0 N 4dxy         0.00000  -0.00000  -0.00000   0.00000  -0.00000
+0 N 4dyz         0.00000  -0.00755   0.00708   0.00510   0.04280
+0 N 4dz^2       -0.01583  -0.00000  -0.00000   0.00000   0.00000
+0 N 4dxz         0.00000  -0.00708  -0.00755   0.04280  -0.00510
+0 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 1s           0.00334   0.00000   0.00000   0.00000   0.00000
+1 N 2s           0.31444   0.00000   0.00000  -0.00000  -0.00000
+1 N 3s           0.09256   0.00000  -0.00000   0.00000  -0.00000
+1 N 4s           0.00308   0.00000  -0.00000   0.00000  -0.00000
+1 N 2px         -0.00000   0.48223   0.51374   0.69650  -0.08302
+1 N 2py          0.00000   0.51374  -0.48223   0.08302   0.69650
+1 N 2pz          0.62164   0.00000   0.00000   0.00000   0.00000
+1 N 3px          0.00000  -0.01420  -0.01513   0.07017  -0.00836
+1 N 3py         -0.00000  -0.01513   0.01420   0.00836   0.07017
+1 N 3pz         -0.04160  -0.00000   0.00000  -0.00000   0.00000
+1 N 4px          0.00000  -0.00704  -0.00750  -0.00634   0.00076
+1 N 4py         -0.00000  -0.00750   0.00704  -0.00076  -0.00634
+1 N 4pz         -0.00219  -0.00000   0.00000  -0.00000   0.00000
+1 N 3dxy        -0.00000   0.00000  -0.00000  -0.00000   0.00000
+1 N 3dyz        -0.00000  -0.03910   0.03670   0.00394   0.03305
+1 N 3dz^2       -0.06413  -0.00000  -0.00000   0.00000  -0.00000
+1 N 3dxz         0.00000  -0.03670  -0.03910   0.03305  -0.00394
+1 N 3dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 4dxy         0.00000   0.00000   0.00000   0.00000   0.00000
+1 N 4dyz         0.00000   0.00755  -0.00708   0.00510   0.04280
+1 N 4dz^2       -0.01583   0.00000  -0.00000   0.00000  -0.00000
+1 N 4dxz        -0.00000   0.00708   0.00755   0.04280  -0.00510
+1 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px          0.00000
+0 N 2py          0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py         -0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz         0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy        -0.00000
+0 N 4dyz        -0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz         0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38223
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px         -0.00000
+1 N 2py         -0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz        -0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz         0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy         0.00000
+1 N 4dyz        -0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz         0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      5        0.99322746
+<CAS-nat-orb|mo-hf>  6      6        0.86378986
+<CAS-nat-orb|mo-hf>  6      7        0.50328751
+<CAS-nat-orb|mo-hf>  7      6       -0.50328751
+<CAS-nat-orb|mo-hf>  7      7        0.86378986
+<CAS-nat-orb|mo-hf>  8      9        0.80010389
+<CAS-nat-orb|mo-hf>  8      15       0.53628076
+<CAS-nat-orb|mo-hf>  9      10       0.80010389
+<CAS-nat-orb|mo-hf>  9      16       0.53628076
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.02298655131611
+Si    (+1)',   E = -0.00618404930954
+Sijrs (0)  ,   E = -0.01376536206351
+Sijr  (+1) ,   E = -0.00791212254509
+Srsi  (-1) ,   E = -0.03808217586816
+Srs   (-2) ,   E = -0.04352444891587
+Sij   (+2) ,   E = -0.00353331376556
+Sir   (0)' ,   E = -0.06905679938284
+Nevpt2 Energy = -0.205044823166687
+Total sc-NEVPT2 energy: -108.93791260733441
+Natural occ [1.98614097 1.47729246 1.47729246 0.52389248 0.52389248 0.01148916]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s           0.00334   0.00000   0.00000   0.00000  -0.00000
+0 N 2s           0.31445   0.00000   0.00000   0.00000  -0.00000
+0 N 3s           0.09256   0.00000  -0.00000   0.00000   0.00000
+0 N 4s           0.00308   0.00000  -0.00000   0.00000   0.00000
+0 N 2px         -0.00000   0.68376   0.17014  -0.64748  -0.26975
+0 N 2py         -0.00000  -0.17014   0.68376   0.26975  -0.64748
+0 N 2pz         -0.62164  -0.00000  -0.00000  -0.00000   0.00000
+0 N 3px          0.00000  -0.02014  -0.00501  -0.06523  -0.02718
+0 N 3py          0.00000   0.00501  -0.02014   0.02718  -0.06523
+0 N 3pz          0.04160  -0.00000  -0.00000   0.00000   0.00000
+0 N 4px          0.00000  -0.00999  -0.00249   0.00589   0.00245
+0 N 4py         -0.00000   0.00249  -0.00999  -0.00245   0.00589
+0 N 4pz          0.00219   0.00000  -0.00000  -0.00000   0.00000
+0 N 3dxy        -0.00000   0.00000  -0.00000   0.00000   0.00000
+0 N 3dyz         0.00000  -0.01295   0.05204  -0.01280   0.03072
+0 N 3dz^2       -0.06413  -0.00000  -0.00000   0.00000   0.00000
+0 N 3dxz        -0.00000   0.05204   0.01295   0.03072   0.01280
+0 N 3dx2-y2     -0.00000  -0.00000   0.00000   0.00000  -0.00000
+0 N 4dxy         0.00000  -0.00000  -0.00000   0.00000   0.00000
+0 N 4dyz         0.00000   0.00250  -0.01004  -0.01658   0.03979
+0 N 4dz^2       -0.01583  -0.00000  -0.00000   0.00000   0.00000
+0 N 4dxz         0.00000  -0.01004  -0.00250   0.03979   0.01658
+0 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 1s           0.00334   0.00000   0.00000   0.00000  -0.00000
+1 N 2s           0.31444   0.00000   0.00000   0.00000  -0.00000
+1 N 3s           0.09256   0.00000   0.00000  -0.00000  -0.00000
+1 N 4s           0.00308   0.00000   0.00000  -0.00000  -0.00000
+1 N 2px         -0.00000   0.68376   0.17014   0.64748   0.26975
+1 N 2py         -0.00000  -0.17014   0.68376  -0.26975   0.64748
+1 N 2pz          0.62164   0.00000   0.00000   0.00000  -0.00000
+1 N 3px          0.00000  -0.02014  -0.00501   0.06523   0.02718
+1 N 3py         -0.00000   0.00501  -0.02014  -0.02718   0.06523
+1 N 3pz         -0.04160  -0.00000  -0.00000   0.00000   0.00000
+1 N 4px          0.00000  -0.00999  -0.00249  -0.00589  -0.00245
+1 N 4py          0.00000   0.00249  -0.00999   0.00245  -0.00589
+1 N 4pz         -0.00219   0.00000  -0.00000  -0.00000   0.00000
+1 N 3dxy        -0.00000   0.00000   0.00000  -0.00000   0.00000
+1 N 3dyz         0.00000   0.01295  -0.05204  -0.01280   0.03072
+1 N 3dz^2       -0.06413  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 3dxz         0.00000  -0.05204  -0.01295   0.03072   0.01280
+1 N 3dx2-y2      0.00000  -0.00000   0.00000  -0.00000  -0.00000
+1 N 4dxy         0.00000   0.00000  -0.00000  -0.00000   0.00000
+1 N 4dyz         0.00000  -0.00250   0.01004  -0.01658   0.03979
+1 N 4dz^2       -0.01583   0.00000  -0.00000  -0.00000  -0.00000
+1 N 4dxz        -0.00000   0.01004   0.00250   0.03979   0.01658
+1 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px         -0.00000
+0 N 2py          0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py          0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz        -0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy         0.00000
+0 N 4dyz         0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz        -0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38223
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px         -0.00000
+1 N 2py          0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz         0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz        -0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy        -0.00000
+1 N 4dyz         0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz        -0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      5        0.99322746
+<CAS-nat-orb|mo-hf>  6      7        0.99955965
+<CAS-nat-orb|mo-hf>  7      6        0.99955965
+<CAS-nat-orb|mo-hf>  8      9        0.72339542
+<CAS-nat-orb|mo-hf>  8      15       0.57846883
+<CAS-nat-orb|mo-hf>  9      10       0.72339542
+<CAS-nat-orb|mo-hf>  9      16       0.57846883
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.02297881125096
+Si    (+1)',   E = -0.00618404930955
+Sijrs (0)  ,   E = -0.01376536206351
+Sijr  (+1) ,   E = -0.00791212254509
+Srsi  (-1) ,   E = -0.03808217586816
+Srs   (-2) ,   E = -0.04352329797583
+Sij   (+2) ,   E = -0.00353331376556
+Sir   (0)' ,   E = -0.06904972534447
+Nevpt2 Energy = -0.205028858123121
+Total sc-NEVPT2 energy: -108.93789664229084
+Natural occ [1.97953358 1.93776026 1.01932446 0.99460047 0.06274223 0.006039  ]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s           0.00000   0.00000   0.00000   0.00334  -0.00000
+0 N 2s           0.00000   0.00000   0.00000   0.31445   0.00000
+0 N 3s          -0.00000  -0.00000   0.00000   0.09256   0.00000
+0 N 4s          -0.00000  -0.00000   0.00000   0.00308  -0.00000
+0 N 2px          0.70112  -0.07013  -0.69794  -0.00000   0.06981
+0 N 2py          0.07013   0.70112  -0.06981  -0.00000  -0.69794
+0 N 2pz         -0.00000  -0.00000  -0.00000  -0.62164   0.00000
+0 N 3px         -0.02065   0.00207  -0.07032   0.00000   0.00703
+0 N 3py         -0.00207  -0.02065  -0.00703   0.00000  -0.07032
+0 N 3pz         -0.00000  -0.00000   0.00000   0.04161  -0.00000
+0 N 4px         -0.01024   0.00102   0.00635   0.00000  -0.00064
+0 N 4py         -0.00102  -0.01024   0.00064   0.00000   0.00635
+0 N 4pz         -0.00000  -0.00000   0.00000   0.00219  -0.00000
+0 N 3dxy         0.00000  -0.00000   0.00000  -0.00000   0.00000
+0 N 3dyz         0.00534   0.05336   0.00331  -0.00000   0.03312
+0 N 3dz^2       -0.00000  -0.00000   0.00000  -0.06413   0.00000
+0 N 3dxz         0.05336  -0.00534   0.03312  -0.00000  -0.00331
+0 N 3dx2-y2     -0.00000   0.00000   0.00000  -0.00000  -0.00000
+0 N 4dxy        -0.00000   0.00000   0.00000   0.00000  -0.00000
+0 N 4dyz        -0.00103  -0.01030   0.00429   0.00000   0.04289
+0 N 4dz^2       -0.00000  -0.00000   0.00000  -0.01583   0.00000
+0 N 4dxz        -0.01030   0.00103   0.04289   0.00000  -0.00429
+0 N 4dx2-y2     -0.00000  -0.00000  -0.00000   0.00000  -0.00000
+1 N 1s           0.00000   0.00000   0.00000   0.00334   0.00000
+1 N 2s           0.00000   0.00000   0.00000   0.31444  -0.00000
+1 N 3s           0.00000   0.00000  -0.00000   0.09256  -0.00000
+1 N 4s           0.00000   0.00000  -0.00000   0.00308   0.00000
+1 N 2px          0.70111  -0.07013   0.69794  -0.00000  -0.06981
+1 N 2py          0.07013   0.70111   0.06981  -0.00000   0.69794
+1 N 2pz          0.00000   0.00000   0.00000   0.62164   0.00000
+1 N 3px         -0.02065   0.00207   0.07032   0.00000  -0.00703
+1 N 3py         -0.00207  -0.02065   0.00703  -0.00000   0.07032
+1 N 3pz         -0.00000  -0.00000   0.00000  -0.04160  -0.00000
+1 N 4px         -0.01024   0.00102  -0.00635   0.00000   0.00064
+1 N 4py         -0.00102  -0.01024  -0.00064   0.00000  -0.00635
+1 N 4pz         -0.00000  -0.00000   0.00000  -0.00219  -0.00000
+1 N 3dxy         0.00000   0.00000  -0.00000  -0.00000   0.00000
+1 N 3dyz        -0.00534  -0.05336   0.00331   0.00000   0.03312
+1 N 3dz^2       -0.00000  -0.00000  -0.00000  -0.06413   0.00000
+1 N 3dxz        -0.05336   0.00534   0.03312   0.00000  -0.00331
+1 N 3dx2-y2     -0.00000   0.00000  -0.00000   0.00000  -0.00000
+1 N 4dxy         0.00000  -0.00000   0.00000   0.00000   0.00000
+1 N 4dyz         0.00103   0.01030   0.00429   0.00000   0.04289
+1 N 4dz^2        0.00000  -0.00000  -0.00000  -0.01583  -0.00000
+1 N 4dxz         0.01030  -0.00103   0.04289  -0.00000  -0.00429
+1 N 4dx2-y2     -0.00000  -0.00000  -0.00000   0.00000  -0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px         -0.00000
+0 N 2py          0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py         -0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz         0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy         0.00000
+0 N 4dyz        -0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz         0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38222
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px          0.00000
+1 N 2py         -0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz        -0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz         0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy         0.00000
+1 N 4dyz        -0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz         0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      7        0.94709190
+<CAS-nat-orb|mo-hf>  6      6        0.94709190
+<CAS-nat-orb|mo-hf>  7      9        0.80098006
+<CAS-nat-orb|mo-hf>  7      15       0.54047873
+<CAS-nat-orb|mo-hf>  8      5        0.99322746
+<CAS-nat-orb|mo-hf>  9      10       0.80098006
+<CAS-nat-orb|mo-hf>  9      16       0.54047873
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.02715640559231
+Si    (+1)',   E = -0.02919764733862
+Sijrs (0)  ,   E = -0.01389610045018
+Sijr  (+1) ,   E = -0.01240356189127
+Srsi  (-1) ,   E = -0.03921209964107
+Srs   (-2) ,   E = -0.04819882353198
+Sij   (+2) ,   E = -0.00527637010307
+Sir   (0)' ,   E = -0.07366591632780
+Nevpt2 Energy = -0.249006924876298
+Total sc-NEVPT2 energy: -108.96138091937414
+Natural occ [1.97953358 1.93776026 1.01932446 0.99460047 0.06274223 0.006039  ]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s          -0.00000   0.00000  -0.00000   0.00334   0.00000
+0 N 2s          -0.00000   0.00000  -0.00000   0.31445  -0.00000
+0 N 3s           0.00000  -0.00000  -0.00000   0.09256   0.00000
+0 N 4s          -0.00000  -0.00000   0.00000   0.00308   0.00000
+0 N 2px         -0.07013   0.70112   0.06981  -0.00000  -0.69794
+0 N 2py          0.70112   0.07013  -0.69794  -0.00000  -0.06981
+0 N 2pz          0.00000  -0.00000   0.00000  -0.62164  -0.00000
+0 N 3px          0.00207  -0.02065   0.00703   0.00000  -0.07032
+0 N 3py         -0.02065  -0.00207  -0.07032  -0.00000  -0.00703
+0 N 3pz          0.00000  -0.00000  -0.00000   0.04161   0.00000
+0 N 4px          0.00102  -0.01024  -0.00064   0.00000   0.00635
+0 N 4py         -0.01024  -0.00102   0.00635   0.00000   0.00064
+0 N 4pz         -0.00000  -0.00000   0.00000   0.00219   0.00000
+0 N 3dxy        -0.00000   0.00000  -0.00000  -0.00000   0.00000
+0 N 3dyz         0.05336   0.00534   0.03312   0.00000   0.00331
+0 N 3dz^2        0.00000  -0.00000   0.00000  -0.06413   0.00000
+0 N 3dxz        -0.00534   0.05336  -0.00331  -0.00000   0.03312
+0 N 3dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+0 N 4dxy         0.00000  -0.00000   0.00000   0.00000   0.00000
+0 N 4dyz        -0.01030  -0.00103   0.04289   0.00000   0.00429
+0 N 4dz^2        0.00000  -0.00000   0.00000  -0.01583   0.00000
+0 N 4dxz         0.00103  -0.01030  -0.00429   0.00000   0.04289
+0 N 4dx2-y2     -0.00000  -0.00000  -0.00000   0.00000  -0.00000
+1 N 1s          -0.00000   0.00000  -0.00000   0.00334  -0.00000
+1 N 2s          -0.00000   0.00000  -0.00000   0.31444   0.00000
+1 N 3s          -0.00000   0.00000  -0.00000   0.09256  -0.00000
+1 N 4s           0.00000   0.00000  -0.00000   0.00308  -0.00000
+1 N 2px         -0.07013   0.70111  -0.06981  -0.00000   0.69794
+1 N 2py          0.70111   0.07013   0.69794   0.00000   0.06981
+1 N 2pz         -0.00000   0.00000  -0.00000   0.62164  -0.00000
+1 N 3px          0.00207  -0.02065  -0.00703   0.00000   0.07032
+1 N 3py         -0.02065  -0.00207   0.07032   0.00000   0.00703
+1 N 3pz          0.00000  -0.00000   0.00000  -0.04160   0.00000
+1 N 4px          0.00102  -0.01024   0.00064   0.00000  -0.00635
+1 N 4py         -0.01024  -0.00102  -0.00635  -0.00000  -0.00064
+1 N 4pz         -0.00000   0.00000   0.00000  -0.00219   0.00000
+1 N 3dxy        -0.00000   0.00000   0.00000  -0.00000  -0.00000
+1 N 3dyz        -0.05336  -0.00534   0.03312  -0.00000   0.00331
+1 N 3dz^2       -0.00000  -0.00000   0.00000  -0.06413  -0.00000
+1 N 3dxz         0.00534  -0.05336  -0.00331   0.00000   0.03312
+1 N 3dx2-y2      0.00000  -0.00000  -0.00000   0.00000  -0.00000
+1 N 4dxy        -0.00000   0.00000   0.00000   0.00000   0.00000
+1 N 4dyz         0.01030   0.00103   0.04289   0.00000   0.00429
+1 N 4dz^2       -0.00000   0.00000   0.00000  -0.01583  -0.00000
+1 N 4dxz        -0.00103   0.01030  -0.00429  -0.00000   0.04289
+1 N 4dx2-y2      0.00000  -0.00000  -0.00000   0.00000  -0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px         -0.00000
+0 N 2py         -0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py         -0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz         0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy         0.00000
+0 N 4dyz         0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz         0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38222
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px          0.00000
+1 N 2py          0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz         0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz         0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy         0.00000
+1 N 4dyz         0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz         0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      6        0.94709190
+<CAS-nat-orb|mo-hf>  6      7        0.94709190
+<CAS-nat-orb|mo-hf>  7      10       0.80098006
+<CAS-nat-orb|mo-hf>  7      16       0.54047873
+<CAS-nat-orb|mo-hf>  8      5        0.99322746
+<CAS-nat-orb|mo-hf>  9      9        0.80098006
+<CAS-nat-orb|mo-hf>  9      15       0.54047873
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.02715640559231
+Si    (+1)',   E = -0.02919764733862
+Sijrs (0)  ,   E = -0.01389610045018
+Sijr  (+1) ,   E = -0.01240356189127
+Srsi  (-1) ,   E = -0.03921209964107
+Srs   (-2) ,   E = -0.04819882353198
+Sij   (+2) ,   E = -0.00527637010307
+Sir   (0)' ,   E = -0.07366591632780
+Nevpt2 Energy = -0.249006924876296
+Total sc-NEVPT2 energy: -108.96138091937414
+Natural occ [1.98572227 1.48444529 1.48444529 0.51656375 0.51656375 0.01225966]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s           0.00334   0.00000  -0.00000  -0.00000   0.00000
+0 N 2s           0.31445   0.00000  -0.00000  -0.00000   0.00000
+0 N 3s           0.09256   0.00000  -0.00000  -0.00000   0.00000
+0 N 4s           0.00308  -0.00000  -0.00000  -0.00000   0.00000
+0 N 2px          0.00000   0.04939   0.70288  -0.04613  -0.69991
+0 N 2py         -0.00000   0.70288  -0.04939  -0.69991   0.04613
+0 N 2pz         -0.62164  -0.00000   0.00000  -0.00000  -0.00000
+0 N 3px         -0.00000  -0.00145  -0.02070  -0.00465  -0.07051
+0 N 3py          0.00000  -0.02070   0.00145  -0.07051   0.00465
+0 N 3pz          0.04160   0.00000  -0.00000  -0.00000   0.00000
+0 N 4px         -0.00000  -0.00072  -0.01027   0.00042   0.00637
+0 N 4py          0.00000  -0.01027   0.00072   0.00637  -0.00042
+0 N 4pz          0.00219  -0.00000   0.00000   0.00000  -0.00000
+0 N 3dxy        -0.00000  -0.00000   0.00000   0.00000   0.00000
+0 N 3dyz        -0.00000   0.05350  -0.00376   0.03321  -0.00219
+0 N 3dz^2       -0.06413  -0.00000   0.00000  -0.00000   0.00000
+0 N 3dxz         0.00000   0.00376   0.05350   0.00219   0.03321
+0 N 3dx2-y2     -0.00000   0.00000  -0.00000  -0.00000   0.00000
+0 N 4dxy         0.00000  -0.00000  -0.00000   0.00000   0.00000
+0 N 4dyz         0.00000  -0.01032   0.00073   0.04301  -0.00283
+0 N 4dz^2       -0.01583  -0.00000   0.00000  -0.00000   0.00000
+0 N 4dxz        -0.00000  -0.00073  -0.01032   0.00283   0.04301
+0 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 1s           0.00334   0.00000  -0.00000  -0.00000   0.00000
+1 N 2s           0.31444   0.00000  -0.00000   0.00000   0.00000
+1 N 3s           0.09256   0.00000   0.00000   0.00000  -0.00000
+1 N 4s           0.00308   0.00000   0.00000   0.00000  -0.00000
+1 N 2px          0.00000   0.04939   0.70288   0.04613   0.69991
+1 N 2py         -0.00000   0.70288  -0.04939   0.69991  -0.04613
+1 N 2pz          0.62164   0.00000  -0.00000  -0.00000   0.00000
+1 N 3px          0.00000  -0.00145  -0.02070   0.00465   0.07051
+1 N 3py          0.00000  -0.02070   0.00145   0.07051  -0.00465
+1 N 3pz         -0.04160  -0.00000  -0.00000  -0.00000   0.00000
+1 N 4px         -0.00000  -0.00072  -0.01027  -0.00042  -0.00637
+1 N 4py          0.00000  -0.01027   0.00072  -0.00637   0.00042
+1 N 4pz         -0.00219  -0.00000   0.00000   0.00000  -0.00000
+1 N 3dxy        -0.00000   0.00000   0.00000   0.00000  -0.00000
+1 N 3dyz         0.00000  -0.05350   0.00376   0.03321  -0.00219
+1 N 3dz^2       -0.06413  -0.00000   0.00000   0.00000  -0.00000
+1 N 3dxz        -0.00000  -0.00376  -0.05350   0.00219   0.03321
+1 N 3dx2-y2      0.00000   0.00000  -0.00000  -0.00000  -0.00000
+1 N 4dxy         0.00000   0.00000   0.00000   0.00000  -0.00000
+1 N 4dyz        -0.00000   0.01032  -0.00073   0.04301  -0.00283
+1 N 4dz^2       -0.01583  -0.00000   0.00000   0.00000  -0.00000
+1 N 4dxz        -0.00000   0.00073   0.01032   0.00283   0.04301
+1 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px         -0.00000
+0 N 2py         -0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py          0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz        -0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy         0.00000
+0 N 4dyz        -0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz        -0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38223
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px          0.00000
+1 N 2py          0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz        -0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz         0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy         0.00000
+1 N 4dyz        -0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz        -0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      5        0.99322746
+<CAS-nat-orb|mo-hf>  6      6        0.98756716
+<CAS-nat-orb|mo-hf>  7      7        0.98756716
+<CAS-nat-orb|mo-hf>  8      10       0.79640400
+<CAS-nat-orb|mo-hf>  8      16       0.56875597
+<CAS-nat-orb|mo-hf>  9      9        0.79640400
+<CAS-nat-orb|mo-hf>  9      15       0.56875597
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.02402718390476
+Si    (+1)',   E = -0.00946516293076
+Sijrs (0)  ,   E = -0.01376574484042
+Sijr  (+1) ,   E = -0.00793891134233
+Srsi  (-1) ,   E = -0.03824713557728
+Srs   (-2) ,   E = -0.04991802671244
+Sij   (+2) ,   E = -0.00929783397272
+Sir   (0)' ,   E = -0.05801204447787
+Nevpt2 Energy = -0.210672043758587
+Total sc-NEVPT2 energy: -108.89709856963417
+Natural occ [1.98473787 1.48494636 1.48494636 0.51652236 0.51652236 0.01232469]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s           0.00334  -0.00000  -0.00000  -0.00000  -0.00000
+0 N 2s           0.31445  -0.00000  -0.00000   0.00000   0.00000
+0 N 3s           0.09256   0.00000   0.00000   0.00000  -0.00000
+0 N 4s           0.00308   0.00000   0.00000   0.00000  -0.00000
+0 N 2px          0.00000   0.70459  -0.00523  -0.70139   0.00744
+0 N 2py          0.00000   0.00523   0.70459  -0.00744  -0.70139
+0 N 2pz         -0.62164   0.00000   0.00000   0.00000   0.00000
+0 N 3px         -0.00000  -0.02075   0.00015  -0.07066   0.00075
+0 N 3py         -0.00000  -0.00015  -0.02075  -0.00075  -0.07066
+0 N 3pz          0.04160   0.00000   0.00000   0.00000  -0.00000
+0 N 4px         -0.00000  -0.01029   0.00008   0.00638  -0.00007
+0 N 4py         -0.00000  -0.00008  -0.01029   0.00007   0.00638
+0 N 4pz          0.00219   0.00000   0.00000  -0.00000  -0.00000
+0 N 3dxy        -0.00000   0.00000  -0.00000   0.00000   0.00000
+0 N 3dyz         0.00000   0.00040   0.05363   0.00035   0.03328
+0 N 3dz^2       -0.06413   0.00000   0.00000   0.00000  -0.00000
+0 N 3dxz         0.00000   0.05363  -0.00040   0.03328  -0.00035
+0 N 3dx2-y2     -0.00000  -0.00000   0.00000   0.00000  -0.00000
+0 N 4dxy         0.00000  -0.00000   0.00000  -0.00000   0.00000
+0 N 4dyz        -0.00000  -0.00008  -0.01035   0.00046   0.04310
+0 N 4dz^2       -0.01583   0.00000   0.00000   0.00000  -0.00000
+0 N 4dxz        -0.00000  -0.01035   0.00008   0.04310  -0.00046
+0 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 1s           0.00334  -0.00000  -0.00000   0.00000   0.00000
+1 N 2s           0.31444  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 3s           0.09256  -0.00000  -0.00000  -0.00000   0.00000
+1 N 4s           0.00308  -0.00000  -0.00000  -0.00000   0.00000
+1 N 2px          0.00000   0.70459  -0.00523   0.70139  -0.00744
+1 N 2py          0.00000   0.00523   0.70459   0.00744   0.70139
+1 N 2pz          0.62164  -0.00000  -0.00000   0.00000   0.00000
+1 N 3px          0.00000  -0.02075   0.00015   0.07066  -0.00075
+1 N 3py          0.00000  -0.00015  -0.02075   0.00075   0.07066
+1 N 3pz         -0.04160  -0.00000   0.00000   0.00000  -0.00000
+1 N 4px         -0.00000  -0.01029   0.00008  -0.00638   0.00007
+1 N 4py         -0.00000  -0.00008  -0.01029  -0.00007  -0.00638
+1 N 4pz         -0.00219   0.00000   0.00000  -0.00000  -0.00000
+1 N 3dxy        -0.00000   0.00000   0.00000  -0.00000   0.00000
+1 N 3dyz        -0.00000  -0.00040  -0.05363   0.00035   0.03328
+1 N 3dz^2       -0.06413   0.00000  -0.00000  -0.00000   0.00000
+1 N 3dxz        -0.00000  -0.05363   0.00040   0.03328  -0.00035
+1 N 3dx2-y2      0.00000  -0.00000   0.00000  -0.00000  -0.00000
+1 N 4dxy         0.00000   0.00000  -0.00000   0.00000   0.00000
+1 N 4dyz        -0.00000   0.00008   0.01035   0.00046   0.04310
+1 N 4dz^2       -0.01583   0.00000  -0.00000  -0.00000   0.00000
+1 N 4dxz        -0.00000   0.01035  -0.00008   0.04310  -0.00046
+1 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px          0.00000
+0 N 2py          0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py         -0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz         0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy        -0.00000
+0 N 4dyz        -0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz         0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38223
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px         -0.00000
+1 N 2py         -0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz        -0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz         0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy         0.00000
+1 N 4dyz        -0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz         0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      5        0.99322746
+<CAS-nat-orb|mo-hf>  6      7        0.97255685
+<CAS-nat-orb|mo-hf>  7      6        0.97255685
+<CAS-nat-orb|mo-hf>  8      9        0.80124326
+<CAS-nat-orb|mo-hf>  8      15       0.55759365
+<CAS-nat-orb|mo-hf>  9      10       0.80124326
+<CAS-nat-orb|mo-hf>  9      16       0.55759365
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.02547597334074
+Si    (+1)',   E = -0.00517773488019
+Sijrs (0)  ,   E = -0.01376588616695
+Sijr  (+1) ,   E = -0.00794216381458
+Srsi  (-1) ,   E = -0.03824805963288
+Srs   (-2) ,   E = -0.04548325807162
+Sij   (+2) ,   E = -0.00432735363352
+Sir   (0)' ,   E = -0.07027718064631
+Nevpt2 Energy = -0.210697610186788
+Total sc-NEVPT2 energy: -108.89708448315645
+Natural occ [1.98510551 1.49011357 1.49011357 0.51077035 0.51077035 0.01312665]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 N 1s           0.00334   0.00000   0.00000  -0.00000   0.00000
+0 N 2s           0.31445   0.00000   0.00000   0.00000  -0.00000
+0 N 3s           0.09256   0.00000   0.00000  -0.00000   0.00000
+0 N 4s           0.00308   0.00000   0.00000  -0.00000   0.00000
+0 N 2px         -0.00000   0.37881   0.59412   0.37249  -0.59435
+0 N 2py          0.00000  -0.59412   0.37881  -0.59435  -0.37249
+0 N 2pz         -0.62164  -0.00000  -0.00000   0.00000  -0.00000
+0 N 3px          0.00000  -0.01116  -0.01750   0.03753  -0.05988
+0 N 3py         -0.00000   0.01750  -0.01116  -0.05988  -0.03753
+0 N 3pz          0.04160   0.00000   0.00000  -0.00000   0.00000
+0 N 4px          0.00000  -0.00553  -0.00868  -0.00339   0.00541
+0 N 4py         -0.00000   0.00868  -0.00553   0.00541   0.00339
+0 N 4pz          0.00219   0.00000   0.00000  -0.00000   0.00000
+0 N 3dxy         0.00000   0.00000   0.00000  -0.00000   0.00000
+0 N 3dyz         0.00000  -0.04522   0.02883   0.02820   0.01768
+0 N 3dz^2       -0.06413  -0.00000  -0.00000  -0.00000   0.00000
+0 N 3dxz        -0.00000   0.02883   0.04522  -0.01768   0.02820
+0 N 3dx2-y2     -0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+0 N 4dxy         0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+0 N 4dyz        -0.00000   0.00873  -0.00556   0.03652   0.02289
+0 N 4dz^2       -0.01583  -0.00000  -0.00000  -0.00000   0.00000
+0 N 4dxz         0.00000  -0.00556  -0.00873  -0.02289   0.03652
+0 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 1s           0.00334   0.00000   0.00000  -0.00000   0.00000
+1 N 2s           0.31444   0.00000   0.00000  -0.00000   0.00000
+1 N 3s           0.09256   0.00000   0.00000   0.00000  -0.00000
+1 N 4s           0.00308   0.00000  -0.00000   0.00000  -0.00000
+1 N 2px         -0.00000   0.37881   0.59412  -0.37249   0.59435
+1 N 2py          0.00000  -0.59412   0.37881   0.59435   0.37249
+1 N 2pz          0.62164   0.00000   0.00000   0.00000  -0.00000
+1 N 3px          0.00000  -0.01116  -0.01750  -0.03753   0.05988
+1 N 3py         -0.00000   0.01750  -0.01116   0.05988   0.03753
+1 N 3pz         -0.04160  -0.00000  -0.00000  -0.00000   0.00000
+1 N 4px          0.00000  -0.00553  -0.00868   0.00339  -0.00541
+1 N 4py         -0.00000   0.00868  -0.00553  -0.00541  -0.00339
+1 N 4pz         -0.00219  -0.00000  -0.00000  -0.00000   0.00000
+1 N 3dxy         0.00000   0.00000   0.00000   0.00000   0.00000
+1 N 3dyz        -0.00000   0.04522  -0.02883   0.02820   0.01767
+1 N 3dz^2       -0.06413  -0.00000  -0.00000   0.00000  -0.00000
+1 N 3dxz         0.00000  -0.02883  -0.04522  -0.01767   0.02820
+1 N 3dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+1 N 4dxy         0.00000   0.00000   0.00000   0.00000   0.00000
+1 N 4dyz         0.00000  -0.00873   0.00556   0.03652   0.02289
+1 N 4dz^2       -0.01583  -0.00000  -0.00000   0.00000  -0.00000
+1 N 4dxz        -0.00000   0.00556   0.00873  -0.02289   0.03652
+1 N 4dx2-y2      0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+               #6       
+0 N 1s          -0.00069
+0 N 2s           0.38223
+0 N 3s           0.17766
+0 N 4s          -0.10168
+0 N 2px         -0.00000
+0 N 2py          0.00000
+0 N 2pz          0.49500
+0 N 3px         -0.00000
+0 N 3py          0.00000
+0 N 3pz         -0.24037
+0 N 4px          0.00000
+0 N 4py         -0.00000
+0 N 4pz         -0.08302
+0 N 3dxy        -0.00000
+0 N 3dyz        -0.00000
+0 N 3dz^2       -0.04805
+0 N 3dxz         0.00000
+0 N 3dx2-y2     -0.00000
+0 N 4dxy         0.00000
+0 N 4dyz        -0.00000
+0 N 4dz^2       -0.00074
+0 N 4dxz         0.00000
+0 N 4dx2-y2      0.00000
+1 N 1s           0.00069
+1 N 2s          -0.38223
+1 N 3s          -0.17765
+1 N 4s           0.10169
+1 N 2px          0.00000
+1 N 2py         -0.00000
+1 N 2pz          0.49500
+1 N 3px          0.00000
+1 N 3py         -0.00000
+1 N 3pz         -0.24037
+1 N 4px         -0.00000
+1 N 4py          0.00000
+1 N 4pz         -0.08302
+1 N 3dxy         0.00000
+1 N 3dyz        -0.00000
+1 N 3dz^2        0.04804
+1 N 3dxz         0.00000
+1 N 3dx2-y2      0.00000
+1 N 4dxy         0.00000
+1 N 4dyz        -0.00000
+1 N 4dz^2        0.00074
+1 N 4dxz         0.00000
+1 N 4dx2-y2     -0.00000
+<CAS-nat-orb|mo-hf>  5      5        0.99322746
+<CAS-nat-orb|mo-hf>  6      6       -0.70092830
+<CAS-nat-orb|mo-hf>  6      7        0.71283291
+<CAS-nat-orb|mo-hf>  7      6        0.71283291
+<CAS-nat-orb|mo-hf>  7      7        0.70092830
+<CAS-nat-orb|mo-hf>  8      10       0.70050042
+<CAS-nat-orb|mo-hf>  8      15      -0.43396476
+<CAS-nat-orb|mo-hf>  9      9        0.70050042
+<CAS-nat-orb|mo-hf>  9      16       0.43396476
+<CAS-nat-orb|mo-hf>  10     21      -0.56422805
+<CAS-nat-orb|mo-hf>  10     32      -0.77317545
+Sr    (-1)',   E = -0.02655134052734
+Si    (+1)',   E = -0.00842345774130
+Sijrs (0)  ,   E = -0.01376613144534
+Sijr  (+1) ,   E = -0.00795584446162
+Srsi  (-1) ,   E = -0.03834950508469
+Srs   (-2) ,   E = -0.05064801503880
+Sij   (+2) ,   E = -0.00847747187830
+Sir   (0)' ,   E = -0.06091563840841
+Nevpt2 Energy = -0.215087404585795
+Total sc-NEVPT2 energy: -108.87310872592336
+Summary of the sc-NEVPT2 calculation:
+    1      -109.271152772840     0.00000000       0.0000
+    2      -108.983440015655     0.28771276       7.8291
+    3      -108.937912607334     0.33324017       9.0679
+    4      -108.937896642291     0.33325613       9.0684
+    5      -108.961380919374     0.30977185       8.4293
+    6      -108.961380919374     0.30977185       8.4293
+    7      -108.897098569634     0.37405420      10.1785
+    8      -108.897084483156     0.37406829      10.1789
+    9      -108.873108725923     0.39804405      10.8313

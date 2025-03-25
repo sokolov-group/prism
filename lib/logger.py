@@ -152,7 +152,7 @@ def prism_header(self):
             PRISM: Open-Source implementation of ab initio methods
                     for excited states and spectroscopy
 
-                               Version 0.6
+                               Version 0.8
 
                    Copyright (C) 2025 Carlos E. V. de Moura
                                       Alexander Sokolov

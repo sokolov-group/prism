@@ -1,0 +1,75 @@
+converged SCF energy = -76.0412566941276
+SCF energy: -76.041257
+
+CASSCF energy = -76.0585829208869
+CASCI E = -76.0585829208869  E(CI) = -6.55621478196070  S^2 = 0.0000000
+CASSCF energy: -76.058583
+
+CVS-IP calculations for different CVS-IP-MR-ADC methods
+
+Transforming integrals to MO basis...
+
+Computing reference wavefunction RDMs...
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)-x
+Nuclear repulsion energy:                          9.168193300756
+Number of electrons:                               10
+Number of basis functions:                         41
+Reference wavefunction type:                       casscf
+Number of core orbitals:                           3
+Number of active orbitals:                         4
+Number of external orbitals:                       34
+Number of active electrons:                        [(2, 2)]
+Reference state active-space energy:              -6.556214781961
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  1
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              2
+
+Overlap truncation parameter (singles):            1.000000e-06
+Overlap truncation parameter (doubles):            1.000000e-10
+Projector for the semi-internal amplitudes:        gno
+
+Computing NEVPT2 amplitudes...
+Correlation energy [0']:                          -0.045601968339
+Correlation energy [+1']:                         -0.003383894394
+Correlation energy [-1']:                         -0.019900899601
+Correlation energy [0]:                           -0.035293960284
+Correlation energy [+1]:                          -0.008322583806
+Correlation energy [-1]:                          -0.055377149876
+Correlation energy [+2]:                          -0.004359671305
+Correlation energy [-2]:                          -0.030003089880
+
+Reference energy:                                -76.058582920887
+NEVPT2 correlation energy:                        -0.202243217485
+Total NEVPT2 energy:                             -76.260826138372
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       722
+Total dimension of the excitation manifold:                723
+Dimension of the orthogonalized excitation manifold:       696
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 100  max_memory 2000  incore True
+davidson 0 1  |r|= 1.43  e= [20.59574411]  max|de|= 20.6  lindep=    1
+davidson 1 2  |r|= 0.372  e= [19.94952255]  max|de|= -0.646  lindep= 0.972
+davidson 2 3  |r|= 0.0868  e= [19.90124888]  max|de|= -0.0483  lindep= 0.983
+davidson 3 4  |r|= 0.0239  e= [19.89882747]  max|de|= -0.00242  lindep= 0.98
+davidson 4 5  |r|= 0.00758  e= [19.89859631]  max|de|= -0.000231  lindep= 0.99
+davidson 5 6  |r|= 0.00259  e= [19.89857713]  max|de|= -1.92e-05  lindep= 0.986
+davidson 6 7  |r|= 0.000999  e= [19.89857438]  max|de|= -2.75e-06  lindep= 0.985
+davidson 7 8  |r|= 0.000303  e= [19.89857405]  max|de|= -3.29e-07  lindep= 0.978
+davidson 8 9  |r|= 8.58e-05  e= [19.89857402]  max|de|= -2.59e-08  lindep= 0.984
+davidson 9 10  |r|= 2.52e-05  e= [19.89857402]  max|de|= -2.18e-09  lindep= 0.984
+root 0 converged  |r|= 7.67e-06  e= 19.898574020736007  max|de|= -2.27e-10
+converged 10 11  |r|= 7.67e-06  e= [19.89857402]  max|de|= -2.27e-10
+
+Summary of results for the CVS-IP-MR-ADC(2)-X calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        19.89857402      541.4678     2.2898    4367232.1979      1.553131
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2)-X calculation    135.27 sec, wall time     49.54 sec

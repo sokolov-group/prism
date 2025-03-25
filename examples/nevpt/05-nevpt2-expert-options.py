@@ -52,8 +52,8 @@ nevpt.method = "nevpt2"
 e_tot, e_corr = nevpt.kernel()
 
 # Selecting reference states
-select_ref = [1,5,6]
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True, select_reference = select_ref)
+ref_list = [1,5,6]
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True, select_reference = ref_list)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-10

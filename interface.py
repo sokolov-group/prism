@@ -245,7 +245,7 @@ class PYSCF:
         # Check spin symmetry of the reference wavefunction and, if necessary, generate complete reference spin manifold
         for p in range(len(mc_ci)):
             ref_wfn_spin_square.append(abs(self.compute_spin_square(mc_ci[p], ncas, nelecas)))
-            ref_wfn_spin.append(int(round((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[p]))) / 2))
+            ref_wfn_spin.append(round((-1) + (np.sqrt(1 + 4 * ref_wfn_spin_square[p]))) / 2)
             ref_wfn_spin_mult.append(int(round((2 * ref_wfn_spin[p]) + 1)))
 
         # Compute all CASCI states for the reference spin manifold
@@ -266,7 +266,7 @@ class PYSCF:
         self.log.info("-----------------------------------------------------------------------------------")
 
         for p in range(len(ref_wfn_spin_square)):
-            self.log.info("%5d       %2.5f     %2d        %2d  %20.12f %20.12f" % ((p+1), ref_wfn_spin_square[p], ref_wfn_spin[p], ref_wfn_spin_mult[p], e_ref[p], e_cas[p]))
+            self.log.info("%5d       %2.5f     %3.1f       %2d  %20.12f %20.12f" % ((p+1), ref_wfn_spin_square[p], ref_wfn_spin[p], ref_wfn_spin_mult[p], e_ref[p], e_cas[p]))
 
         self.log.info("-----------------------------------------------------------------------------------\n")
 
@@ -283,8 +283,10 @@ class PYSCF:
 
     def compute_state_spin_manifold(self, wfn, ncas, nelecas, spin_sq, s_value, multiplicity):
 
-        msz_wfn = self.apply_S_z(wfn, ncas, nelecas)
-        msz_value = np.dot(wfn.ravel(), msz_wfn.ravel())
+        msz_value = 0
+        if sum(nelecas) > 0:
+            msz_wfn = self.apply_S_z(wfn, ncas, nelecas)
+            msz_value = np.dot(wfn.ravel(), msz_wfn.ravel())
 
         ms = []
         for I in range(multiplicity):

@@ -35,6 +35,13 @@ def kernel(mr_adc):
     h2ev = mr_adc.interface.hartree_to_ev
     h2cm = mr_adc.interface.hartree_to_inv_cm
 
+    ref_df = False
+    df = False
+    if mr_adc.interface.reference_df:
+        ref_df = True
+    if mr_adc.interface.with_df:
+        df = True
+
     # Print general information
     mr_adc.log.info("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
     mr_adc.log.info("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
@@ -51,9 +58,13 @@ def kernel(mr_adc):
     if mr_adc.ncvs is not None:
         mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
         mr_adc.log.info("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
-    mr_adc.log.debug("Temporary directory path: %s" % mr_adc.temp_dir)
 
-    mr_adc.log.info("\nOverlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
+    mr_adc.log.info("Reference density fitting?                         %s" % ref_df)
+    mr_adc.log.info("Correlation density fitting?                       %s" % df)
+    mr_adc.log.info("Temporary directory path:                          %s" % mr_adc.temp_dir)
+
+    mr_adc.log.info("\nInternal contraction:                              %s" % "Full")
+    mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
     mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
     mr_adc.log.info("Projector for the semi-internal amplitudes:        %s" % mr_adc.semi_internal_projector)
 
