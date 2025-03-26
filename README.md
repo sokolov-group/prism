@@ -77,7 +77,7 @@ An efficient implementation of NEVPT2 for quasidegenerate states (QDNEVPT2) will
 
 Some important parameters for the NEVPT2 calculations are:
  - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core").
- - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed up the calculation since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors.
+ - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors.
  - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. For experts only.
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. For experts only.
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. For experts only.
@@ -116,15 +116,15 @@ Here, ```mr_adc_dyson_mos.molden``` is the molden file that can be processed usi
 The memory and disk usage of NEVPT and MR-ADC calculations can be greatly reduced by approximating the two-electron integrals with density fitting (DF). 
 An example of using density fitting can be found [here](examples/nevpt/03-nevpt2-density-fitting.py) and [here](examples/mr_adc/05-density_fitting.py). 
 DF is not used by default but can be invoked using the ```density_fit()``` function call. 
-One can overwrite the default auxiliary basis with a specified one (for example, ```density_fit('cc-pvdz-ri')```. 
+One can overwrite the default auxiliary basis with a specified one (for example, ```density_fit('cc-pvdz-ri')```).
 More details about setting up calculations with density fitting can be found on the [Pyscf website](https://pyscf.org/user/df.html).
 Please note that DF is an approximation, which accuracy depends on the quality of the auxiliary basis set.
 Provided that a good auxiliary basis set is used, the DF errors are usually less than 0.01 eV in excitation energy.
 We recommend to use the RI- (or RIFIT-) auxiliary basis sets to approximate the integrals in the NEVPT and MR-ADC calculations.
 The reference CASSCF calculations can be run either using the exact or density-fitted two-electron integrals approximated using the JKFIT-type auxiliary basis sets.
-Note that DF can significantly speed up the CASSCF calculation since the cost of integral transformation at every CASSCF iteration is reduced.
+Note that DF can significantly speed up the CASSCF calculation since the cost of integral transformation at every iteration is reduced.
 
-# Short list of features:
+# Short summary of features:
 
 ## NEVPT2
 - Full internal contraction (equivalent to partially contracted NEVPT2)
@@ -147,12 +147,13 @@ Citation for the NEVPT2 method:
 - "[Introduction of n-electron valence states for multireference perturbation theory](https://doi.org/10.1063/1.1361246)", C. Angeli, R. Cimiraglia, S. Evangelisti, T. Leininger, and J.-P.P. Malrieu, J. Chem. Phys. 114(23), 10252–10264 (2001).
 
 Additional references for the MR-ADC methods:
-- "[Simulating X-ray photoelectron spectra with strong electron correlation using multireference algebraic diagrammatic construction theory](https://doi.org/10.1039/d1cp05476g)", C.E.V. de Moura and A.Yu. Sokolov, Phys. Chem. Chem. Phys. 24, 4769 – 4784 (2022).
 - "[Multi-reference algebraic diagrammatic construction theory for excited states: General formulation and first-order implementation](https://doi.org/10.1063/1.5055380)", A.Yu. Sokolov, J. Chem. Phys. 149(20), 204113 (2018).
+- "[Simulating X-ray photoelectron spectra with strong electron correlation using multireference algebraic diagrammatic construction theory](https://doi.org/10.1039/d1cp05476g)", C.E.V. de Moura and A.Yu. Sokolov, Phys. Chem. Chem. Phys. 24, 4769 – 4784 (2022).
+- "[Algebraic Diagrammatic Construction Theory for Simulating Charged Excited States and Photoelectron Spectra](https://doi.org/10.1021/acs.jctc.3c00251)", S. Banerjee, and A.Yu. Sokolov, J. Chem. Theory Comput. 19(11), 3037–3053 (2023).
 
 # Authors and significant contributors:
-This is the list of Prism's significant contributors.
-Check out AUTHORS for more details.
 
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+
+Check out AUTHORS for more details.
