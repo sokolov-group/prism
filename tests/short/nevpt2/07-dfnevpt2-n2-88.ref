@@ -1,0 +1,49 @@
+converged SCF energy = -108.960608507245
+SCF energy: -108.960609
+
+CASSCF energy = -109.118739872732
+CASCI E = -109.118739872732  E(CI) = -21.4579265288309  S^2 = 0.0000000
+CASSCF energy: -109.118740
+
+NEVPT2 test
+
+Transforming integrals to MO basis...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Nuclear repulsion energy:                         23.615376443607
+Number of electrons:                               14
+Number of basis functions:                         46
+Reference wavefunction type:                       casscf
+Number of reference states:                        1
+Number of reference microstates:                   1
+Number of frozen orbitals:                         0
+Number of core orbitals:                           3
+Number of active orbitals:                         8
+Number of external orbitals:                       35
+Reference density fitting?                         True
+Correlation density fitting?                       True
+Temporary directory path:                          /scratch/local
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.000000e-06
+Overlap truncation parameter (doubles):            1.000000e-10
+
+Computing energy of state #1...
+Reference state active-space energy:             -21.457926528831
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(4, 4)]
+Correlation energy [0']:                          -0.036838266434
+Correlation energy [+1']:                         -0.003404469372
+Correlation energy [-1']:                         -0.037562094472
+Correlation energy [0]:                           -0.003223956294
+Correlation energy [+1]:                          -0.001268852632
+Correlation energy [-1]:                          -0.010662664296
+Correlation energy [+2]:                          -0.001927985535
+Correlation energy [-2]:                          -0.056431895089
+CASSCF reference state total energy:            -109.118739872732
+NEVPT2 correlation energy:                        -0.151320184125
+Total NEVPT2 energy:                            -109.270060056857
+> CPU time for total NEVPT2 calculation     71.09 sec, wall time      5.34 sec

@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import numpy as np
@@ -126,7 +126,6 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.cece[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_c, mo_e)
             mr_adc.v2e.ceae[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_e)
 
-        if mr_adc.method in ("mr-adc(2)-x"):
             mr_adc.v2e.cccc = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
 
             mr_adc.v2e.caea = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_a)
@@ -151,7 +150,7 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.aaee[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_e, mo_e)
             mr_adc.v2e.aeea[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
 
-        if mr_adc.method in ("mr-adc(2)-x") or (mr_adc.method in ("mr-adc(2)") and not mr_adc.approx_trans_moments):
+        if mr_adc.method == "mr-adc(2)-x" or (mr_adc.method == "mr-adc(2)" and not mr_adc.approx_trans_moments):
             mr_adc.v2e.ceee = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_e, compacted = True)
             mr_adc.v2e.aeee = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_e, compacted = True)
 
@@ -166,10 +165,6 @@ def transform_integrals_2e_incore(mr_adc):
     mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, v2e_ccec)
     mr_adc.h1eff.aa = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, ncore:nocc], mr_adc.v2e.ccaa, mr_adc.v2e.caac)
     mr_adc.h1eff.ae = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, nocc:], mr_adc.v2e.ccae, mr_adc.v2e.caec)
-
-    # Store diagonal elements of the generalized Fock operator
-    mr_adc.mo_energy.c = mr_adc.interface.mo_energy[:ncore]
-    mr_adc.mo_energy.e = mr_adc.interface.mo_energy[nocc:]
 
     mr_adc.log.timer("transforming 1e integrals", *cput0)
 
@@ -206,7 +201,7 @@ def transform_Heff_integrals_2e_df(mr_adc):
             mr_adc.v2e.ccaa = tools.create_dataset('ccaa', ctmpfile, (ncore, ncore, ncas, ncas))
             mr_adc.v2e.caac = tools.create_dataset('caac', ctmpfile, (ncore, ncas, ncas, ncore))
 
-        if mr_adc.method in ("mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.cccc = tools.create_dataset('cccc', ctmpfile, (ncore, ncore, ncore, ncore))
 
     # Atomic orbitals auxiliary basis-set
@@ -252,7 +247,7 @@ def transform_Heff_integrals_2e_df(mr_adc):
                 mr_adc.v2e.caac[:] = get_v2e_df(mr_adc, Lca, Lac, 'caac')
                 tools.flush(ctmpfile)
 
-            if mr_adc.method in ("mr-adc(2)-x"):
+            if mr_adc.method == "mr-adc(2)-x":
                 mr_adc.v2e.cccc[:] = get_v2e_df(mr_adc, Lcc, Lcc, 'cccc')
                 tools.flush(ctmpfile)
     else:
@@ -273,7 +268,7 @@ def transform_Heff_integrals_2e_df(mr_adc):
                 mr_adc.v2e.caac[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
                 tools.flush(ctmpfile)
 
-            if mr_adc.method in ("mr-adc(2)-x"):
+            if mr_adc.method == "mr-adc(2)-x":
                 mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
                 tools.flush(ctmpfile)
 
@@ -401,7 +396,6 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.ceae[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lae, s_chunk, f_chunk)
                 tools.flush(ctmpfile)
 
-        if mr_adc.method in ("mr-adc(2)-x"):
             mr_adc.v2e.caea = tools.create_dataset('caea', ctmpfile, (ncore, ncas, nextern, ncas))
 
             mr_adc.v2e.ccee = tools.create_dataset('ccee', ctmpfile, (ncore, ncore, nextern, nextern))
@@ -472,10 +466,6 @@ def transform_integrals_2e_df(mr_adc):
     mr_adc.h1eff.ce = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, nocc:], mr_adc.v2e.ccce, mr_adc.v2e.ccec)
     mr_adc.h1eff.aa = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, ncore:nocc], mr_adc.v2e.ccaa, mr_adc.v2e.caac)
     mr_adc.h1eff.ae = compute_effective_1e(mr_adc, mr_adc.h1e[ncore:nocc, nocc:], mr_adc.v2e.ccae, mr_adc.v2e.caec)
-
-    # Store diagonal elements of the generalized Fock operator
-    mr_adc.mo_energy.c = mr_adc.interface.mo_energy[:ncore]
-    mr_adc.mo_energy.e = mr_adc.interface.mo_energy[nocc:]
 
     mr_adc.log.timer("transforming 2e integrals", *cput0)
 
@@ -673,7 +663,7 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             tools.flush(tmpfile)
             del(mr_adc.v2e.ceae)
 
-        if mr_adc.method in ("mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.xxxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs])
             mr_adc.v2e.xxvv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:])
             mr_adc.v2e.xvvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs])
@@ -997,7 +987,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.log.timer_debug("storing CVS v2e.xeae", *cput1)
             del(mr_adc.v2e.ceae)
 
-        if mr_adc.method in ("mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.xxxx = tools.create_dataset('xxxx', tmpfile, (ncvs, ncvs, ncvs, ncvs))
             mr_adc.v2e.xxvv = tools.create_dataset('xxvv', tmpfile, (ncvs, ncvs, nval, nval))
             mr_adc.v2e.xvvx = tools.create_dataset('xvvx', tmpfile, (ncvs, nval, nval, ncvs))

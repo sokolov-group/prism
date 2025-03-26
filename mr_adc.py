@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import prism.mr_adc_integrals as mr_adc_integrals
@@ -44,7 +44,7 @@ class MRADC:
         self.tmpfile = lambda:None
 
         self.mo = interface.mo
-        self.mo_hf = interface.mo_hf
+        self.mo_scf = interface.mo_scf
         self.ovlp = interface.ovlp
         self.nmo = interface.nmo
         self.nelec = interface.nelec
@@ -59,13 +59,11 @@ class MRADC:
         self.ncas = interface.ncas
         self.nextern = interface.nextern
         self.nocc = self.ncas + self.ncore
-        self.nelecas = interface.nelecas
-        self.e_casscf = interface.e_casscf      # Total CASSCF energy
-        self.e_cas = interface.e_cas            # Active-space CASSCF energy
-        self.wfn_casscf = interface.wfn_casscf  # Ground-state CASSCF wavefunction
-        self.wfn_casscf_spin_square = interface.wfn_casscf_spin_square
-        self.wfn_casscf_spin = interface.wfn_casscf_spin
-        self.wfn_casscf_spin_mult = interface.wfn_casscf_spin_mult
+        self.ref_nelecas = interface.ref_nelecas
+        self.e_ref = interface.e_ref           # Total reference energy
+        self.e_ref_cas = interface.e_ref_cas   # Reference active-space energy
+        self.ref_wfn = interface.ref_wfn       # Reference wavefunction
+        self.ref_wfn_spin_mult = interface.ref_wfn_spin_mult
 
         # MR-ADC specific variables
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
@@ -76,13 +74,14 @@ class MRADC:
         self.max_space = 100            # Maximum size of the Davidson trial space
         self.max_cycle = 50             # Maximum number of iterations in the Davidson procedure
         self.tol_e = 1e-8               # Tolerance for the energy in the Davidson procedure
-        self.tol_davidson = 1e-5        # Tolerance for the residual in the Davidson procedure
+        self.tol_r = 1e-5        # Tolerance for the residual in the Davidson procedure
         self.s_thresh_singles = 1e-5
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
+        self.semi_internal_projector = "gno" # Possible values: gno, gs
 
         self.analyze_spec_factor = False
-        self.spec_factor_print_tol = 0.1
+        self.spec_factor_print_tol = 0.01
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
@@ -109,6 +108,9 @@ class MRADC:
         self.t1 = lambda:None
         self.t2 = lambda:None
         self.dip_mom = None
+
+        self.mo_energy.c = interface.mo_energy[:self.ncore]
+        self.mo_energy.e = interface.mo_energy[self.nocc:]
 
         # Matrix blocks
         self.M_00 = None
@@ -170,15 +172,12 @@ class MRADC:
         if self.interface.with_df:
             mr_adc_integrals.transform_Heff_integrals_2e_df(self)
             mr_adc_integrals.transform_integrals_2e_df(self)
-        elif self.interface.v2e_ao is not None:
+        else: 
+            # TODO: this actually handles out-of-core integrals too, rename the function
             mr_adc_integrals.transform_integrals_2e_incore(self)
-        else:
-            msg = "Out-of-core algorithm is not implemented in Prism."
-            log.error(msg)
-            raise Exception(msg)
 
         # Compute CASCI energies and reduced density matrices
-        mr_adc_rdms.compute_gs_rdms(self)
+        mr_adc_rdms.compute_reference_rdms(self)
 
         # TODO: Compute CASCI wavefunctions for excited states in the active space
         # mr_adc_rdms.compute_es_rdms(self)

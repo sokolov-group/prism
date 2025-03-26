@@ -1,5 +1,14 @@
-# Multireference algebraic diagrammatic construction (MR-ADC) methods
+# Short summary of features:
 
-## Core-valence separation for ionization processes MR-ADC (CVS-IP-MR-ADC) method
-- Second-order perturbation order: CVS-IP-MR-ADC(2)
-- Extended Second-order perturbation order: CVS-IP-MR-ADC(2)-X
+## NEVPT2
+- Full internal contraction (equivalent to partially contracted NEVPT2)
+- Single- and multi-state state-specific NEVPT2 energies
+- Frozen core approximation
+- Full support of density fitting
+
+## CVS-IP-MR-ADC
+- Excitation energies up to MR-ADC(2)-X
+- Photoelectron transition probabilities (so-called spectroscopic factors) up to MR-ADC(2)-X
+- Dyson orbitals
+- Orbital analysis of contributions to spectroscopic factors
+- Full support of density fitting

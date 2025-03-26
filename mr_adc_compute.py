@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
 import sys
@@ -32,33 +32,48 @@ def kernel(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
 
+    h2ev = mr_adc.interface.hartree_to_ev
+    h2cm = mr_adc.interface.hartree_to_inv_cm
+
+    ref_df = False
+    df = False
+    if mr_adc.interface.reference_df:
+        ref_df = True
+    if mr_adc.interface.with_df:
+        df = True
+
     # Print general information
     mr_adc.log.info("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
-    mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
-    mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_cas)
     mr_adc.log.info("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
-    mr_adc.log.info("Reference state S^2:                         %20.12f" % mr_adc.wfn_casscf_spin_square)
-    mr_adc.log.info("Reference state 2S+1:                        %20.12f" % mr_adc.wfn_casscf_spin_mult)
+    mr_adc.log.info("Number of electrons:                               %d" % mr_adc.nelec)
     mr_adc.log.info("Number of basis functions:                         %d" % mr_adc.nmo)
+    mr_adc.log.info("Reference wavefunction type:                       %s" % mr_adc.interface.reference)
     mr_adc.log.info("Number of core orbitals:                           %d" % mr_adc.ncore)
     mr_adc.log.info("Number of active orbitals:                         %d" % mr_adc.ncas)
     mr_adc.log.info("Number of external orbitals:                       %d" % mr_adc.nextern)
-    mr_adc.log.info("Number of electrons:                               %d" % mr_adc.nelec)
-    mr_adc.log.info("Number of active electrons:                        %s" % str(mr_adc.nelecas))
+    mr_adc.log.info("Number of active electrons:                        %s" % str(mr_adc.ref_nelecas))
+    mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_ref_cas[0])
+    mr_adc.log.info("Reference state spin multiplicity:                 %s" % str(mr_adc.ref_wfn_spin_mult))
+    mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
     if mr_adc.ncvs is not None:
         mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
         mr_adc.log.info("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
 
+    mr_adc.log.info("Reference density fitting?                         %s" % ref_df)
+    mr_adc.log.info("Correlation density fitting?                       %s" % df)
+    mr_adc.log.info("Temporary directory path:                          %s" % mr_adc.temp_dir)
+
+    mr_adc.log.info("\nInternal contraction:                              %s" % "Full")
     mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
     mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
+    mr_adc.log.info("Projector for the semi-internal amplitudes:        %s" % mr_adc.semi_internal_projector)
 
     # Print info about CASCI states
-    mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
+    if mr_adc.ncasci > 0:
+        mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
 
     if mr_adc.e_cas_ci is not None:
-        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
-
-    mr_adc.log.debug("Temporary directory path: %s" % mr_adc.temp_dir)
+        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas)))
 
     davidson_verbose = 3
     if mr_adc.verbose > 3:
@@ -96,30 +111,37 @@ def kernel(mr_adc):
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     cput1 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("")
-    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
+    conv, de, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
                                            nroots = mr_adc.nroots,
                                            verbose = davidson_verbose,
                                            max_space = mr_adc.max_space,
                                            max_cycle = mr_adc.max_cycle,
                                            tol = mr_adc.tol_e,
-                                           tol_residual = mr_adc.tol_davidson)
+                                           tol_residual = mr_adc.tol_r)
     mr_adc.log.timer("solving eigenvalue problem", *cput1)
-
-    mr_adc.log.note("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
-    print(E.reshape(-1, 1))
-    mr_adc.log.note("\n%s-%s excitation energies (eV):" % (mr_adc.method_type, mr_adc.method))
-    E_ev = E * 27.2114
-    print(E_ev.reshape(-1, 1))
-    sys.stdout.flush()
 
     # Compute transition moments and spectroscopic factors
     U = np.array(U)
-    spec_intensity, X = compute_trans_properties(mr_adc, E, U)
+    spec_intensity, X = compute_trans_properties(mr_adc, de, U)
 
-    mr_adc.log.info("\n------------------------------------------------------------------------------")
-    mr_adc.log.timer0("total MR-ADC calculation", *cput0)
+    mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
 
-    return E_ev, spec_intensity, X
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+    mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+
+    de_ev = de * h2ev
+    de_cm = de * h2cm
+
+    for p in range(len(de)):
+        de_nm = 10000000 / de_cm[p]
+        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+
+    mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
+
+    return de_ev, spec_intensity, X
 
 def setup_davidson(mr_adc):
 
@@ -236,14 +258,8 @@ def compute_trans_properties(mr_adc, E, U):
 
     spec_intensity = 2.0 * np.sum(X**2, axis=0)
 
-    mr_adc.log.note("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
-    print(spec_intensity.reshape(-1, 1))
-
     if mr_adc.method_type in ("cvs-ee", "ee"):
         osc_strength = (2.0/3.0) * E * spec_intensity
-
-        mr_adc.log.note("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
-        print(osc_strength.reshape(-1, 1))
 
     if (mr_adc.analyze_spec_factor or mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
         mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
