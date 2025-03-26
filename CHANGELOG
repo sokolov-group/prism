@@ -31,5 +31,16 @@ Prism 0.3.1 (2023-12-12)
   - Efficient calculation of contractions containing v_ooee and t_ooee tensors
 
 Prism 0.4 (2024-01-22)
+------------------------
 * Added
   - Memory efficient procedures to read H5PY files
+
+Prism 0.8 (2025-03-25)
+------------------------
+* Added
+  - Fully internally contracted NEVPT2 energies with frozen core and density fitting support
+  - Improved interface to the NEVPT2 and MR-ADC modules
+  - Improved output and summary of results
+  – Better handling of short tests
+* Bug fixes
+  - Fixed bugs in CVS-IP-MR-ADC transition moments when using small max_memory
