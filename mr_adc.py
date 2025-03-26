@@ -74,14 +74,14 @@ class MRADC:
         self.max_space = 100            # Maximum size of the Davidson trial space
         self.max_cycle = 50             # Maximum number of iterations in the Davidson procedure
         self.tol_e = 1e-8               # Tolerance for the energy in the Davidson procedure
-        self.tol_davidson = 1e-5        # Tolerance for the residual in the Davidson procedure
+        self.tol_r = 1e-5        # Tolerance for the residual in the Davidson procedure
         self.s_thresh_singles = 1e-5
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
         self.semi_internal_projector = "gno" # Possible values: gno, gs
 
         self.analyze_spec_factor = False
-        self.spec_factor_print_tol = 0.1
+        self.spec_factor_print_tol = 0.01
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states

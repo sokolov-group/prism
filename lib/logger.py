@@ -154,8 +154,9 @@ def prism_header(self):
 
                                Version 0.8
 
-                   Copyright (C) 2025 Carlos E. V. de Moura
-                                      Alexander Sokolov
+                   Copyright (C) 2025 Prism Developers
+                   Contributors: Carlos E. V. de Moura
+                                 Alexander Yu. Sokolov
 
             Unless required by applicable law or agreed to in
             writing, software distributed under the GNU General

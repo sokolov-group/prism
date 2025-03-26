@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
-#
-# Tests prepared for Prism 0.4, PySCF 2.5.0 and NumPy 1.26.4
-# Results can deviate according to their versions
-#
 
 import unittest
 import numpy as np

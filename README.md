@@ -40,7 +40,16 @@ mc = mcscf.CASSCF(mf, 6, 6).run()
 ```
 
 Once the reference calculation is successfully completed, the objects of Hartree-Fock and CASSCF classes (```mf``` and ```mc```) are passed to Prism. 
-For example, the CVS-IP-MR-ADC calculation can be performed using an example below:
+For example, the NEVPT2 energy calculation for the reference CASSCF state can be performed as follows:
+
+```python
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+nevpt = prism.nevpt.NEVPT(interface)
+nevpt.method = "nevpt2"
+e_tot, e_corr = nevpt.kernel()
+```
+
+Alternatively, the CVS-IP-MR-ADC calculation of core ionized states can be performed as:
 
 ```python
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
@@ -52,25 +61,26 @@ mr_adc.ncvs = 1
 e, p, x = mr_adc.kernel()
 ```
 
-Here, a calculation using CVS-IP-MR-ADC(2) for 10 excited states (roots) is set up. 
+This calculation uses CVS-IP-MR-ADC(2) to compute 10 core ionized states ("roots"). 
 The parameter ```ncvs``` controls the number of core orbitals in the hydrogen fluoride molecule, for which excited states are calculated.
 For example, setting ```ncvs = 1``` corresponds to exciting electrons from the 1s orbitals of fluorine atoms, while ```ncvs = 2``` corresponds to probing the 2s excitations.
 Other examples can be found [here](examples/).
 
 # Methods and algorithms
 ## N-electron valence perturbation theory
-N-electron valence perturbation theory (NEVPT) is an efficient multireference approach to describe dynamic electron correlation starting with a complete active space (CAS) reference wavefunction.
+N-electron valence perturbation theory (NEVPT) is an efficient multireference approach to describe dynamic electron correlation starting with a complete active space configuration interaction (CASCI) or self-consistent field (CASSCF) reference wavefunction.
 Prism features an implementation of second-order NEVPT (NEVPT2) with full internal contraction (FIC), which is also known as "partially contracted" NEVPT2 (PC-NEVPT2).
-The NEVPT2 calculations can be performed starting with one or several CASCI/CASSCF reference wavefunctions with any choice of orbitals (e.g., Hartree–Fock, state-averaged, etc).
+The NEVPT2 calculations can be performed starting with one or several CASCI/CASSCF reference wavefunctions with any choice of orbitals (e.g., Hartree–Fock, state-averaged CASSCF, etc).
 For multiple reference states, the NEVPT2 energies will be computed using a state-averaged generalized Fock operator but the correlation energies will be calculated specifically for each state (so-called state-specific multi-state NEVPT2 calculation).
-Such calculations can deliver accurate excitation energies but may not be able to correctly describe nearly degenerate electronic states (e.g., in the vicinity of conical intersections).
-An efficient implementation of NEVPT2 for quasidgenerate states (QDNEVPT2) will be released soon.
+Such calculations can deliver accurate excitation energies but may not be able to correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
+An efficient implementation of NEVPT2 for quasidegenerate states (QDNEVPT2) will be released soon.
 
 Some important parameters for the NEVPT2 calculations are:
  - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core").
+ - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed up the calculation since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors.
  - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. For experts only.
- - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single excitations. For experts only.
- - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent double excitations. For experts only.
+ - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. For experts only.
+ - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. For experts only.
 
 ## Multireference algebraic diagrammatic construction theory
 Multireference algebraic diagrammatic construction theory can simulate a variety of excited electronic states (neutral excitations, ionization, electron attachment, core excitation and ionization).
@@ -78,17 +88,18 @@ The type of excited states is controled by the ```method_type``` parameter of MR
 Currently, the only excited states that can be computed using MR-ADC in Prism are core-ionized states probed in photoelectron spectroscopy.
 These excitations are simulated by introducing core-valence separation approximation (CVS) and the resulting method is abbreviated as CVS-IP-MR-ADC.
 
-The CVS-IP-MR-ADC calculations can be performed at four different levels of theory that are specified using the ```method``` parameter: ```'mr-adc(0)'```, ```'mr-adc(1)'```, ```'mr-adc(2)'```, ```'mr-adc(2)-x'```.
+The CVS-IP-MR-ADC calculations can be performed at four different levels of theory that are specified using the ```method``` parameter: ```"mr-adc(0)"```, ```"mr-adc(1)"```, ```"mr-adc(2)"```, ```"mr-adc(2)-x"```.
 
 Other important parameters are:
  - ```ncvs``` (integer): The number of core orbitals to be included in the simulation. This number should ideally correspond to the index of highest-energy occupied orbital, from which electrons are allowed to be excited from. E.g., probing the 1s orbital of C in CO can be done by setting ```ncvs = 2```.
  - ```nroots``` (integer): The number of excited states (or transitions) to be calculated. 
  - ```max_cycle``` (integer): The maximum number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix.
  - ```tol_e``` (float): Convergence tolerance for the excitation energies in the Davidson diagonalization.
- - ```tol_davidson``` (float): Convergence tolerance for the residual in the Davidson diagonalization.
- - ```analyze_spec_factor``` (boolean): Request the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol``` (float).
- - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single excitations. For experts only.
- - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent double excitations. For experts only.
+ - ```tol_r``` (float): Convergence tolerance for the residual in the Davidson diagonalization.
+ - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed up the calculation since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors.
+ - ```analyze_spec_factor``` (boolean): Requests the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol``` (float).
+ - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. For experts only.
+ - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. For experts only.
 
 The excited states with large spectroscopic factors can be visualized by generating the Dyson molecular orbitals:
 
@@ -103,7 +114,7 @@ Here, ```mr_adc_dyson_mos.molden``` is the molden file that can be processed usi
 
 ## Density fitting
 The memory and disk usage of NEVPT and MR-ADC calculations can be greatly reduced by approximating the two-electron integrals with density fitting (DF). 
-An example of using density fitting can be found [here](https://github.com/sokolov-group/prism/blob/7e0f77c3406cf9c7d408e0a43c854d837cc5b664/examples/nevpt/03-nevpt2-density-fitting.py) and [here](https://github.com/sokolov-group/prism/blob/7e0f77c3406cf9c7d408e0a43c854d837cc5b664/examples/mr_adc/05-density_fitting.py). 
+An example of using density fitting can be found [here](examples/nevpt/03-nevpt2-density-fitting.py) and [here](examples/mr_adc/05-density_fitting.py). 
 DF is not used by default but can be invoked using the ```density_fit()``` function call. 
 One can overwrite the default auxiliary basis with a specified one (for example, ```density_fit('cc-pvdz-ri')```. 
 More details about setting up calculations with density fitting can be found on the [Pyscf website](https://pyscf.org/user/df.html).
@@ -111,6 +122,7 @@ Please note that DF is an approximation, which accuracy depends on the quality o
 Provided that a good auxiliary basis set is used, the DF errors are usually less than 0.01 eV in excitation energy.
 We recommend to use the RI- (or RIFIT-) auxiliary basis sets to approximate the integrals in the NEVPT and MR-ADC calculations.
 The reference CASSCF calculations can be run either using the exact or density-fitted two-electron integrals approximated using the JKFIT-type auxiliary basis sets.
+Note that DF can significantly speed up the CASSCF calculation since the cost of integral transformation at every CASSCF iteration is reduced.
 
 # Short list of features:
 
@@ -122,13 +134,13 @@ The reference CASSCF calculations can be run either using the exact or density-f
 
 ## CVS-IP-MR-ADC
 - Excitation energies up to MR-ADC(2)-X
-- Photoelectron transition intensities (spectroscopic factors) up to MR-ADC(2)-X
+- Photoelectron transition probabilities (so-called spectroscopic factors) up to MR-ADC(2)-X
 - Dyson orbitals
 - Orbital analysis of contributions to spectroscopic factors
 - Full support of density fitting
 
 # How to cite
-If you include results from Prism in your publication, please cite:
+If you include MR-ADC results from Prism in your publication, please cite:
 - "[Efficient Spin-Adapted Implementation of Multireference Algebraic Diagrammatic Construction Theory. I. Core-Ionized States and X‑ray Photoelectron Spectra](https://doi.org/10.1021/acs.jpca.4c03161)", C.E.V. de Moura, and A.Yu. Sokolov, J. Phys. Chem. A 128, 5816–5831 (2024).
 
 Citation for the NEVPT2 method:
@@ -138,3 +150,9 @@ Additional references for the MR-ADC methods:
 - "[Simulating X-ray photoelectron spectra with strong electron correlation using multireference algebraic diagrammatic construction theory](https://doi.org/10.1039/d1cp05476g)", C.E.V. de Moura and A.Yu. Sokolov, Phys. Chem. Chem. Phys. 24, 4769 – 4784 (2022).
 - "[Multi-reference algebraic diagrammatic construction theory for excited states: General formulation and first-order implementation](https://doi.org/10.1063/1.5055380)", A.Yu. Sokolov, J. Chem. Phys. 149(20), 204113 (2018).
 
+# Authors and significant contributors:
+This is the list of Prism's significant contributors.
+Check out AUTHORS for more details.
+
+- Carlos E. V. de Moura <carlosevmoura@gmail.com>
+- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
