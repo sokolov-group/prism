@@ -60,14 +60,14 @@ Other examples can be found [here](examples/).
 # Methods and algorithms
 ## N-electron valence perturbation theory
 N-electron valence perturbation theory (NEVPT) is an efficient multireference approach to describe dynamic electron correlation starting with a complete active space (CAS) reference wavefunction.
-Prism features an implementation of second-order NEVPT (NEVPT2) with full internal contraction (FIC), which is also known as ``partially contracted'' NEVPT2 (PC-NEVPT2).
+Prism features an implementation of second-order NEVPT (NEVPT2) with full internal contraction (FIC), which is also known as "partially contracted" NEVPT2 (PC-NEVPT2).
 The NEVPT2 calculations can be performed starting with one or several CASCI/CASSCF reference wavefunctions with any choice of orbitals (e.g., Hartree–Fock, state-averaged, etc).
-For multi-state calculations, the NEVPT2 energies will be computed using a state-averaged generalized Fock operator but the correlation energies will be calculated specifically for each state (so-called state-specific multi-state NEVPT2 calculation).
+For multiple reference states, the NEVPT2 energies will be computed using a state-averaged generalized Fock operator but the correlation energies will be calculated specifically for each state (so-called state-specific multi-state NEVPT2 calculation).
 Such calculations can deliver accurate excitation energies but may not be able to correctly describe nearly degenerate electronic states (e.g., in the vicinity of conical intersections).
 An efficient implementation of NEVPT2 for quasidgenerate states (QDNEVPT2) will be released soon.
 
 Some important parameters for the NEVPT2 calculations are:
- - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated (``frozen core'').
+ - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core").
  - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. For experts only.
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single excitations. For experts only.
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent double excitations. For experts only.
@@ -134,7 +134,7 @@ If you include results from Prism in your publication, please cite:
 Citation for the NEVPT2 method:
 - "[Introduction of n-electron valence states for multireference perturbation theory](https://doi.org/10.1063/1.1361246)", C. Angeli, R. Cimiraglia, S. Evangelisti, T. Leininger, and J.-P.P. Malrieu, J. Chem. Phys. 114(23), 10252–10264 (2001).
 
-Additional rReferences for the MR-ADC methods:
+Additional references for the MR-ADC methods:
 - "[Simulating X-ray photoelectron spectra with strong electron correlation using multireference algebraic diagrammatic construction theory](https://doi.org/10.1039/d1cp05476g)", C.E.V. de Moura and A.Yu. Sokolov, Phys. Chem. Chem. Phys. 24, 4769 – 4784 (2022).
 - "[Multi-reference algebraic diagrammatic construction theory for excited states: General formulation and first-order implementation](https://doi.org/10.1063/1.5055380)", A.Yu. Sokolov, J. Chem. Phys. 149(20), 204113 (2018).
 
