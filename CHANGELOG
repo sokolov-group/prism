@@ -1,46 +1,49 @@
-Prism 0.1 (2023-03-27)
+Prism v0.1 (2023-03-27)
 ------------------------
 * Added
   - PySCF interface
   - pc-NEVPT2 amplitudes
   - CVS-IP-MR-ADC(2) energies
 
-Prism 0.2 (2023-05-12)
+Prism v0.2 (2023-05-12)
 ------------------------
 * Added
   - CVS-IP-MR-ADC(2)-X energies
   - CVS-IP-MR-ADC(2) intensities
   - CVS-IP-MR-ADC(2)-X intensities
 
-Prism 0.2.1 (2023-07-04)
+Prism v0.2.1 (2023-07-04)
 ------------------------
 * Added
   - Efficient combinations of einsum terms containing 3-RDMs and 4-RDMs
 
-Prism 0.3 (2023-09-15)
+Prism v0.3 (2023-09-15)
 ------------------------
 * Added
   - Support to density-fitting 2e- integrals
   - Spectroscopic factors analysis for CVS-IP-MR-ADC
 
-Prism 0.3.1 (2023-12-12)
+Prism v0.3.1 (2023-12-12)
 ------------------------
 * Added
   - Effective Hamiltonian integrals consistent with CASSCF/CASCI reference
   - Support to store expensive amplitudes (t1_ccee and t1_caee) on disk
   - Efficient calculation of contractions containing v_ooee and t_ooee tensors
 
-Prism 0.4 (2024-01-22)
+Prism v0.4 (2024-01-22)
 ------------------------
 * Added
   - Memory efficient procedures to read H5PY files
 
-Prism 0.8 (2025-03-25)
+Prism v0.8 (2025-03-26)
 ------------------------
 * Added
   - Fully internally contracted NEVPT2 energies with frozen core and density fitting support
+  - Support of state-averaged CASSCF reference wavefunctions for the state-specific NEVPT2 calculations
   - Improved interface to the NEVPT2 and MR-ADC modules
   - Improved output and summary of results
   – Better handling of short tests
-* Bug fixes
+  - New tests for CVS-IP-MR-ADC and NEVPT2
+* Fixes
   - Fixed bugs in CVS-IP-MR-ADC transition moments when using small max_memory
+  - Fixed bugs in open-shell CVS-IP-MR-ADC calculations introduced during the interface update
