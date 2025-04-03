@@ -113,9 +113,6 @@ class MRADC:
         self.M_00 = None
         self.M_01 = lambda:None
 
-        # Debugging Flags
-        self.semiinternals = True
-
     def kernel(self):
 
         log = self.log
