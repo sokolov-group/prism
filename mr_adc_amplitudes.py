@@ -65,7 +65,7 @@ def compute_t1_amplitudes(mr_adc):
         mr_adc.tmpfile.ct1 = None
 
     # First-order amplitudes
-    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
         if ncore > 0 and nextern > 0 and ncas > 0:
             e_0p, mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae = compute_t1_0p(mr_adc)
         else:
@@ -94,7 +94,7 @@ def compute_t1_amplitudes(mr_adc):
         mr_adc.t1.ae = np.zeros((ncas, nextern))
         mr_adc.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
 
-    if ((mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x")) or
+    if ((mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx")) or
         (mr_adc.method == "mr-adc(1)" and mr_adc.method_type in ("ee", "cvs-ee"))):
 
         nelecas_total = 0
@@ -151,7 +151,7 @@ def compute_t2_amplitudes(mr_adc):
     approx_trans_moments = mr_adc.approx_trans_moments
 
     # Approximate second-order amplitudes
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
 
         if (ncore > 0) and (nextern > 0) and not (approx_trans_moments):
             mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)
@@ -191,7 +191,7 @@ def compute_cvs_amplitudes(mr_adc):
         if mr_adc.method_type == "cvs-ip":
             del(mr_adc.rdm.ccccaaaa)
 
-        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
             mr_adc.t1.xe = np.ascontiguousarray(mr_adc.t1.ce[:ncvs, :])
             mr_adc.t1.ve = np.ascontiguousarray(mr_adc.t1.ce[ncvs:, :])
             del(mr_adc.t1.ce)
@@ -222,7 +222,7 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t1.vvaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, ncvs:, :, :])
             del(mr_adc.t1.ccaa)
 
-            if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"): 
+            if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"): 
                 mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs, :])
                 mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
                 del(mr_adc.t2.ce)
@@ -1923,7 +1923,6 @@ def compute_t2_0p_singles(mr_adc):
         mr_adc.log.timer_debug("contracting v2e.caee", *cput1)
     del(v_caee)
 
-    chunk_size = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)

@@ -119,10 +119,13 @@ class MRADC:
         self.method = self.method.lower()
         self.method_type = self.method_type.lower()
 
-        if self.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            msg = "Unknown method %s" % self.method
-            log.error(msg)
-            raise Exception(msg)
+        if self.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
+             msg = "Unknown method %s" % self.method
+             log.error(msg)
+             raise Exception(msg)
+ 
+        if self.method == "mr-adc(2)-sx" and self.method_type != "cvs-ee":
+            raise Exception("Semi-internal extended method currently only compatible with CVS-EE method type.")
 
         if self.method_type not in ("ee", "ip", "ea", "cvs-ip", "cvs-ee"):
             msg = "Unknown method type %s" % self.method_type
