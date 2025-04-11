@@ -1035,6 +1035,16 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             tools.flush(tmpfile)
             del(mr_adc.v2e.caee)
 
+        if mr_adc.method in ("mr-adc(2)-x"):
+            mr_adc.v2e.xxxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs])
+            mr_adc.v2e.xxvv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:])
+            mr_adc.v2e.xvvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs])
+            mr_adc.v2e.xxvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs])
+            mr_adc.v2e.xxxv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:])
+            mr_adc.v2e.xvxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs])
+            del(mr_adc.v2e.cccc)
+
+
     # Effective one-electron integrals
     mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :])
     mr_adc.v2e.xxva = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :])
@@ -1733,12 +1743,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
             del(mr_adc.v2e.ceec)
 
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
-            #mr_adc.v2e.xxxx = tools.create_dataset('xxxx', tmpfile, (ncvs, ncvs, ncvs, ncvs))
-            #mr_adc.v2e.xxvv = tools.create_dataset('xxvv', tmpfile, (ncvs, ncvs, nval, nval))
-            #mr_adc.v2e.xvvx = tools.create_dataset('xvvx', tmpfile, (ncvs, nval, nval, ncvs))
-            #mr_adc.v2e.xxvx = tools.create_dataset('xxvx', tmpfile, (ncvs, ncvs, nval, ncvs))
-            #mr_adc.v2e.xxxv = tools.create_dataset('xxxv', tmpfile, (ncvs, ncvs, ncvs, nval))
-            #mr_adc.v2e.xvxx = tools.create_dataset('xvxx', tmpfile, (ncvs, nval, ncvs, ncvs))
 
             mr_adc.v2e.xaea = tools.create_dataset('xaea', tmpfile, (ncvs, ncas, nextern, ncas))
             mr_adc.v2e.vaea = tools.create_dataset('vaea', tmpfile, (nval, ncas, nextern, ncas))
@@ -1756,32 +1760,12 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.aeee[:] = mr_adc.v2e.aeee[:]
             tools.flush(tmpfile)
 
-            #mr_adc.v2e.xxxx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs]
-            #tools.flush(tmpfile)
-
-            #mr_adc.v2e.xxvv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:]
-            #tools.flush(tmpfile)
-
-            #mr_adc.v2e.xvvx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs]
-            #tools.flush(tmpfile)
-
-            #mr_adc.v2e.xxvx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs]
-            #tools.flush(tmpfile)
-
-            #mr_adc.v2e.xxxv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:]
-            #tools.flush(tmpfile)
-
-            #mr_adc.v2e.xvxx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
-            #tools.flush(tmpfile)
-            #del(mr_adc.v2e.cccc)
-
             mr_adc.v2e.xaea[:] = mr_adc.v2e.caea[:ncvs, :, :, :]
             tools.flush(tmpfile)
 
             mr_adc.v2e.vaea[:] = mr_adc.v2e.caea[ncvs:, :, :, :]
             tools.flush(tmpfile)
             del(mr_adc.v2e.caea)
-
 
             chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern])
             for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
@@ -1836,6 +1820,32 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.log.timer_debug("storing CVS v2e.veee", *cput1) 
             del(mr_adc.v2e.ceee)
 
+        if mr_adc.method in ("mr-adc(2)-x"):
+            mr_adc.v2e.xxxx = tools.create_dataset('xxxx', tmpfile, (ncvs, ncvs, ncvs, ncvs))
+            mr_adc.v2e.xxvv = tools.create_dataset('xxvv', tmpfile, (ncvs, ncvs, nval, nval))
+            mr_adc.v2e.xvvx = tools.create_dataset('xvvx', tmpfile, (ncvs, nval, nval, ncvs))
+            mr_adc.v2e.xxvx = tools.create_dataset('xxvx', tmpfile, (ncvs, ncvs, nval, ncvs))
+            mr_adc.v2e.xxxv = tools.create_dataset('xxxv', tmpfile, (ncvs, ncvs, ncvs, nval))
+            mr_adc.v2e.xvxx = tools.create_dataset('xvxx', tmpfile, (ncvs, nval, ncvs, ncvs))
+
+            mr_adc.v2e.xxxx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xxvv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xvvx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xxvx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xxxv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xvxx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.cccc)
 
     # Close non-CVS integrals' files
     mr_adc.tmpfile.cferi1.close()
