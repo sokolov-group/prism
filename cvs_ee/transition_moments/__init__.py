@@ -1,0 +1,33 @@
+from .TY_q2_h0 import *
+from .TY_q2_CAAA import compute_TY__q2_h1__CAAA
+from .TY_q2_CAEA import compute_TY__q2_h1__CAEA
+
+from .TY_q2_CCAA import compute_TY__q2_h1__CCAA
+from .TY_q2_CCEA import compute_TY__q2_h1__CCEA
+from .TY_q2_CCEE import compute_TY__q2_h1__CCEE
+from .TY_q2_CAEE import compute_TY__q2_h1__CAEE
+
+from .TY_q2_CVAA import compute_TY__q2_h1__CVAA
+from .TY_q2_CVEA import compute_TY__q2_h1__CVEA
+from .TY_q2_CVEE import compute_TY__q2_h1__CVEE
+
+class SecondOrderTransitionMoments:
+    pass
+
+SecondOrderTransitionMoments.compute_TY__q2_h0__CA = compute_TY__q2_h0__CA
+SecondOrderTransitionMoments.compute_TY__q2_h0__CE = compute_TY__q2_h0__CE
+
+SecondOrderTransitionMoments.compute_TY__q2_h1__CAAA = compute_TY__q2_h1__CAAA
+SecondOrderTransitionMoments.compute_TY__q2_h1__CAEA = compute_TY__q2_h1__CAEA
+
+SecondOrderTransitionMoments.compute_TY__q2_h1__CCAA = compute_TY__q2_h1__CCAA
+SecondOrderTransitionMoments.compute_TY__q2_h1__CCEA = compute_TY__q2_h1__CCEA
+SecondOrderTransitionMoments.compute_TY__q2_h1__CCEE = compute_TY__q2_h1__CCEE
+SecondOrderTransitionMoments.compute_TY__q2_h1__CAEE = compute_TY__q2_h1__CAEE
+
+SecondOrderTransitionMoments.compute_TY__q2_h1__CVAA = compute_TY__q2_h1__CVAA
+SecondOrderTransitionMoments.compute_TY__q2_h1__CVEA = compute_TY__q2_h1__CVEA
+SecondOrderTransitionMoments.compute_TY__q2_h1__CVEE = compute_TY__q2_h1__CVEE
+
+transition_moments = SecondOrderTransitionMoments()
+
