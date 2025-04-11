@@ -269,7 +269,7 @@ def transform_Heff_integrals_2e_df(mr_adc):
             mr_adc.v2e.ccaa = tools.create_dataset('ccaa', ctmpfile, (ncore, ncore, ncas, ncas))
             mr_adc.v2e.caac = tools.create_dataset('caac', ctmpfile, (ncore, ncas, ncas, ncore))
 
-        if mr_adc.method in ("mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.cccc = tools.create_dataset('cccc', ctmpfile, (ncore, ncore, ncore, ncore))
 
     # Atomic orbitals auxiliary basis-set
@@ -1035,7 +1035,7 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             tools.flush(tmpfile)
             del(mr_adc.v2e.caee)
 
-        if mr_adc.method in ("mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.xxxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs])
             mr_adc.v2e.xxvv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:])
             mr_adc.v2e.xvvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs])
@@ -1820,7 +1820,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.log.timer_debug("storing CVS v2e.veee", *cput1) 
             del(mr_adc.v2e.ceee)
 
-        if mr_adc.method in ("mr-adc(2)-x"):
+        if mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.xxxx = tools.create_dataset('xxxx', tmpfile, (ncvs, ncvs, ncvs, ncvs))
             mr_adc.v2e.xxvv = tools.create_dataset('xxvv', tmpfile, (ncvs, ncvs, nval, nval))
             mr_adc.v2e.xvvx = tools.create_dataset('xvvx', tmpfile, (ncvs, nval, nval, ncvs))
