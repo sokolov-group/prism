@@ -1,6 +1,10 @@
 ##Q2 TRANSITION MOMENTS
+from . import logger
 
 def compute_TY__q2_h0__CA(mr_adc, Y_KW__aa, Y_KW__bb, TY):
+
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -7024,7 +7028,12 @@ def compute_TY__q2_h0__CA(mr_adc, Y_KW__aa, Y_KW__bb, TY):
     temp += 1/4 * einsum('Rix,jiya,jzaQ,Pxzy->RPQ', Y_KW__bb, t1_vxae, t1_vaee, rdm_ccaa, optimize = einsum_type)
     TY[:, s_a:f_a, s_e:f_e] += temp
 
+    mr_adc.log.timer_debug("computing T q2-h0 CA", *cput1)
+
 def compute_TY__q2_h0__CE(mr_adc, Y_KC__aa, Y_KC__bb, TY):
+
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -9888,4 +9897,5 @@ def compute_TY__q2_h0__CE(mr_adc, Y_KC__aa, Y_KC__bb, TY):
     temp -= 1/2 * einsum('Ria,jixa,jyzQ,Pzyx->RPQ', Y_KC__bb, t1_vxae, t1_vaae, rdm_ccaa, optimize = einsum_type)
     TY[:, s_a:f_a, s_e:f_e] += temp
 
+    mr_adc.log.timer_debug("computing T q2-h0 CE", *cput1)
 

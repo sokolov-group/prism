@@ -1,6 +1,10 @@
 ##Q2 TRANSITION MOMENTS
+from . import logger
 
 def compute_TY__q2_h1__CAEA(mr_adc, Y_KWCU__aaaa, Y_KWCU__abab, Y_KWCU__baab, Y_KWCU__abba, Y_KWCU__baba, Y_KWCU__bbbb, TY):
+
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -19332,4 +19336,6 @@ def compute_TY__q2_h1__CAEA(mr_adc, Y_KWCU__aaaa, Y_KWCU__abab, Y_KWCU__baab, Y_
     temp -= 1/4 * einsum('Rixay,jiza,jywQ,Pwxz->RPQ', Y_KWCU__bbbb, t1_vxae, t1_vaae, rdm_ccaa, optimize = einsum_type)
     temp += 1/2 * einsum('Rixay,jiza,jyzQ,Px->RPQ', Y_KWCU__bbbb, t1_vxae, t1_vaae, rdm_ca, optimize = einsum_type)
     TY[:, s_a:f_a, s_e:f_e] += temp
+
+    mr_adc.log.timer_debug("computing T q2-h1 CAEA", *cput1)
 

@@ -1,5 +1,10 @@
+##Q2 TRANSITION MOMENTS
+from . import logger
 
 def compute_TY__q2_h1__CVEA(mr_adc, Y_KLCW__aaaa, Y_KLCW__abab, Y_KLCW__baab, Y_KLCW__abba, Y_KLCW__baba, Y_KLCW__bbbb, TY):
+
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -22,26 +27,33 @@ def compute_TY__q2_h1__CVEA(mr_adc, Y_KLCW__aaaa, Y_KLCW__abab, Y_KLCW__baab, Y_
     t1_ae = mr_adc.t1.ae
 
     t1_xxaa = mr_adc.t1.xxaa
+    t1_xxae = mr_adc.t1.xxae
     t1_xxee = mr_adc.t1.xxee
 
     t1_xvaa = mr_adc.t1.xvaa
+    t1_xvae = mr_adc.t1.xvae
     t1_xvee = mr_adc.t1.xvee
 
     t1_xaaa = mr_adc.t1.xaaa
     t1_xaae = mr_adc.t1.xaae
     t1_xaea = mr_adc.t1.xaea
+    t1_xaee = mr_adc.t1.xaee
 
     t1_vxaa = mr_adc.t1.vxaa
+    t1_vxae = mr_adc.t1.vxae
     t1_vxee = mr_adc.t1.vxee
 
     t1_vvaa = mr_adc.t1.vvaa
+    t1_vvae = mr_adc.t1.vvae
     t1_vvee = mr_adc.t1.vvee
 
     t1_vaaa = mr_adc.t1.vaaa
     t1_vaae = mr_adc.t1.vaae
     t1_vaea = mr_adc.t1.vaea
+    t1_vaee = mr_adc.t1.vaee
 
     t1_aaae = mr_adc.t1.aaae
+    t1_aaee = mr_adc.t1.aaee
 
     ## Reduced density matrices
     rdm_ca = mr_adc.rdm.ca
@@ -10266,4 +10278,6 @@ def compute_TY__q2_h1__CVEA(mr_adc, Y_KLCW__aaaa, Y_KLCW__abab, Y_KLCW__baab, Y_
     temp -= 1/4 * einsum('Rijax,jiya,zywQ,Pwxz->RPQ', Y_KLCW__bbbb, t1_vxae, t1_aaae, rdm_ccaa, optimize = einsum_type)
     temp -= 1/4 * einsum('Rijax,jiya,zyxQ,Pz->RPQ', Y_KLCW__bbbb, t1_vxae, t1_aaae, rdm_ca, optimize = einsum_type)
     TY[:, s_a:f_a, s_e:f_e] += temp
+
+    mr_adc.log.timer_debug("computing T q2-h1 CVEA", *cput1)
 

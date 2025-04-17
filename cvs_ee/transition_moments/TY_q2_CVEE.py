@@ -1,5 +1,10 @@
+##Q2 TRANSITION MOMENTS
+from . import logger
 
 def compute_TY__q2_h1__CVEE(mr_adc, Y_KLCD__aaaa, Y_KLCD__abab, Y_KLCD__baba, Y_KLCD__bbbb, TY):
+
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -2377,4 +2382,6 @@ def compute_TY__q2_h1__CVEE(mr_adc, Y_KLCD__aaaa, Y_KLCD__abab, Y_KLCD__baba, Y_
     temp -= 1/4 * einsum('Rijab,jixa,xyQb,Py->RPQ', Y_KLCD__bbbb, t1_vxae, t1_aaee, rdm_ca, optimize = einsum_type)
     temp += 1/2 * einsum('Rijab,jixa,yxQb,Py->RPQ', Y_KLCD__bbbb, t1_vxae, t1_aaee, rdm_ca, optimize = einsum_type)
     TY[:, s_a:f_a, s_e:f_e] += temp
+
+    mr_adc.log.timer_debug("computing T q2-h1 CVEE", *cput1)
 
