@@ -632,6 +632,15 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.aeee[s_chunk:f_chunk] = get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_chunk, f_chunk)
                 tools.flush(ctmpfile)
 
+        if mr_adc.method == "mr-adc(2)-x":
+            mr_adc.v2e.eeee = tools.create_dataset('eeee', ctmpfile, (nextern, nextern, nextern, nextern))
+
+            chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern], ntensors = 2)
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.eeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.eeee[s_chunk:f_chunk] = get_oeee_df(mr_adc, mr_adc.v2e.Lee, mr_adc.v2e.Lee, s_chunk, f_chunk)
+                tools.flush(ctmpfile)
+
     # Effective one-electron integrals
     mr_adc.v2e.ccce = tools.create_dataset('ccce', ctmpfile, (ncore, ncore, ncore, nextern))
     mr_adc.v2e.ccce[:] = get_v2e_df(mr_adc, Lcc, mr_adc.v2e.Lce, 'ccce')
@@ -969,20 +978,74 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.vvae = np.ascontiguousarray(mr_adc.v2e.ccae[ncvs:, ncvs:, :, :])
             del(mr_adc.v2e.ccae)
 
-            mr_adc.v2e.xxee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, :ncvs, :, :])
-            mr_adc.v2e.xvee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, ncvs:, :, :])
-            mr_adc.v2e.vxee = np.ascontiguousarray(mr_adc.v2e.ccee[ncvs:, :ncvs, :, :])
-            mr_adc.v2e.vvee = np.ascontiguousarray(mr_adc.v2e.ccee[ncvs:, ncvs:, :, :])
+            #mr_adc.v2e.xxee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, :ncvs, :, :])
+            #mr_adc.v2e.xvee = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, ncvs:, :, :])
+            #mr_adc.v2e.vxee = np.ascontiguousarray(mr_adc.v2e.ccee[ncvs:, :ncvs, :, :])
+            #mr_adc.v2e.vvee = np.ascontiguousarray(mr_adc.v2e.ccee[ncvs:, ncvs:, :, :])
+            #del(mr_adc.v2e.ccee)
+
+            mr_adc.v2e.xxee = tools.create_dataset('xxee', tmpfile, (ncvs, ncvs, nextern, nextern))
+            mr_adc.v2e.xvee = tools.create_dataset('xvee', tmpfile, (ncvs, nval, nextern, nextern))
+            mr_adc.v2e.vxee = tools.create_dataset('vxee', tmpfile, (nval, ncvs, nextern, nextern))
+            mr_adc.v2e.vvee = tools.create_dataset('vvee', tmpfile, (nval, nval, nextern, nextern))
+
+            mr_adc.v2e.xxee[:] = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, :ncvs, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xvee[:] = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, ncvs:, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vxee[:] = np.ascontiguousarray(mr_adc.v2e.ccee[ncvs:, :ncvs, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vvee[:] = np.ascontiguousarray(mr_adc.v2e.ccee[ncvs:, ncvs:, :, :])
+            tools.flush(tmpfile)
             del(mr_adc.v2e.ccee)
 
-            mr_adc.v2e.xexe = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, :ncvs, :])
-            mr_adc.v2e.xeve = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, ncvs:, :])
-            mr_adc.v2e.vexe = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, :ncvs, :])
-            mr_adc.v2e.veve = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, ncvs:, :])
+            mr_adc.v2e.xeex = tools.create_dataset('xeex', tmpfile, (ncvs, nextern, nextern, ncvs))
+            mr_adc.v2e.xeev = tools.create_dataset('xeev', tmpfile, (ncvs, nextern, nextern, nval))
+            mr_adc.v2e.veex = tools.create_dataset('veex', tmpfile, (nval, nextern, nextern, ncvs))
+            mr_adc.v2e.veev = tools.create_dataset('veev', tmpfile, (nval, nextern, nextern, nval))
+
+            mr_adc.v2e.xeex[:] = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs, :, :, :ncvs])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xeev[:] = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs, :, :, ncvs:])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veex[:] = np.ascontiguousarray(mr_adc.v2e.ceec[ncvs:, :, :, :ncvs])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veev[:] = np.ascontiguousarray(mr_adc.v2e.ceec[ncvs:, :, :, ncvs:])
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.ceec)
+
+            mr_adc.v2e.xexe = tools.create_dataset('xexe', tmpfile, (ncvs, nextern, ncvs, nextern))
+            mr_adc.v2e.xeve = tools.create_dataset('xeve', tmpfile, (ncvs, nextern, nval, nextern))
+            mr_adc.v2e.vexe = tools.create_dataset('vexe', tmpfile, (nval, nextern, ncvs, nextern))
+            mr_adc.v2e.veve = tools.create_dataset('veve', tmpfile, (nval, nextern, nval, nextern))
+
+            mr_adc.v2e.xexe[:] = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, :ncvs, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xeve[:] = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, ncvs:, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vexe[:] = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, :ncvs, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veve[:] = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, ncvs:, :])
+            tools.flush(tmpfile)
             del(mr_adc.v2e.cece)
 
-            mr_adc.v2e.xeex = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs, :, :, :ncvs])
-            del(mr_adc.v2e.ceec)
+            #mr_adc.v2e.xexe = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, :ncvs, :])
+            #mr_adc.v2e.xeve = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, ncvs:, :])
+            #mr_adc.v2e.vexe = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, :ncvs, :])
+            #mr_adc.v2e.veve = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, ncvs:, :])
+            #del(mr_adc.v2e.cece)
+
+            #mr_adc.v2e.xeex = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs, :, :, :ncvs])
+            #del(mr_adc.v2e.ceec)
 
             mr_adc.v2e.xaaa = np.ascontiguousarray(mr_adc.v2e.caaa[:ncvs, :, :, :])
             mr_adc.v2e.vaaa = np.ascontiguousarray(mr_adc.v2e.caaa[ncvs:, :, :, :])
@@ -1846,6 +1909,9 @@ def compute_cvs_integrals_2e_df(mr_adc):
             mr_adc.v2e.xvxx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
             tools.flush(tmpfile)
             del(mr_adc.v2e.cccc)
+
+            mr_adc.v2e.eeee = tools.create_dataset('eeee', tmpfile, (nextern, nextern, nextern, nextern))
+            mr_adc.v2e.eeee[:] = mr_adc.v2e.eeee[:]
 
     # Close non-CVS integrals' files
     mr_adc.tmpfile.cferi1.close()
