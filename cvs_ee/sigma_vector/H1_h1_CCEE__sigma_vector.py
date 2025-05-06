@@ -34,7 +34,6 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     # Reduced Density Matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
-    rdm_cccaaa = mr_adc.rdm.cccaaa
 
     sigma_KLWU_aaaa =- 1/2 * einsum('KLab,UaWb->KLWU', X_aaaa, v_aeae, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/2 * einsum('KLab,UbWa->KLWU', X_aaaa, v_aeae, optimize = einsum_type)
@@ -50,14 +49,10 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     sigma_KLWU_aaaa -= 1/4 * einsum('KLab,Ubxa,Wx->KLWU', X_aaaa, v_aeae, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa -= 1/4 * einsum('KLab,Waxb,Ux->KLWU', X_aaaa, v_aeae, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/4 * einsum('KLab,Wbxa,Ux->KLWU', X_aaaa, v_aeae, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_aaaa -= 1/12 * einsum('KLab,xayb,UWxy->KLWU', X_aaaa, v_aeae, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_aaaa += 1/12 * einsum('KLab,xayb,UWyx->KLWU', X_aaaa, v_aeae, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/2 * einsum('KLab,b,Uxab,Wx->KLWU', X_aaaa, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa -= 1/2 * einsum('KLab,b,Uxba,Wx->KLWU', X_aaaa, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa -= 1/2 * einsum('KLab,b,Wxab,Ux->KLWU', X_aaaa, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/2 * einsum('KLab,b,Wxba,Ux->KLWU', X_aaaa, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_aaaa -= 1/6 * einsum('KLab,b,xyab,UWxy->KLWU', X_aaaa, e_extern, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_aaaa += 1/6 * einsum('KLab,b,xyab,UWyx->KLWU', X_aaaa, e_extern, t1_aaee, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_aaaa -= 1/4 * einsum('KLab,Ux,xyab,Wy->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/4 * einsum('KLab,Ux,yxab,Wy->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/4 * einsum('KLab,Wx,xyab,Uy->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
@@ -66,10 +61,6 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     sigma_KLWU_aaaa += 1/4 * einsum('KLab,xy,Uxba,Wy->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/4 * einsum('KLab,xy,Wxab,Uy->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa -= 1/4 * einsum('KLab,xy,Wxba,Uy->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_aaaa += 1/12 * einsum('KLab,xy,xzab,UWyz->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_aaaa -= 1/12 * einsum('KLab,xy,xzab,UWzy->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_aaaa -= 1/12 * einsum('KLab,xy,zxab,UWyz->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_aaaa += 1/12 * einsum('KLab,xy,zxab,UWzy->KLWU', X_aaaa, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/2 * einsum('KLab,Uxab,Wxyz,yz->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa -= 1/4 * einsum('KLab,Uxab,Wyzx,zy->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_ca, optimize = einsum_type)
     sigma_KLWU_aaaa -= 1/4 * einsum('KLab,Uxab,xyzw,Wzyw->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
@@ -102,12 +93,6 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     sigma_KLWU_aaaa -= 1/12 * einsum('KLab,xyab,Wzwx,Uzyw->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_aaaa -= 1/12 * einsum('KLab,xyab,Wzwy,Uzwx->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_aaaa += 1/12 * einsum('KLab,xyab,Wzwy,Uzxw->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_aaaa -= 1/12 * einsum('KLab,xyab,xzwu,UWwyzu->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_aaaa += 1/12 * einsum('KLab,xyab,xzwu,UWwzyu->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_aaaa -= 1/12 * einsum('KLab,xyab,xzyw,UWwz->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_aaaa += 1/12 * einsum('KLab,xyab,xzyw,UWzw->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_aaaa += 1/12 * einsum('KLab,xyab,yzwu,UWwxzu->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_aaaa -= 1/12 * einsum('KLab,xyab,yzwu,UWwzxu->KLWU', X_aaaa, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
     sigma_KLWU_aaaa = sigma_KLWU_aaaa[:, :, aa_tril_ind[0], aa_tril_ind[1]]
     sigma[ccaa__aaaa] += ascontiguousarray(sigma_KLWU_aaaa[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
 
@@ -119,24 +104,14 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     sigma_KLWU_abab -= einsum('KLab,xyab,UyWx->KLWU', X_abab, t1_aaee, v_aaaa, optimize = einsum_type)
     sigma_KLWU_abab -= 1/2 * einsum('KLab,Ubxa,Wx->KLWU', X_abab, v_aeae, rdm_ca, optimize = einsum_type)
     sigma_KLWU_abab -= 1/2 * einsum('KLab,Waxb,Ux->KLWU', X_abab, v_aeae, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_abab += 1/6 * einsum('KLab,xayb,UWxy->KLWU', X_abab, v_aeae, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab += 1/3 * einsum('KLab,xayb,UWyx->KLWU', X_abab, v_aeae, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_abab -= 1/2 * einsum('KLab,a,Uxba,Wx->KLWU', X_abab, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_abab -= 1/2 * einsum('KLab,a,Wxab,Ux->KLWU', X_abab, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_abab += 1/6 * einsum('KLab,a,xyab,UWxy->KLWU', X_abab, e_extern, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab += 1/3 * einsum('KLab,a,xyab,UWyx->KLWU', X_abab, e_extern, t1_aaee, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_abab -= 1/2 * einsum('KLab,b,Uxba,Wx->KLWU', X_abab, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_abab -= 1/2 * einsum('KLab,b,Wxab,Ux->KLWU', X_abab, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_abab += 1/6 * einsum('KLab,b,xyab,UWxy->KLWU', X_abab, e_extern, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab += 1/3 * einsum('KLab,b,xyab,UWyx->KLWU', X_abab, e_extern, t1_aaee, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_abab += 1/2 * einsum('KLab,Ux,yxab,Wy->KLWU', X_abab, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_abab += 1/2 * einsum('KLab,Wx,xyab,Uy->KLWU', X_abab, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_abab += 1/2 * einsum('KLab,xy,Uxba,Wy->KLWU', X_abab, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_abab += 1/2 * einsum('KLab,xy,Wxab,Uy->KLWU', X_abab, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/6 * einsum('KLab,xy,xzab,UWyz->KLWU', X_abab, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/3 * einsum('KLab,xy,xzab,UWzy->KLWU', X_abab, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/3 * einsum('KLab,xy,zxab,UWyz->KLWU', X_abab, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/6 * einsum('KLab,xy,zxab,UWzy->KLWU', X_abab, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_abab -= einsum('KLab,Uxba,Wxyz,yz->KLWU', X_abab, t1_aaee, v_aaaa, rdm_ca, optimize = einsum_type)
     sigma_KLWU_abab += 1/2 * einsum('KLab,Uxba,Wyzx,zy->KLWU', X_abab, t1_aaee, v_aaaa, rdm_ca, optimize = einsum_type)
     sigma_KLWU_abab += 1/2 * einsum('KLab,Uxba,xyzw,Wzyw->KLWU', X_abab, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
@@ -157,15 +132,6 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     sigma_KLWU_abab -= 1/3 * einsum('KLab,xyab,Wzwx,Uzyw->KLWU', X_abab, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_abab -= 1/3 * einsum('KLab,xyab,Wzwy,Uzwx->KLWU', X_abab, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_abab -= 1/6 * einsum('KLab,xyab,Wzwy,Uzxw->KLWU', X_abab, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/3 * einsum('KLab,xyab,xzwu,UWwyzu->KLWU', X_abab, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/6 * einsum('KLab,xyab,xzwu,UWwzyu->KLWU', X_abab, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/3 * einsum('KLab,xyab,xzyw,UWwz->KLWU', X_abab, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/6 * einsum('KLab,xyab,xzyw,UWzw->KLWU', X_abab, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_abab += 1/6 * einsum('KLab,xyab,yzwu,UWwuxz->KLWU', X_abab, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_abab += 1/6 * einsum('KLab,xyab,yzwu,UWwuzx->KLWU', X_abab, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_abab += 1/6 * einsum('KLab,xyab,yzwu,UWwxuz->KLWU', X_abab, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_abab += 1/6 * einsum('KLab,xyab,yzwu,UWwzux->KLWU', X_abab, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_abab -= 1/6 * einsum('KLab,xyab,yzwu,UWwzxu->KLWU', X_abab, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
     sigma[ccaa__abab] += ascontiguousarray(sigma_KLWU_abab).reshape(-1)
 
     sigma_KLWU_bbbb =- 1/2 * einsum('KLab,UaWb->KLWU', X_bbbb, v_aeae, optimize = einsum_type)
@@ -182,14 +148,10 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     sigma_KLWU_bbbb -= 1/4 * einsum('KLab,Ubxa,Wx->KLWU', X_bbbb, v_aeae, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb -= 1/4 * einsum('KLab,Waxb,Ux->KLWU', X_bbbb, v_aeae, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb += 1/4 * einsum('KLab,Wbxa,Ux->KLWU', X_bbbb, v_aeae, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_bbbb -= 1/12 * einsum('KLab,xayb,UWxy->KLWU', X_bbbb, v_aeae, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_bbbb += 1/12 * einsum('KLab,xayb,UWyx->KLWU', X_bbbb, v_aeae, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_bbbb += 1/2 * einsum('KLab,b,Uxab,Wx->KLWU', X_bbbb, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb -= 1/2 * einsum('KLab,b,Uxba,Wx->KLWU', X_bbbb, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb -= 1/2 * einsum('KLab,b,Wxab,Ux->KLWU', X_bbbb, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb += 1/2 * einsum('KLab,b,Wxba,Ux->KLWU', X_bbbb, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_bbbb -= 1/6 * einsum('KLab,b,xyab,UWxy->KLWU', X_bbbb, e_extern, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_bbbb += 1/6 * einsum('KLab,b,xyab,UWyx->KLWU', X_bbbb, e_extern, t1_aaee, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_bbbb -= 1/4 * einsum('KLab,Ux,xyab,Wy->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb += 1/4 * einsum('KLab,Ux,yxab,Wy->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb += 1/4 * einsum('KLab,Wx,xyab,Uy->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
@@ -198,10 +160,6 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     sigma_KLWU_bbbb += 1/4 * einsum('KLab,xy,Uxba,Wy->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb += 1/4 * einsum('KLab,xy,Wxab,Uy->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb -= 1/4 * einsum('KLab,xy,Wxba,Uy->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
-    sigma_KLWU_bbbb += 1/12 * einsum('KLab,xy,xzab,UWyz->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_bbbb -= 1/12 * einsum('KLab,xy,xzab,UWzy->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_bbbb -= 1/12 * einsum('KLab,xy,zxab,UWyz->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_bbbb += 1/12 * einsum('KLab,xy,zxab,UWzy->KLWU', X_bbbb, h_aa, t1_aaee, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_bbbb += 1/2 * einsum('KLab,Uxab,Wxyz,yz->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb -= 1/4 * einsum('KLab,Uxab,Wyzx,zy->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_ca, optimize = einsum_type)
     sigma_KLWU_bbbb -= 1/4 * einsum('KLab,Uxab,xyzw,Wzyw->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
@@ -234,12 +192,6 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     sigma_KLWU_bbbb -= 1/12 * einsum('KLab,xyab,Wzwx,Uzyw->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_bbbb -= 1/12 * einsum('KLab,xyab,Wzwy,Uzwx->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KLWU_bbbb += 1/12 * einsum('KLab,xyab,Wzwy,Uzxw->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_bbbb -= 1/12 * einsum('KLab,xyab,xzwu,UWwyzu->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_bbbb += 1/12 * einsum('KLab,xyab,xzwu,UWwzyu->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_bbbb -= 1/12 * einsum('KLab,xyab,xzyw,UWwz->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_bbbb += 1/12 * einsum('KLab,xyab,xzyw,UWzw->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma_KLWU_bbbb += 1/12 * einsum('KLab,xyab,yzwu,UWwxzu->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-    sigma_KLWU_bbbb -= 1/12 * einsum('KLab,xyab,yzwu,UWwzxu->KLWU', X_bbbb, t1_aaee, v_aaaa, rdm_cccaaa, optimize = einsum_type)
     sigma_KLWU_bbbb = sigma_KLWU_bbbb[:, :, aa_tril_ind[0], aa_tril_ind[1]]
     sigma[ccaa__bbbb] += ascontiguousarray(sigma_KLWU_bbbb[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
 
@@ -621,6 +573,34 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
 
         mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
     del(v_eeee)
+
+###
+##    from prism.mr_adc_integrals import get_oeee_df, unpack_v2e_oeee
+##
+##    chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern])
+##    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+##        cput2 = (logger.process_clock(), logger.perf_counter())
+##        mr_adc.log.debug("v2e.eeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+##
+##        if mr_adc.interface.with_df:
+##            v_eeee = get_oeee_df(mr_adc, mr_adc.v2e.Lee, mr_adc.v2e.Lee, s_chunk, f_chunk)
+##        else:
+##            v_eeee = unpack_v2e_oeee(mr_adc, mr_adc.v2e.eeee[s_chunk:f_chunk]) 
+##
+##        temp  = 1/2 * einsum('KLab,CaDb->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
+##        temp -= 1/2 * einsum('KLab,CbDa->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
+##        sigma_KLCD_aaaa[:, :, s_chunk:f_chunk] += temp
+##
+##        temp  = einsum('KLab,CaDb->KLCD', X_abab, v_eeee, optimize = einsum_type)
+##        sigma_KLCD_abab[:, :, s_chunk:f_chunk] += temp
+##
+##        temp  = 1/2 * einsum('KLab,CaDb->KLCD', X_bbbb, v_eeee, optimize = einsum_type)
+##        temp -= 1/2 * einsum('KLab,CbDa->KLCD', X_bbbb, v_eeee, optimize = einsum_type)
+##        sigma_KLCD_bbbb[:, :, s_chunk:f_chunk] += temp
+##
+##        mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
+##    del(v_eeee)
+###
 
     sigma_KLCD_aaaa = sigma_KLCD_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]]
     sigma[ccee__aaaa] += ascontiguousarray(sigma_KLCD_aaaa[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
