@@ -21,10 +21,12 @@ class H1SigmaVector:
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCAA_CCAA = compute_sigma_vector__H1__h1_h1__CCAA_CCAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEA_CCAA = compute_sigma_vector__H1__h1_h1__CCEA_CCAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEE_CCAA = compute_sigma_vector__H1__h1_h1__CCEE_CCAA
+## CAEE <- CCAA: ZERO COUPLING                                                                       
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAAA_CCAA = compute_sigma_vector__H1__h1_h1__CAAA_CCAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CCAA = compute_sigma_vector__H1__h1_h1__CAEA_CCAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVAA_CCAA = compute_sigma_vector__H1__h1_h1__CVAA_CCAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CCAA = compute_sigma_vector__H1__h1_h1__CVEA_CCAA
+## CVEE <- CCAA: ZERO COUPLING
 
 ## h1 <- CCEA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCAA_CCEA = compute_sigma_vector__H1__h1_h1__CCAA_CCEA
@@ -44,15 +46,18 @@ H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEE_CCEE = compute_sigma_vector_
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEE_CCEE = compute_sigma_vector__H1__h1_h1__CAEE_CCEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAAA_CCEE = compute_sigma_vector__H1__h1_h1__CAAA_CCEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CCEE = compute_sigma_vector__H1__h1_h1__CAEA_CCEE
+## CVAA <- CCEE: ZERO COUPLING                                                                       
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CCEE = compute_sigma_vector__H1__h1_h1__CVEA_CCEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CCEE = compute_sigma_vector__H1__h1_h1__CVEE_CCEE
 
 ## h1 <- CAEE
+## CCAA <- CAEE: ZERO COUPLING
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEA_CAEE = compute_sigma_vector__H1__h1_h1__CCEA_CAEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEE_CAEE = compute_sigma_vector__H1__h1_h1__CCEE_CAEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEE_CAEE = compute_sigma_vector__H1__h1_h1__CAEE_CAEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAAA_CAEE = compute_sigma_vector__H1__h1_h1__CAAA_CAEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CAEE = compute_sigma_vector__H1__h1_h1__CAEA_CAEE
+## CVAA <- CAEE: ZERO COUPLING                                                                       
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CAEE = compute_sigma_vector__H1__h1_h1__CVEA_CAEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CAEE = compute_sigma_vector__H1__h1_h1__CVEE_CAEE
 
@@ -85,13 +90,16 @@ H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CAEA__V_VEEE = compute_sigma
 ## h1 <- CVAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCAA_CVAA = compute_sigma_vector__H1__h1_h1__CCAA_CVAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEA_CVAA = compute_sigma_vector__H1__h1_h1__CCEA_CVAA
+## CCEE <- CVAA: ZERO COUPLING                                                                       
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAAA_CVAA = compute_sigma_vector__H1__h1_h1__CAAA_CVAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CVAA = compute_sigma_vector__H1__h1_h1__CAEA_CVAA
+## CAEE <- CVAA: ZERO COUPLING                                                                       
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVAA_CVAA = compute_sigma_vector__H1__h1_h1__CVAA_CVAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CVAA = compute_sigma_vector__H1__h1_h1__CVEA_CVAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CVAA = compute_sigma_vector__H1__h1_h1__CVEE_CVAA
 
 ## h1 <- CVEE
+## CCAA <- CVEE: ZERO COUPLING
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEA_CVEE = compute_sigma_vector__H1__h1_h1__CCEA_CVEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEE_CVEE = compute_sigma_vector__H1__h1_h1__CCEE_CVEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEE_CVEE = compute_sigma_vector__H1__h1_h1__CAEE_CVEE
