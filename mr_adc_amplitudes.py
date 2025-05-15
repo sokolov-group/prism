@@ -126,7 +126,7 @@ def compute_t1_amplitudes(mr_adc):
         else:
             mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
-        if nextern > 0 and ncas > 0 and nelecas_total > 0:
+        if nextern > 0 and ncas > 0 and nelecas_total > 1:
             e_m2, mr_adc.t1.aaee = compute_t1_m2(mr_adc)
         else:
             mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
