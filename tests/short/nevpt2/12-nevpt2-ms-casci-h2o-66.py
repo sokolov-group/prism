@@ -88,15 +88,15 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -76.277261487479, 6)
-        self.assertAlmostEqual(e_tot[1], -75.928361832828, 6)
-        self.assertAlmostEqual(e_tot[2], -75.913022415165, 6)
-        self.assertAlmostEqual(e_tot[3], -75.796170298361, 6)
-        self.assertAlmostEqual(e_tot[4], -75.793193783780, 6)
-        self.assertAlmostEqual(e_tot[5], -75.685577872333, 6)
-        self.assertAlmostEqual(e_tot[6], -75.667259105678, 6)
-        self.assertAlmostEqual(e_tot[7], -75.469675507392, 6)
-        self.assertAlmostEqual(e_tot[8], -75.324270370365, 6)
+        self.assertAlmostEqual(e_tot[0], -76.274529690518, 6)
+        self.assertAlmostEqual(e_tot[1], -75.924219959731, 6)
+        self.assertAlmostEqual(e_tot[2], -75.909199702092, 6)
+        self.assertAlmostEqual(e_tot[3], -75.792804957278, 6)
+        self.assertAlmostEqual(e_tot[4], -75.785708232791, 6)
+        self.assertAlmostEqual(e_tot[5], -75.682245942366, 6)
+        self.assertAlmostEqual(e_tot[6], -75.664193875799, 6)
+        self.assertAlmostEqual(e_tot[7], -75.458925609842, 6)
+        self.assertAlmostEqual(e_tot[8], -75.317396820200, 6)
 
 if __name__ == "__main__":
     print("NEVPT2 test")

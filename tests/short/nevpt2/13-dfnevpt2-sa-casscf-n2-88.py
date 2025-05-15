@@ -70,12 +70,12 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -109.276606978677, 6)
-        self.assertAlmostEqual(e_tot[1], -108.988586611990, 6)
-        self.assertAlmostEqual(e_tot[2], -108.974839626136, 6)
-        self.assertAlmostEqual(e_tot[3], -108.974839623518, 6)
-        self.assertAlmostEqual(e_tot[4], -108.942039999748, 6)
-        self.assertAlmostEqual(e_tot[5], -108.942039986187, 6)
+        self.assertAlmostEqual(e_tot[0], -109.276578406100, 6)
+        self.assertAlmostEqual(e_tot[1], -108.988554194876, 6)
+        self.assertAlmostEqual(e_tot[2], -108.974799676538, 6)
+        self.assertAlmostEqual(e_tot[3], -108.974799673309, 6)
+        self.assertAlmostEqual(e_tot[4], -108.942005237050, 6)
+        self.assertAlmostEqual(e_tot[5], -108.942005228650, 6)
 
 if __name__ == "__main__":
     print("NEVPT2 test")

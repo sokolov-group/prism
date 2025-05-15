@@ -30,8 +30,8 @@ def kernel(nevpt):
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.info("\nComputing NEVPT energies...\n")
 
-    n_states = len(nevpt.ref_wfn_spin_mult)
-    n_micro_states = sum(nevpt.ref_wfn_spin_mult)
+    n_states = len(nevpt.ref_wfn_deg)
+    n_micro_states = sum(nevpt.ref_wfn_deg)
 
     ref_df = False
     df = False
@@ -68,15 +68,15 @@ def kernel(nevpt):
     e_corr = []
     mstate = 0
     for state in range(n_states):
-        spin_mult = nevpt.ref_wfn_spin_mult[state]
+        deg = nevpt.ref_wfn_deg[state]
 
         nevpt.log.info("\nComputing energy of state #%d..." % (state + 1))
         nevpt.log.info("Reference state active-space energy:         %20.12f" % nevpt.e_ref_cas[state])
         nevpt.log.info("Reference state spin multiplicity:                 %d" % nevpt.ref_wfn_spin_mult[state])
-        nevpt.log.info("Number of active electrons:                        %s" % str(nevpt.ref_nelecas[mstate:(mstate+spin_mult)]))
+        nevpt.log.info("Number of active electrons:                        %s" % str(nevpt.ref_nelecas[mstate:(mstate+deg)]))
 
         # Compute reduced density matrices for a specific state
-        nevpt_rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+spin_mult)], nevpt.ref_nelecas[mstate:(mstate+spin_mult)])
+        nevpt_rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+deg)], nevpt.ref_nelecas[mstate:(mstate+deg)])
 
         # Compute amplitudes and correlation energy
         e_corr_state = nevpt_amplitudes.compute_amplitudes(nevpt)
@@ -91,7 +91,7 @@ def kernel(nevpt):
         e_corr.append(e_corr_state)
         e_tot.append(e_tot_state)
 
-        mstate += spin_mult
+        mstate += deg
 
     if n_states > 1:
         h2ev = nevpt.interface.hartree_to_ev
