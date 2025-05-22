@@ -26,7 +26,7 @@ import prism.nevpt_overlap as nevpt_overlap
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
-def compute_nevpt2_energy_amplitudes(nevpt, rdms, e_0 = None):
+def compute_energy(nevpt, rdms, e_0 = None):
 
     ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas

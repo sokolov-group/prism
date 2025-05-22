@@ -22,8 +22,9 @@ import numpy as np
 from functools import reduce
 
 import prism.lib.logger as logger
-import prism.nevpt_amplitudes as nevpt_amplitudes
 import prism.nevpt_rdms as nevpt_rdms
+import prism.nevpt2 as nevpt2
+import prism.qd_nevpt2 as qd_nevpt2
 
 def kernel(nevpt):
 
@@ -74,7 +75,7 @@ def kernel(nevpt):
     t1 = []
 
     if nevpt.ncore > 0 and nevpt.nextern > 0:
-        e_0, t1_0 = nevpt_amplitudes.compute_t1_0(nevpt)
+        e_0, t1_0 = nevpt2.compute_t1_0(nevpt)
     else:
         t1_0 = np.zeros((nevpt.ncore, nevpt.ncore, nevpt.nextern, nevpt.nextern))
 
@@ -90,7 +91,7 @@ def kernel(nevpt):
         rdms = nevpt_rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+deg)], nevpt.ref_nelecas[mstate:(mstate+deg)])
 
         # Compute amplitudes and correlation energy
-        e_corr_state, t1_state = nevpt_amplitudes.compute_nevpt2_energy_amplitudes(nevpt, rdms, e_0)
+        e_corr_state, t1_state = nevpt2.compute_energy(nevpt, rdms, e_0)
         e_tot_state = nevpt.e_ref[state] + e_corr_state
 
         ref_name = nevpt.interface.reference.upper()
@@ -111,10 +112,20 @@ def kernel(nevpt):
 
         mstate += deg
 
-    # Quasidegenerate NEVPT calculation
+    # Quasidegenerate NEVPT2 calculation
     if nevpt.method == "qd-nevpt2":
-        print("Yay! I am going to handle quasidegenerate states now!")
+        nevpt.log.info("\nComputing the QD-NEVPT2 effective Hamiltonian...")
+
+        # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
+        e_tot, h_evec = qd_nevpt2.compute_energy(nevpt, e_tot, t1)
+
+        # Update correlation energies
+        for state in range(n_states):
+            e_corr[state] = e_tot[state] - nevpt.e_ref[state]
+
         exit()
+
+        # Return QDNEVPT2 total energies
     else:
         del(t1_0)
 
