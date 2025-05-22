@@ -26,73 +26,55 @@ import prism.nevpt_overlap as nevpt_overlap
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
-def compute_amplitudes(nevpt):
-
-    cput0 = (logger.process_clock(), logger.perf_counter())
-    nevpt.log.extra("Computing correlation energy and amplitudes...")
-
-    # First-order amplitudes
-    e_corr = compute_t1_amplitudes(nevpt)
-
-    nevpt.log.timer("computing amplitudes", *cput0)
-
-    return e_corr
-
-def compute_t1_amplitudes(nevpt):
+def compute_nevpt2_energy_amplitudes(nevpt, rdms, e_0 = None):
 
     ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
     nelecas = nevpt.ref_nelecas
     nextern = nevpt.nextern
 
-    e_0p, e_p1p, e_m1p, e_0, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 8
+    e_0p, e_p1p, e_m1p, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 7
 
-    # Create temporary files
-    if nevpt.outcore_expensive_tensors:
-        nevpt.tmpfile.t1 = tools.create_temp_file(nevpt) # Non-core indices' amplitudes
-        nevpt.tmpfile.ct1 = tools.create_temp_file(nevpt) # Core indices' amplitudes
-    else:
-        nevpt.tmpfile.t1 = None
-        nevpt.tmpfile.ct1 = None
+    t1 = lambda:None
 
     # First-order amplitudes
     # With singles
     if nevpt.compute_singles_amplitudes:
         if ncore > 0 and nextern > 0 and ncas > 0:
-            e_0p, nevpt.t1.ce, nevpt.t1.caea, nevpt.t1.caae = compute_t1_0p(nevpt)
+            e_0p, t1.ce, t1.caea, t1.caae = compute_t1_0p(nevpt, rdms)
         else:
-            nevpt.t1.ce = np.zeros((ncore, nextern))
-            nevpt.t1.caea = np.zeros((ncore, ncas, nextern, ncas))
-            nevpt.t1.caae = np.zeros((ncore, ncas, ncas, nextern))
+            t1.ce = np.zeros((ncore, nextern))
+            t1.caea = np.zeros((ncore, ncas, nextern, ncas))
+            t1.caae = np.zeros((ncore, ncas, ncas, nextern))
 
         if ncore > 0 and ncas > 0:
-            e_p1p, nevpt.t1.ca, nevpt.t1.caaa = compute_t1_p1p(nevpt)
+            e_p1p, t1.ca, t1.caaa = compute_t1_p1p(nevpt, rdms)
         else:
-            nevpt.t1.ca = np.zeros((ncore, ncas))
-            nevpt.t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
+            t1.ca = np.zeros((ncore, ncas))
+            t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
 
         if nextern > 0 and ncas > 0:
-            e_m1p, nevpt.t1.ae, nevpt.t1.aaae = compute_t1_m1p(nevpt)
+            e_m1p, t1.ae, t1.aaae = compute_t1_m1p(nevpt, rdms)
         else:
-            nevpt.t1.ae = np.zeros((ncas, nextern))
-            nevpt.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
+            t1.ae = np.zeros((ncas, nextern))
+            t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
     # Without singles
     else:
         if ncore > 0 and nextern > 0 and ncas > 0:
-            e_0p, nevpt.t1.caea, nevpt.t1.caae = compute_t1_0p_no_singles(nevpt)
+            e_0p, t1.caea, t1.caae = compute_t1_0p_no_singles(nevpt, rdms)
         else:
-            nevpt.t1.caea = np.zeros((ncore, ncas, nextern, ncas))
-            nevpt.t1.caae = np.zeros((ncore, ncas, ncas, nextern))
+            t1.caea = np.zeros((ncore, ncas, nextern, ncas))
+            t1.caae = np.zeros((ncore, ncas, ncas, nextern))
 
         if ncore > 0 and ncas > 0:
-            e_p1p, nevpt.t1.caaa = compute_t1_p1p_no_singles(nevpt)
+            e_p1p, t1.caaa = compute_t1_p1p_no_singles(nevpt, rdms)
         else:
-            nevpt.t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
+            t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
 
         if nextern > 0 and ncas > 0:
-            e_m1p, nevpt.t1.aaae = compute_t1_m1p_no_singles(nevpt)
+            e_m1p, t1.aaae = compute_t1_m1p_no_singles(nevpt, rdms)
         else:
-            nevpt.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
+            t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
 
     nelecas_total = 0
     if isinstance(nelecas, (list)):
@@ -100,34 +82,37 @@ def compute_t1_amplitudes(nevpt):
     else:
         nelecas_total = sum(nelecas)
 
-    if ncore > 0 and nextern > 0:
-        e_0, nevpt.t1.ccee = compute_t1_0(nevpt)
-    else:
-        nevpt.t1.ccee = np.zeros((ncore, ncore, nextern, nextern))
-
     if ncore > 0 and nextern > 0 and ncas > 0:
-        e_p1, nevpt.t1.ccae = compute_t1_p1(nevpt)
+        e_p1, t1.ccae = compute_t1_p1(nevpt, rdms)
     else:
-        nevpt.t1.ccae = np.zeros((ncore, ncore, ncas, nextern))
+        t1.ccae = np.zeros((ncore, ncore, ncas, nextern))
 
     if ncore > 0 and nextern > 0 and ncas > 0 and nelecas_total > 0:
-        e_m1, nevpt.t1.caee = compute_t1_m1(nevpt)
+        e_m1, t1.caee = compute_t1_m1(nevpt, rdms)
     else:
-        nevpt.t1.caee = np.zeros((ncore, ncas, nextern, nextern))
+        t1.caee = np.zeros((ncore, ncas, nextern, nextern))
 
     if ncore > 0 and ncas > 0:
-        e_p2, nevpt.t1.ccaa = compute_t1_p2(nevpt)
+        e_p2, t1.ccaa = compute_t1_p2(nevpt, rdms)
     else:
-        nevpt.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
+        t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
     if nextern > 0 and ncas > 0 and nelecas_total > 1:
-        e_m2, nevpt.t1.aaee = compute_t1_m2(nevpt)
+        e_m2, t1.aaee = compute_t1_m2(nevpt, rdms)
     else:
-        nevpt.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
+        t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
+
+    if e_0 is None:
+        if ncore > 0 and nextern > 0:
+            e_0, t1.ccee = compute_t1_0(nevpt)
+        else:
+            t1.ccee = np.zeros((ncore, ncore, nextern, nextern))
+    else:
+        nevpt.log.info("Correlation energy [0]:                      %20.12f" % e_0)
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
 
-    return e_corr
+    return e_corr, t1
 
 
 def compute_t1_0(nevpt):
@@ -139,7 +124,10 @@ def compute_t1_0(nevpt):
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
 
-    ctmpfile = nevpt.tmpfile.ct1
+    if nevpt.outcore_expensive_tensors:
+        ctmpfile = tools.create_temp_file(nevpt)
+    else:
+        ctmpfile = None
 
     # Variables from kernel
     ncore = nevpt.ncore - nevpt.nfrozen
@@ -186,7 +174,7 @@ def compute_t1_0(nevpt):
 
     return e_0, t1_ccee
 
-def compute_t1_p1(nevpt):
+def compute_t1_p1(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1]^(1) amplitudes...")
@@ -207,13 +195,13 @@ def compute_t1_p1(nevpt):
     v_cace = nevpt.v2e.cace
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
+    rdm_ca = rdms.ca
 
     # Compute K_ac matrix
-    K_ac = nevpt_intermediates.compute_K_ac(nevpt)
+    K_ac = nevpt_intermediates.compute_K_ac(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1_12_inv_act = nevpt_overlap.compute_S12_p1(nevpt)
+    S_p1_12_inv_act = nevpt_overlap.compute_S12_p1(nevpt, rdms)
 
     if hasattr(nevpt.S12, "cca"):
         nevpt.S12.cca = S_p1_12_inv_act.copy()
@@ -258,7 +246,7 @@ def compute_t1_p1(nevpt):
 
     return e_p1, t1_ccae
 
-def compute_t1_m1(nevpt):
+def compute_t1_m1(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-1]^(1) amplitudes...")
@@ -267,7 +255,10 @@ def compute_t1_m1(nevpt):
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
 
-    ctmpfile = nevpt.tmpfile.ct1
+    if nevpt.outcore_expensive_tensors:
+        ctmpfile = tools.create_temp_file(nevpt)
+    else:
+        ctmpfile = None
 
     # Variables from kernel
     ncore = nevpt.ncore - nevpt.nfrozen
@@ -282,13 +273,13 @@ def compute_t1_m1(nevpt):
     v_ceae = nevpt.v2e.ceae
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
+    rdm_ca = rdms.ca
 
     # Compute K_ca matrix
-    K_ca = nevpt_intermediates.compute_K_ca(nevpt)
+    K_ca = nevpt_intermediates.compute_K_ca(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1_12_inv_act = nevpt_overlap.compute_S12_m1(nevpt)
+    S_m1_12_inv_act = nevpt_overlap.compute_S12_m1(nevpt, rdms)
 
     if hasattr(nevpt.S12, "cae"):
         nevpt.S12.cae = S_m1_12_inv_act.copy()
@@ -343,7 +334,7 @@ def compute_t1_m1(nevpt):
 
     return e_m1, t1_caee
 
-def compute_t1_p2(nevpt):
+def compute_t1_p2(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+2]^(1) amplitudes...")
@@ -363,14 +354,14 @@ def compute_t1_p2(nevpt):
     v_caca = nevpt.v2e.caca
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     # Compute K_aaccc matrix
-    K_aacc = nevpt_intermediates.compute_K_aacc(nevpt)
+    K_aacc = nevpt_intermediates.compute_K_aacc(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p2_12_inv_act = nevpt_overlap.compute_S12_p2(nevpt)
+    S_p2_12_inv_act = nevpt_overlap.compute_S12_p2(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p2_12_inv_act.T, K_aacc, S_p2_12_inv_act))
@@ -416,7 +407,7 @@ def compute_t1_p2(nevpt):
 
     return e_p2, t1_ccaa
 
-def compute_t1_m2(nevpt):
+def compute_t1_m2(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-2]^(1) amplitudes...")
@@ -425,7 +416,10 @@ def compute_t1_m2(nevpt):
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
 
-    tmpfile = nevpt.tmpfile.t1
+    if nevpt.outcore_expensive_tensors:
+        tmpfile = tools.create_temp_file(nevpt)
+    else:
+        tmpfile = None
 
     # Variables from kernel
     ncas = nevpt.ncas
@@ -435,13 +429,13 @@ def compute_t1_m2(nevpt):
     e_extern = nevpt.mo_energy.e
 
     ## Reduced density matrices
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ccaa = rdms.ccaa
 
     # Compute K_ccaa matrix
-    K_ccaa = nevpt_intermediates.compute_K_ccaa(nevpt)
+    K_ccaa = nevpt_intermediates.compute_K_ccaa(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m2_12_inv_act = nevpt_overlap.compute_S12_m2(nevpt)
+    S_m2_12_inv_act = nevpt_overlap.compute_S12_m2(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m2_12_inv_act.T, K_ccaa, S_m2_12_inv_act))
@@ -495,7 +489,7 @@ def compute_t1_m2(nevpt):
 
     return e_m2, t1_aaee
 
-def compute_t1_0p(nevpt):
+def compute_t1_0p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[0']^(1) amplitudes...")
@@ -521,14 +515,14 @@ def compute_t1_0p(nevpt):
     v_ceaa = nevpt.v2e.ceaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     # Compute K_caca matrix
-    K_caca = nevpt_intermediates.compute_K_caca(nevpt)
+    K_caca = nevpt_intermediates.compute_K_caca(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_0p_12_inv_act = nevpt_overlap.compute_S12_0p_gno_projector(nevpt)
+    S_0p_12_inv_act = nevpt_overlap.compute_S12_0p_gno_projector(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_0p_12_inv_act[1:,:].T, K_caca, S_0p_12_inv_act[1:,:]))
@@ -623,7 +617,7 @@ def compute_t1_0p(nevpt):
 
     return e_0p, t1_ce, t1_caea, t1_caae
 
-def compute_t1_p1p(nevpt):
+def compute_t1_p1p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1']^(1) amplitudes...")
@@ -646,18 +640,18 @@ def compute_t1_p1p(nevpt):
     v_caaa = nevpt.v2e.caaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute K_p1p matrix
-    K_p1p = nevpt_intermediates.compute_K_p1p(nevpt)
+    K_p1p = nevpt_intermediates.compute_K_p1p(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     if nevpt.semi_internal_projector == "gno":
-        S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_gno_projector(nevpt)
+        S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_gno_projector(nevpt, rdms)
     else:
-        S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_gs_projector(nevpt)
+        S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_gs_projector(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
@@ -783,7 +777,7 @@ def compute_t1_p1p(nevpt):
 
     return e_p1p, t1_ca, t1_caaa
 
-def compute_t1_m1p(nevpt):
+def compute_t1_m1p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-1']^(1) amplitudes...")
@@ -806,18 +800,18 @@ def compute_t1_m1p(nevpt):
     v_aaae = nevpt.v2e.aaae
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute K_m1p matrix
-    K_m1p = nevpt_intermediates.compute_K_m1p(nevpt)
+    K_m1p = nevpt_intermediates.compute_K_m1p(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     if nevpt.semi_internal_projector == "gno":
-        S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_gno_projector(nevpt)
+        S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_gno_projector(nevpt, rdms)
     else:
-        S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_gs_projector(nevpt)
+        S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_gs_projector(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
@@ -918,7 +912,7 @@ def compute_t1_m1p(nevpt):
 
     return e_m1p, t1_ae, t1_aaae
 
-def compute_t1_0p_no_singles(nevpt):
+def compute_t1_0p_no_singles(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[0']^(1) amplitudes...")
@@ -944,14 +938,14 @@ def compute_t1_0p_no_singles(nevpt):
     v_ceaa = nevpt.v2e.ceaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     # Compute K_caca matrix
-    K_caca = nevpt_intermediates.compute_K_caca(nevpt)
+    K_caca = nevpt_intermediates.compute_K_caca(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_0p_12_inv_act = nevpt_overlap.compute_S12_0p_no_singles(nevpt)
+    S_0p_12_inv_act = nevpt_overlap.compute_S12_0p_no_singles(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_0p_12_inv_act.T, K_caca, S_0p_12_inv_act))
@@ -1033,7 +1027,7 @@ def compute_t1_0p_no_singles(nevpt):
 
     return e_0p, t1_caea, t1_caae
 
-def compute_t1_p1p_no_singles(nevpt):
+def compute_t1_p1p_no_singles(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1']^(1) amplitudes...")
@@ -1056,15 +1050,15 @@ def compute_t1_p1p_no_singles(nevpt):
     v_caaa = nevpt.v2e.caaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute K_p1p matrix
-    K_p1p = nevpt_intermediates.compute_K_p1p_no_singles(nevpt)
+    K_p1p = nevpt_intermediates.compute_K_p1p_no_singles(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_no_singles(nevpt)
+    S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_no_singles(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
@@ -1170,7 +1164,7 @@ def compute_t1_p1p_no_singles(nevpt):
 
     return e_p1p, t1_caaa
 
-def compute_t1_m1p_no_singles(nevpt):
+def compute_t1_m1p_no_singles(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-1']^(1) amplitudes...")
@@ -1193,15 +1187,15 @@ def compute_t1_m1p_no_singles(nevpt):
     v_aaae = nevpt.v2e.aaae
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute K_m1p matrix
-    K_m1p = nevpt_intermediates.compute_K_m1p_no_singles(nevpt)
+    K_m1p = nevpt_intermediates.compute_K_m1p_no_singles(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_no_singles(nevpt)
+    S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_no_singles(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))

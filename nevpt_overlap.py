@@ -20,7 +20,7 @@
 import numpy as np
 from functools import reduce
 
-def compute_S12_p1(nevpt):
+def compute_S12_p1(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -30,7 +30,7 @@ def compute_S12_p1(nevpt):
     ncas = nevpt.ncas
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
+    rdm_ca = rdms.ca
 
     s_thresh = nevpt.s_thresh_doubles
 
@@ -53,7 +53,7 @@ def compute_S12_p1(nevpt):
 
     return S_p1_12_inv
 
-def compute_S12_m1(nevpt):
+def compute_S12_m1(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -61,7 +61,7 @@ def compute_S12_m1(nevpt):
 
     # Variables from kernel
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
+    rdm_ca = rdms.ca
 
     s_thresh = nevpt.s_thresh_doubles
 
@@ -83,7 +83,7 @@ def compute_S12_m1(nevpt):
 
     return S_m1_12_inv
 
-def compute_S12_p2(nevpt):
+def compute_S12_p2(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -93,8 +93,8 @@ def compute_S12_p2(nevpt):
     ncas = nevpt.ncas
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     s_thresh = nevpt.s_thresh_doubles
 
@@ -121,7 +121,7 @@ def compute_S12_p2(nevpt):
 
     return S_p2_12_inv
 
-def compute_S12_m2(nevpt):
+def compute_S12_m2(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -131,7 +131,7 @@ def compute_S12_m2(nevpt):
     ncas = nevpt.ncas
 
     ## Reduced density matrices
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ccaa = rdms.ccaa
 
     # Compute S matrix: < Psi_0 | a^{\dag}_X a^{\dag}_Y a_Z a_W | Psi_0 >
     S_m2  = 1/3 * einsum('WZXY->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
@@ -153,7 +153,7 @@ def compute_S12_m2(nevpt):
 
     return S_m2_12_inv
 
-def compute_S12_0p_projector(nevpt):
+def compute_S12_0p_projector(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -173,8 +173,8 @@ def compute_S12_0p_projector(nevpt):
         nelecas = 1
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     # Compute S matrix
     ## S22 block: < Psi_0 | a^{\dag}_X a_Y a^{\dag}_Z a_W | Psi_0 >
@@ -264,7 +264,7 @@ def compute_S12_0p_projector(nevpt):
 
     return S_0p_12_inv
 
-def compute_S12_0p_gno_projector(nevpt):
+def compute_S12_0p_gno_projector(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -276,8 +276,8 @@ def compute_S12_0p_gno_projector(nevpt):
     s_thresh = nevpt.s_thresh_singles
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a^{\dag}_X a_Y | Psi_0 >
@@ -345,7 +345,7 @@ def compute_S12_0p_gno_projector(nevpt):
 
     return S_0p_12_inv
 
-def compute_S12_p1p_gno_projector(nevpt):
+def compute_S12_p1p_gno_projector(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -357,9 +357,9 @@ def compute_S12_p1p_gno_projector(nevpt):
     s_thresh = nevpt.s_thresh_singles
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a_X a^{\dag}_Y | Psi_0 >
@@ -492,7 +492,7 @@ def compute_S12_p1p_gno_projector(nevpt):
 
 # Newer projection technique for the amplitudes
 # MOLECULAR PHYSICS 2020, VOL. 118, NOS. 21–22, e1743889
-def compute_S12_p1p_gs_projector(nevpt):
+def compute_S12_p1p_gs_projector(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -504,9 +504,9 @@ def compute_S12_p1p_gs_projector(nevpt):
     s_thresh = nevpt.s_thresh_singles
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a_X a^{\dag}_Y | Psi_0 >
@@ -635,7 +635,7 @@ def compute_S12_p1p_gs_projector(nevpt):
 
     return S_p1p_12_inv_act
 
-def compute_S12_m1p_gno_projector(nevpt):
+def compute_S12_m1p_gno_projector(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -647,9 +647,9 @@ def compute_S12_m1p_gno_projector(nevpt):
     s_thresh = nevpt.s_thresh_singles
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a^{\dag}_X a_Y | Psi_0 >
@@ -768,7 +768,7 @@ def compute_S12_m1p_gno_projector(nevpt):
 
 # Newer projection technique for the amplitudes
 # MOLECULAR PHYSICS 2020, VOL. 118, NOS. 21–22, e1743889
-def compute_S12_m1p_gs_projector(nevpt):
+def compute_S12_m1p_gs_projector(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -780,9 +780,9 @@ def compute_S12_m1p_gs_projector(nevpt):
     s_thresh = nevpt.s_thresh_singles
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute S matrix
     ## S11 block: < Psi_0 | a^{\dag}_X a_Y | Psi_0 >
@@ -897,7 +897,7 @@ def compute_S12_m1p_gs_projector(nevpt):
 
     return S_m1p_12_inv_act
 
-def compute_S12_0p_no_singles(nevpt):
+def compute_S12_0p_no_singles(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -909,8 +909,8 @@ def compute_S12_0p_no_singles(nevpt):
     s_thresh = nevpt.s_thresh_singles
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     # Compute S matrix
     ## S22 block: < Psi_0 | a^{\dag}_X a_Y a^{\dag}_Z a_W | Psi_0 >
@@ -957,7 +957,7 @@ def compute_S12_0p_no_singles(nevpt):
 
     return S_0p_12_inv
 
-def compute_S12_p1p_no_singles(nevpt):
+def compute_S12_p1p_no_singles(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -969,9 +969,9 @@ def compute_S12_p1p_no_singles(nevpt):
     s_thresh = nevpt.s_thresh_singles
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute S matrix
     ## S22 block: < Psi_0 | a^{\dag}_U a_V a_X a^{\dag}_Y a^{\dag}_Z a_W | Psi_0 >
@@ -1056,7 +1056,7 @@ def compute_S12_p1p_no_singles(nevpt):
 
     return S_p1p_12_inv_act
 
-def compute_S12_m1p_no_singles(nevpt):
+def compute_S12_m1p_no_singles(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -1068,9 +1068,9 @@ def compute_S12_m1p_no_singles(nevpt):
     s_thresh = nevpt.s_thresh_singles
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute S matrix
     ## S22 block: < Psi_0 | a^{\dag}_U a^{\dag}_V a_X a^{\dag}_Y a_Z a_W | Psi_0 >

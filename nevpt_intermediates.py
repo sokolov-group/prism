@@ -19,7 +19,7 @@
 
 import numpy as np
 
-def compute_K_ac(nevpt):
+def compute_K_ac(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -33,8 +33,8 @@ def compute_K_ac(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     # Compute K_ac: < Psi_0 | a_X [H_{act}, a^{\dag}_Y] | Psi_0 >
     K_ac  = einsum('XY->XY', h_aa, optimize = einsum_type).copy()
@@ -45,7 +45,7 @@ def compute_K_ac(nevpt):
 
     return K_ac
 
-def compute_K_ca(nevpt):
+def compute_K_ca(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -59,8 +59,8 @@ def compute_K_ca(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
 
     # Compute K_ca: < Psi_0 | a^{\dag}_X [H_{act}, a_Y] | Psi_0 >
     K_ca =- 1/2 * einsum('Yx,Xx->XY', h_aa, rdm_ca, optimize = einsum_type)
@@ -68,7 +68,7 @@ def compute_K_ca(nevpt):
 
     return K_ca
 
-def compute_K_aacc(nevpt):
+def compute_K_aacc(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -84,9 +84,9 @@ def compute_K_aacc(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute K_aacc: < Psi_0 | a_X a_Y [H_{act}, a^{\dag}_Z a^{\dag}_W] | Psi_0 >
     K_aacc  = einsum('WXZY->XYWZ', v_aaaa, optimize = einsum_type).copy()
@@ -134,7 +134,7 @@ def compute_K_aacc(nevpt):
 
     return K_aacc
 
-def compute_K_ccaa(nevpt):
+def compute_K_ccaa(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -150,8 +150,8 @@ def compute_K_ccaa(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute K_ccaa: < Psi_0 | a^{\dag}_X a^{\dag}_Y [H_{act}, a_Z a_W] | Psi_0 >
     K_ccaa =- 1/6 * einsum('Wx,XYZx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
@@ -172,7 +172,7 @@ def compute_K_ccaa(nevpt):
 
     return K_ccaa
 
-def compute_K_caca(nevpt):
+def compute_K_caca(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -188,9 +188,9 @@ def compute_K_caca(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
 
     # Compute K_caca: < Psi_0 | a^{\dag}_X a_Y [H_{act}, a^{\dag}_Z a_W] | Psi_0 >
     K_caca_aa_aa =- 1/6 * einsum('Wx,XZYx->XYWZ', h_aa, rdm_ccaa, optimize = einsum_type)
@@ -249,7 +249,7 @@ def compute_K_caca(nevpt):
 
     return K_caca
 
-def compute_K_p1p(nevpt):
+def compute_K_p1p(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -265,10 +265,10 @@ def compute_K_p1p(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
-    rdm_ccccaaaa = nevpt.rdm.ccccaaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
+    rdm_ccccaaaa = rdms.ccccaaaa
 
     # Computing K11
     # K11 block: < Psi_0 | a_X [H_{act}, a^{\dag}_Y] | Psi_0 >
@@ -612,7 +612,7 @@ def compute_K_p1p(nevpt):
 
     return K_p1p
 
-def compute_K_m1p(nevpt):
+def compute_K_m1p(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -628,10 +628,10 @@ def compute_K_m1p(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
-    rdm_ccccaaaa = nevpt.rdm.ccccaaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
+    rdm_ccccaaaa = rdms.ccccaaaa
 
     # Computing K11
     # K11 block: < Psi_0 | a^{\dag}_X [H_{act}, a_Y] | Psi_0 >
@@ -828,7 +828,7 @@ def compute_K_m1p(nevpt):
 
     return K_m1p
 
-def compute_K_p1p_no_singles(nevpt):
+def compute_K_p1p_no_singles(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -844,10 +844,10 @@ def compute_K_p1p_no_singles(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
-    rdm_ccccaaaa = nevpt.rdm.ccccaaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
+    rdm_ccccaaaa = rdms.ccccaaaa
 
     # K22 block: < Psi_0 | a^{\dag}_U a_V a_X [H_{act}, a^{\dag}_Y a^{\dag}_Z a_W] | Psi_0 >
     K22_aaa_aaa  = 1/6 * einsum('VY,UZWX->UVXWZY', h_aa, rdm_ccaa, optimize = einsum_type)
@@ -1133,7 +1133,7 @@ def compute_K_p1p_no_singles(nevpt):
 
     return K_p1p
 
-def compute_K_m1p_no_singles(nevpt):
+def compute_K_m1p_no_singles(nevpt, rdms):
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -1149,10 +1149,10 @@ def compute_K_m1p_no_singles(nevpt):
     v_aaaa = nevpt.v2e.aaaa
 
     ## Reduced density matrices
-    rdm_ca = nevpt.rdm.ca
-    rdm_ccaa = nevpt.rdm.ccaa
-    rdm_cccaaa = nevpt.rdm.cccaaa
-    rdm_ccccaaaa = nevpt.rdm.ccccaaaa
+    rdm_ca = rdms.ca
+    rdm_ccaa = rdms.ccaa
+    rdm_cccaaa = rdms.cccaaa
+    rdm_ccccaaaa = rdms.ccccaaaa
 
     # K22 block: < Psi_0 | a^{\dag}_U a^{\dag}_V a_X [H_{act}, a^{\dag}_Y a_Z a_W] | Psi_0 >
     K22_aaa_aaa  = 1/12 * einsum('Wx,UVYXxZ->UVXWZY', h_aa, rdm_cccaaa, optimize = einsum_type)

@@ -64,9 +64,20 @@ def kernel(nevpt):
     if nevpt.compute_singles_amplitudes:
         nevpt.log.info("Projector for the semi-internal amplitudes:        %s" % nevpt.semi_internal_projector)
 
+    # State-specific NEVPT calculation
     e_tot = []
     e_corr = []
     mstate = 0
+
+    e_0 = 0.0
+    t1_0 = None
+    t1 = []
+
+    if nevpt.ncore > 0 and nevpt.nextern > 0:
+        e_0, t1_0 = nevpt_amplitudes.compute_t1_0(nevpt)
+    else:
+        t1_0 = np.zeros((nevpt.ncore, nevpt.ncore, nevpt.nextern, nevpt.nextern))
+
     for state in range(n_states):
         deg = nevpt.ref_wfn_deg[state]
 
@@ -76,22 +87,36 @@ def kernel(nevpt):
         nevpt.log.info("Number of active electrons:                        %s" % str(nevpt.ref_nelecas[mstate:(mstate+deg)]))
 
         # Compute reduced density matrices for a specific state
-        nevpt_rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+deg)], nevpt.ref_nelecas[mstate:(mstate+deg)])
+        rdms = nevpt_rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+deg)], nevpt.ref_nelecas[mstate:(mstate+deg)])
 
         # Compute amplitudes and correlation energy
-        e_corr_state = nevpt_amplitudes.compute_amplitudes(nevpt)
+        e_corr_state, t1_state = nevpt_amplitudes.compute_nevpt2_energy_amplitudes(nevpt, rdms, e_0)
         e_tot_state = nevpt.e_ref[state] + e_corr_state
 
         ref_name = nevpt.interface.reference.upper()
-        method_name = nevpt.method.upper()
+        method_name = "NEVPT2"
         nevpt.log.info("%s reference state total energy: %s  %20.12f" % (ref_name.upper(), (12-len(ref_name)) * " ", nevpt.e_ref[state]))
-        nevpt.log.info("%s correlation energy:           %s  %20.12f" % (method_name.upper(), (12-len(method_name)) * " ", e_corr_state))
-        nevpt.log.info("Total %s energy:                 %s  %20.12f" % (method_name.upper(), (12-len(method_name)) * " ", e_tot_state))
+        nevpt.log.info("%s correlation energy:           %s  %20.12f" % (method_name, (12-len(method_name)) * " ", e_corr_state))
+        nevpt.log.info("Total %s energy:                 %s  %20.12f" % (method_name, (12-len(method_name)) * " ", e_tot_state))
 
         e_corr.append(e_corr_state)
         e_tot.append(e_tot_state)
 
+        if nevpt.method == "qd-nevpt2":
+            t1.append(t1_state)
+        else:
+            del(t1_state)
+
+        del(rdms)
+
         mstate += deg
+
+    # Quasidegenerate NEVPT calculation
+    if nevpt.method == "qd-nevpt2":
+        print("Yay! I am going to handle quasidegenerate states now!")
+        exit()
+    else:
+        del(t1_0)
 
     if n_states > 1:
         h2ev = nevpt.interface.hartree_to_ev
