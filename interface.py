@@ -520,7 +520,20 @@ class PYSCF:
 
         from pyscf import fci
 
-        rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra, ket, self.ncas, nelecas)
+        rdm1, rdm2, rdm3 = 3 * (None,)
+        if isinstance(nelecas, (list)):
+            rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra[0], ket[0], self.ncas, nelecas[0])
+            for p in range(1, len(nelecas)):
+                rdm1_p, rdm2_p, rdm3_p = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra[p], ket[p], self.ncas, nelecas[p])
+                rdm1 += rdm1_p
+                rdm2 += rdm2_p
+                rdm3 += rdm3_p
+            rdm1 /= len(nelecas)
+            rdm2 /= len(nelecas)
+            rdm3 /= len(nelecas)
+        else:
+            rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra, ket, self.ncas, nelecas)
+
         rdm1, rdm2, rdm3 = fci.rdm.reorder_dm123(rdm1, rdm2, rdm3)
 
         # rdm2[p,q,r,s] = \langle p^\dagger q^\dagger s r\rangle
