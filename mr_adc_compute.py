@@ -255,7 +255,7 @@ def compute_trans_properties(mr_adc, E, U):
 
         #mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E, osc_strength)
 
-    if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4):
+    if mr_adc.analyze_spec_factor:
         analyze_trans_properties(mr_adc)
         if mr_adc.method_type == "cvs-ip":
             analyze_spec_factor(mr_adc, X, spec_intensity)
