@@ -536,6 +536,9 @@ class PYSCF:
 
         rdm1, rdm2, rdm3 = fci.rdm.reorder_dm123(rdm1, rdm2, rdm3)
 
+        # This transpose is necessary to get the correct index order for transition 1-RDM
+        rdm1 = rdm1.T
+
         # rdm2[p,q,r,s] = \langle p^\dagger q^\dagger s r\rangle
         rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 1, 3))
 
@@ -566,6 +569,9 @@ class PYSCF:
             rdm1, rdm2, rdm3, rdm4 = fci.rdm.make_dm1234('FCI4pdm_kern_sf', bra, ket, self.ncas, nelecas)
 
         rdm1, rdm2, rdm3, rdm4 = fci.rdm.reorder_dm1234(rdm1, rdm2, rdm3, rdm4)
+
+        # This transpose is necessary to get the correct index order for transition 1-RDM
+        rdm1 = rdm1.T
 
         # rdm2[p,q,r,s] = \langle p^\dagger q^\dagger s r\rangle
         rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 1, 3))
