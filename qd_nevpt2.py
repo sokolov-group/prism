@@ -161,10 +161,22 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             H_IJ += 2/3 * einsum('xyza,wzua,wuxy', t1_aaae, v_aaae, trdm_ccaa, optimize = einsum_type)
             H_IJ -= 1/6 * einsum('xyza,wzua,wuyx', t1_aaae, v_aaae, trdm_ccaa, optimize = einsum_type)
 
-            test  = 1/3 * einsum('xyab,zawb,zwxy', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
-            test -= 1/12 * einsum('xyab,zawb,zwyx', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
+#            test  = 1/3 * einsum('xyab,zawb,zwxy', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
+#            test -= 1/12 * einsum('xyab,zawb,zwyx', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
+            test  = 1/4 * einsum('xyab,zawb,zwxy', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
 
-            print (I, J, test, "VT")
+            test_aaaa = trdm_ccaa/6 - trdm_ccaa.transpose(0,1,3,2)/6
+            test_abab = trdm_ccaa/3 + trdm_ccaa.transpose(0,1,3,2)/6
+            print (I, J, test, "VT norms:", np.linalg.norm(t1_aaee), np.linalg.norm(v_aeae), np.linalg.norm(test_aaaa), np.linalg.norm(test_abab))
+            print (I, J, test, "VT sums:", np.sum(t1_aaee), np.sum(v_aeae), np.sum(test_aaaa), np.sum(test_abab))
+            for p in range(trdm_ca.shape[0]):
+                for q in range(trdm_ca.shape[0]):
+                    for r in range(trdm_ca.shape[0]):
+                        for s in range(trdm_ca.shape[0]):
+                            if abs(test_aaaa[p,q,r,s]) > 1e-10:
+                                print(I, J, "aaaa", p, q, r, s, test_aaaa[p,q,r,s])
+                            if abs(test_abab[p,q,r,s]) > 1e-10:
+                                print(I, J, "abab", p, q, r, s, test_abab[p,q,r,s])
 
             t1_caea = t1[I].caea
             t1_caae = t1[I].caae
