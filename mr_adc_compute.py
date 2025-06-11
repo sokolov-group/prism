@@ -253,6 +253,9 @@ def compute_trans_properties(mr_adc, E, U):
         mr_adc.log.note("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
         print(osc_strength.reshape(-1, 1))
 
+        if mr_adc.compute_NTOs:
+            mr_adc_cvs_ee.compute_NTOs(mr_adc, X)
+
         #mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E, osc_strength)
 
     if mr_adc.analyze_spec_factor:

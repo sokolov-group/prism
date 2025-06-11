@@ -55,6 +55,8 @@ class MRADC:
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
 
+        self.mol = interface.mol        
+
         # CASSCF specific
         self.ncore = interface.ncore
         self.ncas = interface.ncas
@@ -82,6 +84,7 @@ class MRADC:
         self.s_thresh_doubles = 1e-10
 
         self.analyze_spec_factor = False
+        self.compute_NTOs = True
         self.spec_factor_print_tol = 1e-5
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
