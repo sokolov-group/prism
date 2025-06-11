@@ -238,10 +238,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
 
-    print (h_eval)
-
-    exit()
-
     return h_eval, h_evec
 
 

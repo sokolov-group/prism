@@ -74,10 +74,12 @@ def kernel(nevpt):
     t1_0 = None
     t1 = []
 
-    if nevpt.ncore > 0 and nevpt.nextern > 0:
+    ncore = nevpt.ncore - nevpt.nfrozen
+
+    if ncore > 0 and nevpt.nextern > 0:
         e_0, t1_0 = nevpt2.compute_t1_0(nevpt)
     else:
-        t1_0 = np.zeros((nevpt.ncore, nevpt.ncore, nevpt.nextern, nevpt.nextern))
+        t1_0 = np.zeros((ncore, ncore, nevpt.nextern, nevpt.nextern))
 
     for state in range(n_states):
         deg = nevpt.ref_wfn_deg[state]
@@ -122,8 +124,6 @@ def kernel(nevpt):
         # Update correlation energies
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
-
-        exit()
 
         # Return QDNEVPT2 total energies
     else:
