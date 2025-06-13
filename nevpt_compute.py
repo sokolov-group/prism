@@ -122,6 +122,9 @@ def kernel(nevpt):
         e_tot, h_evec = qd_nevpt2.compute_energy(nevpt, e_tot, t1, t1_0)
 
 ###     # Compute Oscillator Strengths CASSCF
+#TODO: Add function for computing oscillator strengths
+
+        # Compute dipole moment in AO basis
         dip_mom_ao = nevpt.interface.dip_mom_ao
         mo = nevpt.mo
 
@@ -129,51 +132,41 @@ def kernel(nevpt):
 
         # Transform dipole moments from AO to MO basis
         for d in range(dip_mom_ao.shape[0]):
-            dip_mom_mo[d] = reduce(np.dot, (mo.T, dip_mom_ao[d], mo))
+            dip_mom_mo[d] = mo.T @ dip_mom_ao[d] @ mo
 
         # Make total RDM in MO basis
         dim = n_micro_states
-        
-        rdm_mo = np.zeros((nevpt.nmo, nevpt.nmo))
 
         # Ground state osc. strength
         gs_index = 0 
 
         # List to store Osc. Strength Values
         osc_total = []
-        rdm_mo = np.zeros((nevpt.nmo, nevpt.nmo))
-        #rdm_mo[:nevpt.ncore, :nevpt.ncore] = 1 * np.eye(nevpt.ncore)
-        
-        # Looping over States
-        for state in range(1,dim):
+
+# TODO: Remove redundant nevpt.X calls. Define them earlier...
+        # Looping over CAS States
+        for state in range(1, dim):
+            # reset final transformed RDM
             rdm_qd = np.zeros((nevpt.nmo, nevpt.nmo))
+
+            # Looping over states I,J
             for I in range(dim):
                 for J in range(dim):
-                    if I != J:
-                        trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
-                        rdm_mo[nevpt.ncore:nevpt.ncore + nevpt.ncas , nevpt.ncore:nevpt.ncore + nevpt.ncas] = trdm_ca
-                        
-                        ### DEBUG 
-                        rdm_qd += 0.5 * (
-                                np.conj(h_evec.T[I, state]) * rdm_mo * h_evec[J, gs_index] +
-                                np.conj(h_evec.T[I, state]) * rdm_mo.conj().T * h_evec[J, gs_index] 
-                                        )
+                    rdm_mo = np.zeros((nevpt.nmo, nevpt.nmo))  # Reset RDM in MO Basis   
+                    trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
+                    rdm_mo[nevpt.ncore:nevpt.ncore + nevpt.ncas , nevpt.ncore:nevpt.ncore + nevpt.ncas] = trdm_ca
 
-                    elif I==J:
-                        rdm_ca, rdm_ccaa, rdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[I], nevpt.ref_nelecas[I])
-                        rdm_mo[nevpt.ncore:nevpt.ncore + nevpt.ncas , nevpt.ncore:nevpt.ncore + nevpt.ncas] = rdm_ca 
-                        
-                        rdm_qd += np.conj(h_evec.T)[I, state] * rdm_mo * h_evec[I, gs_index]
+                    if I == J:
+                        rdm_mo[:nevpt.ncore, :nevpt.ncore] = 2 * np.eye(nevpt.ncore)
+                        rdm_qd += h_evec.T[I, state] * rdm_mo * h_evec[J, gs_index]
+                    else:
+                        rdm_qd += h_evec.T[I, state] * rdm_mo * h_evec[J, gs_index]
 
             # Create Dipole Moment Operator with RDM
             dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
             dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
             dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
-### DEBUG
-            print(dip_evec_x)
-            print(dip_evec_y)
-            print(dip_evec_z)
-            print('\n')
+ 
             osc_x = ((2/3)*(e_tot[state] - e_tot[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
             osc_y = ((2/3)*(e_tot[state] - e_tot[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
             osc_z = ((2/3)*(e_tot[state] - e_tot[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
@@ -181,9 +174,9 @@ def kernel(nevpt):
             # Add Dipole Components
             osc_total.append(osc_x + osc_y + osc_z)
         
-        print('qdnevpt2 oscillator strengths: ', osc_total)
-        #exit()
-### DEBUG
+        print('\nqdnevpt2 oscillator strengths: ')
+        for osc in osc_total:
+            print(osc)
 
         # Update correlation energies
         for state in range(n_states):
