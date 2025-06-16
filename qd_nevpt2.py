@@ -60,19 +60,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             # Compute transition density matrices
             trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
 
-####            for p in range(trdm_ca.shape[0]):
-####                for q in range(trdm_ca.shape[0]):
-####                    if abs(trdm_ca[p,q]) > 1e-10:
-####                        print(I, J, p, q, 0.5 * trdm_ca[p,q])
-####
-####            for p in range(trdm_ca.shape[0]):
-####                for q in range(trdm_ca.shape[0]):
-####                    for r in range(trdm_ca.shape[0]):
-####                        for s in range(trdm_ca.shape[0]):
-####                            if abs(trdm_ccaa[p,q,r,s]) > 1e-10:
-####                                test = trdm_ccaa / 6 - trdm_ccaa.transpose(0, 1, 3, 2) / 6
-####                                print(I, J, p, q, r, s, test[p,q,r,s])
-
             # Compute the effective Hamiltonian matrix elements
             # TODO: optimize memory usage by grouping terms that depend on the same amplitudes and freeing memory after use
             # 0.5 * < Psi_I | V * T | Psi_J >
@@ -85,16 +72,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             t1_ccaa = t1[J].ccaa
             t1_aaee = t1[J].aaee
 
-#DEBUG
-            #t1_caea = np.zeros_like(t1_caea)
-            #t1_caae = np.zeros_like(t1_caae)
-            #t1_caaa = np.zeros_like(t1_caaa)
-            #t1_aaae = np.zeros_like(t1_aaae)
-            #t1_ccae = np.zeros_like(t1_ccae) 
-            #t1_caee = np.zeros_like(t1_caee)
-            #t1_ccaa = np.zeros_like(t1_ccaa)
-            #t1_aaee = np.zeros_like(t1_aaee)
-#DEBUG
             # New SQA Eqns
             H_IJ  = einsum('ia,ixay,yx', h_ce, t1_caea, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ia,ixya,yx', h_ce, t1_caae, trdm_ca, optimize = einsum_type)
@@ -147,19 +124,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             H_IJ += 1/2 * einsum('xyza,wzua,wuxy', t1_aaae, v_aaae, trdm_ccaa, optimize = einsum_type)
 
 
-#            test_aaaa = trdm_ccaa/6 - trdm_ccaa.transpose(0,1,3,2)/6
-#            test_abab = trdm_ccaa/3 + trdm_ccaa.transpose(0,1,3,2)/6
-#            print (I, J, test, "VT norms:", np.linalg.norm(t1_aaee), np.linalg.norm(v_aeae), np.linalg.norm(test_aaaa), np.linalg.norm(test_abab))
-#            print (I, J, test, "VT sums:", np.sum(t1_aaee), np.sum(v_aeae), np.sum(test_aaaa), np.sum(test_abab))
-#            for p in range(trdm_ca.shape[0]):
-#                for q in range(trdm_ca.shape[0]):
-#                    for r in range(trdm_ca.shape[0]):
-#                        for s in range(trdm_ca.shape[0]):
-#                            if abs(test_aaaa[p,q,r,s]) > 1e-10:
-#                                print(I, J, "aaaa", p, q, r, s, test_aaaa[p,q,r,s])
-#                            if abs(test_abab[p,q,r,s]) > 1e-10:
-#                                print(I, J, "abab", p, q, r, s, test_abab[p,q,r,s])
-
             t1_caea = t1[I].caea
             t1_caae = t1[I].caae
             t1_caaa = t1[I].caaa
@@ -169,17 +133,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             t1_ccaa = t1[I].ccaa
             t1_aaee = t1[I].aaee
 
-#DEBUG
-            #t1_caea = np.zeros_like(t1_caea)
-            #t1_caae = np.zeros_like(t1_caae)
-            #t1_caaa = np.zeros_like(t1_caaa)
-            #t1_aaae = np.zeros_like(t1_aaae)
-            #t1_ccae = np.zeros_like(t1_ccae)
-            #t1_caee = np.zeros_like(t1_caee)
-            #t1_ccaa = np.zeros_like(t1_ccaa)
-            #t1_aaee = np.zeros_like(t1_aaee)
-#DEBUG
-            # New SQA Eqns
             # 0.5 * < Psi_I | T+ * V | Psi_J >
             H_IJ += einsum('ia,ixay,xy', h_ce, t1_caea, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ia,ixya,xy', h_ce, t1_caae, trdm_ca, optimize = einsum_type)
@@ -233,8 +186,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
 
             h_eff[I, J] = H_IJ
             h_eff[J, I] = H_IJ
-
-            #print(I, J, H_IJ)
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
 

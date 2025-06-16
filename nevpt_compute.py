@@ -121,63 +121,6 @@ def kernel(nevpt):
         # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
         e_tot, h_evec = qd_nevpt2.compute_energy(nevpt, e_tot, t1, t1_0)
 
-###     # Compute Oscillator Strengths CASSCF
-#TODO: Add function for computing oscillator strengths
-
-        # Compute dipole moment in AO basis
-        dip_mom_ao = nevpt.interface.dip_mom_ao
-        mo = nevpt.mo
-
-        dip_mom_mo = np.zeros_like(dip_mom_ao)
-
-        # Transform dipole moments from AO to MO basis
-        for d in range(dip_mom_ao.shape[0]):
-            dip_mom_mo[d] = mo.T @ dip_mom_ao[d] @ mo
-
-        # Make total RDM in MO basis
-        dim = n_micro_states
-
-        # Ground state osc. strength
-        gs_index = 0 
-
-        # List to store Osc. Strength Values
-        osc_total = []
-
-# TODO: Remove redundant nevpt.X calls. Define them earlier...
-        # Looping over CAS States
-        for state in range(1, dim):
-            # reset final transformed RDM
-            rdm_qd = np.zeros((nevpt.nmo, nevpt.nmo))
-
-            # Looping over states I,J
-            for I in range(dim):
-                for J in range(dim):
-                    rdm_mo = np.zeros((nevpt.nmo, nevpt.nmo))  # Reset RDM in MO Basis   
-                    trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
-                    rdm_mo[nevpt.ncore:nevpt.ncore + nevpt.ncas , nevpt.ncore:nevpt.ncore + nevpt.ncas] = trdm_ca
-
-                    if I == J:
-                        rdm_mo[:nevpt.ncore, :nevpt.ncore] = 2 * np.eye(nevpt.ncore)
-                        rdm_qd += h_evec.T[I, state] * rdm_mo * h_evec[J, gs_index]
-                    else:
-                        rdm_qd += h_evec.T[I, state] * rdm_mo * h_evec[J, gs_index]
-
-            # Create Dipole Moment Operator with RDM
-            dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
-            dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
-            dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
- 
-            osc_x = ((2/3)*(e_tot[state] - e_tot[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
-            osc_y = ((2/3)*(e_tot[state] - e_tot[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
-            osc_z = ((2/3)*(e_tot[state] - e_tot[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
-
-            # Add Dipole Components
-            osc_total.append(osc_x + osc_y + osc_z)
-        
-        print('\nqdnevpt2 oscillator strengths: ')
-        for osc in osc_total:
-            print(osc)
-
         # Update correlation energies
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
@@ -210,9 +153,78 @@ def kernel(nevpt):
 
         nevpt.log.info("------------------------------------------------------------------------------------------------")
 
+    # Oscillator Strengths:
+    gs_idx = 0  # zero‑based index of the “ground” state you want (e.g. 1 => second state)
+    osc_str = osc_strength(nevpt, e_tot, h_evec, gs_index=gs_idx, ncore=ncore)
+
+    nevpt.log.info("\nOscillator Strengths:")
+    nevpt.log.info("------------------------------------------------")
+    nevpt.log.info("   From    To     Oscillator Strength ")
+    nevpt.log.info("------------------------------------------------")
+
+    # start enumerating at the first state *after* gs_idx:
+    for j, f_gj in enumerate(osc_str, start=gs_idx + 2):
+        f_val_str = f"{f_gj:.8f}"  # always eight decimal places
+        nevpt.log.info("    %2d  -> %2d         %s" % (gs_idx+1, j, f_val_str))
+
+    nevpt.log.info("------------------------------------------------")
+
+
     sys.stdout.flush()
 
     nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
 
     return e_tot, e_corr
+
+def osc_strength(nevpt, en, evec, gs_index = 0, ncore = None):
+
+    if ncore == None: ncore = nevpt.ncore # Flag for frozen core
+
+    n_micro_states = sum(nevpt.ref_wfn_deg)
+    dip_mom_ao = nevpt.interface.dip_mom_ao
+    mo_coeff = nevpt.mo
+    nmo = nevpt.nmo
+    ncore = nevpt.ncore
+    ncas = nevpt.ncas
+
+    dip_mom_mo = np.zeros_like(dip_mom_ao)
+
+    # Transform dipole moments from AO to MO basis
+    for d in range(dip_mom_ao.shape[0]):
+        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+
+    # List to store Osc. Strength Values
+    osc_total = []
+
+    # Looping over CAS States
+    for state in range(gs_index + 1, n_micro_states):
+        # Reset final transformed RDM
+        rdm_qd = np.zeros((nmo, nmo))
+
+        # Looping over states I,J
+        for I in range(n_micro_states):
+            for J in range(n_micro_states):
+                rdm_mo = np.zeros((nmo, nmo))  # Reset RDM in MO Basis   
+                trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
+                rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = trdm_ca
+
+                if I == J:
+                    rdm_mo[:ncore, :ncore] = 2 * np.eye(nevpt.ncore)
+                    rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
+                else:
+                    rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
+
+        # Create Dipole Moment Operator with RDM
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
+ 
+        osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
+        osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
+        osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
+
+        # Add Dipole Moment Components
+        osc_total.append((osc_x + osc_y + osc_z).real)
+
+    return osc_total
 
