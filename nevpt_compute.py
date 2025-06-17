@@ -153,26 +153,26 @@ def kernel(nevpt):
 
         nevpt.log.info("------------------------------------------------------------------------------------------------")
 
-    # Oscillator Strengths:
-    gs_idx = 0  # zero‑based index of the “ground” state you want (e.g. 1 => second state)
-    osc_str = osc_strength(nevpt, e_tot, h_evec, gs_index=gs_idx, ncore=ncore)
+        # Oscillator Strengths:
+        gs_idx = 0  # zero‑based index of the “ground” state you want (e.g. 1 => second state)
+        osc_str = osc_strength(nevpt, e_tot, h_evec, gs_index=gs_idx, ncore=ncore)
 
-    nevpt.log.info("\nOscillator Strengths:")
-    nevpt.log.info("------------------------------------------------")
-    nevpt.log.info("   From    To     Oscillator Strength ")
-    nevpt.log.info("------------------------------------------------")
+        nevpt.log.info("\nOscillator Strengths:")
+        nevpt.log.info("------------------------------------------------")
+        nevpt.log.info("   From    To     Oscillator Strength ")
+        nevpt.log.info("------------------------------------------------")
 
-    # start enumerating at the first state *after* gs_idx:
-    for j, f_gj in enumerate(osc_str, start=gs_idx + 2):
-        f_val_str = f"{f_gj:.8f}"  # always eight decimal places
-        nevpt.log.info("    %2d  -> %2d         %s" % (gs_idx+1, j, f_val_str))
+        # start enumerating at the first state *after* gs_idx:
+        for j, f_gj in enumerate(osc_str, start=gs_idx + 2):
+            f_val_str = f"{f_gj:.8f}"  # always eight decimal places
+            nevpt.log.info("    %2d  -> %2d         %s" % (gs_idx+1, j, f_val_str))
 
-    nevpt.log.info("------------------------------------------------")
+        nevpt.log.info("------------------------------------------------")
 
 
-    sys.stdout.flush()
+        sys.stdout.flush()
 
-    nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
+        nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
 
     return e_tot, e_corr
 
