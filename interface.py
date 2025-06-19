@@ -515,6 +515,24 @@ class PYSCF:
 
         return self
 
+    def compute_rdm1(self, bra, ket, nelecas):
+
+        from pyscf.fci.direct_spin1 import trans_rdm1
+
+        rdm1 = (None, )
+
+        if isinstance(nelecas, (list)):
+            rdm1 = trans_rdm1(bra, ket, self.ncas, nelecas)
+            for p in range(1, len(nelecas)):
+                rdm1_p = trans_rdm1(bra, ket, self.ncas, nelecas[p])
+                rdm1 += rdm1_p
+
+            rdm1 /= len(nelecas)
+        
+        else:
+           rdm1 = trans_rdm1(bra, ket, self.ncas, nelecas)
+
+        return rdm1  
 
     def compute_rdm123(self, bra, ket, nelecas):
 

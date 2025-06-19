@@ -152,27 +152,45 @@ def kernel(nevpt):
                 nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f" % ((p+1), nevpt.ref_wfn_spin_mult[p], e_tot[p], de, de_ev, de_nm, de_cm))
 
         nevpt.log.info("------------------------------------------------------------------------------------------------")
+    
+        # Oscillator Strengths
+        num_states = len(e_tot) # total states
+        col_width = 18  # characters per column
 
-        # Oscillator Strengths:
-        gs_idx = 0  # zero‑based index of the “ground” state you want (e.g. 1 => second state)
-        osc_str = osc_strength(nevpt, e_tot, h_evec, gs_index=gs_idx, ncore=ncore)
+        # Collect all transitions per ground state
+        transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
 
-        nevpt.log.info("\nOscillator Strengths:")
-        nevpt.log.info("------------------------------------------------")
-        nevpt.log.info("   From    To     Oscillator Strength ")
-        nevpt.log.info("------------------------------------------------")
+        for i in range(num_states - 1):
+            osc_str = osc_strength(nevpt, e_tot, h_evec, gs_index=i, ncore=ncore) 
+            for j in range(i + 1, num_states):
+                f_ij = osc_str[j - i - 1]
+                f_val_str = f"{f_ij:.8f}"
+                transition_data[i].append(f"{i + 1} -> {j + 1}: {f_val_str}")
 
-        # start enumerating at the first state *after* gs_idx:
-        for j, f_gj in enumerate(osc_str, start=gs_idx + 2):
-            f_val_str = f"{f_gj:.8f}"  # always eight decimal places
-            nevpt.log.info("    %2d  -> %2d         %s" % (gs_idx+1, j, f_val_str))
+        # Compute max rows needed and total line width
+        max_len = max(len(col) for col in transition_data)
+        total_line_width = (col_width + 4) * len(transition_data) # Needed for adjusting printout
 
-        nevpt.log.info("------------------------------------------------")
+        # Print header and transitions
+        separator = "-" * total_line_width
+        nevpt.log.info("\n\nOscillator Strengths: state i -> state f")
+        nevpt.log.info(separator)
 
+        # Final print
+        for row in range(max_len):
+            row_data = []
+            for col in transition_data:
+                if row < len(col):
+                    row_data.append(col[row].ljust(col_width))
+                else:
+                    row_data.append("".ljust(col_width))
+            nevpt.log.info("    ".join(row_data))
 
-        sys.stdout.flush()
+        nevpt.log.info(separator)
 
-        nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
+    
+    sys.stdout.flush()
+    nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
 
     return e_tot, e_corr
 
@@ -205,7 +223,7 @@ def osc_strength(nevpt, en, evec, gs_index = 0, ncore = None):
         for I in range(n_micro_states):
             for J in range(n_micro_states):
                 rdm_mo = np.zeros((nmo, nmo))  # Reset RDM in MO Basis   
-                trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
+                trdm_ca = nevpt.interface.compute_rdm1(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
                 rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = trdm_ca
 
                 if I == J:
