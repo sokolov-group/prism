@@ -202,7 +202,6 @@ def osc_strength(nevpt, en, evec, gs_index = 0, ncore = None):
     dip_mom_ao = nevpt.interface.dip_mom_ao
     mo_coeff = nevpt.mo
     nmo = nevpt.nmo
-    ncore = nevpt.ncore
     ncas = nevpt.ncas
 
     dip_mom_mo = np.zeros_like(dip_mom_ao)
