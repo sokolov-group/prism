@@ -20,6 +20,9 @@
 
 import numpy as np
 
+import prism.lib.logger as logger
+import prism.lib.tools as tools
+
 def compute_K_ac(mr_adc):
 
     # Einsum definition from kernel
@@ -929,3 +932,100 @@ def compute_K_0pp(mr_adc):
     K_0pp[s_bb:f_bb, s_aa:f_aa] = K_caca_aa_bb.T.copy()
   
     return K_0pp
+
+##########################
+# INTERMEDIATE FUNCTIONS #
+##########################
+
+def compute_4RDM_V_INT(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    ## Two-electron integrals
+    v_aaaa = mr_adc.v2e.aaaa
+
+    ## Two-electron integrals
+    v_aaaa = mr_adc.v2e.aaaa
+
+    ## Reduced density matrices
+    rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
+    
+    INT01 = einsum('UYZyVXxz,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT02 = einsum('UYZyVXzx,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT03 = einsum('UYZyVxXz,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT04 = einsum('UYZyVxzX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT05 = einsum('UYZyVzXx,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT06 = einsum('UYZyVzxX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT07 = einsum('UYZyxVXz,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT08 = einsum('UYZyxVzX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT09 = einsum('UYZyxzVX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT10 = einsum('yUYZxzVX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT11 = einsum('UYZyzVxX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT12 = einsum('UYZyzxVX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT13 = einsum('UZxzVWXy,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT14 = einsum('UZxzVWyX,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT15 = einsum('UZxzVyWX,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT16 = einsum('UZxzyVWX,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+
+    return INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10, INT11, INT12, INT13, INT14, INT15, INT16
+
+def compute_4RDM_V_INT_SIGMA(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    ncas = mr_adc.ncas
+
+    ## Two-electron integrals
+    v_aaaa = mr_adc.v2e.aaaa
+
+    ## Reduced density matrices
+    rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
+
+    # Create temp file and datasets
+    mr_adc.tmpfile.rdm = tools.create_temp_file(mr_adc)
+    tmpfile = mr_adc.tmpfile.rdm
+
+    INT01 = tools.create_dataset('INT01', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT02 = tools.create_dataset('INT02', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT03 = tools.create_dataset('INT03', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT04 = tools.create_dataset('INT04', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT05 = tools.create_dataset('INT05', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT06 = tools.create_dataset('INT06', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT07 = tools.create_dataset('INT07', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT08 = tools.create_dataset('INT08', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT09 = tools.create_dataset('INT09', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT10 = tools.create_dataset('INT10', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT11 = tools.create_dataset('INT11', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT12 = tools.create_dataset('INT12', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT13 = tools.create_dataset('INT13', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT14 = tools.create_dataset('INT14', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT15 = tools.create_dataset('INT15', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+    INT16 = tools.create_dataset('INT16', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
+
+    INT01[:] = einsum('UVwvWuyz,xwuv->UVWyzx', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT02[:] = einsum('UVwvWyuz,xwuv->UVWyzx', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT03[:] = einsum('UVwvWyzu,xwuv->UVWyzx', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT04[:] = einsum('UVwvuWyz,xwuv->UVWyzx', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT05[:] = einsum('UVxuWvwz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT06[:] = einsum('UVxuWvzw,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT07[:] = einsum('UVxuWwvz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT08[:] = einsum('UVxuWwzv,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT09[:] = einsum('UVxuWzvw,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT10[:] = einsum('UVxuWzwv,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT11[:] = einsum('UVxuvWwz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT12[:] = einsum('uUVxwvWz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT13[:] = einsum('UVxuvwWz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT14[:] = einsum('UVxuwWvz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT15[:] = einsum('UVxuwWzv,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT16[:] = einsum('UVxuwvWz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+  
+    # Flush file buffers
+    tools.flush(tmpfile)
+
+    return INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10, INT11, INT12, INT13, INT14, INT15, INT16
+
