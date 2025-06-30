@@ -159,6 +159,7 @@ class PYSCF:
 
             # Canonicalize the orbitals
             log.info("Canonicalizing molecular orbitals using reference wavefunction manifold...\n")
+            self.ref_rdm1 = ref_rdm1
             mo, ci, mo_energy = mc.canonicalize(casdm1 = ref_rdm1, ci = ci, cas_natorb = False)
             del ref_rdm1
 

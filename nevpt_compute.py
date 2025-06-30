@@ -195,15 +195,18 @@ def kernel(nevpt):
     return e_tot, e_corr
 
 def osc_strength(nevpt, en, evec, gs_index = 0, ncore = None):
-
     if ncore == None: ncore = nevpt.ncore # Flag for frozen core
 
     n_micro_states = sum(nevpt.ref_wfn_deg)
     dip_mom_ao = nevpt.interface.dip_mom_ao
+    
+    if nevpt.pe == True:
+        dip_mom_ao = nevpt.ind
+
     mo_coeff = nevpt.mo
     nmo = nevpt.nmo
     ncas = nevpt.ncas
-
+    nevpt.evec = evec
     dip_mom_mo = np.zeros_like(dip_mom_ao)
 
     # Transform dipole moments from AO to MO basis
