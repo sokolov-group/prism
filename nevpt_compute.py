@@ -161,7 +161,7 @@ def kernel(nevpt):
         transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
 
         for i in range(num_states - 1):
-            osc_str = osc_strength(nevpt, e_tot, h_evec, gs_index=i, ncore=ncore) 
+            osc_str = osc_strength(nevpt, e_tot, h_evec, gs_index=i) 
             for j in range(i + 1, num_states):
                 f_ij = osc_str[j - i - 1]
                 f_val_str = f"{f_ij:.8f}"
@@ -194,9 +194,9 @@ def kernel(nevpt):
 
     return e_tot, e_corr
 
-def osc_strength(nevpt, en, evec, gs_index = 0, ncore = None):
+def osc_strength(nevpt, en, evec, gs_index = 0):
 
-    if ncore == None: ncore = nevpt.ncore # Flag for frozen core
+    ncore = nevpt.ncore # Flag for frozen core
 
     n_micro_states = sum(nevpt.ref_wfn_deg)
     dip_mom_ao = nevpt.interface.dip_mom_ao
