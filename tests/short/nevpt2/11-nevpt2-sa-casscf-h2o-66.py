@@ -39,6 +39,7 @@ mol.atom = [
 mol.basis = 'aug-cc-pvdz'
 mol.symmetry = True
 mol.build()
+mol.verbose = 5
 
 # RHF calculation
 mf = pyscf.scf.RHF(mol)
@@ -72,7 +73,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        e_tot, e_corr = nevpt.kernel()
+        e_tot, e_corr, osc = nevpt.kernel()
 
         self.assertAlmostEqual(e_tot[0], -76.268906691501, 5)
         self.assertAlmostEqual(e_tot[1], -75.901163426898, 5)
