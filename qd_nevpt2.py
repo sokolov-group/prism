@@ -52,16 +52,13 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
     v_aeae = nevpt.v2e.aeae
     v_aaae = nevpt.v2e.aaae
 
-    # TODO: Optimize memory usage for the ee integrals
-    # TODO: test frozen core
-
+    # TODO: optimize memory usage by grouping terms that depend on the same amplitudes and freeing memory after use
+    # Compute the effective Hamiltonian matrix elements
     for I in range(dim):
         for J in range(I):
             # Compute transition density matrices
             trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
 
-            # Compute the effective Hamiltonian matrix elements
-            # TODO: optimize memory usage by grouping terms that depend on the same amplitudes and freeing memory after use
             # 0.5 * < Psi_I | V * T | Psi_J >
             t1_caea = t1[J].caea
             t1_caae = t1[J].caae
@@ -72,25 +69,17 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             t1_ccaa = t1[J].ccaa
             t1_aaee = t1[J].aaee
 
-            # New SQA Eqns
             H_IJ  = einsum('ia,ixay,yx', h_ce, t1_caea, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ia,ixya,yx', h_ce, t1_caae, trdm_ca, optimize = einsum_type)
-            #H_IJ -= 1/2 * einsum('ix,iy,yx', h_ca, t1_ca, trdm_ca, optimize = einsum_type)
             H_IJ += einsum('ix,iyxz,zy', h_ca, t1_caaa, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ix,iyzw,zwxy', h_ca, t1_caaa, trdm_ccaa, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ix,iyzx,zy', h_ca, t1_caaa, trdm_ca, optimize = einsum_type)
-            #H_IJ += 1/2 * einsum('xa,ya,xy', h_ae, t1_ae, trdm_ca, optimize = einsum_type)
             H_IJ += 1/2 * einsum('xa,yzwa,xwzy', h_ae, t1_aaae, trdm_ccaa, optimize = einsum_type)
-            #H_IJ += einsum('ia,iaxy,xy', t1_ce, v_ceaa, trdm_ca, optimize = einsum_type)
-            #H_IJ -= 1/2 * einsum('ia,ixya,yx', t1_ce, v_caae, trdm_ca, optimize = einsum_type)
             H_IJ -= einsum('ijxa,iyja,xy', t1_ccae, v_cace, trdm_ca, optimize = einsum_type)
             H_IJ += 1/2 * einsum('ijxa,jyia,xy', t1_ccae, v_cace, trdm_ca, optimize = einsum_type)
             H_IJ -= einsum('ijxy,ixjz,yz', t1_ccaa, v_caca, trdm_ca, optimize = einsum_type)
             H_IJ += 1/2 * einsum('ijxy,iyjz,xz', t1_ccaa, v_caca, trdm_ca, optimize = einsum_type)
             H_IJ += 1/4 * einsum('ijxy,izjw,xyzw', t1_ccaa, v_caca, trdm_ccaa, optimize = einsum_type)
-            #H_IJ += einsum('ix,ixyz,yz', t1_ca, v_caaa, trdm_ca, optimize = einsum_type)
-            #H_IJ -= 1/2 * einsum('ix,iyzw,xzyw', t1_ca, v_caaa, trdm_ccaa, optimize = einsum_type)
-            #H_IJ -= 1/2 * einsum('ix,iyzx,zy', t1_ca, v_caaa, trdm_ca, optimize = einsum_type)
             H_IJ += einsum('ixab,iayb,yx', t1_caee, v_ceae, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ixab,ibya,yx', t1_caee, v_ceae, trdm_ca, optimize = einsum_type)
             H_IJ += einsum('ixay,iazw,yzxw', t1_caea, v_ceaa, trdm_ccaa, optimize = einsum_type)
@@ -113,7 +102,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             H_IJ += einsum('ixyz,iywz,wx', t1_caaa, v_caaa, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ixyz,izwu,ywxu', t1_caaa, v_caaa, trdm_ccaa, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ixyz,izwy,wx', t1_caaa, v_caaa, trdm_ca, optimize = einsum_type)
-            #H_IJ += 1/2 * einsum('xa,yzwa,wyxz', t1_ae, v_aaae, trdm_ccaa, optimize = einsum_type)
             H_IJ += 1/4 * einsum('xyab,zawb,zwxy', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
             H_IJ -= 1/6 * einsum('xyza,wuva,zvwuxy', t1_aaae, v_aaae, trdm_cccaaa, optimize = einsum_type)
             H_IJ -= 1/6 * einsum('xyza,wuva,zvwuyx', t1_aaae, v_aaae, trdm_cccaaa, optimize = einsum_type)
@@ -136,22 +124,15 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             # 0.5 * < Psi_I | T+ * V | Psi_J >
             H_IJ += einsum('ia,ixay,xy', h_ce, t1_caea, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ia,ixya,xy', h_ce, t1_caae, trdm_ca, optimize = einsum_type)
-            #temp -= 1/2 * einsum('ix,iy,xy', h_ca, t1_ca, trdm_ca, optimize = einsum_type)
             H_IJ += einsum('ix,iyxz,yz', h_ca, t1_caaa, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ix,iyzw,xyzw', h_ca, t1_caaa, trdm_ccaa, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ix,iyzx,yz', h_ca, t1_caaa, trdm_ca, optimize = einsum_type)
-            #temp += 1/2 * einsum('xa,ya,yx', h_ae, t1_ae, trdm_ca, optimize = einsum_type)
             H_IJ += 1/2 * einsum('xa,yzwa,zyxw', h_ae, t1_aaae, trdm_ccaa, optimize = einsum_type)
-            #temp += einsum('ia,iaxy,yx', t1_ce, v_ceaa, trdm_ca, optimize = einsum_type)
-            #temp -= 1/2 * einsum('ia,ixya,xy', t1_ce, v_caae, trdm_ca, optimize = einsum_type)
             H_IJ -= einsum('ijxa,iyja,yx', t1_ccae, v_cace, trdm_ca, optimize = einsum_type)
             H_IJ += 1/2 * einsum('ijxa,jyia,yx', t1_ccae, v_cace, trdm_ca, optimize = einsum_type)
             H_IJ -= einsum('ijxy,ixjz,zy', t1_ccaa, v_caca, trdm_ca, optimize = einsum_type)
             H_IJ += 1/2 * einsum('ijxy,iyjz,zx', t1_ccaa, v_caca, trdm_ca, optimize = einsum_type)
             H_IJ += 1/4 * einsum('ijxy,izjw,zwxy', t1_ccaa, v_caca, trdm_ccaa, optimize = einsum_type)
-            #temp += einsum('ix,ixyz,zy', t1_ca, v_caaa, trdm_ca, optimize = einsum_type)
-            #temp -= 1/2 * einsum('ix,iyzw,ywxz', t1_ca, v_caaa, trdm_ccaa, optimize = einsum_type)
-            #temp -= 1/2 * einsum('ix,iyzx,yz', t1_ca, v_caaa, trdm_ca, optimize = einsum_type)
             H_IJ += einsum('ixab,iayb,xy', t1_caee, v_ceae, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ixab,ibya,xy', t1_caee, v_ceae, trdm_ca, optimize = einsum_type)
             H_IJ += einsum('ixay,iazw,xwyz', t1_caea, v_ceaa, trdm_ccaa, optimize = einsum_type)
@@ -174,7 +155,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             H_IJ += einsum('ixyz,iywz,xw', t1_caaa, v_caaa, trdm_ca, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ixyz,izwu,xuyw', t1_caaa, v_caaa, trdm_ccaa, optimize = einsum_type)
             H_IJ -= 1/2 * einsum('ixyz,izwy,xw', t1_caaa, v_caaa, trdm_ca, optimize = einsum_type)
-            #temp += 1/2 * einsum('xa,yzwa,xzwy', t1_ae, v_aaae, trdm_ccaa, optimize = einsum_type)
             H_IJ += 1/4 * einsum('xyab,zawb,xyzw', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
             H_IJ -= 1/6 * einsum('xyza,wuva,yxuvwz', t1_aaae, v_aaae, trdm_cccaaa, optimize = einsum_type)
             H_IJ += 1/3 * einsum('xyza,wuva,yxuvzw', t1_aaae, v_aaae, trdm_cccaaa, optimize = einsum_type)
