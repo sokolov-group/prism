@@ -126,15 +126,21 @@ def kernel(nevpt):
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
 
-        # Get Oscillator Strengths
-        osc_str = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec)
     else:
         del(t1_0)
 
     if n_states > 1:
-        if nevpt.method == "nevpt2":
+        # Get Oscillator Strengths
+        if nevpt.method == "qd-nevpt2":
+            osc_str = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec)
+        else:
             osc_str = nevpt2.osc_strength(nevpt, e_tot)
-            
+
+        # Update spin multiplicity
+        spin_mult = nevpt.ref_wfn_spin_mult
+        if nevpt.method == "qd-nevpt2":
+            spin_mult = qd_nevpt2.determine_spin_mult(nevpt, h_evec)
+
         h2ev = nevpt.interface.hartree_to_ev
         h2cm = nevpt.interface.hartree_to_inv_cm
 
@@ -151,10 +157,10 @@ def kernel(nevpt):
             de_ev = de * h2ev
             de_cm = de * h2cm
             if p == 0 or abs(de) < 1e-5:
-                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), nevpt.ref_wfn_spin_mult[p], e_tot[p], de, de_ev, " ", de_cm, " "))
+                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), spin_mult[p], e_tot[p], de, de_ev, " ", de_cm, " "))
             else:
                 de_nm = 10000000 / de_cm
-                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), nevpt.ref_wfn_spin_mult[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), spin_mult[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
 
         nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
     

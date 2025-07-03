@@ -273,4 +273,14 @@ def osc_strength(nevpt, en, evec, gs_index = 0):
     return osc_total
 
 
+def determine_spin_mult(nevpt, evec):
+
+    spin_mult_old = nevpt.ref_wfn_spin_mult
+    spin_mult_new = []
+
+    for root in range(evec.shape[1]):
+        index = np.argmax(np.abs(evec[:, root]))
+        spin_mult_new.append(spin_mult_old[index])
+
+    return spin_mult_new
 
