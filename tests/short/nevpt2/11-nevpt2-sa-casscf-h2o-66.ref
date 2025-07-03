@@ -1,19 +1,24 @@
-converged SCF energy = -76.0412566941275
+converged SCF energy = -76.0412566941277
 SCF energy: -76.041257
 
 CASSCF energy = -75.6915177093492
 CASCI E = -75.6915177093492  E(CI) = -12.5683871410396  S^2 = 1.0000000
 CASCI state-averaged energy = -75.6915177093492
 CASCI energy for each state
-  State 0 weight 0.166667  E = -76.0313781085849 S^2 = 0.0000000
-  State 1 weight 0.166667  E = -75.7288729881958 S^2 = 2.0000000
+  State 0 weight 0.166667  E = -76.031378108585 S^2 = 0.0000000
+  State 1 weight 0.166667  E = -75.7288729881959 S^2 = 2.0000000
   State 2 weight 0.166667  E = -75.7102064952823 S^2 = 0.0000000
-  State 3 weight 0.166667  E = -75.6041868469694 S^2 = 2.0000000
+  State 3 weight 0.166667  E = -75.6041868469695 S^2 = 2.0000000
   State 4 weight 0.166667  E = -75.567844237489 S^2 = 0.0000000
-  State 5 weight 0.166667  E = -75.5066175795736 S^2 = 2.0000000
-NEVPT2 test
+  State 5 weight 0.166667  E = -75.5066175795737 S^2 = 2.0000000
 
 Transforming integrals to MO basis...
+
+Transforming 1e integrals to MO basis...
+> CPU time for transforming 1e integrals      0.00 sec, wall time      0.00 sec
+
+Transforming 2e integrals to MO basis (in-core)...
+> CPU time for transforming 1e integrals      0.33 sec, wall time      0.03 sec
 
 Computing NEVPT energies...
 
@@ -30,118 +35,373 @@ Number of active orbitals:                         6
 Number of external orbitals:                       33
 Reference density fitting?                         False
 Correlation density fitting?                       False
-Temporary directory path:                          /scratch/local
+Temporary directory path:                          /scratch/local/serna.40
 
 Internal contraction:                              Full (= Partial)
 Compute singles amplitudes?                        False
 Overlap truncation parameter (singles):            1.000000e-10
 Overlap truncation parameter (doubles):            1.000000e-10
 
+Computing T[0]^(1) amplitudes...
+Norm of T[0]^(1):                                  0.033950726922
+Correlation energy [0]:                           -0.007744640511
+> CPU time for computing T[0]^(1) amplitudes      0.03 sec, wall time      0.00 sec
+
 Computing energy of state #1...
 Reference state active-space energy:             -12.908247540275
 Reference state spin multiplicity:                 1
 Number of active electrons:                        [(3, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.73 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    70
+Smallest eigenvalue of the [0'] overlap metric:    6.916483e-08
+Norm of T[0']^(1):                                 0.786775108574
 Correlation energy [0']:                          -0.021730174875
-Correlation energy [+1']:                         -0.003701033482
-Correlation energy [-1']:                         -0.064596874878
-Correlation energy [0]:                           -0.007744640511
+> CPU time for computing T[0']^(1) amplitudes      0.14 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   228
+Smallest eigenvalue of the [+1'] overlap metric:   1.298174e-10
+Norm of T[+1']^(1):                                4.941371544748
+Correlation energy [+1']:                         -0.003701041732
+> CPU time for computing T[+1']^(1) amplitudes      3.11 sec, wall time      0.26 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   226
+Smallest eigenvalue of the [-1'] overlap metric:   1.255790e-10
+Norm of T[-1']^(1):                                9.988062353206
+Correlation energy [-1']:                         -0.064596531405
+> CPU time for computing T[-1']^(1) amplitudes      2.15 sec, wall time      0.18 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.021585668248
 Correlation energy [+1]:                          -0.001815525476
+> CPU time for computing T[+1]^(1) amplitudes      0.03 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.061148805584
 Correlation energy [-1]:                          -0.035316715773
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    9.734681e-08
+Norm of T[+2]^(1):                                 0.157648031799
 Correlation energy [+2]:                          -0.000285780222
+> CPU time for computing T[+2]^(1) amplitudes      0.11 sec, wall time      0.01 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    3.505007e-08
+Norm of T[-2]^(1):                                 8.053867384099
 Correlation energy [-2]:                          -0.102337918091
+> CPU time for computing T[-2]^(1) amplitudes      0.08 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.007744640511
 SA-CASSCF reference state total energy:          -76.031378108585
-NEVPT2 correlation energy:                        -0.237528663309
-Total NEVPT2 energy:                             -76.268906771894
+NEVPT2 correlation energy:                        -0.237528328086
+Total NEVPT2 energy:                             -76.268906436671
 
 Computing energy of state #2...
 Reference state active-space energy:             -12.605742419886
 Reference state spin multiplicity:                 3
 Number of active electrons:                        [(3, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.73 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    71
+Smallest eigenvalue of the [0'] overlap metric:    3.921851e-08
+Norm of T[0']^(1):                                 0.230830760111
 Correlation energy [0']:                          -0.025463999238
-Correlation energy [+1']:                         -0.002727972546
-Correlation energy [-1']:                         -0.028801239251
-Correlation energy [0]:                           -0.007744640511
+> CPU time for computing T[0']^(1) amplitudes      0.14 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   268
+Smallest eigenvalue of the [+1'] overlap metric:   1.135749e-10
+Norm of T[+1']^(1):                                0.898459414934
+Correlation energy [+1']:                         -0.002727973317
+> CPU time for computing T[+1']^(1) amplitudes      3.07 sec, wall time      0.26 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   267
+Smallest eigenvalue of the [-1'] overlap metric:   1.011831e-10
+Norm of T[-1']^(1):                               16.711786605271
+Correlation energy [-1']:                         -0.028801320408
+> CPU time for computing T[-1']^(1) amplitudes      2.04 sec, wall time      0.17 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.023527503533
 Correlation energy [+1]:                          -0.001688121789
+> CPU time for computing T[+1]^(1) amplitudes      0.03 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.063716338635
 Correlation energy [-1]:                          -0.031362744900
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    4.185718e-09
+Norm of T[+2]^(1):                                 0.545804444515
 Correlation energy [+2]:                          -0.000167624146
+> CPU time for computing T[+2]^(1) amplitudes      0.11 sec, wall time      0.01 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    5.252364e-10
+Norm of T[-2]^(1):                                18.283702876015
 Correlation energy [-2]:                          -0.074333951503
+> CPU time for computing T[-2]^(1) amplitudes      0.08 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.007744640511
 SA-CASSCF reference state total energy:          -75.728872988196
-NEVPT2 correlation energy:                        -0.172290293885
-Total NEVPT2 energy:                             -75.901163282080
+NEVPT2 correlation energy:                        -0.172290375811
+Total NEVPT2 energy:                             -75.901163364007
 
 Computing energy of state #3...
 Reference state active-space energy:             -12.587075926973
 Reference state spin multiplicity:                 1
 Number of active electrons:                        [(3, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.73 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    70
+Smallest eigenvalue of the [0'] overlap metric:    8.055852e-08
+Norm of T[0']^(1):                                 0.342764380324
 Correlation energy [0']:                          -0.025197573308
-Correlation energy [+1']:                         -0.002517314439
-Correlation energy [-1']:                         -0.031751619968
-Correlation energy [0]:                           -0.007744640511
+> CPU time for computing T[0']^(1) amplitudes      0.14 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   237
+Smallest eigenvalue of the [+1'] overlap metric:   2.043779e-10
+Norm of T[+1']^(1):                                5.373921305885
+Correlation energy [+1']:                         -0.002517238459
+> CPU time for computing T[+1']^(1) amplitudes      3.28 sec, wall time      0.27 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   235
+Smallest eigenvalue of the [-1'] overlap metric:   1.789500e-10
+Norm of T[-1']^(1):                               20.957287267434
+Correlation energy [-1']:                         -0.031751524064
+> CPU time for computing T[-1']^(1) amplitudes      2.24 sec, wall time      0.19 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.023539659060
 Correlation energy [+1]:                          -0.001736115767
+> CPU time for computing T[+1]^(1) amplitudes      0.03 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.063698361696
 Correlation energy [-1]:                          -0.031294821257
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    6.357164e-07
+Norm of T[+2]^(1):                                 0.147811503466
 Correlation energy [+2]:                          -0.000248934643
+> CPU time for computing T[+2]^(1) amplitudes      0.11 sec, wall time      0.01 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    2.012905e-08
+Norm of T[-2]^(1):                                13.049241300344
 Correlation energy [-2]:                          -0.075244149907
+> CPU time for computing T[-2]^(1) amplitudes      0.08 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.007744640511
 SA-CASSCF reference state total energy:          -75.710206495282
-NEVPT2 correlation energy:                        -0.175735169801
-Total NEVPT2 energy:                             -75.885941665083
+NEVPT2 correlation energy:                        -0.175734997916
+Total NEVPT2 energy:                             -75.885941493198
 
 Computing energy of state #4...
 Reference state active-space energy:             -12.481056278660
 Reference state spin multiplicity:                 3
 Number of active electrons:                        [(3, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.78 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    71
+Smallest eigenvalue of the [0'] overlap metric:    2.727046e-07
+Norm of T[0']^(1):                                 0.807328232957
 Correlation energy [0']:                          -0.027164102216
-Correlation energy [+1']:                         -0.003001602220
-Correlation energy [-1']:                         -0.024928497933
-Correlation energy [0]:                           -0.007744640511
+> CPU time for computing T[0']^(1) amplitudes      0.14 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   281
+Smallest eigenvalue of the [+1'] overlap metric:   1.065531e-10
+Norm of T[+1']^(1):                                1.115614321780
+Correlation energy [+1']:                         -0.003001602145
+> CPU time for computing T[+1']^(1) amplitudes      3.21 sec, wall time      0.27 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   275
+Smallest eigenvalue of the [-1'] overlap metric:   1.615396e-10
+Norm of T[-1']^(1):                                9.123527859788
+Correlation energy [-1']:                         -0.024928476123
+> CPU time for computing T[-1']^(1) amplitudes      2.09 sec, wall time      0.17 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.023408279403
 Correlation energy [+1]:                          -0.002177704253
+> CPU time for computing T[+1]^(1) amplitudes      0.03 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.059343657841
 Correlation energy [-1]:                          -0.030395061331
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    1.861770e-07
+Norm of T[+2]^(1):                                 0.162753046973
 Correlation energy [+2]:                          -0.000269442764
+> CPU time for computing T[+2]^(1) amplitudes      0.12 sec, wall time      0.01 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    2.644305e-09
+Norm of T[-2]^(1):                                 6.426393091440
 Correlation energy [-2]:                          -0.070854315916
+> CPU time for computing T[-2]^(1) amplitudes      0.08 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.007744640511
 SA-CASSCF reference state total energy:          -75.604186846969
-NEVPT2 correlation energy:                        -0.166535367145
-Total NEVPT2 energy:                             -75.770722214114
+NEVPT2 correlation energy:                        -0.166535345259
+Total NEVPT2 energy:                             -75.770722192229
 
 Computing energy of state #5...
 Reference state active-space energy:             -12.444713669179
 Reference state spin multiplicity:                 1
 Number of active electrons:                        [(3, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.74 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    70
+Smallest eigenvalue of the [0'] overlap metric:    2.444479e-06
+Norm of T[0']^(1):                                 0.410436761321
 Correlation energy [0']:                          -0.026986459215
-Correlation energy [+1']:                         -0.002863152647
-Correlation energy [-1']:                         -0.033159017018
-Correlation energy [0]:                           -0.007744640511
+> CPU time for computing T[0']^(1) amplitudes      0.14 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   251
+Smallest eigenvalue of the [+1'] overlap metric:   1.991271e-10
+Norm of T[+1']^(1):                                1.411863658641
+Correlation energy [+1']:                         -0.002863149921
+> CPU time for computing T[+1']^(1) amplitudes      3.13 sec, wall time      0.26 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   250
+Smallest eigenvalue of the [-1'] overlap metric:   1.991271e-10
+Norm of T[-1']^(1):                               19.565361474181
+Correlation energy [-1']:                         -0.033159020727
+> CPU time for computing T[-1']^(1) amplitudes      2.09 sec, wall time      0.17 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.024192102282
 Correlation energy [+1]:                          -0.002091703682
+> CPU time for computing T[+1]^(1) amplitudes      0.03 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.056753247862
 Correlation energy [-1]:                          -0.031376499057
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    1.487053e-06
+Norm of T[+2]^(1):                                 0.042810374797
 Correlation energy [+2]:                          -0.000452841036
+> CPU time for computing T[+2]^(1) amplitudes      0.11 sec, wall time      0.01 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    3.979394e-07
+Norm of T[-2]^(1):                                 4.392648735843
 Correlation energy [-2]:                          -0.077262469016
+> CPU time for computing T[-2]^(1) amplitudes      0.08 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.007744640511
 SA-CASSCF reference state total energy:          -75.567844237489
-NEVPT2 correlation energy:                        -0.181936782182
-Total NEVPT2 energy:                             -75.749781019671
+NEVPT2 correlation energy:                        -0.181936783166
+Total NEVPT2 energy:                             -75.749781020655
 
 Computing energy of state #6...
 Reference state active-space energy:             -12.383487011264
 Reference state spin multiplicity:                 3
 Number of active electrons:                        [(3, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.74 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    71
+Smallest eigenvalue of the [0'] overlap metric:    1.187485e-07
+Norm of T[0']^(1):                                 0.775857102735
 Correlation energy [0']:                          -0.033092755141
-Correlation energy [+1']:                         -0.002447757585
-Correlation energy [-1']:                         -0.029113307983
-Correlation energy [0]:                           -0.007744640511
+> CPU time for computing T[0']^(1) amplitudes      0.14 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   279
+Smallest eigenvalue of the [+1'] overlap metric:   2.264959e-10
+Norm of T[+1']^(1):                                1.236932768193
+Correlation energy [+1']:                         -0.002447757571
+> CPU time for computing T[+1']^(1) amplitudes      3.13 sec, wall time      0.26 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   274
+Smallest eigenvalue of the [-1'] overlap metric:   1.197333e-10
+Norm of T[-1']^(1):                               26.662857942741
+Correlation energy [-1']:                         -0.029113314508
+> CPU time for computing T[-1']^(1) amplitudes      2.12 sec, wall time      0.18 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.023901829454
 Correlation energy [+1]:                          -0.002183958547
+> CPU time for computing T[+1]^(1) amplitudes      0.03 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.058365806022
 Correlation energy [-1]:                          -0.032303232399
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    9.331576e-08
+Norm of T[+2]^(1):                                 0.157278021698
 Correlation energy [+2]:                          -0.000177098396
+> CPU time for computing T[+2]^(1) amplitudes      0.11 sec, wall time      0.01 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    3.454174e-09
+Norm of T[-2]^(1):                                12.850021402356
 Correlation energy [-2]:                          -0.083245307270
+> CPU time for computing T[-2]^(1) amplitudes      0.08 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.007744640511
 SA-CASSCF reference state total energy:          -75.506617579574
-NEVPT2 correlation energy:                        -0.190308057832
-Total NEVPT2 energy:                             -75.696925637405
+NEVPT2 correlation energy:                        -0.190308064343
+Total NEVPT2 energy:                             -75.696925643917
 
 Summary of results for the NEVPT2 calculation with the SA-CASSCF reference:
-------------------------------------------------------------------------------------------------
-  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)
-------------------------------------------------------------------------------------------------
-    1        1          -76.268906771894     0.00000000       0.0000                      0.0000
-    2        3          -75.901163282080     0.36774349      10.0068     123.8998     80710.3669
-    3        1          -75.885941665083     0.38296511      10.4210     118.9752     84051.1256
-    4        3          -75.770722214114     0.49818456      13.5563      91.4588    109338.8722
-    5        1          -75.749781019671     0.51912575      14.1261      87.7694    113934.9331
-    6        3          -75.696925637405     0.57198113      15.5644      79.6588    125535.3486
-------------------------------------------------------------------------------------------------
-> CPU time for total NEVPT2 calculation     66.90 sec, wall time      3.98 sec
+-----------------------------------------------------------------------------------------------------------------
+  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. 
+-----------------------------------------------------------------------------------------------------------------
+    1        1          -76.268906436671     0.00000000       0.0000                      0.0000               
+    2        3          -75.901163364007     0.36774307      10.0068     123.9000     80710.2753     0.00000000
+    3        1          -75.885941493198     0.38296494      10.4210     118.9753     84051.0898     0.18632095
+    4        3          -75.770722192229     0.49818424      13.5563      91.4588    109338.8034     0.00000000
+    5        1          -75.749781020655     0.51912542      14.1261      87.7695    113934.8593     0.00800995
+    6        3          -75.696925643917     0.57198079      15.5644      79.6589    125535.2736     0.00000000
+-----------------------------------------------------------------------------------------------------------------
+
+
+Oscillator Strengths: state i -> state f
+--------------------------------------------------------------------------------------------------------------
+1 -> 2: 0.00000000    2 -> 3: 0.00000000    3 -> 4: 0.00000000    4 -> 5: 0.00000000    5 -> 6: 0.00000000
+1 -> 3: 0.18632095    2 -> 4: 0.18632095    3 -> 5: 0.18632095    4 -> 6: 0.18632095                      
+1 -> 4: 0.00000000    2 -> 5: 0.00000000    3 -> 6: 0.00000000                                            
+1 -> 5: 0.00800995    2 -> 6: 0.00800995                                                                  
+1 -> 6: 0.00000000                                                                                        
+--------------------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation     38.77 sec, wall time      3.24 sec
