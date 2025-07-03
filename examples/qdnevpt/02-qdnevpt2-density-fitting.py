@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-Using density fitting with NEVPT2 for N2
+Using density fitting with QD-NEVPT2 for N2
 '''
 
 import numpy as np
@@ -25,7 +25,7 @@ mol.build()
 mf = pyscf.scf.RHF(mol)
 mf.kernel()
 
-# SA-CASSCF reference, DF-NEVPT2
+# SA-CASSCF reference, DF-QD-NEVPT2
 n_states = 9
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
@@ -33,10 +33,10 @@ emc = mc.mc1step()[0]
 
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "nevpt2"
+nevpt.method = "qd-nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()
 
-# DF-SA-CASSCF reference, DF-NEVPT2
+# DF-SA-CASSCF reference, DF-QD-NEVPT2
 n_states = 9
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights).density_fit('aug-cc-pvdz-ri')
@@ -44,5 +44,5 @@ emc = mc.mc1step()[0]
 
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "nevpt2"
+nevpt.method = "qd-nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()

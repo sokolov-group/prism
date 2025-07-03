@@ -14,7 +14,7 @@
 # Available at https://github.com/sokolov-group/prism
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#
+#          James D. Serna <jserna456@gmail.com>
 
 import numpy as np
 from functools import reduce

@@ -15,7 +15,7 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#
+#          James D. Serna <jserna456@gmail.com>
 
 import sys
 import numpy as np

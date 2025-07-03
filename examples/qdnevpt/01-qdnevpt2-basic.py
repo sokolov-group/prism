@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-Basic NEVPT2 calculation for H2O
+Basic QD-NEVPT2 calculation for H2O
 '''
 
 import numpy as np
@@ -23,7 +23,7 @@ mol.atom = [
             ['H', (0.0,  -x,   y)],
             ['H', (0.0,   x,   y)]]
 mol.basis = 'aug-cc-pvdz'
-mol.symmetry = True
+mol.symmetry = False
 mol.verbose = 4
 mol.build()
 
@@ -34,8 +34,10 @@ mf.conv_tol = 1e-12
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
-# CASSCF calculation
-mc = pyscf.mcscf.CASSCF(mf, 6, 6)
+# SA-CASSCF calculation
+n_states = 6
+weights = np.ones(n_states)/n_states
+mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 mc.conv_tol = 1e-11
 mc.conv_tol_grad = 1e-6
 
@@ -43,15 +45,15 @@ emc = mc.mc1step()[0]
 mc.analyze()
 print("CASSCF energy: %f\n" % emc)
 
-# NEVPT2 with all electrons correlated
+# QD-NEVPT2 with all electrons correlated
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "nevpt2"
+nevpt.method = "qd-nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()
 
-# NEVPT2 with frozen core
+# QD-NEVPT2 with frozen core
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.nfrozen = 1
-nevpt.method = "nevpt2"
+nevpt.method = "qd-nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()

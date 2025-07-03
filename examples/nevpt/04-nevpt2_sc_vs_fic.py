@@ -39,7 +39,7 @@ nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-10
 nevpt.s_thresh_doubles = 1e-10
 nevpt.method = "nevpt2"
-e_tot, e_corr = nevpt.kernel()
+e_tot, e_corr, osc = nevpt.kernel()
 
 # SC-NEVPT2 calculation using PySCF
 mo = mc.mo_coeff.copy()
