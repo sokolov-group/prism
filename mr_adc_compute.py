@@ -19,307 +19,393 @@
 #              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
-import sys
+from typing import Tuple, List, Callable
 import numpy as np
-from functools import reduce
 
 import prism.mr_adc_amplitudes as mr_adc_amplitudes
 import prism.mr_adc_integrals as mr_adc_integrals
-import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
-import prism.mr_adc_cvs_ee as mr_adc_cvs_ee
+#import prism.mr_adc_testing_block as testing_block
 
 import prism.lib.logger as logger
 
-def kernel(mr_adc):
+def kernel(mr_adc) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Main computation kernel for MR-ADC calculations."""
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
+    
+    # Setup and logging
+    _log_calculation_info(mr_adc)
+    
+    # Core computation pipeline
+    _compute_amplitudes(mr_adc)
+    _compute_cvs_integrals(mr_adc)
+    _compute_excitation_manifolds(mr_adc)
+    
+    # Solve eigenvalue problem
+    conv, E, U = _solve_eigenvalue_problem(mr_adc)
+    
+    # Compute spectroscopic properties
+    spec_intensity, X = _compute_spectroscopic_properties(mr_adc, E, U)
+    
+    # Results and cleanup 
+    _log_results_summary(mr_adc, E, spec_intensity)
+    mr_adc.log.timer0(f"total {mr_adc.method_type.upper()}-{mr_adc.method.upper()} calculation", *cput0)
+    
+    HARTREE_TO_EV = mr_adc.interface.HARTREE_TO_EV
+    return E * HARTREE_TO_EV, spec_intensity, X
 
-    # Print general information
-    mr_adc.log.info("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
-    mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
-    mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_cas)
-    mr_adc.log.info("Nuclear repulsion energy:                    %20.12f" % mr_adc.enuc)
-    mr_adc.log.info("Reference state S^2:                         %20.12f" % mr_adc.wfn_casscf_spin_square)
-    mr_adc.log.info("Reference state 2S+1:                        %20.12f" % mr_adc.wfn_casscf_spin_mult)
-    mr_adc.log.info("Number of basis functions:                         %d" % mr_adc.nmo)
-    mr_adc.log.info("Number of core orbitals:                           %d" % mr_adc.ncore)
-    mr_adc.log.info("Number of active orbitals:                         %d" % mr_adc.ncas)
-    mr_adc.log.info("Number of external orbitals:                       %d" % mr_adc.nextern)
-    mr_adc.log.info("Number of electrons:                               %d" % mr_adc.nelec)
-    mr_adc.log.info("Number of active electrons:                        %s" % str(mr_adc.nelecas))
+
+def _log_calculation_info(mr_adc):
+    """Print comprehensive calculation setup information."""
+
+    log = mr_adc.log
+    log.info("\nComputing MR-ADC excitation energies...\n")
+    
+    # General parameters
+    log.info(f"Method:                                            {mr_adc.method_type}-{mr_adc.method}")
+    log.info(f"Nuclear repulsion energy:                    {mr_adc.enuc:20.12f}")
+    log.info(f"Number of electrons:                               {mr_adc.nelec}")
+    log.info(f"Number of basis functions:                         {mr_adc.nmo}")
+    log.info(f"Reference wavefunction type:                       {mr_adc.interface.reference}")
+    log.info(f"Number of core orbitals:                           {mr_adc.ncore}")
+    log.info(f"Number of active orbitals:                         {mr_adc.ncas}")
+    log.info(f"Number of external orbitals:                       {mr_adc.nextern}")
+    log.info(f"Number of active electrons:                        {str(mr_adc.ref_nelecas)}")
+    log.info(f"Reference state active-space energy:         {mr_adc.e_ref_cas[0]:20.12f}")
+    log.info(f"Reference state spin multiplicity:                 {str(mr_adc.ref_wfn_spin_mult)}")
+    log.info(f"Number of MR-ADC roots requested:                  {mr_adc.nroots}")
     if mr_adc.ncvs is not None:
-        mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
-        mr_adc.log.info("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
-
-    mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
-
-    # Print info about CASCI states
-    mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
-
+        log.info(f"Number of CVS orbitals:                            {mr_adc.ncvs}")
+        log.info(f"Number of valence (non-CVS) orbitals:              {mr_adc.nval}")
+    
+    # Other parameters
+    log.info(f"Reference density fitting?                         {bool(mr_adc.interface.reference_df)}")
+    log.info(f"Correlation density fitting?                       {bool(mr_adc.interface.with_df)}")
+    log.info(f"Temporary directory path:                          {mr_adc.temp_dir}")
+    
+    log.info(f"\nInternal contraction:                              Full")
+    log.info(f"Overlap truncation parameter (singles):            {mr_adc.s_thresh_singles:e}")
+    log.info(f"Overlap truncation parameter (doubles):            {mr_adc.s_thresh_doubles:e}")
+    log.info(f"Projector for the semi-internal amplitudes:        {mr_adc.semi_internal_projector}")
+    
+    # CASCI states information
+    if mr_adc.ncasci > 0:
+        log.info(f"Number of CASCI states:                            {mr_adc.ncasci}")
+    
     if mr_adc.e_cas_ci is not None:
-        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(27.2114*(mr_adc.e_cas_ci - mr_adc.e_cas)))
+        HARTREE_TO_EV = mr_adc.interface.HARTREE_TO_EV
+        excitation_energies = HARTREE_TO_EV * (mr_adc.e_cas_ci - mr_adc.e_cas)
+        log.extra(f"CASCI excitation energies (eV):                    {str(excitation_energies)}")
 
-    mr_adc.log.debug("Temporary directory path: %s" % mr_adc.temp_dir)
 
-    davidson_verbose = 3
-    if mr_adc.verbose > 3:
-        davidson_verbose = 6
-
-    # Compute amplitudes
+def _compute_amplitudes(mr_adc):
+    """Compute amplitudes."""
     mr_adc_amplitudes.compute_amplitudes(mr_adc)
 
-    # Compute CVS integrals
-    if mr_adc.method_type == "cvs-ip" or mr_adc.method_type == "cvs-ee":
+def _compute_cvs_integrals(mr_adc):
+    """Compute CVS integrals."""
+    if mr_adc.method_type in mr_adc.CVS_TYPES:
         if mr_adc.interface.with_df:
             mr_adc_integrals.compute_cvs_integrals_2e_df(mr_adc)
         else:
             mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
 
-    # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
-    if mr_adc.method_type == "ip":
-        mr_adc = mr_adc_ip.compute_excitation_manifolds(mr_adc)
 
-    elif mr_adc.method_type == "ea":
-        mr_adc = mr_adc_ea.compute_excitation_manifolds(mr_adc)
+def _compute_excitation_manifolds(mr_adc):
+    """Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec"""
+    method_type = mr_adc.method_type
+    mr_adc = method_registry.call(method_type, "compute_excitation_manifolds", mr_adc)
 
-    elif mr_adc.method_type == "ee":
-        mr_adc = mr_adc_ee.compute_excitation_manifolds(mr_adc)
 
-    elif mr_adc.method_type == "cvs-ip":
-        mr_adc = mr_adc_cvs_ip.compute_excitation_manifolds(mr_adc)
-
-    elif mr_adc.method_type == "cvs-ee":
-        mr_adc = mr_adc_cvs_ee.compute_excitation_manifolds(mr_adc)
+def _solve_eigenvalue_problem(mr_adc) -> Tuple[bool, np.ndarray, np.ndarray]:
+    """Solve eigenvalue problem using Davidson algorithm."""
 
     # Setup Davidson algorithm parameters
-    apply_M, precond, x0 = setup_davidson(mr_adc)
+    apply_M, precond, x0 = _setup_davidson_solver(mr_adc)
 
+    # Verbose logging
+    davidson_verbose = 6 if mr_adc.verbose > 3 else 3
+    
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     cput1 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("")
-    conv, E, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
-                                           nroots = mr_adc.nroots,
-                                           verbose = davidson_verbose,
-                                           max_space = mr_adc.max_space,
-                                           max_cycle = mr_adc.max_cycle,
-                                           tol = mr_adc.tol_e,
-                                           tol_residual = mr_adc.tol_davidson)
-
+        
+    conv, E, U = mr_adc.interface.davidson(
+        lambda xs: [apply_M(x) for x in xs], 
+        x0, 
+        precond,
+        nroots=mr_adc.nroots,
+        verbose=davidson_verbose,
+        max_space=mr_adc.max_space,
+        max_cycle=mr_adc.max_cycle,
+        tol=mr_adc.tol_e,
+        tol_residual=mr_adc.tol_r
+    )
+    
     mr_adc.log.timer("solving eigenvalue problem", *cput1)
+    return conv, E, np.array(U)
 
-    mr_adc.log.note("\n%s-%s excitation energies (a.u.):" % (mr_adc.method_type, mr_adc.method))
-    print(E.reshape(-1, 1))
-    mr_adc.log.note("\n%s-%s excitation energies (eV):" % (mr_adc.method_type, mr_adc.method))
-    E_ev = E * 27.2114
-    print(E_ev.reshape(-1, 1))
-    sys.stdout.flush()
 
-    # Compute transition moments and spectroscopic factors
-    U = np.array(U)
+def _setup_davidson_solver(mr_adc) -> Tuple[Callable, np.ndarray, List[np.ndarray]]:
+    """Setup all Davidson algorithm components."""
 
-    spec_intensity, X = compute_trans_properties(mr_adc, E, U)
-
-    mr_adc.log.info("\n------------------------------------------------------------------------------")
-    mr_adc.log.timer0("total MR-ADC calculation", *cput0)
-
-    return E_ev, spec_intensity, X
-
-def setup_davidson(mr_adc):
-
-    precond = None
-
-    # Compute M matrix sectors to be stored
-    if mr_adc.method_type == "ip":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00 = mr_adc_ip.compute_M_00(mr_adc)
-
-        # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
-            M_01 = mr_adc_ip.compute_M_01(mr_adc)
-
-    elif mr_adc.method_type == "ea":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00 = mr_adc_ea.compute_M_00(mr_adc)
-
-        # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
-            M_01 = mr_adc_ea.compute_M_01(mr_adc)
-
-    elif mr_adc.method_type == "ee":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00   = mr_adc_ee.compute_M_00(mr_adc)
-
-        # Compute parts of the h0-h1 and h1-h1 blocks of the effective Hamiltonian matrix
-        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
-            M_01 = mr_adc_ee.compute_M_01(mr_adc)
-
-    elif mr_adc.method_type == "cvs-ip":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        mr_adc_cvs_ip.compute_M_00(mr_adc)
-
-        # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
-            mr_adc_cvs_ip.compute_M_01(mr_adc)
-
-    elif mr_adc.method_type == "cvs-ee":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00 = mr_adc_cvs_ee.compute_M_00(mr_adc)
-
-    # Compute diagonal of the M matrix
-    if mr_adc.method_type == "ip":
-        precond = mr_adc_ip.compute_preconditioner(mr_adc, M_00)
-    elif mr_adc.method_type == "ea":
-        precond = mr_adc_ea.compute_preconditioner(mr_adc, M_00)
-    elif mr_adc.method_type == "ee":
-        precond = mr_adc_ee.compute_preconditioner(mr_adc, M_00)
-
-    # Apply Core-Valence Separation Approximation (CVS)
-    elif mr_adc.method_type == "cvs-ip":
-        precond = mr_adc_cvs_ip.compute_preconditioner(mr_adc)
-    elif mr_adc.method_type == "cvs-ee":
-        precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc)
-
-    # Compute guess vectors
-    x0 = compute_guess_vectors(mr_adc, precond)
-
-    # Define M * vec
-    apply_M = None
-    if mr_adc.method_type == "ip":
-        apply_M = mr_adc_ip.define_effective_hamiltonian(mr_adc, M_00, M_01, M_11)
-    elif mr_adc.method_type == "ea":
-        apply_M = mr_adc_ea.define_effective_hamiltonian(mr_adc, M_00, M_01, M_11)
-    elif mr_adc.method_type == "ee":
-        apply_M = mr_adc_ee.define_effective_hamiltonian(mr_adc, M_00, M_01)
-    elif mr_adc.method_type == "cvs-ip":
-        apply_M = mr_adc_cvs_ip.define_effective_hamiltonian(mr_adc)
-    elif mr_adc.method_type == "cvs-ee":
-        apply_M = mr_adc_cvs_ee.define_effective_hamiltonian(mr_adc)
-
+    # Compute M matrix sectors
+    _compute_effective_hamiltonian_blocks(mr_adc)
+    
+    # Compute diagonal of the M matrix (preconditioner)
+    precond = _compute_preconditioner(mr_adc)
+    
+    # Compute initial guess vectors
+    x0 = _compute_guess_vectors(precond, mr_adc.nroots)
+    
+    # Create matrix-vector product function (M * vec)
+    apply_M = _create_matrix_vector_product(mr_adc)
+    
     return apply_M, precond, x0
 
-def compute_guess_vectors(mr_adc, precond, ascending = True):
+def _compute_effective_hamiltonian_blocks(mr_adc):
+    """Compute effective Hamiltonian matrix blocks."""
 
-    sort_ind = None
-    if ascending:
-        sort_ind = np.argsort(precond)
+    method_type = mr_adc.method_type
+    method = mr_adc.method
+    
+    # Standard methods
+    if method_type in ("ip", "ea", "ee"):
+        module = method_registry.get_module(method_type)
+
+        # Compute h0-h0 block of the effective Hamiltonian matrix
+        module.compute_M_00(mr_adc)
+
+        if method in ("mr-adc(2)", "mr-adc(2)-x"):
+            # Compute h0-h1 block of the effective Hamiltonian matrix
+            module.compute_M_01(mr_adc)
+
+            # Compute h1-h1 block of the effective Hamiltonian matrix
+            if method_type in ("ip", "ea") and hasattr(module, 'compute_M_11'):
+                module.compute_M_11(mr_adc)
+
+    # CVS methods
+    elif method_type in mr_adc.CVS_TYPES:
+        module = method_registry.get_module(method_type)
+
+        # Compute h0-h0 block of the effective Hamiltonian matrix
+        module.compute_M_00(mr_adc)
+
+        # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
+        if method in ("mr-adc(2)", "mr-adc(2)-x") and method_type == 'cvs-ip':
+            module.compute_M_01(mr_adc)
+
     else:
-        sort_ind = np.argsort(precond)[::-1]
+        raise ValueError(f"Unknown method type: {method_type}")
 
-    x0s = np.zeros((precond.shape[0], mr_adc.nroots))
-    min_shape = min(precond.shape[0], mr_adc.nroots)
-    x0s[:min_shape,:min_shape] = np.identity(min_shape)
+def _compute_preconditioner(mr_adc) -> np.ndarray:
+    """Compute preconditioner for Davidson algorithm."""
 
-    x0 = np.zeros((precond.shape[0], mr_adc.nroots))
+    method_type = mr_adc.method_type
+    if method_type in mr_adc.SUPPORTED_METHOD_TYPES:
+        return method_registry.call(method_type, "compute_preconditioner", mr_adc)
+    else:
+        raise ValueError(f"Unknown method type: {method_type}")
+
+def _create_matrix_vector_product(mr_adc) -> Callable:
+    """Create matrix-vector product function for Davidson algorithm."""
+
+    method_type = mr_adc.method_type
+    if method_type in mr_adc.SUPPORTED_METHOD_TYPES:
+        return method_registry.call(method_type, "define_effective_hamiltonian", mr_adc)
+    else:
+        raise ValueError(f"Unknown method type: {method_type}")
+
+
+def _compute_guess_vectors(precond: np.ndarray, nroots: int, ascending: bool = True) -> List[np.ndarray]:
+    """Compute initial guess vectors for Davidson algorithm."""
+
+    sort_ind = np.argsort(precond)
+    if not ascending:
+        sort_ind = sort_ind[::-1]
+    
+    x0s = np.zeros((precond.shape[0], nroots))
+    min_shape = min(precond.shape[0], nroots)
+    x0s[:min_shape, :min_shape] = np.identity(min_shape)
+    
+    x0 = np.zeros_like(x0s)
     x0[sort_ind] = x0s.copy()
+    
+    # Return list of vectors
+    return [x0[:, p] for p in range(x0.shape[1])]
 
-    x0s = []
-    for p in range(x0.shape[1]):
-        x0s.append(x0[:,p])
+def _compute_transition_moments(mr_adc, eigenvectors: np.ndarray) -> np.ndarray:
+    """Compute transition moments."""
+    method_type = mr_adc.method_type
+    return method_registry.call(method_type, "compute_trans_moments", mr_adc, eigenvectors)
 
-    return x0s
+def _compute_spectroscopic_properties(mr_adc, energies: np.ndarray, eigenvectors: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Compute transition moments and spectroscopic intensities."""
 
-def compute_trans_properties(mr_adc, E, U):
+    # Compute transition moments
+    X = _compute_transition_moments(mr_adc, eigenvectors)
 
-    X = None
+    # X is a tuple for CVS-EE
+    if isinstance(X, tuple):
+        X = X[1] 
 
-    if mr_adc.method_type == "ip":
-        X = mr_adc_ip.compute_trans_moments(mr_adc, U)
-    elif mr_adc.method_type == "cvs-ip":
-        X = mr_adc_cvs_ip.compute_trans_moments(mr_adc, U)
-    elif mr_adc.method_type == "ea":
-        X = mr_adc_ea.compute_trans_moments(mr_adc, U)
-    elif mr_adc.method_type == "ee":
-        X = mr_adc_ee.compute_trans_moments(mr_adc, U)
-    elif mr_adc.method_type == "cvs-ee":
-        X, dX = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
-    else:
-        msg = "Unknown Method Type ..."
-        mr_adc.log.error(msg)
-        raise Exception(msg)
-
-    if mr_adc.method_type == "cvs-ip":
-        spec_intensity = 2.0 * np.sum(X**2, axis=0)
-    elif mr_adc.method_type == "ee" or mr_adc.method_type == "cvs-ee":
-        spec_intensity = np.sum(dX**2, axis=0)
-        
-    mr_adc.log.note("\n%s-%s spectroscopic intensity:" % (mr_adc.method_type, mr_adc.method))
-    print(spec_intensity.reshape(-1, 1))
-
-    if mr_adc.method_type == "ee" or mr_adc.method_type == "cvs-ee":
-        osc_strength = (2.0/3.0) * E * spec_intensity
-
-        mr_adc.log.note("\n%s-%s oscillator strength:" % (mr_adc.method_type, mr_adc.method))
-        print(osc_strength.reshape(-1, 1))
-
-        #mr_adc_cvs_ee.analyze_eigenvector(mr_adc, U, E, osc_strength)
-
-    if mr_adc.analyze_spec_factor:
-        analyze_trans_properties(mr_adc)
-        if mr_adc.method_type == "cvs-ip":
-            analyze_spec_factor(mr_adc, X, spec_intensity)
-        elif mr_adc.method_type == "cvs-ee":
-            analyze_spec_factor(mr_adc, dX, spec_intensity)
-
+    # Compute spectroscopic intensities
+    spec_intensity = 2.0 * np.sum(X**2, axis=0)
+    
+    # Compute oscillator strengths for EE methods
+    if mr_adc.method_type in ("cvs-ee", "ee"):
+        osc_strength = (2.0/3.0) * energies * spec_intensity
+        #analyze_eigenvector(mr_adc, U, E, osc_strength)
+    
+    # Analyze spectroscopic factors if requested
+    if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4): 
+        analyze_mo_overlap(mr_adc)
+        analyze_spec_factor(mr_adc, X, spec_intensity)
+    
     return spec_intensity, X
+
+## TODO: Include Davidson convergence info
+def _log_results_summary(mr_adc, energies: np.ndarray, intensities: np.ndarray):
+    """Print formatted results summary table."""
+
+    log = mr_adc.log
+    HARTREE_TO_EV = mr_adc.interface.HARTREE_TO_EV
+    HARTREE_TO_INV_CM = mr_adc.interface.HARTREE_TO_INV_CM
+
+    log.info(f"\nSummary of results for the {mr_adc.method_type.upper()}-{mr_adc.method.upper()} calculation with the {mr_adc.interface.reference_type.upper()} reference:")
+    
+    log.info("-" * 96)
+    log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
+    log.info("-" * 96)
+    
+    energies_ev = energies * HARTREE_TO_EV
+    energies_cm = energies * HARTREE_TO_INV_CM
+    
+    for i, (e_au, e_ev, e_cm, intensity) in enumerate(zip(energies, energies_ev, energies_cm, intensities), 1):
+        wavelength_nm = 10000000 / e_cm
+        log.info(f"{i:5d}     {e_au:14.8f}  {e_ev:12.4f} {wavelength_nm:10.4f}  {e_cm:14.4f}    {intensity:10.6f}")
+    
+    log.info("-" * 96)
+
+#========== METHOD REGISTRY FOR MR-ADC METHOD MODULES AND FUNCTIONS ==========#
+import importlib
+
+class MethodRegistry:
+    """Registry for MR-ADC method modules and function dispatch."""
+
+    _module_map = {
+        "ip": "prism.mr_adc_ip",
+        "ea": "prism.mr_adc_ea",
+        "ee": "prism.mr_adc_ee",
+        "cvs-ip": "prism.mr_adc_cvs_ip",
+        "cvs-ee": "prism.mr_adc_cvs_ee",
+    }
+
+    def __init__(self):
+        self._cache = {}
+
+    def get_module(self, method_type):
+        key = method_type.replace("-", "_")
+        if key not in self._cache:
+            module_name = self._module_map[method_type]
+            self._cache[key] = importlib.import_module(module_name)
+        return self._cache[key]
+
+    def call(self, method_type, func_name, *args, **kwargs):
+        module = self.get_module(method_type)
+        func = getattr(module, func_name)
+        return func(*args, **kwargs)
+
+method_registry = MethodRegistry()
+
+#========== UTILITY FUNCTIONS FOR SPECIAL ANALYSES ==========#
+## TODO: Is this needed? Also, transform_2e_phys_incore is not defined anywhere
+def dyall_hamiltonian(mr_adc) -> float:
+    """Compute expected value of zeroth-order Dyall Hamiltonian."""
+    
+    mr_adc.log.info("Calculating the Spin-Adapted Dyall Hamiltonian...")
+    
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+    
+    # Extract required quantities
+    h_aa = mr_adc.h1eff.aa
+    rdm_ca = mr_adc.rdm.ca
+    v_aaaa = mr_adc.v2e.aaaa
+    rdm_ccaa = mr_adc.rdm.ccaa
+    mo_c = mr_adc.mo_energy.c
+    
+    # Compute frozen core energy
+    h_cc = 2.0 * mr_adc.h1e[:mr_adc.ncore, :mr_adc.ncore].copy()
+    v_cccc = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
+    
+    e_fc = einsum('ii', h_cc, optimize=True)
+    e_fc += 2.0 * einsum('ijij', v_cccc, optimize=True)
+    e_fc -= einsum('jiij', v_cccc, optimize=True)
+    
+    # Compute active space energy
+    h_act = einsum('xy,xy', h_aa, rdm_ca, optimize=True)
+    h_act += 0.5 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize=einsum_type)
+    
+    total_energy = h_act + e_fc + mr_adc.interface.enuc
+    print(f"\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {total_energy}")
+    
+    return total_energy
 
 
 def analyze_spec_factor(mr_adc, X, spec_intensity):
-
-    print("\nSpectroscopic Factors Analysis:")
+    """Analyze and print spectroscopic factors for each state above a given threshold."""
 
     print_thresh = mr_adc.spec_factor_print_tol
-    mr_adc.log.extra("Print spectroscopic factors > %e" %  print_thresh)
+    mr_adc.log.info(f"\nAnalyzing spectroscopic factors (threshold = {print_thresh:e}) ...")
 
-    if mr_adc.method_type == "cvs-ee":
-        X_2 = (X.T)**2
-    elif mr_adc.method_type == "cvs-ip":
-        X_2 = 2.0 * (X.T)**2
+    X_2 = np.empty_like(X.T)
+    np.square(X.T, out=X_2, order='C')
+    
+    if mr_adc.method_type == 'cvs-ee':
+        X_2 *= 2.0
 
     for i in range(X_2.shape[0]):
 
         sort = np.argsort(-X_2[i,:])
         X_2_row = X_2[i,:]
         X_2_row = X_2_row[sort]
-
+        
+        # If symmetry is not used or symmetry labels are unavailable, assign all orbitals to 'A'
         if not mr_adc.symmetry:
             group_repr_symm = np.repeat(['A'], X_2_row.shape[0])
+
         else:
             group_repr_symm = mr_adc.group_repr_symm
-            group_repr_symm = np.array(group_repr_symm)
+            group_repr_symm = np.array(group_repr_symm)[sort]
 
-            group_repr_symm = group_repr_symm[sort]
-
-        spec_Contribution = X_2_row[X_2_row > print_thresh]
+        spec_contribution = X_2_row[X_2_row > print_thresh]
         index_orb = sort[X_2_row > print_thresh] + 1
 
-        if np.sum(spec_Contribution) <= print_thresh:
+        if np.sum(spec_contribution) <= print_thresh:
             continue
 
-        partial_Contribution = spec_Contribution / spec_intensity[i]
+        partial_Contribution = spec_contribution / spec_intensity[i]
 
-        spec_Contribution = spec_Contribution[partial_Contribution > 1e-6]
+        filtered_spec_contribution = spec_contribution[partial_Contribution > 1e-6]
         index_orb = index_orb[partial_Contribution > 1e-6]
         partial_Contribution = partial_Contribution[partial_Contribution > 1e-6]
 
-        print("\n%s | root %d \n" % (mr_adc.method, i))
+        print(f"\n{mr_adc.method} | state {i+1} \n")
         print("  MO          Spec. Contribution       Partial Contribution")
         print("-------------------------------------------------------------")
 
         for c in range(index_orb.shape[0]):
-            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c],
-                                                                            spec_Contribution[c],
-                                                                            partial_Contribution[c]))
+            print(f" {index_orb[c]:>5d}   ({group_repr_symm[c]:<2})   {filtered_spec_contribution[c]:>20.8f}   {partial_Contribution[c]:>20.8f}")
 
-def analyze_trans_properties(mr_adc):
+def analyze_mo_overlap(mr_adc):
+    """Analyze and print overlap of CASSCF and HF spatial MOs."""
 
-    print ("\nOverlap of CASSCF and HF spatial MO's:")
-
+    from functools import reduce
     print_thresh = 0.01
-    mr_adc.log.extra("Print HF MO contributions > %e" %  print_thresh)
+    mr_adc.log.info(f"\nAnalyzing overlap of CASSCF and HF spatial MO's (threshold = {print_thresh:e}) ...")
 
-    cas_hf_ovlp = reduce(np.dot, (mr_adc.mo.T, mr_adc.ovlp, mr_adc.mo_hf))
+    cas_hf_ovlp = reduce(np.dot, (mr_adc.mo.T, mr_adc.ovlp, mr_adc.mo_scf))
     for p in range(mr_adc.mo.shape[1]):
 
         hf_ovlp = cas_hf_ovlp[p]**2
@@ -328,43 +414,6 @@ def analyze_trans_properties(mr_adc):
 
         print ("\nCASSCF MO #%d:" % (p + 1))
 
-        for hf_p in range(mr_adc.mo_hf.shape[1]):
+        for hf_p in range(mr_adc.mo_scf.shape[1]):
             if (hf_ovlp_sorted[hf_p] > print_thresh):
                 print ("%.3f HF MO #%d" % (hf_ovlp_sorted[hf_p], hf_ovlp_ind[hf_p] + 1))
-
-def dyall_hamiltonian(mr_adc):
-    """Zeroth Order Dyall Hamiltonian"""
-
-    from prism.mr_adc_integrals import mr_adc_integrals
-
-    # Testing Dyall Hamiltonian expected value
-    print("Calculating the Spin-Adapted Dyall Hamiltonian...")
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Variables needed
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
-    rdm_ca = mr_adc.rdm.ca
-    v_aaaa = mr_adc.v2e.aaaa
-    rdm_ccaa = mr_adc.rdm.ccaa
-    mo_c = mr_adc.mo[:, :mr_adc.ncore].copy()
-
-    # Calculating E_fc
-    ## Calculating h_cc term
-    h_cc = 2.0 * mr_adc.h1e[:mr_adc.ncore, :mr_adc.ncore].copy()
-
-    ## Calculating v_cccc term
-    v_cccc = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
-
-    # Calculating temp_E_fc
-    temp_E_fc  = einsum('ii', h_cc, optimize = True)
-    temp_E_fc += 2.0 * einsum('ijij', v_cccc, optimize = True)
-    temp_E_fc -= einsum('jiij', v_cccc, optimize = True)
-
-    # Calculating H_act
-    temp  = einsum('xy,xy', h_aa, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-
-    print("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
