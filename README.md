@@ -134,6 +134,7 @@ Note that DF can significantly speed up the CASSCF calculation since the cost of
 - Oscillator strengths for multi-state NEVPT2 calculations
 
 ## QD-NEVPT2
+- Full internal contraction (equivalent to partially contracted QD-NEVPT2)
 - Frozen core approximation
 - Full support of density fitting
 - Oscillator strengths
