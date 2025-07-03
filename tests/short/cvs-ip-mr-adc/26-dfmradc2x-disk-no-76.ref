@@ -160,3 +160,30 @@ davidson 16 58  |r|= 0.000488  e= [15.13872373 15.3975191  15.41429145 15.421785
 davidson 17 60  |r|= 0.00012  e= [15.13872373 15.3975191  15.4142914  15.42178583]  max|de|= -4.86e-08  lindep= 0.93
 davidson 18 62  |r|= 5.48e-05  e= [15.13872373 15.3975191  15.4142914  15.42178583]  max|de|= -4.13e-09  lindep= 0.899
 davidson 19 64  |r|= 1.26e-05  e= [15.13872373 15.3975191  15.4142914  15.42178583]  max|de|= -6.76e-10  lindep= 0.925
+root 2 converged  |r|= 3.28e-06  e= 15.414291397508139  max|de|= -5.43e-11
+root 3 converged  |r|= 3.35e-06  e= 15.421785828782049  max|de|= -5.39e-11
+converged 20 66  |r|= 7.34e-06  e= [15.13872373 15.3975191  15.4142914  15.42178583]  max|de|= -5.43e-11
+> CPU time for solving eigenvalue problem   9241.14 sec, wall time   1452.13 sec
+
+Computing transition moments matrix...
+> CPU time for computing transition moments matrix    162.02 sec, wall time     25.53 sec
+
+Spectroscopic Factors Analysis:
+Print spectroscopic factors > 1.000000e-02
+
+mr-adc(2)-x | root 0 
+
+  MO          Spec. Contribution       Partial Contribution
+-------------------------------------------------------------
+   2 (A1)             1.50994446                 0.99999712
+
+Summary of results for the CVS-IP-MR-ADC(2)-X calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        15.13872373      411.9457     3.0097    3322565.8094      1.509949
+    2        15.39751910      418.9878     2.9591    3379364.8282      0.000001
+    3        15.41429140      419.4442     2.9559    3383045.9222      0.000000
+    4        15.42178583      419.6482     2.9545    3384690.7597      0.000000
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2)-X calculation   9569.43 sec, wall time   1505.49 sec
