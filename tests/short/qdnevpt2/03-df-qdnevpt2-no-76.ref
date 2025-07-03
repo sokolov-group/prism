@@ -1,0 +1,1562 @@
+#INFO: **** input file is /home/serna.40/programming/prism/tests/short/qdnevpt2/03-df-qdnevpt2-no-76.py ****
+# Copyright 2025 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          James D. Serna <jserna456@gmail.com>
+
+import unittest
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.nevpt
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+
+r = 1.1508
+
+mol = pyscf.gto.Mole()
+mol.atom = [
+            ['N', (0.0, 0.0, 0.0)],
+            ['O', (0.0, 0.0,   r)]]
+mol.basis = 'cc-pvdz'
+mol.symmetry = False
+mol.spin = 0
+mol.charge = +1
+mol.verbose = 5
+mol.build()
+
+# RHF calculation
+mf = pyscf.scf.RHF(mol)
+mf.max_cycle = 250
+mf.conv_tol = 1e-12
+
+ehf = mf.scf()
+print("SCF energy: %f\n" % ehf)
+
+mol.spin = 1
+mol.charge = 0
+mol.build()
+
+# CASSCF calculation
+n_states = 7
+weights = np.ones(n_states)/n_states
+mc = pyscf.mcscf.CASSCF(mf, 6, 7).state_average_(weights)
+mc.conv_tol = 1e-11
+mc.conv_tol_grad = 1e-6
+emc = mc.mc1step()[0]
+
+# NEVPT2 calculation
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('cc-pvdz-ri')
+nevpt = prism.nevpt.NEVPT(interface)
+nevpt.compute_singles_amplitudes = False
+nevpt.semi_internal_projector = "gno"
+nevpt.s_thresh_singles = 1e-10
+nevpt.s_thresh_doubles = 1e-10
+nevpt.method = "qd-nevpt2"
+
+e, e_corr, osc = nevpt.kernel()
+print(e_corr)
+exit()
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mc.e_tot, -129.154007811535, 6)
+        self.assertAlmostEqual(mc.e_cas, -15.6158947578694, 6)
+
+    def test_prism(self):
+
+        e_tot, e_corr, osc = nevpt.kernel()
+
+        self.assertAlmostEqual(e_tot[0], -129.578564871164, 6)
+        self.assertAlmostEqual(e_tot[1], -129.578564870994, 6)
+        self.assertAlmostEqual(e_tot[2], -129.334367957280, 6)
+        self.assertAlmostEqual(e_tot[3], -129.327646030955, 6)
+        self.assertAlmostEqual(e_tot[4], -129.327646030953, 6)
+        self.assertAlmostEqual(e_tot[5], -129.291656258049, 6)
+        self.assertAlmostEqual(e_tot[6], -129.291656258048, 6)
+
+if __name__ == "__main__":
+    print("QD-NEVPT2 test")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-0118200.asc.ohio-state.edu', release='4.18.0-553.56.1.el8_10.x86_64', version='#1 SMP Mon Jun 2 12:33:13 EDT 2025', machine='x86_64')  Threads 12
+Python 3.9.19 (main, May  6 2024, 19:43:03) 
+[GCC 11.2.0]
+numpy 1.22.3  scipy 1.7.3  h5py 3.7.0
+Date: Thu Jul  3 11:29:05 2025
+PySCF version 2.6.2
+PySCF path  /home/serna.40/programming/pyscf
+GIT HEAD (branch ee_adc_merge) 206a467f02c44defa9ed9e1a64d96ad61b44fd7e
+
+[ENV] PYSCF_TMPDIR /scratch/local/serna.40
+[CONFIG] conf_file None
+[INPUT] verbose = 5
+[INPUT] max_memory = 4000 
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 14
+[INPUT] charge = 1
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 N      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 O      0.000000000000   0.000000000000   1.150800000000 AA    0.000000000000   0.000000000000   2.174696824149 Bohr   0.0
+[INPUT] ---------------- BASIS SET ---------------- 
+[INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
+[INPUT] N
+[INPUT] 0    0    [8    /2   ]  9046              0.0007 -0.000153
+                                1357              0.005389 -0.001208
+                                309.3             0.027406 -0.005992
+                                87.73             0.103207 -0.024544
+                                28.56             0.278723 -0.067459
+                                10.21             0.44854 -0.158078
+                                3.838             0.278238 -0.121831
+                                0.7466            0.01544 0.549003
+[INPUT] 0    0    [1    /1   ]  0.2248               1
+[INPUT] 1    0    [3    /1   ]  13.55             0.039919
+                                2.917             0.217169
+                                0.7973            0.510319
+[INPUT] 1    0    [1    /1   ]  0.2185               1
+[INPUT] 2    0    [1    /1   ]  0.817                1
+[INPUT] O
+[INPUT] 0    0    [8    /2   ]  11720             0.00071 -0.00016
+                                1759              0.00547 -0.001263
+                                400.8             0.027837 -0.006267
+                                113.7             0.1048 -0.025716
+                                37.03             0.283062 -0.070924
+                                13.27             0.448719 -0.165411
+                                5.025             0.270952 -0.116955
+                                1.013             0.015458 0.557368
+[INPUT] 0    0    [1    /1   ]  0.3023               1
+[INPUT] 1    0    [3    /1   ]  17.7              0.043018
+                                3.854             0.228913
+                                1.046             0.508728
+[INPUT] 1    0    [1    /1   ]  0.2753               1
+[INPUT] 2    0    [1    /1   ]  1.185                1
+
+nuclear repulsion = 25.750715859854
+number of shells = 10
+number of NR pGTOs = 52
+number of NR cGTOs = 28
+basis = cc-pvdz
+ecp = {}
+CPU time:         0.63
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 250
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/serna.40/tmpqpl2c65j
+max_memory 4000 MB (current use 98 MB)
+cond(S) = 207.20178596841737
+Set gradient conv threshold to 1e-06
+Initial guess from minao.
+E1 = -228.0361239800053  E_coul = 72.97725728412642
+init E= -129.308150836025
+    CPU time for initialize scf      0.60 sec, wall time      0.05 sec
+  HOMO = -0.483840517324653  LUMO = -0.043717246967014
+  mo_energy =
+[-20.7835081  -15.60465857  -1.81981951  -0.87670293  -0.58751674  -0.58751674  -0.48384052  -0.04371725  -0.04371725   0.47183496   0.95865269
+   0.95865269   0.95985289   1.03078543   1.09123473   1.17493416   1.17493416   1.96679276   1.9860985    1.9860985    1.99670749   1.99670749
+   2.84564327   2.89189386   2.89189386   3.48070653   3.48070653   3.85088959]
+E1 = -219.00652871475648  E_coul = 64.5003666776707
+cycle= 1 E= -128.755446177232  delta_E= 0.553  |g|= 0.77  |ddm|=  1.7
+    CPU time for cycle= 1      0.05 sec, wall time      0.00 sec
+  HOMO = -1.1679915272985  LUMO = -0.44697075670197
+  mo_energy =
+[-21.20320147 -16.72930517  -2.18656138  -1.44358486  -1.20241222  -1.16799153  -1.16799153  -0.44697076  -0.44697076   0.06486569   0.40282463
+   0.40282463   0.4064336    0.49217414   0.75907      0.83569145   0.83569145   1.32589285   1.32589285   1.39321427   1.39321427   1.58006548
+   2.23502417   2.48349193   2.48349193   3.02883566   3.02883566   3.39911141]
+E1 = -220.53426181888128  E_coul = 65.97265312343224
+cycle= 2 E= -128.810892835595  delta_E= -0.0554  |g|= 0.65  |ddm|= 0.85
+    CPU time for cycle= 2      0.05 sec, wall time      0.00 sec
+  HOMO = -1.14549787080296  LUMO = -0.365240128719794
+  mo_energy =
+[-21.38031146 -16.31686202  -2.13650734  -1.40826892  -1.15065762  -1.14549787  -1.14549787  -0.36524013  -0.36524013   0.12304231   0.50273944
+   0.51674708   0.51674708   0.60510506   0.69356612   0.77971799   0.77971799   1.47280714   1.47280714   1.49718583   1.49718583   1.54655792
+   2.35164333   2.41584471   2.41584471   3.00862834   3.00862834   3.37392118]
+E1 = -221.01120563032492  E_coul = 66.37962463535882
+cycle= 3 E= -128.880865135112  delta_E= -0.07  |g|= 0.186  |ddm|= 0.407
+    CPU time for cycle= 3      0.05 sec, wall time      0.00 sec
+  HOMO = -1.09798818985727  LUMO = -0.32931050442985
+  mo_energy =
+[-21.21721872 -16.28016467  -2.07352755  -1.36507092  -1.1266473   -1.09798819  -1.09798819  -0.3293105   -0.3293105    0.15258689   0.53045755
+   0.53045755   0.53553673   0.61161776   0.73034075   0.82210896   0.82210896   1.49130533   1.49130533   1.52908192   1.52908192   1.58770991
+   2.38506104   2.47766673   2.47766673   3.06176173   3.06176173   3.43337489]
+E1 = -220.72159305980458  E_coul = 66.08409221027274
+cycle= 4 E= -128.886784989678  delta_E= -0.00592  |g|= 0.0116  |ddm|= 0.089
+    CPU time for cycle= 4      0.06 sec, wall time      0.01 sec
+  HOMO = -1.09960299422123  LUMO = -0.32772453267544
+  mo_energy =
+[-21.2212224  -16.28116864  -2.07466581  -1.36596625  -1.13008883  -1.09960299  -1.09960299  -0.32772453  -0.32772453   0.15331023   0.53099881
+   0.53099881   0.53506155   0.61131104   0.72952656   0.82212886   0.82212886   1.49097254   1.49097254   1.52880565   1.52880565   1.58753455
+   2.38476144   2.4771855    2.4771855    3.06163621   3.06163621   3.43301424]
+E1 = -220.72933761711226  E_coul = 66.0917884126863
+cycle= 5 E= -128.886833344572  delta_E= -4.84e-05  |g|= 0.0017  |ddm|= 0.0134
+    CPU time for cycle= 5      0.05 sec, wall time      0.00 sec
+  HOMO = -1.09945109121623  LUMO = -0.328102542021898
+  mo_energy =
+[-21.22107162 -16.28177813  -2.07483684  -1.36589523  -1.13035021  -1.09945109  -1.09945109  -0.32810254  -0.32810254   0.15323077   0.53069474
+   0.53069474   0.53456138   0.61104689   0.72947063   0.82211923   0.82211923   1.49054433   1.49054433   1.52848849   1.52848849   1.58747531
+   2.38447807   2.47711872   2.47711872   3.0615325    3.0615325    3.43289454]
+E1 = -220.72919509379292  E_coul = 66.09164496976153
+cycle= 6 E= -128.886834264177  delta_E= -9.2e-07  |g|= 0.000405  |ddm|= 0.00246
+    CPU time for cycle= 6      0.05 sec, wall time      0.00 sec
+  HOMO = -1.09948492910788  LUMO = -0.328122031263464
+  mo_energy =
+[-21.22108708 -16.28191903  -2.07482947  -1.36590826  -1.13039563  -1.09948493  -1.09948493  -0.32812203  -0.32812203   0.1532251    0.5306622
+   0.5306622    0.53452384   0.61101087   0.72948693   0.82212479   0.82212479   1.4904936    1.4904936    1.52845252   1.52845252   1.58749552
+   2.38444233   2.47714288   2.47714288   3.06153099   3.06153099   3.43288952]
+E1 = -220.72918173732484  E_coul = 66.09163155812516
+cycle= 7 E= -128.886834319346  delta_E= -5.52e-08  |g|= 0.000181  |ddm|= 0.000542
+    CPU time for cycle= 7      0.05 sec, wall time      0.00 sec
+  HOMO = -1.09947792986186  LUMO = -0.328116288192668
+  mo_energy =
+[-21.22101334 -16.28193029  -2.0748123   -1.36588063  -1.13039072  -1.09947793  -1.09947793  -0.32811629  -0.32811629   0.15323281   0.53065288
+   0.53065288   0.53451336   0.61099932   0.72952622   0.82214699   0.82214699   1.49047484   1.49047484   1.52844867   1.52844867   1.58752199
+   2.38443996   2.47718233   2.47718233   3.06155967   3.06155967   3.43292207]
+E1 = -220.7291297043395  E_coul = 66.09157951263323
+cycle= 8 E= -128.886834331852  delta_E= -1.25e-08  |g|= 1.58e-05  |ddm|= 0.000305
+    CPU time for cycle= 8      0.05 sec, wall time      0.00 sec
+  HOMO = -1.09947586825474  LUMO = -0.328119462828409
+  mo_energy =
+[-21.22101012 -16.28193888  -2.07481228  -1.36588058  -1.13039143  -1.09947587  -1.09947587  -0.32811946  -0.32811946   0.1532312    0.53065031
+   0.53065031   0.53450938   0.61099558   0.72952824   0.82214826   0.82214826   1.49047134   1.49047134   1.52844598   1.52844598   1.58752312
+   2.38443684   2.47718488   2.47718488   3.06156024   3.06156024   3.43292265]
+E1 = -220.7291287062784  E_coul = 66.09157851448823
+cycle= 9 E= -128.886834331936  delta_E= -8.39e-11  |g|= 1.44e-06  |ddm|= 2.33e-05
+    CPU time for cycle= 9      0.05 sec, wall time      0.00 sec
+  HOMO = -1.09947598328503  LUMO = -0.328119235688984
+  mo_energy =
+[-21.22101046 -16.28193834  -2.07481245  -1.36588077  -1.13039136  -1.09947598  -1.09947598  -0.32811924  -0.32811924   0.15323119   0.53065058
+   0.53065058   0.53450948   0.61099571   0.72952813   0.82214819   0.82214819   1.49047159   1.49047159   1.52844614   1.52844614   1.58752297
+   2.38443699   2.47718475   2.47718475   3.06156017   3.06156017   3.43292254]
+E1 = -220.7291299469873  E_coul = 66.09157975519666
+cycle= 10 E= -128.886834331937  delta_E= -4.55e-13  |g|= 9.94e-08  |ddm|= 1.85e-06
+    CPU time for cycle= 10      0.06 sec, wall time      0.00 sec
+  HOMO = -1.09947595629621  LUMO = -0.32811923233671
+  mo_energy =
+[-21.22101043 -16.28193833  -2.07481243  -1.36588076  -1.13039136  -1.09947596  -1.09947596  -0.32811923  -0.32811923   0.15323119   0.53065059
+   0.53065059   0.53450949   0.61099571   0.72952814   0.82214821   0.82214821   1.49047159   1.49047159   1.52844615   1.52844615   1.58752298
+   2.38443699   2.47718477   2.47718477   3.06156018   3.06156018   3.43292255]
+E1 = -220.72912989778325  E_coul = 66.09157970599291
+Extra cycle  E= -128.886834331936  delta_E= 2.84e-13  |g|= 2.9e-08  |ddm|= 1.05e-07
+    CPU time for scf_cycle      1.17 sec, wall time      0.10 sec
+    CPU time for SCF      1.32 sec, wall time      0.11 sec
+converged SCF energy = -128.886834331936
+SCF energy: -128.886834
+
+
+******** <class 'pyscf.mcscf.addons.StateAverageCASSCF'> ********
+CAS (4e+3e, 6o), ncore = 4, nvir = 18
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = 1e-06
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /scratch/local/serna.40/tmpqpl2c65j
+max_memory 4000 MB (current use 113 MB)
+internal_rotation = False
+******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 7
+pspace_size = 400
+spin = None
+State-average over 7 states with weights [0.14285714 0.14285714 0.14285714 0.14285714 0.14285714 0.14285714 0.14285714]
+Start 1-step CASSCF
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -113.935528630296
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+state 0  E = -129.286149657726 S^2 = 0.7500000
+state 1  E = -129.286149657726 S^2 = 0.7500000
+state 2  E = -129.052414530582 S^2 = 3.7500000
+state 3  E = -129.052414530582 S^2 = 3.7500000
+state 4  E = -129.03155893872 S^2 = 3.7500000
+state 5  E = -129.013620676646 S^2 = 0.7500000
+state 6  E = -129.013620676646 S^2 = 0.7500000
+    CPU time for FCI solver      0.64 sec, wall time      0.05 sec
+CAS space CI energy = -15.1696040366509
+CASCI E = -129.105132666947  S^2 = 2.0357143
+    CPU time for Initializing 1-step CASSCF      0.92 sec, wall time      0.08 sec
+    CPU time for CAS DM      0.03 sec, wall time      0.00 sec
+    |g|=0.327
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=0.295  |dxi|=0.0303  max(|x|)=0.207  |dr|=0.0303  eig=-0.0356  seig=0.103
+    imic  2( 4)  |g[o]|=0.267  |dxi|= 0.03  max(|x|)=0.206  |dr|=0.0603  eig=-0.0302  seig=0.103
+    imic  3( 5)  |g[o]|=0.246  |dxi|=0.0293  max(|x|)=0.251  |dr|=0.0895  eig=-0.0258  seig=0.0857
+    imic  4( 6)  |g[o]|=0.228  |dxi|=0.0289  max(|x|)=0.278  |dr|=0.118  eig=-0.0228  seig=0.0838
+    CPU time for aug_hess in  4 inner iters      0.12 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.17 sec, wall time      0.01 sec
+davidson 0 7  |r|= 0.0234  e= [-15.41357902 -15.41357902 -15.17725341 -15.17725341 -15.15567918 -15.13799869 -15.13799869]  max|de|= -15.4  lindep= 0.775
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+    6     ->     5 
+    5     ->     6 
+root 0 converged  |r|= 0.00813  e= -15.413934352558103  max|de|= -0.000355
+root 1 converged  |r|= 0.00813  e= -15.413934352558094  max|de|= -0.000355
+root 2 converged  |r|= 0.00457  e= -15.177612195815511  max|de|= -0.000359
+root 3 converged  |r|= 0.00457  e= -15.17761219581548  max|de|= -0.000359
+root 4 converged  |r|= 0.00245  e= -15.155940462157755  max|de|= -0.000261
+root 5 converged  |r|= 0.00489  e= -15.138356919769498  max|de|= -0.000358
+root 6 converged  |r|= 0.00489  e= -15.138356919769478  max|de|= -0.000358
+converged 1 14  |r|= 0.00813  e= [-15.41393435 -15.41393435 -15.1776122  -15.1776122  -15.15594046 -15.13835692 -15.13835692]  max|de|= -0.000359
+    CPU time for update CAS DM      0.60 sec, wall time      0.05 sec
+micro  1  |u-1|=0.167  |g[o]|=0.327  |g[c]|=None  |ddm|=0.0155
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+    |g|=0.228 (keyframe), |g-correction|=0.00897
+    CPU time for gen h_op      0.06 sec, wall time      0.01 sec
+    imic  5( 7)  |g[o]|=0.215  |dxi|=0.0287  max(|x|)= 0.34  |dr|=0.0287  eig=-0.0222  seig=0.0488
+    imic  6( 8)  |g[o]|=0.203  |dxi|=0.0276  max(|x|)= 0.37  |dr|=0.0563  eig=-0.0207  seig=0.0487
+    imic  7( 9)  |g[o]|=0.193  |dxi|=0.0276  max(|x|)=0.386  |dr|=0.0839  eig=-0.0194  seig=0.0391
+    imic  8(10)  |g[o]|=0.183  |dxi|=0.0275  max(|x|)=0.402  |dr|=0.111  eig=-0.0183  seig=0.0369
+    CPU time for aug_hess in  8 inner iters      0.10 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.17 sec, wall time      0.01 sec
+davidson 0 7  |r|= 0.0234  e= [-15.45400773 -15.45400773 -15.21619606 -15.21619606 -15.19281342 -15.17677598 -15.17677598]  max|de|= -15.5  lindep= 0.986
+root 0 converged  |r|= 0.00576  e= -15.45441384869957  max|de|= -0.000406
+root 1 converged  |r|= 0.00576  e= -15.454413848699568  max|de|= -0.000406
+root 2 converged  |r|= 0.00489  e= -15.216519020056877  max|de|= -0.000323
+root 3 converged  |r|= 0.00489  e= -15.216519020056863  max|de|= -0.000323
+root 4 converged  |r|= 0.00221  e= -15.192946884797248  max|de|= -0.000133
+root 5 converged  |r|= 0.00548  e= -15.17710807896813  max|de|= -0.000332
+root 6 converged  |r|= 0.00548  e= -15.177108078968127  max|de|= -0.000332
+converged 1 14  |r|= 0.00576  e= [-15.45441385 -15.45441385 -15.21651902 -15.21651902 -15.19294688 -15.17710808 -15.17710808]  max|de|= -0.000406
+    CPU time for update CAS DM      0.59 sec, wall time      0.05 sec
+micro  2  |u-1|=0.322  |g[o]|=0.228  |g[c]|=None  |ddm|=0.0352
+    CPU time for micro iter  2      0.00 sec, wall time      0.00 sec
+    |g|=0.182 (keyframe), |g-correction|=0.00658
+    CPU time for gen h_op      0.06 sec, wall time      0.01 sec
+    imic  9(11)  |g[o]|=0.174  |dxi|=0.027  max(|x|)=0.447  |dr|=0.027  eig=-0.0185  seig=0.0369
+    imic 10(12)  |g[o]|=0.167  |dxi|=0.0268  max(|x|)=0.463  |dr|=0.0538  eig=-0.0177  seig=0.0334
+    imic 11(13)  |g[o]|= 0.16  |dxi|=0.0267  max(|x|)=0.474  |dr|=0.0805  eig=-0.017  seig=0.0331
+    imic 12(14)  |g[o]|=0.153  |dxi|=0.0267  max(|x|)=0.484  |dr|=0.107  eig=-0.0164  seig=0.0323
+    CPU time for aug_hess in 12 inner iters      0.09 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.15 sec, wall time      0.01 sec
+davidson 0 7  |r|= 0.0169  e= [-15.49309382 -15.49309382 -15.25393389 -15.25393389 -15.22777618 -15.21447421 -15.21447421]  max|de|= -15.5  lindep= 0.784
+root 0 converged  |r|= 0.00672  e= -15.493279422889369  max|de|= -0.000186
+root 1 converged  |r|= 0.00672  e= -15.493279422889357  max|de|= -0.000186
+root 2 converged  |r|= 0.00429  e= -15.254123633531009  max|de|= -0.00019
+root 3 converged  |r|= 0.00429  e= -15.254123633530988  max|de|= -0.00019
+root 4 converged  |r|= 0.00201  e= -15.22786253976764  max|de|= -8.64e-05
+root 5 converged  |r|= 0.0063  e= -15.214661890734435  max|de|= -0.000188
+root 6 converged  |r|= 0.0063  e= -15.214661890734403  max|de|= -0.000188
+converged 1 14  |r|= 0.00672  e= [-15.49327942 -15.49327942 -15.25412363 -15.25412363 -15.22786254 -15.21466189 -15.21466189]  max|de|= -0.00019
+    CPU time for update CAS DM      0.59 sec, wall time      0.05 sec
+micro  3  |u-1|= 0.47  |g[o]|=0.182  |g[c]|=None  |ddm|=0.0484
+    CPU time for micro iter  3      0.00 sec, wall time      0.00 sec
+    |g|=0.151 (keyframe), |g-correction|=0.00538
+    CPU time for gen h_op      0.06 sec, wall time      0.01 sec
+    imic 13(15)  |g[o]|=0.145  |dxi|=0.0262  max(|x|)=0.503  |dr|=0.0262  eig=-0.0158  seig=0.0252
+    imic 14(16)  |g[o]|= 0.14  |dxi|=0.0262  max(|x|)=0.512  |dr|=0.0525  eig=-0.0153  seig=0.0229
+    imic 15(17)  |g[o]|=0.134  |dxi|=0.0262  max(|x|)= 0.52  |dr|=0.0787  eig=-0.0148  seig= 0.02
+    imic 16(18)  |g[o]|=0.129  |dxi|=0.0262  max(|x|)=0.527  |dr|=0.105  eig=-0.0144  seig=0.0197
+    CPU time for aug_hess in 16 inner iters      0.11 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.18 sec, wall time      0.01 sec
+micro  4  |u-1|=0.614  |g[o]|=0.151
+Active space overlap to initial guess, SVD = [0.99983759 0.99983759 0.99964885 0.99964885 0.99620485 0.9111622 ]
+Active space overlap to last step, SVD = [0.99983759 0.99983759 0.99964885 0.99964885 0.99620485 0.9111622 ]
+    CPU time for update eri      0.06 sec, wall time      0.01 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.01 sec, wall time      0.00 sec
+core energy = -113.80542344173
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 7  |r|= 0.0148  e= [-15.52452982 -15.52452982 -15.28473478 -15.28473478 -15.25943924 -15.24524829 -15.24524829]  max|de|= -15.5  lindep= 0.938
+davidson 1 14  |r|= 0.00741  e= [-15.52467087 -15.52467087 -15.28483098 -15.28483098 -15.25950452 -15.24535652 -15.24535652]  max|de|= -0.000141  lindep= 0.675
+davidson 2 21  |r|= 0.00278  e= [-15.52468456 -15.52468456 -15.28484189 -15.28484189 -15.25950839 -15.24539682 -15.24539682]  max|de|= -4.03e-05  lindep= 0.851
+davidson 3 28  |r|= 0.000585  e= [-15.52468586 -15.52468586 -15.28484257 -15.28484257 -15.25950851 -15.24540459 -15.24540459]  max|de|= -7.77e-06  lindep= 0.91
+root 4 converged  |r|= 1.19e-05  e= -15.259508518534737  max|de|= -5.81e-09
+davidson 4 35  |r|= 0.000147  e= [-15.52468591 -15.52468591 -15.28484259 -15.28484259 -15.25950852 -15.24540487 -15.24540487]  max|de|= -2.77e-07  lindep= 0.928
+root 0 converged  |r|= 3.87e-05  e= -15.52468591284631  max|de|= 1.42e-14
+root 1 converged  |r|= 3.87e-05  e= -15.524685912846294  max|de|= 3.55e-15
+root 2 converged  |r|= 3.74e-05  e= -15.284842593245093  max|de|=    0
+root 3 converged  |r|= 3.74e-05  e= -15.284842593245077  max|de|= -3.55e-15
+davidson 5 7  |r|= 0.000147  e= [-15.52468591 -15.52468591 -15.28484259 -15.28484259 -15.25950852 -15.24540487 -15.24540487]  max|de|= 1.42e-14  lindep= 0.989
+davidson 6 9  |r|= 9.17e-05  e= [-15.52468591 -15.52468591 -15.28484259 -15.28484259 -15.25950852 -15.2454049  -15.2454049 ]  max|de|= -2.89e-08  lindep= 0.842
+davidson 7 11  |r|= 6.63e-05  e= [-15.52468591 -15.52468591 -15.28484259 -15.28484259 -15.25950852 -15.24540491 -15.24540491]  max|de|= -1.34e-08  lindep= 0.857
+root 5 converged  |r|= 2.98e-05  e= -15.245404917698083  max|de|= -4.61e-09
+root 6 converged  |r|= 2.98e-05  e= -15.245404917698082  max|de|= -4.61e-09
+converged 8 13  |r|= 3.63e-05  e= [-15.52468591 -15.52468591 -15.28484259 -15.28484259 -15.25950852 -15.24540492 -15.24540492]  max|de|= -4.61e-09
+state 0  E = -129.330109354762 S^2 = 0.7500000
+state 1  E = -129.330109354762 S^2 = 0.7500000
+state 2  E = -129.090266035913 S^2 = 3.7500000
+state 3  E = -129.090266035913 S^2 = 3.7500000
+state 4  E = -129.064931960265 S^2 = 3.7500000
+state 5  E = -129.050828359428 S^2 = 0.7500000
+state 6  E = -129.050828359428 S^2 = 0.7500000
+    CPU time for FCI solver      1.03 sec, wall time      0.09 sec
+CAS space CI energy = -15.3384821954800
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -129.143905637210  dE = -3.87729703e-02  S^2 = 2.0357143
+               |grad[o]|=0.327  |ddm|=0.0484  |maxRot[o]|= 0.31
+    CPU time for CASCI solver      1.28 sec, wall time      0.11 sec
+    CPU time for macro iter  1      3.83 sec, wall time      0.32 sec
+    |g|=0.129
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=0.119  |dxi|=0.0259  max(|x|)=0.258  |dr|=0.0259  eig=-0.00873  seig=0.000261
+    imic  2( 4)  |g[o]|=0.109  |dxi|=0.0259  max(|x|)=0.248  |dr|=0.0518  eig=-0.00769  seig=0.000203
+    imic  3( 5)  |g[o]|=0.101  |dxi|=0.0257  max(|x|)=0.244  |dr|=0.0775  eig=-0.00671  seig=0.000141
+    imic  4( 6)  |g[o]|=0.092  |dxi|=0.0256  max(|x|)=0.237  |dr|=0.103  eig=-0.00583  seig=0.000134
+    CPU time for aug_hess in  4 inner iters      0.11 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.19 sec, wall time      0.02 sec
+davidson 0 7  |r|= 0.0107  e= [-15.58055676 -15.58055676 -15.33933055 -15.33933055 -15.3111666  -15.29983609 -15.29983609]  max|de|= -15.6  lindep= 0.753
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+    6     ->     5 
+    5     ->     6 
+root 0 converged  |r|= 0.00382  e= -15.580621623281003  max|de|= -6.49e-05
+root 1 converged  |r|= 0.00382  e= -15.580621623280996  max|de|= -6.49e-05
+root 2 converged  |r|= 0.00211  e= -15.339390379572361  max|de|= -5.98e-05
+root 3 converged  |r|= 0.00211  e= -15.339390379572352  max|de|= -5.98e-05
+root 4 converged  |r|= 0.00147  e= -15.31120785581904  max|de|= -4.13e-05
+root 5 converged  |r|= 0.00211  e= -15.299900585701222  max|de|= -6.45e-05
+root 6 converged  |r|= 0.00211  e= -15.299900585701211  max|de|= -6.45e-05
+converged 1 14  |r|= 0.00382  e= [-15.58062162 -15.58062162 -15.33939038 -15.33939038 -15.31120786 -15.29990059 -15.29990059]  max|de|= -6.49e-05
+    CPU time for update CAS DM      0.59 sec, wall time      0.05 sec
+micro  1  |u-1|=0.146  |g[o]|=0.129  |g[c]|=None  |ddm|=0.00413
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+    |g|=0.092 (keyframe), |g-correction|=0.00314
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  5( 7)  |g[o]|=0.0843  |dxi|=0.0253  max(|x|)=0.239  |dr|=0.0253  eig=-0.00526  seig=0.000122
+    imic  6( 8)  |g[o]|=0.0769  |dxi|=0.0253  max(|x|)=0.228  |dr|=0.0506  eig=-0.00456  seig=0.000119
+    imic  7( 9)  |g[o]|=0.0699  |dxi|=0.0252  max(|x|)=0.218  |dr|=0.0758  eig=-0.0039  seig=7.85e-05
+    imic  8(10)  |g[o]|=0.0631  |dxi|=0.0252  max(|x|)=0.206  |dr|=0.101  eig=-0.00331  seig=7.84e-05
+    CPU time for aug_hess in  8 inner iters      0.09 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.14 sec, wall time      0.01 sec
+davidson 0 7  |r|= 0.0095  e= [-15.63701776 -15.63701776 -15.39456843 -15.39456843 -15.36247538 -15.35507702 -15.35507702]  max|de|= -15.6  lindep= 0.968
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+root 0 converged  |r|= 0.00337  e= -15.637080687195223  max|de|= -6.29e-05
+root 1 converged  |r|= 0.00337  e= -15.637080687195223  max|de|= -6.29e-05
+root 2 converged  |r|= 0.00215  e= -15.39461803387553  max|de|= -4.96e-05
+root 3 converged  |r|= 0.00215  e= -15.394618033875519  max|de|= -4.96e-05
+root 4 converged  |r|= 0.00111  e= -15.36251241421675  max|de|= -3.7e-05
+root 5 converged  |r|= 0.00227  e= -15.355127084460372  max|de|= -5.01e-05
+root 6 converged  |r|= 0.00227  e= -15.35512708446036  max|de|= -5.01e-05
+converged 1 14  |r|= 0.00337  e= [-15.63708069 -15.63708069 -15.39461803 -15.39461803 -15.36251241 -15.35512708 -15.35512708]  max|de|= -6.29e-05
+    CPU time for update CAS DM      0.57 sec, wall time      0.05 sec
+micro  2  |u-1|=0.288  |g[o]|=0.092  |g[c]|=None  |ddm|=0.00895
+    CPU time for micro iter  2      0.00 sec, wall time      0.00 sec
+    |g|=0.0628 (keyframe), |g-correction|=0.00285
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  9(11)  |g[o]|=0.0563  |dxi|=0.0251  max(|x|)=0.192  |dr|=0.0251  eig=-0.00279  seig=7.77e-05
+    imic 10(12)  |g[o]|= 0.05  |dxi|=0.0251  max(|x|)=0.178  |dr|=0.0502  eig=-0.00229  seig=6.95e-05
+    imic 11(13)  |g[o]|=0.0439  |dxi|=0.0251  max(|x|)=0.163  |dr|=0.0753  eig=-0.00185  seig=6.72e-05
+    imic 12(14)  |g[o]|=0.0379  |dxi|=0.025  max(|x|)=0.147  |dr|=  0.1  eig=-0.00145  seig=6.7e-05
+    CPU time for aug_hess in 12 inner iters      0.11 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.17 sec, wall time      0.01 sec
+davidson 0 7  |r|= 0.00798  e= [-15.70437318 -15.70437318 -15.460738   -15.460738   -15.4229799  -15.42127718 -15.42127718]  max|de|= -15.7  lindep= 0.792
+root 0 converged  |r|= 0.00342  e= -15.704408397237225  max|de|= -3.52e-05
+root 1 converged  |r|= 0.00342  e= -15.704408397237218  max|de|= -3.52e-05
+root 2 converged  |r|= 0.00142  e= -15.460769429721399  max|de|= -3.14e-05
+root 3 converged  |r|= 0.00142  e= -15.460769429721383  max|de|= -3.14e-05
+root 4 converged  |r|= 0.0013  e= -15.423017015538381  max|de|= -3.71e-05
+root 5 converged  |r|= 0.0019  e= -15.421307625712803  max|de|= -3.04e-05
+root 6 converged  |r|= 0.0019  e= -15.421307625712792  max|de|= -3.04e-05
+converged 1 14  |r|= 0.00342  e= [-15.7044084  -15.7044084  -15.46076943 -15.46076943 -15.42301702 -15.42130763 -15.42130763]  max|de|= -3.71e-05
+    CPU time for update CAS DM      0.58 sec, wall time      0.05 sec
+micro  3  |u-1|=0.428  |g[o]|=0.0628  |g[c]|=None  |ddm|=0.0108
+    CPU time for micro iter  3      0.00 sec, wall time      0.00 sec
+    |g|=0.0369 (keyframe), |g-correction|=0.00347
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic 13(15)  |g[o]|=0.0306  |dxi|=0.0256  max(|x|)=0.117  |dr|=0.0256  eig=-0.00105  seig=5.96e-05
+    imic 14(16)  |g[o]|=0.0245  |dxi|=0.0255  max(|x|)=0.0997  |dr|=0.051  eig=-0.000734  seig=5.61e-05
+    imic 15(17)  |g[o]|=0.0184  |dxi|=0.0255  max(|x|)=0.0813  |dr|=0.0765  eig=-0.000475  seig=5.58e-05
+    imic 16(18)  |g[o]|=0.0125  |dxi|=0.0254  max(|x|)=0.0624  |dr|=0.102  eig=-0.000273  seig=5.4e-05
+    CPU time for aug_hess in 16 inner iters      0.12 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.17 sec, wall time      0.01 sec
+micro  4  |u-1|=0.569  |g[o]|=0.0369
+Active space overlap to initial guess, SVD = [0.99961434 0.99961434 0.9990574  0.9990574  0.98519109 0.68796115]
+Active space overlap to last step, SVD = [0.99995159 0.99995159 0.99985116 0.99985116 0.99532992 0.92444719]
+    CPU time for update eri      0.04 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.01 sec, wall time      0.00 sec
+core energy = -113.560434324878
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 7  |r|= 0.00865  e= [-15.78499049 -15.78499049 -15.54100637 -15.54100637 -15.50158    -15.50158    -15.49893469]  max|de|= -15.8  lindep= 0.95
+davidson 1 14  |r|= 0.00386  e= [-15.78504013 -15.78504013 -15.54103969 -15.54103969 -15.50161316 -15.50161316 -15.49900129]  max|de|= -6.66e-05  lindep= 0.678
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+davidson 2 21  |r|= 0.00111  e= [-15.78504728 -15.78504728 -15.5410416  -15.5410416  -15.50161805 -15.50161805 -15.49900354]  max|de|= -7.15e-06  lindep= 0.858
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+davidson 3 28  |r|= 0.000439  e= [-15.78504784 -15.78504784 -15.54104181 -15.54104181 -15.50161904 -15.50161904 -15.49900364]  max|de|= -9.82e-07  lindep= 0.778
+root 6 converged  |r|= 1.3e-05  e= -15.499003644932875  max|de|= -2.43e-09
+davidson 4 35  |r|= 0.000206  e= [-15.78504788 -15.78504788 -15.54104183 -15.54104183 -15.50161923 -15.50161923 -15.49900364]  max|de|= -1.99e-07  lindep= 0.81
+root 0 converged  |r|= 5.47e-05  e= -15.78504787648215  max|de|= 1.07e-14
+root 1 converged  |r|= 5.47e-05  e= -15.785047876482142  max|de|= -1.78e-15
+root 2 converged  |r|= 4.49e-05  e= -15.541041830893397  max|de|= 8.88e-15
+root 3 converged  |r|= 4.49e-05  e= -15.541041830893384  max|de|= 1.24e-14
+davidson 5 7  |r|= 0.000206  e= [-15.78504788 -15.78504788 -15.54104183 -15.54104183 -15.50161923 -15.50161923 -15.49900364]  max|de|= 1.24e-14  lindep= 0.951
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+    5     ->     4 
+    4     ->     5 
+davidson 6 9  |r|= 8.11e-05  e= [-15.78504788 -15.78504788 -15.54104183 -15.54104183 -15.50161927 -15.50161927 -15.49900364]  max|de|= -3.26e-08  lindep= 0.886
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+davidson 7 11  |r|= 6.88e-05  e= [-15.78504788 -15.78504788 -15.54104183 -15.54104183 -15.50161928 -15.50161928 -15.49900364]  max|de|= -1.04e-08  lindep= 0.829
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+    5     ->     4 
+    4     ->     5 
+root 4 converged  |r|= 4.42e-05  e= -15.501619282727765  max|de|= -5.39e-09
+root 5 converged  |r|= 4.42e-05  e= -15.50161928272776  max|de|= -5.39e-09
+converged 8 13  |r|= 4.64e-05  e= [-15.78504788 -15.78504788 -15.54104183 -15.54104183 -15.50161928 -15.50161928 -15.49900364]  max|de|= -5.39e-09
+state 0  E = -129.345482201785 S^2 = 0.7500000
+state 1  E = -129.345482201785 S^2 = 0.7500000
+state 2  E = -129.101476156029 S^2 = 3.7500000
+state 3  E = -129.101476156029 S^2 = 3.7500000
+state 4  E = -129.062053607606 S^2 = 0.7500000
+state 5  E = -129.062053607606 S^2 = 0.7500000
+state 6  E = -129.059437969811 S^2 = 3.7500000
+    CPU time for FCI solver      0.92 sec, wall time      0.08 sec
+CAS space CI energy = -15.5934888037865
+macro iter   2 ( 21 JK    4 micro), CASSCF E = -129.153923128665  dE = -1.00174915e-02  S^2 = 2.0357143
+               |grad[o]|=0.129  |ddm|=0.0108  |maxRot[o]|=0.312
+    CPU time for CASCI solver      1.12 sec, wall time      0.09 sec
+    CPU time for macro iter  2      3.57 sec, wall time      0.30 sec
+    |g|=0.0143
+    CPU time for gen h_op      0.04 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=0.000915  |dxi|=0.0203  max(|x|)=0.013  |dr|=0.0203  eig=-7.62e-05  seig=0.000556
+    CPU time for aug_hess in  1 inner iters      0.05 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.12 sec, wall time      0.01 sec
+davidson 0 7  |r|= 0.00265  e= [-15.79253113 -15.79253113 -15.54823279 -15.54823279 -15.50883005 -15.50883005 -15.50605902]  max|de|= -15.8  lindep= 0.814
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    5     ->     4 
+    4     ->     5 
+root 0 converged  |r|= 0.00104  e= -15.792533385368943  max|de|= -2.25e-06
+root 1 converged  |r|= 0.00104  e= -15.792533385368934  max|de|= -2.25e-06
+root 2 converged  |r|= 0.0007  e= -15.54823798219683  max|de|= -5.19e-06
+root 3 converged  |r|= 0.0007  e= -15.548237982196806  max|de|= -5.19e-06
+root 4 converged  |r|= 0.00065  e= -15.508834316863696  max|de|= -4.27e-06
+root 5 converged  |r|= 0.00065  e= -15.508834316863693  max|de|= -4.27e-06
+root 6 converged  |r|= 0.000329  e= -15.506061272919215  max|de|= -2.25e-06
+converged 1 14  |r|= 0.00104  e= [-15.79253339 -15.79253339 -15.54823798 -15.54823798 -15.50883432 -15.50883432 -15.50606127]  max|de|= -5.19e-06
+    CPU time for update CAS DM      0.57 sec, wall time      0.05 sec
+micro  1  |u-1|=0.0288  |g[o]|=0.0143  |g[c]|=None  |ddm|=0.00159
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+    |g|=0.00114 (keyframe), |g-correction|=0.00102
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  2( 4)  |g[o]|=0.00153  |dxi|=0.005  max(|x|)=0.00333  |dr|=0.005  eig=-1.43e-06  seig=0.000555
+    imic  3( 5)  |g[o]|=0.00062  |dxi|=0.00324  max(|x|)=0.00242  |dr|=0.00795  eig=-1.06e-06  seig=0.000169
+    imic  4( 6)  |g[o]|=0.000163  |dxi|=0.00125  max(|x|)=0.000761  |dr|=0.00914  eig=-1.64e-07  seig=0.000169
+    CPU time for aug_hess in  4 inner iters      0.08 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.13 sec, wall time      0.01 sec
+davidson 0 7  |r|= 0.00199  e= [-15.79954942 -15.79954942 -15.55522546 -15.55522546 -15.51583429 -15.51583429 -15.51249746]  max|de|= -15.8  lindep= 0.781
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+    5     ->     4 
+    4     ->     5 
+davidson 1 14  |r|= 0.00069  e= [-15.79955029 -15.79955029 -15.55522639 -15.55522639 -15.5158351  -15.5158351  -15.51250175]  max|de|= -4.29e-06  lindep= 0.689
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    3     ->     2 
+    2     ->     3 
+root 2 converged  |r|= 9e-05  e= -15.555226429538543  max|de|= -3.77e-08
+root 3 converged  |r|= 9e-05  e= -15.555226429538534  max|de|= -3.77e-08
+root 4 converged  |r|= 0.000125  e= -15.515835153409224  max|de|= -5.04e-08
+root 5 converged  |r|= 0.000125  e= -15.515835153409212  max|de|= -5.04e-08
+davidson 2 21  |r|= 0.000145  e= [-15.79955057 -15.79955057 -15.55522643 -15.55522643 -15.51583515 -15.51583515 -15.51250194]  max|de|= -2.77e-07  lindep= 0.948
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    3     ->     2 
+    2     ->     3 
+root 0 converged  |r|= 4.62e-05  e= -15.799550578829423  max|de|= -1.17e-08
+root 1 converged  |r|= 4.62e-05  e= -15.799550578829416  max|de|= -1.17e-08
+root 6 converged  |r|= 3.42e-05  e= -15.512501960059211  max|de|= -1.53e-08
+converged 3 24  |r|= 0.000121  e= [-15.79955058 -15.79955058 -15.55522643 -15.55522643 -15.51583516 -15.51583516 -15.51250196]  max|de|= -1.53e-08
+    CPU time for update CAS DM      0.69 sec, wall time      0.06 sec
+micro  2  |u-1|=0.0383  |g[o]|=0.00114  |g[c]|=None  |ddm|=0.00182
+    CPU time for micro iter  2      0.00 sec, wall time      0.00 sec
+    |g|=0.000309 (keyframe), |g-correction|=0.000274
+    CPU time for gen h_op      0.07 sec, wall time      0.01 sec
+    imic  5( 7)  |g[o]|=0.000441  |dxi|=0.00543  max(|x|)=0.00388  |dr|=0.00543  eig=-8.82e-07  seig=0.00016
+    imic  6( 8)  |g[o]|=9.13e-05  |dxi|=0.000591  max(|x|)=0.000395  |dr|=0.00561  eig=-8.39e-08  seig=0.00015
+    CPU time for aug_hess in  6 inner iters      0.05 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.13 sec, wall time      0.01 sec
+davidson 0 7  |r|= 0.00136  e= [-15.80421986 -15.80421986 -15.55986716 -15.55986716 -15.52048299 -15.52048299 -15.51680014]  max|de|= -15.8  lindep= 0.935
+Old state -> New state
+    5     ->     4 
+    4     ->     5 
+davidson 1 14  |r|= 0.000409  e= [-15.80421999 -15.80421999 -15.55986731 -15.55986731 -15.52048311 -15.52048311 -15.51680213]  max|de|= -1.99e-06  lindep= 0.688
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+root 2 converged  |r|= 2.61e-05  e= -15.559867309601525  max|de|= -4.44e-09
+root 3 converged  |r|= 2.61e-05  e= -15.559867309601508  max|de|= -4.44e-09
+root 4 converged  |r|= 6.78e-05  e= -15.520483123108646  max|de|= -9.49e-09
+root 5 converged  |r|= 6.78e-05  e= -15.52048312310864  max|de|= -9.49e-09
+davidson 2 21  |r|= 9.1e-05  e= [-15.80422    -15.80422    -15.55986731 -15.55986731 -15.52048312 -15.52048312 -15.51680224]  max|de|= -1.11e-07  lindep= 0.839
+root 0 converged  |r|= 1.05e-05  e= -15.804219998497599  max|de|= -7.93e-10
+root 1 converged  |r|= 1.05e-05  e= -15.804219998497597  max|de|= -7.93e-10
+root 6 converged  |r|= 4.16e-05  e= -15.516802250476672  max|de|= -7.35e-09
+converged 3 24  |r|= 6.42e-05  e= [-15.80422    -15.80422    -15.55986731 -15.55986731 -15.52048312 -15.52048312 -15.51680225]  max|de|= -7.35e-09
+    CPU time for update CAS DM      0.70 sec, wall time      0.06 sec
+micro  3  |u-1|=0.0451  |g[o]|=0.000309  |g[c]|=None  |ddm|=0.00176
+    CPU time for micro iter  3      0.00 sec, wall time      0.00 sec
+    |g|=0.00022 (keyframe), |g-correction|=0.000206
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  7( 9)  |g[o]|=6.1e-05  |dxi|=0.00362  max(|x|)=0.00289  |dr|=0.00362  eig=-4.35e-07  seig=0.000121
+    CPU time for aug_hess in  7 inner iters      0.02 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.08 sec, wall time      0.01 sec
+micro  4  |u-1|=0.0495  |g[o]|=0.00022
+Active space overlap to initial guess, SVD = [0.99958118 0.99958118 0.99898858 0.99898858 0.98551026 0.67536071]
+Active space overlap to last step, SVD = [0.99999886 0.99999886 0.99999818 0.99999818 0.99974657 0.99964932]
+    CPU time for update eri      0.05 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.01 sec, wall time      0.00 sec
+core energy = -113.538663846162
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 7  |r|= 0.000928  e= [-15.80730357 -15.80730357 -15.56294723 -15.56294723 -15.52356736 -15.52356736 -15.51976795]  max|de|= -15.8  lindep= 0.826
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    3     ->     2 
+    2     ->     3 
+    5     ->     4 
+    4     ->     5 
+davidson 1 14  |r|= 0.000297  e= [-15.80730363 -15.80730363 -15.56294729 -15.56294729 -15.52356741 -15.52356741 -15.5197689 ]  max|de|= -9.5e-07  lindep= 0.618
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    5     ->     4 
+    4     ->     5 
+root 0 converged  |r|= 2.15e-05  e= -15.807303640559436  max|de|= -7.26e-09
+root 1 converged  |r|= 2.15e-05  e= -15.807303640559422  max|de|= -7.26e-09
+root 2 converged  |r|= 1.12e-05  e= -15.562947292383637  max|de|= -1.13e-09
+root 3 converged  |r|= 1.12e-05  e= -15.562947292383612  max|de|= -1.13e-09
+root 4 converged  |r|= 4.42e-05  e= -15.523567419198546  max|de|= -7.93e-09
+root 5 converged  |r|= 4.42e-05  e= -15.523567419198537  max|de|= -7.93e-09
+davidson 2 21  |r|= 7.81e-05  e= [-15.80730364 -15.80730364 -15.56294729 -15.56294729 -15.52356742 -15.52356742 -15.51976896]  max|de|= -5.88e-08  lindep= 0.968
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+root 6 converged  |r|= 4.35e-05  e= -15.519768960599437  max|de|= -3.91e-09
+converged 3 22  |r|= 4.42e-05  e= [-15.80730364 -15.80730364 -15.56294729 -15.56294729 -15.52356742 -15.52356742 -15.51976896]  max|de|= -3.91e-09
+state 0  E = -129.345967486721 S^2 = 0.7500000
+state 1  E = -129.345967486721 S^2 = 0.7500000
+state 2  E = -129.101611138546 S^2 = 3.7500000
+state 3  E = -129.101611138545 S^2 = 3.7500000
+state 4  E = -129.06223126536 S^2 = 0.7500000
+state 5  E = -129.06223126536 S^2 = 0.7500000
+state 6  E = -129.058432806761 S^2 = 3.7500000
+    CPU time for FCI solver      0.98 sec, wall time      0.08 sec
+CAS space CI energy = -15.6153436664118
+macro iter   3 ( 12 JK    4 micro), CASSCF E = -129.154007512574  dE = -8.43839091e-05  S^2 = 2.0357143
+               |grad[o]|=0.0143  |ddm|=0.00176  |maxRot[o]|=0.0222
+    CPU time for CASCI solver      1.19 sec, wall time      0.10 sec
+    CPU time for macro iter  3      3.66 sec, wall time      0.31 sec
+    |g|=0.000375
+    CPU time for gen h_op      0.09 sec, wall time      0.01 sec
+    imic  1( 3)  |g[o]|=8.17e-05  |dxi|=0.00155  max(|x|)=0.00107  |dr|=0.00155  eig=-2.68e-07  seig=1.25e-05
+    CPU time for aug_hess in  1 inner iters      0.08 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.23 sec, wall time      0.02 sec
+davidson 0 7  |r|= 0.000219  e= [-15.80833974 -15.80833974 -15.56397995 -15.56397995 -15.52460038 -15.52460038 -15.52066432]  max|de|= -15.8  lindep= 0.935
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+root 0 converged  |r|= 4.7e-05  e= -15.808339746295673  max|de|= -7.85e-09
+root 1 converged  |r|= 4.7e-05  e= -15.80833974629567  max|de|= -7.85e-09
+davidson 1 14  |r|= 7.79e-05  e= [-15.80833975 -15.80833975 -15.56397997 -15.56397997 -15.5246004  -15.5246004  -15.52066437]  max|de|= -5.22e-08  lindep= 0.96
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+root 2 converged  |r|= 9.48e-06  e= -15.563979967073857  max|de|= -9.06e-10
+root 3 converged  |r|= 9.48e-06  e= -15.56397996707384  max|de|= -9.06e-10
+root 4 converged  |r|= 2.26e-05  e= -15.524600405593688  max|de|= -1.79e-09
+root 5 converged  |r|= 2.26e-05  e= -15.524600405593684  max|de|= -1.79e-09
+root 6 converged  |r|= 3.08e-05  e= -15.520664374826449  max|de|= -2.77e-09
+converged 2 19  |r|= 4.41e-05  e= [-15.80833975 -15.80833975 -15.56397997 -15.56397997 -15.52460041 -15.52460041 -15.52066437]  max|de|= -2.77e-09
+    CPU time for update CAS DM      0.74 sec, wall time      0.06 sec
+micro  1  |u-1|=0.0022  |g[o]|=0.000375  |g[c]|=None  |ddm|=6.11e-05
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+    |g|=8.68e-05 (keyframe), |g-correction|=2.9e-05
+    CPU time for gen h_op      0.07 sec, wall time      0.01 sec
+    imic  2( 4)  |g[o]|=4.73e-05  |dxi|=0.000315  max(|x|)=0.000227  |dr|=0.000315  eig=-4.99e-09  seig=1.22e-05
+    imic  3( 5)  |g[o]|=1.01e-05  |dxi|=9.33e-05  max(|x|)=7.57e-05  |dr|=0.000356  eig=-8.46e-10  seig=1.17e-05
+    CPU time for aug_hess in  3 inner iters      0.05 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.11 sec, wall time      0.01 sec
+davidson 0 7  |r|= 7.3e-05  e= [-15.80818425 -15.80818425 -15.56382456 -15.56382456 -15.52444494 -15.52444494 -15.52051827]  max|de|= -15.8  lindep= 0.778
+root 2 converged  |r|= 7.69e-06  e= -15.563824564924614  max|de|= -5.06e-10
+root 3 converged  |r|= 7.69e-06  e= -15.563824564924598  max|de|= -5.06e-10
+root 4 converged  |r|= 1.62e-05  e= -15.524444941897835  max|de|= -6.86e-10
+root 5 converged  |r|= 1.62e-05  e= -15.524444941897826  max|de|= -6.86e-10
+davidson 1 14  |r|= 3.79e-05  e= [-15.80818425 -15.80818425 -15.56382456 -15.56382456 -15.52444494 -15.52444494 -15.52051828]  max|de|= -5.94e-09  lindep= 0.689
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+root 0 converged  |r|= 3.21e-06  e= -15.808184249767724  max|de|= -2.78e-10
+root 1 converged  |r|= 3.21e-06  e= -15.808184249767715  max|de|= -2.78e-10
+root 6 converged  |r|= 1.28e-05  e= -15.520518277644678  max|de|= -6.1e-10
+converged 2 17  |r|= 1.47e-05  e= [-15.80818425 -15.80818425 -15.56382456 -15.56382456 -15.52444494 -15.52444494 -15.52051828]  max|de|= -6.1e-10
+    CPU time for update CAS DM      0.63 sec, wall time      0.05 sec
+micro  2  |u-1|=0.00258  |g[o]|=8.68e-05  |g[c]|=None  |ddm|=7.12e-05
+    CPU time for micro iter  2      0.00 sec, wall time      0.00 sec
+    |g|=1.44e-05 (keyframe), |g-correction|=8.59e-06
+    CPU time for gen h_op      0.07 sec, wall time      0.01 sec
+    imic  4( 6)  |g[o]|=4.72e-06  |dxi|=0.000127  max(|x|)=9.05e-05  |dr|=0.000127  eig=-4.84e-10  seig=1.15e-05
+    CPU time for aug_hess in  4 inner iters      0.03 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.09 sec, wall time      0.01 sec
+davidson 0 7  |r|= 2.92e-05  e= [-15.80807198 -15.80807198 -15.56371291 -15.56371291 -15.52433311 -15.52433311 -15.52041437]  max|de|= -15.8  lindep= 0.901
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+davidson 1 14  |r|= 1.41e-05  e= [-15.80807198 -15.80807198 -15.56371291 -15.56371291 -15.52433311 -15.52433311 -15.52041437]  max|de|= -1.04e-09  lindep= 0.621
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+root 0 converged  |r|= 1.09e-06  e= -15.808071975176734  max|de|= -4.95e-12
+root 1 converged  |r|= 1.09e-06  e= -15.808071975176732  max|de|= -4.95e-12
+root 2 converged  |r|= 6.25e-07  e= -15.563712905354901  max|de|= -5.09e-12
+root 3 converged  |r|= 6.25e-07  e= -15.5637129053549  max|de|= -5.08e-12
+davidson 2 21  |r|= 1.07e-05  e= [-15.80807198 -15.80807198 -15.56371291 -15.56371291 -15.52433311 -15.52433311 -15.52041437]  max|de|= -2.61e-10  lindep= 0.891
+Old state -> New state
+    3     ->     2 
+    2     ->     3 
+    5     ->     4 
+    4     ->     5 
+root 6 converged  |r|= 1.56e-06  e= -15.520414369915711  max|de|= -1.73e-11
+davidson 3 24  |r|= 5.98e-06  e= [-15.80807198 -15.80807198 -15.56371291 -15.56371291 -15.52433311 -15.52433311 -15.52041437]  max|de|= -1.23e-10  lindep= 0.881
+davidson 4 26  |r|= 2.65e-06  e= [-15.80807198 -15.80807198 -15.56371291 -15.56371291 -15.52433311 -15.52433311 -15.52041437]  max|de|= -4.03e-11  lindep= 0.888
+Old state -> New state
+    5     ->     4 
+    4     ->     5 
+davidson 5 28  |r|= 3.86e-06  e= [-15.80807198 -15.80807198 -15.56371291 -15.56371291 -15.52433311 -15.52433311 -15.52041437]  max|de|= -2.71e-11  lindep= 0.921
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    3     ->     2 
+    2     ->     3 
+    5     ->     4 
+    4     ->     5 
+root 4 converged  |r|= 1.69e-06  e= -15.524333112067277  max|de|= -1.63e-11
+root 5 converged  |r|= 1.69e-06  e= -15.524333112067266  max|de|= -1.63e-11
+converged 6 30  |r|= 1.69e-06  e= [-15.80807198 -15.80807198 -15.56371291 -15.56371291 -15.52433311 -15.52433311 -15.52041437]  max|de|= -1.63e-11
+    CPU time for update CAS DM      0.87 sec, wall time      0.07 sec
+micro  3  |u-1|=0.00271  |g[o]|=1.44e-05  |g[c]|=None  |ddm|=7.34e-05
+    CPU time for micro iter  3      0.00 sec, wall time      0.00 sec
+    |g|=8.63e-06 (keyframe), |g-correction|=5.19e-06
+    CPU time for gen h_op      0.07 sec, wall time      0.01 sec
+    imic  5( 7)  |g[o]|=2.34e-06  |dxi|=4.97e-05  max(|x|)=3.96e-05  |dr|=4.97e-05  eig=-1.03e-10  seig=1.11e-05
+    CPU time for aug_hess in  5 inner iters      0.03 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.10 sec, wall time      0.01 sec
+micro  4  |u-1|=0.00276  |g[o]|=8.63e-06
+Active space overlap to initial guess, SVD = [0.99958082 0.99958082 0.99899002 0.99899002 0.98535873 0.67553552]
+Active space overlap to last step, SVD = [1.        1.        1.        1.        0.9999996 0.9999985]
+    CPU time for update eri      0.05 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.02 sec, wall time      0.00 sec
+core energy = -113.537975025245
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 7  |r|= 1.45e-05  e= [-15.80801089 -15.80801089 -15.56365212 -15.56365212 -15.5242723  -15.5242723  -15.52035887]  max|de|= -15.8  lindep= 0.921
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    3     ->     2 
+    2     ->     3 
+root 0 converged  |r|= 1.6e-06  e= -15.808010889400864  max|de|= -1.52e-11
+root 1 converged  |r|= 1.6e-06  e= -15.808010889400858  max|de|= -1.52e-11
+root 2 converged  |r|= 3.98e-07  e= -15.563652123874029  max|de|= -1.17e-11
+root 3 converged  |r|= 3.98e-07  e= -15.563652123874016  max|de|= -1.17e-11
+root 4 converged  |r|= 1.14e-06  e= -15.524272302134358  max|de|= -1.19e-11
+root 5 converged  |r|= 1.14e-06  e= -15.52427230213434  max|de|= -1.19e-11
+root 6 converged  |r|= 4.82e-06  e= -15.520358870581013  max|de|= -2.38e-10
+converged 1 14  |r|= 4.82e-06  e= [-15.80801089 -15.80801089 -15.56365212 -15.56365212 -15.5242723  -15.5242723  -15.52035887]  max|de|= -2.38e-10
+state 0  E = -129.345985914645 S^2 = 0.7500000
+state 1  E = -129.345985914645 S^2 = 0.7500000
+state 2  E = -129.101627149119 S^2 = 3.7500000
+state 3  E = -129.101627149119 S^2 = 3.7500000
+state 4  E = -129.062247327379 S^2 = 0.7500000
+state 5  E = -129.062247327379 S^2 = 0.7500000
+state 6  E = -129.058333895826 S^2 = 3.7500000
+    CPU time for FCI solver      0.84 sec, wall time      0.07 sec
+CAS space CI energy = -15.6160327859142
+macro iter   4 ( 10 JK    4 micro), CASSCF E = -129.154007811159  dE = -2.98585093e-07  S^2 = 2.0357143
+               |grad[o]|=0.000375  |ddm|=7.34e-05  |maxRot[o]|=0.00145
+    CPU time for CASCI solver      1.06 sec, wall time      0.09 sec
+    CPU time for macro iter  4      3.90 sec, wall time      0.33 sec
+    |g|=5.05e-06
+    CPU time for gen h_op      0.04 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=1.06e-06  |dxi|=7.53e-05  max(|x|)=6.1e-05  |dr|=7.53e-05  eig=-1.88e-10  seig=1.6e-09
+    CPU time for aug_hess in  1 inner iters      0.05 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.13 sec, wall time      0.01 sec
+davidson 0 7  |r|= 2.03e-05  e= [-15.80794476 -15.80794476 -15.56358633 -15.56358633 -15.52420642 -15.52420642 -15.52029727]  max|de|= -15.8  lindep= 0.997
+davidson 1 14  |r|= 5.77e-06  e= [-15.80794476 -15.80794476 -15.56358633 -15.56358633 -15.52420642 -15.52420642 -15.52029727]  max|de|= -4.83e-10  lindep= 0.849
+root 0 converged  |r|= 5.88e-07  e= -15.807944764601055  max|de|= -1.99e-12
+root 1 converged  |r|= 5.88e-07  e= -15.807944764601025  max|de|= -1.98e-12
+root 2 converged  |r|= 8.32e-07  e= -15.563586332293161  max|de|= -3.55e-15
+root 3 converged  |r|= 8.32e-07  e= -15.563586332293136  max|de|= 1.24e-14
+root 4 converged  |r|= 6.55e-07  e= -15.52420641905887  max|de|= -1.18e-12
+root 5 converged  |r|= 6.55e-07  e= -15.524206419058853  max|de|= -1.17e-12
+davidson 2 19  |r|= 1.66e-06  e= [-15.80794476 -15.80794476 -15.56358633 -15.56358633 -15.52420642 -15.52420642 -15.52029727]  max|de|= -2.38e-11  lindep= 0.947
+root 6 converged  |r|= 7.65e-07  e= -15.520297266080593  max|de|= -2.09e-12
+converged 3 20  |r|= 8.32e-07  e= [-15.80794476 -15.80794476 -15.56358633 -15.56358633 -15.52420642 -15.52420642 -15.52029727]  max|de|= -2.09e-12
+    CPU time for update CAS DM      0.63 sec, wall time      0.05 sec
+micro  1  |u-1|=0.000107  |g[o]|=5.05e-06  |g[c]|=None  |ddm|=3.72e-06
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+    |g|=3.23e-06 (keyframe), |g-correction|=2.89e-06
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  2( 4)  |g[o]|=1.67e-06  |dxi|=3.54e-05  max(|x|)=2.89e-05  |dr|=3.54e-05  eig=-4.5e-11  seig=1.54e-09
+    imic  3( 5)  |g[o]|=6.51e-07  |dxi|=2.98e-06  max(|x|)=1.81e-06  |dr|=3.68e-05  eig=-1.46e-12  seig=1.4e-09
+    CPU time for aug_hess in  3 inner iters      0.04 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.09 sec, wall time      0.01 sec
+davidson 0 7  |r|= 1.02e-05  e= [-15.80790546 -15.80790546 -15.56354725 -15.56354725 -15.5241673  -15.5241673  -15.52026087]  max|de|= -15.8  lindep= 0.964
+root 0 converged  |r|= 8.43e-07  e= -15.807905457627008  max|de|= -7.55e-12
+root 1 converged  |r|= 8.43e-07  e= -15.807905457627001  max|de|= -7.56e-12
+root 2 converged  |r|= 4.1e-07  e= -15.563547249319067  max|de|= -7.56e-12
+root 3 converged  |r|= 4.1e-07  e= -15.56354724931905  max|de|= -7.55e-12
+root 4 converged  |r|= 7.13e-07  e= -15.52416729565377  max|de|= -5.4e-12
+root 5 converged  |r|= 7.13e-07  e= -15.524167295653765  max|de|= -5.4e-12
+davidson 1 14  |r|= 3.29e-06  e= [-15.80790546 -15.80790546 -15.56354725 -15.56354725 -15.5241673  -15.5241673  -15.52026087]  max|de|= -1.15e-10  lindep= 0.984
+root 6 converged  |r|= 1.07e-06  e= -15.520260872944734  max|de|= -6.98e-12
+converged 2 15  |r|= 1.07e-06  e= [-15.80790546 -15.80790546 -15.56354725 -15.56354725 -15.5241673  -15.5241673  -15.52026087]  max|de|= -6.98e-12
+    CPU time for update CAS DM      0.58 sec, wall time      0.05 sec
+micro  2  |u-1|=0.000158  |g[o]|=3.23e-06  |g[c]|=None  |ddm|=5.61e-06
+    CPU time for micro iter  2      0.00 sec, wall time      0.00 sec
+    |g|=1.74e-06 (keyframe), |g-correction|=1.68e-06
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  4( 6)  |g[o]|=4.04e-07  |dxi|=1.86e-05  max(|x|)=1.45e-05  |dr|=1.86e-05  eig=-1.18e-11  seig=1.4e-09
+    CPU time for aug_hess in  4 inner iters      0.02 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.07 sec, wall time      0.01 sec
+davidson 0 7  |r|= 5.05e-06  e= [-15.8078851  -15.8078851  -15.563527   -15.563527   -15.52414703 -15.52414703 -15.52024208]  max|de|= -15.8  lindep= 0.847
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    5     ->     4 
+    4     ->     5 
+root 0 converged  |r|= 2.63e-07  e= -15.807885104663214  max|de|= -2.61e-12
+root 1 converged  |r|= 2.63e-07  e= -15.807885104663205  max|de|= -2.6e-12
+root 2 converged  |r|= 3.15e-07  e= -15.56352699840833  max|de|= -1.8e-12
+root 3 converged  |r|= 3.15e-07  e= -15.56352699840832  max|de|= -1.8e-12
+root 4 converged  |r|= 8.43e-07  e= -15.524147026628253  max|de|= -1.78e-12
+root 5 converged  |r|= 8.43e-07  e= -15.524147026628242  max|de|= -1.77e-12
+davidson 1 14  |r|= 1.99e-06  e= [-15.8078851  -15.8078851  -15.563527   -15.563527   -15.52414703 -15.52414703 -15.52024208]  max|de|= -2.91e-11  lindep= 0.984
+root 6 converged  |r|= 8.45e-07  e= -15.520242082921456  max|de|= -2.22e-12
+converged 2 15  |r|= 8.45e-07  e= [-15.8078851  -15.8078851  -15.563527   -15.563527   -15.52414703 -15.52414703 -15.52024208]  max|de|= -2.22e-12
+    CPU time for update CAS DM      0.61 sec, wall time      0.05 sec
+micro  3  |u-1|=0.000185  |g[o]|=1.74e-06  |g[c]|=None  |ddm|=6.71e-06
+    CPU time for micro iter  3      0.00 sec, wall time      0.00 sec
+    |g|=1.16e-06 (keyframe), |g-correction|=8.96e-07
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  5( 7)  |g[o]|=1.4e-07  |dxi|=9.25e-06  max(|x|)=7.21e-06  |dr|=9.25e-06  eig=-3.06e-12  seig=8.68e-10
+    CPU time for aug_hess in  5 inner iters      0.03 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.10 sec, wall time      0.01 sec
+micro  4  |u-1|=0.000197  |g[o]|=1.16e-06
+Active space overlap to initial guess, SVD = [0.9995808  0.9995808  0.99899006 0.99899006 0.9853616  0.67555268]
+Active space overlap to last step, SVD = [1.         1.         1.         1.         1.         0.99999999]
+    CPU time for update eri      0.05 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.01 sec, wall time      0.00 sec
+core energy = -113.538109248946
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 7  |r|= 2.58e-06  e= [-15.80787491 -15.80787491 -15.56351686 -15.56351686 -15.52413688 -15.52413688 -15.52023264]  max|de|= -15.8  lindep= 0.72
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    3     ->     2 
+    2     ->     3 
+root 0 converged  |r|= 8.95e-07  e= -15.807874909185543  max|de|= -3.91e-14
+root 1 converged  |r|= 8.95e-07  e= -15.80787490918554  max|de|= -3.02e-14
+root 2 converged  |r|= 7.51e-07  e= -15.563516861298341  max|de|= -4.44e-14
+root 3 converged  |r|= 7.51e-07  e= -15.563516861298325  max|de|= -1.78e-14
+root 4 converged  |r|= 7.27e-07  e= -15.524136879914535  max|de|= -8.7e-13
+root 5 converged  |r|= 7.27e-07  e= -15.524136879914517  max|de|= -8.56e-13
+root 6 converged  |r|= 1.21e-06  e= -15.520232637317369  max|de|= -7.54e-12
+converged 1 10  |r|= 1.21e-06  e= [-15.80787491 -15.80787491 -15.56351686 -15.56351686 -15.52413688 -15.52413688 -15.52023264]  max|de|= -7.54e-12
+state 0  E = -129.345984158132 S^2 = 0.7500000
+state 1  E = -129.345984158132 S^2 = 0.7500000
+state 2  E = -129.101626110245 S^2 = 3.7500000
+state 3  E = -129.101626110245 S^2 = 3.7500000
+state 4  E = -129.062246128861 S^2 = 0.7500000
+state 5  E = -129.062246128861 S^2 = 0.7500000
+state 6  E = -129.058341886264 S^2 = 3.7500000
+    CPU time for FCI solver      0.72 sec, wall time      0.06 sec
+CAS space CI energy = -15.6158985625877
+macro iter   5 ( 10 JK    4 micro), CASSCF E = -129.154007811534  dE = -3.75280251e-10  S^2 = 2.0357143
+               |grad[o]|=5.05e-06  |ddm|=6.71e-06  |maxRot[o]|=0.000112
+    CPU time for CASCI solver      0.95 sec, wall time      0.08 sec
+    CPU time for macro iter  5      3.22 sec, wall time      0.27 sec
+    |g|=3.98e-07
+    CPU time for gen h_op      0.05 sec, wall time      0.00 sec
+    imic  1( 1)  |g[o]|=2.15e-07  |dxi|=3.47e-06  max(|x|)=2.7e-06  |dr|=3.47e-06  eig=-4.3e-13  seig=8.55e-11
+    imic  2( 2)  |g[o]|=2.15e-07  |dxi|=4.17e-17  max(|x|)=3.25e-17  |dr|=3.47e-06  eig=-6.21e-35  seig=8.55e-11
+    imic  3( 3)  |g[o]|=2.15e-07  |dxi|=9.54e-24  max(|x|)=7.44e-24  |dr|=3.47e-06  eig=-3.26e-48  seig=8.55e-11
+    imic  4( 4)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic  5( 5)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic  6( 6)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic  7( 7)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic  8( 8)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic  9( 9)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic 10(10)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic 11(11)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic 12(12)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    imic 13(13)  |g[o]|=2.15e-07  |dxi|=    0  max(|x|)=    0  |dr|=3.47e-06  eig=    0  seig=8.55e-11
+    CPU time for aug_hess in 13 inner iters      0.10 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.19 sec, wall time      0.02 sec
+davidson 0 7  |r|= 1.58e-06  e= [-15.80787109 -15.80787109 -15.56351306 -15.56351306 -15.52413308 -15.52413308 -15.5202291 ]  max|de|= -15.8  lindep= 0.964
+root 0 converged  |r|= 3.4e-07  e= -15.807871087488225  max|de|= -9.97e-13
+root 1 converged  |r|= 3.4e-07  e= -15.80787108748821  max|de|= -9.95e-13
+root 2 converged  |r|= 9.98e-07  e= -15.56351306146198  max|de|= -5.33e-15
+root 3 converged  |r|= 9.98e-07  e= -15.563513061461965  max|de|= -7.11e-15
+root 4 converged  |r|= 8.74e-07  e= -15.524133076474792  max|de|= -3.55e-15
+root 5 converged  |r|= 8.74e-07  e= -15.524133076474786  max|de|= -3.55e-15
+root 6 converged  |r|= 1.01e-06  e= -15.520229096065702  max|de|= -1.98e-12
+converged 1 10  |r|= 1.01e-06  e= [-15.80787109 -15.80787109 -15.56351306 -15.56351306 -15.52413308 -15.52413308 -15.5202291 ]  max|de|= -1.98e-12
+    CPU time for update CAS DM      0.57 sec, wall time      0.05 sec
+micro  1  |u-1|=4.9e-06  |g[o]|=3.98e-07  |g[c]|=None  |ddm|=2.14e-07
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [0.9995808  0.9995808  0.99899006 0.99899006 0.98536171 0.67555282]
+Active space overlap to last step, SVD = [1. 1. 1. 1. 1. 1.]
+    CPU time for update eri      0.06 sec, wall time      0.01 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.01 sec, wall time      0.00 sec
+core energy = -113.538113019121
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 7  |r|= 1.01e-06  e= [-15.80787109 -15.80787109 -15.56351306 -15.56351306 -15.52413308 -15.52413308 -15.5202291 ]  max|de|= -15.8  lindep=    1
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+    5     ->     4 
+    4     ->     5 
+root 0 converged  |r|= 3.4e-07  e= -15.807871087485706  max|de|= -1.78e-14
+root 1 converged  |r|= 3.4e-07  e= -15.807871087485697  max|de|=    0
+root 2 converged  |r|= 9.98e-07  e= -15.56351306145947  max|de|= -1.95e-14
+root 3 converged  |r|= 9.98e-07  e= -15.563513061459453  max|de|= -5.33e-15
+root 4 converged  |r|= 8.74e-07  e= -15.524133076472289  max|de|= -1.24e-14
+root 5 converged  |r|= 8.74e-07  e= -15.524133076472275  max|de|= 1.78e-15
+root 6 converged  |r|= 3.31e-07  e= -15.52022909606478  max|de|= -3.94e-13
+converged 1 8  |r|= 9.98e-07  e= [-15.80787109 -15.80787109 -15.56351306 -15.56351306 -15.52413308 -15.52413308 -15.5202291 ]  max|de|= -3.94e-13
+state 0  E = -129.345984106607 S^2 = 0.7500000
+state 1  E = -129.345984106607 S^2 = 0.7500000
+state 2  E = -129.10162608058 S^2 = 3.7500000
+state 3  E = -129.10162608058 S^2 = 3.7500000
+state 4  E = -129.062246095593 S^2 = 0.7500000
+state 5  E = -129.062246095593 S^2 = 0.7500000
+state 6  E = -129.058342115186 S^2 = 3.7500000
+    CPU time for FCI solver      0.66 sec, wall time      0.06 sec
+CAS space CI energy = -15.6158947924142
+macro iter   6 ( 13 JK    1 micro), CASSCF E = -129.154007811535  dE = -1.02318154e-12  S^2 = 2.0357143
+               |grad[o]|=3.98e-07  |ddm|=2.14e-07  |maxRot[o]|=2.7e-06
+    CPU time for CASCI solver      0.86 sec, wall time      0.07 sec
+    CPU time for macro iter  6      1.68 sec, wall time      0.14 sec
+1-step CASSCF converged in   6 macro ( 87 JK  21 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.83666245 1.68874264 1.68874264 0.8828586  0.8828586  0.02013507]
+i = 1  <i|F|i> = -20.69768492
+i = 2  <i|F|i> = -15.64125667
+i = 3  <i|F|i> =  -1.57392088
+i = 4  <i|F|i> =  -0.91650984
+i = 5  <i|F|i> =  -0.62932782
+i = 6  <i|F|i> =  -0.61151752
+i = 7  <i|F|i> =  -0.61151752
+i = 8  <i|F|i> =  -0.05822158
+i = 9  <i|F|i> =  -0.05822158
+i = 10  <i|F|i> =   0.90821789
+i = 11  <i|F|i> =   0.69130315
+i = 12  <i|F|i> =   0.94128116
+i = 13  <i|F|i> =   0.94128116
+i = 14  <i|F|i> =   1.03903229
+i = 15  <i|F|i> =   1.04819514
+i = 16  <i|F|i> =   1.18345571
+i = 17  <i|F|i> =   1.18345571
+i = 18  <i|F|i> =   1.96946859
+i = 19  <i|F|i> =   1.96946859
+i = 20  <i|F|i> =   1.97480201
+i = 21  <i|F|i> =   1.99014951
+i = 22  <i|F|i> =   1.99014951
+i = 23  <i|F|i> =   2.84492827
+i = 24  <i|F|i> =   2.90148879
+i = 25  <i|F|i> =   2.90148879
+i = 26  <i|F|i> =   3.49936785
+i = 27  <i|F|i> =   3.49936785
+i = 28  <i|F|i> =   3.86740714
+    CPU time for 1-step CASSCF     20.86 sec, wall time      1.75 sec
+CASSCF energy = -129.154007811535
+CASCI E = -129.154007811535  E(CI) = -15.6158947924142  S^2 = 2.0357143
+CASCI state-averaged energy = -129.154007811535
+CASCI energy for each state
+  State 0 weight 0.142857  E = -129.345984106607 S^2 = 0.7500000
+  State 1 weight 0.142857  E = -129.345984106607 S^2 = 0.7500000
+  State 2 weight 0.142857  E = -129.10162608058 S^2 = 3.7500000
+  State 3 weight 0.142857  E = -129.10162608058 S^2 = 3.7500000
+  State 4 weight 0.142857  E = -129.062246095593 S^2 = 0.7500000
+  State 5 weight 0.142857  E = -129.062246095593 S^2 = 0.7500000
+  State 6 weight 0.142857  E = -129.058342115186 S^2 = 3.7500000
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.8
+
+                   Copyright (C) 2025 Prism Developers
+                   Contributors: Carlos E. V. de Moura
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: sa-casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 7
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.75000     0.5        2     -129.345984106607     -15.807871087486
+    2       0.75000     0.5        2     -129.345984106607     -15.807871087486
+    3       3.75000     1.5        4     -129.101626080580     -15.563513061459
+    4       3.75000     1.5        4     -129.101626080580     -15.563513061459
+    5       0.75000     0.5        2     -129.062246095593     -15.524133076472
+    6       0.75000     0.5        2     -129.062246095593     -15.524133076472
+    7       3.75000     1.5        4     -129.058342115186     -15.520229096065
+-----------------------------------------------------------------------------------
+
+Importing Pyscf density-fitting objects...
+Initializing state-specific fully internally contracted NEVPT...
+
+Transforming integrals to MO basis...
+
+Transforming 1e integrals to MO basis...
+> CPU time for transforming 1e integrals      0.00 sec, wall time      0.00 sec
+
+Transforming Heff 2e integrals to MO basis (in-core)...
+> CPU time for transforming 2e integrals      0.06 sec, wall time      0.00 sec
+
+Transforming 2e integrals to MO basis (density-fitting)...
+
+******** <class 'pyscf.df.df.DF'> ********
+auxbasis = cc-pvdz-ri
+max_memory = 4000
+num shells = 36, num cGTOs = 112
+size of aux basis 112
+int3c2e [1/1], AO [0:10], nrow = 406
+    CPU time for cholesky_eri      0.03 sec, wall time      0.00 sec
+> CPU time for transforming 2e integrals      0.35 sec, wall time      0.03 sec
+
+Computing NEVPT energies...
+
+Method:                                            qd-nevpt2
+Nuclear repulsion energy:                         25.750715859854
+Number of electrons:                               15
+Number of basis functions:                         28
+Reference wavefunction type:                       sa-casscf
+Number of reference states:                        7
+Number of reference microstates:                   7
+Number of frozen orbitals:                         0
+Number of core orbitals:                           4
+Number of active orbitals:                         6
+Number of external orbitals:                       18
+Reference density fitting?                         False
+Correlation density fitting?                       True
+Temporary directory path:                          /scratch/local/serna.40
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.000000e-10
+Overlap truncation parameter (doubles):            1.000000e-10
+
+Computing T[0]^(1) amplitudes...
+Norm of T[0]^(1):                                  0.047261116621
+Correlation energy [0]:                           -0.013997672753
+> CPU time for computing T[0]^(1) amplitudes      0.02 sec, wall time      0.00 sec
+
+Computing energy of state #1...
+Reference state active-space energy:             -15.807871087486
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(4, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.73 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    72
+Smallest eigenvalue of the [0'] overlap metric:    8.314749e-05
+Norm of T[0']^(1):                                 0.107708789653
+Correlation energy [0']:                          -0.061020607651
+> CPU time for computing T[0']^(1) amplitudes      0.23 sec, wall time      0.02 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   296
+Smallest eigenvalue of the [+1'] overlap metric:   3.536412e-10
+Norm of T[+1']^(1):                                1.430593971135
+Correlation energy [+1']:                         -0.009746589276
+> CPU time for computing T[+1']^(1) amplitudes      3.44 sec, wall time      0.29 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   306
+Smallest eigenvalue of the [-1'] overlap metric:   2.641498e-08
+Norm of T[-1']^(1):                                0.482303826487
+Correlation energy [-1']:                         -0.033557103013
+> CPU time for computing T[-1']^(1) amplitudes      2.23 sec, wall time      0.19 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.037086118609
+Correlation energy [+1]:                          -0.006852994634
+> CPU time for computing T[+1]^(1) amplitudes      0.04 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.070480919844
+Correlation energy [-1]:                          -0.041967608845
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    1.287459e-06
+Norm of T[+2]^(1):                                 0.106623536380
+Correlation energy [+2]:                          -0.003523446188
+> CPU time for computing T[+2]^(1) amplitudes      0.20 sec, wall time      0.02 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    1.129184e-04
+Norm of T[-2]^(1):                                 0.144473819282
+Correlation energy [-2]:                          -0.061895461302
+> CPU time for computing T[-2]^(1) amplitudes      0.10 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.013997672753
+SA-CASSCF reference state total energy:         -129.345984106607
+NEVPT2 correlation energy:                        -0.232561483662
+Total NEVPT2 energy:                            -129.578545590269
+
+Computing energy of state #2...
+Reference state active-space energy:             -15.807871087486
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(4, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.70 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    72
+Smallest eigenvalue of the [0'] overlap metric:    8.314749e-05
+Norm of T[0']^(1):                                 0.107708789653
+Correlation energy [0']:                          -0.061020607651
+> CPU time for computing T[0']^(1) amplitudes      0.23 sec, wall time      0.02 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   296
+Smallest eigenvalue of the [+1'] overlap metric:   3.536412e-10
+Norm of T[+1']^(1):                                1.430594387452
+Correlation energy [+1']:                         -0.009746589246
+> CPU time for computing T[+1']^(1) amplitudes      3.40 sec, wall time      0.28 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   306
+Smallest eigenvalue of the [-1'] overlap metric:   2.641498e-08
+Norm of T[-1']^(1):                                0.482303826225
+Correlation energy [-1']:                         -0.033557103013
+> CPU time for computing T[-1']^(1) amplitudes      2.20 sec, wall time      0.18 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.037086118609
+Correlation energy [+1]:                          -0.006852994634
+> CPU time for computing T[+1]^(1) amplitudes      0.04 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.070480919844
+Correlation energy [-1]:                          -0.041967608845
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    1.287459e-06
+Norm of T[+2]^(1):                                 0.106623536377
+Correlation energy [+2]:                          -0.003523446188
+> CPU time for computing T[+2]^(1) amplitudes      0.20 sec, wall time      0.02 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    1.129184e-04
+Norm of T[-2]^(1):                                 0.144473819282
+Correlation energy [-2]:                          -0.061895461302
+> CPU time for computing T[-2]^(1) amplitudes      0.09 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.013997672753
+SA-CASSCF reference state total energy:         -129.345984106607
+NEVPT2 correlation energy:                        -0.232561483632
+Total NEVPT2 energy:                            -129.578545590239
+
+Computing energy of state #3...
+Reference state active-space energy:             -15.563513061459
+Reference state spin multiplicity:                 4
+Number of active electrons:                        [(4, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.72 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    72
+Smallest eigenvalue of the [0'] overlap metric:    1.005998e-08
+Norm of T[0']^(1):                                 0.127375455059
+Correlation energy [0']:                          -0.061676394894
+> CPU time for computing T[0']^(1) amplitudes      0.22 sec, wall time      0.02 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   209
+Smallest eigenvalue of the [+1'] overlap metric:   1.306785e-10
+Norm of T[+1']^(1):                                1.378844237468
+Correlation energy [+1']:                         -0.007421372120
+> CPU time for computing T[+1']^(1) amplitudes      3.32 sec, wall time      0.28 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   285
+Smallest eigenvalue of the [-1'] overlap metric:   1.396687e-10
+Norm of T[-1']^(1):                                5.862911688506
+Correlation energy [-1']:                         -0.032328267171
+> CPU time for computing T[-1']^(1) amplitudes      2.13 sec, wall time      0.18 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.037632037364
+Correlation energy [+1]:                          -0.007054638958
+> CPU time for computing T[+1]^(1) amplitudes      0.04 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.072549874332
+Correlation energy [-1]:                          -0.042768483222
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    31
+Smallest eigenvalue of the [+2] overlap metric:    1.686849e-09
+Norm of T[+2]^(1):                                 0.038341156568
+Correlation energy [+2]:                          -0.002125756796
+> CPU time for computing T[+2]^(1) amplitudes      0.19 sec, wall time      0.02 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    6.706301e-09
+Norm of T[-2]^(1):                                 1.015104230875
+Correlation energy [-2]:                          -0.058647318277
+> CPU time for computing T[-2]^(1) amplitudes      0.09 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.013997672753
+SA-CASSCF reference state total energy:         -129.101626080580
+NEVPT2 correlation energy:                        -0.226019904191
+Total NEVPT2 energy:                            -129.327645984771
+
+Computing energy of state #4...
+Reference state active-space energy:             -15.563513061459
+Reference state spin multiplicity:                 4
+Number of active electrons:                        [(4, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.72 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    72
+Smallest eigenvalue of the [0'] overlap metric:    1.005998e-08
+Norm of T[0']^(1):                                 0.127375455041
+Correlation energy [0']:                          -0.061676394894
+> CPU time for computing T[0']^(1) amplitudes      0.22 sec, wall time      0.02 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   209
+Smallest eigenvalue of the [+1'] overlap metric:   1.306791e-10
+Norm of T[+1']^(1):                                1.378844205017
+Correlation energy [+1']:                         -0.007421372118
+> CPU time for computing T[+1']^(1) amplitudes      3.33 sec, wall time      0.28 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   285
+Smallest eigenvalue of the [-1'] overlap metric:   1.396687e-10
+Norm of T[-1']^(1):                                5.862910056529
+Correlation energy [-1']:                         -0.032328267172
+> CPU time for computing T[-1']^(1) amplitudes      2.15 sec, wall time      0.18 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.037632037364
+Correlation energy [+1]:                          -0.007054638958
+> CPU time for computing T[+1]^(1) amplitudes      0.04 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.072549874332
+Correlation energy [-1]:                          -0.042768483222
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    31
+Smallest eigenvalue of the [+2] overlap metric:    1.686848e-09
+Norm of T[+2]^(1):                                 0.038341156546
+Correlation energy [+2]:                          -0.002125756796
+> CPU time for computing T[+2]^(1) amplitudes      0.20 sec, wall time      0.02 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    6.706300e-09
+Norm of T[-2]^(1):                                 1.015104283763
+Correlation energy [-2]:                          -0.058647318277
+> CPU time for computing T[-2]^(1) amplitudes      0.09 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.013997672753
+SA-CASSCF reference state total energy:         -129.101626080580
+NEVPT2 correlation energy:                        -0.226019904190
+Total NEVPT2 energy:                            -129.327645984770
+
+Computing energy of state #5...
+Reference state active-space energy:             -15.524133076472
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(4, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.71 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    72
+Smallest eigenvalue of the [0'] overlap metric:    9.079271e-06
+Norm of T[0']^(1):                                 0.119594797788
+Correlation energy [0']:                          -0.062516674797
+> CPU time for computing T[0']^(1) amplitudes      0.22 sec, wall time      0.02 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   296
+Smallest eigenvalue of the [+1'] overlap metric:   1.298484e-09
+Norm of T[+1']^(1):                                1.812100963239
+Correlation energy [+1']:                         -0.007416449374
+> CPU time for computing T[+1']^(1) amplitudes      3.37 sec, wall time      0.28 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   306
+Smallest eigenvalue of the [-1'] overlap metric:   1.761661e-08
+Norm of T[-1']^(1):                                0.653970111398
+Correlation energy [-1']:                         -0.033025928553
+> CPU time for computing T[-1']^(1) amplitudes      2.17 sec, wall time      0.18 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.039708518111
+Correlation energy [+1]:                          -0.007070843886
+> CPU time for computing T[+1]^(1) amplitudes      0.04 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.072917150219
+Correlation energy [-1]:                          -0.042853191135
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    4.295371e-06
+Norm of T[+2]^(1):                                 0.081967324827
+Correlation energy [+2]:                          -0.002454186057
+> CPU time for computing T[+2]^(1) amplitudes      0.19 sec, wall time      0.02 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    8.146161e-06
+Norm of T[-2]^(1):                                 0.315745287042
+Correlation energy [-2]:                          -0.060094525157
+> CPU time for computing T[-2]^(1) amplitudes      0.09 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.013997672753
+SA-CASSCF reference state total energy:         -129.062246095593
+NEVPT2 correlation energy:                        -0.229429471713
+Total NEVPT2 energy:                            -129.291675567307
+
+Computing energy of state #6...
+Reference state active-space energy:             -15.524133076472
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(4, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.71 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    72
+Smallest eigenvalue of the [0'] overlap metric:    9.079271e-06
+Norm of T[0']^(1):                                 0.119594797788
+Correlation energy [0']:                          -0.062516674797
+> CPU time for computing T[0']^(1) amplitudes      0.22 sec, wall time      0.02 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   296
+Smallest eigenvalue of the [+1'] overlap metric:   1.298484e-09
+Norm of T[+1']^(1):                                1.812101192690
+Correlation energy [+1']:                         -0.007416449373
+> CPU time for computing T[+1']^(1) amplitudes      3.37 sec, wall time      0.28 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   306
+Smallest eigenvalue of the [-1'] overlap metric:   1.761661e-08
+Norm of T[-1']^(1):                                0.653970103391
+Correlation energy [-1']:                         -0.033025928553
+> CPU time for computing T[-1']^(1) amplitudes      2.17 sec, wall time      0.18 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.039708518111
+Correlation energy [+1]:                          -0.007070843886
+> CPU time for computing T[+1]^(1) amplitudes      0.04 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.072917150219
+Correlation energy [-1]:                          -0.042853191135
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    36
+Smallest eigenvalue of the [+2] overlap metric:    4.295371e-06
+Norm of T[+2]^(1):                                 0.081967324831
+Correlation energy [+2]:                          -0.002454186057
+> CPU time for computing T[+2]^(1) amplitudes      0.19 sec, wall time      0.02 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    8.146161e-06
+Norm of T[-2]^(1):                                 0.315745287040
+Correlation energy [-2]:                          -0.060094525157
+> CPU time for computing T[-2]^(1) amplitudes      0.09 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.013997672753
+SA-CASSCF reference state total energy:         -129.062246095593
+NEVPT2 correlation energy:                        -0.229429471713
+Total NEVPT2 energy:                            -129.291675567306
+
+Computing energy of state #7...
+Reference state active-space energy:             -15.520229096065
+Reference state spin multiplicity:                 4
+Number of active electrons:                        [(4, 3)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.71 sec, wall time      0.06 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    71
+Smallest eigenvalue of the [0'] overlap metric:    2.863912e-06
+Norm of T[0']^(1):                                 0.228988997243
+Correlation energy [0']:                          -0.070840362628
+> CPU time for computing T[0']^(1) amplitudes      0.25 sec, wall time      0.02 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   209
+Smallest eigenvalue of the [+1'] overlap metric:   3.572791e-07
+Norm of T[+1']^(1):                                0.228216729042
+Correlation energy [+1']:                         -0.031092416847
+> CPU time for computing T[+1']^(1) amplitudes      4.40 sec, wall time      0.37 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   297
+Smallest eigenvalue of the [-1'] overlap metric:   1.263220e-10
+Norm of T[-1']^(1):                                4.553135734102
+Correlation energy [-1']:                         -0.038422609686
+> CPU time for computing T[-1']^(1) amplitudes      2.14 sec, wall time      0.18 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.043409526002
+Correlation energy [+1]:                          -0.009715664741
+> CPU time for computing T[+1]^(1) amplitudes      0.04 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.073073231484
+Correlation energy [-1]:                          -0.043956243843
+> CPU time for computing T[-1]^(1) amplitudes      0.05 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    34
+Smallest eigenvalue of the [+2] overlap metric:    1.120382e-07
+Norm of T[+2]^(1):                                 0.879594332058
+Correlation energy [+2]:                          -0.004012806465
+> CPU time for computing T[+2]^(1) amplitudes      0.19 sec, wall time      0.02 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    3.298285e-06
+Norm of T[-2]^(1):                                 0.704593697763
+Correlation energy [-2]:                          -0.063988063511
+> CPU time for computing T[-2]^(1) amplitudes      0.10 sec, wall time      0.01 sec
+Correlation energy [0]:                           -0.013997672753
+SA-CASSCF reference state total energy:         -129.058342115186
+NEVPT2 correlation energy:                        -0.276025840474
+Total NEVPT2 energy:                            -129.334367955660
+
+Computing the QD-NEVPT2 effective Hamiltonian...
+
+Summary of results for the QD-NEVPT2 calculation with the SA-CASSCF reference:
+-----------------------------------------------------------------------------------------------------------------
+  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. 
+-----------------------------------------------------------------------------------------------------------------
+    1        2         -129.578564871144     0.00000000       0.0000                      0.0000               
+    2        2         -129.578564871114     0.00000000       0.0000                      0.0000               
+    3        4         -129.334367955660     0.24419692       6.6449     186.5845     53595.0280     0.00000000
+    4        4         -129.327645984771     0.25091889       6.8279     181.5860     55070.3301     0.00000000
+    5        2         -129.327645984770     0.25091889       6.8279     181.5860     55070.3301     0.00000000
+    6        2         -129.291656286431     0.28690858       7.8072     158.8079     62969.1559     0.00136307
+    7        4         -129.291656286431     0.28690858       7.8072     158.8079     62969.1559     0.00009186
+-----------------------------------------------------------------------------------------------------------------
+
+
+Oscillator Strengths: state i -> state f
+------------------------------------------------------------------------------------------------------------------------------------
+1 -> 2: 0.00000000    2 -> 3: 0.00000000    3 -> 4: 0.00000000    4 -> 5: 0.00000000    5 -> 6: 0.00000000    6 -> 7: 0.00000000
+1 -> 3: 0.00000000    2 -> 4: 0.00000000    3 -> 5: 0.00000000    4 -> 6: 0.00000000    5 -> 7: 0.00000000                      
+1 -> 4: 0.00000000    2 -> 5: 0.00000000    3 -> 6: 0.00000000    4 -> 7: 0.00000000                                            
+1 -> 5: 0.00000000    2 -> 6: 0.00000000    3 -> 7: 0.00000000                                                                  
+1 -> 6: 0.00136307    2 -> 7: 0.00136307                                                                                        
+1 -> 7: 0.00009186                                                                                                              
+------------------------------------------------------------------------------------------------------------------------------------
+> CPU time for total QD-NEVPT2 calculation     62.01 sec, wall time      5.18 sec
+[-0.23258076453728904, -0.23258076450747467, -0.2327418750794834, -0.22601990419099138, -0.26539988917707547, -0.22941019083822312, -0.23331417124529708]
