@@ -131,6 +131,12 @@ Note that DF can significantly speed up the CASSCF calculation since the cost of
 - Single- and multi-state state-specific NEVPT2 energies
 - Frozen core approximation
 - Full support of density fitting
+- Oscillator strengths for multi-state NEVPT2 calculations
+
+## QD-NEVPT2
+- Frozen core approximation
+- Full support of density fitting
+- Oscillator strengths
 
 ## CVS-IP-MR-ADC
 - Excitation energies up to MR-ADC(2)-X
@@ -155,5 +161,6 @@ Additional references for the MR-ADC methods:
 
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+- James D. Serna <jserna456@gmail.com>
 
 Check out AUTHORS for more details.
