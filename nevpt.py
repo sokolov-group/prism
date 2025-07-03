@@ -117,9 +117,12 @@ class NEVPT:
             nevpt_integrals.transform_integrals_2e_incore(self)
 
         # Run NEVPT computation
-        e_tot, e_corr = nevpt_compute.kernel(self)
+        e_tot, e_corr, osc = nevpt_compute.kernel(self)
 
-        return e_tot, e_corr
+        if osc is None:
+            return e_tot, e_corr
+        else:
+            return e_tot, e_corr, osc
 
     @property
     def verbose(self):

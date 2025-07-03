@@ -69,6 +69,7 @@ def kernel(nevpt):
     e_tot = []
     e_corr = []
     mstate = 0
+    osc_str = None
 
     e_0 = 0.0
     t1_0 = None
@@ -125,19 +126,23 @@ def kernel(nevpt):
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
 
-        # Return QDNEVPT2 total energies
+        # Get Oscillator Strengths
+        osc_str = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec)
     else:
         del(t1_0)
 
     if n_states > 1:
+        if nevpt.method == "nevpt2":
+            osc_str = nevpt2.osc_strength(nevpt, e_tot)
+            
         h2ev = nevpt.interface.hartree_to_ev
         h2cm = nevpt.interface.hartree_to_inv_cm
 
         nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method.upper(), nevpt.interface.reference.upper()))
 
-        nevpt.log.info("------------------------------------------------------------------------------------------------")
-        nevpt.log.info("  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)")
-        nevpt.log.info("------------------------------------------------------------------------------------------------")
+        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. ")
+        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
 
         e_gs = e_tot[0]
 
@@ -146,102 +151,55 @@ def kernel(nevpt):
             de_ev = de * h2ev
             de_cm = de * h2cm
             if p == 0 or abs(de) < 1e-5:
-                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f" % ((p+1), nevpt.ref_wfn_spin_mult[p], e_tot[p], de, de_ev, " ", de_cm))
+                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), nevpt.ref_wfn_spin_mult[p], e_tot[p], de, de_ev, " ", de_cm, " "))
             else:
                 de_nm = 10000000 / de_cm
-                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f" % ((p+1), nevpt.ref_wfn_spin_mult[p], e_tot[p], de, de_ev, de_nm, de_cm))
+                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), nevpt.ref_wfn_spin_mult[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
 
-        nevpt.log.info("------------------------------------------------------------------------------------------------")
+        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
     
-        # Oscillator Strengths
-        num_states = len(e_tot) # total states
-        col_width = 18  # characters per column
-
-        # Collect all transitions per ground state
-        transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
-
-        for i in range(num_states - 1):
-            osc_str = osc_strength(nevpt, e_tot, h_evec, gs_index=i) 
-            for j in range(i + 1, num_states):
-                f_ij = osc_str[j - i - 1]
-                f_val_str = f"{f_ij:.8f}"
-                transition_data[i].append(f"{i + 1} -> {j + 1}: {f_val_str}")
-
-        # Compute max rows needed and total line width
-        max_len = max(len(col) for col in transition_data)
-        total_line_width = (col_width + 4) * len(transition_data) # Needed for adjusting printout
-
-        # Print header and transitions
-        separator = "-" * total_line_width
-        nevpt.log.info("\n\nOscillator Strengths: state i -> state f")
-        nevpt.log.info(separator)
-
-        # Final print
-        for row in range(max_len):
-            row_data = []
-            for col in transition_data:
-                if row < len(col):
-                    row_data.append(col[row].ljust(col_width))
-                else:
-                    row_data.append("".ljust(col_width))
-            nevpt.log.info("    ".join(row_data))
-
-        nevpt.log.info(separator)
-
+    if nevpt.verbose >= 5:
+        print_osc_str(nevpt, e_tot, osc_str)
     
     sys.stdout.flush()
     nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
+    
+    return e_tot, e_corr, osc_str
 
-    return e_tot, e_corr
+def print_osc_str(nevpt, e_tot, osc_str):
+    # Oscillator Strengths
+    num_states = len(e_tot) # total states
+    col_width = 18  # characters per column
 
-def osc_strength(nevpt, en, evec, gs_index = 0):
+    # Collect all transitions per ground state
+    transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
+    osc_val = [[] for _ in range(num_states - 1)] 
+    
+    for i in range(num_states - 1):
+        for j in range(i + 1, num_states):
+            f_ij = osc_str[j - i - 1]
+            osc_val.append(f_ij)
+            
+            f_val_str = f"{f_ij:.8f}"
+            transition_data[i].append(f"{i + 1} -> {j + 1}: {f_val_str}")
 
-    ncore = nevpt.ncore # Flag for frozen core
+    # Compute max rows needed and total line width
+    max_len = max(len(col) for col in transition_data)
+    total_line_width = (col_width + 4) * len(transition_data) # Needed for adjusting printout
 
-    n_micro_states = sum(nevpt.ref_wfn_deg)
-    dip_mom_ao = nevpt.interface.dip_mom_ao
-    mo_coeff = nevpt.mo
-    nmo = nevpt.nmo
-    ncas = nevpt.ncas
+    # Print header and transitions
+    separator = "-" * total_line_width
+    nevpt.log.info("\n\nOscillator Strengths: state i -> state f")
+    nevpt.log.info(separator)
 
-    dip_mom_mo = np.zeros_like(dip_mom_ao)
+    # Final print
+    for row in range(max_len):
+        row_data = []
+        for col in transition_data:
+            if row < len(col):
+                row_data.append(col[row].ljust(col_width))
+            else:
+                row_data.append("".ljust(col_width))
+        nevpt.log.info("    ".join(row_data))
 
-    # Transform dipole moments from AO to MO basis
-    for d in range(dip_mom_ao.shape[0]):
-        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
-
-    # List to store Osc. Strength Values
-    osc_total = []
-
-    # Looping over CAS States
-    for state in range(gs_index + 1, n_micro_states):
-        # Reset final transformed RDM
-        rdm_qd = np.zeros((nmo, nmo))
-
-        # Looping over states I,J
-        for I in range(n_micro_states):
-            for J in range(n_micro_states):
-                rdm_mo = np.zeros((nmo, nmo))  # Reset RDM in MO Basis   
-                trdm_ca = nevpt.interface.compute_rdm1(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
-                rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = trdm_ca
-
-                if I == J:
-                    rdm_mo[:ncore, :ncore] = 2 * np.eye(nevpt.ncore)
-                    rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
-                else:
-                    rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
-
-        # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
- 
-        osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
-        osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
-        osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
-
-        # Add Dipole Moment Components
-        osc_total.append((osc_x + osc_y + osc_z).real)
-
-    return osc_total
-
+    nevpt.log.info(separator)
