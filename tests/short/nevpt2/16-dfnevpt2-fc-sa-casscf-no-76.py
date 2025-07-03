@@ -15,6 +15,7 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          James D. Serna <jserna456@gmail.com>
 
 import unittest
 import numpy as np
@@ -86,6 +87,12 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(e_tot[4], -129.287568008749, 6)
         self.assertAlmostEqual(e_tot[5], -129.287568008749, 6)
         self.assertAlmostEqual(e_tot[6], -129.330152379172, 6)
+        
+        self.assertAlmostEqual(osc[0], 0.0, 6)
+        self.assertAlmostEqual(osc[1], 0.0, 6)
+        self.assertAlmostEqual(osc[2], 0.0, 6)
+        self.assertAlmostEqual((osc[3] + osc[4]), (0.00138210+0.00000094), 6)
+        self.assertAlmostEqual(osc[5], 0.0, 6)
 
 if __name__ == "__main__":
     print("NEVPT2 test")
