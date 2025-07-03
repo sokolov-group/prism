@@ -19,7 +19,6 @@
 
 import sys
 import numpy as np
-from functools import reduce
 
 import prism.lib.logger as logger
 import prism.nevpt_rdms as nevpt_rdms
@@ -79,7 +78,7 @@ def kernel(nevpt):
     ncore = nevpt.ncore - nevpt.nfrozen
 
     if ncore > 0 and nevpt.nextern > 0:
-        e_0, t1_0 = nevpt2.nevpt_amplitudes.compute_t1_0(nevpt)
+        e_0, t1_0 = nevpt_amplitudes.compute_t1_0(nevpt)
     else:
         t1_0 = np.zeros((ncore, ncore, nevpt.nextern, nevpt.nextern))
 
@@ -110,9 +109,9 @@ def kernel(nevpt):
         if nevpt.method == "qd-nevpt2":
             t1.append(t1_state)
         else:
-            del(t1_state)
+            del (t1_state)
 
-        del(rdms)
+        del (rdms)
 
         mstate += deg
 
@@ -127,8 +126,9 @@ def kernel(nevpt):
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
 
-    else:
-        del(t1_0)
+        del (t1)
+
+    del (t1_0)
 
     if n_states > 1:
         # Get Oscillator Strengths
