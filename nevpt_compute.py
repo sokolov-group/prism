@@ -23,6 +23,7 @@ from functools import reduce
 
 import prism.lib.logger as logger
 import prism.nevpt_rdms as nevpt_rdms
+import prism.nevpt_amplitudes as nevpt_amplitudes
 import prism.nevpt2 as nevpt2
 import prism.qd_nevpt2 as qd_nevpt2
 
@@ -78,7 +79,7 @@ def kernel(nevpt):
     ncore = nevpt.ncore - nevpt.nfrozen
 
     if ncore > 0 and nevpt.nextern > 0:
-        e_0, t1_0 = nevpt2.compute_t1_0(nevpt)
+        e_0, t1_0 = nevpt2.nevpt_amplitudes.compute_t1_0(nevpt)
     else:
         t1_0 = np.zeros((ncore, ncore, nevpt.nextern, nevpt.nextern))
 
