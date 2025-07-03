@@ -15,7 +15,8 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
-
+#          James D. Serna <jserna456@gmail.com>
+ 
 import unittest
 import numpy as np
 import math
@@ -25,7 +26,7 @@ import pyscf.mcscf
 import prism.interface
 import prism.nevpt
 
-#np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
 r = 0.96
 x = r * math.sin(104.5 * math.pi/(2 * 180.0))
@@ -37,8 +38,7 @@ mol.atom = [
             ['H', (0.0,  -x,   y)],
             ['H', (0.0,   x,   y)]]
 mol.basis = 'aug-cc-pvdz'
-mol.symmetry = True
-mol.verbose = 5
+mol.symmetry = False
 mol.build()
 
 # RHF calculation
@@ -61,31 +61,38 @@ interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
-nevpt.s_thresh_singles = 1e-10
-nevpt.s_thresh_doubles = 1e-10
+nevpt.s_thresh_singles = 1e-8
+nevpt.s_thresh_doubles = 1e-8
 nevpt.method = "qd-nevpt2"
 
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,  -75.6915177093492, 6)
-        self.assertAlmostEqual(mc.e_cas,  -12.5683871410396, 6)
+        self.assertAlmostEqual(mc.e_tot,  -75.8195380454856, 6)
+        self.assertAlmostEqual(mc.e_cas,  -12.6639537183245, 6)
 
     def test_prism(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -76.271700250051, 5)
-        self.assertAlmostEqual(e_tot[1], -75.901242639252, 5)
-        self.assertAlmostEqual(e_tot[2], -75.885836013805, 5)
-        self.assertAlmostEqual(e_tot[3], -75.770736119896, 5)
-        self.assertAlmostEqual(e_tot[4], -75.747093185052, 5)
-        self.assertAlmostEqual(e_tot[5], -75.696832494150, 5)
+        self.assertAlmostEqual(e_tot[0], -76.267176933501, 5)
+        self.assertAlmostEqual(e_tot[1], -75.989861278395, 5)
+        self.assertAlmostEqual(e_tot[2], -75.977156822450, 5)
+        self.assertAlmostEqual(e_tot[3], -75.917821026148, 5)
+        self.assertAlmostEqual(e_tot[4], -75.911455809535, 5)
+        self.assertAlmostEqual(e_tot[5], -75.902504277921, 5)
+        
+        self.assertAlmostEqual(e_corr[0], -0.227497485644, 5)
+        self.assertAlmostEqual(e_corr[1], -0.159162632919, 5)
+        self.assertAlmostEqual(e_corr[2], -0.160421631008, 5)
+        self.assertAlmostEqual(e_corr[3], -0.164316953799, 5)
+        self.assertAlmostEqual(e_corr[4], -0.166517119857, 5)
+        self.assertAlmostEqual(e_corr[5], -0.170832051808, 5)
         
         self.assertAlmostEqual(osc[0], 0.0, 5)
-        self.assertAlmostEqual(osc[1], 0.12151018, 5)
+        self.assertAlmostEqual(osc[1], 0.0191822507, 5)
         self.assertAlmostEqual(osc[2], 0.0, 5)
-        self.assertAlmostEqual(osc[3], 0.01851123, 5)
+        self.assertAlmostEqual(osc[3], 0.0, 5)
         self.assertAlmostEqual(osc[4], 0.0, 5)
 
 if __name__ == "__main__":

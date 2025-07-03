@@ -70,7 +70,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        e_tot, e_corr = nevpt.kernel()
+        e_tot, e_corr, osc = nevpt.kernel()
 
         self.assertAlmostEqual(e_tot[0], -100.251356337893, 6)
         self.assertAlmostEqual(e_corr[0],  -0.214601607885, 6)

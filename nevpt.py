@@ -119,10 +119,7 @@ class NEVPT:
         # Run NEVPT computation
         e_tot, e_corr, osc = nevpt_compute.kernel(self)
 
-        if osc is None:
-            return e_tot, e_corr
-        else:
-            return e_tot, e_corr, osc
+        return e_tot, e_corr, osc
 
     @property
     def verbose(self):

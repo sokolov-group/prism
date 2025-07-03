@@ -15,6 +15,7 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          James D. Serna <jserna456@gmail.com>
 
 import unittest
 import numpy as np
@@ -64,10 +65,10 @@ interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('cc-pvd
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
-nevpt.s_thresh_singles = 1e-10
-nevpt.s_thresh_doubles = 1e-10
+nevpt.s_thresh_singles = 1e-8
+nevpt.s_thresh_doubles = 1e-8
 nevpt.nfrozen = 2
-nevpt.method = "nevpt2"
+nevpt.method = "qd-nevpt2"
 
 class KnownValues(unittest.TestCase):
 
@@ -79,14 +80,29 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -129.574421622874, 6)
-        self.assertAlmostEqual(e_tot[1], -129.574421622861, 6)
-        self.assertAlmostEqual(e_tot[2], -129.323516275273, 6)
-        self.assertAlmostEqual(e_tot[3], -129.323516275271, 6)
-        self.assertAlmostEqual(e_tot[4], -129.287568008749, 6)
-        self.assertAlmostEqual(e_tot[5], -129.287568008749, 6)
-        self.assertAlmostEqual(e_tot[6], -129.330152379172, 6)
+        self.assertAlmostEqual(e_tot[0], -129.574440989907, 6)
+        self.assertAlmostEqual(e_tot[1], -129.574440989907, 6)
+        self.assertAlmostEqual(e_tot[2], -129.330152086338, 6)
+        self.assertAlmostEqual(e_tot[3], -129.323515948305, 6)
+        self.assertAlmostEqual(e_tot[4], -129.323515948304, 6)
+        self.assertAlmostEqual(e_tot[5], -129.287548577760, 6)
+        self.assertAlmostEqual(e_tot[6], -129.287548577760, 6)
 
+        self.assertAlmostEqual(e_corr[0], -0.2284568907441, 6)
+        self.assertAlmostEqual(e_corr[1], -0.2284568907438, 6)
+        self.assertAlmostEqual(e_corr[2], -0.2285260127866, 6)
+        self.assertAlmostEqual(e_corr[3], -0.2218898747531, 6)
+        self.assertAlmostEqual(e_corr[4], -0.2612698593988, 6)
+        self.assertAlmostEqual(e_corr[5], -0.2253024888553, 6)
+        self.assertAlmostEqual(e_corr[6], -0.2292064202525, 6)
+        
+        self.assertAlmostEqual(osc[0], 0.0, 6)
+        self.assertAlmostEqual(osc[1], 0.0, 6)
+        self.assertAlmostEqual(osc[2], 0.0, 6)
+        self.assertAlmostEqual(osc[3], 0.0, 6)
+        self.assertAlmostEqual(osc[4] + osc[5], (0.00061126 + 0.00084377), 6)
+        
+        
 if __name__ == "__main__":
-    print("NEVPT2 test")
+    print("QD-NEVPT2 test")
     unittest.main()
