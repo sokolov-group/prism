@@ -77,7 +77,7 @@ Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calc
 This allows to incorporate the interaction between the first-order wavefunctions and correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
 
 Some important parameters for the NEVPT2 calculations are:
- - ```method``` (string): Chooses the flavor of NEVPT2 calculation. Use ```"nevpt2"``` for SS-NEVPT2 and ``"qd-nevpt2"``` for QD-NEVPT2.
+ - ```method``` (string): Chooses the flavor of NEVPT2 calculation. Use ```"nevpt2"``` for SS-NEVPT2 and ```"qd-nevpt2"``` for QD-NEVPT2.
  - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core").
  - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors.
  - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. For experts only.
