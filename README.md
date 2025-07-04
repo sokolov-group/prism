@@ -4,8 +4,7 @@ Currently, Prism features the methods of N-electron valence perturbation theory 
 
 # How to install
 ## Requirements
-- Python 3.7 or older;
-- [PySCF 2.7 or older](https://github.com/pyscf/pyscf/), including its [dependencies](https://pyscf.org/install.html);
+- Python 3.7 or older, including its dependencies;
 - Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions
 
 ## Installation
@@ -61,7 +60,7 @@ mr_adc.ncvs = 1
 e, p, x = mr_adc.kernel()
 ```
 
-This calculation uses CVS-IP-MR-ADC(2) to compute 10 core ionized states ("roots"). 
+This calculation uses CVS-IP-MR-ADC(2) to compute 10 core ionized states ("roots").
 The parameter ```ncvs``` controls the number of core orbitals in the hydrogen fluoride molecule, for which excited states are calculated.
 For example, setting ```ncvs = 1``` corresponds to exciting electrons from the 1s orbitals of fluorine atoms, while ```ncvs = 2``` corresponds to probing the 2s excitations.
 Other examples can be found [here](examples/).
@@ -71,11 +70,13 @@ Other examples can be found [here](examples/).
 N-electron valence perturbation theory (NEVPT) is an efficient multireference approach to describe dynamic electron correlation starting with a complete active space configuration interaction (CASCI) or self-consistent field (CASSCF) reference wavefunction.
 Prism features an implementation of second-order NEVPT (NEVPT2) with full internal contraction (FIC), which is also known as "partially contracted" NEVPT2 (PC-NEVPT2).
 The NEVPT2 calculations can be performed starting with one or several CASCI/CASSCF reference wavefunctions with any choice of orbitals (e.g., Hartree–Fock, state-averaged CASSCF, etc).
-For multiple reference states, the NEVPT2 energies will be computed using a state-averaged generalized Fock operator but the correlation energies will be calculated specifically for each state (so-called state-specific multi-state NEVPT2 calculation).
-Such calculations can deliver accurate excitation energies but may not be able to correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
-An efficient implementation of NEVPT2 for quasidegenerate states (QDNEVPT2) will be released soon.
+For multiple reference states, two flavors of NEVPT2 are available: 1) state-specific (SS-NEVPT2) and 2) quasidegenerate (QD-NEVPT2).
+In the SS-NEVPT2 method, the first-order wavefunctions and second-order correlation energies are computed for each electronic state.
+Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calculated by diagonalizing the effective Hamiltonian evaluated to second order perturbation theory.
+This allows to incorporate the interaction between the first-order wavefunctions and correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
 
 Some important parameters for the NEVPT2 calculations are:
+ - ```method``` (string): Controls the flavor of NEVPT2 calculation. Use ```"nevpt2"``` for SS-NEVPT2 and ``"qd-nevpt2"``` for QD-NEVPT2.
  - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core").
  - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors.
  - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. For experts only.
