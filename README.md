@@ -45,7 +45,7 @@ For example, the NEVPT2 energy calculation for the reference CASSCF state can be
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.method = "nevpt2"
-e_tot, e_corr = nevpt.kernel()
+e_tot, e_corr, osc = nevpt.kernel()
 ```
 
 Alternatively, the CVS-IP-MR-ADC calculation of core ionized states can be performed as:
