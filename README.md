@@ -77,12 +77,12 @@ Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calc
 This allows to incorporate the interaction between the first-order wavefunctions and correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
 
 Some important parameters for the NEVPT2 calculations are:
- - ```method``` (string): Chooses the flavor of NEVPT2 calculation. Use ```"nevpt2"``` for SS-NEVPT2 and ```"qd-nevpt2"``` for QD-NEVPT2.
- - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core").
- - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors.
- - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. For experts only.
- - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. For experts only.
- - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. For experts only.
+ - ```method``` (string): Chooses the flavor of NEVPT2 calculation. Use ```"nevpt2"``` for SS-NEVPT2 and ```"qd-nevpt2"``` for QD-NEVPT2. Default is ```"nevpt2"```.
+ - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core"). Default is 0 or None.
+ - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors. Default is set by PySCF.
+ - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. Default is False. For experts only.
+ - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-8. For experts only. 
+ - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-8. For experts only.
 
 ## Multireference algebraic diagrammatic construction theory
 Multireference algebraic diagrammatic construction theory can simulate a variety of excited electronic states (neutral excitations, ionization, electron attachment, core excitation and ionization).
@@ -94,14 +94,14 @@ The CVS-IP-MR-ADC calculations can be performed at four different levels of theo
 
 Other important parameters are:
  - ```ncvs``` (integer): The number of core orbitals to be included in the simulation. This number should ideally correspond to the index of highest-energy occupied orbital, from which electrons are allowed to be excited from. E.g., probing the 1s orbital of C in CO can be done by setting ```ncvs = 2```.
- - ```nroots``` (integer): The number of excited states (or transitions) to be calculated. 
- - ```max_cycle``` (integer): The maximum number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix.
- - ```tol_e``` (float): Convergence tolerance for the excitation energies in the Davidson diagonalization.
- - ```tol_r``` (float): Convergence tolerance for the residual in the Davidson diagonalization.
- - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed up the calculation since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors.
- - ```analyze_spec_factor``` (boolean): Requests the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol``` (float).
- - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. For experts only.
- - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. For experts only.
+ - ```nroots``` (integer): The number of excited states (or transitions) to be calculated. Default is 6.
+ - ```max_cycle``` (integer): The maximum number of iterations in the Davidson diagonalization of the MR-ADC effective Hamiltonian matrix. Default is 50.
+ - ```tol_e``` (float): Convergence tolerance for the excitation energies in the Davidson diagonalization (in Hartree). Default is 1e-8.
+ - ```tol_r``` (float): Convergence tolerance for the residual in the Davidson diagonalization. Default is 1e-5.
+ - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed up the calculation since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors. Default is set by PySCF.
+ - ```analyze_spec_factor``` (boolean): Requests the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol``` (float). Default is False.
+ - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-5. For experts only.
+ - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-10. For experts only.
 
 The excited states with large spectroscopic factors can be visualized by generating the Dyson molecular orbitals:
 

@@ -70,8 +70,8 @@ class NEVPT:
         self.nfrozen = None                       # Number of lowest-energy (core) orbitals that will be left uncorrelated ("frozen core")
         self.compute_singles_amplitudes = False   # Include singles amplitudes in the NEVPT2 energy?
         self.semi_internal_projector = "gno"      # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
-        self.s_thresh_singles = 1e-10
-        self.s_thresh_doubles = 1e-10
+        self.s_thresh_singles = 1e-8
+        self.s_thresh_doubles = 1e-8
 
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
 
