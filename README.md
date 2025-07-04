@@ -154,6 +154,9 @@ If you include MR-ADC results from Prism in your publication, please cite:
 Citation for the NEVPT2 method:
 - "[Introduction of n-electron valence states for multireference perturbation theory](https://doi.org/10.1063/1.1361246)", C. Angeli, R. Cimiraglia, S. Evangelisti, T. Leininger, and J.-P.P. Malrieu, J. Chem. Phys. 114(23), 10252–10264 (2001).
 
+Citation for the QD-NEVPT2 method:
+- "[A quasidegenerate formulation of the second order n-electron valence state perturbation theory approach](https://doi.org/10.1063/1.1778711)", C. Angeli, S. Borini, M. Cestari, and R. Cimiraglia, J. Chem. Phys. 121(9), 4043–4049 (2004).
+
 Additional references for the MR-ADC methods:
 - "[Multi-reference algebraic diagrammatic construction theory for excited states: General formulation and first-order implementation](https://doi.org/10.1063/1.5055380)", A.Yu. Sokolov, J. Chem. Phys. 149(20), 204113 (2018).
 - "[Simulating X-ray photoelectron spectra with strong electron correlation using multireference algebraic diagrammatic construction theory](https://doi.org/10.1039/d1cp05476g)", C.E.V. de Moura and A.Yu. Sokolov, Phys. Chem. Chem. Phys. 24, 4769 – 4784 (2022).
