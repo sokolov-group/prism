@@ -70,6 +70,7 @@ Other examples can be found [here](examples/).
 N-electron valence perturbation theory (NEVPT) is an efficient multireference approach to describe dynamic electron correlation starting with a complete active space configuration interaction (CASCI) or self-consistent field (CASSCF) reference wavefunction.
 Prism features an implementation of second-order NEVPT (NEVPT2) with full internal contraction (FIC), which is also known as "partially contracted" NEVPT2 (PC-NEVPT2).
 The NEVPT2 calculations can be performed starting with one or several CASCI/CASSCF reference wavefunctions with any choice of orbitals (e.g., Hartree–Fock, state-averaged CASSCF, etc).
+
 For multiple reference states, two flavors of NEVPT2 are available: 1) state-specific (SS-NEVPT2) and 2) quasidegenerate (QD-NEVPT2).
 In the SS-NEVPT2 method, the first-order wavefunctions and second-order correlation energies are computed for each electronic state.
 Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calculated by diagonalizing the effective Hamiltonian evaluated to second order perturbation theory.
