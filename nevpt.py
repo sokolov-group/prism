@@ -66,12 +66,12 @@ class NEVPT:
         self.ref_wfn_deg = interface.ref_wfn_deg
 
         # NEVPT specific variables
-        self.method = "nevpt2"                    # Possible methods: nevpt2
+        self.method = "nevpt2"                    # Possible methods: nevpt2, qd-nevpt2 (qdnevpt2)
         self.nfrozen = None                       # Number of lowest-energy (core) orbitals that will be left uncorrelated ("frozen core")
         self.compute_singles_amplitudes = False   # Include singles amplitudes in the NEVPT2 energy?
         self.semi_internal_projector = "gno"      # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
-        self.s_thresh_singles = 1e-10
-        self.s_thresh_doubles = 1e-10
+        self.s_thresh_singles = 1e-8
+        self.s_thresh_doubles = 1e-8
 
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
 
@@ -81,8 +81,6 @@ class NEVPT:
         self.mo_energy = lambda:None
         self.h1eff = lambda:None
         self.v2e = lambda:None
-        self.rdm = lambda:None
-        self.t1 = lambda:None
 
         self.mo_energy.c = interface.mo_energy[:self.ncore]
         self.mo_energy.e = interface.mo_energy[self.nocc:]
@@ -92,7 +90,10 @@ class NEVPT:
         log = self.log
         self.method = self.method.lower()
 
-        if self.method not in ("nevpt2"):
+        if self.method == "qdnevpt2":
+            self.method = "qd-nevpt2"
+
+        if self.method not in ("nevpt2", "qd-nevpt2"):
             msg = "Unknown method %s" % self.method
             log.info(msg)
             raise Exception(msg)
@@ -116,9 +117,9 @@ class NEVPT:
             nevpt_integrals.transform_integrals_2e_incore(self)
 
         # Run NEVPT computation
-        e_tot, e_corr = nevpt_compute.kernel(self)
+        e_tot, e_corr, osc = nevpt_compute.kernel(self)
 
-        return e_tot, e_corr
+        return e_tot, e_corr, osc
 
     @property
     def verbose(self):

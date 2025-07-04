@@ -47,11 +47,11 @@ print("CASSCF energy: %f\n" % emc)
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.method = "nevpt2"
-e_tot, e_corr = nevpt.kernel()
+e_tot, e_corr, osc = nevpt.kernel()
 
 # NEVPT2 with frozen core
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.nfrozen = 1
 nevpt.method = "nevpt2"
-e_tot, e_corr = nevpt.kernel()
+e_tot, e_corr, osc = nevpt.kernel()

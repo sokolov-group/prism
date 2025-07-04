@@ -15,6 +15,7 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+#          James D. Serna <jserna456@gmail.com>
 
 import unittest
 import numpy as np
@@ -68,7 +69,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        e_tot, e_corr = nevpt.kernel()
+        e_tot, e_corr, osc = nevpt.kernel()
 
         self.assertAlmostEqual(e_tot[0], -109.276578406100, 6)
         self.assertAlmostEqual(e_tot[1], -108.988554194876, 6)
@@ -76,6 +77,13 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(e_tot[3], -108.974799673309, 6)
         self.assertAlmostEqual(e_tot[4], -108.942005237050, 6)
         self.assertAlmostEqual(e_tot[5], -108.942005228650, 6)
+        
+        self.assertAlmostEqual(osc[0], 0.0, 6)
+        self.assertAlmostEqual(osc[1], 0.0, 6)
+        self.assertAlmostEqual(osc[2], 0.0, 6)
+        self.assertAlmostEqual(osc[3], 0.0, 6)
+        self.assertAlmostEqual(osc[4], 0.0, 6)
+        self.assertAlmostEqual(osc[5], 0.0, 6)
 
 if __name__ == "__main__":
     print("NEVPT2 test")

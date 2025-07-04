@@ -15,7 +15,7 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#
+#          James D. Serna <jserna456@gmail.com>
 
 import os
 import tempfile
@@ -515,13 +515,47 @@ class PYSCF:
 
         return self
 
+    def compute_rdm1(self, bra, ket, nelecas):
+
+        from pyscf.fci.direct_spin1 import trans_rdm1
+
+        rdm1 = (None, )
+
+        if isinstance(nelecas, (list)):
+            rdm1 = trans_rdm1(bra, ket, self.ncas, nelecas)
+            for p in range(1, len(nelecas)):
+                rdm1_p = trans_rdm1(bra, ket, self.ncas, nelecas[p])
+                rdm1 += rdm1_p
+
+            rdm1 /= len(nelecas)
+        
+        else:
+           rdm1 = trans_rdm1(bra, ket, self.ncas, nelecas)
+
+        return rdm1  
 
     def compute_rdm123(self, bra, ket, nelecas):
 
         from pyscf import fci
 
-        rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra, ket, self.ncas, nelecas)
+        rdm1, rdm2, rdm3 = 3 * (None,)
+        if isinstance(nelecas, (list)):
+            rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra[0], ket[0], self.ncas, nelecas[0])
+            for p in range(1, len(nelecas)):
+                rdm1_p, rdm2_p, rdm3_p = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra[p], ket[p], self.ncas, nelecas[p])
+                rdm1 += rdm1_p
+                rdm2 += rdm2_p
+                rdm3 += rdm3_p
+            rdm1 /= len(nelecas)
+            rdm2 /= len(nelecas)
+            rdm3 /= len(nelecas)
+        else:
+            rdm1, rdm2, rdm3 = fci.rdm.make_dm123('FCI3pdm_kern_sf', bra, ket, self.ncas, nelecas)
+
         rdm1, rdm2, rdm3 = fci.rdm.reorder_dm123(rdm1, rdm2, rdm3)
+
+        # This transpose is necessary to get the correct index order for transition 1-RDM
+        rdm1 = rdm1.T
 
         # rdm2[p,q,r,s] = \langle p^\dagger q^\dagger s r\rangle
         rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 1, 3))
@@ -553,6 +587,9 @@ class PYSCF:
             rdm1, rdm2, rdm3, rdm4 = fci.rdm.make_dm1234('FCI4pdm_kern_sf', bra, ket, self.ncas, nelecas)
 
         rdm1, rdm2, rdm3, rdm4 = fci.rdm.reorder_dm1234(rdm1, rdm2, rdm3, rdm4)
+
+        # This transpose is necessary to get the correct index order for transition 1-RDM
+        rdm1 = rdm1.T
 
         # rdm2[p,q,r,s] = \langle p^\dagger q^\dagger s r\rangle
         rdm2 = np.ascontiguousarray(rdm2.transpose(0, 2, 1, 3))

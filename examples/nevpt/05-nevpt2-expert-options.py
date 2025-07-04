@@ -40,7 +40,7 @@ nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-6
 nevpt.method = "nevpt2"
-e_tot, e_corr = nevpt.kernel()
+e_tot, e_corr, osc = nevpt.kernel()
 
 # Including the singles amplitudes in the NEVPT2 energy
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
@@ -49,7 +49,7 @@ nevpt.compute_singles_amplitudes = True
 nevpt.s_thresh_singles = 1e-10
 nevpt.s_thresh_doubles = 1e-10
 nevpt.method = "nevpt2"
-e_tot, e_corr = nevpt.kernel()
+e_tot, e_corr, osc = nevpt.kernel()
 
 # Selecting reference states
 ref_list = [1,5,6]
@@ -59,4 +59,4 @@ nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-10
 nevpt.s_thresh_doubles = 1e-10
 nevpt.method = "nevpt2"
-e_tot, e_corr = nevpt.kernel()
+e_tot, e_corr, osc = nevpt.kernel()
