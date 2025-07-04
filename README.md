@@ -29,7 +29,7 @@ import prism.mr_adc # For MR-ADC calculations
 import prism.nevpt  # For NEVPT calculations
 ```
 
-Next, as described in the [PySCF user guide](https://pyscf.org/user.html), specify molecular geometry, then run reference Hartree-Fock and complete active space self-consistent field (CASSCF) calculations.
+Next, as described in the [PySCF user guide](https://pyscf.org/user/index.html), specify molecular geometry, then run reference Hartree-Fock and complete active space self-consistent field (CASSCF) calculations.
 Below is an example of reference CASSCF calculation for the hydrogen fluoride (HF) molecule with the cc-pvdz basis set and 6 electrons in 6 orbitals (6e, 6o) active space.
 
 ```python
