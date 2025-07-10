@@ -19,11 +19,13 @@
 #              Donna H. Odhiambo <donna.odhiambo@proton.me>
 
 from typing import Optional, Tuple, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_rdms as mr_adc_rdms
 import prism.mr_adc_compute as mr_adc_compute
+
+##TODO: Add log.extra statements for initialization and configuration
 
 @dataclass
 class MRADCConfig:
@@ -57,6 +59,9 @@ class MRADCConfig:
     ncvs: Optional[int] = None              # Number of core orbitals selected for CVS (if None, no CVS)
     nval: Optional[int] = None              # Number of valence orbitals (ncore - ncvs)
 
+    ## New feature
+    use_mradc1_guess: bool = False          # Use MR-ADC(1) guess vectors for MR-ADC(2)-/-SX/-X calculations
+
 
 class MRADCError(Exception):
     """Custom exception for MR-ADC errors."""
@@ -72,7 +77,7 @@ class MRADC:
     DF_COMPATIBLE_TYPES = {"cvs-ip", "cvs-ee"}
     IMPLEMENTED_TYPES = {"cvs-ip", "cvs-ee"}
     CVS_TYPES = {"cvs-ip", "cvs-ee"}
-    
+
     def __init__(self, interface, config: Optional[MRADCConfig] = None):
         """ Initialize the MRADC object."""
         self.interface = interface
@@ -125,9 +130,6 @@ class MRADC:
         self.nocc = self.ncas + self.ncore
         self.ref_nelecas = self.interface.ref_nelecas
 
-        # Initialize MO energies
-        self._initialize_mo_energies()
-         
         # Reference energies and wavefunctions
         self.e_ref = self.interface.e_ref
         self.e_ref_cas = self.interface.e_ref_cas
@@ -136,7 +138,7 @@ class MRADC:
         self.ref_wfn_deg = self.interface.ref_wfn_deg
            
     def _initialize_config_attributes(self) -> None:
-        """Initialize attributes from the MRADCConfig."""
+        """Initialize attributes from MRADCConfig."""
 
         # Method settings
         self.method = self.config.method
@@ -162,19 +164,9 @@ class MRADC:
         self.spec_factor_print_tol = self.config.spec_factor_print_tol
         self.outcore_expensive_tensors = self.config.outcore_expensive_tensors
         self.approx_trans_moments = self.config.approx_trans_moments
-        
-    def _initialize_mo_energies(self) -> None:
-        """Initialize molecular orbital energies from the interface."""
 
-        class MOEnergy:
-            def __init__(self):
-                self.c = None  # Core orbital energies
-                self.e = None  # External orbital energies
-        
-        self.mo_energy = MOEnergy()
-        self.mo_energy.c = self.interface.mo_energy[:self.ncore]
-        self.mo_energy.e = self.interface.mo_energy[self.nocc:]
-    
+        self.use_mradc1_guess = self.config.use_mradc1_guess
+   
     def _initialize_matrices(self) -> None:
         """Initialize matrices and attributes used in MR-ADC calculations."""
         
@@ -196,6 +188,8 @@ class MRADC:
         self.t1 = lambda:None           # Amplitudes for singles excitations
         self.t2 = lambda:None           # Amplitudes for doubles excitations
         self.dip_mom = None             # Dipole moment
+        
+        self.mo_energy = lambda:None    # Diagonal elements of generalized Fock operator 
         
         # Matrix blocks
         self.M_00 = None

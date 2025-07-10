@@ -92,9 +92,8 @@ class Integrals:
 @dataclass
 class SpinOperatorResult:
     """Result from spin operator application."""
-    
-    psi: Optional[np.ndarray]
-    nelecas: Optional[Tuple[int, int]]
+    wfn: Optional[np.ndarray]
+    nelec: Optional[Tuple[int, int]]
 
 class PYSCF:
     """PySCF interface for Prism."""
@@ -102,6 +101,21 @@ class PYSCF:
     # Unit conversions
     HARTREE_TO_EV = 27.2113862459817
     HARTREE_TO_INV_CM = 219474.63136314
+    HARTREE_TO_J = 4.359744722206e-18
+
+    def convert_energies(self, value, unit: str):
+        """Convert Hartree"""
+        unit = unit.lower()
+        if unit == "ev":
+            return value * self.HARTREE_TO_EV
+        elif unit == "inv_cm":
+            return value * self.HARTREE_TO_INV_CM
+        elif unit == "nm":
+            return 1e7 / (value * self.HARTREE_TO_INV_CM)
+        elif unit == "j":
+            return value * self.HARTREE_TO_J
+        else:
+            raise ValueError(f"Unsupported unit: {unit}. Supported units are 'eV', 'inv_cm', 'nm', and 'J'.")
     
     def __init__(self, mf, mc: Optional[Any] = None, opt_einsum: bool = False, select_reference: Optional[List[int]] = None):
 
@@ -401,11 +415,11 @@ class PYSCF:
         
         for y in range(ncas):
             a_result = self.act_des_b(psi, ncas, nelecas, y)
-            if a_result.psi is not None:
-                ca_result = self.act_cre_a(a_result.psi, ncas, a_result.nelecas, y)
-                if ca_result.psi is not None:
-                    sp_psi_components.append(ca_result.psi)
-                    sp_ne = ca_result.nelecas
+            if a_result.wfn is not None:
+                ca_result = self.act_cre_a(a_result.wfn, ncas, a_result.nelec, y)
+                if ca_result.wfn is not None:
+                    sp_psi_components.append(ca_result.wfn)
+                    sp_ne = ca_result.nelec
                     
         result_wfn = sum(sp_psi_components) if sp_psi_components else None
         
@@ -425,11 +439,11 @@ class PYSCF:
         
         for y in range(ncas):
             a_result = self.act_des_a(psi, ncas, nelecas, y)
-            if a_result.psi is not None:
-                ca_result = self.act_cre_b(a_result.psi, ncas, a_result.nelecas, y)
-                if ca_result.psi is not None:
-                    sp_psi_components.append(ca_result.psi)
-                    sp_ne = ca_result.nelecas
+            if a_result.wfn is not None:
+                ca_result = self.act_cre_b(a_result.wfn, ncas, a_result.nelec, y)
+                if ca_result.wfn is not None:
+                    sp_psi_components.append(ca_result.wfn)
+                    sp_ne = ca_result.nelec
                     
         result_wfn = sum(sp_psi_components) if sp_psi_components else None
 
@@ -449,17 +463,17 @@ class PYSCF:
 
             # Alpha contribution
             a_result = self.act_des_a(psi, ncas, nelecas, y)
-            if a_result.psi is not None:
-                a_result2 = self.act_cre_a(a_result.psi, ncas, a_result.psi, y)
-                alpha_contrib = a_result2.psi
+            if a_result.wfn is not None:
+                a_result2 = self.act_cre_a(a_result.wfn, ncas, a_result.nelec, y)
+                alpha_contrib = a_result2.wfn
             else:
                 alpha_contrib = None
             
             # Beta contribution
             b_result = self.act_des_b(psi, ncas, nelecas, y)
-            if b_result.psi is not None:
-                b_result2 = self.act_cre_b(b_result.psi, ncas, b_result.psi, y)
-                beta_contrib = b_result2.psi
+            if b_result.wfn is not None:
+                b_result2 = self.act_cre_b(b_result.wfn, ncas, b_result.nelec, y)
+                beta_contrib = b_result2.wfn
             else:
                 beta_contrib = None
             

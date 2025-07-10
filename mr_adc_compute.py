@@ -26,6 +26,8 @@ import prism.mr_adc_amplitudes as mr_adc_amplitudes
 import prism.mr_adc_integrals as mr_adc_integrals
 #import prism.mr_adc_testing_block as testing_block
 
+## compute_guess_vector -> use MR-ADC(1) eigvec for guess vectors
+
 import prism.lib.logger as logger
 
 def kernel(mr_adc) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -48,7 +50,7 @@ def kernel(mr_adc) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     spec_intensity, X = _compute_spectroscopic_properties(mr_adc, E, U)
     
     # Results and cleanup 
-    _log_results_summary(mr_adc, E, spec_intensity)
+    _log_results_summary(mr_adc, E, spec_intensity, conv)
     mr_adc.log.timer0(f"total {mr_adc.method_type.upper()}-{mr_adc.method.upper()} calculation", *cput0)
     
     HARTREE_TO_EV = mr_adc.interface.HARTREE_TO_EV
@@ -66,7 +68,7 @@ def _log_calculation_info(mr_adc):
     log.info(f"Nuclear repulsion energy:                    {mr_adc.enuc:20.12f}")
     log.info(f"Number of electrons:                               {mr_adc.nelec}")
     log.info(f"Number of basis functions:                         {mr_adc.nmo}")
-    log.info(f"Reference wavefunction type:                       {mr_adc.interface.reference}")
+    log.info(f"Reference wavefunction type:                       {mr_adc.interface.reference_type}")
     log.info(f"Number of core orbitals:                           {mr_adc.ncore}")
     log.info(f"Number of active orbitals:                         {mr_adc.ncas}")
     log.info(f"Number of external orbitals:                       {mr_adc.nextern}")
@@ -157,7 +159,7 @@ def _setup_davidson_solver(mr_adc) -> Tuple[Callable, np.ndarray, List[np.ndarra
     
     # Compute initial guess vectors
     x0 = _compute_guess_vectors(precond, mr_adc.nroots)
-    
+ 
     # Create matrix-vector product function (M * vec)
     apply_M = _create_matrix_vector_product(mr_adc)
     
@@ -207,6 +209,7 @@ def _compute_preconditioner(mr_adc) -> np.ndarray:
     else:
         raise ValueError(f"Unknown method type: {method_type}")
 
+
 def _create_matrix_vector_product(mr_adc) -> Callable:
     """Create matrix-vector product function for Davidson algorithm."""
 
@@ -215,7 +218,6 @@ def _create_matrix_vector_product(mr_adc) -> Callable:
         return method_registry.call(method_type, "define_effective_hamiltonian", mr_adc)
     else:
         raise ValueError(f"Unknown method type: {method_type}")
-
 
 def _compute_guess_vectors(precond: np.ndarray, nroots: int, ascending: bool = True) -> List[np.ndarray]:
     """Compute initial guess vectors for Davidson algorithm."""
@@ -258,14 +260,15 @@ def _compute_spectroscopic_properties(mr_adc, energies: np.ndarray, eigenvectors
         #analyze_eigenvector(mr_adc, U, E, osc_strength)
     
     # Analyze spectroscopic factors if requested
-    if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4): 
+    #if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4): 
+    if mr_adc.analyze_spec_factor: 
         analyze_mo_overlap(mr_adc)
         analyze_spec_factor(mr_adc, X, spec_intensity)
     
     return spec_intensity, X
 
 ## TODO: Include Davidson convergence info
-def _log_results_summary(mr_adc, energies: np.ndarray, intensities: np.ndarray):
+def _log_results_summary(mr_adc, energies: np.ndarray, intensities: np.ndarray, conv: np.ndarray):
     """Print formatted results summary table."""
 
     log = mr_adc.log
@@ -287,6 +290,14 @@ def _log_results_summary(mr_adc, energies: np.ndarray, intensities: np.ndarray):
     
     log.info("-" * 96)
 
+    if all(conv):
+        log.info('Convergence reached.')
+    elif any(conv):
+        not_converged = np.where(conv == False)[0]
+        log.warn(f'States {not_converged+1} did not converge!')
+    else:
+        log.warn('No convergence reached for Davidson iterations!')
+
 #========== METHOD REGISTRY FOR MR-ADC METHOD MODULES AND FUNCTIONS ==========#
 import importlib
 
@@ -305,11 +316,10 @@ class MethodRegistry:
         self._cache = {}
 
     def get_module(self, method_type):
-        key = method_type.replace("-", "_")
-        if key not in self._cache:
+        if method_type not in self._cache:
             module_name = self._module_map[method_type]
-            self._cache[key] = importlib.import_module(module_name)
-        return self._cache[key]
+            self._cache[method_type] = importlib.import_module(module_name)
+        return self._cache[method_type]
 
     def call(self, method_type, func_name, *args, **kwargs):
         module = self.get_module(method_type)
@@ -342,7 +352,7 @@ def dyall_hamiltonian(mr_adc) -> float:
     e_fc = einsum('ii', h_cc, optimize=True)
     e_fc += 2.0 * einsum('ijij', v_cccc, optimize=True)
     e_fc -= einsum('jiij', v_cccc, optimize=True)
-    
+
     # Compute active space energy
     h_act = einsum('xy,xy', h_aa, rdm_ca, optimize=True)
     h_act += 0.5 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize=einsum_type)
@@ -412,8 +422,8 @@ def analyze_mo_overlap(mr_adc):
         hf_ovlp_ind = np.argsort(hf_ovlp)[::-1]
         hf_ovlp_sorted = hf_ovlp[hf_ovlp_ind]
 
-        print ("\nCASSCF MO #%d:" % (p + 1))
+        print (f"\nCASSCF MO #{p + 1}:")
 
         for hf_p in range(mr_adc.mo_scf.shape[1]):
             if (hf_ovlp_sorted[hf_p] > print_thresh):
-                print ("%.3f HF MO #%d" % (hf_ovlp_sorted[hf_p], hf_ovlp_ind[hf_p] + 1))
+                print (f"{hf_ovlp_sorted[hf_p]:.3f} HF MO #{hf_ovlp_ind[hf_p] + 1}")
