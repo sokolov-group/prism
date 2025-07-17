@@ -15,6 +15,8 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
 import prism.mr_adc_integrals as mr_adc_integrals
@@ -22,6 +24,13 @@ import prism.mr_adc_rdms as mr_adc_rdms
 import prism.mr_adc_compute as mr_adc_compute
 
 class MRADC:
+    # Supported methods and method types
+    SUPPORTED_METHODS = {"mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"}
+    SUPPORTED_METHOD_TYPES = {"ee", "ip", "ea", "cvs-ip", "cvs-ee"}
+    DF_COMPATIBLE_TYPES = {"cvs-ip", "cvs-ee"}
+    IMPLEMENTED_TYPES = {"cvs-ip", "cvs-ee"}
+    CVS_TYPES = {"cvs-ip", "cvs-ee"}
+
     def __init__(self, interface):
 
         # General info
@@ -60,48 +69,54 @@ class MRADC:
         self.nextern = interface.nextern
         self.nocc = self.ncas + self.ncore
         self.ref_nelecas = interface.ref_nelecas
-        self.e_ref = interface.e_ref           # Total reference energy
-        self.e_ref_cas = interface.e_ref_cas   # Reference active-space energy
-        self.ref_wfn = interface.ref_wfn       # Reference wavefunction
+        self.e_ref = interface.e_ref            # Total reference energy
+        self.e_ref_cas = interface.e_ref_cas    # Reference active-space energy
+        self.ref_wfn = interface.ref_wfn        # Reference wavefunction
         self.ref_wfn_spin_mult = interface.ref_wfn_spin_mult
         self.ref_wfn_deg = interface.ref_wfn_deg
 
         # MR-ADC specific variables
-        self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
-        self.method_type = "ip"         # Possible method types: ee, ip, ea
-        # self.max_t_order = 1          # Maximum order of t amplitudes to compute
-        self.ncasci = 6                 # Number of CASCI roots requested
-        self.nroots = 6                 # Number of MR-ADC roots requested
-        self.max_space = 100            # Maximum size of the Davidson trial space
-        self.max_cycle = 50             # Maximum number of iterations in the Davidson procedure
-        self.tol_e = 1e-8               # Tolerance for the energy in the Davidson procedure
-        self.tol_r = 1e-5        # Tolerance for the residual in the Davidson procedure
-        self.s_thresh_singles = 1e-5
-        self.s_thresh_singles_t2 = 1e-3
-        self.s_thresh_doubles = 1e-10
-        self.semi_internal_projector = "gno" # Possible values: gno, gs
+        self.method = "mr-adc(2)"               # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-sx, mr-adc(2)-x
+        self.method_type = "ip"                 # Possible method types: ee, ip, ea
+        # self.max_t_order = 1                  # Maximum order of t amplitudes to compute
+        self.ncasci = 6                         # Number of CASCI roots requested
+        self.nroots = 6                         # Number of MR-ADC roots requested
 
-        self.analyze_spec_factor = False
-        self.spec_factor_print_tol = 0.01
+        ## Davidson solver settings
+        self.max_space = 100                    # Maximum size of the Davidson trial space
+        self.max_cycle = 50                     # Maximum number of iterations in the Davidson procedure
+        self.tol_e = 1e-8                       # Tolerance for the energy in the Davidson procedure
+        self.tol_r = 1e-5                       # Tolerance for the residual in the Davidson procedure
 
-        self.e_cas_ci = None            # Active-space energies of CASCI states
-        self.wfn_casci = None           # Active-space wavefunctions of CASCI states
-        self.nelecasci = None           # Active-space number of electrons of CASCI states
-        self.h0 = lambda:None           # Information about h0 excitation manifold
-        self.h1 = lambda:None           # Information about h1 excitation manifold
-        self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
-        self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
+        ## Overlap Settings
+        self.s_thresh_singles = 1e-5            # Singles truncation threshold
+        self.s_thresh_doubles = 1e-10           # Doubles truncation threshold
+        self.semi_internal_projector = "gno"    # Possible projection techniques for amplitudes: gno, gs
 
-        self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
+        ## Analysis Settings
+        self.analyze_spec_factor = False        # Spectroscopic factors analysis
+        self.spec_factor_print_tol = 0.01       # Tolerance for spectroscopic factors analysis
 
-        # Approximations
-        self.approx_trans_moments = False
+        ## Other Settings
+        self.outcore_expensive_tensors = True   # Store expensive (ooee) integrals and amplitudes on disk
+        self.approx_trans_moments = False       # Approximate transition moments
 
-        # Parameters for the CVS implementation
+        # Initialize attributes and matrices
+        self.e_cas_ci = None                    # Active-space energies of CASCI states
+        self.wfn_casci = None                   # Active-space wavefunctions of CASCI states
+        self.nelecasci = None                   # Active-space number of electrons of CASCI states
+
+        ## Manifolds
+        self.h0 = lambda:None                   # Information about h0 excitation manifold
+        self.h1 = lambda:None                   # Information about h1 excitation manifold
+        self.h_orth = lambda:None               # Information about orthonormalized excitation manifold
+        self.S12 = lambda:None                  # Matrices for orthogonalization of excitation spaces
+
+        ## CVS Parameters
         self.ncvs = None
         self.nval = None
 
-        # Integrals
+        ## Integrals and amplitudes
         self.mo_energy = lambda:None
         self.h1eff = lambda:None
         self.v2e = lambda:None
@@ -110,10 +125,11 @@ class MRADC:
         self.t2 = lambda:None
         self.dip_mom = None
 
-        self.mo_energy.c = interface.mo_energy[:self.ncore]
-        self.mo_energy.e = interface.mo_energy[self.nocc:]
+## redundant: MO energy is set in integrals
+#        self.mo_energy.c = interface.mo_energy[:self.ncore]
+#        self.mo_energy.e = interface.mo_energy[self.nocc:]
 
-        # Matrix blocks
+        ## Matrix blocks
         self.M_00 = None
         self.M_01 = lambda:None
 
@@ -123,47 +139,51 @@ class MRADC:
         self.method = self.method.lower()
         self.method_type = self.method_type.lower()
 
-        if self.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            msg = "Unknown method %s" % self.method
+        if self.method not in self.SUPPORTED_METHODS:
+             msg = f"Unknown method {self.method}"
+             log.error(msg)
+             raise Exception(msg)
+
+        if self.method == "mr-adc(2)-sx" and self.method_type != "cvs-ee":
+            msg = "Semi-internal extended method currently only compatible with CVS-EE method type."
             log.error(msg)
             raise Exception(msg)
 
-        if self.method_type not in ("ee", "ip", "ea", "cvs-ip", "cvs-ee"):
-            msg = "Unknown method type %s" % self.method_type
+        if self.method_type not in self.SUPPORTED_METHOD_TYPES:
+            msg = f"Unknown method type {self.method_type}"
             log.error(msg)
             raise Exception(msg)
 
-        if self.interface.with_df and self.method_type not in ('cvs-ip'):
-            msg = "Density-fitting currently only compatible with CVS-IP method type."
+        if self.interface.with_df and self.method_type not in self.DF_COMPATIBLE_TYPES:
+            msg = f"Density-fitting currently only compatible with {self.DF_COMPATIBLE_TYPES} method types."
             log.error(msg)
             raise Exception(msg)
 
-        if self.method_type == "cvs-ip" and self.ncvs is None:
-            msg = "Method type %s requires setting the ncvs parameter" % self.method_type
+        if self.method_type in self.CVS_TYPES and self.ncvs is None:
+            msg = f"Method type {self.method_type} requires setting the ncvs parameter"
             log.error(msg)
             raise Exception(msg)
 
-        if self.method_type in ("cvs-ip", "cvs-ee"):
+        if self.method_type in self.CVS_TYPES:
 
             if isinstance (self.ncvs, int):
                 if self.ncvs < 1 or self.ncvs > self.ncore:
-                    msg = '''Method type %s requires setting the ncvs parameter as a
-                             positive integer that is smaller than ncore''' % self.method_type
+                    msg = f"Method type {self.method_type} requires setting the ncvs parameter as a positive integer that is smaller than ncore"
                     log.error(msg)
                     raise Exception(msg)
 
                 self.nval = self.ncore - self.ncvs
 
             else:
-                msg = "Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type
+                msg = f"Method type {self.method_type} requires setting the ncvs parameter to a positive integer"
                 log.error(msg)
                 raise Exception(msg)
 
             self.ncasci = 0
 
         # TODO: Temporary check of what methods are implemented in this version
-        if self.method_type not in ("cvs-ip"):
-            msg = "This spin-adapted version does not currently support method type %s" % self.method_type
+        if self.method_type not in self.IMPLEMENTED_TYPES:
+            msg = f"This spin-adapted version does not currently support method type {self.method_type}"
             log.error(msg)
             raise Exception(msg)
 

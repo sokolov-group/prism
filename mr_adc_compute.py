@@ -15,15 +15,16 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
-import sys
 import numpy as np
-from functools import reduce
 
 import prism.mr_adc_amplitudes as mr_adc_amplitudes
 import prism.mr_adc_integrals as mr_adc_integrals
 import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
+import prism.mr_adc_cvs_ee as mr_adc_cvs_ee
 
 import prism.lib.logger as logger
 
@@ -74,16 +75,12 @@ def kernel(mr_adc):
 
     if mr_adc.e_cas_ci is not None:
         mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas)))
-
-    davidson_verbose = 3
-    if mr_adc.verbose > 3:
-        davidson_verbose = 6
-
+    
     # Compute amplitudes
     mr_adc_amplitudes.compute_amplitudes(mr_adc)
 
     # Compute CVS integrals
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
         if mr_adc.interface.with_df:
             mr_adc_integrals.compute_cvs_integrals_2e_df(mr_adc)
         else:
@@ -106,6 +103,7 @@ def kernel(mr_adc):
         mr_adc = mr_adc_cvs_ee.compute_excitation_manifolds(mr_adc)
 
     # Setup Davidson algorithm parameters
+    davidson_verbose = 6 if mr_adc.verbose > 3 else 3
     apply_M, precond, x0 = setup_davidson(mr_adc)
 
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
@@ -127,17 +125,28 @@ def kernel(mr_adc):
     mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
 
     mr_adc.log.info("------------------------------------------------------------------------------------------------")
+#    if mr_adc.method_type == "cvs-ee":
+#        spec_intensity = (2.0/3.0) * de * spec_intensity ## OSC STR
+#        mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Osc Str(f)")
     mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
     mr_adc.log.info("------------------------------------------------------------------------------------------------")
 
     de_ev = de * h2ev
     de_cm = de * h2cm
 
-    for p in range(len(de)):
-        de_nm = 10000000 / de_cm[p]
-        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+    for p, (e_au, e_ev, e_cm, intensity) in enumerate(zip(de, de_ev, de_cm, spec_intensity), 1):
+        e_nm = 10000000 / e_cm
+        mr_adc.log.info(f"{p:5d}     {e_au:14.8f}  {e_ev:12.4f} {e_nm:10.4f}  {e_cm:14.4f}    {intensity:10.6f}")
 
     mr_adc.log.info("------------------------------------------------------------------------------------------------")
+
+    if all(conv):
+        mr_adc.log.info('Full convergence reached.')
+    elif any(conv):
+        not_converged = np.where(conv == False)[0]
+        mr_adc.log.warn(f'States {not_converged+1} did not converge!')
+    else:
+        mr_adc.log.warn('No convergence reached for Davidson iterations!')
 
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
@@ -196,7 +205,7 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "cvs-ip":
         precond = mr_adc_cvs_ip.compute_preconditioner(mr_adc)
     elif mr_adc.method_type == "cvs-ee":
-        precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc, M_00)
+        precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc)
 
     # Compute guess vectors
     x0 = compute_guess_vectors(mr_adc, precond)
@@ -212,17 +221,15 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "cvs-ip":
         apply_M = mr_adc_cvs_ip.define_effective_hamiltonian(mr_adc)
     elif mr_adc.method_type == "cvs-ee":
-        apply_M = mr_adc_cvs_ee.define_effective_hamiltonian(mr_adc, M_00)
+        apply_M = mr_adc_cvs_ee.define_effective_hamiltonian(mr_adc)
 
     return apply_M, precond, x0
 
 def compute_guess_vectors(mr_adc, precond, ascending = True):
 
-    sort_ind = None
-    if ascending:
-        sort_ind = np.argsort(precond)
-    else:
-        sort_ind = np.argsort(precond)[::-1]
+    sort_ind = np.argsort(precond)
+    if not ascending:
+        sort_ind = sort_ind[::-1]
 
     x0s = np.zeros((precond.shape[0], mr_adc.nroots))
     min_shape = min(precond.shape[0], mr_adc.nroots)
@@ -231,12 +238,9 @@ def compute_guess_vectors(mr_adc, precond, ascending = True):
     x0 = np.zeros((precond.shape[0], mr_adc.nroots))
     x0[sort_ind] = x0s.copy()
 
-    x0s = []
-    for p in range(x0.shape[1]):
-        x0s.append(x0[:,p])
+    return [x0[:, p] for p in range(x0.shape[1])]
 
-    return x0s
-
+## TODO: add in NTOs!
 def compute_trans_properties(mr_adc, E, U):
 
     X = None
@@ -256,16 +260,24 @@ def compute_trans_properties(mr_adc, E, U):
         mr_adc.log.error(msg)
         raise Exception(msg)
 
-    spec_intensity = 2.0 * np.sum(X**2, axis=0)
-
-    if mr_adc.method_type in ("cvs-ee", "ee"):
-        osc_strength = (2.0/3.0) * E * spec_intensity
-
-    if (mr_adc.analyze_spec_factor or mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
-        mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
-
+    # X is a tuple for CVS-EE
+    if isinstance(X, tuple):
+        X = X[1]
+        spec_intensity = np.sum(X**2, axis=0)
+    else:
+        spec_intensity = 2.0 * np.sum(X**2, axis=0)
+   
+    # Analyze spectroscopic factors if requested
+    #if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4): 
+    if mr_adc.analyze_spec_factor: 
+        analyze_mo_overlap(mr_adc)
+        analyze_spec_factor(mr_adc, X, spec_intensity)
+    
     return spec_intensity, X
 
+#========== UTILITY FUNCTIONS FOR SPECIAL ANALYSES ==========#
+
+## TODO: either remove or restore functionality to dyall_hamiltonian
 def dyall_hamiltonian(mr_adc):
     """Zeroth Order Dyall Hamiltonian"""
 
@@ -302,3 +314,113 @@ def dyall_hamiltonian(mr_adc):
     temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
     print("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
+
+def analyze_spec_factor(mr_adc, X, spec_intensity):
+    """Analyze and print spectroscopic factors for each state above a given threshold."""
+
+    print_thresh = mr_adc.spec_factor_print_tol
+    mr_adc.log.info(f"\nSpectroscopic factors analysis (threshold = {print_thresh:.2e}): ")
+
+    X_squared = np.square(X.T, order='C')
+    
+    if mr_adc.method_type == 'cvs-ip':
+        X_squared *= 2.0
+
+    results = []
+
+    # Analyze states
+    for state in range(X_squared.shape[0]):
+
+        sort_ind = np.argsort(-X_squared[state])
+        sorted_cont = X_squared[state][sort_ind]
+       
+        # If symmetry is not used or symmetry labels are unavailable, assign all orbitals to 'A'
+        if not mr_adc.symmetry or not hasattr(mr_adc, 'group_repr_symm'):
+            orb_symm_labels = np.repeat(['A'], sorted_cont.shape[0])
+        else:
+            orb_symm_labels = np.array(mr_adc.group_repr_symm)[sort_ind]
+
+        # check if any contributions meet given threshold
+        if not np.any(sorted_cont > print_thresh):
+            continue
+
+        # apply threshold to contributions
+        spec_contribution = sorted_cont[sorted_cont > print_thresh]
+        orb_index = sort_ind[sorted_cont > print_thresh] + 1
+        orb_symm_labels = orb_symm_labels[sorted_cont > print_thresh]
+
+        # compute contribution by state
+        partial_cont = spec_contribution / spec_intensity[state]
+
+        # apply another threshold (is this necessary?)
+        filtered_spec_contribution = spec_contribution[partial_cont > 1e-6]
+        orb_index = orb_index[partial_cont > 1e-6]
+        partial_cont = partial_cont[partial_cont > 1e-6]
+        orb_symm_labels = orb_symm_labels[partial_cont > 1e-6]
+
+        # Store results for this state
+        for idx, sym, contrib, partial in zip(orb_index, orb_symm_labels, filtered_spec_contribution, partial_cont):
+            results.append((state + 1, idx, sym, contrib, partial))
+
+    # Print results
+    if results:
+        current_state = None
+        mr_adc.log.info("="*60)
+        mr_adc.log.info("                             Spectral            Partial")
+        mr_adc.log.info("  State       MO         Contribution       Contribution")
+        mr_adc.log.info("="*60)
+        
+        for state_num, mo_idx, symmetry, spec_contrib, partial_contrib in results:
+            if current_state is not None and state_num != current_state:
+                mr_adc.log.info("") ## line break for new states
+            mr_adc.log.info(f"  {state_num:>3d}    {mo_idx:>4d} ({symmetry:<2})       {spec_contrib:8e}       {partial_contrib:8e}")
+            current_state = state_num
+        mr_adc.log.info("="*60)
+    else:
+        mr_adc.log.info(f"No significant spectroscopic contributions found above threshold = {print_thresh:.2e}.")
+
+def analyze_mo_overlap(mr_adc):
+    """Analyze and print overlap of CASSCF and HF spatial MOs."""
+    from functools import reduce
+
+    print_thresh = mr_adc.spec_factor_print_tol
+    mr_adc.log.info(f"\nOverlap of CASSCF and HF spatial MO's:")
+
+    # Overlap Matrix
+    cas_hf_ovlp = reduce(np.dot, (mr_adc.mo.T, mr_adc.ovlp, mr_adc.mo_scf))
+    ovlp_squared = np.square(cas_hf_ovlp, order='C')
+
+    results = []
+
+    # Analyze CAS MOs
+    for cas_mo in range(mr_adc.mo.shape[1]):
+
+        hf_ovlp = ovlp_squared[cas_mo]
+        sort_ind = np.argsort(hf_ovlp)[::-1]
+        hf_ovlp_sorted = hf_ovlp[sort_ind]
+
+        if np.any(hf_ovlp_sorted > print_thresh):
+            idx = np.where(hf_ovlp_sorted > print_thresh) 
+
+            hf_ovlp_sorted = hf_ovlp_sorted[idx]
+            sort_ind = sort_ind[idx]
+
+            for overlap_val, hf_idx in zip(hf_ovlp_sorted, sort_ind):
+                results.append((cas_mo + 1, hf_idx + 1, overlap_val))
+
+    # Print results
+    if results:
+        current_cas = None
+        mr_adc.log.info("="*40)
+        mr_adc.log.info("   CASSCF MO    HF MO     Overlap")
+        mr_adc.log.info("="*40)
+        for cas_mo, hf_mo, overlap in results:
+            if current_cas is not None and cas_mo != current_cas:
+                mr_adc.log.info("")
+            
+            mr_adc.log.info(f"     {cas_mo:>3d}        {hf_mo:>3d}      {overlap:>8.3%}")
+            current_cas = cas_mo
+        mr_adc.log.info("="*40)
+    else:
+        mr_adc.log.info(f"\nNo significant MO overlaps found above threshold = {print_thresh:.2e}.")
+

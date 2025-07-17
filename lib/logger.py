@@ -59,7 +59,8 @@ TIMER_LEVEL  = 5
 TIMER0_LEVEL = 4
 
 def flush(rec, msg, *args):
-    rec.stdout.write(msg%args)
+    #rec.stdout.write(msg%args)
+    rec.stdout.write(msg.format(*args))
     rec.stdout.write('\n')
     rec.stdout.flush()
 
