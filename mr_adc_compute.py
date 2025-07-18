@@ -122,23 +122,34 @@ def kernel(mr_adc):
     U = np.array(U)
     spec_intensity, X = compute_trans_properties(mr_adc, de, U)
 
-    mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
-
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-#    if mr_adc.method_type == "cvs-ee":
-#        spec_intensity = (2.0/3.0) * de * spec_intensity ## OSC STR
-#        mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Osc Str(f)")
-    mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-
+    # Conversions for energy
     de_ev = de * h2ev
     de_cm = de * h2cm
 
-    for p, (e_au, e_ev, e_cm, intensity) in enumerate(zip(de, de_ev, de_cm, spec_intensity), 1):
-        e_nm = 10000000 / e_cm
-        mr_adc.log.info(f"{p:5d}     {e_au:14.8f}  {e_ev:12.4f} {e_nm:10.4f}  {e_cm:14.4f}    {intensity:10.6f}")
+    mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
 
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+    ## Oscillator Strength
+    if mr_adc.method_type == "cvs-ee":
+        mr_adc.log.info("-"*100)
+        mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity       Osc Str(f)")
+        mr_adc.log.info("-"*100)
+
+        for p, (e_au, e_ev, e_cm, intensity) in enumerate(zip(de, de_ev, de_cm, spec_intensity), 1):
+            e_nm = 10000000 / e_cm
+            osc_str = (2.0/3.0) * e_au * intensity
+            mr_adc.log.info(f"{p:5d}     {e_au:14.8f}  {e_ev:12.4f} {e_nm:10.4f}  {e_cm:14.4f}    {intensity:10.6f}      {osc_str:10.6f} ")
+
+        mr_adc.log.info("-"*100)
+    else: 
+        mr_adc.log.info("-"*96)
+        mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
+        mr_adc.log.info("-"*96)
+
+        for p, (e_au, e_ev, e_cm, intensity) in enumerate(zip(de, de_ev, de_cm, spec_intensity), 1):
+            e_nm = 10000000 / e_cm
+            mr_adc.log.info(f"{p:5d}     {e_au:14.8f}  {e_ev:12.4f} {e_nm:10.4f}  {e_cm:14.4f}    {intensity:10.6f}")
+
+        mr_adc.log.info("-"*96)
 
     if all(conv):
         mr_adc.log.info('Full convergence reached.')
