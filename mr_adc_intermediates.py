@@ -937,40 +937,6 @@ def compute_K_0pp(mr_adc):
 # INTERMEDIATE FUNCTIONS #
 ##########################
 
-def compute_4RDM_V_INT(mr_adc):
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    ## Two-electron integrals
-    v_aaaa = mr_adc.v2e.aaaa
-
-    ## Two-electron integrals
-    v_aaaa = mr_adc.v2e.aaaa
-
-    ## Reduced density matrices
-    rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
-    
-    INT01 = einsum('UYZyVXxz,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT02 = einsum('UYZyVXzx,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT03 = einsum('UYZyVxXz,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT04 = einsum('UYZyVxzX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT05 = einsum('UYZyVzXx,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT06 = einsum('UYZyVzxX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT07 = einsum('UYZyxVXz,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT08 = einsum('UYZyxVzX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT09 = einsum('UYZyxzVX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT10 = einsum('yUYZxzVX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT11 = einsum('UYZyzVxX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT12 = einsum('UYZyzxVX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT13 = einsum('UZxzVWXy,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT14 = einsum('UZxzVWyX,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT15 = einsum('UZxzVyWX,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT16 = einsum('UZxzyVWX,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-
-    return INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10, INT11, INT12, INT13, INT14, INT15, INT16
-
 def compute_4RDM_V_INT_SIGMA(mr_adc):
 
     # Einsum definition from kernel
