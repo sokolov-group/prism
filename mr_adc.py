@@ -133,6 +133,11 @@ class MRADC:
         self.M_00 = None
         self.M_01 = lambda:None
 
+        # New Options
+        self.return_vectors = False             # Return eigenvectors from Davidson
+        self.use_mradc_guess = False            # Use MR-ADC eigenvectors as guess
+        self.guess_vec = None                   # Guess vector from previous MR-ADC calculation
+
     def kernel(self):
 
         log = self.log

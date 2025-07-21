@@ -161,7 +161,12 @@ def kernel(mr_adc):
 
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
-    return de_ev, spec_intensity, X
+    #return de_ev, spec_intensity, X
+
+    if mr_adc.return_vectors:
+        return de_ev, spec_intensity, U
+    else:
+        return de_ev, spec_intensity, X
 
 def setup_davidson(mr_adc):
 
@@ -219,7 +224,10 @@ def setup_davidson(mr_adc):
         precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc)
 
     # Compute guess vectors
-    x0 = compute_guess_vectors(mr_adc, precond)
+    if mr_adc.use_mradc_guess:
+        x0 = compute_MRADC_guess_vectors(mr_adc)
+    else:
+        x0 = compute_guess_vectors(mr_adc, precond)
 
     # Define M * vec
     apply_M = None
@@ -250,6 +258,32 @@ def compute_guess_vectors(mr_adc, precond, ascending = True):
     x0[sort_ind] = x0s.copy()
 
     return [x0[:, p] for p in range(x0.shape[1])]
+
+def compute_MRADC_guess_vectors(mr_adc):
+
+    dim = mr_adc.h_orth.dim
+    roots = mr_adc.nroots
+
+    x0 = np.zeros((dim, roots))
+    guess_vec = getattr(mr_adc, 'guess_vec', None)
+    if guess_vec is None:
+        raise Exception('no guess provided.') ## replace Exception with warning + default to compute_guess_vectors()
+    else:
+        min_shape = min(dim, roots)
+        x0[:min_shape, :min_shape] = np.identity(min_shape)
+
+        g_roots, g_dim = guess_vec.shape
+        if g_dim > dim:
+            mr_adc.log.info('Dimension of guess exceeds that of current calculation.')
+        if g_roots < roots:
+            mr_adc.log.info('Roots of guess are less than roots requested.')
+
+        min_dim = min(g_dim, dim)
+        min_roots = min(g_roots, roots)
+
+        x0[:min_dim, :min_roots] = guess_vec[:min_roots, :min_dim].T
+
+    return [x0[:, p] for p in range(roots)]
 
 ## TODO: add in NTOs!
 def compute_trans_properties(mr_adc, E, U):
