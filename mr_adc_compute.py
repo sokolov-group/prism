@@ -65,8 +65,8 @@ def kernel(mr_adc):
     mr_adc.log.info("Temporary directory path:                          %s" % mr_adc.temp_dir)
 
     mr_adc.log.info("\nInternal contraction:                              %s" % "Full")
-    mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
+    mr_adc.log.info("Overlap truncation parameter (singles):            %.2e" % mr_adc.s_thresh_singles)
+    mr_adc.log.info("Overlap truncation parameter (doubles):            %.2e" % mr_adc.s_thresh_doubles)
     mr_adc.log.info("Projector for the semi-internal amplitudes:        %s" % mr_adc.semi_internal_projector)
 
     # Print info about CASCI states
@@ -225,7 +225,7 @@ def setup_davidson(mr_adc):
 
     # Compute guess vectors
     if mr_adc.use_mradc_guess:
-        x0 = compute_MRADC_guess_vectors(mr_adc)
+        x0 = compute_MRADC_guess_vectors(mr_adc, precond)
     else:
         x0 = compute_guess_vectors(mr_adc, precond)
 
@@ -259,7 +259,8 @@ def compute_guess_vectors(mr_adc, precond, ascending = True):
 
     return [x0[:, p] for p in range(x0.shape[1])]
 
-def compute_MRADC_guess_vectors(mr_adc):
+def compute_MRADC_guess_vectors(mr_adc, precond, ascending = True):
+    mr_adc.log.info('>> using MR-ADC guess vectors')
 
     dim = mr_adc.h_orth.dim
     roots = mr_adc.nroots
@@ -282,6 +283,12 @@ def compute_MRADC_guess_vectors(mr_adc):
         min_roots = min(g_roots, roots)
 
         x0[:min_dim, :min_roots] = guess_vec[:min_roots, :min_dim].T
+
+        # Sort x0
+        sort_ind = np.argsort(precond)
+        if not ascending:
+            sort_ind = sort_ind[::-1]
+        x0 = x0[sort_ind]
 
     return [x0[:, p] for p in range(roots)]
 
@@ -418,7 +425,7 @@ def analyze_spec_factor(mr_adc, X, spec_intensity):
         for state_num, mo_idx, symmetry, spec_contrib, partial_contrib in results:
             if current_state is not None and state_num != current_state:
                 mr_adc.log.info("") ## line break for new states
-            mr_adc.log.info(f"  {state_num:>3d}    {mo_idx:>4d} ({symmetry:<2})       {spec_contrib:8e}       {partial_contrib:8e}")
+            mr_adc.log.info(f"  {state_num:>3d}    {mo_idx:>4d} ({symmetry:<4})     {spec_contrib:8e}       {partial_contrib:8e}")
             current_state = state_num
         mr_adc.log.info("="*60)
     else:
@@ -428,7 +435,7 @@ def analyze_mo_overlap(mr_adc):
     """Analyze and print overlap of CASSCF and HF spatial MOs."""
     from functools import reduce
 
-    print_thresh = mr_adc.spec_factor_print_tol
+    print_thresh = 1e-2
     mr_adc.log.info(f"\nOverlap of CASSCF and HF spatial MO's:")
 
     # Overlap Matrix
