@@ -1,5 +1,6 @@
 ## h1 <- h1 coupling contributions
 from . import logger, tools, ascontiguousarray
+from prism.mr_adc_integrals import get_eeee_df, unpack_v2e_eeee
 
 # CCAA <- CVEE: NO CONTRIBUTION
 
@@ -1563,21 +1564,24 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X
         mr_adc.log.debug("v2e.eeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
     
         ## Two-electron integral
-        v_eeee = mr_adc.v2e.eeee[:, :, s_chunk:f_chunk]
+        if mr_adc.interface.with_df:
+            v_eeee = get_eeee_df(mr_adc, mr_adc.v2e.Lee, s_chunk, f_chunk)
+        else:
+            v_eeee = unpack_v2e_eeee(mr_adc, mr_adc.v2e.eeee, s_chunk, f_chunk)
 
         temp  = 1/2 * einsum('KLab,CaDb->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
         temp -= 1/2 * einsum('KLab,CbDa->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
-        sigma_KLCD_aaaa[:, :, :, s_chunk:f_chunk] += temp
+        sigma_KLCD_aaaa[:, :, s_chunk:f_chunk, :] += temp
 
         temp  = einsum('KLab,CaDb->KLCD', X_abab, v_eeee, optimize = einsum_type)
-        sigma_KLCD_abab[:, :, :, s_chunk:f_chunk] += temp
+        sigma_KLCD_abab[:, :, s_chunk:f_chunk, :] += temp
 
         temp  = einsum('KLab,CaDb->KLCD', X_baba, v_eeee, optimize = einsum_type)
-        sigma_KLCD_baba[:, :, :, s_chunk:f_chunk] += temp
+        sigma_KLCD_baba[:, :, s_chunk:f_chunk, :] += temp
 
         temp  = 1/2 * einsum('KLab,CaDb->KLCD', X_bbbb, v_eeee, optimize = einsum_type)
         temp -= 1/2 * einsum('KLab,CbDa->KLCD', X_bbbb, v_eeee, optimize = einsum_type)
-        sigma_KLCD_bbbb[:, :, :, s_chunk:f_chunk] += temp
+        sigma_KLCD_bbbb[:, :, s_chunk:f_chunk, :] += temp
 
         mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
     del(v_eeee)

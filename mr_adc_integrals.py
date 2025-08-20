@@ -51,6 +51,10 @@ def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4, compacted=False)
     nmo_4 = mo_4.shape[1]
 
     v2e = interface.transform_2e_chem_incore(interface.v2e_ao, (mo_1, mo_2, mo_3, mo_4), compact=compacted)
+
+    if compacted and (nmo_1 == nmo_2 == nmo_3 == nmo_4): #v2e_eeee
+        return np.ascontiguousarray(v2e)
+
     if compacted:
         v2e = v2e.reshape(nmo_1, nmo_2, -1)
     else:
@@ -189,12 +193,7 @@ def transform_integrals_2e_incore(mr_adc):
 
         if mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.cccc = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
-            mr_adc.v2e.eeee = transform_2e_chem_incore(interface, mo_e, mo_e, mo_e, mo_e)
- 
-#    # Effective one-electron integrals
-#    ggcc = transform_2e_chem_incore(interface, mo, mo, mo_c, mo_c)
-#    gccg = transform_2e_chem_incore(interface, mo, mo_c, mo_c, mo)
-#    h1eff = mr_adc.h1e + 2.0 * einsum('pqrr->pq', ggcc, optimize = einsum_type) - einsum('prrq->pq', gccg, optimize = einsum_type)
+            mr_adc.v2e.eeee = transform_2e_chem_incore(interface, mo_e, mo_e, mo_e, mo_e, compacted = True)
 
     # Effective one-electron integrals
     mr_adc.v2e.ccca = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
@@ -351,7 +350,7 @@ def transform_integrals_2e_df(mr_adc):
         mr_adc.v2e.aeee = None
 
     # Create temp file and datasets
-    mr_adc.tmpfile.feri1 = tools.create_temp_file(mr_adc) # Non-core indices' integrals
+    mr_adc.tmpfile.feri1 = tools.create_temp_file(mr_adc)  # Non-core indices' integrals
     mr_adc.tmpfile.cferi1 = tools.create_temp_file(mr_adc) # Core indices' integras
 
     tmpfile = mr_adc.tmpfile.feri1
@@ -395,8 +394,9 @@ def transform_integrals_2e_df(mr_adc):
     # 2e- integrals
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method == "mr-adc(0)" or mr_adc.method == "mr-adc(1)" or mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
-            mr_adc.v2e.ccae = tools.create_dataset('ccae', ctmpfile, (ncore, ncore, ncas, nextern))
-            mr_adc.v2e.caec = tools.create_dataset('caec', ctmpfile, (ncore, ncas, nextern, ncore))
+            ## redundant
+            #mr_adc.v2e.ccae = tools.create_dataset('ccae', ctmpfile, (ncore, ncore, ncas, nextern))
+            #mr_adc.v2e.caec = tools.create_dataset('caec', ctmpfile, (ncore, ncas, nextern, ncore))
             mr_adc.v2e.cace = tools.create_dataset('cace', ctmpfile, (ncore, ncas, ncore, nextern))
 
             mr_adc.v2e.caca = tools.create_dataset('caca', ctmpfile, (ncore, ncas, ncore, ncas))
@@ -411,11 +411,11 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.ceae = tools.create_dataset('ceae', ctmpfile, (ncore, nextern, ncas, nextern))
 
 
-            mr_adc.v2e.ccae[:] = get_v2e_df(mr_adc, Lcc, mr_adc.v2e.Lae, 'ccae')
-            tools.flush(ctmpfile)
+            #mr_adc.v2e.ccae[:] = get_v2e_df(mr_adc, Lcc, mr_adc.v2e.Lae, 'ccae')
+            #tools.flush(ctmpfile)
 
-            mr_adc.v2e.caec[:] = get_v2e_df(mr_adc, Lca, Lec, 'caec')
-            tools.flush(ctmpfile)
+            #mr_adc.v2e.caec[:] = get_v2e_df(mr_adc, Lca, Lec, 'caec')
+            #tools.flush(ctmpfile)
 
             mr_adc.v2e.cace[:] = get_v2e_df(mr_adc, Lca, mr_adc.v2e.Lce, 'cace')
             tools.flush(ctmpfile)
@@ -447,7 +447,7 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.ceae[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lae, s_chunk, f_chunk)
                 tools.flush(ctmpfile)
 
-        if mr_adc.method == "mr-adc(2)-x":
+        if mr_adc.method == "mr-adc(2)" or mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.caea = tools.create_dataset('caea', ctmpfile, (ncore, ncas, nextern, ncas))
 
             mr_adc.v2e.ccee = tools.create_dataset('ccee', ctmpfile, (ncore, ncore, nextern, nextern))
@@ -614,15 +614,6 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.aeee[s_chunk:f_chunk] = get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_chunk, f_chunk)
                 tools.flush(ctmpfile)
 
-        if mr_adc.method == "mr-adc(2)-x":
-            mr_adc.v2e.eeee = tools.create_dataset('eeee', ctmpfile, (nextern, nextern, nextern, nextern))
-
-            chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern], ntensors = 2)
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                mr_adc.log.debug("v2e.eeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-                mr_adc.v2e.eeee[s_chunk:f_chunk] = get_oeee_df(mr_adc, mr_adc.v2e.Lee, mr_adc.v2e.Lee, s_chunk, f_chunk)
-                tools.flush(ctmpfile)
-
     # Effective one-electron integrals
     mr_adc.v2e.ccce = tools.create_dataset('ccce', ctmpfile, (ncore, ncore, ncore, nextern))
     mr_adc.v2e.ccce[:] = get_v2e_df(mr_adc, Lcc, mr_adc.v2e.Lce, 'ccce')
@@ -678,8 +669,9 @@ def get_oeee_df(mr_adc, Loe, Lee, s_chunk_occ, f_chunk_occ):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
         Loe_chunk = np.ascontiguousarray(Loe[s_chunk:f_chunk,s_chunk_occ:f_chunk_occ])
-        Lee_chunk = Lee[s_chunk:f_chunk]
+        Lee_chunk = np.ascontiguousarray(Lee[s_chunk:f_chunk])
 
+        ##v_oeee += np.tensordot(Loe_chunk, Lee_chunk, axes=([0], [0]))
         v_oeee += einsum('iab,icd->abcd', Loe_chunk, Lee_chunk, optimize = einsum_type)
 
         mr_adc.log.timer_debug("contracting v_oeee DF", *cput1)
@@ -747,22 +739,19 @@ def unpack_v2e_oeee(mr_adc, v2e_oeee):
 
     v2e_oeee_ = None
 
-    if len(v2e_oeee.shape) == 3:
-        if (v2e_oeee.shape[0] == n_ee):
-            v2e_oeee_ = np.zeros((nextern, nextern, v2e_oeee.shape[1], v2e_oeee.shape[2]))
-            v2e_oeee_[ind_ee[0], ind_ee[1]] = v2e_oeee
-            v2e_oeee_[ind_ee[1], ind_ee[0]] = v2e_oeee
-
-        elif (v2e_oeee.shape[2] == n_ee):
-            v2e_oeee_ = np.zeros((v2e_oeee.shape[0], v2e_oeee.shape[1], nextern, nextern))
-            v2e_oeee_[:, :, ind_ee[0], ind_ee[1]] = v2e_oeee
-            v2e_oeee_[:, :, ind_ee[1], ind_ee[0]] = v2e_oeee
-
-        else:
-            raise TypeError("ERI dimensions don't match")
-
-    else:
+    if len(v2e_oeee.shape) != 3:
         raise RuntimeError("ERI does not have a correct dimension")
+
+    if (v2e_oeee.shape[0] == n_ee):
+        v2e_oeee_ = np.zeros((nextern, nextern, v2e_oeee.shape[1], v2e_oeee.shape[2]))
+        v2e_oeee_[ind_ee[0], ind_ee[1]] = v2e_oeee
+        v2e_oeee_[ind_ee[1], ind_ee[0]] = v2e_oeee
+    elif (v2e_oeee.shape[2] == n_ee):
+        v2e_oeee_ = np.zeros((v2e_oeee.shape[0], v2e_oeee.shape[1], nextern, nextern))
+        v2e_oeee_[:, :, ind_ee[0], ind_ee[1]] = v2e_oeee
+        v2e_oeee_[:, :, ind_ee[1], ind_ee[0]] = v2e_oeee
+    else:
+        raise TypeError("ERI dimensions don't match")
 
     return v2e_oeee_
 
@@ -1034,7 +1023,7 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.xaea = np.ascontiguousarray(mr_adc.v2e.caea[:ncvs, :, :, :])
             mr_adc.v2e.vaea = np.ascontiguousarray(mr_adc.v2e.caea[ncvs:, :, :, :])
             del(mr_adc.v2e.caea)
-##
+
             mr_adc.v2e.xeee = tools.create_dataset('xeee', tmpfile, (ncvs, nextern, nextern, nextern))
             mr_adc.v2e.veee = tools.create_dataset('veee', tmpfile, (nval, nextern, nextern, nextern))
 
@@ -1044,7 +1033,7 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.veee[:] = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:, :, :, :])
             tools.flush(tmpfile)
             del(mr_adc.v2e.ceee)
-##
+
             mr_adc.v2e.xeea = tools.create_dataset('xeea', tmpfile, (ncvs, nextern, nextern, ncas))
             mr_adc.v2e.veea = tools.create_dataset('veea', tmpfile, (nval, nextern, nextern, ncas))
 
@@ -1054,7 +1043,7 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             mr_adc.v2e.veea[:] = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:, :, :, :])
             tools.flush(tmpfile)
             del(mr_adc.v2e.ceea)
-##
+
             mr_adc.v2e.xaee = tools.create_dataset('xaee', tmpfile, (ncvs, ncas, nextern, nextern))
             mr_adc.v2e.vaee = tools.create_dataset('vaee', tmpfile, (nval, ncas, nextern, nextern))
 
@@ -1113,7 +1102,10 @@ def compute_cvs_integrals_2e_df(mr_adc):
     nextern = mr_adc.nextern
 
     # Remove in-core v2e integrals
-    del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+    if mr_adc.method_type == 'cvs-ee' and mr_adc.method == "mr-adc(2)-x":
+        del(mr_adc.v2e.Lce, mr_adc.v2e.Lae)
+    else:
+        del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
 
     mr_adc.tmpfile.xferi1 = tools.create_temp_file(mr_adc)
     tmpfile = mr_adc.tmpfile.xferi1
@@ -1877,9 +1869,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
             tools.flush(tmpfile)
             del(mr_adc.v2e.cccc)
 
-            mr_adc.v2e.eeee = tools.create_dataset('eeee', tmpfile, (nextern, nextern, nextern, nextern))
-            mr_adc.v2e.eeee[:] = mr_adc.v2e.eeee[:]
-
     # Close non-CVS integrals' files
     mr_adc.tmpfile.cferi1.close()
 
@@ -1888,3 +1877,71 @@ def compute_cvs_integrals_2e_df(mr_adc):
     mr_adc.mo_energy.v = mr_adc.mo_energy.c[ncvs:]
 
     mr_adc.log.timer("computing CVS integrals", *cput0)
+
+#=======================================================================================================
+
+def unpack_v2e_eeee(mr_adc, v2e_eeee, s_chunk, f_chunk):
+
+    # Variables from kernel
+    nextern = mr_adc.nextern
+
+    n_ee = nextern * (nextern + 1) // 2
+
+    if len(v2e_eeee.shape) != 2:
+        raise TypeError("ERI dimensions don't match")
+    if v2e_eeee.shape[1] != n_ee:
+        raise RuntimeError("ERI does not have a correct dimension")
+
+    def index_array(p, q):
+        p, q = np.asarray(p), np.asarray(q)
+        mask = p > q
+        pp, qq = np.where(mask, q, p), np.where(mask, p, q)
+        return qq * (qq + 1) // 2 + pp
+
+    r_grid, s_grid = np.mgrid[0:nextern, 0:nextern]
+    rs_idx = index_array(r_grid, s_grid)
+
+    p_vals = np.arange(s_chunk, f_chunk)[:, None]
+    q_vals = np.arange(nextern)[None, :]
+    pq_idx = index_array(p_vals, q_vals)
+
+    v2e_eeee_ = v2e_eeee[pq_idx[:, :, None, None], rs_idx[None, None, :, :]]
+
+    return v2e_eeee_
+
+def get_eeee_df(mr_adc, Lee, s_chunk_ext, f_chunk_ext):
+    cput0 = (logger.process_clock(), logger.perf_counter())
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    naux = mr_adc.naux
+    nextern = mr_adc.nextern
+
+    chunk_size_ext = f_chunk_ext - s_chunk_ext
+
+    chunks_aux = tools.calculate_double_chunks(mr_adc, naux, [chunk_size_ext, nextern], [nextern, nextern],
+                                                       extra_tensors=[[chunk_size_ext, nextern, nextern, nextern],
+                                                                      [chunk_size_ext, nextern, nextern, nextern]])
+
+    v_eeee = np.zeros((chunk_size_ext, nextern, nextern, nextern))
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks_aux):
+        mr_adc.log.debug("aux [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks_aux), s_chunk, f_chunk)
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        Lee_chunk_1 = np.ascontiguousarray(Lee[s_chunk:f_chunk])
+        Lee_chunk_2 = Lee_chunk_1[:, s_chunk_ext:f_chunk_ext, :]
+
+        ##v_eeee += np.tensordot(Lee_chunk_2, Lee_chunk_1, axes=([0], [0]))
+        v_eeee += einsum('iab,icd->abcd', Lee_chunk_2, Lee_chunk_1, optimize = einsum_type)
+
+        mr_adc.log.timer_debug("contracting v_eeee DF", *cput1)
+
+        del Lee_chunk_1, Lee_chunk_2
+
+    mr_adc.log.timer_debug("computing v_eeee DF", *cput0)
+    return v_eeee
+
