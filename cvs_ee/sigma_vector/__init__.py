@@ -39,6 +39,8 @@ H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVAA_CCEA = compute_sigma_vector_
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CCEA = compute_sigma_vector__H1__h1_h1__CVEA_CCEA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CCEA = compute_sigma_vector__H1__h1_h1__CVEE_CCEA
 
+H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEE_CCEA__V_AEEE = compute_sigma_vector__H1__h1_h1__CCEE_CCEA__V_AEEE
+
 ## h1 <- CCEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCAA_CCEE = compute_sigma_vector__H1__h1_h1__CCAA_CCEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEA_CCEE = compute_sigma_vector__H1__h1_h1__CCEA_CCEE
@@ -50,6 +52,9 @@ H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CCEE = compute_sigma_vector_
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CCEE = compute_sigma_vector__H1__h1_h1__CVEA_CCEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CCEE = compute_sigma_vector__H1__h1_h1__CVEE_CCEE
 
+H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CCEE__V_XEEE = compute_sigma_vector__H1__h1_h1__CAEA_CCEE__V_XEEE
+H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEA_CCEE__V_AEEE = compute_sigma_vector__H1__h1_h1__CCEA_CCEE__V_AEEE
+
 ## h1 <- CAEE
 ## CCAA <- CAEE: ZERO COUPLING
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEA_CAEE = compute_sigma_vector__H1__h1_h1__CCEA_CAEE
@@ -60,6 +65,8 @@ H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CAEE = compute_sigma_vector_
 ## CVAA <- CAEE: ZERO COUPLING                                                                       
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CAEE = compute_sigma_vector__H1__h1_h1__CVEA_CAEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CAEE = compute_sigma_vector__H1__h1_h1__CVEE_CAEE
+
+H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CAEE__V_AEEE = compute_sigma_vector__H1__h1_h1__CAEA_CAEE__V_AEEE
 
 ## h1 <- CAAA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCAA_CAAA = compute_sigma_vector__H1__h1_h1__CCAA_CAAA
@@ -109,6 +116,9 @@ H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVAA_CVEE = compute_sigma_vector_
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CVEE = compute_sigma_vector__H1__h1_h1__CVEA_CVEE
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CVEE = compute_sigma_vector__H1__h1_h1__CVEE_CVEE
 
+H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CVEE__V_VEEE = compute_sigma_vector__H1__h1_h1__CAEA_CVEE__V_VEEE
+H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CVEE__V_AEEE = compute_sigma_vector__H1__h1_h1__CVEA_CVEE__V_AEEE
+
 ## h1 <- CVEA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCAA_CVEA = compute_sigma_vector__H1__h1_h1__CCAA_CVEA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CCEA_CVEA = compute_sigma_vector__H1__h1_h1__CCEA_CVEA
@@ -119,6 +129,8 @@ H1SigmaVector.compute_sigma_vector__H1__h1_h1__CAEA_CVEA = compute_sigma_vector_
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVAA_CVEA = compute_sigma_vector__H1__h1_h1__CVAA_CVEA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEA_CVEA = compute_sigma_vector__H1__h1_h1__CVEA_CVEA
 H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CVEA = compute_sigma_vector__H1__h1_h1__CVEE_CVEA
+
+H1SigmaVector.compute_sigma_vector__H1__h1_h1__CVEE_CVEA__V_AEEE = compute_sigma_vector__H1__h1_h1__CVEE_CVEA__V_AEEE
 
 sigma_vector = H1SigmaVector()
 
