@@ -662,16 +662,15 @@ def get_oeee_df(mr_adc, Loe, Lee, s_chunk_occ, f_chunk_occ):
                                                         extra_tensors=[[chunk_size_occ, nextern, nextern, nextern],
                                                                        [chunk_size_occ, nextern, nextern, nextern]])
 
-    v_oeee = np.empty((chunk_size_occ, nextern, nextern, nextern))
+    v_oeee = np.zeros((chunk_size_occ, nextern, nextern, nextern))
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks_aux):
         mr_adc.log.debug("aux [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks_aux), s_chunk, f_chunk)
         cput1 = (logger.process_clock(), logger.perf_counter())
 
         Loe_chunk = np.ascontiguousarray(Loe[s_chunk:f_chunk,s_chunk_occ:f_chunk_occ])
-        Lee_chunk = np.ascontiguousarray(Lee[s_chunk:f_chunk])
+        Lee_chunk = Lee[s_chunk:f_chunk]
 
-        ##v_oeee += np.tensordot(Loe_chunk, Lee_chunk, axes=([0], [0]))
         v_oeee += einsum('iab,icd->abcd', Loe_chunk, Lee_chunk, optimize = einsum_type)
 
         mr_adc.log.timer_debug("contracting v_oeee DF", *cput1)
