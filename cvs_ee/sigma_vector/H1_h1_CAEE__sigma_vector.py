@@ -2035,7 +2035,7 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X
 
     mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAEA-CAEE", *cput1)
 
-def compute_sigma_vector__H1__h1_h1__CAEA_CAEE__V_AEEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma):
+def compute_sigma_vector__H1__h1_h1__CAEA_CAEE__V_AEEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma, v_aeee):
 
     cput1 = (logger.process_clock(), logger.perf_counter())
 
