@@ -2048,7 +2048,8 @@ def compute_t2_0p_singles(mr_adc):
             V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
 
         mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
-    del(v_aeee, t1_caee, rdm_ca)
+    if mr_adc.ncas > 0:
+        del(v_aeee, t1_caee, rdm_ca)
 
     if mr_adc.method_type == "cvs-ip":
         del mr_adc.v2e.ceee

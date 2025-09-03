@@ -113,6 +113,7 @@ def kernel(mr_adc):
                                            nroots = mr_adc.nroots,
                                            verbose = davidson_verbose,
                                            max_space = mr_adc.max_space,
+                                           max_memory = mr_adc.max_memory,
                                            max_cycle = mr_adc.max_cycle,
                                            tol = mr_adc.tol_e,
                                            tol_residual = mr_adc.tol_r)

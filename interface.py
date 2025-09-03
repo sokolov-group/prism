@@ -177,7 +177,10 @@ class PYSCF:
 # Removing the spin manifold code for now
 
             # Print reference info
-            self.ref_wfn_spin_mult = self.print_reference_info(ci, self.ncas, mc.nelecas, e_ref, e_cas)
+            if self.ncas > 0:
+                self.ref_wfn_spin_mult = self.print_reference_info(ci, self.ncas, mc.nelecas, e_ref, e_cas)
+            else:
+                self.ref_wfn_spin_mult = [1]
 
             self.ref_wfn = ci
             self.ref_nelecas = len(ci) * [mc.nelecas, ]
