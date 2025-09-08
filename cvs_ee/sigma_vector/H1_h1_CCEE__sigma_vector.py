@@ -1,5 +1,5 @@
 ## h1 <- h1 coupling contributions
-from . import logger, tools, ascontiguousarray
+from . import logger, tools, ascontiguousarray, zeros
 from prism.mr_adc_integrals import get_eeee_df, unpack_v2e_eeee
 
 # CCAA <- CCEE
@@ -512,6 +512,7 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
+    dot = mr_adc.interface.dot
 
     #Excitation Manifold
     ccee__aaaa = mr_adc.h1.ccee__aaaa
@@ -529,6 +530,7 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
 #    v_eeee = mr_adc.v2e.eeee
 
     # Variables from kernel
+    ncvs = mr_adc.ncvs
     nextern = mr_adc.nextern
 
 #    sigma_KLCD_aaaa  = 1/2 * einsum('KLab,CaDb->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
@@ -581,7 +583,16 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
 #    sigma_KLCD_bbbb = sigma_KLCD_bbbb[:, :, ee_tril_ind[0], ee_tril_ind[1]]
 #    sigma[ccee__bbbb] += ascontiguousarray(sigma_KLCD_bbbb[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern])
+    # Pack X for ladder contractions
+    X_aaaa = ascontiguousarray((X_aaaa - X_aaaa.transpose(0, 1, 3, 2)).reshape(ncvs*ncvs, -1).T)
+    X_abab = ascontiguousarray(X_abab.reshape(ncvs*ncvs, -1).T)
+    X_bbbb = ascontiguousarray((X_bbbb - X_bbbb.transpose(0, 1, 3, 2)).reshape(ncvs*ncvs, -1).T)
+
+    temp_aaaa = zeros((nextern, nextern, ncvs*ncvs))
+    temp_abab = zeros((nextern, nextern, ncvs*ncvs))
+    temp_bbbb = zeros((nextern, nextern, ncvs*ncvs))
+
+    chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern], ntensors = 4)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.eeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -591,21 +602,21 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, s
             v_eeee = get_eeee_df(mr_adc, mr_adc.v2e.Lee, s_chunk, f_chunk)
         else:
             v_eeee = unpack_v2e_eeee(mr_adc, mr_adc.v2e.eeee, s_chunk, f_chunk)
+        
+        # Contractions using dot products
+        temp_aaaa[s_chunk:f_chunk] += 0.5 * dot(v_eeee, X_aaaa).reshape(-1, nextern, ncvs*ncvs)
+        temp_abab[s_chunk:f_chunk] += dot(v_eeee, X_abab).reshape(-1, nextern, ncvs*ncvs)
+        temp_bbbb[s_chunk:f_chunk] += 0.5 * dot(v_eeee, X_bbbb).reshape(-1, nextern, ncvs*ncvs)
 
-        temp  = 1/2 * einsum('KLab,CaDb->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
-        temp -= 1/2 * einsum('KLab,CbDa->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
-        sigma_KLCD_aaaa[:, :, s_chunk:f_chunk, :] += temp
-
-        temp  = einsum('KLab,CaDb->KLCD', X_abab, v_eeee, optimize = einsum_type)
-        sigma_KLCD_abab[:, :, s_chunk:f_chunk, :] += temp
-
-        temp  = 1/2 * einsum('KLab,CaDb->KLCD', X_bbbb, v_eeee, optimize = einsum_type)
-        temp -= 1/2 * einsum('KLab,CbDa->KLCD', X_bbbb, v_eeee, optimize = einsum_type)
-        sigma_KLCD_bbbb[:, :, s_chunk:f_chunk, :] += temp
-
+        del(v_eeee)
         mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
-    del(v_eeee)
+    del(X_aaaa, X_abab, X_bbbb)
 
+    sigma_KLCD_aaaa += temp_aaaa.transpose(2,0,1).reshape((ncvs, ncvs, nextern, nextern))
+    sigma_KLCD_abab += temp_abab.transpose(2,0,1).reshape((ncvs, ncvs, nextern, nextern))
+    sigma_KLCD_bbbb += temp_bbbb.transpose(2,0,1).reshape((ncvs, ncvs, nextern, nextern))
+    del(temp_aaaa, temp_abab, temp_bbbb)
+ 
     sigma_KLCD_aaaa = sigma_KLCD_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]]
     sigma[ccee__aaaa] += ascontiguousarray(sigma_KLCD_aaaa[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
 
@@ -1502,22 +1513,19 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CCEE__V_XEEE(mr_adc, X_aaaa, X_abab, X
     # Reduced Density Matrices
     rdm_ca = mr_adc.rdm.ca
   
-    sigma_KWCU_aaaa =- 1/4 * einsum('Kiab,iaCb,UW->KWCU', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KWCU_aaaa += 1/4 * einsum('Kiab,ibCa,UW->KWCU', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KWCU_aaaa += 1/2 * einsum('Kiab,ibCa,UW->KWCU', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
+    temp =- 1/4 * einsum('Kiab,iaCb,UW->KWCU', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
+    temp += 1/4 * einsum('Kiab,ibCa,UW->KWCU', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
+    temp += 1/2 * einsum('Kiab,ibCa,UW->KWCU', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
+    sigma_KWCU_aaaa = temp
+    sigma_KWCU_abab = temp
+    del temp
 
-    sigma_KWCU_abab =- 1/4 * einsum('Kiab,iaCb,UW->KWCU', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KWCU_abab += 1/4 * einsum('Kiab,ibCa,UW->KWCU', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KWCU_abab += 1/2 * einsum('Kiab,ibCa,UW->KWCU', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
-
-    sigma_KWCU_baba  = 1/2 * einsum('iKab,iaCb,UW->KWCU', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KWCU_baba -= 1/4 * einsum('Kiab,iaCb,UW->KWCU', X_bbbb, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KWCU_baba += 1/4 * einsum('Kiab,ibCa,UW->KWCU', X_bbbb, v_xeee, rdm_ca, optimize = einsum_type)
-
-    sigma_KWCU_bbbb  = 1/2 * einsum('iKab,iaCb,UW->KWCU', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KWCU_bbbb -= 1/4 * einsum('Kiab,iaCb,UW->KWCU', X_bbbb, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KWCU_bbbb += 1/4 * einsum('Kiab,ibCa,UW->KWCU', X_bbbb, v_xeee, rdm_ca, optimize = einsum_type) 
-
+    temp  = 1/2 * einsum('iKab,iaCb,UW->KWCU', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
+    temp -= 1/4 * einsum('Kiab,iaCb,UW->KWCU', X_bbbb, v_xeee, rdm_ca, optimize = einsum_type)
+    temp += 1/4 * einsum('Kiab,ibCa,UW->KWCU', X_bbbb, v_xeee, rdm_ca, optimize = einsum_type)
+    sigma_KWCU_baba = temp
+    sigma_KWCU_bbbb = temp
+    
     return sigma_KWCU_aaaa, sigma_KWCU_abab, sigma_KWCU_baba, sigma_KWCU_bbbb
     mr_adc.log.timer_debug("contracting v2e.xeee", *cput1)
 

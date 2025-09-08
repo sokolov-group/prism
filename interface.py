@@ -237,6 +237,9 @@ class PYSCF:
             self.einsum = np.einsum
             self.einsum_type = "greedy"
 
+        # Dot product
+        self.dot = np.dot
+
     @property
     def with_df(self):
         return self._with_df

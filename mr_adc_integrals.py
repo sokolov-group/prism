@@ -745,6 +745,9 @@ def unpack_v2e_oeee(mr_adc, v2e_oeee):
     if len(v2e_oeee.shape) != 3:
         raise RuntimeError("ERI does not have a correct dimension")
 
+    if not (v2e_oeee.shape[0] == n_ee  or v2e_oeee.shape[2] == n_ee):
+        raise TypeError("ERI dimensions don't match")
+
     if (v2e_oeee.shape[0] == n_ee):
         v2e_oeee_ = np.zeros((nextern, nextern, v2e_oeee.shape[1], v2e_oeee.shape[2]))
         v2e_oeee_[ind_ee[0], ind_ee[1]] = v2e_oeee
@@ -753,8 +756,6 @@ def unpack_v2e_oeee(mr_adc, v2e_oeee):
         v2e_oeee_ = np.zeros((v2e_oeee.shape[0], v2e_oeee.shape[1], nextern, nextern))
         v2e_oeee_[:, :, ind_ee[0], ind_ee[1]] = v2e_oeee
         v2e_oeee_[:, :, ind_ee[1], ind_ee[0]] = v2e_oeee
-    else:
-        raise TypeError("ERI dimensions don't match")
 
     return v2e_oeee_
 
@@ -1883,7 +1884,7 @@ def compute_cvs_integrals_2e_df(mr_adc):
 
 #=======================================================================================================
 
-def unpack_v2e_eeee(mr_adc, v2e_eeee, s_chunk, f_chunk):
+def unpack_v2e_eeee(mr_adc, v2e_eeee, s_chunk, f_chunk, pack=True):
 
     # Variables from kernel
     nextern = mr_adc.nextern
@@ -1910,9 +1911,15 @@ def unpack_v2e_eeee(mr_adc, v2e_eeee, s_chunk, f_chunk):
 
     v2e_eeee_ = v2e_eeee[pq_idx[:, :, None, None], rs_idx[None, None, :, :]]
 
+    # Physicist notation
+    if pack:
+        v2e_eeee_ = np.ascontiguousarray(v2e_eeee_.transpose(0,2,1,3).reshape(-1, nextern*nextern))
+    else:
+        v2e_eeee_ = np.ascontiguousarray(v2e_eeee_.transpose(0,2,1,3))
+
     return v2e_eeee_
 
-def get_eeee_df(mr_adc, Lee, s_chunk_ext, f_chunk_ext):
+def get_eeee_df(mr_adc, Lee, s_chunk_ext, f_chunk_ext, pack=True):
     cput0 = (logger.process_clock(), logger.perf_counter())
 
     # Variables from kernel
@@ -1934,13 +1941,19 @@ def get_eeee_df(mr_adc, Lee, s_chunk_ext, f_chunk_ext):
         chunk_size_aux = f_chunk - s_chunk
 
         Lee_chunk_1 = np.ascontiguousarray(Lee[s_chunk:f_chunk].reshape(chunk_size_aux, -1))
-        Lee_chunk_2 = np.ascontiguousarray(Lee[s_chunk:f_chunk, s_chunk_ext:f_chunk_ext, :].transpose(1,2,0).reshape(-1, chunk_size_aux))
+        Lee_chunk_2 = np.ascontiguousarray(Lee[:].T[s_chunk_ext:f_chunk_ext, :, s_chunk:f_chunk].reshape(-1, chunk_size_aux))
 
         v_eeee += np.dot(Lee_chunk_2, Lee_chunk_1).reshape(chunk_size_ext, nextern, nextern, nextern)
 
         mr_adc.log.timer_debug("contracting v_eeee DF", *cput1)
 
         del Lee_chunk_1, Lee_chunk_2
+
+    # Physicist notation
+    if pack:
+        v_eeee = np.ascontiguousarray(v_eeee.transpose(0,2,1,3).reshape(-1, nextern*nextern))
+    else:
+        v_eeee = np.ascontiguousarray(v_eeee.transpose(0,2,1,3))
 
     mr_adc.log.timer_debug("computing v_eeee DF", *cput0)
     return v_eeee

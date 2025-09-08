@@ -1,6 +1,6 @@
 import prism.lib.logger as logger
 import prism.lib.tools as tools
-from numpy import ascontiguousarray
+from numpy import ascontiguousarray, zeros
 
 from .H1_h1_CCAA__sigma_vector import *
 from .H1_h1_CCEA__sigma_vector import *

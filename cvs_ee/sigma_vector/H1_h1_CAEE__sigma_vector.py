@@ -1,5 +1,5 @@
 ## h1 <- h1 coupling contributions
-from . import logger, tools, ascontiguousarray
+from . import logger, tools, ascontiguousarray, zeros
 from prism.mr_adc_integrals import get_eeee_df, unpack_v2e_eeee
 
 # CCAA <- CAEE: NO CONTRIBUTION
@@ -337,6 +337,7 @@ def compute_sigma_vector__H1__h1_h1__CAEE_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
+    dot = mr_adc.interface.dot
 
     #Excitation Manifold
     caee__aaaa = mr_adc.h1.caee__aaaa
@@ -478,6 +479,20 @@ def compute_sigma_vector__H1__h1_h1__CAEE_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X
     sigma_KWCD_bbbb -= 1/4 * einsum('ixCD,Kyzi,zy,Wx->KWCD', X_bbbb, v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
 #    sigma[caee__bbbb] += ascontiguousarray(sigma_KWCD_bbbb[:, :, ee_tril_ind[0], ee_tril_ind[1]]).reshape(-1)
 
+    # Form X intermediates and pack for ladder contractions
+    X_aaaa = ascontiguousarray(einsum('Kxab,Wx->KWab', X_aaaa, rdm_ca, optimize = einsum_type))
+    X_bbbb = ascontiguousarray(einsum('Kxab,Wx->KWab', X_bbbb, rdm_ca, optimize = einsum_type))
+    X_aaaa = ascontiguousarray((X_aaaa - X_aaaa.transpose(0,1,3,2)).reshape(-1, nextern*nextern).T)
+    X_bbbb = ascontiguousarray((X_bbbb - X_bbbb.transpose(0,1,3,2)).reshape(-1, nextern*nextern).T)
+
+    X_abab = ascontiguousarray(einsum('Kxab,Wx->KWab', X_abab, rdm_ca, optimize = einsum_type).reshape(-1, nextern*nextern).T)
+    X_baba = ascontiguousarray(einsum('Kxab,Wx->KWab', X_baba, rdm_ca, optimize = einsum_type).reshape(-1, nextern*nextern).T)
+
+    temp_aaaa = zeros((nextern, nextern, ncvs*ncas))
+    temp_abab = zeros((nextern, nextern, ncvs*ncas))
+    temp_baba = zeros((nextern, nextern, ncvs*ncas))
+    temp_bbbb = zeros((nextern, nextern, ncvs*ncas))
+
     chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern])
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
@@ -488,24 +503,23 @@ def compute_sigma_vector__H1__h1_h1__CAEE_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X
             v_eeee = get_eeee_df(mr_adc, mr_adc.v2e.Lee, s_chunk, f_chunk)
         else:
             v_eeee = unpack_v2e_eeee(mr_adc, mr_adc.v2e.eeee, s_chunk, f_chunk)
+        
+        # Contractions using dot products
+        temp_aaaa[s_chunk:f_chunk] += 0.25 * dot(v_eeee, X_aaaa).reshape(-1, nextern, ncvs*ncas)
+        temp_abab[s_chunk:f_chunk] += 0.50 * dot(v_eeee, X_abab).reshape(-1, nextern, ncvs*ncas)
+        temp_baba[s_chunk:f_chunk] += 0.50 * dot(v_eeee, X_baba).reshape(-1, nextern, ncvs*ncas)
+        temp_bbbb[s_chunk:f_chunk] += 0.25 * dot(v_eeee, X_bbbb).reshape(-1, nextern, ncvs*ncas)
 
-        temp  = 1/4 * einsum('Kxab,CaDb,Wx->KWCD', X_aaaa, v_eeee, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('Kxab,CbDa,Wx->KWCD', X_aaaa, v_eeee, rdm_ca, optimize = einsum_type)
-        sigma_KWCD_aaaa[:, :, s_chunk:f_chunk, :] += temp
-
-        temp  = 1/2 * einsum('Kxab,CaDb,Wx->KWCD', X_abab, v_eeee, rdm_ca, optimize = einsum_type)
-        sigma_KWCD_abab[:, :, s_chunk:f_chunk, :] += temp
-
-        temp  = 1/2 * einsum('Kxab,CaDb,Wx->KWCD', X_baba, v_eeee, rdm_ca, optimize = einsum_type)
-        sigma_KWCD_baba[:, :, s_chunk:f_chunk, :] += temp
-
-        temp  = 1/4 * einsum('Kxab,CaDb,Wx->KWCD', X_bbbb, v_eeee, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('Kxab,CbDa,Wx->KWCD', X_bbbb, v_eeee, rdm_ca, optimize = einsum_type)
-        sigma_KWCD_bbbb[:, :, s_chunk:f_chunk, :] += temp
-
+        del(v_eeee)
         mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
-    del(v_eeee)
+    del(X_aaaa, X_abab, X_baba, X_bbbb)
 
+    sigma_KWCD_aaaa += temp_aaaa.transpose(2,0,1).reshape((ncvs, ncas, nextern, nextern))
+    sigma_KWCD_abab += temp_abab.transpose(2,0,1).reshape((ncvs, ncas, nextern, nextern))
+    sigma_KWCD_baba += temp_baba.transpose(2,0,1).reshape((ncvs, ncas, nextern, nextern))
+    sigma_KWCD_bbbb += temp_bbbb.transpose(2,0,1).reshape((ncvs, ncas, nextern, nextern))
+    del(temp_aaaa, temp_abab, temp_baba, temp_bbbb)
+ 
     sigma[caee__aaaa] += ascontiguousarray(sigma_KWCD_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]]).reshape(-1)
     sigma[caee__abab] += ascontiguousarray(sigma_KWCD_abab).reshape(-1)
     sigma[caee__baba] += ascontiguousarray(sigma_KWCD_baba).reshape(-1)
