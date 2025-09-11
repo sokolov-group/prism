@@ -316,7 +316,10 @@ def compute_trans_properties(mr_adc, E, U):
     # X is a tuple for CVS-EE
     if isinstance(X, tuple):
         X = X[1]
-        spec_intensity = np.sum(X**2, axis=0)
+        if mr_adc.method == "mr-adc(0)":
+            spec_intensity = np.sum(X**2, axis=0)
+        else:
+            spec_intensity = 2.0 * np.sum(X**2, axis=0)
     else:
         spec_intensity = 2.0 * np.sum(X**2, axis=0)
    
@@ -374,10 +377,15 @@ def analyze_spec_factor(mr_adc, X, spec_intensity):
     print_thresh = mr_adc.spec_factor_print_tol
     mr_adc.log.info(f"\nSpectroscopic factors analysis (threshold = {print_thresh:.2e}): ")
 
-    X_squared = np.square(X.T, order='C')
-    
-    if mr_adc.method_type == 'cvs-ip':
-        X_squared *= 2.0
+    #X_squared = np.square(X.T, order='C')
+
+    #if mr_adc.method_type == 'cvs-ip':
+    #    X_squared *= 2.0
+
+    if (mr_adc.method_type == "cvs-ee" and mr_adc.method == "mr-adc(0)"):
+        X_squared = np.square(X.T, order='C')
+    else:
+        X_squared = 2 * np.square(X.T, order='C')
 
     results = []
 
