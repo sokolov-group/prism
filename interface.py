@@ -24,7 +24,7 @@ import numpy as np
 import prism.lib.logger as logger
 class PYSCF:
 
-    def __init__(self, mf, mc = None, opt_einsum = False, select_reference = None):
+    def __init__(self, mf, mc = None, opt_einsum = False, pytblis = False, select_reference = None):
 
         if mc is None:
             self.stdout = mf.stdout
@@ -239,6 +239,12 @@ class PYSCF:
 
         # Dot product
         self.dot = np.dot
+
+        if pytblis:
+            print('>> using pytblis...')
+            from pytblis import einsum
+            self.einsum = einsum
+            self.einsum_type = "greedy"
 
     @property
     def with_df(self):
