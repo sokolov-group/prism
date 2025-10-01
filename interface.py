@@ -21,6 +21,10 @@ import os
 import tempfile
 import numpy as np
 
+#os.environ["OMP_NUM_THREADS"] = '12'
+#os.environ["MKL_NUM_THREADS"] = '12'
+#os.environ["OPENBLAS_NUM_THREADS"] = '12'
+
 import prism.lib.logger as logger
 class PYSCF:
 
@@ -202,6 +206,7 @@ class PYSCF:
             self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
 
             self.davidson = lib.linalg_helper.davidson1
+            self.davidson_nosym = lib.linalg_helper.davidson_nosym1
 
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
             self.select_casci = None
