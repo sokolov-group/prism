@@ -247,15 +247,18 @@ def setup_davidson(mr_adc):
 
 def compute_guess_vectors(mr_adc, precond, ascending = True):
 
+    nroots = mr_adc.nroots
+    dim = precond.shape[0]
+
     sort_ind = np.argsort(precond)
     if not ascending:
         sort_ind = sort_ind[::-1]
 
-    x0s = np.zeros((precond.shape[0], mr_adc.nroots))
-    min_shape = min(precond.shape[0], mr_adc.nroots)
+    x0s = np.zeros((dim, nroots))
+    min_shape = min(dim, nroots)
     x0s[:min_shape,:min_shape] = np.identity(min_shape)
 
-    x0 = np.zeros((precond.shape[0], mr_adc.nroots))
+    x0 = np.zeros((dim, nroots))
     x0[sort_ind] = x0s.copy()
 
     return [x0[:, p] for p in range(x0.shape[1])]
@@ -322,6 +325,9 @@ def compute_trans_properties(mr_adc, E, U):
             spec_intensity = 2.0 * np.sum(X**2, axis=0)
     else:
         spec_intensity = 2.0 * np.sum(X**2, axis=0)
+
+    
+    ##mr_adc_cvs_ee.analyze_eigenvector(mr_adc, E, U)
    
     # Analyze spectroscopic factors if requested
     #if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4): 
