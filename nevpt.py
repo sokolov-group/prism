@@ -86,6 +86,8 @@ class NEVPT:
         self.mo_energy.e = interface.mo_energy[self.nocc:]
 
         #For SOC
+        self.soc = None
+        self.soc_order = 1
         self.evec_qdnevpt2 = None
 
     def kernel(self):
@@ -123,8 +125,9 @@ class NEVPT:
         e_tot, e_corr, osc = nevpt_compute.kernel(self)
 
         #Test for SOC code
-        from prism import SOC
-        SOC.Initialize_SOC(self)
+        if self.soc: 
+          from prism import general_somf
+          general_somf.Initialize_SOC(self)
 
         return e_tot, e_corr, osc
 
