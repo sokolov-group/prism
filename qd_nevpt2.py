@@ -285,9 +285,10 @@ def determine_spin_mult(nevpt, evec):
     return spin_mult_new
 
 def Initialize_SOC(method):
-
+    print("\n \n \nConsider spin-orbit coupling effect...")
     if method.evec_qdnevpt2 is None:
         print("It is NEVPT2")
+        method.evec_qdnevpt2 = np.diag(np.ones(len(ref_wfn)))
     else:
         print("It is QDNEVPT2")
 
@@ -311,16 +312,8 @@ def Initialize_SOC(method):
 
     ms = [round(elem,2) for elem in ms]
 
-    print("ref_wfn_spin_mult=")
-    print(ref_wfn_spin_mult)
-    print("S=")
-    print(S)
-    print("ms=")
-    print(ms)
-    print(type(wfn))
-
-    # Add spin-projections of non-singlet CASCI states:
-
+    # Generate all ms states:
+    print("Generate all ms states...")
     e_cas_roots_spinstate = []
     wfn_spinstate = []
     ms_spinstate = []
@@ -328,7 +321,6 @@ def Initialize_SOC(method):
     E_spinstate = []
 
     for root in range(nstate):
-        #root = 4
         n_plus = int(S[root] - ms[root])
         n_minus =  int(ms[root] + S[root])
         wfn_S = []
@@ -346,10 +338,8 @@ def Initialize_SOC(method):
         spin_nelec_plus = ref_nelecas[root]
         spin_nelec_minus = ref_nelecas[root]
 
-        #print(n_plus)
         #Operate plus
         for I in range(n_plus):
-            print("doing plus")
             # Apply spin operators for finding ms values
             sz_plus = method.interface.apply_S_z(spin_wf_plus, ncas, spin_nelec_plus)
             msz_plus = np.dot(spin_wf_plus.ravel(), sz_plus.ravel())
@@ -362,11 +352,9 @@ def Initialize_SOC(method):
             ms_S.append(msz_plus+1)
             E_S.append(en[root])
             nele_S.append(spin_nelec_plus)
-            #ncasci += 1
 
         #Operate minus
         for I in range(n_minus):
-            print("doing minus")
             # Apply spin operators for finding ms values
             sz_minus = method.interface.apply_S_z(spin_wf_minus, ncas, spin_nelec_minus)
             msz_minus = np.dot(spin_wf_minus.ravel(), sz_minus.ravel()) 
@@ -379,17 +367,7 @@ def Initialize_SOC(method):
             ms_S.append(msz_minus-1)
             E_S.append(en[root])
             nele_S.append(spin_nelec_minus)
-            #ncasci += 1
 
-        
-        #print("ms_S=")
-        #print(ms_S)
-
-        #print("spin_nelec_minus")
-        #print(nele_S)
-        #print(wfn_S[1])
-
-        #reorder list for -S to S:
         ms_S, nele_S,wfn_S,E_S = zip(*sorted(zip(ms_S, nele_S,wfn_S,E_S), reverse=True))
         ms_S= [round(elem,2) for elem in ms_S]
         
@@ -402,7 +380,7 @@ def Initialize_SOC(method):
 
     nstate_spinstate = len(ms_spinstate)
     ncas_so = ncas *2
-    #print(E_spinstate)
+
     #calculate rdm_so_ca:
     print("calculate rdm...")
     rdm_so_ca = np.zeros((nstate_spinstate, ncas_so, ncas_so))    
@@ -412,30 +390,22 @@ def Initialize_SOC(method):
     # Compute transition RDMs
     print("calculate trdm...")
     rdm_so_tca = compute_rdm_tcat_so(method.interface, wfn_spinstate, nele_spinstate, offset = -1)
-    print("finsih trdm")
 
     method.ncasci = nstate_spinstate
     method.rdm_so.ca = rdm_so_ca
     method.rdm_so.tca = rdm_so_tca
-    
-
-    method.h_soc = bpsomf(method)
-    
-
+       
     print("construct HSOC matrix...")
+    method.h_soc = bpsomf(method)
     HSOC = compute_h_somf1(method)
     H_sf = np.diag(E_spinstate).astype('complex')
     
-
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
-
-    #en_soc = (en_soc - en_soc[0] *np.ones(nstate_spinstate) ) * 219474.63
 
     print("\n Absolute energies in a.u |||| Excitation energies in a.u ||  eV ||  cm-1\n*****************************")
     for e in en_soc:
         print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-en_soc[0]),((e-en_soc[0])*27.2114),((e-en_soc[0])*219474.63)))
 
-    #print(np.round(en_soc,2))
 
 
     
