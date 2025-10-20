@@ -6000,7 +6000,7 @@ def compute_t2_0pp_singles(mr_adc):
             mr_adc.log.timer_debug("contracting t1.ccee", *cput1)
         del(e_extern, t1_ccee_ab, t1_ccee_ba)
 
-    ## t1_ccea 
+    ## t1_ccae 
     def compute_V1__t1_p1(mr_adc, V1):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
