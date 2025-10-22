@@ -81,6 +81,13 @@ class PYSCF:
             else:
                 self.group_repr_symm = None
         else:
+            #from interface in prisim_beta for SOC
+            from pyscf import fci
+            self.cre_a = fci.addons.cre_a
+            self.cre_b = fci.addons.cre_b
+            self.des_a = fci.addons.des_a
+            self.des_b = fci.addons.des_b
+
             # Determine reference type
             from pyscf.mcscf.casci import CASCI
 
@@ -601,3 +608,121 @@ class PYSCF:
         rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))
 
         return rdm1, rdm2, rdm3, rdm4
+    
+    #From interface of prisim_beta for SOC calculation
+    def compute_rdm_ca_si(self, bra, ket, bra_ne, ket_ne = None):
+
+        if ket_ne is None:
+            ket_ne = bra_ne
+
+        ncas = self.ncas
+
+        rdm_aa, rdm_ab, rdm_ba, rdm_bb = 4 * (None, )
+
+        # AA and BB
+        #if (bra_ne == ket_ne):
+        #    rdm_aa, rdm_bb = self.trans_rdm1s(bra, ket, ncas, bra_ne)
+        #    rdm_aa = rdm_aa.T.copy()
+        #    rdm_bb = rdm_bb.T.copy()
+
+        #NEW AA:
+        if (bra_ne == ket_ne):
+            a_bra, a_bra_ne = self.apply_a(bra, ncas, bra_ne, "a")
+            a_ket, a_ket_ne = self.apply_a(ket, ncas, ket_ne, "a")
+            if a_bra is not None:
+                a_bra = a_bra.reshape(ncas, -1)
+                a_ket = a_ket.reshape(ncas, -1)
+                rdm_aa = np.dot(a_bra, a_ket.T)
+
+            b_bra, b_bra_ne = self.apply_a(bra, ncas, bra_ne, "b")
+            b_ket, b_ket_ne = self.apply_a(ket, ncas, ket_ne, "b")
+            if b_bra is not None:
+                b_bra = b_bra.reshape(ncas, -1)
+                b_ket = b_ket.reshape(ncas, -1)
+                rdm_bb = np.dot(b_bra, b_ket.T)
+
+        # AB
+        if ((bra_ne[0] - 1, bra_ne[1]) == (ket_ne[0], ket_ne[1] - 1)):
+            a_bra, a_bra_ne = self.apply_a(bra, ncas, bra_ne, "a")
+            b_ket, b_ket_ne = self.apply_a(ket, ncas, ket_ne, "b")
+            if a_bra is not None:
+                a_bra = a_bra.reshape(ncas, -1)
+                b_ket = b_ket.reshape(ncas, -1)
+                rdm_ab = np.dot(a_bra, b_ket.T)
+
+        # BA
+        if ((bra_ne[0], bra_ne[1] - 1) == (ket_ne[0] - 1, ket_ne[1])):
+            b_bra, b_bra_ne = self.apply_a(bra, ncas, bra_ne, "b")
+            a_ket, a_ket_ne = self.apply_a(ket, ncas, ket_ne, "a")
+            if b_bra is not None:
+                b_bra = b_bra.reshape(ncas, -1)
+                a_ket = a_ket.reshape(ncas, -1)
+                rdm_ba = np.dot(b_bra, a_ket.T)
+
+        return rdm_aa, rdm_ab, rdm_ba, rdm_bb
+    
+    def apply_a(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[0] == "a":
+                y_psi, y_psi_ne = self.act_des_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_des_b(psi, ncas, nelecas, y)
+            psi_list.append(y_psi)
+            psi_ne = y_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 1)
+
+        return psi_list, psi_ne
+
+    # Act annihilation operator (alpha spin) from prisim_beta
+    def act_des_a(self, wfn, ncas, nelec, orb):
+
+        if (wfn is not None) and (nelec[0] > 0):
+            a_wfn = self.des_a(wfn, ncas, nelec, orb)
+            a_wfn_ne = (nelec[0] - 1, nelec[1])
+        else:
+            a_wfn = None
+            a_wfn_ne = None
+
+        return a_wfn, a_wfn_ne
+
+    # Act annihilation operator (beta spin) from prisim_beta
+    def act_des_b(self, wfn, ncas, nelec, orb):
+
+        if (wfn is not None) and (nelec[1] > 0):
+            a_wfn = self.des_b(wfn, ncas, nelec, orb)
+            a_wfn_ne = (nelec[0], nelec[1] - 1)
+        else:
+            a_wfn = None
+            a_wfn_ne = None
+
+        return a_wfn, a_wfn_ne
+    
+    # Convert list of CI vectors into a numpy array from prisim_beta
+    def extract_vectors(self, vec_list, ncas, dim):
+
+        if (vec_list[0] is not None):
+            ndim_a = vec_list[0].shape[0]
+            ndim_b = vec_list[0].shape[1]
+            vec_list = np.array(vec_list)
+            if dim == 1:
+                vec_list = vec_list.reshape(ncas, ndim_a, ndim_b).copy()
+            elif dim == 2:
+                vec_list = vec_list.reshape(ncas, ncas, ndim_a, ndim_b).transpose(1,0,2,3).copy()
+            elif dim == 3:
+                vec_list = vec_list.reshape(ncas, ncas, ncas, ndim_a, ndim_b).transpose(2,1,0,3,4).copy()
+            elif dim == 4:
+                vec_list = vec_list.reshape(ncas, ncas, ncas, ncas, ndim_a, ndim_b).transpose(3,2,1,0,4,5).copy()
+            else:
+                raise Exception("Unknown dimension")
+        else:
+            vec_list = None
+
+        return vec_list
+    
+    

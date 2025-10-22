@@ -89,6 +89,12 @@ class NEVPT:
         self.soc = None
         self.soc_order = 1
         self.evec_qdnevpt2 = None
+        self.en_qdnevpt2 = None
+
+        #For SOC in temporary
+        self.ncasci = None
+        self.rdm_so = lambda:None
+        self.h_soc = None
 
     def kernel(self):
 
@@ -126,8 +132,9 @@ class NEVPT:
 
         #Test for SOC code
         if self.soc: 
-          from prism import general_somf
-          general_somf.Initialize_SOC(self)
+          #from prism import general_somf
+          from prism import qd_nevpt2
+          qd_nevpt2.Initialize_SOC(self)
 
         return e_tot, e_corr, osc
 
