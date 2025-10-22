@@ -286,11 +286,6 @@ def determine_spin_mult(nevpt, evec):
 
 def Initialize_SOC(method):
     print("\n \n \nConsider spin-orbit coupling effect...")
-    if method.evec_qdnevpt2 is None:
-        print("It is NEVPT2")
-        method.evec_qdnevpt2 = np.diag(np.ones(len(ref_wfn)))
-    else:
-        print("It is QDNEVPT2")
 
     ref_wfn =method.ref_wfn  
     ncas = method.ncas 
@@ -298,6 +293,19 @@ def Initialize_SOC(method):
     ref_wfn_spin_mult = method.ref_wfn_spin_mult
     S =  [round((spin_mult-1)/2,2) for spin_mult in ref_wfn_spin_mult]     
     nstate = len(ref_wfn)
+
+    if method.evec_qdnevpt2 is None:
+        print("It is NEVPT2")
+        method.evec_qdnevpt2 = np.diag(np.ones(len(ref_wfn)))
+    else:
+        print("It is QDNEVPT2")
+
+    ##test by using CASSCF######
+    #print("This is SOC-CASSCF")
+    #method.evec_qdnevpt2 = np.diag(np.ones(len(ref_wfn)))
+    #method.en_qdnevpt2 = method.e_ref_cas 
+    ##test by using CASSCF######
+
     evec = method.evec_qdnevpt2
     en = method.en_qdnevpt2
 
