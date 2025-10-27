@@ -132,8 +132,10 @@ class NEVPT:
 
         #Test for SOC code
         if self.soc: 
-          #from prism import general_somf
-          from prism import qd_nevpt2
+          from prism import general_somf
+          #from prism import qd_nevpt2
+          general_somf.getSOC_integrals(self)
+          exit()
           qd_nevpt2.Initialize_SOC(self)
 
         return e_tot, e_corr, osc

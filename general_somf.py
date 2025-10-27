@@ -21,12 +21,20 @@
 import sys
 import os
 import numpy as np
+from functools import reduce
 from pyscf.lib.parameters import LIGHT_SPEED
 from pyscf.x2c import sfx2c1e
 from pyscf.x2c import x2c
-from .socutils.somf import somf
 
-def getSOC_integrals(method, unc = None):
+# Add python path for socutils:
+prism_path = os.path.dirname(os.path.abspath(__file__)) 
+if prism_path not in sys.path:
+      sys.path.insert(0, prism_path)
+
+# Add socutils module
+from socutils.somf import somf
+
+def getSOC_integrals(method, unc = True):
     
     prefactor = 0.5 / ((LIGHT_SPEED)**2)
     mol = method.interface.mol
@@ -36,17 +44,17 @@ def getSOC_integrals(method, unc = None):
 
     if unc:
         xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
-        rdm1ao = reduce(numpy.dot, (contr_coeff, rdm1ao, contr_coeff.T))
+        rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
     else:
-        xmol, contr_coeff = method.mol, numpy.eye(method.mol.nao_nr())
+        xmol, contr_coeff = method.mol, np.eye(method.mol.nao_nr())
 
     nbasis = xmol.nao_nr()
     hsocint = np.zeros((3, nbasis, nbasis))
 
-    if method.soc is "breit-pauli":
+    if method.soc == "breit-pauli":
         hsocint += prefactor * somf.get_wso(xmol)
         hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
-    elif method.soc is "x2c":
+    elif method.soc == "x2c":
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
     else:
