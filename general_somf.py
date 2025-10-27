@@ -17,29 +17,46 @@
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 #
+
 import sys
 import os
 import numpy as np
+from pyscf.lib.parameters import LIGHT_SPEED
+from pyscf.x2c import sfx2c1e
+from pyscf.x2c import x2c
+
 socutils_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'prism', 'socutils'))
 if socutils_path not in sys.path:
     sys.path.insert(0, socuitls_path)
 
-import somf
 
-def getSOC_integrals(method):
+def getSOC_integrals(method, unc = None):
     
+    import somf
+
+    prefactor = 0.5 / ((LIGHT_SPEED)**2)
     mol = method.interface.mol
-    socints = []
 
-    # Build 1e-density matrix:
+    # Build 1e-density matrix
+    rdm1ao = method.interface.mc.make_rdm1() 
 
+    if unc:
+        xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
+        rdm1ao = reduce(numpy.dot, (contr_coeff, rdm1ao, contr_coeff.T))
+    else:
+        xmol, contr_coeff = method.mol, numpy.eye(method.mol.nao_nr())
+
+    nbasis = xmol.nao_nr()
+    hsocint = np.zeros((3, nbasis, nbasis))
 
     if method.soc is "breit-pauli":
-        socints.append(somf.get_hso1e_bp(mol))
-        socints.append(somf.get_fso2e_bp(mol, dm))
+        hsocint += prefactor * somf.get_wso(xmol)
+        hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
+    elif method.soc is "x2c":
+        hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
+        hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
     else:
-        socints.append(somf.get_hso1e_x2c1(mol))
-        socints.append(somf.get_fso2e_x2c(mol, dm))
+        raise Exception("Incorrect SOC flag in input file!!")
 
     return socints
 

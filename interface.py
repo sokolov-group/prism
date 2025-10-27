@@ -47,6 +47,7 @@ class PYSCF:
         self.enuc = mf.mol.energy_nuc()
         self.e_scf = mf.e_tot
         self.mf = mf
+        self.mc = mc
         self.log = log
 
         # Unit conversions
