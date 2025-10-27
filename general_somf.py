@@ -24,16 +24,10 @@ import numpy as np
 from pyscf.lib.parameters import LIGHT_SPEED
 from pyscf.x2c import sfx2c1e
 from pyscf.x2c import x2c
-
-socutils_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'prism', 'socutils'))
-if socutils_path not in sys.path:
-    sys.path.insert(0, socuitls_path)
-
+from .socutils.somf import somf
 
 def getSOC_integrals(method, unc = None):
     
-    import somf
-
     prefactor = 0.5 / ((LIGHT_SPEED)**2)
     mol = method.interface.mol
 
@@ -58,7 +52,7 @@ def getSOC_integrals(method, unc = None):
     else:
         raise Exception("Incorrect SOC flag in input file!!")
 
-    return socints
+    return hsocint
 
 
 def Initialize_SOC(method):
