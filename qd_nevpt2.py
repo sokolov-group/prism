@@ -251,12 +251,10 @@ def osc_strength(nevpt, en, evec, gs_index = 0):
                 rdm_mo = np.zeros((nmo, nmo))  # Reset RDM in MO Basis   
                 trdm_ca = nevpt.interface.compute_rdm1(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
                 rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = trdm_ca
-
                 if I == J:
                     rdm_mo[:ncore, :ncore] = 2 * np.eye(nevpt.ncore)
-                    rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
-                else:
-                    rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
+                
+                rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
 
         # Create Dipole Moment Operator with RDM
         dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
