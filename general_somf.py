@@ -137,6 +137,29 @@ def Wigner_SOC(method):
  
     #print("finish")
     print("calculate rdm...")
+
+    from pyscf.fci.direct_spin1 import trans_rdm1s
+    from pyscf.fci.direct_spin1 import make_rdm1s
+    #from pyscf.fci.addons import make_trdm1s
+    print("test make_trdm1s")
+    
+    
+    rdm_wigner_2 = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
+    #trdm_wigner = np.zeros((nstate*(nstate-1)//2,nmo,nmo))
+    print("ref_nelecas=")
+    print(ref_nelecas)
+    for I in range(nstate):
+        for J in range(nstate):
+            cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
+            cg = float(cg)
+            rdm_aabb = trans_rdm1s(wfn[I],wfn[J],ncas,ref_nelecas[I])
+            T_z = 1/np.sqrt(2) * (rdm_aabb[0] - rdm_aabb[1]) / cg
+            rdm_wigner_2[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
+            
+
+
+
+
     from prism import qd_nevpt2
     ncas_so = ncas * 2
     rdm_ca_so = np.zeros((nstate, ncas_so, ncas_so))    
@@ -168,7 +191,16 @@ def Wigner_SOC(method):
                 T_z = 1/np.sqrt(2) * (trdm_ca_so_t[::2, ::2] - trdm_ca_so_t[1::2, 1::2]) / cg
                 rdm_wigner[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
     
-    print("Test..")
+    I = 1
+    J = 0
+    P = (J*(J-1))//2 + I
+    trdm_ca_so_t = trdm_ca_so[P].T
+    print("trdm_ca_so[P, ::2, ::2]")
+    print(trdm_ca_so_t[::2, ::2])
+    print("rdm_wigner_2=")
+    A = trans_rdm1s(wfn[I],wfn[J],ncas,ref_nelecas[I])
+    print(A[0])
+    #exit()
     #print(rdm_wigner[0,0])
     #print(np.trace(rdm_wigner[0,0]))
     print("compute Hso_mo...")
