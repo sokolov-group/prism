@@ -88,8 +88,8 @@ class NEVPT:
         #For SOC
         self.soc = None
         self.soc_order = 1
-        self.evec_qdnevpt2 = None
-        self.en_qdnevpt2 = None
+        self.evec = None
+        self.en = None
 
         #For SOC in temporary
         self.ncasci = None
@@ -134,11 +134,10 @@ class NEVPT:
         if self.soc: 
           from prism import general_somf
           from prism import qd_nevpt2
-          #general_somf.getSOC_integrals(self)
-          general_somf.Wigner_SOC(self)
-          #exit()
+          general_somf.generalSOC(self)
           qd_nevpt2.Initialize_SOC(self)
-
+          qd_nevpt2.osc_strength(nevpt, nevpt.en, nevpt.evec)
+        
         return e_tot, e_corr, osc
 
     @property

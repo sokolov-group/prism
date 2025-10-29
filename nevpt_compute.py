@@ -105,6 +105,8 @@ def kernel(nevpt):
 
         e_corr.append(e_corr_state)
         e_tot.append(e_tot_state)
+        nevpt.evec = np.identity(n_states) 
+        nevpt.en = e_tot
 
         if nevpt.method == "qd-nevpt2":
             t1.append(t1_state)
@@ -123,8 +125,8 @@ def kernel(nevpt):
         e_tot, h_evec = qd_nevpt2.compute_energy(nevpt, e_tot, t1, t1_0)
 
         # For SOC calculation
-        nevpt.evec_qdnevpt2 = h_evec
-        nevpt.en_qdnevpt2 = e_tot
+        nevpt.evec = h_evec
+        nevpt.en = e_tot
         # Update correlation energies
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]

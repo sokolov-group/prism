@@ -78,40 +78,22 @@ def getSOC_integrals(method, unc = True):
         h_soc_total[comp] =-1j*(h_soc_all_x2c1_contr[comp].astype('complex'))
 
 
-
     return h_soc_total #hsocint
 
 
-
-
-def Wigner_SOC(method):
-    print("\n \n \n Employ Wigner–Eckart’s theorem")
+def generalSOC(method):
+    print("\n \n \n Spin-Free Framework: Employ Wigner–Eckart’s theorem")
     print("Consider spin-orbit coupling effect...")
-    ref_wfn =method.ref_wfn  
+    ref_wfn = method.ref_wfn  
     ncas = method.ncas 
     nmo = method.nmo
     ncore = method.ncore 
-
+    evec = method.evec
+    en = method.en
     ref_nelecas = method.ref_nelecas 
     ref_wfn_spin_mult = method.ref_wfn_spin_mult
-    S =  [round((spin_mult-1)/2,2) for spin_mult in ref_wfn_spin_mult]     
+    S = [round((spin_mult-1)/2,2) for spin_mult in ref_wfn_spin_mult]     
     nstate = len(ref_wfn)
-
-
-    if method.evec_qdnevpt2 is None:
-        print("It is NEVPT2")
-        method.evec_qdnevpt2 = np.diag(np.ones(len(ref_wfn)))
-    else:
-        print("It is QDNEVPT2")
-
-    ##test by using CASSCF######
-    #print("This is SOC-CASSCF")
-    #method.evec_qdnevpt2 = np.diag(np.ones(len(ref_wfn)))
-    #method.en_qdnevpt2 = method.e_ref_cas 
-    ##test by using CASSCF######
-
-    evec = method.evec_qdnevpt2
-    en = method.en_qdnevpt2
 
     #Get target state psi (wfn)
     wfn = np.einsum('ij,iab->jab',evec,ref_wfn)
@@ -126,26 +108,10 @@ def Wigner_SOC(method):
     print("ms=")
     print(ms)
 
-    #calculate 1-TRDM
-    #trdm_mo = np.zeros((nstate,nstate,nmo, nmo))
-    #for I in range(nstate):
-    #    for J in range(nstate):
-    #        trdm_ca = method.interface.compute_rdm1(wfn[I], wfn[J], ref_nelecas[I])
-    #        trdm_mo[I,J,ncore:ncore + ncas,ncore:ncore + ncas] = trdm_ca
-    #print(trdm_ca)
-    #print(trdm_ca.shape)
- 
-    #print("finish")
     print("calculate rdm...")
-
     from pyscf.fci.direct_spin1 import trans_rdm1s
-    from pyscf.fci.direct_spin1 import make_rdm1s
-    #from pyscf.fci.addons import make_trdm1s
-    print("test make_trdm1s")
     
-    
-    rdm_wigner_2 = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
-    #trdm_wigner = np.zeros((nstate*(nstate-1)//2,nmo,nmo))
+    rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     print("ref_nelecas=")
     print(ref_nelecas)
     for I in range(nstate):
@@ -154,74 +120,17 @@ def Wigner_SOC(method):
             cg = float(cg)
             rdm_aabb = trans_rdm1s(wfn[J],wfn[I],ncas,ref_nelecas[I])
             T_z = 1/np.sqrt(2) * (rdm_aabb[0] - rdm_aabb[1]) / cg
-            rdm_wigner_2[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
-            
+            rdm_wigner[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
 
-
-
-    '''
-    from prism import qd_nevpt2
-    ncas_so = ncas * 2
-    rdm_ca_so = np.zeros((nstate, ncas_so, ncas_so))    
-    for ind in range(nstate):
-        rdm_ca_so[ind] =  qd_nevpt2.compute_rdm_ca_so(method.interface, wfn[ind], wfn[ind], ref_nelecas[ind], ref_nelecas[ind])
-
-    print("calculate trdm...")
-    trdm_ca_so = qd_nevpt2.compute_rdm_tcat_so(method.interface, wfn, ref_nelecas, offset = -1)
-    
-    rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
-    #trdm_wigner = np.zeros((nstate*(nstate-1)//2,nmo,nmo))
-
-    for I in range(nstate):
-        for J in range(nstate):
-            cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
-            cg = float(cg)
-            if I==J:
-                T_z = 1/np.sqrt(2) * (rdm_ca_so[I, ::2, ::2] - rdm_ca_so[J, 1::2, 1::2]) / cg
-                #rdm_wigner[I,:ncore,:ncore] += np.identity(ncore)
-                rdm_wigner[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
-                #rdm_wigner[I] = T_z 
-            elif I>J:
-                P = (I*(I-1))//2 + J
-                T_z = 1/np.sqrt(2) * (trdm_ca_so[P, ::2, ::2] - trdm_ca_so[P, 1::2, 1::2]) / cg
-                rdm_wigner[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
-            elif J>I:
-                P = (J*(J-1))//2 + I
-                trdm_ca_so_t = trdm_ca_so[P].T
-                T_z = 1/np.sqrt(2) * (trdm_ca_so_t[::2, ::2] - trdm_ca_so_t[1::2, 1::2]) / cg
-                rdm_wigner[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
-    '''
-    print("using trans_rdm1s...")
-    rdm_wigner = rdm_wigner_2
-    
-    #I = 1
-    #J = 0
-    #P = (I*(I-1))//2 + J
-    ##trdm_ca_so_t = trdm_ca_so[P].T
-    #print("trdm_ca_so[P, ::2, ::2]")
-    #print(trdm_ca_so[P, ::2, ::2])
-    #print("rdm_wigner_2=")
-    #A = trans_rdm1s(wfn[I],wfn[J],ncas,ref_nelecas[I])
-    #print(A[0])
-    ##exit()
-    ##print(rdm_wigner[0,0])
-    ##print(np.trace(rdm_wigner[0,0]))
-    #print("compute Hso_mo...")
-
+    # Get SOC integrals:
     h_soc = getSOC_integrals(method)
-    h1_plus = (h_soc[0] + (1j*h_soc[1])) #/np.sqrt(2)
-    h1_minus = (h_soc[0] - (1j*h_soc[1])) #/np.sqrt(2)
+    h1_plus = (h_soc[0] + (1j*h_soc[1])) 
+    h1_minus = (h_soc[0] - (1j*h_soc[1])) 
     h1_zero = h_soc[2]
 
     H_minus = np.einsum('pq,ijpq->ij',h1_minus,rdm_wigner) * (-1/2)
     H_zero = np.einsum('pq,ijpq->ij',h1_zero,rdm_wigner) / np.sqrt(2)
     H_plus = np.einsum('pq,ijpq->ij',h1_plus,rdm_wigner) / 2
-
-    #n_spinstate = 0
-    #for i in range(nstate):
-    #    n_spinstate += S[i]*2 + 1
-    #n_spinstate = int(n_spinstate)
-    
 
     S_total = []
     ms_total = []
@@ -243,6 +152,7 @@ def Wigner_SOC(method):
     print(I_total)
     nstate_total = len(S_total)
 
+    # Forming SOC Hamiltonian using WE-Theorem:
     HSOC = np.zeros((nstate_total,nstate_total),dtype='complex')
     for I in range(nstate_total):
         for J in  range(nstate_total):
@@ -265,13 +175,9 @@ def Wigner_SOC(method):
                 HSOC[I,J] = cg * H_plus[I_total[I],I_total[J]]
 
     H_sf = np.diag(E_spinstate).astype('complex')
-    en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
+    nevpt.en, nevpt.evec = np.linalg.eigh(HSOC+H_sf)
+
     print("\n Absolute energies in a.u |||| Excitation energies in a.u ||  eV ||  cm-1\n*****************************")
-    for e in en_soc:
-        print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-en_soc[0]),((e-en_soc[0])*27.2114),((e-en_soc[0])*219474.63)))
-
-            
-
-
-
+    for e in nevpt.en:
+        print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-nevpt.en[0]),((e-nevpt.en[0])*27.2114),((e-nevpt.en[0])*219474.63)))
 
