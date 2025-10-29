@@ -135,8 +135,9 @@ class NEVPT:
           from prism import general_somf
           from prism import qd_nevpt2
           general_somf.generalSOC(self)
-          qd_nevpt2.Initialize_SOC(self)
-          qd_nevpt2.osc_strength(nevpt, nevpt.en, nevpt.evec)
+          #qd_nevpt2.Initialize_SOC(self)
+          #osc = qd_nevpt2.osc_strength(self, self.en, self.evec)
+          #print(osc)
         
         return e_tot, e_corr, osc
 

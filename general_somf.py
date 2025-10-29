@@ -66,16 +66,16 @@ def getSOC_integrals(method, unc = True):
         raise Exception("Incorrect SOC flag in input file!!")
 
     ###contract########
-    h_soc_all_x2c1_contr = np.zeros((3, nao, nao))
+    h_soc_all_contr = np.zeros((3, nao, nao))
     for comp in range(3):
-        h_soc_all_x2c1_contr[comp] = reduce(np.dot, (contr_coeff.T, hsocint[comp], contr_coeff))
+        h_soc_all_contr[comp] = reduce(np.dot, (contr_coeff.T, hsocint[comp], contr_coeff))
 
     ##### Convert to MO basis:
-    h_soc_all_x2c1_contr = np.einsum('xpq,pi,qj->xij',h_soc_all_x2c1_contr, mo, mo)
+    h_soc_all_contr = np.einsum('xpq,pi,qj->xij',h_soc_all_contr, mo, mo)
     
     h_soc_total = np.zeros((3, nmo, nmo), dtype = 'complex')    
     for comp in range(3):
-        h_soc_total[comp] =-1j*(h_soc_all_x2c1_contr[comp].astype('complex'))
+        h_soc_total[comp] =-1j*(h_soc_all_contr[comp].astype('complex'))
 
 
     return h_soc_total #hsocint
@@ -105,15 +105,12 @@ def generalSOC(method):
         ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
 
     ms = [round(elem,2) for elem in ms]
-    print("ms=")
-    print(ms)
+
 
     print("calculate rdm...")
     from pyscf.fci.direct_spin1 import trans_rdm1s
     
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
-    print("ref_nelecas=")
-    print(ref_nelecas)
     for I in range(nstate):
         for J in range(nstate):
             cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
@@ -146,10 +143,7 @@ def generalSOC(method):
             ms_total.append(m)
             I_total.append(i)
             E_spinstate.append(en[i])
-
-    print(S_total)
-    print(ms_total)
-    print(I_total)
+            
     nstate_total = len(S_total)
 
     # Forming SOC Hamiltonian using WE-Theorem:
@@ -175,9 +169,9 @@ def generalSOC(method):
                 HSOC[I,J] = cg * H_plus[I_total[I],I_total[J]]
 
     H_sf = np.diag(E_spinstate).astype('complex')
-    nevpt.en, nevpt.evec = np.linalg.eigh(HSOC+H_sf)
+    method.en, method.evec = np.linalg.eigh(HSOC+H_sf)
 
     print("\n Absolute energies in a.u |||| Excitation energies in a.u ||  eV ||  cm-1\n*****************************")
-    for e in nevpt.en:
-        print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-nevpt.en[0]),((e-nevpt.en[0])*27.2114),((e-nevpt.en[0])*219474.63)))
+    for e in method.en:
+        print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-method.en[0]),((e-method.en[0])*27.2114),((e-method.en[0])*219474.63)))
 
