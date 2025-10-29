@@ -152,14 +152,14 @@ def Wigner_SOC(method):
         for J in range(nstate):
             cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
             cg = float(cg)
-            rdm_aabb = trans_rdm1s(wfn[I],wfn[J],ncas,ref_nelecas[I])
+            rdm_aabb = trans_rdm1s(wfn[J],wfn[I],ncas,ref_nelecas[I])
             T_z = 1/np.sqrt(2) * (rdm_aabb[0] - rdm_aabb[1]) / cg
             rdm_wigner_2[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
             
 
 
 
-
+    '''
     from prism import qd_nevpt2
     ncas_so = ncas * 2
     rdm_ca_so = np.zeros((nstate, ncas_so, ncas_so))    
@@ -190,20 +190,23 @@ def Wigner_SOC(method):
                 trdm_ca_so_t = trdm_ca_so[P].T
                 T_z = 1/np.sqrt(2) * (trdm_ca_so_t[::2, ::2] - trdm_ca_so_t[1::2, 1::2]) / cg
                 rdm_wigner[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
+    '''
+    print("using trans_rdm1s...")
+    rdm_wigner = rdm_wigner_2
     
-    I = 1
-    J = 0
-    P = (J*(J-1))//2 + I
-    trdm_ca_so_t = trdm_ca_so[P].T
-    print("trdm_ca_so[P, ::2, ::2]")
-    print(trdm_ca_so_t[::2, ::2])
-    print("rdm_wigner_2=")
-    A = trans_rdm1s(wfn[I],wfn[J],ncas,ref_nelecas[I])
-    print(A[0])
-    #exit()
-    #print(rdm_wigner[0,0])
-    #print(np.trace(rdm_wigner[0,0]))
-    print("compute Hso_mo...")
+    #I = 1
+    #J = 0
+    #P = (I*(I-1))//2 + J
+    ##trdm_ca_so_t = trdm_ca_so[P].T
+    #print("trdm_ca_so[P, ::2, ::2]")
+    #print(trdm_ca_so[P, ::2, ::2])
+    #print("rdm_wigner_2=")
+    #A = trans_rdm1s(wfn[I],wfn[J],ncas,ref_nelecas[I])
+    #print(A[0])
+    ##exit()
+    ##print(rdm_wigner[0,0])
+    ##print(np.trace(rdm_wigner[0,0]))
+    #print("compute Hso_mo...")
 
     h_soc = getSOC_integrals(method)
     h1_plus = (h_soc[0] + (1j*h_soc[1])) #/np.sqrt(2)
