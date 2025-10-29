@@ -285,8 +285,8 @@ def determine_spin_mult(nevpt, evec):
     return spin_mult_new
 
 def Initialize_SOC(method):
-    print("\n \n \nConsider spin-orbit coupling effect...")
-
+    print("\n \n \n Prisim_beta")
+    print("Consider spin-orbit coupling effect...")
     ref_wfn =method.ref_wfn  
     ncas = method.ncas 
     ref_nelecas = method.ref_nelecas 
@@ -404,7 +404,12 @@ def Initialize_SOC(method):
     method.rdm_so.tca = rdm_so_tca
        
     print("construct HSOC matrix...")
-    method.h_soc = bpsomf(method)
+    #method.h_soc = bpsomf(method)
+    print("Use general_somf...")
+    from prism import general_somf
+    method.h_soc = general_somf.getSOC_integrals(method)
+    
+    #exit()
     HSOC = compute_h_somf1(method)
     H_sf = np.diag(E_spinstate).astype('complex')
     
