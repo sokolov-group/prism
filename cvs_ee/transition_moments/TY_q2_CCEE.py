@@ -1,7 +1,7 @@
 ##Q2 TRANSITION MOMENTS
 from . import logger
 
-def compute_TY__q2_h1__CCEE(mr_adc, Y_KLCD__aaaa, Y_KLCD__abab, Y_KLCD__bbbb, TY):
+def compute_TY__q2_h1__CCEE(mr_adc, Y_KLCD__abab, TY):
 
     cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -53,6 +53,9 @@ def compute_TY__q2_h1__CCEE(mr_adc, Y_KLCD__aaaa, Y_KLCD__abab, Y_KLCD__bbbb, TY
     # Reduced Density Matrices
     rdm_ca = mr_adc.rdm.ca
     rdm_ccaa = mr_adc.rdm.ccaa
+
+    Y_KLCD__aaaa = Y_KLCD__abab - Y_KLCD__abab.transpose(0,1,2,4,3)
+    Y_KLCD__bbbb = Y_KLCD__aaaa.copy()
 
     temp =- 1/2 * einsum('RPiab,Qixa,xb->RPQ', Y_KLCD__aaaa, t1_xxae, t1_ae, optimize = einsum_type)
     temp += 1/2 * einsum('RPiab,Qixy,xyab->RPQ', Y_KLCD__aaaa, t1_xxaa, t1_aaee, optimize = einsum_type)

@@ -79,7 +79,7 @@ def compute_sigma_vector__H1__h1_h1__CCEA_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X
     mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCEA-CVEE", *cput1)
 
 # CCEE <- CVEE
-def compute_sigma_vector__H1__h1_h1__CCEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma):
+def compute_sigma_vector__H1__h1_h1__CCEE_CVEE(mr_adc, X, sigma):
     cput1 = (logger.process_clock(), logger.perf_counter())
 
     # Einsum definition from kernel
@@ -87,9 +87,11 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X
     einsum_type = mr_adc.interface.einsum_type
 
     #Excitation Manifold
-    ccee__aaaa = mr_adc.h1.ccee__aaaa
-    ccee__abab = mr_adc.h1.ccee__abab
-    ccee__bbbb = mr_adc.h1.ccee__bbbb 
+    #ccee__aaaa = mr_adc.h1.ccee__aaaa
+    #ccee__abab = mr_adc.h1.ccee__abab
+    #ccee__bbbb = mr_adc.h1.ccee__bbbb 
+
+    ccee = mr_adc.h1.ccee
 
     ## Indices
     cc_tril_ind = mr_adc.h1.cc_tril_ind 
@@ -101,22 +103,26 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X
     v_xeev = mr_adc.v2e.xeev
     v_vxee = mr_adc.v2e.vxee
 
-    sigma_KLCD_aaaa  = einsum('KiCa,LDai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('KiCa,iLDa->KLCD', X_aaaa, v_vxee, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('KiDa,LCai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('KiDa,iLCa->KLCD', X_aaaa, v_vxee, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('LiCa,KDai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('LiCa,iKDa->KLCD', X_aaaa, v_vxee, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('LiDa,KCai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('LiDa,iKCa->KLCD', X_aaaa, v_vxee, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('ijCD,KiLj->KLCD', X_aaaa, v_xxxv, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('ijCD,KjLi->KLCD', X_aaaa, v_xvxx, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('KiCa,LDai->KLCD', X_abab, v_xeev, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('KiDa,LCai->KLCD', X_abab, v_xeev, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('LiCa,KDai->KLCD', X_abab, v_xeev, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('LiDa,KCai->KLCD', X_abab, v_xeev, optimize = einsum_type)
-    sigma_KLCD_aaaa = sigma_KLCD_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]]
-    sigma[ccee__aaaa] += ascontiguousarray(sigma_KLCD_aaaa[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
+    X_abab, X_baba = X, X
+    X_aaaa = X-X.transpose(0,1,3,2)
+    X_bbbb = X-X.transpose(0,1,3,2)
+
+    #sigma_KLCD_aaaa  = einsum('KiCa,LDai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_aaaa -= einsum('KiCa,iLDa->KLCD', X_aaaa, v_vxee, optimize = einsum_type)
+    #sigma_KLCD_aaaa -= einsum('KiDa,LCai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_aaaa += einsum('KiDa,iLCa->KLCD', X_aaaa, v_vxee, optimize = einsum_type)
+    #sigma_KLCD_aaaa -= einsum('LiCa,KDai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_aaaa += einsum('LiCa,iKDa->KLCD', X_aaaa, v_vxee, optimize = einsum_type)
+    #sigma_KLCD_aaaa += einsum('LiDa,KCai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_aaaa -= einsum('LiDa,iKCa->KLCD', X_aaaa, v_vxee, optimize = einsum_type)
+    #sigma_KLCD_aaaa += einsum('ijCD,KiLj->KLCD', X_aaaa, v_xxxv, optimize = einsum_type)
+    #sigma_KLCD_aaaa -= einsum('ijCD,KjLi->KLCD', X_aaaa, v_xvxx, optimize = einsum_type)
+    #sigma_KLCD_aaaa += einsum('KiCa,LDai->KLCD', X_abab, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_aaaa -= einsum('KiDa,LCai->KLCD', X_abab, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_aaaa -= einsum('LiCa,KDai->KLCD', X_abab, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_aaaa += einsum('LiDa,KCai->KLCD', X_abab, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_aaaa = sigma_KLCD_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]]
+    #sigma[ccee__aaaa] += ascontiguousarray(sigma_KLCD_aaaa[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
 
     sigma_KLCD_abab  = einsum('KiCa,LDai->KLCD', X_aaaa, v_xeev, optimize = einsum_type)
     sigma_KLCD_abab += einsum('KiCa,LDai->KLCD', X_abab, v_xeev, optimize = einsum_type)
@@ -128,24 +134,25 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X
     sigma_KLCD_abab -= einsum('LiaC,iKDa->KLCD', X_baba, v_vxee, optimize = einsum_type)
     sigma_KLCD_abab += einsum('ijDC,KjLi->KLCD', X_baba, v_xvxx, optimize = einsum_type)
     sigma_KLCD_abab += einsum('LiDa,KCai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
-    sigma[ccee__abab] += ascontiguousarray(sigma_KLCD_abab).reshape(-1)
+    #sigma[ccee__abab] += ascontiguousarray(sigma_KLCD_abab).reshape(-1)
+    sigma[ccee] += ascontiguousarray(sigma_KLCD_abab).reshape(-1)
 
-    sigma_KLCD_bbbb  = einsum('KiCa,LDai->KLCD', X_baba, v_xeev, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('KiDa,LCai->KLCD', X_baba, v_xeev, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('LiCa,KDai->KLCD', X_baba, v_xeev, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('LiDa,KCai->KLCD', X_baba, v_xeev, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('KiCa,LDai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('KiCa,iLDa->KLCD', X_bbbb, v_vxee, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('KiDa,LCai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('KiDa,iLCa->KLCD', X_bbbb, v_vxee, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('LiCa,KDai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('LiCa,iKDa->KLCD', X_bbbb, v_vxee, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('LiDa,KCai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('LiDa,iKCa->KLCD', X_bbbb, v_vxee, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('ijCD,KiLj->KLCD', X_bbbb, v_xxxv, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('ijCD,KjLi->KLCD', X_bbbb, v_xvxx, optimize = einsum_type)
-    sigma_KLCD_bbbb = sigma_KLCD_bbbb[:, :, ee_tril_ind[0], ee_tril_ind[1]]
-    sigma[ccee__bbbb] += ascontiguousarray(sigma_KLCD_bbbb[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
+    #sigma_KLCD_bbbb  = einsum('KiCa,LDai->KLCD', X_baba, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_bbbb -= einsum('KiDa,LCai->KLCD', X_baba, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_bbbb -= einsum('LiCa,KDai->KLCD', X_baba, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_bbbb += einsum('LiDa,KCai->KLCD', X_baba, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_bbbb += einsum('KiCa,LDai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_bbbb -= einsum('KiCa,iLDa->KLCD', X_bbbb, v_vxee, optimize = einsum_type)
+    #sigma_KLCD_bbbb -= einsum('KiDa,LCai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_bbbb += einsum('KiDa,iLCa->KLCD', X_bbbb, v_vxee, optimize = einsum_type)
+    #sigma_KLCD_bbbb -= einsum('LiCa,KDai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_bbbb += einsum('LiCa,iKDa->KLCD', X_bbbb, v_vxee, optimize = einsum_type)
+    #sigma_KLCD_bbbb += einsum('LiDa,KCai->KLCD', X_bbbb, v_xeev, optimize = einsum_type)
+    #sigma_KLCD_bbbb -= einsum('LiDa,iKCa->KLCD', X_bbbb, v_vxee, optimize = einsum_type)
+    #sigma_KLCD_bbbb += einsum('ijCD,KiLj->KLCD', X_bbbb, v_xxxv, optimize = einsum_type)
+    #sigma_KLCD_bbbb -= einsum('ijCD,KjLi->KLCD', X_bbbb, v_xvxx, optimize = einsum_type)
+    #sigma_KLCD_bbbb = sigma_KLCD_bbbb[:, :, ee_tril_ind[0], ee_tril_ind[1]]
+    #sigma[ccee__bbbb] += ascontiguousarray(sigma_KLCD_bbbb[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
 
     mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCEE-CVEE", *cput1)
 
@@ -1531,7 +1538,7 @@ def compute_sigma_vector__H1__h1_h1__CVEA_CVEE__V_AEEE(mr_adc, X_aaaa, X_abab, X
     return sigma_KLCW_aaaa, sigma_KLCW_abab, sigma_KLCW_baab, sigma_KLCW_abba, sigma_KLCW_baba, sigma_KLCW_bbbb
 
 # CVEE <- CVEE
-def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma):        
+def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X, sigma):        
     cput1 = (logger.process_clock(), logger.perf_counter())
 
     # Einsum definition from kernel
@@ -1540,10 +1547,7 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X
     dot = mr_adc.interface.dot
 
     #Excitation Manifold
-    cvee__aaaa = mr_adc.h1.cvee__aaaa
-    cvee__abab = mr_adc.h1.cvee__abab
-    cvee__baba = mr_adc.h1.cvee__baba
-    cvee__bbbb = mr_adc.h1.cvee__bbbb 
+    cvee = mr_adc.h1.cvee
 
     ## Indices
     ee_tril_ind = mr_adc.h1.ee_tril_ind 
@@ -1555,87 +1559,30 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X
     v_xeex = mr_adc.v2e.xeex
     v_vvee = mr_adc.v2e.vvee
     v_veev = mr_adc.v2e.veev
-#    v_eeee = mr_adc.v2e.eeee
+    #v_eeee = mr_adc.v2e.eeee
 
     # Variables from kernel
     ncvs    = mr_adc.ncvs
     nval    = mr_adc.nval
     nextern = mr_adc.nextern
 
-#    sigma_KLCD_aaaa  = 1/2 * einsum('KLab,CaDb->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
-#    sigma_KLCD_aaaa -= 1/2 * einsum('KLab,CbDa->KLCD', X_aaaa, v_eeee, optimize = einsum_type)
-    sigma_KLCD_aaaa  = einsum('KiCa,LDai->KLCD', X_aaaa, v_veev, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('KiCa,iLDa->KLCD', X_aaaa, v_vvee, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('KiDa,LCai->KLCD', X_aaaa, v_veev, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('KiDa,iLCa->KLCD', X_aaaa, v_vvee, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('iLCa,KDai->KLCD', X_aaaa, v_xeex, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('iLCa,iKDa->KLCD', X_aaaa, v_xxee, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('iLDa,KCai->KLCD', X_aaaa, v_xeex, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('iLDa,iKCa->KLCD', X_aaaa, v_xxee, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('ijCD,KiLj->KLCD', X_aaaa, v_xxvv, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('ijCD,KjLi->KLCD', X_aaaa, v_xvvx, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('KiCa,LDai->KLCD', X_abab, v_veev, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('KiDa,LCai->KLCD', X_abab, v_veev, optimize = einsum_type)
-    sigma_KLCD_aaaa -= einsum('iLaC,KDai->KLCD', X_baba, v_xeex, optimize = einsum_type)
-    sigma_KLCD_aaaa += einsum('iLaD,KCai->KLCD', X_baba, v_xeex, optimize = einsum_type)
-#    sigma[cvee__aaaa] += ascontiguousarray(sigma_KLCD_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]]).reshape(-1)
- 
-    sigma_KLCD_abab  = einsum('KiCa,LDai->KLCD', X_aaaa, v_veev, optimize = einsum_type)
-#    sigma_KLCD_abab += einsum('KLab,CaDb->KLCD', X_abab, v_eeee, optimize = einsum_type)
-    sigma_KLCD_abab += einsum('KiCa,LDai->KLCD', X_abab, v_veev, optimize = einsum_type)
-    sigma_KLCD_abab -= einsum('KiCa,iLDa->KLCD', X_abab, v_vvee, optimize = einsum_type)
-    sigma_KLCD_abab -= einsum('KiaD,iLCa->KLCD', X_abab, v_vvee, optimize = einsum_type)
-    sigma_KLCD_abab -= einsum('iLCa,iKDa->KLCD', X_abab, v_xxee, optimize = einsum_type)
-    sigma_KLCD_abab += einsum('iLaD,KCai->KLCD', X_abab, v_xeex, optimize = einsum_type)
-    sigma_KLCD_abab -= einsum('iLaD,iKCa->KLCD', X_abab, v_xxee, optimize = einsum_type)
-    sigma_KLCD_abab += einsum('ijCD,KiLj->KLCD', X_abab, v_xxvv, optimize = einsum_type)
-    sigma_KLCD_abab += einsum('ijDC,KjLi->KLCD', X_baba, v_xvvx, optimize = einsum_type)
-    sigma_KLCD_abab -= einsum('iLDa,KCai->KLCD', X_bbbb, v_xeex, optimize = einsum_type)
-#    sigma[cvee__abab] += ascontiguousarray(sigma_KLCD_abab).reshape(-1)
-
-    sigma_KLCD_baba =- einsum('iLDa,KCai->KLCD', X_aaaa, v_xeex, optimize = einsum_type)
-    sigma_KLCD_baba += einsum('ijDC,KjLi->KLCD', X_abab, v_xvvx, optimize = einsum_type)
-#    sigma_KLCD_baba += einsum('KLab,CaDb->KLCD', X_baba, v_eeee, optimize = einsum_type)
-    sigma_KLCD_baba += einsum('KiCa,LDai->KLCD', X_baba, v_veev, optimize = einsum_type)
-    sigma_KLCD_baba -= einsum('KiCa,iLDa->KLCD', X_baba, v_vvee, optimize = einsum_type)
-    sigma_KLCD_baba -= einsum('KiaD,iLCa->KLCD', X_baba, v_vvee, optimize = einsum_type)
-    sigma_KLCD_baba -= einsum('iLCa,iKDa->KLCD', X_baba, v_xxee, optimize = einsum_type)
-    sigma_KLCD_baba += einsum('iLaD,KCai->KLCD', X_baba, v_xeex, optimize = einsum_type)
-    sigma_KLCD_baba -= einsum('iLaD,iKCa->KLCD', X_baba, v_xxee, optimize = einsum_type)
-    sigma_KLCD_baba += einsum('ijCD,KiLj->KLCD', X_baba, v_xxvv, optimize = einsum_type)
-    sigma_KLCD_baba += einsum('KiCa,LDai->KLCD', X_bbbb, v_veev, optimize = einsum_type)
-#    sigma[cvee__baba] += ascontiguousarray(sigma_KLCD_baba).reshape(-1)
-
-    sigma_KLCD_bbbb =- einsum('iLaC,KDai->KLCD', X_abab, v_xeex, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('iLaD,KCai->KLCD', X_abab, v_xeex, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('KiCa,LDai->KLCD', X_baba, v_veev, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('KiDa,LCai->KLCD', X_baba, v_veev, optimize = einsum_type)
-#    sigma_KLCD_bbbb += 1/2 * einsum('KLab,CaDb->KLCD', X_bbbb, v_eeee, optimize = einsum_type)
-#    sigma_KLCD_bbbb -= 1/2 * einsum('KLab,CbDa->KLCD', X_bbbb, v_eeee, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('KiCa,LDai->KLCD', X_bbbb, v_veev, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('KiCa,iLDa->KLCD', X_bbbb, v_vvee, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('KiDa,LCai->KLCD', X_bbbb, v_veev, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('KiDa,iLCa->KLCD', X_bbbb, v_vvee, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('iLCa,KDai->KLCD', X_bbbb, v_xeex, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('iLCa,iKDa->KLCD', X_bbbb, v_xxee, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('iLDa,KCai->KLCD', X_bbbb, v_xeex, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('iLDa,iKCa->KLCD', X_bbbb, v_xxee, optimize = einsum_type)
-    sigma_KLCD_bbbb += einsum('ijCD,KiLj->KLCD', X_bbbb, v_xxvv, optimize = einsum_type)
-    sigma_KLCD_bbbb -= einsum('ijCD,KjLi->KLCD', X_bbbb, v_xvvx, optimize = einsum_type)
-#    sigma[cvee__bbbb] += ascontiguousarray(sigma_KLCD_bbbb[:, :, ee_tril_ind[0], ee_tril_ind[1]]).reshape(-1)
+    #sigma_KLCD  = einsum('KLab,CaDb->KLCD', X, v_eeee, optimize = einsum_type)
+    sigma_KLCD  = 2 * einsum('KiCa,LDai->KLCD', X, v_veev, optimize = einsum_type)
+    sigma_KLCD -= einsum('KiCa,iLDa->KLCD', X, v_vvee, optimize = einsum_type)
+    sigma_KLCD -= einsum('KiaC,LDai->KLCD', X, v_veev, optimize = einsum_type)
+    sigma_KLCD -= einsum('KiaD,iLCa->KLCD', X, v_vvee, optimize = einsum_type)
+    sigma_KLCD -= einsum('iLCa,iKDa->KLCD', X, v_xxee, optimize = einsum_type)
+    sigma_KLCD -= einsum('iLDa,KCai->KLCD', X, v_xeex, optimize = einsum_type)
+    sigma_KLCD += 2 * einsum('iLaD,KCai->KLCD', X, v_xeex, optimize = einsum_type)
+    sigma_KLCD -= einsum('iLaD,iKCa->KLCD', X, v_xxee, optimize = einsum_type)
+    sigma_KLCD += einsum('ijCD,KiLj->KLCD', X, v_xxvv, optimize = einsum_type)
+    sigma_KLCD += einsum('ijDC,KjLi->KLCD', X, v_xvvx, optimize = einsum_type)
 
     # Pack X for ladder contractions
-    X_aaaa = ascontiguousarray((X_aaaa - X_aaaa.transpose(0, 1, 3, 2)).reshape(ncvs*nval, -1).T) 
-    X_abab = ascontiguousarray(X_abab.reshape(ncvs*nval, -1).T) 
-    X_baba = ascontiguousarray(X_baba.reshape(ncvs*nval, -1).T)
-    X_bbbb = ascontiguousarray((X_bbbb - X_bbbb.transpose(0, 1, 3, 2)).reshape(ncvs*nval, -1).T)
+    X = ascontiguousarray(X.reshape(ncvs*nval, -1).T) 
+    temp = zeros((nextern, nextern, ncvs*nval))
 
-    temp_aaaa = zeros((nextern, nextern, ncvs*nval))
-    temp_abab = zeros((nextern, nextern, ncvs*nval))
-    temp_baba = zeros((nextern, nextern, ncvs*nval))
-    temp_bbbb = zeros((nextern, nextern, ncvs*nval))
-
-    chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern], ntensors=5)
+    chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern], ntensors=2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.eeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -1647,26 +1594,15 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X
             v_eeee = unpack_v2e_eeee(mr_adc, mr_adc.v2e.eeee, s_chunk, f_chunk)
         
         # Contractions using dot products
-        temp_aaaa[s_chunk:f_chunk] += 0.5 * dot(v_eeee, X_aaaa).reshape(-1, nextern, ncvs*nval)
-        temp_abab[s_chunk:f_chunk] += dot(v_eeee, X_abab).reshape(-1, nextern, ncvs*nval)
-        temp_baba[s_chunk:f_chunk] += dot(v_eeee, X_baba).reshape(-1, nextern, ncvs*nval)
-        temp_bbbb[s_chunk:f_chunk] += 0.5 * dot(v_eeee, X_bbbb).reshape(-1, nextern, ncvs*nval)
+        temp[s_chunk:f_chunk] += dot(v_eeee, X).reshape(-1, nextern, ncvs*nval)
 
         del(v_eeee)
         mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
-    del(X_aaaa, X_abab, X_baba, X_bbbb)
 
-    sigma_KLCD_aaaa += temp_aaaa.transpose(2,0,1).reshape((ncvs, nval, nextern, nextern))
-    sigma_KLCD_abab += temp_abab.transpose(2,0,1).reshape((ncvs, nval, nextern, nextern))
-    sigma_KLCD_baba += temp_baba.transpose(2,0,1).reshape((ncvs, nval, nextern, nextern))
-    sigma_KLCD_bbbb += temp_bbbb.transpose(2,0,1).reshape((ncvs, nval, nextern, nextern))
-    del (temp_aaaa, temp_abab, temp_baba, temp_bbbb)
+    sigma_KLCD += temp.transpose(2,0,1).reshape((ncvs, nval, nextern, nextern))
+    del(X, temp)
  
-    sigma[cvee__aaaa] += ascontiguousarray(sigma_KLCD_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]]).reshape(-1)
-    sigma[cvee__abab] += ascontiguousarray(sigma_KLCD_abab).reshape(-1)
-    sigma[cvee__baba] += ascontiguousarray(sigma_KLCD_baba).reshape(-1)
-    sigma[cvee__bbbb] += ascontiguousarray(sigma_KLCD_bbbb[:, :, ee_tril_ind[0], ee_tril_ind[1]]).reshape(-1)
+    sigma[cvee] += ascontiguousarray(sigma_KLCD).reshape(-1)
 
     mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVEE-CVEE", *cput1)
-
 
