@@ -95,6 +95,12 @@ def generalSOC(method):
     S = [round((spin_mult-1)/2,2) for spin_mult in ref_wfn_spin_mult]     
     nstate = len(ref_wfn)
 
+    ##test by using CASSCF######
+    #print("This is SOC-CASSCF")
+    #evec = np.diag(np.ones(len(ref_wfn)))
+    #en = method.e_ref 
+    ##test by using CASSCF######
+
     #Get target state psi (wfn)
     wfn = np.einsum('ij,iab->jab',evec,ref_wfn)
     wfn = list(wfn)
@@ -174,4 +180,60 @@ def generalSOC(method):
     print("\n Absolute energies in a.u |||| Excitation energies in a.u ||  eV ||  cm-1\n*****************************")
     for e in method.en:
         print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-method.en[0]),((e-method.en[0])*27.2114),((e-method.en[0])*219474.63)))
+    
+    return S_total, ms_total, I_total 
 
+
+
+def osc_strength_soc(nevpt, en, evec, S_total, ms_total, I_total, gs_index = 0):
+
+    ncore = nevpt.ncore 
+    #n_micro_states = sum(nevpt.ref_wfn_deg)
+    n_states = sum(nevpt.ref_wfn_deg)
+    n_micro_states = len(en)
+    dip_mom_ao = nevpt.interface.dip_mom_ao
+    mo_coeff = nevpt.mo
+    nmo = nevpt.nmo
+    ncas = nevpt.ncas
+
+    dip_mom_mo = np.zeros_like(dip_mom_ao)
+
+    # Transform dipole moments from AO to MO basis
+    for d in range(dip_mom_ao.shape[0]):
+        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+
+    # List to store Osc. Strength Values
+    osc_total = []
+
+    # Looping over CAS States
+    for state in range(gs_index + 1, n_micro_states):
+        # Reset final transformed RDM
+        rdm_qd = np.zeros((nmo, nmo),dtype='complex')
+
+        # Looping over states I,J
+        for I in range(n_micro_states):
+            for J in range(n_micro_states):
+                #if  (S_total[I]==S_total[J]) and (ms_total[I]==ms_total[J]):
+                i = I_total[I]
+                j = I_total[J]
+                rdm_mo = np.zeros((nmo, nmo),dtype='complex')  # Reset RDM in MO Basis   
+                trdm_ca = nevpt.interface.compute_rdm1(nevpt.ref_wfn[i], nevpt.ref_wfn[j], nevpt.ref_nelecas[j])
+                rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = trdm_ca
+                if I == J:
+                    rdm_mo[:ncore, :ncore] = 2 * np.eye(nevpt.ncore)
+                
+                rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
+
+        # Create Dipole Moment Operator with RDM
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
+ 
+        osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
+        osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
+        osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
+
+        # Add Dipole Moment Components
+        osc_total.append((osc_x + osc_y + osc_z).real)
+
+    return osc_total

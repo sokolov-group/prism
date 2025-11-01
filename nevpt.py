@@ -134,10 +134,12 @@ class NEVPT:
         if self.soc: 
           from prism import general_somf
           from prism import qd_nevpt2
-          general_somf.generalSOC(self)
           #qd_nevpt2.Initialize_SOC(self)
-          #osc = qd_nevpt2.osc_strength(self, self.en, self.evec)
-          #print(osc)
+          S_total, ms_total, I_total = general_somf.generalSOC(self)
+          osc = general_somf.osc_strength_soc(self, self.en, self.evec,S_total, ms_total, I_total)
+          print("Oscillator strenth:")
+          for i in osc:
+             print("%14.8f"%((i)))
         
         return e_tot, e_corr, osc
 
