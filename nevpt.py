@@ -90,6 +90,8 @@ class NEVPT:
         self.soc_order = 1
         self.evec = None
         self.en = None
+        self.evec_soc = None #Note that it is under QDNEVPT2 eigenbasis
+        self.en_soc = None
 
         #For SOC in temporary
         self.ncasci = None
@@ -136,7 +138,7 @@ class NEVPT:
           from prism import qd_nevpt2
           #qd_nevpt2.Initialize_SOC(self)
           S_total, ms_total, I_total = general_somf.generalSOC(self)
-          osc = general_somf.osc_strength_soc(self, self.en, self.evec,S_total, ms_total, I_total)
+          osc = general_somf.osc_strength_soc(self, self.en_soc, self.evec_soc,S_total, ms_total, I_total)
           print("Oscillator strenth:")
           for i in osc:
              print("%14.8f"%((i)))
