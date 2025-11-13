@@ -92,6 +92,7 @@ class NEVPT:
         self.en = None
         self.evec_soc = None #Note that it is under QDNEVPT2 eigenbasis
         self.en_soc = None
+        self.gtensor = False
 
         #For SOC in temporary
         self.ncasci = None
@@ -142,6 +143,11 @@ class NEVPT:
           print("Oscillator strenth:")
           for i in osc:
              print("%14.8f"%((i)))
+
+ 
+          #general_somf.gtensor(self, S_total, ms_total, I_total)
+          if self.gtensor is True:
+            general_somf.gtensor_general(self, S_total, ms_total, I_total)
         
         return e_tot, e_corr, osc
 
