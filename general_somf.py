@@ -331,7 +331,7 @@ def gtensor(method, S_total, ms_total, I_total):
     for I in range(n_micro_states):
         for J in range(n_micro_states):
             if J>=I:
-                if  ((S_total[I]-S_total[J])<1e-8) and ((ms_total[I]-ms_total[J])<1e-8):
+                if  (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
                     i = I_total[I]
                     j = I_total[J]
                     rdm_mo = np.zeros((nmo, nmo),dtype='complex')  # Reset RDM in MO Basis   
@@ -477,7 +477,6 @@ def gtensor_general(method, S_total, ms_total, I_total):
     #n_micro_states = sum(method.ref_wfn_deg)
     n_states = sum(method.ref_wfn_deg)
     n_micro_states = len(S_total)
-    dip_mom_ao = method.interface.dip_mom_ao
     mo_coeff = method.mo
     nmo = method.nmo
     ncas = method.ncas
@@ -539,7 +538,6 @@ def gtensor_general(method, S_total, ms_total, I_total):
         print("origin=",origin_type)
         mf.mol.set_common_orig(origin_type)
     l1_ao = 0 
-    #print("set_different_origin")
     l1_ao += -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)#, hermi=1) #cint1e_cg_irxp_sph int1e_giao_irjxp_sph
     
     # AO -> MO basis:
@@ -548,7 +546,7 @@ def gtensor_general(method, S_total, ms_total, I_total):
     for I in range(n_micro_states):
         for J in range(n_micro_states):
             if J>=I:
-                if  ((S_total[I]-S_total[J])<1e-8) and ((ms_total[I]-ms_total[J])<1e-8):
+                if  (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
                     i = I_total[I]
                     j = I_total[J]
                     rdm_mo = np.zeros((nmo, nmo),dtype='complex')  # Reset RDM in MO Basis   
@@ -559,7 +557,7 @@ def gtensor_general(method, S_total, ms_total, I_total):
                     rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = rdm_ca
                     if I == J:
                         rdm_mo[:ncore, :ncore] = 2 * np.eye(method.ncore)
-                
+
                     l_mat[0,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[0])
                     l_mat[1,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[1])
                     l_mat[2,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[2])
@@ -576,66 +574,37 @@ def gtensor_general(method, S_total, ms_total, I_total):
     Kramer_pair  = qdnevpt_evec[:,Kramer_index:Kramer_index+multicity] 
     
     # define unique Kramer's doublet
-    test_kramer_z = np.einsum('ai,ib,bj->aj',np.conj(Kramer_pair).T , s_mat[2] , Kramer_pair)
-    #test_kramer_lx = np.einsum('ai,ib,bj->aj',np.conj(Kramer_pair).T , l_mat[0] , Kramer_pair)
-    #test_kramer_ly = np.einsum('ai,ib,bj->aj',np.conj(Kramer_pair).T , l_mat[1] , Kramer_pair)  
-    test_kramer_lz = np.einsum('ai,ib,bj->aj',np.conj(Kramer_pair).T , l_mat[2] , Kramer_pair)
+    S_old = np.einsum('ai,kib,bj->kaj',np.conj(Kramer_pair).T , s_mat , Kramer_pair)
+    L_old = np.einsum('ai,kib,bj->kaj',np.conj(Kramer_pair).T , l_mat , Kramer_pair)
+    Hab_old = L_old + S_old * 2.002319
 
-
-    test_Jz = test_kramer_lz + test_kramer_z * 2.002319
-
-
-    
-    z_en, z_evec = np.linalg.eigh(test_Jz)
     print("Use Jz to transform...")
-
+    z_en, z_evec = np.linalg.eigh(Hab_old[2])
     Kramer_pair_2 = Kramer_pair @ z_evec
-    
-
-
-    test_kramer_z = np.real(z_en)
-
-    reorder_list  = np.argsort(test_kramer_z)
-
-
-
-    Kramer_pair_new = Kramer_pair_2
-    test_kramer_z = np.einsum('ai,ib,bj->aj',np.conj(Kramer_pair_new).T , s_mat[2] , Kramer_pair_new)
-
-
-    test_kramer_x = np.einsum('ai,ib,bj->aj',np.conj(Kramer_pair_new).T , s_mat[0] , Kramer_pair_new)
-    
-
-    #print("Kramer_pair_new=")
-    #print(Kramer_pair_new)
-    
-   
+    Kramer_pair_new =  Kramer_pair_2   
     
     # S in Kramer_pair basis
-    S_kramer = np.einsum('ai,kib,bj->kaj',np.conj(Kramer_pair_new).T , s_mat , Kramer_pair_new)
+    S_new = np.einsum('ai,kib,bj->kaj',np.conj(Kramer_pair_new).T , s_mat , Kramer_pair_new)
     # L in Kramer_pair basis
-    L_kramer = np.einsum('ai,kib,bj->kaj',np.conj(Kramer_pair_new).T , l_mat , Kramer_pair_new) 
+    L_new = np.einsum('ai,kib,bj->kaj',np.conj(Kramer_pair_new).T , l_mat , Kramer_pair_new) 
     
-    
-    Hab = L_kramer + S_kramer * 2.002319
+    Hab_new = L_new + S_new * 2.002319
+    Hab = Hab_new
 
+    #print("Hab=")
+    #print(Hab)
+ 
     g=np.zeros([3,3])
     for i in range(3):
       g[i,0] = np.real(Hab[i,0,1]) *2/np.sqrt(S*2)
       g[i,1] = np.imag(Hab[i,0,1]) *(-2)/np.sqrt(S*2)
       g[i,2] = np.real(Hab[i,0,0])/S
     
-    #g[1,1] = - g[1,1]
-    #print(g)
-    #g = (g + g.T)/2
     G = np.einsum('km,lm->kl',g,g)
-
     print("g=")
     print(g)
     print("G=")
     print(G)
-    #print("G_gtensor=")
-    #print(G_tensor)
 
     G_en, G_evec = np.linalg.eigh(G)
     #G_tensor_en, G_tensor_evec = np.linalg.eigh(G_tensor)
