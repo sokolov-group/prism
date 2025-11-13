@@ -27,6 +27,7 @@ from pyscf.x2c import sfx2c1e
 from pyscf.x2c import x2c
 from sympy.physics.quantum.cg import CG
 from pyscf.fci.direct_spin1 import trans_rdm1s
+from prism import qd_nevpt2
 
 # Add python path for socutils:
 prism_path = os.path.dirname(os.path.abspath(__file__)) 
@@ -93,7 +94,7 @@ def generalSOC(method):
     en = method.en
     ref_nelecas = method.ref_nelecas 
     ref_wfn_spin_mult = method.ref_wfn_spin_mult
-    S = [round((spin_mult-1)/2,2) for spin_mult in ref_wfn_spin_mult]     
+    S_cas = [round((spin_mult-1)/2,2) for spin_mult in ref_wfn_spin_mult]     
     nstate = len(ref_wfn)
 
     ##test by using CASSCF######
@@ -105,6 +106,10 @@ def generalSOC(method):
     #Get target state psi (wfn)
     wfn = np.einsum('ij,iab->jab',evec,ref_wfn)
     wfn = list(wfn)
+    #method S:
+    spin_mult_wfn = qd_nevpt2.determine_spin_mult(method,evec)
+    S = [round((spin_mult-1)/2,2) for spin_mult in spin_mult_wfn] 
+
     #Get ms 
     ms = []
     for I in range(nstate):
@@ -594,7 +599,7 @@ def gtensor_general(method, S_total, ms_total, I_total):
 
 
 
-    Kramer_pair_new = Kramer_pair
+    Kramer_pair_new = Kramer_pair_2
     test_kramer_z = np.einsum('ai,ib,bj->aj',np.conj(Kramer_pair_new).T , s_mat[2] , Kramer_pair_new)
 
 
