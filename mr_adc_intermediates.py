@@ -966,32 +966,20 @@ def compute_4RDM_V_INT_SIGMA(mr_adc):
     INT08 = tools.create_dataset('INT08', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
     INT09 = tools.create_dataset('INT09', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
     INT10 = tools.create_dataset('INT10', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
-    INT11 = tools.create_dataset('INT11', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
-    INT12 = tools.create_dataset('INT12', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
-    INT13 = tools.create_dataset('INT13', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
-    INT14 = tools.create_dataset('INT14', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
-    INT15 = tools.create_dataset('INT15', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
-    INT16 = tools.create_dataset('INT16', tmpfile, (ncas, ncas, ncas, ncas, ncas, ncas))
 
-    INT01[:] = einsum('UVwvWuyz,xwuv->UVWyzx', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT02[:] = einsum('UVwvWyuz,xwuv->UVWyzx', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT03[:] = einsum('UVwvWyzu,xwuv->UVWyzx', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT04[:] = einsum('UVwvuWyz,xwuv->UVWyzx', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT05[:] = einsum('UVxuWvwz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT06[:] = einsum('UVxuWvzw,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT07[:] = einsum('UVxuWwvz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT08[:] = einsum('UVxuWwzv,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT09[:] = einsum('UVxuWzvw,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT10[:] = einsum('UVxuWzwv,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT11[:] = einsum('UVxuvWwz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT12[:] = einsum('uUVxwvWz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT13[:] = einsum('UVxuvwWz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT14[:] = einsum('UVxuwWvz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT15[:] = einsum('UVxuwWzv,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-    INT16[:] = einsum('UVxuwvWz,ywuv->UVxWzy', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
-  
+    INT01[:] = einsum('UYZyVXxz,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT02[:] = einsum('UYZyVXzx,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT03[:] = einsum('UYZyVxzX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT04[:] = einsum('UYZyVzXx,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT05[:] = einsum('UYZyVzxX,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT06[:] = einsum('UYZyXxVz,Wxyz->UYZXVW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT07[:] = einsum('UYZyxVXz,Wxyz->UYZVXW', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT08[:] = einsum('UZxzVWXy,Yxyz->UZVWXY', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT09[:] = einsum('UYxzVWyX,Zxyz->UYVWXZ', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+    INT10[:] = einsum('UYxzVyWX,Zxyz->UYVWXZ', rdm_ccccaaaa, v_aaaa, optimize = einsum_type).astype(np.float64, order='C')
+
     # Flush file buffers
     tools.flush(tmpfile)
 
-    return INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10, INT11, INT12, INT13, INT14, INT15, INT16
+    return INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10
 

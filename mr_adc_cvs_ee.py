@@ -26471,15 +26471,14 @@ def compute_preconditioner(mr_adc):
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
         rdm_cccaaa = mr_adc.rdm.cccaaa
-        rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
         ## Overlap Matrices
         S12_ca_caaa = mr_adc.S12.ca_caaa
 
         ## Intermediates
-        #ints = mr_adc_intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
-        #INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10, INT11, INT12, INT13, INT14, INT15, INT16 = ints
-        #del ints
+        ints = mr_adc_intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
+        INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10 = ints
+        del ints
 
         # CA and CAAA
         # 0th- and 1st-order         
@@ -26677,9 +26676,9 @@ def compute_preconditioner(mr_adc):
         precond_caaa__aaaa += 1/12 * einsum('II,WxXy,UYZVyx->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__aaaa += 1/12 * einsum('II,WxXy,UYZxVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__aaaa += 1/12 * einsum('II,WxXy,UYZyxV->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        precond_caaa__aaaa += 1/12 * einsum('II,Wxyz,UYZyVXxz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__aaaa += 1/12 * einsum('II,Wxyz,UYZyXxVz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__aaaa += 1/12 * einsum('II,Wxyz,UYZyxVXz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa += 1/12 * einsum('II,Wxyz,UYZyVXxz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa += 1/12 * einsum('II,Wxyz,UYZyXxVz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa += 1/12 * einsum('II,Wxyz,UYZyxVXz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
         precond_caaa__aaaa += 1/6 * einsum('II,XYxZ,UxVW->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
         precond_caaa__aaaa -= 1/6 * einsum('II,XYxZ,UxWV->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
         precond_caaa__aaaa += 1/6 * einsum('II,XYxy,UZxVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
@@ -26697,12 +26696,12 @@ def compute_preconditioner(mr_adc):
         precond_caaa__aaaa -= 1/12 * einsum('II,YxZy,UxyVXW->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__aaaa -= 1/12 * einsum('II,YxZy,UxyWVX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__aaaa -= 1/12 * einsum('II,YxZy,UxyXWV->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        precond_caaa__aaaa -= 1/12 * einsum('II,Yxyz,UZxzVWXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__aaaa -= 1/12 * einsum('II,Yxyz,UZxzWXVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__aaaa -= 1/12 * einsum('II,Yxyz,UZxzXVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__aaaa += 1/12 * einsum('II,Zxyz,UYxzVWXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__aaaa += 1/12 * einsum('II,Zxyz,UYxzWXVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__aaaa += 1/12 * einsum('II,Zxyz,UYxzXVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa -= 1/12 * einsum('II,Yxyz,UZxzVWXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa -= 1/12 * einsum('II,Yxyz,UZxzWXVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa -= 1/12 * einsum('II,Yxyz,UZxzXVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa += 1/12 * einsum('II,Zxyz,UYxzVWXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa += 1/12 * einsum('II,Zxyz,UYxzWXVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__aaaa += 1/12 * einsum('II,Zxyz,UYxzXVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
         precond_caaa__aaaa -= 1/6 * einsum('II,VY,I,UZWX->IUVXWZY', np.identity(ncvs), np.identity(ncas), e_cvs, rdm_ccaa, optimize = einsum_type)
         precond_caaa__aaaa += 1/6 * einsum('II,VY,I,UZXW->IUVXWZY', np.identity(ncvs), np.identity(ncas), e_cvs, rdm_ccaa, optimize = einsum_type)
         precond_caaa__aaaa += 1/6 * einsum('II,VZ,I,UYWX->IUVXWZY', np.identity(ncvs), np.identity(ncas), e_cvs, rdm_ccaa, optimize = einsum_type)
@@ -26774,6 +26773,16 @@ def compute_preconditioner(mr_adc):
         precond_caaa__aaaa += 1/2 * einsum('II,VY,XZ,Wxyz,Uyxz->IUVXWZY', np.identity(ncvs), np.identity(ncas), np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
         precond_caaa__aaaa -= 1/2 * einsum('II,VZ,XY,Wxyz,Uyxz->IUVXWZY', np.identity(ncvs), np.identity(ncas), np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
 
+        precond_caaa__aaaa += 1/12 * einsum('II,UYZVXW->IUVXWZY', np.identity(ncvs), INT01, optimize = einsum_type)
+        precond_caaa__aaaa += 1/12 * einsum('II,UYZXVW->IUVXWZY', np.identity(ncvs), INT06, optimize = einsum_type)
+        precond_caaa__aaaa += 1/12 * einsum('II,UYZVXW->IUVXWZY', np.identity(ncvs), INT07, optimize = einsum_type)
+        precond_caaa__aaaa -= 1/12 * einsum('II,UZVWXY->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__aaaa -= 1/12 * einsum('II,UZWXVY->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__aaaa -= 1/12 * einsum('II,UZXVWY->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__aaaa += 1/12 * einsum('II,UYVWXZ->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__aaaa += 1/12 * einsum('II,UYWXVZ->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__aaaa += 1/12 * einsum('II,UYXVWZ->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+
         ##abba
         precond_caaa__abba  = 1/12 * einsum('II,I,UYZVXW->IUVXWZY', np.identity(ncvs), e_cvs, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__abba -= 1/12 * einsum('II,I,UYZWVX->IUVXWZY', np.identity(ncvs), e_cvs, rdm_cccaaa, optimize = einsum_type)
@@ -26820,14 +26829,14 @@ def compute_preconditioner(mr_adc):
         precond_caaa__abba -= 1/12 * einsum('II,WxXy,UYZxVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__abba -= 1/6 * einsum('II,WxXy,UYZxyV->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__abba -= 1/12 * einsum('II,WxXy,UYZyxV->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/12 * einsum('II,Wxyz,UYZyVXxz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba -= 1/6 * einsum('II,Wxyz,UYZyVXzx->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba -= 1/6 * einsum('II,Wxyz,UYZyVxzX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba -= 1/6 * einsum('II,Wxyz,UYZyVzXx->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba -= 1/6 * einsum('II,Wxyz,UYZyVzxX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/6 * einsum('II,Wxyz,UYZyXVxz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/12 * einsum('II,Wxyz,UYZyXxVz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/12 * einsum('II,Wxyz,UYZyxVXz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/12 * einsum('II,Wxyz,UYZyVXxz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba -= 1/6 * einsum('II,Wxyz,UYZyVXzx->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba -= 1/6 * einsum('II,Wxyz,UYZyVxzX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba -= 1/6 * einsum('II,Wxyz,UYZyVzXx->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba -= 1/6 * einsum('II,Wxyz,UYZyVzxX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/6 * einsum('II,Wxyz,UYZyXVxz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/12 * einsum('II,Wxyz,UYZyXxVz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/12 * einsum('II,Wxyz,UYZyxVXz->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
         precond_caaa__abba += 1/6 * einsum('II,XYxZ,UxVW->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
         precond_caaa__abba -= 1/6 * einsum('II,XYxZ,UxWV->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccaa, optimize = einsum_type)
         precond_caaa__abba += 1/6 * einsum('II,XYxy,UZxVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
@@ -26844,17 +26853,17 @@ def compute_preconditioner(mr_adc):
         precond_caaa__abba += 1/12 * einsum('II,YxZy,UxyWVX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__abba += 1/6 * einsum('II,YxZy,UxyWXV->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
         precond_caaa__abba += 1/12 * einsum('II,YxZy,UxyXWV->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        precond_caaa__abba -= 1/12 * einsum('II,Yxyz,UZxzVWXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/6 * einsum('II,Yxyz,UZxzWVXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/12 * einsum('II,Yxyz,UZxzWXVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/12 * einsum('II,Yxyz,UZxzXVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/12 * einsum('II,Zxyz,UYxzVWXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/6 * einsum('II,Zxyz,UYxzVWyX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/6 * einsum('II,Zxyz,UYxzVXyW->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/6 * einsum('II,Zxyz,UYxzVyWX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/6 * einsum('II,Zxyz,UYxzVyXW->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba += 1/12 * einsum('II,Zxyz,UYxzWXVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
-        precond_caaa__abba -= 1/12 * einsum('II,Zxyz,UYxzXVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba -= 1/12 * einsum('II,Yxyz,UZxzVWXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/6 * einsum('II,Yxyz,UZxzWVXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/12 * einsum('II,Yxyz,UZxzWXVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/12 * einsum('II,Yxyz,UZxzXVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/12 * einsum('II,Zxyz,UYxzVWXy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/6 * einsum('II,Zxyz,UYxzVWyX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/6 * einsum('II,Zxyz,UYxzVXyW->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/6 * einsum('II,Zxyz,UYxzVyWX->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/6 * einsum('II,Zxyz,UYxzVyXW->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba += 1/12 * einsum('II,Zxyz,UYxzWXVy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
+        #precond_caaa__abba -= 1/12 * einsum('II,Zxyz,UYxzXVWy->IUVXWZY', np.identity(ncvs), v_aaaa, rdm_ccccaaaa, optimize = einsum_type)
         precond_caaa__abba += 1/3 * einsum('II,VZ,I,UYWX->IUVXWZY', np.identity(ncvs), np.identity(ncas), e_cvs, rdm_ccaa, optimize = einsum_type)
         precond_caaa__abba += 1/6 * einsum('II,VZ,I,UYXW->IUVXWZY', np.identity(ncvs), np.identity(ncas), e_cvs, rdm_ccaa, optimize = einsum_type)
         precond_caaa__abba -= 1/6 * einsum('II,XY,I,UZVW->IUVXWZY', np.identity(ncvs), np.identity(ncas), e_cvs, rdm_ccaa, optimize = einsum_type)
@@ -26894,8 +26903,28 @@ def compute_preconditioner(mr_adc):
         precond_caaa__abba -= 1/2 * einsum('II,VZ,XY,Wx,Ux->IUVXWZY', np.identity(ncvs), np.identity(ncas), np.identity(ncas), h_aa, rdm_ca, optimize = einsum_type)
         precond_caaa__abba -= 1/2 * einsum('II,VZ,XY,Wxyz,Uyxz->IUVXWZY', np.identity(ncvs), np.identity(ncas), np.identity(ncas), v_aaaa, rdm_ccaa, optimize = einsum_type)
 
+        precond_caaa__abba += 1/12 * einsum('II,UYZVXW->IUVXWZY', np.identity(ncvs), INT01, optimize = einsum_type)
+        precond_caaa__abba -= 1/6 * einsum('II,UYZVXW->IUVXWZY', np.identity(ncvs), INT02, optimize = einsum_type)
+        precond_caaa__abba -= 1/6 * einsum('II,UYZVXW->IUVXWZY', np.identity(ncvs), INT03, optimize = einsum_type)
+        precond_caaa__abba -= 1/6 * einsum('II,UYZVXW->IUVXWZY', np.identity(ncvs), INT04, optimize = einsum_type)
+        precond_caaa__abba -= 1/6 * einsum('II,UYZVXW->IUVXWZY', np.identity(ncvs), INT05, optimize = einsum_type)
+        precond_caaa__abba += 1/6 * einsum('II,UYZXVW->IUVXWZY', np.identity(ncvs), INT01, optimize = einsum_type)
+        precond_caaa__abba += 1/12 * einsum('II,UYZXVW->IUVXWZY', np.identity(ncvs), INT06, optimize = einsum_type)
+        precond_caaa__abba += 1/12 * einsum('II,UYZVXW->IUVXWZY', np.identity(ncvs), INT07, optimize = einsum_type)
+        precond_caaa__abba -= 1/12 * einsum('II,UZVWXY->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__abba += 1/6 * einsum('II,UZWVXY->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__abba += 1/12 * einsum('II,UZWXVY->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__abba += 1/12 * einsum('II,UZXVWY->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__abba += 1/12 * einsum('II,UYVWXZ->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__abba += 1/6 * einsum('II,UYVWXZ->IUVXWZY', np.identity(ncvs), INT09, optimize = einsum_type)
+        precond_caaa__abba += 1/6 * einsum('II,UYVXWZ->IUVXWZY', np.identity(ncvs), INT09, optimize = einsum_type)
+        precond_caaa__abba += 1/6 * einsum('II,UYVWXZ->IUVXWZY', np.identity(ncvs), INT10, optimize = einsum_type)
+        precond_caaa__abba += 1/6 * einsum('II,UYVXWZ->IUVXWZY', np.identity(ncvs), INT10, optimize = einsum_type)
+        precond_caaa__abba += 1/12 * einsum('II,UYWXVZ->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+        precond_caaa__abba -= 1/12 * einsum('II,UYXVWZ->IUVXWZY', np.identity(ncvs), INT08, optimize = einsum_type)
+
         # Delete used intermediates
-        #del INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10, INT11, INT12, INT13, INT14, INT15, INT16
+        del INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10
 
         ## off-diagonal
         precond_caaa__aaaa_abba = np.ascontiguousarray(precond_caaa__aaaa - precond_caaa__abba.transpose(0,1,3,2,4,6,5) + precond_caaa__abba.transpose(0,1,2,3,4,6,5))
