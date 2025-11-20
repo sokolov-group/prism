@@ -90,8 +90,6 @@ class NEVPT:
         self.soc_order = 1
         self.evec = None
         self.en = None
-        self.evec_soc = None #Note that it is under QDNEVPT2 eigenbasis
-        self.en_soc = None
         self.gtensor = False
 
         #For SOC in temporary
@@ -136,10 +134,43 @@ class NEVPT:
         #Test for SOC code
         if self.soc: 
           from prism import general_somf
+          import numpy as np
+          print("\n \n \nInitialize SOC program...")
+          # calculate method's wfn
+          wfn = np.einsum('ij,iab->jab',self.evec,self.ref_wfn)
+          wfn = list(wfn)
+
+          # calculate method's S:
           from prism import qd_nevpt2
-          #qd_nevpt2.Initialize_SOC(self)
-          S_total, ms_total, I_total = general_somf.generalSOC(self)
-          osc = general_somf.osc_strength_soc(self, self.en_soc, self.evec_soc,S_total, ms_total, I_total)
+          spin_mult_wfn = qd_nevpt2.determine_spin_mult(self,self.evec)
+          S = [round((spin_mult-1)/2,2) for spin_mult in spin_mult_wfn] 
+
+          # calculate method's Ms: 
+          ms = []
+          nstate = len(wfn)
+          for I in range(nstate):
+            sz = self.interface.apply_S_z(wfn[I],self.ncas,self.ref_nelecas[I])
+            ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
+
+          ms = [round(elem,2) for elem in ms]
+
+          # calculate method's rdm_aa, rdm_bb:
+          print("calculate rdm_aabb...")
+          from pyscf.fci.direct_spin1 import trans_rdm1s
+          rdm_aa = np.zeros((nstate,nstate,self.nmo,self.nmo))
+          rdm_bb = np.zeros((nstate,nstate,self.nmo,self.nmo))
+          
+          for I in range(nstate):
+            for J in range(nstate):
+                rdm_aabb = trans_rdm1s(wfn[J],wfn[I],self.ncas,self.ref_nelecas[I])
+                rdm_aa[I,J,self.ncore:self.ncore + self.ncas ,self.ncore:self.ncore + self.ncas] = rdm_aabb[0]
+                rdm_bb[I,J,self.ncore:self.ncore + self.ncas ,self.ncore:self.ncore + self.ncas] = rdm_aabb[1]
+
+          #generalSOC requires spin-free energy...
+          en = self.en
+
+          en_soc, evec_soc, S_total, ms_total, I_total = general_somf.generalSOC(self,en,rdm_aa,rdm_bb,S,ms)
+          osc = general_somf.osc_strength_soc(self, en_soc, evec_soc, S_total, ms_total, I_total)
           print("Oscillator strenth:")
           for i in osc:
              print("%14.8f"%((i)))
@@ -147,7 +178,7 @@ class NEVPT:
  
           #general_somf.gtensor(self, S_total, ms_total, I_total)
           if self.gtensor is True:
-            general_somf.gtensor_general(self, S_total, ms_total, I_total)
+            general_somf.gtensor_general(self,evec_soc, S_total, ms_total, I_total)
         
         return e_tot, e_corr, osc
 

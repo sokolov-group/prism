@@ -83,53 +83,20 @@ def getSOC_integrals(method, unc = True):
     return h_soc_total #hsocint
 
 
-def generalSOC(method):
-    print("\n \n \nSpin-Free Framework: Employ Wigner–Eckart’s theorem")
+def generalSOC(method,en,rdm_aa,rdm_bb,S,ms):
+    print("\nSpin-Free Framework: Employ Wigner–Eckart’s theorem")
     print("Consider spin-orbit coupling effect...")
-    ref_wfn = method.ref_wfn  
-    ncas = method.ncas 
-    nmo = method.nmo
-    ncore = method.ncore 
-    evec = method.evec
-    en = method.en
-    ref_nelecas = method.ref_nelecas 
-    ref_wfn_spin_mult = method.ref_wfn_spin_mult
-    S_cas = [round((spin_mult-1)/2,2) for spin_mult in ref_wfn_spin_mult]     
-    nstate = len(ref_wfn)
+    nmo = len(rdm_aa[0,0])
+    nstate = len(S)
 
-    ##test by using CASSCF######
-    #print("This is SOC-CASSCF")
-    #evec = np.diag(np.ones(len(ref_wfn)))
-    #en = method.e_ref 
-    ##test by using CASSCF######
-
-    #Get target state psi (wfn)
-    wfn = np.einsum('ij,iab->jab',evec,ref_wfn)
-    wfn = list(wfn)
-    #method S:
-    spin_mult_wfn = qd_nevpt2.determine_spin_mult(method,evec)
-    S = [round((spin_mult-1)/2,2) for spin_mult in spin_mult_wfn] 
-
-    #Get ms 
-    ms = []
-    for I in range(nstate):
-        sz = method.interface.apply_S_z(wfn[I],ncas,ref_nelecas[I])
-        ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
-
-    ms = [round(elem,2) for elem in ms]
-
-
-    print("calculate rdm...")
-    from pyscf.fci.direct_spin1 import trans_rdm1s
-    
+    print("calculate Wigner's rdm...")
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     for I in range(nstate):
         for J in range(nstate):
             cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
             cg = float(cg)
-            rdm_aabb = trans_rdm1s(wfn[J],wfn[I],ncas,ref_nelecas[I])
-            T_z = 1/np.sqrt(2) * (rdm_aabb[0] - rdm_aabb[1]) / cg
-            rdm_wigner[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = T_z 
+            T_z = 1/np.sqrt(2) * (rdm_aa[I,J] - rdm_bb[I,J]) / cg
+            rdm_wigner[I,J] = T_z 
 
     # Get SOC integrals:
     h_soc = getSOC_integrals(method)
@@ -181,12 +148,12 @@ def generalSOC(method):
                 HSOC[I,J] = cg * H_plus[I_total[I],I_total[J]]
 
     H_sf = np.diag(E_spinstate).astype('complex')
-    method.en_soc, method.evec_soc = np.linalg.eigh(HSOC+H_sf)
+    en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
     print("\n Absolute energies in a.u |||| Excitation energies in a.u ||  eV ||  cm-1\n*****************************")
-    for e in method.en_soc:
-        print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-method.en_soc[0]),((e-method.en_soc[0])*27.2114),((e-method.en_soc[0])*219474.63)))
+    for e in en_soc:
+        print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-en_soc[0]),((e-en_soc[0])*27.2114),((e-en_soc[0])*219474.63)))
     
-    return S_total, ms_total, I_total 
+    return en_soc, evec_soc, S_total, ms_total, I_total 
 
 
 
@@ -211,7 +178,6 @@ def osc_strength_soc(nevpt, en_soc, evec_soc, S_total, ms_total, I_total, gs_ind
 
     # List to store Osc. Strength Values
     osc_total = []
-    print(ms_total)
     # Looping over CAS States
     for state in range(gs_index + 1, n_micro_states):
         # Reset final transformed RDM
@@ -245,7 +211,7 @@ def osc_strength_soc(nevpt, en_soc, evec_soc, S_total, ms_total, I_total, gs_ind
 
     return osc_total
 
-def gtensor(method, S_total, ms_total, I_total):
+def gtensor(method, evec_soc, S_total, ms_total, I_total):
     print("Calculating g-tensor...")
     mf = method.interface.mf
     mo = method.mo
@@ -257,7 +223,7 @@ def gtensor(method, S_total, ms_total, I_total):
     mo_coeff = method.mo
     nmo = method.nmo
     ncas = method.ncas
-    qdnevpt_evec  = method.evec_soc
+    qdnevpt_evec  = evec_soc
     
     S = np.zeros(n_states)
     for i in range(n_micro_states):
@@ -469,7 +435,7 @@ def gtensor(method, S_total, ms_total, I_total):
     return G_sq_en
     
         
-def gtensor_general(method, S_total, ms_total, I_total):
+def gtensor_general(method, evec_soc, S_total, ms_total, I_total):
     print("Calculating g-tensor(general)...")
     mf = method.interface.mf
     mo = method.mo
@@ -480,7 +446,7 @@ def gtensor_general(method, S_total, ms_total, I_total):
     mo_coeff = method.mo
     nmo = method.nmo
     ncas = method.ncas
-    qdnevpt_evec  = method.evec_soc
+    qdnevpt_evec  = evec_soc
     
     S = np.zeros(n_states)
     for i in range(n_micro_states):
