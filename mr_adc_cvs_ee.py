@@ -561,8 +561,6 @@ def compute_M_00(mr_adc):
         
         t1_aaee = mr_adc.t1.aaee
 
-        #t2_aaae = mr_adc.t2.aaae
-        
         # Reduced Density Matrices
         rdm_cccaaa = mr_adc.rdm.cccaaa
         rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
@@ -30470,51 +30468,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
         mr_adc.log.timer_debug("contracting v2e.vaee", *cput1)
 
-    def compute_sigma_vector__H1__h1_h0__CCEE_CA(mr_adc, X, sigma):
-
-        cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        ## Molecular Orbitals Energies
-        e_cvs = mr_adc.mo_energy.x
-        e_extern = mr_adc.mo_energy.e
-
-        ## One-electron integrals
-        h_aa = mr_adc.h1eff.aa
-
-        ## Two-electron integrals
-        v_aaaa = mr_adc.v2e.aaaa
-        #v_xeae = mr_adc.v2e.xeae
-
-        ## Amplitudes
-        t1_xaee = mr_adc.t1.xaee
- 
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        X_aa, X_bb = X, X
-
-        #sigma_KLCD_abab  = einsum('Kx,LDxC->KLCD', X_aa, v_xeae, optimize = einsum_type)
-        #sigma_KLCD_abab += einsum('Lx,KCxD->KLCD', X_bb, v_xeae, optimize = einsum_type)
-        sigma_KLCD_abab  = einsum('Kx,C,LxDC->KLCD', X_aa, e_extern, t1_xaee, optimize = einsum_type)
-        sigma_KLCD_abab += einsum('Kx,D,LxDC->KLCD', X_aa, e_extern, t1_xaee, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Kx,L,LxDC->KLCD', X_aa, e_cvs, t1_xaee, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Kx,xy,LyDC->KLCD', X_aa, h_aa, t1_xaee, optimize = einsum_type)
-        sigma_KLCD_abab += einsum('Lx,C,KxCD->KLCD', X_bb, e_extern, t1_xaee, optimize = einsum_type)
-        sigma_KLCD_abab += einsum('Lx,D,KxCD->KLCD', X_bb, e_extern, t1_xaee, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Lx,K,KxCD->KLCD', X_bb, e_cvs, t1_xaee, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Lx,xy,KyCD->KLCD', X_bb, h_aa, t1_xaee, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Kx,LyDC,xyzw,zw->KLCD', X_aa, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KLCD_abab += 1/2 * einsum('Kx,LyDC,xzwy,wz->KLCD', X_aa, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Lx,KyCD,xyzw,zw->KLCD', X_bb, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KLCD_abab += 1/2 * einsum('Lx,KyCD,xzwy,wz->KLCD', X_bb, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma[ccee] += np.ascontiguousarray(sigma_KLCD_abab).reshape(-1)
-
-        mr_adc.log.timer_debug("computing sigma H1 h1-h0 CCEE-CA", *cput1)
-
     def compute_sigma_vector__H1__h1_h0__CCEE_CA__V_XEAE(mr_adc, X, sigma, v_xeae):
 
         cput1 = (logger.process_clock(), logger.perf_counter())
@@ -30601,44 +30554,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
         mr_adc.log.timer_debug("contracting v2e.xeee", *cput1)
 
-    def compute_sigma_vector__H1__h1_h0__CVEE_CA(mr_adc, X, sigma):
-
-        cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        ## Molecular Orbitals Energies
-        e_val = mr_adc.mo_energy.v
-        e_extern = mr_adc.mo_energy.e
-
-        ## One-electron integrals
-        h_aa = mr_adc.h1eff.aa
-
-        ## Two-electron integrals
-        v_aaaa = mr_adc.v2e.aaaa
-        #v_veae = mr_adc.v2e.veae
-
-        ## Amplitudes
-        t1_vaee = mr_adc.t1.vaee
- 
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        X_aa, X_bb = X, X
-
-        #sigma_KLCD_abab  = einsum('Kx,LDxC->KLCD', X_aa, v_veae, optimize = einsum_type)
-        sigma_KLCD_abab  = einsum('Kx,C,LxDC->KLCD', X_aa, e_extern, t1_vaee, optimize = einsum_type)
-        sigma_KLCD_abab += einsum('Kx,D,LxDC->KLCD', X_aa, e_extern, t1_vaee, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Kx,L,LxDC->KLCD', X_aa, e_val, t1_vaee, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Kx,xy,LyDC->KLCD', X_aa, h_aa, t1_vaee, optimize = einsum_type)
-        sigma_KLCD_abab -= einsum('Kx,LyDC,xyzw,zw->KLCD', X_aa, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KLCD_abab += 1/2 * einsum('Kx,LyDC,xzwy,wz->KLCD', X_aa, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma[cvee] += np.ascontiguousarray(sigma_KLCD_abab).reshape(-1)
-
-        mr_adc.log.timer_debug("computing sigma H1 h1-h0 CVEE-CA", *cput1)
-
     def compute_sigma_vector__H1__h1_h0__CVEE_CA__V_VEAE(mr_adc, X, sigma, v_veae):
 
         cput1 = (logger.process_clock(), logger.perf_counter())
@@ -30713,47 +30628,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma[cvee] += np.ascontiguousarray(sigma_KLCD).reshape(-1)
 
         mr_adc.log.timer_debug("contracting v2e.veee", *cput1)
-
-    def compute_sigma_vector__H1__h1_h0__CAEE_CA(mr_adc, X, sigma):
-
-        cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        ## Molecular Orbitals Energies
-        e_extern = mr_adc.mo_energy.e
-
-        ## One-electron integrals
-        h_aa = mr_adc.h1eff.aa
-
-        ## Two-electron integrals
-        v_aaaa = mr_adc.v2e.aaaa
-        #v_aeae = mr_adc.v2e.aeae
-
-        ## Amplitudes
-        t1_aaee = mr_adc.t1.aaee
- 
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-        rdm_ccaa = mr_adc.rdm.ccaa
-
-        #sigma_KWCD  = 1/2 * einsum('Kx,xCyD,Wy->KWCD', X, v_aeae, rdm_ca, optimize = einsum_type)
-        sigma_KWCD  = 1/2 * einsum('Kx,C,xyCD,Wy->KWCD', X, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-        sigma_KWCD += 1/2 * einsum('Kx,D,xyCD,Wy->KWCD', X, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-        sigma_KWCD -= 1/2 * einsum('Kx,xy,yzCD,Wz->KWCD', X, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
-        sigma_KWCD -= 1/2 * einsum('Kx,yz,xyCD,Wz->KWCD', X, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
-        sigma_KWCD -= 1/2 * einsum('Kx,xyCD,yzwu,Wwzu->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCD += 1/6 * einsum('Kx,yzCD,xwuy,Wwuz->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCD += 1/3 * einsum('Kx,yzCD,xwuy,Wwzu->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCD += 1/3 * einsum('Kx,yzCD,xwuz,Wwuy->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCD += 1/6 * einsum('Kx,yzCD,xwuz,Wwyu->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCD -= 1/2 * einsum('Kx,yzCD,xywu,Wuzw->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCD -= 1/2 * einsum('Kx,yzCD,xywz,Ww->KWCD', X, t1_aaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma[caee] += np.ascontiguousarray(sigma_KWCD).reshape(-1)
-
-        mr_adc.log.timer_debug("computing sigma H1 h1-h0 CAEE-CA", *cput1)
 
     def compute_sigma_vector__H1__h1_h0__CAEE_CA__V_AEAE(mr_adc, X, sigma, v_aeae):
 
@@ -32751,15 +32625,12 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         ## h1-h0 contributions
         compute_sigma_vector__H1__h1_h0__CCAA_CA(mr_adc, X, sigma)
         compute_sigma_vector__H1__h1_h0__CCEA_CA(mr_adc, X, sigma)
-        #compute_sigma_vector__H1__h1_h0__CCEE_CA(mr_adc, X, sigma)
-        #compute_sigma_vector__H1__h1_h0__CAEE_CA(mr_adc, X, sigma) 
         compute_sigma_vector__H1__h1_h0__CAEA_CA(mr_adc, X, sigma)
         compute_sigma_vector__H0__h1_h0__CAAA_CA(mr_adc, X, sigma) 
         compute_sigma_vector__H1__h1_h0__CAAA_CA(mr_adc, X, sigma)
         if nval > 0:
             compute_sigma_vector__H1__h1_h0__CVAA_CA(mr_adc, X, sigma)
             compute_sigma_vector__H1__h1_h0__CVEA_CA(mr_adc, X, sigma)
-            #compute_sigma_vector__H1__h1_h0__CVEE_CA(mr_adc, X, sigma)
 
         sigma_KW = np.zeros_like(X)
 
