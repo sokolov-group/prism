@@ -28482,49 +28482,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         return sigma_KC
 
     # CA <- CCEE
-    def compute_sigma_vector__H1__h0_h1__CA_CCEE(mr_adc, X, sigma): 
-
-        cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        ## Molecular Orbitals Energies
-        e_cvs = mr_adc.mo_energy.x
-        e_extern = mr_adc.mo_energy.e
-
-        ## One-electron integrals
-        h_aa = mr_adc.h1eff.aa
-
-        ## Two-electron integrals
-        #v_xeae = mr_adc.v2e.xeae
-        v_aaaa = mr_adc.v2e.aaaa
-
-        ## Amplitudes
-        t1_xaee = mr_adc.t1.xaee
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        #sigma_KW =- einsum('Kiab,iaWb->KW', X, v_xeae, optimize = einsum_type)
-        #sigma_KW += 2 * einsum('Kiab,ibWa->KW', X, v_xeae, optimize = einsum_type)
-        sigma_KW =- einsum('Kiab,a,iWab->KW', X, e_extern, t1_xaee, optimize = einsum_type)
-        sigma_KW += 2 * einsum('Kiab,a,iWba->KW', X, e_extern, t1_xaee, optimize = einsum_type)
-        sigma_KW -= einsum('Kiab,b,iWab->KW', X, e_extern, t1_xaee, optimize = einsum_type)
-        sigma_KW += 2 * einsum('Kiab,b,iWba->KW', X, e_extern, t1_xaee, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,i,iWab->KW', X, e_cvs, t1_xaee, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,i,iWba->KW', X, e_cvs, t1_xaee, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,Wx,ixab->KW', X, h_aa, t1_xaee, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,Wx,ixba->KW', X, h_aa, t1_xaee, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,ixab,Wxyz,yz->KW', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW -= 1/2 * einsum('Kiab,ixab,Wyzx,zy->KW', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,ixba,Wxyz,yz->KW', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,ixba,Wyzx,zy->KW', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma[ca] += np.ascontiguousarray(sigma_KW).reshape(-1)
-
-        mr_adc.log.timer_debug("computing sigma H1 h0-h1 CA-CCEE", *cput1)
-
     def compute_sigma_vector__H1__h0_h1__CA_CCEE__V_XEAE(mr_adc, X, v_xeae): 
 
         cput1 = (logger.process_clock(), logger.perf_counter())
@@ -31876,19 +31833,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
 
-#        sigma_KLCW_aaaa  = einsum('KLCW,C->KLCW', X_aaaa, e_extern, optimize = einsum_type)
-#        sigma_KLCW_aaaa -= einsum('KLCW,K->KLCW', X_aaaa, e_cvs, optimize = einsum_type)
-#        sigma_KLCW_aaaa -= einsum('KLCW,L->KLCW', X_aaaa, e_val, optimize = einsum_type)
-#        sigma_KLCW_aaaa += einsum('KLCx,Wx->KLCW', X_aaaa, h_aa, optimize = einsum_type)
-#        sigma_KLCW_aaaa -= 1/2 * einsum('KLCx,C,Wx->KLCW', X_aaaa, e_extern, rdm_ca, optimize = einsum_type)
-#        sigma_KLCW_aaaa += 1/2 * einsum('KLCx,K,Wx->KLCW', X_aaaa, e_cvs, rdm_ca, optimize = einsum_type)
-#        sigma_KLCW_aaaa += 1/2 * einsum('KLCx,L,Wx->KLCW', X_aaaa, e_val, rdm_ca, optimize = einsum_type)
-#        sigma_KLCW_aaaa -= 1/2 * einsum('KLCx,xy,Wy->KLCW', X_aaaa, h_aa, rdm_ca, optimize = einsum_type)
-#        sigma_KLCW_aaaa -= 1/2 * einsum('KLCx,Wyzx,zy->KLCW', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
-#        sigma_KLCW_aaaa += einsum('KLCx,Wxyz,yz->KLCW', X_aaaa, v_aaaa, rdm_ca, optimize = einsum_type)
-#        sigma_KLCW_aaaa -= 1/2 * einsum('KLCx,xyzw,Wzyw->KLCW', X_aaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
-#        sigma[cvea__aaaa] += np.ascontiguousarray(sigma_KLCW_aaaa).reshape(-1)
-
         sigma_KLCW_abab  = einsum('KLCW,C->KLCW', X_abab, e_extern, optimize = einsum_type)
         sigma_KLCW_abab -= einsum('KLCW,K->KLCW', X_abab, e_cvs, optimize = einsum_type)
         sigma_KLCW_abab -= einsum('KLCW,L->KLCW', X_abab, e_val, optimize = einsum_type)
@@ -32877,10 +32821,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
     # CCAA
     if ncas > 0:
-        X_aaaa = np.zeros((ncvs, ncvs, ncas, ncas))
-        X_abab = np.zeros((ncvs, ncvs, ncas, ncas))
-        X_bbbb = np.zeros((ncvs, ncvs, ncas, ncas))
- 
         X = np.ascontiguousarray(Xt[ccaa].reshape(ncvs, ncvs, ncas, ncas))
 
         ## h0-h1 contributions
@@ -32891,14 +32831,14 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         compute_sigma_vector__H0__h1_h1__CCAA(mr_adc, X, sigma)
 
         if mr_adc.method == "mr-adc(2)-x":
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CCAA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCAA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCAA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CCAA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCAA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-            if nval is not None:
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CCAA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CCAA(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CCAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CCAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCAA(mr_adc, X, sigma)
+            if nval > 0:
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CCAA(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CCAA(mr_adc, X, sigma)
  
     # CCEA
     if ncas > 0 and nextern > 0:
@@ -32912,85 +32852,78 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         compute_sigma_vector__H0__h1_h1__CCEA(mr_adc, X, sigma)
 
         if mr_adc.method == "mr-adc(2)-x":
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
-            if nval is not None:
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CCEA(mr_adc, X_aaaa, X_abab, X_abba, X_bbbb, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CCEA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCEA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CCEA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CCEA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCEA(mr_adc, X, sigma)
+            if nval > 0:
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CCEA(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CCEA(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CCEA(mr_adc, X, sigma)
 
-            sigma_KLCW_aaaa = np.zeros_like(X_aaaa)
-            sigma_KLCW_abab = np.zeros_like(X_abab)
-            sigma_KLCW_abba = np.zeros_like(X_abba)
-            sigma_KLCW_bbbb = np.zeros_like(X_bbbb)
+            # sigma_KLCW = np.zeros_like(X)
 
-            # v_aeee
-            chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 12)
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+            # # v_aeee
+            # chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 12)
+            # for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            #     cput1 = (logger.process_clock(), logger.perf_counter())
+            #     mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-                ## Two-electron integral
-                v_aeee = mr_adc.v2e.aeee[:, :, s_chunk:f_chunk, :]
+            #     ## Two-electron integral
+            #     v_aeee = mr_adc.v2e.aeee[:, :, s_chunk:f_chunk, :]
 
-                ## CCEA block
-                X_aaaa = np.zeros((ncvs, ncvs, nextern, ncas))
-                X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] += Xt[ccea__aaaa].reshape(-1, nextern, ncas).copy()
-                X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] -= Xt[ccea__aaaa].reshape(-1, nextern, ncas).copy()
+            #     ## CCEA block
+            #     X_aaaa = np.zeros((ncvs, ncvs, nextern, ncas))
+            #     X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] += Xt[ccea__aaaa].reshape(-1, nextern, ncas).copy()
+            #     X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] -= Xt[ccea__aaaa].reshape(-1, nextern, ncas).copy()
          
-                X_bbbb = np.zeros((ncvs, ncvs, nextern, ncas))
-                X_bbbb[cc_tril_ind[0], cc_tril_ind[1]] += Xt[ccea__bbbb].reshape(-1, nextern, ncas).copy()
-                X_bbbb[cc_tril_ind[1], cc_tril_ind[0]] -= Xt[ccea__bbbb].reshape(-1, nextern, ncas).copy()
+            #     X_bbbb = np.zeros((ncvs, ncvs, nextern, ncas))
+            #     X_bbbb[cc_tril_ind[0], cc_tril_ind[1]] += Xt[ccea__bbbb].reshape(-1, nextern, ncas).copy()
+            #     X_bbbb[cc_tril_ind[1], cc_tril_ind[0]] -= Xt[ccea__bbbb].reshape(-1, nextern, ncas).copy()
          
-                X_abab = np.ascontiguousarray(Xt[ccea__abab].reshape(ncvs, ncvs, nextern, ncas))
-                X_abba = np.ascontiguousarray(Xt[ccea__abba].reshape(ncvs, ncvs, nextern, ncas))
+            #     X_abab = np.ascontiguousarray(Xt[ccea__abab].reshape(ncvs, ncvs, nextern, ncas))
+            #     X_abba = np.ascontiguousarray(Xt[ccea__abba].reshape(ncvs, ncvs, nextern, ncas))
 
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCEA__V_AEEE(mr_adc, X_aaaa[:, :, s_chunk:f_chunk, :], X_abab[:, :, s_chunk:f_chunk, :], X_abba[:, :, s_chunk:f_chunk, :], X_bbbb[:, :, s_chunk:f_chunk, :], sigma, v_aeee)
-                del(X_aaaa, X_abab, X_abba, X_bbbb)
+            #     h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCEA__V_AEEE(mr_adc, X_aaaa[:, :, s_chunk:f_chunk, :], X_abab[:, :, s_chunk:f_chunk, :], X_abba[:, :, s_chunk:f_chunk, :], X_bbbb[:, :, s_chunk:f_chunk, :], sigma, v_aeee)
+            #     del(X_aaaa, X_abab, X_abba, X_bbbb)
 
-                ## CCEE block
-                X_aaaa = np.zeros((ncvs, ncvs, nextern, nextern))
-                temp = np.zeros((n_cc, nextern, nextern))
-                temp[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[ccee__aaaa].reshape(n_cc, n_ee).copy()
-                temp[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[ccee__aaaa].reshape(n_cc, n_ee).copy()
-                X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] += temp
-                X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] -= temp 
+            #     ## CCEE block
+            #     X_aaaa = np.zeros((ncvs, ncvs, nextern, nextern))
+            #     temp = np.zeros((n_cc, nextern, nextern))
+            #     temp[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[ccee__aaaa].reshape(n_cc, n_ee).copy()
+            #     temp[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[ccee__aaaa].reshape(n_cc, n_ee).copy()
+            #     X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] += temp
+            #     X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] -= temp 
         
-                X_bbbb = np.zeros((ncvs, ncvs, nextern, nextern))
-                temp = np.zeros((n_cc, nextern, nextern))
-                temp[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[ccee__bbbb].reshape(n_cc, n_ee).copy()
-                temp[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[ccee__bbbb].reshape(n_cc, n_ee).copy()
-                X_bbbb[cc_tril_ind[0], cc_tril_ind[1]] += temp
-                X_bbbb[cc_tril_ind[1], cc_tril_ind[0]] -= temp 
+            #     X_bbbb = np.zeros((ncvs, ncvs, nextern, nextern))
+            #     temp = np.zeros((n_cc, nextern, nextern))
+            #     temp[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[ccee__bbbb].reshape(n_cc, n_ee).copy()
+            #     temp[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[ccee__bbbb].reshape(n_cc, n_ee).copy()
+            #     X_bbbb[cc_tril_ind[0], cc_tril_ind[1]] += temp
+            #     X_bbbb[cc_tril_ind[1], cc_tril_ind[0]] -= temp 
         
-                X_abab = np.ascontiguousarray(Xt[ccee__abab].reshape(ncvs, ncvs, nextern, nextern))
+            #     X_abab = np.ascontiguousarray(Xt[ccee__abab].reshape(ncvs, ncvs, nextern, nextern))
  
-                temp_aaaa, temp_abab, temp_abba, temp_bbbb = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEE__V_AEEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma, v_aeee)
+            #     temp_aaaa, temp_abab, temp_abba, temp_bbbb = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEE__V_AEEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma, v_aeee)
 
-                sigma_KLCW_aaaa[:, :, s_chunk:f_chunk, :] += temp_aaaa
-                sigma_KLCW_abab[:, :, s_chunk:f_chunk, :] += temp_abab
-                sigma_KLCW_abba[:, :, s_chunk:f_chunk, :] += temp_abba
-                sigma_KLCW_bbbb[:, :, s_chunk:f_chunk, :] += temp_bbbb
+            #     sigma_KLCW_aaaa[:, :, s_chunk:f_chunk, :] += temp_aaaa
+            #     sigma_KLCW_abab[:, :, s_chunk:f_chunk, :] += temp_abab
+            #     sigma_KLCW_abba[:, :, s_chunk:f_chunk, :] += temp_abba
+            #     sigma_KLCW_bbbb[:, :, s_chunk:f_chunk, :] += temp_bbbb
 
-                mr_adc.log.timer_debug("v2e.aeee contractions", *cput1)
-            del(v_aeee, X_aaaa, X_abab, X_bbbb)
+            #     mr_adc.log.timer_debug("v2e.aeee contractions", *cput1)
+            # del(v_aeee, X_aaaa, X_abab, X_bbbb)
             
-            sigma[ccea__aaaa] += np.ascontiguousarray(sigma_KLCW_aaaa[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
-            sigma[ccea__abab] += np.ascontiguousarray(sigma_KLCW_abab).reshape(-1)
-            sigma[ccea__abba] += np.ascontiguousarray(sigma_KLCW_abba).reshape(-1)
-            sigma[ccea__bbbb] += np.ascontiguousarray(sigma_KLCW_bbbb[cc_tril_ind[0], cc_tril_ind[1]]).reshape(-1)
-            del(sigma_KLCW_aaaa, sigma_KLCW_abab, sigma_KLCW_abba, sigma_KLCW_bbbb)
+            # sigma[ccea] += np.ascontiguousarray(sigma_KLCW).reshape(-1)
+            # del(sigma_KLCW)
 
     # CCEE
     if nextern > 0:
         X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
  
         ## h0-h1 contributions 
-        #compute_sigma_vector__H1__h0_h1__CA_CCEE(mr_adc, X, sigma)
         compute_sigma_vector__H1__h0_h1__CE_CCEE(mr_adc, X, sigma)
 
         if ncas > 0:
@@ -33035,13 +32968,13 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         if mr_adc.method == "mr-adc(2)-x":
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X, sigma)
             if ncas > 0:
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CCEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CCEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCEE(mr_adc, X, sigma)
             if nval > 0 and ncas > 0:
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CCEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CCEE(mr_adc, X, sigma)
             if nval > 0:
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CCEE(mr_adc, X, sigma)
 
@@ -33050,7 +32983,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         X = np.ascontiguousarray(Xt[caee].reshape(ncvs, ncas, nextern, nextern))
 
         ## h0-h1 contributions
-        #compute_sigma_vector__H1__h0_h1__CA_CAEE(mr_adc, X, sigma)
         compute_sigma_vector__H1__h0_h1__CE_CAEE(mr_adc, X, sigma)
 
         ## t1_aaee
@@ -33092,14 +33024,14 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         compute_sigma_vector__H0__h1_h1__CAEE(mr_adc, X, sigma)
 
         if mr_adc.method == "mr-adc(2)-x":
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            if nval is not None:
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAEE(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAEE(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAEE(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CAEE(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CAEE(mr_adc, X, sigma)
+            if nval > 0:
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAEE(mr_adc, X, sigma)
 
     # CAAA
     if ncas > 0:
@@ -33120,15 +33052,15 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
 
-##        if mr_adc.method == "mr-adc(2)-x":
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CAAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-##            if nval is not None:
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CAAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
+        if mr_adc.method == "mr-adc(2)-x":
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+           if nval > 0:
+               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAAA(mr_adc, X_aaaa, X_abab, sigma)
 
     # CAEA
     if ncas > 0 and nextern > 0:
@@ -33147,22 +33079,19 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
 
-##        if mr_adc.method == "mr-adc(2)-x":
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            if nval is not None:
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##
+        if mr_adc.method == "mr-adc(2)-x":
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+           if nval is not None:
+               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+
 ##            sigma_KWCU_aaaa = np.zeros_like((X_aaaa))
 ##            sigma_KWCU_abab = np.zeros_like((X_abab))
 ##            sigma_KWCU_baab = np.zeros_like((X_baab))
-##            sigma_KWCU_abba = np.zeros_like((X_abba))
-##            sigma_KWCU_baba = np.zeros_like((X_baba))
-##            sigma_KWCU_bbbb = np.zeros_like((X_bbbb))
 ## 
 ##            # v_xeee
 ##            chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nextern, nextern], ntensors = 12)
@@ -33335,13 +33264,13 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         compute_sigma_vector__H0__h1_h1__CVAA(mr_adc, X, sigma)
     
         if mr_adc.method == "mr-adc(2)-x":
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CVAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CVAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CVAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVAA(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)        
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CVAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CVAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CVAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVAA(mr_adc, X, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVAA(mr_adc, X, sigma)        
 
     # CVEA
     if nval > 0 and ncas > 0 and nextern > 0:    
@@ -33354,17 +33283,17 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         ## h1-h1 contributions 
         compute_sigma_vector__H0__h1_h1__CVEA(mr_adc, X_abab, X_baab, sigma)
 
-##        if mr_adc.method == "mr-adc(2)-x":
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)
-##            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEA(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma)        
-##
+        if mr_adc.method == "mr-adc(2)-x":
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CVEA(mr_adc, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CVEA(mr_adc, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CVEA(mr_adc, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CVEA(mr_adc, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CVEA(mr_adc, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVEA(mr_adc, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVEA(mr_adc, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEA(mr_adc, X_abab, X_baab, sigma)
+           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEA(mr_adc, X_abab, X_baab, sigma)
+
 ##            sigma_KLCW_aaaa = np.zeros_like(X_aaaa)
 ##            sigma_KLCW_abab = np.zeros_like(X_abab)
 ##            sigma_KLCW_baab = np.zeros_like(X_baab)
@@ -33432,7 +33361,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         X = np.ascontiguousarray(Xt[cvee].reshape(ncvs, nval, nextern, nextern))
 
         ## h0-h1 contributions
-        #compute_sigma_vector__H1__h0_h1__CA_CVEE(mr_adc, X, sigma)
         compute_sigma_vector__H1__h0_h1__CE_CVEE(mr_adc, X, sigma)
         if ncas > 0:
 
@@ -33478,12 +33406,12 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         if mr_adc.method == "mr-adc(2)-x":
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CVEE(mr_adc, X, sigma)
             if ncas > 0:
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CVEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CVEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAAA_CVEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVEE(mr_adc, X, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEE(mr_adc, X, sigma)
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X, sigma)        
 
     mr_adc.log.timer_debug("computing sigma vector", *cput0)
