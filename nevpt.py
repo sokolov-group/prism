@@ -136,7 +136,7 @@ class NEVPT:
           from prism import general_somf
           import numpy as np
           print("\n \n \nInitialize SOC program...")
-          # calculate method's wfn
+          # Rotate CAS Wavefunction:
           wfn = np.einsum('ij,iab->jab',self.evec,self.ref_wfn)
           wfn = list(wfn)
 
@@ -157,19 +157,18 @@ class NEVPT:
           # calculate method's rdm_aa, rdm_bb:
           print("calculate rdm_aabb...")
           from pyscf.fci.direct_spin1 import trans_rdm1s
-          rdm_aa = np.zeros((nstate,nstate,self.nmo,self.nmo))
-          rdm_bb = np.zeros((nstate,nstate,self.nmo,self.nmo))
+          rdm = np.zeros((2, nstate, nstate, self.nmo, self.nmo))
           
           for I in range(nstate):
             for J in range(nstate):
-                rdm_aabb = trans_rdm1s(wfn[J],wfn[I],self.ncas,self.ref_nelecas[I])
-                rdm_aa[I,J,self.ncore:self.ncore + self.ncas ,self.ncore:self.ncore + self.ncas] = rdm_aabb[0]
-                rdm_bb[I,J,self.ncore:self.ncore + self.ncas ,self.ncore:self.ncore + self.ncas] = rdm_aabb[1]
+                tmprdm_aabb = trans_rdm1s(wfn[J], wfn[I], self.ncas, self.ref_nelecas[I])
+                rdm[0, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[0]
+                rdm[1, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[1]
 
           #generalSOC requires spin-free energy...
           en = self.en
 
-          en_soc, evec_soc, S_total, ms_total, I_total = general_somf.generalSOC(self,en,rdm_aa,rdm_bb,S,ms)
+          en_soc, evec_soc, S_total, ms_total, I_total = general_somf.generalSOC(self.interface, en, rdm, S, ms)
           osc = general_somf.osc_strength_soc(self, en_soc, evec_soc, S_total, ms_total, I_total)
           print("Oscillator strenth:")
           for i in osc:

@@ -37,33 +37,34 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def getSOC_integrals(method, unc = True):
+def getSOC_integrals(interface, soc="breit-pauli"):
     
-    mo = method.mo
-    nmo = method.nmo
-    nao = method.mo.shape[0]
+    mo = interface.mo
+    nmo = interface.nmo
+    nao = interface.mo.shape[1]
 
     prefactor = 0.5 / ((LIGHT_SPEED)**2)
-    mol = method.interface.mol
+    mol = interface.mol
 
     # Build 1e-density matrix
-    rdm1ao = method.interface.mc.make_rdm1() 
+    rdm1ao = interface.mc.make_rdm1() 
 
-    if unc:
+    xmol, contr_coeff = None, None
+    if soc == "x2c":
         xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-    else:
-        xmol, contr_coeff = method.mol, np.eye(method.mol.nao_nr())
-
-    nbasis = xmol.nao_nr()
-    hsocint = np.zeros((3, nbasis, nbasis))
-
-    if method.soc == "breit-pauli":
-        hsocint += prefactor * somf.get_wso(xmol)
-        hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
-    elif method.soc == "x2c":
+        nbasis = xmol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
+
+    elif soc == "breit-pauli":
+        xmol, contr_coeff = mol, np.eye(mol.nao_nr())
+        nbasis = xmol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis))
+        hsocint += prefactor * somf.get_wso(xmol)
+        hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
+    
     else:
         raise Exception("Incorrect SOC flag in input file!!")
 
@@ -83,11 +84,11 @@ def getSOC_integrals(method, unc = True):
     return h_soc_total #hsocint
 
 
-def generalSOC(method,en,rdm_aa,rdm_bb,S,ms):
+def generalSOC(interface, en, rdm, S, ms):
     print("\nSpin-Free Framework: Employ Wigner–Eckart’s theorem")
     print("Consider spin-orbit coupling effect...")
-    nmo = len(rdm_aa[0,0])
-    nstate = len(S)
+    nmo = interface.nmo
+    nstate = len(en)
 
     print("calculate Wigner's rdm...")
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
@@ -95,11 +96,11 @@ def generalSOC(method,en,rdm_aa,rdm_bb,S,ms):
         for J in range(nstate):
             cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
             cg = float(cg)
-            T_z = 1/np.sqrt(2) * (rdm_aa[I,J] - rdm_bb[I,J]) / cg
+            T_z = 1/np.sqrt(2) * (rdm[0,I,J] - rdm[1,I,J]) / cg
             rdm_wigner[I,J] = T_z 
 
     # Get SOC integrals:
-    h_soc = getSOC_integrals(method)
+    h_soc = getSOC_integrals(interface, soc)
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
     h1_zero = h_soc[2]
