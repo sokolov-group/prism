@@ -37,7 +37,7 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def getSOC_integrals(interface, soc="breit-pauli"):
+def getSOC_integrals(interface, soc="breit-pauli", unc=True):
     
     mo = interface.mo
     nmo = interface.nmo
@@ -50,21 +50,25 @@ def getSOC_integrals(interface, soc="breit-pauli"):
     rdm1ao = interface.mc.make_rdm1() 
 
     xmol, contr_coeff = None, None
-    if soc == "x2c":
+    if unc:
         xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
+    else:
+        xmol, contr_coeff = mol, np.eye(mol.nao_nr())
+ 
         nbasis = xmol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis))
+   
+    if (soc=="breit-pauli"):
+        hsocint = np.zeros((3, nbasis, nbasis))
+        hsocint += prefactor * somf.get_wso(xmol)
+        hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
+
+    elif (soc=="x2c"):
         hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
 
-    elif soc == "breit-pauli":
-        xmol, contr_coeff = mol, np.eye(mol.nao_nr())
-        nbasis = xmol.nao_nr()
-        hsocint = np.zeros((3, nbasis, nbasis))
-        hsocint += prefactor * somf.get_wso(xmol)
-        hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
-    
     else:
         raise Exception("Incorrect SOC flag in input file!!")
 
@@ -88,6 +92,8 @@ def generalSOC(interface, en, rdm, S, ms):
     print("\nSpin-Free Framework: Employ Wigner–Eckart’s theorem")
     print("Consider spin-orbit coupling effect...")
     nmo = interface.nmo
+    soc = interface.soc
+    unc = interface.uncontract
     nstate = len(en)
 
     print("calculate Wigner's rdm...")
@@ -100,7 +106,7 @@ def generalSOC(interface, en, rdm, S, ms):
             rdm_wigner[I,J] = T_z 
 
     # Get SOC integrals:
-    h_soc = getSOC_integrals(interface, soc)
+    h_soc = getSOC_integrals(interface, soc=soc, unc=unc)
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
     h1_zero = h_soc[2]

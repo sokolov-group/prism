@@ -147,6 +147,10 @@ class PYSCF:
             self.davidson_only = mc.fcisolver.davidson_only
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
+            # SOC params:
+            self.soc = None
+            self.uncontract = False
+            self.soc_order = None
 
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df

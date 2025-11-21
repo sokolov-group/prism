@@ -87,7 +87,11 @@ class NEVPT:
 
         #For SOC
         self.soc = None
+        self.uncontract = False
         self.soc_order = 1
+        self.interface.soc = self.soc
+        self.interface.uncontract = self.uncontract
+        self.interface.soc_order = self.soc_order
         self.evec = None
         self.en = None
         self.gtensor = False
