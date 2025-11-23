@@ -34718,6 +34718,8 @@ def compute_trans_moments(mr_adc, U):
         Y[i] = apply_S_12(mr_adc, U[i], transpose = False)
     del U
     
+    #norm_function(mr_adc, U, Y)
+
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
         Y = renormalize_eigenvectors(mr_adc, Y)
 
@@ -34898,6 +34900,107 @@ def compute_trans_moments(mr_adc, U):
     mr_adc.log.timer("computing transition moments matrix", *cput0)
 
     return TY, dX
+
+def norm_function(mr_adc, U, Y):
+
+    print("\neigenvector analysis:")
+
+    # Non-Orthogonal Excitation Manifold
+    ce = mr_adc.h0.ce
+    ca = mr_adc.h0.ca
+
+    # Orthogonal Excitation Manifolds
+    ca_caaa = mr_adc.h_orth.ca_caaa
+    ce_caea = mr_adc.h_orth.ce_caea
+
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
+        ho_ccaa = mr_adc.h_orth.ccaa      
+        ho_ccea = mr_adc.h_orth.ccea
+        ho_ccee = mr_adc.h_orth.ccee
+        ho_caee = mr_adc.h_orth.caee
+        if mr_adc.nval > 0:
+            ho_cvaa = mr_adc.h_orth.cvaa     
+            ho_cvea__abab = mr_adc.h_orth.cvea__abab
+            ho_cvea__baab = mr_adc.h_orth.cvea__baab
+            ho_cvee = mr_adc.h_orth.cvee
+
+        # Non-Orthogonal Excitation Manifolds
+        h1_ccaa = mr_adc.h1.ccaa
+        h1_ccea = mr_adc.h1.ccea
+        h1_ccee = mr_adc.h1.ccee
+        h1_caee = mr_adc.h1.caee
+
+        h1_caea__aaaa = mr_adc.h1.caea__aaaa
+        h1_caea__abab = mr_adc.h1.caea__abab
+        h1_caea__baab = mr_adc.h1.caea__baab
+        h1_caaa__aaaa = mr_adc.h1.caaa__aaaa
+        h1_caaa__abab = mr_adc.h1.caaa__abab
+
+        if mr_adc.nval > 0:
+            h1_cvaa = mr_adc.h1.cvaa
+            h1_cvea__abab = mr_adc.h1.cvea__abab
+            h1_cvea__baab = mr_adc.h1.cvea__baab
+            h1_cvee = mr_adc.h1.cvee 
+
+    for i in range(U.shape[0]):
+        print(f"Root {i+1} \n" )
+        print("    Excitation Type         Contribution")
+        print("--------------------------------------------------------")
+
+        norm_ca_caaa = np.linalg.norm(U[i, ca_caaa])**2
+        norm_ce_caea = np.linalg.norm(U[i, ce_caea])**2
+
+        norm_ca = np.linalg.norm(Y[i, ca])**2
+        norm_ce = np.linalg.norm(Y[i, ce])**2
+
+        print(f"    ho CA_CAAA               {norm_ca_caaa:10.8f}") 
+        print(f"    h1 CA                    {norm_ca:10.8f}\n") 
+        print(f"    ho CE_CAEA               {norm_ce_caea:10.8f}")
+        print(f"    h1 CE                    {norm_ce:10.8f}\n")
+        
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
+            norm_ho_ccaa    = np.linalg.norm(U[i, ho_ccaa])**2
+            norm_ho_ccea    = np.linalg.norm(U[i, ho_ccea])**2
+            norm_ho_ccee    = np.linalg.norm(U[i, ho_ccee])**2
+            norm_ho_caee    = np.linalg.norm(U[i, ho_caee])**2
+
+            norm_h1_ccaa    = np.linalg.norm(Y[i, h1_ccaa])**2
+            norm_h1_ccea    = np.linalg.norm(Y[i, h1_ccea])**2
+            norm_h1_ccee    = np.linalg.norm(Y[i, h1_ccee])**2
+            norm_h1_caee    = np.linalg.norm(Y[i, h1_caee])**2
+
+            norm_h1_caaa__aaaa    = np.linalg.norm(Y[i, h1_caaa__aaaa])**2
+            norm_h1_caaa__abab    = np.linalg.norm(Y[i, h1_caaa__abab])**2
+            norm_h1_caea__aaaa    = np.linalg.norm(Y[i, h1_caea__aaaa])**2
+            norm_h1_caea__abab    = np.linalg.norm(Y[i, h1_caea__abab])**2
+            norm_h1_caea__baab    = np.linalg.norm(Y[i, h1_caea__baab])**2
+
+            print(f"    ho CCAA                  {norm_ho_ccaa:10.8f}")
+            print(f"    h1 CCAA                  {norm_h1_ccaa:10.8f}\n")
+            print(f"    ho CCEA                  {norm_ho_ccea:10.8f}")
+            print(f"    h1 CCEA                  {norm_h1_ccea:10.8f}\n")
+            print(f"    ho CCEE                  {norm_ho_ccee:10.8f}")
+            print(f"    h1 CCEE                  {norm_h1_ccee:10.8f}\n")
+            print(f"    ho CAEE                  {norm_ho_caee:10.8f}")
+            print(f"    h1 CAEE                  {norm_h1_caee:10.8f}\n")
+
+            if mr_adc.nval > 0:
+                norm_ho_cvaa = np.linalg.norm(U[i, ho_cvaa])**2
+                norm_ho_cvaa = np.linalg.norm(U[i, ho_cvaa])**2
+                norm_ho_cvea = np.linalg.norm(U[i, ho_cvea__abab])**2 + np.linalg.norm(U[i, ho_cvea__baab])**2
+                norm_ho_cvee = np.linalg.norm(U[i, ho_cvee])**2
+
+                norm_h1_cvaa = np.linalg.norm(Y[i, h1_cvaa])**2
+                norm_h1_cvea = np.linalg.norm(Y[i, h1_cvea__abab])**2 + np.linalg.norm(Y[i, h1_cvea__baab])**2
+                norm_h1_cvee = np.linalg.norm(Y[i, h1_cvee])**2
+
+                print(f"    ho CVAA                  {norm_ho_cvaa:10.8f}")
+                print(f"    h1 CVAA                  {norm_h1_cvaa:10.8f}\n")
+                print(f"    ho CVEA                  {norm_ho_cvea:10.8f}")
+                print(f"    h1 CVEA                  {norm_h1_cvea:10.8f}\n")
+                print(f"    ho CVEE                  {norm_ho_cvee:10.8f}")
+                print(f"    h1 CVEE                  {norm_h1_cvee:10.8f}")
+        print("--------------------------------------------------------\n")
 
 def analyze_eigenvector(mr_adc, de, U):
 
