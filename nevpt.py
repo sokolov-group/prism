@@ -136,6 +136,7 @@ class NEVPT:
         e_tot, e_corr, osc = nevpt_compute.kernel(self)
 
         #Test for SOC code
+        self.interface.soc = self.soc
         if self.soc: 
           from prism import general_somf
           import numpy as np
@@ -173,15 +174,14 @@ class NEVPT:
           en = self.en
 
           en_soc, evec_soc, S_total, ms_total, I_total = general_somf.generalSOC(self.interface, en, rdm, S, ms)
-          osc = general_somf.osc_strength_soc(self, en_soc, evec_soc, S_total, ms_total, I_total)
+          osc = general_somf.osc_strength_soc(self.interface, en_soc, evec_soc,rdm, I_total)
           print("Oscillator strenth:")
           for i in osc:
              print("%14.8f"%((i)))
 
- 
-          #general_somf.gtensor(self, S_total, ms_total, I_total)
+
           if self.gtensor is True:
-            general_somf.gtensor_general(self,evec_soc, S_total, ms_total, I_total)
+            general_somf.gtensor_general(self.interface,evec_soc,rdm, S_total, I_total)
         
         return e_tot, e_corr, osc
 
