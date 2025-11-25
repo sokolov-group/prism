@@ -4992,7 +4992,9 @@ def compute_t2_0pp_singles(mr_adc):
         rdm_ccaa = mr_adc.rdm.ccaa
         rdm_cccaaa = mr_adc.rdm.cccaaa
         rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
-        
+
+        V1_m2 = np.zeros_like(V1)
+
         chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
@@ -5009,12 +5011,10 @@ def compute_t2_0pp_singles(mr_adc):
             temp -= 1/4 * einsum('xyab,zawb,XxyYzw->XY', t1_aaee, v_aeae, rdm_cccaaa, optimize = einsum_type)
             temp -= 1/4 * einsum('xyab,zawb,XzwYxy->XY', t1_aaee, v_aeae, rdm_cccaaa, optimize = einsum_type)
  
-            V1 += temp
+            V1_m2 += temp
             mr_adc.log.timer_debug("contracting v2e.aeae", *cput1)
-        del(t1_aaee, v_aeae)
+            del(t1_aaee, v_aeae)
 
-        t1_aaee_INT = np.zeros((ncas, ncas, ncas, ncas))
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -5025,102 +5025,115 @@ def compute_t2_0pp_singles(mr_adc):
             ## Amplitudes
             t1_aaee = mr_adc.t1.aaee[:, :, s_chunk:f_chunk, :]
 
-            t1_aaee_INT += einsum('xuab,vsab->xuvs', t1_aaee, t1_aaee)
+            t1_aaee_INT = einsum('xuab,vsab->xuvs', t1_aaee, t1_aaee, optimize = einsum_type)
+
+            #temp =- 1/2 * einsum('a,Yxab,yzab,Xxyz->XY', e_extern, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            ###temp -= 1/2 * einsum('a,Yxba,yzab,Xxzy->XY', e_extern, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            #temp -= 1/2 * einsum('a,xYab,yzab,Xxzy->XY', e_extern, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            #temp -= 1/4 * einsum('a,xyab,zwab,XxyYzw->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp -= 1/4 * einsum('a,xyab,zwab,XzwYxy->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('Yx,xyab,zwab,Xyzw->XY', h_aa, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xy,Yxab,zwab,Xyzw->XY', h_aa, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xy,xzab,Ywab,Xwyz->XY', h_aa, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            ###temp += 1/4 * einsum('xy,xzab,Ywba,Xwzy->XY', h_aa, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xy,xzab,wYab,Xwzy->XY', h_aa, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xy,xzab,wuab,XwuYyz->XY', h_aa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xy,xzab,wuab,XyzYwu->XY', h_aa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('Yxyz,wxab,uvab,Xywvzu->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('Yxyz,wzab,uvab,Xywxvu->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('Yxyz,xzab,wuab,Xywu->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('Yxyz,ywab,uvab,Xuvxzw->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xyzw,Yxab,uvab,Xywuvz->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xyzw,xuab,Yvab,Xzvywu->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            ###temp += 1/4 * einsum('xyzw,xuab,Yvba,Xzvuwy->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xyzw,xuab,vYab,Xzvuwy->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp -= 1/6 * einsum('xyzw,xuab,vsab,XvszYuwy->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/6 * einsum('xyzw,xuab,vsab,XvszYuyw->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/6 * einsum('xyzw,xuab,vsab,XvszYwuy->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 5/24 * einsum('xyzw,xuab,vsab,XvszYwyu->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp += 1/12 * einsum('xyzw,xuab,vsab,XvszYyuw->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 5/24 * einsum('xyzw,xuab,vsab,XvszYywu->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XvszuwyY->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XvszuywY->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XvszwYyu->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XvszwuyY->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XvszwyYu->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XvszwyuY->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp += 1/24 * einsum('xyzw,xuab,vsab,XvszyYuw->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp += 1/24 * einsum('xyzw,xuab,vsab,XvszyuYw->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 5/24 * einsum('xyzw,xuab,vsab,XwyuYsvz->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/6 * einsum('xyzw,xuab,vsab,XwyuYszv->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 5/24 * einsum('xyzw,xuab,vsab,XwyuYvsz->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/6 * einsum('xyzw,xuab,vsab,XwyuYvzs->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/6 * einsum('xyzw,xuab,vsab,XwyuYzsv->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp += 1/12 * einsum('xyzw,xuab,vsab,XwyuYzvs->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XwyusYvz->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp += 1/24 * einsum('xyzw,xuab,vsab,XwyuszYv->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XwyuvYsz->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp += 1/24 * einsum('xyzw,xuab,vsab,XwyuvzYs->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XwyuzYsv->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XwyuzYvs->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XwyuzsvY->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp -= 1/24 * einsum('xyzw,xuab,vsab,XwyuzvsY->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccccaaaa, optimize = einsum_type)
+            #temp += 1/4 * einsum('xyzw,xzab,Yuab,Xuyw->XY', v_aaaa, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
+            #temp += 1/8 * einsum('xyzw,xzab,uvab,XuvYyw->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            #temp += 1/8 * einsum('xyzw,xzab,uvab,XywYuv->XY', v_aaaa, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
 
             temp =- 1/2 * einsum('a,Yxab,yzab,Xxyz->XY', e_extern, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
             temp -= 1/2 * einsum('a,xYab,yzab,Xxzy->XY', e_extern, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
-            temp += 1/6 * einsum('a,xyab,zwab,XxyYwz->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/3 * einsum('a,xyab,zwab,XxyYzw->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/6 * einsum('a,xyab,zwab,XxywYz->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/6 * einsum('a,xyab,zwab,XxywzY->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/6 * einsum('a,xyab,zwab,XxyzYw->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/6 * einsum('a,xyab,zwab,XxyzwY->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            temp -= 1/4 * einsum('a,xyab,zwab,XxyYzw->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
+            temp -= 1/4 * einsum('a,xyab,zwab,XzwYxy->XY', e_extern, t1_aaee, t1_aaee, rdm_cccaaa, optimize = einsum_type)
 
-            V1 += temp
+            temp += 1/4 * einsum('Yx,xyzw,Xyzw->XY', h_aa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xy,Yxzw,Xyzw->XY', h_aa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xy,xzYw,Xwyz->XY', h_aa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xy,xzwY,Xwzy->XY', h_aa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xy,xzwu,XwuYyz->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xy,xzwu,XyzYwu->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/4 * einsum('Yxyz,wxuv,Xywvzu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/4 * einsum('Yxyz,wzuv,Xywxvu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/4 * einsum('Yxyz,xzwu,Xywu->XY', v_aaaa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
+            temp += 1/4 * einsum('Yxyz,ywuv,Xuvxzw->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xyzw,Yxuv,Xywuvz->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xyzw,xuYv,Xzvywu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xyzw,xuvY,Xzvuwy->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp -= 1/6 * einsum('xyzw,xuvs,XvszYuwy->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/6 * einsum('xyzw,xuvs,XvszYuyw->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/6 * einsum('xyzw,xuvs,XvszYwuy->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 5/24 * einsum('xyzw,xuvs,XvszYwyu->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp += 1/12 * einsum('xyzw,xuvs,XvszYyuw->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 5/24 * einsum('xyzw,xuvs,XvszYywu->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XvszuwyY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XvszuywY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XvszwYyu->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XvszwuyY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XvszwyYu->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XvszwyuY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp += 1/24 * einsum('xyzw,xuvs,XvszyYuw->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp += 1/24 * einsum('xyzw,xuvs,XvszyuYw->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 5/24 * einsum('xyzw,xuvs,XwyuYsvz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/6 * einsum('xyzw,xuvs,XwyuYszv->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 5/24 * einsum('xyzw,xuvs,XwyuYvsz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/6 * einsum('xyzw,xuvs,XwyuYvzs->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/6 * einsum('xyzw,xuvs,XwyuYzsv->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp += 1/12 * einsum('xyzw,xuvs,XwyuYzvs->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XwyusYvz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp += 1/24 * einsum('xyzw,xuvs,XwyuszYv->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XwyuvYsz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp += 1/24 * einsum('xyzw,xuvs,XwyuvzYs->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XwyuzYsv->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XwyuzYvs->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XwyuzsvY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp -= 1/24 * einsum('xyzw,xuvs,XwyuzvsY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
+            temp += 1/4 * einsum('xyzw,xzYu,Xuyw->XY', v_aaaa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
+            temp += 1/8 * einsum('xyzw,xzuv,XuvYyw->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/8 * einsum('xyzw,xzuv,XywYuv->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
+
+            V1_m2 += temp
             mr_adc.log.timer_debug("contracting t1.aaee", *cput1)
-        del(e_extern, t1_aaee)
+            del(e_extern, t1_aaee)
 
-        temp  = 1/4 * einsum('Yx,xyzw,Xyzw->XY', h_aa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
-        temp += 1/4 * einsum('xy,Yxzw,Xyzw->XY', h_aa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
-        temp += 1/4 * einsum('xy,xzYw,Xwyz->XY', h_aa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
-        temp += 1/4 * einsum('xy,xzwY,Xwzy->XY', h_aa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
-        temp += 5/24 * einsum('xy,xzwu,XwuYyz->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XwuYzy->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XwuyYz->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XwuyzY->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XwuzYy->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XwuzyY->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XyzYuw->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 5/24 * einsum('xy,xzwu,XyzYwu->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XyzuYw->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XyzuwY->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XyzwYu->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xy,xzwu,XyzwuY->XY', h_aa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('Yxyz,xwuv,Xywuvz->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/6 * einsum('Yxyz,xwuv,Xywuzv->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('Yxyz,xwuv,Xywvuz->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('Yxyz,xwuv,Xywvzu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('Yxyz,xwuv,Xywzuv->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('Yxyz,xwuv,Xywzvu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/4 * einsum('Yxyz,xzwu,Xywu->XY', v_aaaa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,ywuv,Xuvwxz->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,ywuv,Xuvwzx->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,ywuv,Xuvxwz->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 5/24 * einsum('Yxyz,ywuv,Xuvxzw->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,ywuv,Xuvzwx->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,ywuv,Xuvzxw->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,zwuv,Xywuvx->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,zwuv,Xywuxv->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,zwuv,Xywvux->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,zwuv,Xywvxu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 5/24 * einsum('Yxyz,zwuv,Xywxuv->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('Yxyz,zwuv,Xywxvu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/4 * einsum('xyzw,Yxuv,Xywuvz->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/4 * einsum('xyzw,xuYv,Xzvywu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/6 *  einsum('xyzw,xuvY,Xzvuwy->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvY,Xzvuyw->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvY,Xzvwuy->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvY,Xzvwyu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvY,Xzvyuw->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvY,Xzvywu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/4 * einsum('xyzw,xzYu,Xuyw->XY', v_aaaa, t1_aaee_INT, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xyzw,xzuv,XuvYwy->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/12 * einsum('xyzw,xzuv,XuvYyw->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xzuv,XuvwyY->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xzuv,XuvywY->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/12 * einsum('xyzw,xzuv,XywYuv->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xyzw,xzuv,XywYvu->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xzuv,XywuvY->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xzuv,XywvuY->XY', v_aaaa, t1_aaee_INT, rdm_cccaaa, optimize = einsum_type)
-        temp -= 1/16 * einsum('xyzw,xuvs,XywuYsvz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvs,XywuYszv->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/16 * einsum('xyzw,xuvs,XywuYvsz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 5/24 * einsum('xyzw,xuvs,XywuYvzs->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvs,XywuYzsv->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xyzw,xuvs,XywuYzvs->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/48 * einsum('xyzw,xuvs,XywusYvz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xyzw,xuvs,XywusYzv->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 1/48 * einsum('xyzw,xuvs,XywusvYz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/48 * einsum('xyzw,xuvs,XywuvYsz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 1/48 * einsum('xyzw,xuvs,XywuvsYz->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 1/24 * einsum('xyzw,xuvs,XywuvzYs->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xyzw,xuvs,XywuzYsv->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 1/24 * einsum('xyzw,xuvs,XywuzvYs->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/16 * einsum('xyzw,xuvs,XzvsYuwy->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/16 * einsum('xyzw,xuvs,XzvsYuyw->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvs,XzvsYwuy->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 5/24 * einsum('xyzw,xuvs,XzvsYwyu->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/12 * einsum('xyzw,xuvs,XzvsYyuw->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xyzw,xuvs,XzvsYywu->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 1/24 * einsum('xyzw,xuvs,XzvswYyu->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 1/48 * einsum('xyzw,xuvs,XzvswuYy->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 1/48 * einsum('xyzw,xuvs,XzvswuyY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp += 1/24 * einsum('xyzw,xuvs,XzvswyYu->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xyzw,xuvs,XzvsyYuw->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/48 * einsum('xyzw,xuvs,XzvsyuYw->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/48 * einsum('xyzw,xuvs,XzvsyuwY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        temp -= 1/24 * einsum('xyzw,xuvs,XzvsywuY->XY', v_aaaa, t1_aaee_INT, rdm_ccccaaaa, optimize = einsum_type)
-        V1 += temp
+        V1 += V1_m2
 
     ## t1_caee
     def compute_V1__t1_m1(mr_adc, V1):
@@ -5141,34 +5154,46 @@ def compute_t2_0pp_singles(mr_adc):
         rdm_ca = mr_adc.rdm.ca 
         rdm_ccaa = mr_adc.rdm.ccaa
         rdm_cccaaa = mr_adc.rdm.cccaaa
+        
+        V1_m1 = np.zeros_like(V1)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern], ntensors = 3)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
     
             ## Two-electron integrals
-            v_ceae_ab = mr_adc.v2e.ceae[:, s_chunk:f_chunk, :, :]
-            v_ceae_ba = mr_adc.v2e.ceae[:, :, :, s_chunk:f_chunk]
+            v_ceae = mr_adc.v2e.ceae[:, s_chunk:f_chunk, :, :]
  
             ## Amplitudes
             t1_caee = mr_adc.t1.caee[:, :, s_chunk:f_chunk, :]
 
-            temp =- einsum('iYab,iaxb,Xx->XY', t1_caee, v_ceae_ab, rdm_ca, optimize = einsum_type)
-            temp -= einsum('ixab,iaYb,Xx->XY', t1_caee, v_ceae_ab, rdm_ca, optimize = einsum_type)
-            temp -= einsum('ixab,iayb,XxYy->XY', t1_caee, v_ceae_ab, rdm_ccaa, optimize = einsum_type)
-            temp -= einsum('ixab,iayb,XyYx->XY', t1_caee, v_ceae_ab, rdm_ccaa, optimize = einsum_type)
+            temp =- einsum('iYab,iaxb,Xx->XY', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
+            temp -= einsum('ixab,iaYb,Xx->XY', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
+            temp -= einsum('ixab,iayb,XxYy->XY', t1_caee, v_ceae, rdm_ccaa, optimize = einsum_type)
+            temp -= einsum('ixab,iayb,XyYx->XY', t1_caee, v_ceae, rdm_ccaa, optimize = einsum_type)
 
-            temp += 1/2 * einsum('iYab,ibxa,Xx->XY', t1_caee, v_ceae_ba, rdm_ca, optimize = einsum_type)
-            temp += 1/2 * einsum('ixab,ibYa,Xx->XY', t1_caee, v_ceae_ba, rdm_ca, optimize = einsum_type)
-            temp += 1/2 * einsum('ixab,ibya,XxYy->XY', t1_caee, v_ceae_ba, rdm_ccaa, optimize = einsum_type)
-            temp += 1/2 * einsum('ixab,ibya,XyYx->XY', t1_caee, v_ceae_ba, rdm_ccaa, optimize = einsum_type)
-
-            V1 += temp
+            V1_m1 += temp
             mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
-        del(t1_caee, v_ceae_ab, v_ceae_ba)
+            del(t1_caee, v_ceae)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+
+            ## Two-electron integrals
+            v_ceae = mr_adc.v2e.ceae[:, :, :, s_chunk:f_chunk]
+ 
+            ## Amplitudes
+            t1_caee = mr_adc.t1.caee[:, :, s_chunk:f_chunk, :]
+
+            temp  = 1/2 * einsum('iYab,ibxa,Xx->XY', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
+            temp += 1/2 * einsum('ixab,ibYa,Xx->XY', t1_caee, v_ceae, rdm_ca, optimize = einsum_type)
+            temp += 1/2 * einsum('ixab,ibya,XxYy->XY', t1_caee, v_ceae, rdm_ccaa, optimize = einsum_type)
+            temp += 1/2 * einsum('ixab,ibya,XyYx->XY', t1_caee, v_ceae, rdm_ccaa, optimize = einsum_type)
+
+            V1_m1 += temp
+            mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
+            del(t1_caee, v_ceae)
+
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -5188,10 +5213,8 @@ def compute_t2_0pp_singles(mr_adc):
             temp += 1/2 * einsum('a,ixab,iyba,XxYy->XY', e_extern, t1_caee_ab, t1_caee_ba, rdm_ccaa, optimize = einsum_type)
             temp += 1/2 * einsum('a,ixba,iyab,XxYy->XY', e_extern, t1_caee_ba, t1_caee_ab, rdm_ccaa, optimize = einsum_type)
             temp -= einsum('a,ixba,iyba,XxYy->XY', e_extern, t1_caee_ba, t1_caee_ba, rdm_ccaa, optimize = einsum_type)
-            temp += 1/2 * einsum('i,iYab,ixab,Xx->XY', e_core, t1_caee_ab, t1_caee_ab, rdm_ca, optimize = einsum_type)
-            temp -= 1/4 * einsum('i,iYab,ixba,Xx->XY', e_core, t1_caee_ab, t1_caee_ba, rdm_ca, optimize = einsum_type)
-            temp += 1/2 * einsum('i,ixab,iYab,Xx->XY', e_core, t1_caee_ab, t1_caee_ab, rdm_ca, optimize = einsum_type)
-            temp -= 1/4 * einsum('i,ixab,iYba,Xx->XY', e_core, t1_caee_ab, t1_caee_ba, rdm_ca, optimize = einsum_type)
+            temp += einsum('i,iYab,ixab,Xx->XY', e_core, t1_caee_ab, t1_caee_ab, rdm_ca, optimize = einsum_type)
+            temp -= 1/2 * einsum('i,iYab,ixba,Xx->XY', e_core, t1_caee_ab, t1_caee_ba, rdm_ca, optimize = einsum_type)
             temp += 1/2 * einsum('i,ixab,iyab,XxYy->XY', e_core, t1_caee_ab, t1_caee_ab, rdm_ccaa, optimize = einsum_type)
             temp += 1/2 * einsum('i,ixab,iyab,XyYx->XY', e_core, t1_caee_ab, t1_caee_ab, rdm_ccaa, optimize = einsum_type)
             temp -= 1/4 * einsum('i,ixab,iyba,XxYy->XY', e_core, t1_caee_ab, t1_caee_ba, rdm_ccaa, optimize = einsum_type)
@@ -5212,34 +5235,16 @@ def compute_t2_0pp_singles(mr_adc):
             temp -= 1/4 * einsum('Yxyz,izab,iwba,Xyxw->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_ccaa, optimize = einsum_type)
             temp += 1/2 * einsum('xyzw,ixab,iYab,Xzyw->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_ccaa, optimize = einsum_type)
             temp -= 1/4 * einsum('xyzw,ixab,iYba,Xzyw->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_ccaa, optimize = einsum_type)
-            temp += 1/3 * einsum('xyzw,ixab,iuab,XywYuz->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XywYzu->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XywuYz->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XywuzY->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XywzYu->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XywzuY->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/3 * einsum('xyzw,ixab,iuab,XzuYwy->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XzuYyw->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XzuwYy->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XzuwyY->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XzuyYw->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuab,XzuywY->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuba,XywYuz->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XywYzu->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XywuYz->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XywuzY->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XywzYu->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XywzuY->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/6 * einsum('xyzw,ixab,iuba,XzuYwy->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XzuYyw->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XzuwYy->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XzuwyY->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XzuyYw->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
-            temp += 1/12 * einsum('xyzw,ixab,iuba,XzuywY->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/2 * einsum('xyzw,ixab,iuab,XywYuz->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
+            temp += 1/2 * einsum('xyzw,ixab,iuab,XzuYwy->XY', v_aaaa, t1_caee_ab, t1_caee_ab, rdm_cccaaa, optimize = einsum_type)
+            temp -= 1/4 * einsum('xyzw,ixab,iuba,XywYuz->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
+            temp -= 1/4 * einsum('xyzw,ixab,iuba,XzuYwy->XY', v_aaaa, t1_caee_ab, t1_caee_ba, rdm_cccaaa, optimize = einsum_type)
 
-            V1 += temp
+            V1_m1 += temp
             mr_adc.log.timer_debug("contracting t1.caee", *cput1)
-        del(e_extern, t1_caee_ab, t1_caee_ba)
+            del(t1_caee_ab, t1_caee_ba)
+
+        V1 += V1_m1
 
     ## t1_ccee 
     def compute_V1__t1_0(mr_adc, V1):
@@ -5252,8 +5257,10 @@ def compute_t2_0pp_singles(mr_adc):
 
         ## Reduced density matrices
         rdm_ca = mr_adc.rdm.ca 
+        
+        V1_0 = np.zeros_like(V1)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern], ntensors = 3)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.cece [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -5267,11 +5274,10 @@ def compute_t2_0pp_singles(mr_adc):
             temp =- 2 * einsum('ijab,iajb,XY->XY', t1_ccee, v_cece, rdm_ca, optimize = einsum_type)
             temp += einsum('ijab,jaib,XY->XY', t1_ccee, v_cece, rdm_ca, optimize = einsum_type)
 
-            V1 += temp
+            V1_0 += temp
             mr_adc.log.timer_debug("contracting v2e.cece", *cput1)
-        del(t1_ccee, v_cece)
+            del(t1_ccee, v_cece)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern], ntensors = 3)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("t1.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -5288,9 +5294,11 @@ def compute_t2_0pp_singles(mr_adc):
             temp += 2 * einsum('i,ijab,ijab,XY->XY', e_core, t1_ccee_ab, t1_ccee_ab, rdm_ca, optimize = einsum_type)
             temp -= einsum('i,ijab,ijba,XY->XY', e_core, t1_ccee_ab, t1_ccee_ba, rdm_ca, optimize = einsum_type)
  
-            V1 += temp
+            V1_0 += temp
             mr_adc.log.timer_debug("contracting t1.ccee", *cput1)
-        del(e_extern, t1_ccee_ab, t1_ccee_ba)
+            del(e_extern, t1_ccee_ab, t1_ccee_ba)
+        
+        V1 += V1_0
 
     ## t1_ccae 
     def compute_V1__t1_p1(mr_adc, V1):
@@ -5404,7 +5412,6 @@ def compute_t2_0pp_singles(mr_adc):
         V1_p1 -= 1/2 * einsum('xyzw,ijxa,jiwa,XzYy->XY', v_aaaa, t1_ccae, t1_ccae, rdm_ccaa, optimize = einsum_type)
         V1_p1 += einsum('xyzw,ijxa,jiya,XzYw->XY', v_aaaa, t1_ccae, t1_ccae, rdm_ccaa, optimize = einsum_type)
         V1 += V1_p1
-        #print (">> Norm of t1_p1 contribution:                     %20.12f\n" % (np.linalg.norm(V1_p1)))
 
 
     ## t1_ccaa 
