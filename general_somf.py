@@ -189,16 +189,9 @@ def osc_strength_soc(interface, en_soc, evec_soc, rdm,  I_total, gs_index = 0):
         # Looping over states I,J
         for I in range(n_micro_states):
             for J in range(n_micro_states):
-                #if  ((S_total[I]-S_total[J])<1e-8) and ((ms_total[I]-ms_total[J])<1e-8):
                 i = I_total[I]
                 j = I_total[J]
-                #rdm_mo = np.zeros((nmo, nmo),dtype='complex')  # Reset RDM in MO Basis   
-                #trdm_ca = nevpt.interface.compute_rdm1(wfn[i], wfn[j], nevpt.ref_nelecas[j])
-                #rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = trdm_ca
-                #if I == J:
-                #    rdm_mo[:ncore, :ncore] = 2 * np.eye(nevpt.ncore)
                 rdm_mo = rdm[0,i,j] + rdm[1,i,j]
-                
                 rdm_qd += np.conj(evec_soc)[I, state] * rdm_mo * evec_soc[J, gs_index]
 
         # Create Dipole Moment Operator with RDM

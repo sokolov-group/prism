@@ -174,6 +174,17 @@ class NEVPT:
           en = self.en
 
           en_soc, evec_soc, S_total, ms_total, I_total = general_somf.generalSOC(self.interface, en, rdm, S, ms)
+          
+          rdm_mo = rdm[0] + rdm[1]
+          I_evec_soc = []
+          I_evec_soc.append(I_total)
+          I_evec_soc.append(evec_soc)
+          from prism import nevpt2
+          osc = nevpt2.osc_strength_test(self.interface, en_soc,rdm_mo, I_evec_soc)
+          print("Oscillator strenth:")
+          for i in osc:
+             print("%14.8f"%((i)))
+
           osc = general_somf.osc_strength_soc(self.interface, en_soc, evec_soc,rdm, I_total)
           print("Oscillator strenth:")
           for i in osc:

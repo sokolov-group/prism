@@ -137,11 +137,22 @@ def kernel(nevpt):
 
     if n_states > 1:
         # Get Oscillator Strengths
-        if nevpt.method == "qd-nevpt2":
-            osc_str = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec)
+        # Calculate ref RDM
+        if nevpt.method == "nevpt2":
+            evec = np.identity(n_states)
         else:
-            #osc_str = nevpt2.osc_strength(nevpt, e_tot)
-            osc_str = nevpt2.osc_strength_test(nevpt, e_tot)
+            evec =  h_evec
+        wfn = np.einsum('ij,iab->jab',evec,nevpt.ref_wfn)
+        wfn = list(wfn)
+        rdm_mo = np.zeros((n_states,n_states,nevpt.nmo, nevpt.nmo), dtype='complex')
+        for I in range(n_states):
+            for J in range(n_states): 
+                rdm_ca = nevpt.interface.compute_rdm1(wfn[I], wfn[J], nevpt.ref_nelecas[I])
+                rdm_mo[I,J,nevpt.ncore:nevpt.ncore + nevpt.ncas ,nevpt.ncore:nevpt.ncore + nevpt.ncas] = rdm_ca
+            if I == J:
+                rdm_mo[I,J,:nevpt.ncore, :nevpt.ncore] = 2 * np.eye(nevpt.ncore)
+        
+        osc_str = nevpt2.osc_strength_test(nevpt.interface, e_tot,rdm_mo)
 
         # Update spin multiplicity
         spin_mult = nevpt.ref_wfn_spin_mult

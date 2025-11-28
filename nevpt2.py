@@ -153,7 +153,7 @@ def osc_strength(nevpt, en, gs_index = 0):
 
     return osc_total
 
-def osc_strength_test(interface, en, evec=None, evec_soc=None,I_total=None, gs_index = 0):
+def osc_strength_test(interface, en, rdm_mo, I_evec_soc=None, gs_index = 0):
     ncore = interface.ncore 
     dip_mom_ao = interface.dip_mom_ao
     mo_coeff = interface.mo
@@ -161,34 +161,18 @@ def osc_strength_test(interface, en, evec=None, evec_soc=None,I_total=None, gs_i
     ncas = interface.ncas
     dip_mom_mo = np.zeros_like(dip_mom_ao)
     n_states = len(en)
-
-    #If Nevpt2:
-    if evec is None:
-        evec = np.identity(n_states)
-    
+   
     #If spin-free:
-    if evec_soc is None:
-        evec_soc = np.identity(n_states)
+    if I_evec_soc is None:
         I_total=np.arange(n_states)
-
+        evec_soc = np.identity(n_states)
+    else:
+        I_total = I_evec_soc[0]
+        evec_soc = I_evec_soc[1]
 
     # Transform dipole moments from AO to MO basis
     for d in range(dip_mom_ao.shape[0]):
         dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
-
-
-    # Calculate ref RDM
-    wfn = np.einsum('ij,iab->jab',evec,interface.ref_wfn)
-    wfn = list(wfn)
-
-    rdm_mo = np.zeros((n_states,n_states,nmo, nmo), dtype='complex')
-    for I in range(n_states):
-        for J in range(n_states): 
-            rdm_ca = interface.interface.compute_rdm1(wfn[I], wfn[J], interface.ref_nelecas[I])
-            rdm_mo[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = rdm_ca
-            if I == J:
-                rdm_mo[I,J,:ncore, :ncore] = 2 * np.eye(interface.ncore)
-                
 
     # List to store Osc. Strength Values
     osc_total = []
@@ -197,13 +181,12 @@ def osc_strength_test(interface, en, evec=None, evec_soc=None,I_total=None, gs_i
         # Reset final transformed RDM
         rdm_qd = np.zeros((nmo, nmo),dtype='complex')
 
-        # Looping over states I,J    
+        # Looping over states i,j    
         for i in range(n_states):
             for j in range(n_states):
                 I = I_total[i]
                 J = I_total[j]
-  
-                rdm_qd += np.conj(evec_soc)[I, state] * rdm_mo[I,J] * evec_soc[J, gs_index]
+                rdm_qd += np.conj(evec_soc)[i, state] * rdm_mo[I,J] * evec_soc[j, gs_index]
 
         # Create Dipole Moment Operator with RDM
         dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
