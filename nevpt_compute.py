@@ -140,12 +140,16 @@ def kernel(nevpt):
         if nevpt.method == "qd-nevpt2":
             osc_str = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec)
         else:
-            osc_str = nevpt2.osc_strength(nevpt, e_tot)
+            #osc_str = nevpt2.osc_strength(nevpt, e_tot)
+            osc_str = nevpt2.osc_strength_test(nevpt, e_tot)
 
         # Update spin multiplicity
         spin_mult = nevpt.ref_wfn_spin_mult
         if nevpt.method == "qd-nevpt2":
             spin_mult = qd_nevpt2.determine_spin_mult(nevpt, h_evec)
+        
+        #SOC calculation requires method's spin multiplicity
+        nevpt.spin_mult = spin_mult
 
         h2ev = nevpt.interface.hartree_to_ev
         h2cm = nevpt.interface.hartree_to_inv_cm

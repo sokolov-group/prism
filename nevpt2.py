@@ -152,3 +152,69 @@ def osc_strength(nevpt, en, gs_index = 0):
         osc_total.append((osc_x + osc_y + osc_z).real)
 
     return osc_total
+
+def osc_strength_test(interface, en, evec=None, evec_soc=None,I_total=None, gs_index = 0):
+    ncore = interface.ncore 
+    dip_mom_ao = interface.dip_mom_ao
+    mo_coeff = interface.mo
+    nmo = interface.nmo
+    ncas = interface.ncas
+    dip_mom_mo = np.zeros_like(dip_mom_ao)
+    n_states = len(en)
+
+    #If Nevpt2:
+    if evec is None:
+        evec = np.identity(n_states)
+    
+    #If spin-free:
+    if evec_soc is None:
+        evec_soc = np.identity(n_states)
+        I_total=np.arange(n_states)
+
+
+    # Transform dipole moments from AO to MO basis
+    for d in range(dip_mom_ao.shape[0]):
+        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+
+
+    # Calculate ref RDM
+    wfn = np.einsum('ij,iab->jab',evec,interface.ref_wfn)
+    wfn = list(wfn)
+
+    rdm_mo = np.zeros((n_states,n_states,nmo, nmo), dtype='complex')
+    for I in range(n_states):
+        for J in range(n_states): 
+            rdm_ca = interface.interface.compute_rdm1(wfn[I], wfn[J], interface.ref_nelecas[I])
+            rdm_mo[I,J,ncore:ncore + ncas ,ncore:ncore + ncas] = rdm_ca
+            if I == J:
+                rdm_mo[I,J,:ncore, :ncore] = 2 * np.eye(interface.ncore)
+                
+
+    # List to store Osc. Strength Values
+    osc_total = []
+    # Looping over CAS States
+    for state in range(gs_index + 1, n_states):
+        # Reset final transformed RDM
+        rdm_qd = np.zeros((nmo, nmo),dtype='complex')
+
+        # Looping over states I,J    
+        for i in range(n_states):
+            for j in range(n_states):
+                I = I_total[i]
+                J = I_total[j]
+  
+                rdm_qd += np.conj(evec_soc)[I, state] * rdm_mo[I,J] * evec_soc[J, gs_index]
+
+        # Create Dipole Moment Operator with RDM
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
+ 
+        osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
+        osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
+        osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
+        
+        # Add Dipole Moment Components
+        osc_total.append((osc_x + osc_y + osc_z).real)
+
+    return osc_total

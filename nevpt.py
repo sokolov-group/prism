@@ -89,11 +89,11 @@ class NEVPT:
         self.soc = None
         self.uncontract = False
         self.soc_order = 1
-        self.interface.soc = self.soc
         self.interface.uncontract = self.uncontract
         self.interface.soc_order = self.soc_order
         self.evec = None
         self.en = None
+        self.spin_mult = None
         self.gtensor = False
 
         #For SOC in temporary
@@ -147,7 +147,7 @@ class NEVPT:
 
           # calculate method's S:
           from prism import qd_nevpt2
-          spin_mult_wfn = qd_nevpt2.determine_spin_mult(self,self.evec)
+          spin_mult_wfn = self.spin_mult
           S = [round((spin_mult-1)/2,2) for spin_mult in spin_mult_wfn] 
 
           # calculate method's Ms: 
