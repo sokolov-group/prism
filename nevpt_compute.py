@@ -152,7 +152,7 @@ def kernel(nevpt):
             if I == J:
                 rdm_mo[I,J,:nevpt.ncore, :nevpt.ncore] = 2 * np.eye(nevpt.ncore)
         
-        osc_str = nevpt2.osc_strength_test(nevpt.interface, e_tot,rdm_mo)
+        osc_str = nevpt.interface.osc_strength_general(e_tot, rdm_mo)
 
         # Update spin multiplicity
         spin_mult = nevpt.ref_wfn_spin_mult

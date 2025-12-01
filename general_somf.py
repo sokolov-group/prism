@@ -28,6 +28,7 @@ from pyscf.x2c import x2c
 from sympy.physics.quantum.cg import CG
 from pyscf.fci.direct_spin1 import trans_rdm1s
 from prism import qd_nevpt2
+from prism import nevpt2
 
 # Add python path for socutils:
 prism_path = os.path.dirname(os.path.abspath(__file__)) 
@@ -156,57 +157,79 @@ def generalSOC(interface, en, rdm, S, ms):
 
     H_sf = np.diag(E_spinstate).astype('complex')
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
-    print("\n Absolute energies in a.u |||| Excitation energies in a.u ||  eV ||  cm-1\n*****************************")
-    for e in en_soc:
-        print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-en_soc[0]),((e-en_soc[0])*27.2114),((e-en_soc[0])*219474.63)))
+
+    #calculate Osc Str
+    osc_str = interface.osc_strength_general(en_soc,rdm[0]+rdm[1], (I_total,evec_soc))
+
+    h2ev = interface.hartree_to_ev
+    h2cm = interface.hartree_to_inv_cm
+
+    #print("\n Absolute energies in a.u |||| Excitation energies in a.u ||  eV ||  cm-1\n*****************************")
+    #for e in en_soc:
+    #    print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-en_soc[0]),((e-en_soc[0])*27.2114),((e-en_soc[0])*219474.63)))
+    print("\nSummary of results for the SOC calculation with the %s Hamiltionian:" % (soc))
+
+    print("-----------------------------------------------------------------------------------------------------------------")
+    print("  State            E(total)           dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. ")
+    print("-----------------------------------------------------------------------------------------------------------------")
     
+    e_gs = en_soc[0]
+
+    for p in range(nstate_total):
+        de = en_soc[p] - e_gs
+        de_ev = de * h2ev
+        de_cm = de * h2cm
+        if p == 0 or abs(de) < 1e-5:
+            print("%5d       %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), en_soc[p], de, de_ev, " ", de_cm, " "))
+        else:
+            de_nm = 10000000 / de_cm
+            print("%5d       %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), en_soc[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+    print("-----------------------------------------------------------------------------------------------------------------")
     return en_soc, evec_soc, S_total, ms_total, I_total 
 
-
-
-def osc_strength_soc(interface, en_soc, evec_soc, rdm,  I_total, gs_index = 0):
-
-    ncore = interface.ncore 
-    n_states = len(rdm[0,0])
-    n_micro_states = len(en_soc)
-    dip_mom_ao = interface.dip_mom_ao
-    mo_coeff = interface.mo
-    nmo = interface.nmo
-    ncas = interface.ncas
-    dip_mom_mo = np.zeros_like(dip_mom_ao)
-
-    # Transform dipole moments from AO to MO basis
-    for d in range(dip_mom_ao.shape[0]):
-        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
-
-    # List to store Osc. Strength Values
-    osc_total = []
-    # Looping over CAS States
-    for state in range(gs_index + 1, n_micro_states):
-        # Reset final transformed RDM
-        rdm_qd = np.zeros((nmo, nmo),dtype='complex')
-
-        # Looping over states I,J
-        for I in range(n_micro_states):
-            for J in range(n_micro_states):
-                i = I_total[I]
-                j = I_total[J]
-                rdm_mo = rdm[0,i,j] + rdm[1,i,j]
-                rdm_qd += np.conj(evec_soc)[I, state] * rdm_mo * evec_soc[J, gs_index]
-
-        # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
- 
-        osc_x = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
-        osc_y = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
-        osc_z = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
-
-        # Add Dipole Moment Components
-        osc_total.append((osc_x + osc_y + osc_z).real)
-
-    return osc_total
+#def osc_strength_soc(interface, en_soc, evec_soc, rdm,  I_total, gs_index = 0):
+#
+#   ncore = interface.ncore 
+#   n_states = len(rdm[0,0])
+#   n_micro_states = len(en_soc)
+#   dip_mom_ao = interface.dip_mom_ao
+#   mo_coeff = interface.mo
+#   nmo = interface.nmo
+#   ncas = interface.ncas
+#   dip_mom_mo = np.zeros_like(dip_mom_ao)
+#
+#   # Transform dipole moments from AO to MO basis
+#   for d in range(dip_mom_ao.shape[0]):
+#       dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+#
+#   # List to store Osc. Strength Values
+#   osc_total = []
+#   # Looping over CAS States
+#   for state in range(gs_index + 1, n_micro_states):
+#       # Reset final transformed RDM
+#       rdm_qd = np.zeros((nmo, nmo),dtype='complex')
+#
+#       # Looping over states I,J
+#       for I in range(n_micro_states):
+#           for J in range(n_micro_states):
+#               i = I_total[I]
+#               j = I_total[J]
+#               rdm_mo = rdm[0,i,j] + rdm[1,i,j]
+#               rdm_qd += np.conj(evec_soc)[I, state] * rdm_mo * evec_soc[J, gs_index]
+#
+#       # Create Dipole Moment Operator with RDM
+#       dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
+#       dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
+#       dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
+#
+#       osc_x = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
+#       osc_y = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
+#       osc_z = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
+#
+#       # Add Dipole Moment Components
+#       osc_total.append((osc_x + osc_y + osc_z).real)
+#
+#   return osc_total
             
 def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0):
     print("Calculating g-tensor(general)...")
@@ -344,6 +367,9 @@ def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0)
     #G_tensor_en, G_tensor_evec = np.linalg.eigh(G_tensor)
     G_sq_en = np.sqrt(G_en)
     #G_tensor_sq_en = np.sqrt(G_tensor_en)
+    print("magnetic axis=")
+    print(G_evec)
+    print("g-factor=")
     print("%14.6f, %14.6f, %14.6f, ge=2.002319"%(G_sq_en[0],G_sq_en[1],G_sq_en[2]))
     print("%14.6f, %14.6f, %14.6f"%(G_sq_en[0]-2.002319,G_sq_en[1]-2.002319,G_sq_en[2]-2.002319))
     print("%14.3f, %14.3f, %14.3f, ptt(general)"%(1000*(G_sq_en[0]-2.002319),1000*(G_sq_en[1]-2.002319),1000*(G_sq_en[2]-2.002319)))

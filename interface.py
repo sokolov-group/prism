@@ -614,4 +614,53 @@ class PYSCF:
 
         return rdm1, rdm2, rdm3, rdm4
     
+    def osc_strength_general(self, en, rdm_mo, I_evec_soc=None, gs_index = 0):
+        ncore = self.ncore 
+        dip_mom_ao = self.dip_mom_ao
+        mo_coeff = self.mo
+        nmo = self.nmo
+        ncas = self.ncas
+        dip_mom_mo = np.zeros_like(dip_mom_ao)
+        n_states = len(en)
+    
+        #If spin-free:
+        if I_evec_soc is None:
+            I_total=np.arange(n_states)
+            evec_soc = np.identity(n_states)
+        else:
+            I_total = I_evec_soc[0]
+            evec_soc = I_evec_soc[1]
+
+        # Transform dipole moments from AO to MO basis
+        for d in range(dip_mom_ao.shape[0]):
+            dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+
+        # List to store Osc. Strength Values
+        osc_total = []
+        # Looping over CAS States
+        for state in range(gs_index + 1, n_states):
+            # Reset final transformed RDM
+            rdm_qd = np.zeros((nmo, nmo),dtype='complex')
+
+            # Looping over states i,j    
+            for i in range(n_states):
+                for j in range(n_states):
+                    I = I_total[i]
+                    J = I_total[j]
+                    rdm_qd += np.conj(evec_soc)[i, state] * rdm_mo[I,J] * evec_soc[j, gs_index]
+
+            # Create Dipole Moment Operator with RDM
+            dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
+            dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
+            dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
+    
+            osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
+            osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
+            osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
+
+            # Add Dipole Moment Components
+            osc_total.append((osc_x + osc_y + osc_z).real)
+
+        return osc_total
+    
   
