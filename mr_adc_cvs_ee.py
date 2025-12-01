@@ -34766,6 +34766,10 @@ def compute_trans_moments(mr_adc, U):
 
     TY = np.zeros((nroots, nmo, nmo))
 
+    # Renormalize eigenvectors
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
+        U = renormalize_eigenvectors(mr_adc, U)
+
     # Transform eigenvectors to the non-orthogonal basis
     Y = np.zeros((nroots, dim))
     for i in range(nroots):
@@ -34773,9 +34777,6 @@ def compute_trans_moments(mr_adc, U):
     del U
     
     #norm_function(mr_adc, U, Y)
-
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
-        Y = renormalize_eigenvectors(mr_adc, Y)
 
     Y_KC = Y[:, ce].reshape(nroots, ncvs, nextern) 
     Y_KW = Y[:, ca].reshape(nroots, ncvs, ncas) 
@@ -35127,7 +35128,7 @@ def analyze_eigenvector(mr_adc, de, U):
         print("--------------------------------------------------------\n")
 
 
-def renormalize_eigenvectors(mr_adc, Y):
+def renormalize_eigenvectors(mr_adc, U):
 
     # Variables from kernel
     ncvs    = mr_adc.ncvs
@@ -35145,27 +35146,19 @@ def renormalize_eigenvectors(mr_adc, Y):
     # Dot product
     dot = mr_adc.interface.dot
 
-    # Non-Orthogonal Excitation Manifold
-    ce = mr_adc.h0.ce
-    ca = mr_adc.h0.ca
+    ## Orthogonal Excitation Manifolds
+    ca_caaa = mr_adc.h_orth.ca_caaa
+    ce_caea = mr_adc.h_orth.ce_caea
 
-    ccaa = mr_adc.h1.ccaa
-    ccea = mr_adc.h1.ccea
-    ccee = mr_adc.h1.ccee
-    caee = mr_adc.h1.caee
-
-    caea__aaaa = mr_adc.h1.caea__aaaa
-    caea__abab = mr_adc.h1.caea__abab
-    caea__baab = mr_adc.h1.caea__baab
-
-    caaa__aaaa = mr_adc.h1.caaa__aaaa
-    caaa__abab = mr_adc.h1.caaa__abab
-
-    if nval > 0:
-        cvaa = mr_adc.h1.cvaa
-        cvea__abab = mr_adc.h1.cvea__abab
-        cvea__baab = mr_adc.h1.cvea__baab
-        cvee = mr_adc.h1.cvee 
+    ccaa = mr_adc.h_orth.ccaa      
+    ccea = mr_adc.h_orth.ccea
+    ccee = mr_adc.h_orth.ccee
+    caee = mr_adc.h_orth.caee
+    if mr_adc.nval > 0:
+        cvaa = mr_adc.h_orth.cvaa     
+        cvea__abab = mr_adc.h_orth.cvea__abab
+        cvea__baab = mr_adc.h_orth.cvea__baab
+        cvee = mr_adc.h_orth.cvee
 
     # Antisymmetric Dot Product
     def antisym_dot(tensor, asym_axes):
@@ -35177,45 +35170,31 @@ def renormalize_eigenvectors(mr_adc, Y):
         tensor_flat = tensor.ravel()
         return dot(tensor_flat, tensor_flat)
 
-    renormY = Y.copy()
+    renormU = U.copy()
 
     for state in range(nroots):
-        # Singles
-        YdotY = square(Y[state, ce]) + square(Y[state, ca])
+        # Semi-Internal
+        UdotU = square(U[state, ce_caea]) + square(U[state, ca_caaa])
 
-        # Compound Indices
-        n_aa = mr_adc.h1.n_aa 
-        aa_tril_ind = mr_adc.h1.aa_tril_ind 
-
-        Y_KWUV__aaaa = np.zeros((ncvs, ncas, ncas, ncas))
-        Y_KWUV__aaaa[:, :, aa_tril_ind[0], aa_tril_ind[1]] += Y[state, caaa__aaaa].reshape(ncvs, ncas, n_aa).copy()
-        Y_KWUV__aaaa[:, :, aa_tril_ind[1], aa_tril_ind[0]] -= Y[state, caaa__aaaa].reshape(ncvs, ncas, n_aa).copy()
- 
         # Doubles
-        YdotY += (
-              antisym_dot(Y[state, ccaa].reshape(ncvs, ncvs, ncas, ncas), (2, 3))
-            + antisym_dot(Y[state, ccee].reshape(ncvs, ncvs, nextern, nextern), (2, 3))
-            + 2 * antisym_dot(Y[state, ccea].reshape(ncvs, ncvs, nextern, ncas), (0, 1))
-            + 2 * antisym_dot(Y[state, caee].reshape(ncvs, ncas, nextern, nextern), (2, 3))
-
-            + 0.5 * square(Y_KWUV__aaaa) + square(Y[state, caaa__abab].reshape(ncvs, ncas, ncas, ncas))
-
-            + square(Y[state, caea__aaaa].reshape(ncvs, ncas, nextern, ncas))
-            + square(Y[state, caea__abab].reshape(ncvs, ncas, nextern, ncas))
-            + square(Y[state, caea__baab].reshape(ncvs, ncas, nextern, ncas))
+        UdotU += (
+              antisym_dot(U[state, ccaa].reshape(ncvs, ncvs, ncas, ncas), (2, 3))
+            + antisym_dot(U[state, ccee].reshape(ncvs, ncvs, nextern, nextern), (2, 3))
+            + 2 * antisym_dot(U[state, ccea].reshape(ncvs, ncvs, nextern, -1), (0, 1))
+            + 2 * antisym_dot(U[state, caee].reshape(ncvs, -1, nextern, nextern), (2, 3))
         )
 
         if nval > 0:
-            YdotY += (
-                  2 * antisym_dot(Y[state, cvaa].reshape(ncvs, nval, ncas, ncas), (2, 3))
-                + 2 * antisym_dot(Y[state, cvee].reshape(ncvs, nval, nextern, nextern), (2, 3))
+            UdotU += (
+                  2 * antisym_dot(U[state, cvaa].reshape(ncvs, nval, ncas, ncas), (2, 3))
+                + 2 * antisym_dot(U[state, cvee].reshape(ncvs, nval, nextern, nextern), (2, 3))
 
-                + 2 * square(Y[state, cvea__abab].reshape(ncvs, nval, nextern, ncas))
-                + 2 * square(Y[state, cvea__baab].reshape(ncvs, nval, nextern, ncas))
-                + 2 * dot(Y[state, cvea__abab].reshape(ncvs, nval, nextern, ncas).ravel(), Y[state, cvea__baab].reshape(ncvs, nval, nextern, ncas).ravel())
+                + 2 * square(U[state, cvea__abab].reshape(ncvs, nval, nextern, -1))
+                + 2 * square(U[state, cvea__baab].reshape(ncvs, nval, nextern, -1))
+                + 2 * dot(U[state, cvea__abab].reshape(ncvs, nval, nextern, -1).ravel(), U[state, cvea__baab].reshape(ncvs, nval, nextern, -1).ravel())
             )
 
-        renormY[state] /= np.sqrt(YdotY)
+        renormU[state] /= np.sqrt(UdotU)
 
-    return renormY
+    return renormU
 
