@@ -38,7 +38,7 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def getSOC_integrals(interface, soc="breit-pauli", unc=True):
+def getSOC_integrals(interface, unc=True):
     
     mo = interface.mo
     nmo = interface.nmo
@@ -50,37 +50,44 @@ def getSOC_integrals(interface, soc="breit-pauli", unc=True):
     # Build 1e-density matrix
     rdm1ao = interface.mc.make_rdm1() 
 
+    # Uncontract basis:
     xmol, contr_coeff = None, None
     if unc:
         xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
     else:
         xmol, contr_coeff = mol, np.eye(mol.nao_nr())
- 
-        nbasis = xmol.nao_nr()
-        hsocint = np.zeros((3, nbasis, nbasis))
+
+    # Get integrals:
+    nbasis = xmol.nao_nr()
+    hsocint = np.zeros((3, nbasis, nbasis))
    
-    if (soc=="breit-pauli"):
+    if (interface.soc=="breit-pauli"):
         hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_wso(xmol)
         hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
 
-    elif (soc=="x2c"):
+    elif (interface.soc=="x2c-1"):
         hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
+        hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
+    
+    elif (interface.soc=="x2c-2"):
+        hsocint = np.zeros((3, nbasis, nbasis))
+        hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
+        hsocint += prefactor * get_hso1e_x2c2(xmol) 
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
 
     else:
         raise Exception("Incorrect SOC flag in input file!!")
 
-    ###contract########
+    ### Recontract the basis:
     h_soc_all_contr = np.zeros((3, nao, nao))
     for comp in range(3):
         h_soc_all_contr[comp] = reduce(np.dot, (contr_coeff.T, hsocint[comp], contr_coeff))
 
-    ##### Convert to MO basis:
+    ### Convert to MO basis:
     h_soc_all_contr = np.einsum('xpq,pi,qj->xij',h_soc_all_contr, mo, mo)
-    
     h_soc_total = np.zeros((3, nmo, nmo), dtype = 'complex')    
     for comp in range(3):
         h_soc_total[comp] =-1j*(h_soc_all_contr[comp].astype('complex'))
@@ -107,7 +114,7 @@ def generalSOC(interface, en, rdm, S, ms):
             rdm_wigner[I,J] = T_z 
 
     # Get SOC integrals:
-    h_soc = getSOC_integrals(interface, soc=soc, unc=unc)
+    h_soc = getSOC_integrals(interface, unc=unc)
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
     h1_zero = h_soc[2]
@@ -373,3 +380,168 @@ def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0)
     print("%14.6f, %14.6f, %14.6f, ge=2.002319"%(G_sq_en[0],G_sq_en[1],G_sq_en[2]))
     print("%14.6f, %14.6f, %14.6f"%(G_sq_en[0]-2.002319,G_sq_en[1]-2.002319,G_sq_en[2]-2.002319))
     print("%14.3f, %14.3f, %14.3f, ptt(general)"%(1000*(G_sq_en[0]-2.002319),1000*(G_sq_en[1]-2.002319),1000*(G_sq_en[2]-2.002319)))
+
+
+## DKH-2 specific functionalities:
+
+def get_hxr(mol):
+
+    c = LIGHT_SPEED
+    t = mol.intor_symmetric('int1e_kin')
+    v = mol.intor_symmetric('int1e_nuc')
+    s = mol.intor_symmetric('int1e_ovlp')
+    w = mol.intor_symmetric('int1e_pnucp')
+    h1p, x, rp, h1m, xb, rm = _x2c1e_hxrmat(t, v, w, s, c)
+    
+    return s, t, h1p, x, rp, h1m, xb, rm
+
+
+def _x2c1e_hxrmat(t, v, w, s, c):
+    nao = s.shape[0]
+    n2 = nao * 2
+    h = numpy.zeros((n2, n2), dtype=v.dtype)
+    m = numpy.zeros((n2, n2), dtype=v.dtype)
+    h[:nao, :nao] = v
+    h[:nao, nao:] = t
+    h[nao:, :nao] = t
+    h[nao:, nao:] = w * (.25 / c**2) - t
+    m[:nao, :nao] = s
+    m[nao:, nao:] = t * (.5 / c**2)
+
+    e, a = scipy.linalg.eigh(h, m)
+    cl = a[:nao, nao:]
+    cs = a[nao:, nao:]
+
+    b = numpy.dot(cl, cl.T.conj())
+    x = reduce(numpy.dot, (cs, cl.T.conj(), numpy.linalg.inv(b)))
+
+    s1 = s + reduce(numpy.dot, (x.T.conj(), t, x)) * (.5 / c**2)
+    #tx = reduce(numpy.dot, (t, x))
+    h1 = (h[:nao, :nao] + h[:nao, nao:].dot(x) + x.T.conj().dot(h[nao:, :nao]) +
+          reduce(numpy.dot, (x.T.conj(), h[nao:, nao:], x)))
+
+    sa = x2c._invsqrt(s)
+    sb = x2c._invsqrt(reduce(numpy.dot, (sa, s1, sa)))
+    r = reduce(numpy.dot, (sa, sb, sa, s))
+    h1_plus = reduce(numpy.dot, (r.T.conj(), h1, r))
+
+    # Add h_minus, l_minus, r_minus, x_bar: ADDED BY RAJAT
+    x_bar = -(reduce(numpy.dot, (numpy.linalg.inv(s), x.T.conj(), (0.5 / c**2)*t))) 
+    
+    s_min_bar = (0.5 / c**2)*t + reduce(numpy.dot, (x_bar.T.conj(), s, x_bar))
+    s2_invsqrt = x2c._invsqrt((0.5/c**2)*t)
+    s2_smin_s2_invsqrt = x2c._invsqrt(reduce(numpy.dot, (s2_invsqrt, s_min_bar, s2_invsqrt)))
+    r_min = reduce(numpy.dot, (s2_invsqrt, s2_smin_s2_invsqrt, s2_invsqrt, ((0.5/c**2)*t)))
+    
+    l_min = (h[nao:, nao:] + h[nao:, :nao].dot(x_bar) + (x_bar.T.conj()).dot(h[:nao, nao:]) + 
+              reduce(numpy.dot, (x_bar.T.conj(), h[:nao, :nao], x_bar)))
+    h1_min = reduce(numpy.dot, (r_min.T.conj(), l_min, r_min))
+
+    return h1_plus, x, r, h1_min, x_bar, r_min
+
+
+def get_hso1e_x2c2(mol):
+    '''One electron DKH-2 type operator'''
+    s, t, h1p, x, rp, h1m, xb, rm = get_hxr(mol)
+    c = LIGHT_SPEED
+    ep, cp = scipy.linalg.eigh(h1p, s)
+    em, cm = scipy.linalg.eigh(h1m, ((0.5/c**2)*t))
+    
+    #Build o1:
+    nb = x.shape[0]
+    O1 = numpy.zeros((3, nb, nb))
+    o1 = numpy.zeros((3, nb, nb))
+    wso = get_wso(mol)
+    for ic in range(3):
+        O1[ic] = (0.25/c**2) * reduce(numpy.dot, (rp.T.conj(), x.T.conj(), wso[ic], rm))
+        o1[ic] = reduce(numpy.dot, (cp.T.conj(), O1[ic], cm))
+    
+    # Construct w1:
+    w1 = numpy.zeros((3, nb, nb))
+    for ic in range(3):
+        for p in range(nb):
+            for q in range(nb):
+                w1[ic, p, q] -= o1[ic, p, q]/(em[q] - ep[p])
+
+    del o1
+    # Construct W1:
+    W1 = numpy.zeros((3, nb, nb))
+    for ic in range(3):
+        W1[ic] = (0.5/c**2) * reduce(numpy.dot, (s, cp, w1[ic], cm.T.conj(), t))
+
+    
+    # Construct h1e_sd2_plus: Eq. 91 
+    tinv_w1 = numpy.zeros((3, nb, nb))
+    tinv_o1 = numpy.zeros((3, nb, nb))
+    for ic in range(3):
+        tinv_w1[ic] = numpy.dot(numpy.linalg.inv(t), W1[ic].T.conj())
+        tinv_o1[ic] = numpy.dot(numpy.linalg.inv(t), O1[ic].T.conj())
+
+    h1e_sox2c2 = numpy.zeros((3, nb, nb))
+    h1e_sox2c2[0] = numpy.dot(O1[1],tinv_w1[2]) - numpy.dot(O1[2],tinv_w1[1])
+    h1e_sox2c2[1] = numpy.dot(O1[2],tinv_w1[0]) - numpy.dot(O1[0],tinv_w1[2])
+    h1e_sox2c2[2] = numpy.dot(O1[0],tinv_w1[1]) - numpy.dot(O1[1],tinv_w1[0])
+    
+    h1e_sox2c2[0] += numpy.dot(W1[1],tinv_o1[2]) - numpy.dot(W1[2],tinv_o1[1])
+    h1e_sox2c2[1] += numpy.dot(W1[2],tinv_o1[0]) - numpy.dot(W1[0],tinv_o1[2])
+    h1e_sox2c2[2] += numpy.dot(W1[0],tinv_o1[1]) - numpy.dot(W1[1],tinv_o1[0])
+
+    # Sanity checks:
+    print(numpy.linalg.norm(h1e_sox2c2[0] + h1e_sox2c2[0].T.conj()))
+    print(numpy.linalg.norm(h1e_sox2c2[1] + h1e_sox2c2[1].T.conj()))
+    print(numpy.linalg.norm(h1e_sox2c2[2] + h1e_sox2c2[2].T.conj()))
+
+    return h1e_sox2c2
+
+
+def get_hsf1e_x2c2(mol, unc=True):
+    
+    if unc:
+        xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
+
+    '''One electron DKH-2 type operator'''
+    s, t, h1p, x, rp, h1m, xb, rm = get_hxr(mol)
+    c = LIGHT_SPEED
+    ep, cp = scipy.linalg.eigh(h1p, s)
+    em, cm = scipy.linalg.eigh(h1m, ((0.5/c**2)*t))
+
+    #Build o1:
+    nb = x.shape[0]
+    O1 = numpy.zeros((3, nb, nb))
+    o1 = numpy.zeros((3, nb, nb))
+    wso = get_wso(xmol)
+    for ic in range(3):
+        O1[ic] = (0.25/c**2) * reduce(numpy.dot, (rp.T.conj(), x.T.conj(), wso[ic], rm))
+        o1[ic] = reduce(numpy.dot, (cp.T.conj(), O1[ic], cm))
+    
+    # Construct w1:
+    w1 = numpy.zeros((3, nb, nb))
+    for ic in range(3):
+        for p in range(nb):
+            for q in range(nb):
+                w1[ic, p, q] -= o1[ic, p, q]/(em[q] - ep[p])
+
+    del o1
+    # Construct W1:
+    W1 = numpy.zeros((3, nb, nb))
+    for ic in range(3):
+        W1[ic] = (0.5/c**2) * reduce(numpy.dot, (s, cp, w1[ic], cm.T.conj(), t))
+
+
+    tinv_w1 = numpy.zeros((3, nb, nb))
+    tinv_o1 = numpy.zeros((3, nb, nb))
+    for ic in range(3):
+        tinv_w1[ic] = numpy.dot(numpy.linalg.inv(t), W1[ic].T.conj())
+        tinv_o1[ic] = numpy.dot(numpy.linalg.inv(t), O1[ic].T.conj())
+
+    # Construct h1e_sf2_plus: Eq. 90
+    h1e_sf2 = (numpy.dot(O1[0],tinv_w1[0]) + numpy.dot(O1[1],tinv_w1[1]) + numpy.dot(O1[2],tinv_w1[2]))+(numpy.dot(W1[0],tinv_o1[0]) + numpy.dot(W1[1],tinv_o1[1]) + numpy.dot(W1[2],tinv_o1[2]))
+    h1e_sf2 = (c**2) * h1e_sf2
+
+    # Recontract:
+    h1e_sf2 = reduce(numpy.dot, (contr_coeff.T, h1e_sf2, contr_coeff))
+    h1e_sf1 = reduce(numpy.dot, (contr_coeff.T, h1p, contr_coeff))
+   
+    return h1e_sfx2c1, h1e_sfx2c2
+
+
