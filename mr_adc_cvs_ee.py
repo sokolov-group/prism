@@ -32651,7 +32651,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
             compute_sigma_vector__H1__h1_h0__CAEA_CE__V_XXEE(mr_adc, X, sigma, v_xxee)
             compute_sigma_vector__H1__h1_h0__CAEA_CE__V_XEEX(mr_adc, X, sigma, v_xeex)
-            #del(X)
 
             ## CAEA block
             X_aaaa = np.ascontiguousarray(Xt[caea__aaaa].reshape(ncvs, ncas, nextern, ncas))
@@ -32773,7 +32772,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             # sigma_KLCW = np.zeros_like(X)
 
             # # v_aeee
-            # chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 12)
+            # chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 4)
             # for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             #     cput1 = (logger.process_clock(), logger.perf_counter())
             #     mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -32782,49 +32781,21 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             #     v_aeee = mr_adc.v2e.aeee[:, :, s_chunk:f_chunk, :]
 
             #     ## CCEA block
-            #     X_aaaa = np.zeros((ncvs, ncvs, nextern, ncas))
-            #     X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] += Xt[ccea__aaaa].reshape(-1, nextern, ncas).copy()
-            #     X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] -= Xt[ccea__aaaa].reshape(-1, nextern, ncas).copy()
-         
-            #     X_bbbb = np.zeros((ncvs, ncvs, nextern, ncas))
-            #     X_bbbb[cc_tril_ind[0], cc_tril_ind[1]] += Xt[ccea__bbbb].reshape(-1, nextern, ncas).copy()
-            #     X_bbbb[cc_tril_ind[1], cc_tril_ind[0]] -= Xt[ccea__bbbb].reshape(-1, nextern, ncas).copy()
-         
-            #     X_abab = np.ascontiguousarray(Xt[ccea__abab].reshape(ncvs, ncvs, nextern, ncas))
-            #     X_abba = np.ascontiguousarray(Xt[ccea__abba].reshape(ncvs, ncvs, nextern, ncas))
+            #     X = np.ascontiguousarray(Xt[ccea].reshape(ncvs, ncvs, nextern, ncas))
 
-            #     h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCEA__V_AEEE(mr_adc, X_aaaa[:, :, s_chunk:f_chunk, :], X_abab[:, :, s_chunk:f_chunk, :], X_abba[:, :, s_chunk:f_chunk, :], X_bbbb[:, :, s_chunk:f_chunk, :], sigma, v_aeee)
-            #     del(X_aaaa, X_abab, X_abba, X_bbbb)
+            #     h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCEA__V_AEEE(mr_adc, X[:, :, s_chunk:f_chunk, :], sigma, v_aeee)
 
             #     ## CCEE block
-            #     X_aaaa = np.zeros((ncvs, ncvs, nextern, nextern))
-            #     temp = np.zeros((n_cc, nextern, nextern))
-            #     temp[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[ccee__aaaa].reshape(n_cc, n_ee).copy()
-            #     temp[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[ccee__aaaa].reshape(n_cc, n_ee).copy()
-            #     X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] += temp
-            #     X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] -= temp 
-        
-            #     X_bbbb = np.zeros((ncvs, ncvs, nextern, nextern))
-            #     temp = np.zeros((n_cc, nextern, nextern))
-            #     temp[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[ccee__bbbb].reshape(n_cc, n_ee).copy()
-            #     temp[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[ccee__bbbb].reshape(n_cc, n_ee).copy()
-            #     X_bbbb[cc_tril_ind[0], cc_tril_ind[1]] += temp
-            #     X_bbbb[cc_tril_ind[1], cc_tril_ind[0]] -= temp 
-        
-            #     X_abab = np.ascontiguousarray(Xt[ccee__abab].reshape(ncvs, ncvs, nextern, nextern))
+            #     X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
  
-            #     temp_aaaa, temp_abab, temp_abba, temp_bbbb = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEE__V_AEEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma, v_aeee)
+            #     temp = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEE__V_AEEE(mr_adc, X, sigma, v_aeee)
 
-            #     sigma_KLCW_aaaa[:, :, s_chunk:f_chunk, :] += temp_aaaa
-            #     sigma_KLCW_abab[:, :, s_chunk:f_chunk, :] += temp_abab
-            #     sigma_KLCW_abba[:, :, s_chunk:f_chunk, :] += temp_abba
-            #     sigma_KLCW_bbbb[:, :, s_chunk:f_chunk, :] += temp_bbbb
+            #     sigma_KLCW[:, :, s_chunk:f_chunk, :] += temp
 
             #     mr_adc.log.timer_debug("v2e.aeee contractions", *cput1)
-            # del(v_aeee, X_aaaa, X_abab, X_bbbb)
             
             # sigma[ccea] += np.ascontiguousarray(sigma_KLCW).reshape(-1)
-            # del(sigma_KLCW)
+            # del(sigma_KLCW, v_aeee, X)
 
     # CCEE
     if nextern > 0:
@@ -32909,9 +32880,8 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             
             ## CAEE block
             X = np.ascontiguousarray(Xt[caee].reshape(ncvs, ncas, nextern, nextern))
-            X = X[:, :, :, s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h0_h1__CA_CAEE__T1_AAEE(mr_adc, X, sigma, t1_aaee_ab, t1_aaee_ba, e_extern_b) 
+            compute_sigma_vector__H1__h0_h1__CA_CAEE__T1_AAEE(mr_adc, X[:, :, :, s_chunk:f_chunk], sigma, t1_aaee_ab, t1_aaee_ba, e_extern_b) 
             del(t1_aaee_ba)
  
             ## CA block
@@ -32960,11 +32930,11 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
 
         if mr_adc.method == "mr-adc(2)-x":
-           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
-           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
-           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAAA(mr_adc, X_aaaa, X_abab, sigma)
-           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAAA(mr_adc, X_aaaa, X_abab, sigma)
-           if nval > 0:
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAAA(mr_adc, X_aaaa, X_abab, sigma)
+            if nval > 0:
                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAAA(mr_adc, X_aaaa, X_abab, sigma)
                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAAA(mr_adc, X_aaaa, X_abab, sigma)
@@ -32987,14 +32957,14 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
 
         if mr_adc.method == "mr-adc(2)-x":
-           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
-           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
-           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
-           h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
-           if nval is not None:
-               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
-               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
-               h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+            if nval > 0:
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
+                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, sigma)
 
 ##            sigma_KWCU_aaaa = np.zeros_like((X_aaaa))
 ##            sigma_KWCU_abab = np.zeros_like((X_abab))
@@ -33012,44 +32982,24 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 ##                ## CAEA block
 ##                X_aaaa = np.ascontiguousarray(Xt[caea__aaaa].reshape(ncvs, ncas, nextern, ncas))
 ##                X_abab = np.ascontiguousarray(Xt[caea__abab].reshape(ncvs, ncas, nextern, ncas))
-##                X_baba = np.ascontiguousarray(Xt[caea__baba].reshape(ncvs, ncas, nextern, ncas))
-##                X_bbbb = np.ascontiguousarray(Xt[caea__bbbb].reshape(ncvs, ncas, nextern, ncas))
 ##
 ##                X_aaaa = X_aaaa[:, :, s_chunk:f_chunk]
 ##                X_abab = X_abab[:, :, s_chunk:f_chunk]
-##                X_baba = X_baba[:, :, s_chunk:f_chunk]
-##                X_bbbb = X_bbbb[:, :, s_chunk:f_chunk]
 ##
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAEA__V_XEEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma, v_xeee)
-##                del(X_aaaa, X_abab, X_baba, X_bbbb)
+##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CAEA__V_XEEE(mr_adc, X_aaaa, X_abab, sigma, v_xeee)
+##                del(X_aaaa, X_abab)
 ##
 ##                ## CCEE block
-##                X_aaaa = np.zeros((ncvs, ncvs, nextern, nextern))
-##                temp = np.zeros((n_cc, nextern, nextern))
-##                temp[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[ccee__aaaa].reshape(n_cc, n_ee).copy()
-##                temp[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[ccee__aaaa].reshape(n_cc, n_ee).copy()
-##                X_aaaa[cc_tril_ind[0], cc_tril_ind[1]] += temp
-##                X_aaaa[cc_tril_ind[1], cc_tril_ind[0]] -= temp 
-##    
-##                X_bbbb = np.zeros((ncvs, ncvs, nextern, nextern))
-##                temp = np.zeros((n_cc, nextern, nextern))
-##                temp[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[ccee__bbbb].reshape(n_cc, n_ee).copy()
-##                temp[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[ccee__bbbb].reshape(n_cc, n_ee).copy()
-##                X_bbbb[cc_tril_ind[0], cc_tril_ind[1]] += temp
-##                X_bbbb[cc_tril_ind[1], cc_tril_ind[0]] -= temp 
-##    
-##                X_abab = np.ascontiguousarray(Xt[ccee__abab].reshape(ncvs, ncvs, nextern, nextern))
+##                X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
 ## 
-##                temp_aaaa, temp_abab, temp_baba, temp_bbbb = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCEE__V_XEEE(mr_adc, X_aaaa, X_abab, X_bbbb, sigma, v_xeee)
+##                temp_aaaa, temp_abab = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCEE__V_XEEE(mr_adc, X, sigma, v_xeee)
 ##
 ##                sigma_KWCU_aaaa[:, :, s_chunk:f_chunk, :] += temp_aaaa
 ##                sigma_KWCU_abab[:, :, s_chunk:f_chunk, :] += temp_abab
-##                sigma_KWCU_baba[:, :, s_chunk:f_chunk, :] += temp_baba
-##                sigma_KWCU_bbbb[:, :, s_chunk:f_chunk, :] += temp_bbbb
 ##
 ##                mr_adc.log.timer_debug("v2e.xeee contractions", *cput1)
 ##
-##            del(v_xeee, X_aaaa, X_abab, X_bbbb)
+##            del(v_xeee, X_aaaa, X_abab)
 ##
 ##            # v_aeee
 ##            chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 17)
@@ -33064,46 +33014,28 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 ##                X_aaaa = np.ascontiguousarray(Xt[caea__aaaa].reshape(ncvs, ncas, nextern, ncas))
 ##                X_abab = np.ascontiguousarray(Xt[caea__abab].reshape(ncvs, ncas, nextern, ncas))
 ##                X_baab = np.ascontiguousarray(Xt[caea__baab].reshape(ncvs, ncas, nextern, ncas))
-##                X_abba = np.ascontiguousarray(Xt[caea__abba].reshape(ncvs, ncas, nextern, ncas))
-##                X_baba = np.ascontiguousarray(Xt[caea__baba].reshape(ncvs, ncas, nextern, ncas))
-##                X_bbbb = np.ascontiguousarray(Xt[caea__bbbb].reshape(ncvs, ncas, nextern, ncas))
 ##
 ##                X_aaaa = X_aaaa[:, :, s_chunk:f_chunk]
 ##                X_abab = X_abab[:, :, s_chunk:f_chunk]
 ##                X_baab = X_baab[:, :, s_chunk:f_chunk]
-##                X_abba = X_abba[:, :, s_chunk:f_chunk]
-##                X_baba = X_baba[:, :, s_chunk:f_chunk]
-##                X_bbbb = X_bbbb[:, :, s_chunk:f_chunk]
 ##
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAEA__V_AEEE(mr_adc, X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb, sigma, v_aeee)
-##                del(X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb)
+##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEE_CAEA__V_AEEE(mr_adc, X_aaaa, X_abab, X_baab, sigma, v_aeee)
+##                del(X_aaaa, X_abab, X_baab)
 ##
 ##                ## CAEE block
-##                X_aaaa = np.zeros((ncvs, ncas, nextern, nextern))
-##                X_aaaa[:, :, ee_tril_ind[0], ee_tril_ind[1]] += Xt[caee__aaaa].reshape(ncvs, ncas, -1).copy()
-##                X_aaaa[:, :, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[caee__aaaa].reshape(ncvs, ncas, -1).copy()
-## 
-##                X_bbbb = np.zeros((ncvs, ncas, nextern, nextern))
-##                X_bbbb[:, :, ee_tril_ind[0], ee_tril_ind[1]] += Xt[caee__bbbb].reshape(ncvs, ncas, -1).copy()
-##                X_bbbb[:, :, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[caee__bbbb].reshape(ncvs, ncas, -1).copy()
-## 
-##                X_abab = np.ascontiguousarray(Xt[caee__abab].reshape(ncvs, ncas, nextern, nextern))
-##                X_baba = np.ascontiguousarray(Xt[caee__baba].reshape(ncvs, ncas, nextern, nextern))
+##                X = np.ascontiguousarray(Xt[caee].reshape(ncvs, ncas, nextern, nextern))
 ##
-##                temp_aaaa, temp_abab, temp_baab, temp_abba, temp_baba, temp_bbbb = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CAEE__V_AEEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma, v_aeee)
+##                temp_aaaa, temp_abab, temp_baab = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CAEE__V_AEEE(mr_adc, X, sigma, v_aeee)
 ##
 ##                sigma_KWCU_aaaa[:, :, s_chunk:f_chunk, :] += temp_aaaa
 ##                sigma_KWCU_abab[:, :, s_chunk:f_chunk, :] += temp_abab
 ##                sigma_KWCU_baab[:, :, s_chunk:f_chunk, :] += temp_baab
-##                sigma_KWCU_abba[:, :, s_chunk:f_chunk, :] += temp_abba
-##                sigma_KWCU_baba[:, :, s_chunk:f_chunk, :] += temp_baba
-##                sigma_KWCU_bbbb[:, :, s_chunk:f_chunk, :] += temp_bbbb
 ##
 ##                mr_adc.log.timer_debug("v2e.aeee contractions", *cput1)
 ##
-##            del(v_aeee, X_aaaa, X_abab, X_baba, X_bbbb)
+##            del(v_aeee, X)
 ##
-##            if nval is not None:
+##            if nval > 0:
 ##                # v_veee
 ##                chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nextern, nextern], ntensors = 13)
 ##                for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
@@ -33116,37 +33048,20 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 ##                    ## CAEA block
 ##                    X_aaaa = np.ascontiguousarray(Xt[caea__aaaa].reshape(ncvs, ncas, nextern, ncas))
 ##                    X_abab = np.ascontiguousarray(Xt[caea__abab].reshape(ncvs, ncas, nextern, ncas))
-##                    X_baba = np.ascontiguousarray(Xt[caea__baba].reshape(ncvs, ncas, nextern, ncas))
-##                    X_bbbb = np.ascontiguousarray(Xt[caea__bbbb].reshape(ncvs, ncas, nextern, ncas))
 ##        
 ##                    X_aaaa = X_aaaa[:, :, s_chunk:f_chunk]
 ##                    X_abab = X_abab[:, :, s_chunk:f_chunk]
-##                    X_baba = X_baba[:, :, s_chunk:f_chunk]
-##                    X_bbbb = X_bbbb[:, :, s_chunk:f_chunk]
 ##        
-##                    h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAEA__V_VEEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma, v_veee)
-##                    del(X_aaaa, X_abab, X_baba, X_bbbb)
+##                    h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CAEA__V_VEEE(mr_adc, X_aaaa, X_abab, sigma, v_veee)
+##                    del(X_aaaa, X_abab)
 ##
 ##                    ## CVEE block
-##                    X_aaaa = np.zeros((ncvs * nval, nextern, nextern))
-##                    X_aaaa[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[cvee__aaaa].reshape(ncvs * nval, n_ee).copy()
-##                    X_aaaa[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[cvee__aaaa].reshape(ncvs * nval, n_ee).copy()
-##                    X_aaaa = X_aaaa.reshape((ncvs, nval, nextern, nextern)) 
-##            
-##                    X_bbbb = np.zeros((ncvs * nval, nextern, nextern))
-##                    X_bbbb[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[cvee__bbbb].reshape(ncvs * nval, n_ee).copy()
-##                    X_bbbb[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[cvee__bbbb].reshape(ncvs * nval, n_ee).copy()
-##                    X_bbbb = X_bbbb.reshape((ncvs, nval, nextern, nextern)) 
-##            
-##                    X_abab = np.ascontiguousarray(Xt[cvee__abab].reshape(ncvs, nval, nextern, nextern))
-##                    X_baba = np.ascontiguousarray(Xt[cvee__baba].reshape(ncvs, nval, nextern, nextern))
+##                    X = np.ascontiguousarray(Xt[cvee].reshape(ncvs, nval, nextern, nextern))
 ## 
-##                    temp_aaaa, temp_abab, temp_baba, temp_bbbb = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVEE__V_VEEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma, v_veee)
+##                    temp_aaaa, temp_abab = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVEE__V_VEEE(mr_adc, X, sigma, v_veee)
 ##    
 ##                    sigma_KWCU_aaaa[:, :, s_chunk:f_chunk, :] += temp_aaaa
 ##                    sigma_KWCU_abab[:, :, s_chunk:f_chunk, :] += temp_abab
-##                    sigma_KWCU_baba[:, :, s_chunk:f_chunk, :] += temp_baba
-##                    sigma_KWCU_bbbb[:, :, s_chunk:f_chunk, :] += temp_bbbb
 ##
 ##                    mr_adc.log.timer_debug("v2e.veee contractions", *cput1)
 ##
@@ -33155,11 +33070,8 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 ##            sigma[caea__aaaa] += np.ascontiguousarray(sigma_KWCU_aaaa).reshape(-1)
 ##            sigma[caea__abab] += np.ascontiguousarray(sigma_KWCU_abab).reshape(-1)
 ##            sigma[caea__baab] += np.ascontiguousarray(sigma_KWCU_baab).reshape(-1)
-##            sigma[caea__abba] += np.ascontiguousarray(sigma_KWCU_abba).reshape(-1)
-##            sigma[caea__baba] += np.ascontiguousarray(sigma_KWCU_baba).reshape(-1)
-##            sigma[caea__bbbb] += np.ascontiguousarray(sigma_KWCU_bbbb).reshape(-1)
-##            del(sigma_KWCU_aaaa, sigma_KWCU_abab, sigma_KWCU_baab, sigma_KWCU_abba, sigma_KWCU_baba, sigma_KWCU_bbbb)
-           
+##            del(sigma_KWCU_aaaa, sigma_KWCU_abab, sigma_KWCU_baab)
+ 
     # CVAA 
     if nval > 0 and ncas > 0:
         X = np.ascontiguousarray(Xt[cvaa].reshape(ncvs, nval, ncas, ncas))
@@ -33201,12 +33113,8 @@ def compute_sigma_vector(mr_adc, Xt, ints):
            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEA(mr_adc, X_abab, X_baab, sigma)
            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEA(mr_adc, X_abab, X_baab, sigma)
 
-##            sigma_KLCW_aaaa = np.zeros_like(X_aaaa)
 ##            sigma_KLCW_abab = np.zeros_like(X_abab)
 ##            sigma_KLCW_baab = np.zeros_like(X_baab)
-##            sigma_KLCW_abba = np.zeros_like(X_abba)
-##            sigma_KLCW_baba = np.zeros_like(X_baba)
-##            sigma_KLCW_bbbb = np.zeros_like(X_bbbb)
 ##
 ##            # v_aeee
 ##            chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 17)
@@ -33218,50 +33126,27 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 ##                v_aeee = mr_adc.v2e.aeee[:, :, s_chunk:f_chunk, :]
 ##
 ##                ## CVEA block
-##                X_aaaa = np.ascontiguousarray(Xt[cvea__aaaa].reshape(ncvs, nval, nextern, ncas))
 ##                X_abab = np.ascontiguousarray(Xt[cvea__abab].reshape(ncvs, nval, nextern, ncas))
 ##                X_baab = np.ascontiguousarray(Xt[cvea__baab].reshape(ncvs, nval, nextern, ncas))
-##                X_abba = np.ascontiguousarray(Xt[cvea__abba].reshape(ncvs, nval, nextern, ncas))
-##                X_baba = np.ascontiguousarray(Xt[cvea__baba].reshape(ncvs, nval, nextern, ncas))
-##                X_bbbb = np.ascontiguousarray(Xt[cvea__bbbb].reshape(ncvs, nval, nextern, ncas))
 ##
-##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEA__V_AEEE(mr_adc, X_aaaa[:, :, s_chunk:f_chunk, :], X_abab[:, :, s_chunk:f_chunk, :], X_baab[:, :, s_chunk:f_chunk, :], X_abba[:, :, s_chunk:f_chunk, :], X_baba[:, :, s_chunk:f_chunk, :], X_bbbb[:, :, s_chunk:f_chunk, :], sigma, v_aeee) 
-##                del(X_aaaa, X_abab, X_baab, X_abba, X_baba, X_bbbb)
+##                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEA__V_AEEE(mr_adc, X_abab[:, :, s_chunk:f_chunk, :], X_baab[:, :, s_chunk:f_chunk, :], sigma, v_aeee) 
+##                del(X_abab, X_baab)
 ##
 ##                ## CVEE block
-##                X_aaaa = np.zeros((ncvs * nval, nextern, nextern))
-##                X_aaaa[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[cvee__aaaa].reshape(ncvs * nval, n_ee).copy()
-##                X_aaaa[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[cvee__aaaa].reshape(ncvs * nval, n_ee).copy()
-##                X_aaaa = X_aaaa.reshape((ncvs, nval, nextern, nextern)) 
-##
-##                X_bbbb = np.zeros((ncvs * nval, nextern, nextern))
-##                X_bbbb[:, ee_tril_ind[0], ee_tril_ind[1]] += Xt[cvee__bbbb].reshape(ncvs * nval, n_ee).copy()
-##                X_bbbb[:, ee_tril_ind[1], ee_tril_ind[0]] -= Xt[cvee__bbbb].reshape(ncvs * nval, n_ee).copy()
-##                X_bbbb = X_bbbb.reshape((ncvs, nval, nextern, nextern)) 
-##
-##                X_abab = np.ascontiguousarray(Xt[cvee__abab].reshape(ncvs, nval, nextern, nextern))
-##                X_baba = np.ascontiguousarray(Xt[cvee__baba].reshape(ncvs, nval, nextern, nextern))
+##                X = np.ascontiguousarray(Xt[cvee].reshape(ncvs, nval, nextern, nextern))
 ## 
-##                temp_aaaa, temp_abab, temp_baab, temp_abba, temp_baba, temp_bbbb = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEE__V_AEEE(mr_adc, X_aaaa, X_abab, X_baba, X_bbbb, sigma, v_aeee)
+##                temp_abab, temp_baab = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEE__V_AEEE(mr_adc, X, sigma, v_aeee)
 ##
-##                sigma_KLCW_aaaa[:, :, s_chunk:f_chunk, :] += temp_aaaa
 ##                sigma_KLCW_abab[:, :, s_chunk:f_chunk, :] += temp_abab
 ##                sigma_KLCW_baab[:, :, s_chunk:f_chunk, :] += temp_baab
-##                sigma_KLCW_abba[:, :, s_chunk:f_chunk, :] += temp_abba
-##                sigma_KLCW_baba[:, :, s_chunk:f_chunk, :] += temp_baba
-##                sigma_KLCW_bbbb[:, :, s_chunk:f_chunk, :] += temp_bbbb
 ##
 ##                mr_adc.log.timer_debug("v2e.aeee contractions", *cput1)
 ##            
-##            del(v_aeee, X_aaaa, X_abab, X_baba, X_bbbb)
+##            del(v_aeee, X)
 ##
-##            sigma[cvea__aaaa] += np.ascontiguousarray(sigma_KLCW_aaaa).reshape(-1)
 ##            sigma[cvea__abab] += np.ascontiguousarray(sigma_KLCW_abab).reshape(-1)
 ##            sigma[cvea__baab] += np.ascontiguousarray(sigma_KLCW_baab).reshape(-1)
-##            sigma[cvea__abba] += np.ascontiguousarray(sigma_KLCW_abba).reshape(-1)
-##            sigma[cvea__baba] += np.ascontiguousarray(sigma_KLCW_baba).reshape(-1)
-##            sigma[cvea__bbbb] += np.ascontiguousarray(sigma_KLCW_bbbb).reshape(-1)
-##            del(sigma_KLCW_aaaa, sigma_KLCW_abab, sigma_KLCW_abba, sigma_KLCW_bbbb)
+##            del(sigma_KLCW_abab, sigma_KLCW_baab)
 
     # CVEE
     if nval > 0 and nextern > 0:    
@@ -33320,7 +33205,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVEE(mr_adc, X, sigma)
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEE(mr_adc, X, sigma)
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X, sigma)        
-
     mr_adc.log.timer_debug("computing sigma vector", *cput0)
 
     return np.ascontiguousarray(sigma)
