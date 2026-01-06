@@ -233,23 +233,20 @@ class PYSCF:
         # Dipole moments
         self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
-        # Whether to use opt_einsum
-        if opt_einsum:
-            from opt_einsum import contract
-            self.einsum = contract
-            self.einsum_type = "greedy"
-        else:
-            self.einsum = np.einsum
-            self.einsum_type = "greedy"
+        # Einsum Backend
+        PYSCF.opt_einsum = bool(opt_einsum)
+        PYSCF.pytblis = bool(pytblis)
 
-        # Dot product
+        self._einsum = None
+        self.einsum_type = "greedy"
         self.dot = np.dot
 
-        if pytblis:
-            print('>> using pytblis...')
-            from pytblis import einsum
-            self.einsum = einsum
-            self.einsum_type = "greedy"
+    @property
+    def einsum(self):
+        if self._einsum is None:
+            from prism.lib import numpy_helper
+            self._einsum = numpy_helper.einsum
+        return self._einsum
 
     @property
     def with_df(self):
