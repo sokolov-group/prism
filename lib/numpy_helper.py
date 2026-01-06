@@ -10,8 +10,8 @@ dot = numpy.dot
 asarray = numpy.asarray
 
 ##TODO: create attribute for user defined flop threshold
-FLOP_THRESHOLD = 1e4
-#FLOP_THRESHOLD = 5e6
+#FLOP_THRESHOLD = 1e4
+FLOP_THRESHOLD = 5e6
 
 # Interface flags
 PYTBLIS = getattr(PYSCF, 'pytblis', False)
@@ -38,12 +38,11 @@ elif _HAS_OPT_EINSUM:
 else:
     EINSUM_BACKEND = "numpy"
 
-setattr(PYSCF, 'einsum_backend', EINSUM_BACKEND)
-
 # Import backend
 try:
     if EINSUM_BACKEND == "pytblis":
         import pytblis
+        pytblis.set_num_threads(8)
     elif EINSUM_BACKEND == "opt_einsum":
         import opt_einsum
 except Exception:
@@ -56,6 +55,10 @@ try:
     _einsum_path = getattr(_opt_einsum, "contract_path", numpy.einsum_path)
 except ImportError:
     _einsum_path = getattr(numpy, "einsum_path", None)
+
+@lru_cache(maxsize=256)
+def _compiled_opt_expr(subscripts, shapes, optimize):
+    return _opt_einsum.contract_expression(subscripts, *shapes, optimize=optimize)
 
 def contract(subscripts, A, B, **kwargs):
     '''
@@ -70,38 +73,41 @@ def contract(subscripts, A, B, **kwargs):
         out : ndarray, optional
             Output tensor to store the result.
     '''
+    # Call numpy.asarray because A or B may be HDF5 Datasets
+    A = asarray(A)
+    B = asarray(B)
     idx_str = subscripts.replace(" ","")
 
     if EINSUM_BACKEND == "opt_einsum":
-        return opt_einsum.contract(idx_str, A, B, **kwargs)
+        # compile/reuse cache expression keyed by shapes + optimize
+        optimize = kwargs.pop('optimize', True)
+        shapes = (tuple(A.shape), tuple(B.shape))
+        expr = _compiled_opt_expr(idx_str, shapes, optimize)
+        return expr(A, B, **kwargs)
 
     if EINSUM_BACKEND == "pytblis":
         return pytblis.einsum(idx_str, A, B, **kwargs)
 
-    # Call numpy.asarray because A or B may be HDF5 Datasets
-    A = asarray(A)
-    B = asarray(B)
-
-    # Linear algebra kwargs for GEMM branch
+    # Linear algebra kwargs
     alpha = kwargs.pop('alpha', 1)
     beta = kwargs.pop('beta', 0)
     out = kwargs.pop('out', None)
 
-    # binary einsum with an explicit output?
+    # check: binary einsum with an explicit output?
     if "->" not in idx_str or idx_str.count(",") != 1:
         return _numpy_einsum(idx_str, A, B, **kwargs)
 
-    # valid GEMM contraction?
+    # check: valid GEMM contraction?
     analysis = _analyze_indices(idx_str)
     if analysis is None:
         return _numpy_einsum(idx_str, A, B, **kwargs)
 
     idxA, idxB, idxC, orderA, orderB, permC, shared = analysis
 
+    # check: dimensions valid?
     if len(idxA) != A.ndim or len(idxB) != B.ndim:
         return _numpy_einsum(idx_str, A, B, **kwargs)
 
-    # GEMM based on FLOP heuristic
     shapeA = dict(zip(idxA, A.shape))
     shapeB = dict(zip(idxB, B.shape))
 
@@ -118,14 +124,14 @@ def contract(subscripts, A, B, **kwargs):
     outer_dim_B = B.size // inner_dim
     flops = outer_dim_A * inner_dim * outer_dim_B
 
+    # check: FLOP threshold met?
     if flops < FLOP_THRESHOLD:
         return _numpy_einsum(idx_str, A, B, **kwargs)
 
     if A.size == 0 or B.size == 0:
         out_shape = (
-            [shapeA[i] for i in idxA if i not in shared]
-            + [shapeB[i] for i in idxB if i not in shared]
-        )
+            [shapeA[i] for i in idxA if i not in shared] +
+            [shapeB[i] for i in idxB if i not in shared])
         out_shape = [out_shape[i] for i in permC]
         return numpy.zeros(out_shape, dtype=numpy.result_type(A, B))
 
@@ -138,14 +144,12 @@ def contract(subscripts, A, B, **kwargs):
     Cmat = dot(At, Bt)
 
     out_shape = (
-        [shapeA[i] for i in idxA if i not in shared]
-        + [shapeB[i] for i in idxB if i not in shared]
-    )
+        [shapeA[i] for i in idxA if i not in shared] +
+        [shapeB[i] for i in idxB if i not in shared])
 
     Cres = Cmat.reshape(out_shape)
-    #return C.reshape(out_shape, order="A").transpose(permC)
 
-    # only apply permutation if perm is not identity
+    # check if perm is identity
     if permC != list(range(len(permC))):
         Cres = Cres.transpose(permC)
 
@@ -160,8 +164,8 @@ def contract(subscripts, A, B, **kwargs):
         result = Cres * alpha
         if beta != 0:
             result = result + out_arr * beta
-        # cast/assign back to out with broadcasting checks
-        out[...] = numpy.asarray(result, dtype=numpy.result_type(A, B, out))
+        # assign to output
+        out[...] = asarray(result, dtype=numpy.result_type(A, B, out))
         return out
 
 def einsum(scripts, *tensors, **kwargs):
@@ -175,8 +179,8 @@ def einsum(scripts, *tensors, **kwargs):
     subscripts = scripts.replace(' ','')
 
     if EINSUM_BACKEND == "pytblis":
-        if kwargs.get("optimize") is True:
-           kwargs["optimize"] = "optimal"
+        #if kwargs.get("optimize") is True:
+        #   kwargs["optimize"] = "optimal"
         return pytblis.einsum(subscripts, *tensors, **kwargs)
 
     if len(tensors) <= 1 or '...' in subscripts:
@@ -184,7 +188,9 @@ def einsum(scripts, *tensors, **kwargs):
 
     optimize = kwargs.pop('optimize', True)
     if EINSUM_BACKEND == "opt_einsum":
-        return opt_einsum.contract(subscripts, *tensors, optimize=optimize)
+        shapes = tuple(tuple(t.shape) for t in tensors)
+        expr = _compiled_opt_expr(subscripts, shapes, optimize)
+        return expr(*tensors)
 
     _contract = kwargs.pop('_contract', contract)
     if len(tensors) <= 2:
@@ -197,8 +203,7 @@ def einsum(scripts, *tensors, **kwargs):
         ops = [operands[i] for i in inds]
         fn = _contract if len(ops) == 2 else _numpy_einsum
         result = fn(einsum_str, *ops, **kwargs)
-        for i in sorted(inds, reverse=True):
-            del operands[i]
+        operands = [op for i, op in enumerate(operands) if i not in inds]
         operands.append(result)
 
     return operands[0]
@@ -224,11 +229,13 @@ def _analyze_indices(idx_str):
 
     uniqA = set(idxA)
     uniqB = set(idxB)
+
     # reject when indices repeat
     if len(idxA) != len(uniqA) or len(idxB) != len(uniqB):
         return None
 
     shared = sorted(uniqA & uniqB)
+
     # reject when no indices overlap
     if not shared:
         return None
@@ -243,8 +250,10 @@ def _analyze_indices(idx_str):
     external_A = [i for i in idxA if i not in internal_ind]
     external_B = [i for i in idxB if i not in internal_ind]
 
-    # reject when external index is in both GEMM axes or when multiple external indices cannot be flattened
-    if (external_ind and external_A and external_B) or ((len(external_ind) > 1) and (external_A or external_B)):
+    # reject when external index is in both GEMM axes or 
+    # when multiple external indices cannot be flattened
+    if ((external_ind and external_A and external_B) or
+        ((len(external_ind) > 1) and (external_A or external_B))):
         return None
 
     # reorder A: [..., internal]

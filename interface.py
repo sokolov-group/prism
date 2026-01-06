@@ -238,6 +238,7 @@ class PYSCF:
         PYSCF.pytblis = bool(pytblis)
 
         self._einsum = None
+        self.einsum_backend = None
         self.einsum_type = "greedy"
         self.dot = np.dot
 
@@ -246,6 +247,7 @@ class PYSCF:
         if self._einsum is None:
             from prism.lib import numpy_helper
             self._einsum = numpy_helper.einsum
+            self.einsum_backend = numpy_helper.EINSUM_BACKEND
         return self._einsum
 
     @property
