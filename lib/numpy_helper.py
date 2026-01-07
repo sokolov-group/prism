@@ -42,7 +42,7 @@ else:
 try:
     if EINSUM_BACKEND == "pytblis":
         import pytblis
-        pytblis.set_num_threads(8)
+        #pytblis.set_num_threads(8)
     elif EINSUM_BACKEND == "opt_einsum":
         import opt_einsum
 except Exception:
@@ -58,7 +58,7 @@ except ImportError:
 
 @lru_cache(maxsize=256)
 def _compiled_opt_expr(subscripts, shapes, optimize):
-    return _opt_einsum.contract_expression(subscripts, *shapes, optimize=optimize)
+    return opt_einsum.contract_expression(subscripts, *shapes, optimize=optimize)
 
 def contract(subscripts, A, B, **kwargs):
     '''
@@ -73,10 +73,9 @@ def contract(subscripts, A, B, **kwargs):
         out : ndarray, optional
             Output tensor to store the result.
     '''
-    # Call numpy.asarray because A or B may be HDF5 Datasets
-    A = asarray(A)
-    B = asarray(B)
     idx_str = subscripts.replace(" ","")
+    # Call numpy.asarray because A or B may be HDF5 Datasets
+    A, B = asarray(A), asarray(B)
 
     if EINSUM_BACKEND == "opt_einsum":
         # compile/reuse cache expression keyed by shapes + optimize
@@ -169,22 +168,23 @@ def contract(subscripts, A, B, **kwargs):
         return out
 
 def einsum(scripts, *tensors, **kwargs):
-    '''Perform a more efficient einsum via reshaping to a matrix multiply.
+    '''
+    Perform a more efficient einsum via reshaping to a matrix multiply.
 
     Current differences compared to numpy.einsum:
     This assumes that each repeated index is actually summed (i.e. no 'i,i->i')
     and appears only twice (i.e. no 'ij,ik,il->jkl'). The output indices must
     be explicitly specified (i.e. 'ij,j->i' and not 'ij,j').
     '''
-    subscripts = scripts.replace(' ','')
-
-    if EINSUM_BACKEND == "pytblis":
-        #if kwargs.get("optimize") is True:
-        #   kwargs["optimize"] = "optimal"
-        return pytblis.einsum(subscripts, *tensors, **kwargs)
+    subscripts = scripts.replace(" ","")
 
     if len(tensors) <= 1 or '...' in subscripts:
         return _numpy_einsum(subscripts, *tensors, **kwargs)
+
+    if EINSUM_BACKEND == "pytblis":
+        if kwargs.get("optimize") is True:
+           kwargs["optimize"] = "optimal"
+        return pytblis.einsum(subscripts, *tensors, **kwargs)
 
     optimize = kwargs.pop('optimize', True)
     if EINSUM_BACKEND == "opt_einsum":
@@ -196,8 +196,10 @@ def einsum(scripts, *tensors, **kwargs):
     if len(tensors) <= 2:
         return _contract(subscripts, *tensors, **kwargs)
 
+    ##NOTE: NumPy >= 2.4 returns 3 values instead of 5 for einsum_path
     _, contraction_list = _einsum_path(subscripts, *tensors, optimize=optimize, einsum_call=True)
 
+    ##TODO: add in handling of in-place contraction (see numpy/numpy/blob/v2.4.0/numpy/_core/einsumfunc.py)
     operands = list(tensors)
     for inds, _, einsum_str, _, _ in contraction_list:
         ops = [operands[i] for i in inds]
