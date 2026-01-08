@@ -162,6 +162,10 @@ def kernel(mr_adc):
     else:
         mr_adc.log.warn('No convergence reached for Davidson iterations!')
 
+    # Analyze eigenvectors
+    if mr_adc.method_type == "cvs-ee":
+        mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, de_ev, U)
+
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
     #return de_ev, spec_intensity, X
@@ -299,7 +303,7 @@ def compute_MRADC_guess_vectors(mr_adc, precond, ascending = True):
     return [x0[:, p] for p in range(roots)]
 
 ## TODO: add in NTOs!
-def compute_trans_properties(mr_adc, E, U):
+def compute_trans_properties(mr_adc, de, U):
 
     X = None
 
@@ -328,15 +332,12 @@ def compute_trans_properties(mr_adc, E, U):
     else:
         spec_intensity = 2.0 * np.sum(X**2, axis=0)
 
-    
-    ##mr_adc_cvs_ee.analyze_eigenvector(mr_adc, E, U)
-   
     # Analyze spectroscopic factors if requested
     #if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4): 
     if mr_adc.analyze_spec_factor: 
         analyze_mo_overlap(mr_adc)
-        analyze_spec_factor(mr_adc, X, spec_intensity)
-    
+        #analyze_spec_factor(mr_adc, X, spec_intensity)
+
     return spec_intensity, X
 
 #========== UTILITY FUNCTIONS FOR SPECIAL ANALYSES ==========#

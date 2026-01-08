@@ -34859,77 +34859,6 @@ def norm_function(mr_adc, U, Y):
                 print(f"    h1 CVEE                  {norm_h1_cvee:10.8f}")
         print("--------------------------------------------------------\n")
 
-def analyze_eigenvector(mr_adc, de, U):
-
-    print("\neigenvector analysis:")
-
-    #print_thresh = mr_adc.spec_factor_print_tol
-    print_thresh = 1e-6
-
-    h2ev = mr_adc.interface.hartree_to_ev
-    de_ev = de * h2ev
-
-    ## Orthogonal Excitation Manifolds
-    ca_caaa = mr_adc.h_orth.ca_caaa
-    ce_caea = mr_adc.h_orth.ce_caea
-
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
-        ccaa = mr_adc.h_orth.ccaa      
-        ccea = mr_adc.h_orth.ccea
-        ccee = mr_adc.h_orth.ccee
-        caee = mr_adc.h_orth.caee
-        if mr_adc.nval > 0:
-            cvaa = mr_adc.h_orth.cvaa     
-            cvea__abab = mr_adc.h_orth.cvea__abab
-            cvea__baab = mr_adc.h_orth.cvea__baab
-            cvee = mr_adc.h_orth.cvee
-
-    for i in range(U.shape[0]):
-        #print("Root %2d | E (eV) = %12.8f | Strength = %.8f\n" % (i+1, de_ev[i], osc_strength[i]))
-        print("Root %2d | E (eV) = %12.4f \n" % (i+1, de_ev[i]))
-        print("    Excitation Type         Contribution")
-        print("--------------------------------------------------------")
-
-        norm_ca_caaa = np.linalg.norm(U[i, ca_caaa])**2
-        norm_ce_caea = np.linalg.norm(U[i, ce_caea])**2
-
-        
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
-            norm_ccaa    = np.linalg.norm(U[i, ccaa])**2
-            norm_ccea    = np.linalg.norm(U[i, ccea])**2
-            norm_ccee    = np.linalg.norm(U[i, ccee])**2
-            norm_caee    = np.linalg.norm(U[i, caee])**2
-
-            if mr_adc.nval > 0:
-                norm_cvaa = np.linalg.norm(U[i, cvaa])**2
-                norm_cvea = np.linalg.norm(U[i, cvea__abab])**2 + np.linalg.norm(U[i, cvea__baab])**2
-                norm_cvee = np.linalg.norm(U[i, cvee])**2
-
-        if norm_ca_caaa > print_thresh:
-            print(f"       CA_CAAA               {100 * norm_ca_caaa:10.2f}%") 
-        if norm_ce_caea > print_thresh:
-            print(f"       CE_CAEA               {100 * norm_ce_caea:10.2f}%")
-
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
-            if norm_ccaa > print_thresh:
-                print(f"       CCAA                  {100 * norm_ccaa:10.2f}%")
-            if norm_ccea > print_thresh:
-                print(f"       CCEA                  {100 * norm_ccea:10.2f}%")
-            if norm_ccee > print_thresh:
-                print(f"       CCEE                  {100 * norm_ccee:10.2f}%")
-            if norm_caee > print_thresh:
-                print(f"       CAEE                  {100 * norm_caee:10.2f}%")
-
-            if mr_adc.nval > 0:
-                if norm_cvaa > print_thresh:
-                    print(f"       CVAA                  {100 * norm_cvaa:10.2f}%")
-                if norm_cvea > print_thresh:
-                    print(f"       CVEA                  {100 * norm_cvea:10.2f}%")
-                if norm_cvee > print_thresh:
-                    print(f"       CVEE                  {100 * norm_cvee:10.2f}%")
-        print("--------------------------------------------------------\n")
-
-
 def renormalize_eigenvectors(mr_adc, U):
 
     # Variables from kernel
@@ -34995,11 +34924,15 @@ def renormalize_eigenvectors(mr_adc, U):
 
     return renormU
 
-def analyze_eigenvectors(mr_adc, de, U):
+def analyze_eigenvectors(mr_adc, de_ev, U):
 
-    h2ev = mr_adc.interface.hartree_to_ev
-    print_thresh = 1e-2 #1e-4
-    #print_thresh = 1e-6
+    mr_adc.log.info("")
+    mr_adc.log.info("*"*55)
+    mr_adc.log.info("Eigenvector Magnitude Analysis")
+
+    print_thresh = 1e-2
+
+    mr_adc.log.extra(f"eigenvector elements threshold: {print_thresh:.2e}\n")
 
     # Variables from kernel
     ncvs    = mr_adc.ncvs
@@ -35035,7 +34968,8 @@ def analyze_eigenvectors(mr_adc, de, U):
             h1_cvea__baab = mr_adc.h1.cvea__baab
             h1_cvee = mr_adc.h1.cvee 
 
-    mr_adc.log.info(f"Print eigenvector elements > {print_thresh:f}\n")
+        # Renormalize eigenvectors for second-order methods
+        U = renormalize_eigenvectors(mr_adc, U)
 
     result = []
     for state in range(nroots):
@@ -35051,13 +34985,14 @@ def analyze_eigenvectors(mr_adc, de, U):
 
         Y_sq = Y_sq[ind_idx]
         Y_sorted = Y[ind_idx]
- 
+
         # Filter by tolerance
         mask = Y_sq > print_thresh**2
         ind_idx = ind_idx[mask]
         Y_sorted = Y_sorted[mask]
 
-        for orb_idx, value in zip(ind_idx, Y_sorted):
+        for orb_idx, eigval in zip(ind_idx, Y_sorted):
+            value = np.linalg.norm(eigval)**2
 
             # Singles
             if orb_idx in range(h0_ca.start, h0_ca.stop):
@@ -35143,7 +35078,7 @@ def analyze_eigenvectors(mr_adc, de, U):
         result.append((state, _singles, _doubles))
 
     for state, singles, doubles in result:
-        mr_adc.log.info(f"{mr_adc.method} | state {state+1:d} | Energy (eV) = {de[state] * h2ev:12.8f}")
+        mr_adc.log.info(f"{mr_adc.method_type.upper()}-{mr_adc.method.upper()} | State {state+1:d} | dE (eV) = {de_ev[state]:12.4f}")
         mr_adc.log.info("\n1p1h block:")
         for p, q, p_label, q_label, val in singles:
             mr_adc.log.info(f"{p_label}({p:4d}) -> {q_label}({q:4d}) = {val:7.4f}")
@@ -35152,6 +35087,6 @@ def analyze_eigenvectors(mr_adc, de, U):
         for p, q, r, s, p_label, q_label, r_label, s_label, val in doubles:
             mr_adc.log.info(f"{p_label},{q_label}({p:4d}, {q:4d}) -> {r_label},{s_label}({r:4d}, {s:4d}) = {val:7.4f}")
         mr_adc.log.info('')
-    mr_adc.log.info("***************************************************************************************\n")
-    exit()
+
+    mr_adc.log.info("*"*55)
 
