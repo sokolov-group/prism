@@ -95,6 +95,7 @@ class NEVPT:
         self.en = None
         self.spin_mult = None
         self.gtensor = False
+        self.origin_type = 'charge'
 
         #For SOC in temporary
         self.ncasci = None
@@ -186,7 +187,7 @@ class NEVPT:
 
 
           if self.gtensor is True:
-            general_somf.gtensor_general(self.interface,evec_soc,rdm, S_total, I_total)
+            general_somf.gtensor_general(self.interface,evec_soc,rdm, S_total, I_total,origin_type=self.origin_type)
         
         return e_tot, e_corr, osc
 

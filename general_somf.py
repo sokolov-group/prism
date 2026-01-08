@@ -238,7 +238,7 @@ def generalSOC(interface, en, rdm, S, ms):
 #
 #   return osc_total
             
-def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0):
+def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0,origin_type = 'charge'):
     print("Calculating g-tensor(general)...")
     mf = interface.mf
     mo = interface.mo
@@ -293,7 +293,6 @@ def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0)
         A += multiplicity[I]
 
     ###L part########
-    origin_type = 'charge'
     if origin_type == 'charge':
         origin = [ 0, 0 ,0]
         total_charge = 0
@@ -380,6 +379,8 @@ def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0)
     print("%14.6f, %14.6f, %14.6f, ge=2.002319"%(G_sq_en[0],G_sq_en[1],G_sq_en[2]))
     print("%14.6f, %14.6f, %14.6f"%(G_sq_en[0]-2.002319,G_sq_en[1]-2.002319,G_sq_en[2]-2.002319))
     print("%14.3f, %14.3f, %14.3f, ptt(general)"%(1000*(G_sq_en[0]-2.002319),1000*(G_sq_en[1]-2.002319),1000*(G_sq_en[2]-2.002319)))
+
+    return G_sq_en, G_evec
 
 
 ## DKH-2 specific functionalities:
