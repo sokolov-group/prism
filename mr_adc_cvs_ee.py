@@ -34687,11 +34687,76 @@ def compute_trans_moments(mr_adc, U):
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CVEA(mr_adc, Y_KLCW__abab, Y_KLCW__baab, TY)
 
+    analyze_mo_cont(mr_adc, TY)
+
     dX = compute_dX(mr_adc, TY)
 
     mr_adc.log.timer("computing transition moments matrix", *cput0)
 
     return TY, dX
+
+def analyze_mo_cont(mr_adc, TY):
+
+    print_thresh = 1e-6
+
+    # Variables from kernel
+    ncvs    = mr_adc.ncvs
+    nval    = mr_adc.nval
+    ncas    = mr_adc.ncas
+    nextern = mr_adc.nextern
+
+    nroots  = mr_adc.nroots
+
+    def classify_orbital(idx):
+        if idx < ncvs:
+            return "cvs"
+        elif idx < ncvs + nval:
+            return "val"
+        elif idx < ncvs + nval + ncas:
+            return "cas"
+        elif idx < ncvs + nval + ncas + nextern:
+            return "ext"
+        else:
+            return "out_of_range"
+
+    results = []
+
+    for state in range(nroots):
+        norm = np.linalg.norm(TY[state])
+
+        if norm > print_thresh:
+            sq_norm = np.abs(TY[state]) ** 2
+            total = sq_norm.sum()
+
+            flat_idx = np.argsort(sq_norm.ravel())[::-1]
+            #top_mo = flat_idx[:3]
+            top_mo = flat_idx[:10]
+
+            top_mo_cont = []
+            for mo_idx in top_mo:
+                p, q = np.unravel_index(mo_idx, sq_norm.shape)
+                frac = sq_norm[p, q] / total * 100
+
+                # Classify p and q
+                p_label = classify_orbital(p)
+                q_label = classify_orbital(q)
+
+                # Skip or flag invalid indices
+                if "out_of_range" in (p_label, q_label):
+                    print(f"Warning: Orbital index {p, q} out of range in state {state + 1}")
+                    continue
+
+                top_mo_cont.append((p, q, p_label, q_label, frac))
+
+            results.append((state, top_mo_cont))
+
+    # Report results
+    for state, mos in results:
+        print(f"\nState {state + 1}")
+        for p, q, p_label, q_label, frac in mos:
+            print(
+                f"Orbital Contribution: {p_label.upper()}({p+1}) -> {q_label.upper()}({q+1}) "
+                f"= {frac:.2f}%")
 
 def norm_function(mr_adc, U, Y):
 
@@ -34929,4 +34994,164 @@ def renormalize_eigenvectors(mr_adc, U):
         renormU[state] /= np.sqrt(UdotU)
 
     return renormU
+
+def analyze_eigenvectors(mr_adc, de, U):
+
+    h2ev = mr_adc.interface.hartree_to_ev
+    print_thresh = 1e-2 #1e-4
+    #print_thresh = 1e-6
+
+    # Variables from kernel
+    ncvs    = mr_adc.ncvs
+    nval    = mr_adc.nval
+    ncas    = mr_adc.ncas
+    nextern = mr_adc.nextern
+
+    nroots  = mr_adc.nroots
+
+    # Non-Orthogonal Excitation Manifold
+    h0_ce = mr_adc.h0.ce
+    h0_ca = mr_adc.h0.ca
+
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
+        h1_ccaa = mr_adc.h1.ccaa
+        h1_ccea = mr_adc.h1.ccea
+        h1_ccee = mr_adc.h1.ccee
+        h1_caee = mr_adc.h1.caee
+
+        h1_caea__aaaa = mr_adc.h1.caea__aaaa
+        h1_caea__abab = mr_adc.h1.caea__abab
+        h1_caea__baab = mr_adc.h1.caea__baab
+        h1_caaa__aaaa = mr_adc.h1.caaa__aaaa
+        h1_caaa__abab = mr_adc.h1.caaa__abab
+
+        h1_cvaa = slice(0,0)
+        h1_cvea__abab = slice(0,0)
+        h1_cvea__baab = slice(0,0)
+        h1_cvee = slice(0,0)
+        if mr_adc.nval > 0:
+            h1_cvaa = mr_adc.h1.cvaa
+            h1_cvea__abab = mr_adc.h1.cvea__abab
+            h1_cvea__baab = mr_adc.h1.cvea__baab
+            h1_cvee = mr_adc.h1.cvee 
+
+    mr_adc.log.info(f"Print eigenvector elements > {print_thresh:f}\n")
+
+    result = []
+    for state in range(nroots):
+
+        _singles = []
+        _doubles = []
+
+        # Transform eigenvectors to the non-orthogonal basis
+        Y = apply_S_12(mr_adc, U[state], transpose = False)
+
+        Y_sq = np.abs(Y) ** 2
+        ind_idx = np.argsort(-Y_sq)
+
+        Y_sq = Y_sq[ind_idx]
+        Y_sorted = Y[ind_idx]
+ 
+        # Filter by tolerance
+        mask = Y_sq > print_thresh**2
+        ind_idx = ind_idx[mask]
+        Y_sorted = Y_sorted[mask]
+
+        for orb_idx, value in zip(ind_idx, Y_sorted):
+
+            # Singles
+            if orb_idx in range(h0_ca.start, h0_ca.stop):
+                local_idx = orb_idx - h0_ca.start
+                p, q = np.unravel_index(local_idx, (ncvs, ncas))
+                _singles.append((p + 1, q + 1 + ncvs + nval, 'CVS', 'CAS', value))
+
+            elif orb_idx in range(h0_ce.start, h0_ce.stop):
+                local_idx = orb_idx - h0_ce.start
+                p, q = np.unravel_index(local_idx, (ncvs, nextern))
+                _singles.append((p + 1, q + 1 + ncvs + nval + ncas, 'CVS', 'EXT', value))
+
+            elif orb_idx in range(h1_ccaa.start, h1_ccaa.start):
+                local_idx = orb_idx - h1_ccaa.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncvs, ncas, ncas))
+                _doubles.append((p+1, q+1, r+1+ncvs+nval, s+1+ncvs+nval, 'CVS', 'CVS', 'CAS', 'CAS', value))
+
+            elif orb_idx in range(h1_ccea.start, h1_ccea.start):
+                local_idx = orb_idx - h1_ccea.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncvs, nextern, ncas))
+                _doubles.append((p+1, q+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'CVS', 'EXT', 'CAS', value))
+
+            elif orb_idx in range(h1_ccee.start, h1_ccee.stop):
+                local_idx = orb_idx - h1_ccee.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncvs, nextern, nextern))
+                _doubles.append((p+1, q+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval+ncas, 'CVS', 'CVS', 'EXT', 'EXT', value))
+
+            elif orb_idx in range(h1_cvaa.start, h1_cvaa.stop):
+                local_idx = orb_idx - h1_cvaa.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, nval, ncas, ncas))
+                _doubles.append((p+1, q+ncvs+1, r+1+ncvs+nval, s+1+ncvs+nval, 'CVS', 'VAL', 'CAS', 'CAS', value))
+
+            elif orb_idx in range(h1_cvea__abab.start, h1_cvea__abab.stop):
+                local_idx = orb_idx - h1_cvea__abab.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, nval, nextern, ncas))
+                _doubles.append((p+1, q+ncvs+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'VAL', 'EXT', 'CAS', value))
+
+            elif orb_idx in range(h1_cvea__baab.start, h1_cvea__baab.stop):
+                local_idx = orb_idx - h1_cvea__baab.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, nval, nextern, ncas))
+                _doubles.append((p+1, q+ncvs+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'VAL', 'EXT', 'CAS', value))
+
+            elif orb_idx in range(h1_cvee.start, h1_cvee.stop):
+                local_idx = orb_idx - h1_cvee.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, nval, nextern, nextern))
+                _doubles.append((p+1, q+ncvs+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval+ncas, 'CVS', 'VAL', 'EXT', 'EXT', value))
+
+            elif orb_idx in range(h1_caee.start, h1_caee.stop):
+                local_idx = orb_idx - h1_caee.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, nextern))
+                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval+ncas, 'CVS', 'CAS', 'EXT', 'EXT', value))
+
+            elif orb_idx in range(h1_caee.start, h1_caee.stop):
+                local_idx = orb_idx - h1_caee.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, nextern))
+                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval+ncas, 'CVS', 'CAS', 'EXT', 'EXT', value))
+
+            elif orb_idx in range(h1_caaa__aaaa.start, h1_caaa__aaaa.stop):
+                local_idx = orb_idx - h1_caaa__aaaa.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, ncas, ncas))
+                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval, s+1+ncvs+nval, 'CVS', 'CAS', 'CAS', 'CAS', value))
+
+            elif orb_idx in range(h1_caaa__abab.start, h1_caaa__abab.stop):
+                local_idx = orb_idx - h1_caaa__abab.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, ncas, ncas))
+                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval, s+1+ncvs+nval, 'CVS', 'CAS', 'CAS', 'CAS', value))
+
+            elif orb_idx in range(h1_caea__aaaa.start, h1_caea__aaaa.stop):
+                local_idx = orb_idx - h1_caea__aaaa.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, ncas))
+                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'CAS', 'EXT', 'CAS', value))
+
+            elif orb_idx in range(h1_caea__abab.start, h1_caea__abab.stop):
+                local_idx = orb_idx - h1_caea__abab.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, ncas))
+                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'CAS', 'EXT', 'CAS', value))
+
+            elif orb_idx in range(h1_caea__baab.start, h1_caea__baab.stop):
+                local_idx = orb_idx - h1_caea__baab.start
+                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, ncas))
+                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'CAS', 'EXT', 'CAS', value))
+
+        result.append((state, _singles, _doubles))
+
+    for state, singles, doubles in result:
+        mr_adc.log.info(f"{mr_adc.method} | state {state+1:d} | Energy (eV) = {de[state] * h2ev:12.8f}")
+        mr_adc.log.info("\n1p1h block:")
+        for p, q, p_label, q_label, val in singles:
+            mr_adc.log.info(f"{p_label}({p:4d}) -> {q_label}({q:4d}) = {val:7.4f}")
+
+        mr_adc.log.info("\n2p2h block:")
+        for p, q, r, s, p_label, q_label, r_label, s_label, val in doubles:
+            mr_adc.log.info(f"{p_label},{q_label}({p:4d}, {q:4d}) -> {r_label},{s_label}({r:4d}, {s:4d}) = {val:7.4f}")
+        mr_adc.log.info('')
+    mr_adc.log.info("***************************************************************************************\n")
+    exit()
 
