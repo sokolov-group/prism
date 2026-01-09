@@ -42,7 +42,7 @@ else:
 try:
     if EINSUM_BACKEND == "pytblis":
         import pytblis
-        #pytblis.set_num_threads(8)
+        pytblis.set_num_threads(8)
     elif EINSUM_BACKEND == "opt_einsum":
         import opt_einsum
 except Exception:
@@ -58,7 +58,7 @@ except ImportError:
 
 @lru_cache(maxsize=256)
 def _compiled_opt_expr(subscripts, shapes, optimize):
-    return opt_einsum.contract_expression(subscripts, *shapes, optimize=optimize)
+    return _opt_einsum.contract_expression(subscripts, *shapes, optimize=optimize)
 
 def contract(subscripts, A, B, **kwargs):
     '''
@@ -77,15 +77,15 @@ def contract(subscripts, A, B, **kwargs):
     # Call numpy.asarray because A or B may be HDF5 Datasets
     A, B = asarray(A), asarray(B)
 
-    if EINSUM_BACKEND == "opt_einsum":
-        # compile/reuse cache expression keyed by shapes + optimize
-        optimize = kwargs.pop('optimize', True)
-        shapes = (tuple(A.shape), tuple(B.shape))
-        expr = _compiled_opt_expr(idx_str, shapes, optimize)
-        return expr(A, B, **kwargs)
+    #optimize = kwargs.pop('optimize', True)
+    #if EINSUM_BACKEND == "opt_einsum":
+    #    # compile/reuse cache expression keyed by shapes + optimize
+    #    shapes = (tuple(A.shape), tuple(B.shape))
+    #    expr = _compiled_opt_expr(idx_str, shapes, optimize)
+    #    return expr(A, B, **kwargs)
 
     if EINSUM_BACKEND == "pytblis":
-        return pytblis.einsum(idx_str, A, B, **kwargs)
+       return pytblis.contract(idx_str, A, B, **kwargs)
 
     # Linear algebra kwargs
     alpha = kwargs.pop('alpha', 1)
@@ -102,6 +102,15 @@ def contract(subscripts, A, B, **kwargs):
         return _numpy_einsum(idx_str, A, B, **kwargs)
 
     idxA, idxB, idxC, orderA, orderB, permC, shared = analysis
+
+    if A.size == 0 or B.size == 0:
+        shapeA = dict(zip(idxA, A.shape))
+        shapeB = dict(zip(idxB, B.shape))
+        out_shape = (
+            [shapeA[i] for i in idxA if i not in shared] +
+            [shapeB[i] for i in idxB if i not in shared])
+        out_shape = [out_shape[i] for i in permC]
+        return numpy.zeros(out_shape, dtype=numpy.result_type(A, B))
 
     # check: dimensions valid?
     if len(idxA) != A.ndim or len(idxB) != B.ndim:
@@ -127,18 +136,13 @@ def contract(subscripts, A, B, **kwargs):
     if flops < FLOP_THRESHOLD:
         return _numpy_einsum(idx_str, A, B, **kwargs)
 
-    if A.size == 0 or B.size == 0:
-        out_shape = (
-            [shapeA[i] for i in idxA if i not in shared] +
-            [shapeB[i] for i in idxB if i not in shared])
-        out_shape = [out_shape[i] for i in permC]
-        return numpy.zeros(out_shape, dtype=numpy.result_type(A, B))
+    At = A.transpose(orderA).reshape(-1, inner_dim)
+    Bt = B.transpose(orderB).reshape(inner_dim, -1)
 
-    At = A.transpose(orderA)
-    Bt = B.transpose(orderB)
-
-    At = asarray(At.reshape(-1, inner_dim), order="C")
-    Bt = asarray(Bt.reshape(inner_dim, -1), order="C")
+    if not At.flags.c_contiguous:
+        At = asarray(At, order="C")
+    if not Bt.flags.c_contiguous:
+        Bt = asarray(Bt, order="C")
 
     Cmat = dot(At, Bt)
 
@@ -154,18 +158,16 @@ def contract(subscripts, A, B, **kwargs):
 
     # alpha/beta/out semantics
     if out is None:
-        if alpha != 1:
-            Cres = Cres * alpha
-        return Cres
-    else:
-        out_arr = asarray(out)
-        # compute into temporary to avoid aliasing issues
-        result = Cres * alpha
-        if beta != 0:
-            result = result + out_arr * beta
-        # assign to output
-        out[...] = asarray(result, dtype=numpy.result_type(A, B, out))
-        return out
+        return Cres * alpha if alpha != 1 else Cres
+
+    # out provided
+    out_arr = asarray(out)
+    numpy.multiply(Cres, alpha, out=Cres)
+    if beta != 0:
+        numpy.add(Cres, out_arr * beta, out=Cres)
+    # assign to output
+    out_arr[...] = Cres
+    return out
 
 def einsum(scripts, *tensors, **kwargs):
     '''
@@ -177,11 +179,13 @@ def einsum(scripts, *tensors, **kwargs):
     be explicitly specified (i.e. 'ij,j->i' and not 'ij,j').
     '''
     subscripts = scripts.replace(" ","")
+    tensors = tuple(asarray(t) for t in tensors)
 
     if len(tensors) <= 1 or '...' in subscripts:
         return _numpy_einsum(subscripts, *tensors, **kwargs)
 
-    if EINSUM_BACKEND == "pytblis":
+    #if EINSUM_BACKEND == "pytblis":
+    if EINSUM_BACKEND == "pytblis" and len(tensors) < 4:
         if kwargs.get("optimize") is True:
            kwargs["optimize"] = "optimal"
         return pytblis.einsum(subscripts, *tensors, **kwargs)
@@ -207,6 +211,7 @@ def einsum(scripts, *tensors, **kwargs):
         result = fn(einsum_str, *ops, **kwargs)
         operands = [op for i, op in enumerate(operands) if i not in inds]
         operands.append(result)
+        del ops, result
 
     return operands[0]
 
