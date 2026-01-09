@@ -34344,11 +34344,11 @@ def compute_trans_moments(mr_adc, U):
     def compute_TY__q1_h1__CVEE(mr_adc, Y_KLCD, TY):
 
         cput1 = (logger.process_clock(), logger.perf_counter())
-        
+
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         ## Amplitudes
         t1_xxee = mr_adc.t1.xxee
         t1_vvee = mr_adc.t1.vvee
@@ -34462,10 +34462,10 @@ def compute_trans_moments(mr_adc, U):
         ## Dipole moment
         dip_mom = mr_adc.dip_mom
 
-        dX = einsum("Rpq,Kpq->RK", dip_mom, TY, optimize = einsum_type) 
+        dX = einsum("Rpq,Kpq->RK", dip_mom, TY, optimize = einsum_type)
 
         return dX
- 
+
     # Variables from kernel
     ncvs    = mr_adc.ncvs
     nval    = mr_adc.nval
@@ -34512,11 +34512,9 @@ def compute_trans_moments(mr_adc, U):
     for i in range(nroots):
         Y[i] = apply_S_12(mr_adc, U[i], transpose = False)
     del U
-    
-    #norm_function(mr_adc, U, Y)
 
-    Y_KC = Y[:, ce].reshape(nroots, ncvs, nextern) 
-    Y_KW = Y[:, ca].reshape(nroots, ncvs, ncas) 
+    Y_KC = Y[:, ce].reshape(nroots, ncvs, nextern)
+    Y_KW = Y[:, ca].reshape(nroots, ncvs, ncas)
 
     ## {q^(0)| h^(0)^dag}
     ### q(0) - CA
@@ -34557,9 +34555,9 @@ def compute_trans_moments(mr_adc, U):
             cvaa = mr_adc.h1.cvaa
             cvea__abab = mr_adc.h1.cvea__abab
             cvea__baab = mr_adc.h1.cvea__baab
-            cvee = mr_adc.h1.cvee 
+            cvee = mr_adc.h1.cvee
 
-        ## {q^(2)| h^(0)^dag}  
+        ## {q^(2)| h^(0)^dag}
         ### q(2) - CA
         if ncas > 0:
             q2_trans_mom.compute_TY__q2_h0__CA(mr_adc, Y_KW, TY)
@@ -34567,18 +34565,18 @@ def compute_trans_moments(mr_adc, U):
         ### q(2) - CE
         if nextern > 0:
             q2_trans_mom.compute_TY__q2_h0__CE(mr_adc, Y_KC, TY)
-    
+
         del(Y_KC, Y_KW)
 
         # Compound Indices
-        n_cc = mr_adc.h1.n_cc 
-        n_aa = mr_adc.h1.n_aa 
-        n_ee = mr_adc.h1.n_ee 
+        n_cc = mr_adc.h1.n_cc
+        n_aa = mr_adc.h1.n_aa
+        n_ee = mr_adc.h1.n_ee
 
         ## Indices
-        cc_tril_ind = mr_adc.h1.cc_tril_ind 
-        aa_tril_ind = mr_adc.h1.aa_tril_ind 
-        ee_tril_ind = mr_adc.h1.ee_tril_ind 
+        cc_tril_ind = mr_adc.h1.cc_tril_ind
+        aa_tril_ind = mr_adc.h1.aa_tril_ind
+        ee_tril_ind = mr_adc.h1.ee_tril_ind
 
         ## {q^(0)| h^(1)^dag}
         if ncas > 0:
@@ -34596,7 +34594,7 @@ def compute_trans_moments(mr_adc, U):
             ### q(2) - CAAA
             if mr_adc.method in ("mr-adc(2)-sx", "mr-adc(2)-x"):
                 q2_trans_mom.compute_TY__q2_h1__CAAA(mr_adc, Y_KWUV__aaaa, Y_KWUV__abab, TY)
-    
+
         if ncas > 0 and nextern > 0:
             ### q(0) - CAEA
             Y_KWCU__aaaa = np.ascontiguousarray(Y[:, caea__aaaa].reshape(-1, ncvs, ncas, nextern, ncas))
@@ -34632,7 +34630,7 @@ def compute_trans_moments(mr_adc, U):
             ### q(2) - CCEA
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CCEA(mr_adc, Y_KLCW, TY)
- 
+
         if nextern > 0:
             ### q(1) - CCEE
             Y_KLCD = np.ascontiguousarray(Y[:, ccee].reshape(-1, ncvs, ncvs, nextern, nextern))
@@ -34659,11 +34657,11 @@ def compute_trans_moments(mr_adc, U):
             Y_KLWU = np.ascontiguousarray(Y[:, cvaa].reshape(-1, ncvs, nval, ncas, ncas))
 
             compute_TY__q1_h1__CVAA(mr_adc, Y_KLWU, TY)
- 
+
             ### q(2) - CVAA
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CVAA(mr_adc, Y_KLWU, TY)
-    
+
         if nval > 0 and nextern > 0:    
             ### q(1) - CVEE
             Y_KLCD = np.ascontiguousarray(Y[:, cvee].reshape(-1, ncvs, nval, nextern, nextern))
@@ -34673,10 +34671,10 @@ def compute_trans_moments(mr_adc, U):
             ### q(2) - CVEE
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CVEE(mr_adc, Y_KLCD, TY)
-    
+
             del(Y_KLCD)
 
-        if nval > 0 and ncas > 0 and nextern > 0:    
+        if nval > 0 and ncas > 0 and nextern > 0:
             # q(1) - CVEA
             Y_KLCW__abab = np.ascontiguousarray(Y[:, cvea__abab].reshape(-1, ncvs, nval, nextern, ncas))
             Y_KLCW__baab = np.ascontiguousarray(Y[:, cvea__baab].reshape(-1, ncvs, nval, nextern, ncas))
@@ -34687,7 +34685,7 @@ def compute_trans_moments(mr_adc, U):
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CVEA(mr_adc, Y_KLCW__abab, Y_KLCW__baab, TY)
 
-    analyze_mo_cont(mr_adc, TY)
+    #analyze_mo_cont(mr_adc, TY)
 
     dX = compute_dX(mr_adc, TY)
 
@@ -34778,12 +34776,12 @@ def renormalize_eigenvectors(mr_adc, U):
     ca_caaa = mr_adc.h_orth.ca_caaa
     ce_caea = mr_adc.h_orth.ce_caea
 
-    ccaa = mr_adc.h_orth.ccaa      
+    ccaa = mr_adc.h_orth.ccaa
     ccea = mr_adc.h_orth.ccea
     ccee = mr_adc.h_orth.ccee
     caee = mr_adc.h_orth.caee
     if mr_adc.nval > 0:
-        cvaa = mr_adc.h_orth.cvaa     
+        cvaa = mr_adc.h_orth.cvaa
         cvea__abab = mr_adc.h_orth.cvea__abab
         cvea__baab = mr_adc.h_orth.cvea__baab
         cvee = mr_adc.h_orth.cvee

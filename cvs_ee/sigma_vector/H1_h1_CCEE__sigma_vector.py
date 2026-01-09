@@ -93,7 +93,7 @@ def compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X, sigma):
     v_xxae = mr_adc.v2e.xxae
     v_xaex = mr_adc.v2e.xaex
     v_aaaa = mr_adc.v2e.aaaa
-    v_aeee = mr_adc.v2e.aeee
+    #v_aeee = mr_adc.v2e.aeee
 
     ## Amplitudes
     t1_ae = mr_adc.t1.ae 
@@ -104,7 +104,7 @@ def compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X, sigma):
     rdm_ccaa = mr_adc.rdm.ccaa
 
     sigma_KLCW  = einsum('KLCa,Wa->KLCW', X, h_ae, optimize = einsum_type)
-    sigma_KLCW += einsum('KLab,WbCa->KLCW', X, v_aeee, optimize = einsum_type)
+    #sigma_KLCW += einsum('KLab,WbCa->KLCW', X, v_aeee, optimize = einsum_type)
     sigma_KLCW += 2 * einsum('KiCa,LWai->KLCW', X, v_xaex, optimize = einsum_type)
     sigma_KLCW -= einsum('KiCa,iLWa->KLCW', X, v_xxae, optimize = einsum_type)
     sigma_KLCW -= einsum('KiaC,LWai->KLCW', X, v_xaex, optimize = einsum_type)
@@ -113,7 +113,7 @@ def compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X, sigma):
     sigma_KLCW -= einsum('KLCa,Wx,xa->KLCW', X, h_aa, t1_ae, optimize = einsum_type)
     sigma_KLCW -= 1/2 * einsum('KLCa,Wxya,yx->KLCW', X, v_aaae, rdm_ca, optimize = einsum_type)
     sigma_KLCW += einsum('KLCa,xyWa,xy->KLCW', X, v_aaae, rdm_ca, optimize = einsum_type)
-    sigma_KLCW -= 1/2 * einsum('KLab,xbCa,Wx->KLCW', X, v_aeee, rdm_ca, optimize = einsum_type)
+    #sigma_KLCW -= 1/2 * einsum('KLab,xbCa,Wx->KLCW', X, v_aeee, rdm_ca, optimize = einsum_type)
     sigma_KLCW -= einsum('KiCa,Lxai,Wx->KLCW', X, v_xaex, rdm_ca, optimize = einsum_type)
     sigma_KLCW += 1/2 * einsum('KiCa,iLxa,Wx->KLCW', X, v_xxae, rdm_ca, optimize = einsum_type)
     sigma_KLCW += 1/2 * einsum('KiaC,Lxai,Wx->KLCW', X, v_xaex, rdm_ca, optimize = einsum_type)
