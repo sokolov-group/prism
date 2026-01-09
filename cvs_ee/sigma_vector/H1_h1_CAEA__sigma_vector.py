@@ -5824,7 +5824,7 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
     v_vxxe = mr_adc.v2e.vxxe
     v_vaae = mr_adc.v2e.vaae
     v_veaa = mr_adc.v2e.veaa
-    v_veee = mr_adc.v2e.veee
+    #v_veee = mr_adc.v2e.veee
     v_aaaa = mr_adc.v2e.aaaa
 
     ## Amplitudes
@@ -5837,14 +5837,14 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
 
     sigma_KLCD_abab  = 1/2 * einsum('KxCy,LDyz,xz->KLCD', X_aaaa, v_veaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab -= 1/2 * einsum('KxCy,LDzx,yz->KLCD', X_aaaa, v_veaa, rdm_ca, optimize = einsum_type)
-    sigma_KLCD_abab += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_aaaa, v_veee, rdm_ca, optimize = einsum_type)
+    #sigma_KLCD_abab += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_aaaa, v_veee, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab -= 1/2 * einsum('ixCy,KiLD,xy->KLCD', X_aaaa, v_xxve, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab -= 1/2 * einsum('ixDy,LiKC,xy->KLCD', X_aaaa, v_vxxe, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab += 1/2 * einsum('KxCy,LDyz,xz->KLCD', X_abab, v_veaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab -= 1/2 * einsum('KxCy,LDzx,yz->KLCD', X_abab, v_veaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab += 1/2 * einsum('KxCy,LxzD,yz->KLCD', X_abab, v_vaae, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab -= 1/2 * einsum('KxCy,LzyD,xz->KLCD', X_abab, v_vaae, rdm_ca, optimize = einsum_type)
-    sigma_KLCD_abab += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_abab, v_veee, rdm_ca, optimize = einsum_type)
+    #sigma_KLCD_abab += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_abab, v_veee, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab -= 1/2 * einsum('ixCy,KiLD,xy->KLCD', X_abab, v_xxve, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab -= 1/2 * einsum('ixDy,LiKC,xy->KLCD', X_abab, v_vxxe, rdm_ca, optimize = einsum_type)
     sigma_KLCD_abab -= 1/2 * einsum('KxDy,LxzC,yz->KLCD', X_baab, v_vaae, rdm_ca, optimize = einsum_type)
