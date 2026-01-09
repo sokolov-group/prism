@@ -685,7 +685,7 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
     v_xaae = mr_adc.v2e.xaae
     v_xeaa = mr_adc.v2e.xeaa
     v_aaaa = mr_adc.v2e.aaaa
-    v_xeee = mr_adc.v2e.xeee
+    #v_xeee = mr_adc.v2e.xeee
   
     ## Amplitudes
     t1_xe = mr_adc.t1.xe
@@ -698,22 +698,22 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
 
     sigma_KLCD  = 1/2 * einsum('KxCy,LDyz,xz->KLCD', X_aaaa, v_xeaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('KxCy,LDzx,yz->KLCD', X_aaaa, v_xeaa, rdm_ca, optimize = einsum_type)
-    sigma_KLCD += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
+    #sigma_KLCD += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
     sigma_KLCD += 1/2 * einsum('LxDy,KCyz,xz->KLCD', X_aaaa, v_xeaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('LxDy,KCzx,yz->KLCD', X_aaaa, v_xeaa, rdm_ca, optimize = einsum_type)
-    sigma_KLCD += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
+    #sigma_KLCD += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('ixCy,KiLD,xy->KLCD', X_aaaa, v_xxxe, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('ixDy,LiKC,xy->KLCD', X_aaaa, v_xxxe, rdm_ca, optimize = einsum_type)
     sigma_KLCD += 1/2 * einsum('KxCy,LDyz,xz->KLCD', X_abab, v_xeaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('KxCy,LDzx,yz->KLCD', X_abab, v_xeaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD += 1/2 * einsum('KxCy,LxzD,yz->KLCD', X_abab, v_xaae, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('KxCy,LzyD,xz->KLCD', X_abab, v_xaae, rdm_ca, optimize = einsum_type)
-    sigma_KLCD += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
+    #sigma_KLCD += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
     sigma_KLCD += 1/2 * einsum('LxDy,KCyz,xz->KLCD', X_abab, v_xeaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('LxDy,KCzx,yz->KLCD', X_abab, v_xeaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD += 1/2 * einsum('LxDy,KxzC,yz->KLCD', X_abab, v_xaae, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('LxDy,KzyC,xz->KLCD', X_abab, v_xaae, rdm_ca, optimize = einsum_type)
-    sigma_KLCD += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
+    #sigma_KLCD += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('ixCy,KiLD,xy->KLCD', X_abab, v_xxxe, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('ixDy,LiKC,xy->KLCD', X_abab, v_xxxe, rdm_ca, optimize = einsum_type)
     sigma_KLCD -= 1/2 * einsum('KxDy,LxzC,yz->KLCD', X_baab, v_xaae, rdm_ca, optimize = einsum_type)
@@ -898,11 +898,11 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CAEA__V_XEEE(mr_adc, X_aaaa, X_abab, s
     # Reduced Density Matrices
     rdm_ca = mr_adc.rdm.ca
 
-    sigma_KLCD_abab  = 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KLCD_abab += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KLCD_abab += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_baba, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma_KLCD_abab += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_bbbb, v_xeee, rdm_ca, optimize = einsum_type)
-    sigma[ccee] += ascontiguousarray(sigma_KLCD_abab).reshape(-1)
+    sigma_KLCD  = 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
+    sigma_KLCD += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
+    sigma_KLCD += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
+    sigma_KLCD += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
+    sigma[ccee] += ascontiguousarray(sigma_KLCD).reshape(-1)
 
     mr_adc.log.timer_debug("contracting v2e.xeee", *cput1)
 
