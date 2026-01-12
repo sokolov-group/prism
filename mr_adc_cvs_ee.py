@@ -76,14 +76,10 @@ def compute_excitation_manifolds(mr_adc):
 
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
         # Compound Indices
-        mr_adc.h1.n_cc = mr_adc.ncvs * (mr_adc.ncvs - 1) // 2
         mr_adc.h1.n_aa = mr_adc.ncas * (mr_adc.ncas - 1) // 2
-        mr_adc.h1.n_ee = mr_adc.nextern * (mr_adc.nextern - 1) // 2
 
         ## Indices
-        mr_adc.h1.cc_tril_ind = np.tril_indices(mr_adc.ncvs, k = -1)
         mr_adc.h1.aa_tril_ind = np.tril_indices(mr_adc.ncas, k = -1)
-        mr_adc.h1.ee_tril_ind = np.tril_indices(mr_adc.nextern, k = -1)
 
         ## First-order manifold
         # double-core excitations
@@ -186,7 +182,6 @@ def compute_excitation_manifolds(mr_adc):
         # Orthogonalized zeroth- and first-order manifold
         if not hasattr(mr_adc.S12, "ccaa"):
             mr_adc.S12.ccaa = mr_adc_overlap.compute_S12_p2(mr_adc)
-            mr_adc.S12.ccaa_aa = mr_adc_overlap.compute_S12_p2_aa(mr_adc)
         if not hasattr(mr_adc.S12, "ccea"):
             mr_adc.S12.ccea = mr_adc_overlap.compute_S12_p1(mr_adc)
         if not hasattr(mr_adc.S12, "caee"):
@@ -26059,15 +26054,6 @@ def compute_preconditioner(mr_adc):
         precond_ccaa = precond_ccaa.reshape(ncvs, ncvs, ncas**2, ncas**2)
         precond_ccaa = einsum('IJXY,XP,YP->IJP', precond_ccaa, S12_ccaa, S12_ccaa, optimize = einsum_type) 
 
-        #S12_ccaa_aa = mr_adc.S12.ccaa_aa
-
-        #precond_ccaa__aaaa = precond_ccaa__aaaa[:,:,:,:,aa_tril_ind[0], aa_tril_ind[1]]
-        #precond_ccaa__aaaa = precond_ccaa__aaaa[:,:,aa_tril_ind[0], aa_tril_ind[1]]
-        #precond_ccaa__aaaa = precond_ccaa__aaaa[cc_tril_ind[0], cc_tril_ind[1]]
- 
-        #precond_ccaa__aaaa = einsum('IXY,XP,YP->IP', precond_ccaa__aaaa, S12_ccaa_aa, S12_ccaa_aa, optimize = einsum_type) 
- 
-        #return precond_ccaa__aaaa, precond_ccaa
         return precond_ccaa
 
     ## CVAA
@@ -27079,9 +27065,7 @@ def compute_preconditioner(mr_adc):
     elif mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
 
         ## Indices
-        cc_tril_ind = mr_adc.h1.cc_tril_ind 
         aa_tril_ind = mr_adc.h1.aa_tril_ind 
-        ee_tril_ind = mr_adc.h1.ee_tril_ind 
 
         ## Excitation manifolds
         ho_ccaa = mr_adc.h_orth.ccaa
@@ -27492,14 +27476,10 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         nelecas = sum(nelecas)
 
     # Compound Indices
-    n_cc = mr_adc.h1.n_cc 
     n_aa = mr_adc.h1.n_aa 
-    n_ee = mr_adc.h1.n_ee 
 
     ## Indices
-    cc_tril_ind = mr_adc.h1.cc_tril_ind 
     aa_tril_ind = mr_adc.h1.aa_tril_ind 
-    ee_tril_ind = mr_adc.h1.ee_tril_ind 
 
     # Matrix Block
     M_00 = mr_adc.M_00
@@ -34559,14 +34539,10 @@ def compute_trans_moments(mr_adc, U):
         del(Y_KC, Y_KW)
 
         # Compound Indices
-        n_cc = mr_adc.h1.n_cc
         n_aa = mr_adc.h1.n_aa
-        n_ee = mr_adc.h1.n_ee
 
         ## Indices
-        cc_tril_ind = mr_adc.h1.cc_tril_ind
         aa_tril_ind = mr_adc.h1.aa_tril_ind
-        ee_tril_ind = mr_adc.h1.ee_tril_ind
 
         ## {q^(0)| h^(1)^dag}
         if ncas > 0:
@@ -34585,6 +34561,8 @@ def compute_trans_moments(mr_adc, U):
             if mr_adc.method in ("mr-adc(2)-sx", "mr-adc(2)-x"):
                 q2_trans_mom.compute_TY__q2_h1__CAAA(mr_adc, Y_KWUV__aaaa, Y_KWUV__abab, TY)
 
+            del Y_KWUV__aaaa, Y_KWUV__abab
+
         if ncas > 0 and nextern > 0:
             ### q(0) - CAEA
             Y_KWCU__aaaa = np.ascontiguousarray(Y[:, caea__aaaa].reshape(-1, ncvs, ncas, nextern, ncas))
@@ -34600,6 +34578,8 @@ def compute_trans_moments(mr_adc, U):
             if mr_adc.method in ("mr-adc(2)-sx", "mr-adc(2)-x"):
                 q2_trans_mom.compute_TY__q2_h1__CAEA(mr_adc, Y_KWCU__aaaa, Y_KWCU__abab, Y_KWCU__baab, TY)
 
+            del Y_KWCU__aaaa, Y_KWCU__abab, Y_KWCU__baab
+
         ## {q^(1)| h^(1)^dag}
         if ncas > 0:
             ### q(1) - CCAA
@@ -34611,6 +34591,8 @@ def compute_trans_moments(mr_adc, U):
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CCAA(mr_adc, Y_KLWU, TY)
 
+            del Y_KLWU
+
         if ncas > 0 and nextern > 0:
             ### q(1) - CCEA
             Y_KLCW = np.ascontiguousarray(Y[:, ccea].reshape(-1, ncvs, ncvs, nextern, ncas)).copy()
@@ -34620,6 +34602,8 @@ def compute_trans_moments(mr_adc, U):
             ### q(2) - CCEA
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CCEA(mr_adc, Y_KLCW, TY)
+
+            del Y_KLCW
 
         if nextern > 0:
             ### q(1) - CCEE
@@ -34631,7 +34615,8 @@ def compute_trans_moments(mr_adc, U):
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CCEE(mr_adc, Y_KLCD, TY)
 
-            del(Y_KLCD)
+            del Y_KLCD
+
         if ncas > 0 and nextern > 0:
             ### q(1) - CAEE
             Y_KWCD = np.ascontiguousarray(Y[:, caee].reshape(-1, ncvs, ncas, nextern, nextern))
@@ -34641,6 +34626,8 @@ def compute_trans_moments(mr_adc, U):
             ### q(2) - CAEE
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CAEE(mr_adc, Y_KWCD, TY)
+
+            del Y_KWCD
 
         if nval > 0 and ncas > 0:
             ### q(1) - CVAA
@@ -34652,6 +34639,8 @@ def compute_trans_moments(mr_adc, U):
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CVAA(mr_adc, Y_KLWU, TY)
 
+            del Y_KLWU
+
         if nval > 0 and nextern > 0:    
             ### q(1) - CVEE
             Y_KLCD = np.ascontiguousarray(Y[:, cvee].reshape(-1, ncvs, nval, nextern, nextern))
@@ -34662,7 +34651,7 @@ def compute_trans_moments(mr_adc, U):
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CVEE(mr_adc, Y_KLCD, TY)
 
-            del(Y_KLCD)
+            del Y_KLCD
 
         if nval > 0 and ncas > 0 and nextern > 0:
             # q(1) - CVEA
@@ -34674,6 +34663,8 @@ def compute_trans_moments(mr_adc, U):
             ### q(2) - CVEA
             if mr_adc.method == "mr-adc(2)-x":
                 q2_trans_mom.compute_TY__q2_h1__CVEA(mr_adc, Y_KLCW__abab, Y_KLCW__baab, TY)
+
+            del Y_KLCW__abab, Y_KLCW__baab
 
     #analyze_mo_cont(mr_adc, TY)
 

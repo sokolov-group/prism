@@ -171,10 +171,6 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X, sigma):
     #Excitation Manifold
     ccee = mr_adc.h1.ccee
 
-    ## Indices
-    cc_tril_ind = mr_adc.h1.cc_tril_ind 
-    ee_tril_ind = mr_adc.h1.ee_tril_ind 
-
     ## Two-electron integrals
     v_xxxx = mr_adc.v2e.xxxx
     v_xxee = mr_adc.v2e.xxee
