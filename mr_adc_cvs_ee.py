@@ -49,7 +49,7 @@ def compute_excitation_manifolds(mr_adc):
 
     mr_adc.h0.ca = slice(mr_adc.h0.s_ca, mr_adc.h0.f_ca)
     mr_adc.h0.ce = slice(mr_adc.h0.s_ce, mr_adc.h0.f_ce)
- 
+
     mr_adc.log.extra("\nDimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
 
     # Orthogonalized zeroth-order manifold
@@ -61,15 +61,15 @@ def compute_excitation_manifolds(mr_adc):
     mr_adc.h_orth.dim_ca_caaa = mr_adc.h_orth.n_ca_caaa 
     mr_adc.h_orth.dim_ce_caea = mr_adc.h_orth.n_ce_caea  
     mr_adc.h_orth.dim = mr_adc.h_orth.dim_ce_caea + mr_adc.h_orth.dim_ca_caaa 
- 
+
     mr_adc.h_orth.s_ca_caaa = 0
     mr_adc.h_orth.f_ca_caaa = mr_adc.h_orth.s_ca_caaa + mr_adc.h_orth.n_ca_caaa
     mr_adc.h_orth.s_ce_caea = mr_adc.h_orth.f_ca_caaa
     mr_adc.h_orth.f_ce_caea = mr_adc.h_orth.s_ce_caea + mr_adc.h_orth.n_ce_caea
-  
+
     mr_adc.h_orth.ca_caaa = slice(mr_adc.h_orth.s_ca_caaa, mr_adc.h_orth.f_ca_caaa)
     mr_adc.h_orth.ce_caea = slice(mr_adc.h_orth.s_ce_caea, mr_adc.h_orth.f_ce_caea)
- 
+
     # MR-ADC(2), MR-ADC(2)-SX, and MR-ADC(2)-X
     mr_adc.h1.dim = 0
     mr_adc.h_orth.dim = mr_adc.h0.dim
@@ -86,7 +86,7 @@ def compute_excitation_manifolds(mr_adc):
         mr_adc.h1.n_ccaa = mr_adc.ncvs * mr_adc.ncvs * mr_adc.ncas * mr_adc.ncas
         mr_adc.h1.n_ccea = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern * mr_adc.ncas
         mr_adc.h1.n_ccee = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern * mr_adc.nextern
- 
+
         # single-core excitations
         mr_adc.h1.n_caee = mr_adc.ncvs * mr_adc.ncas * mr_adc.nextern * mr_adc.nextern
         mr_adc.h1.n_caaa = mr_adc.ncvs * mr_adc.ncas * mr_adc.ncas * mr_adc.ncas
@@ -133,10 +133,10 @@ def compute_excitation_manifolds(mr_adc):
         ## Case Indices
         # CCAA (CVAA)
         mr_adc.h1.ccaa = slice(mr_adc.h1.s_ccaa, mr_adc.h1.f_ccaa)
- 
+
         if mr_adc.nval > 0:
             mr_adc.h1.cvaa = slice(mr_adc.h1.s_cvaa, mr_adc.h1.f_cvaa)
- 
+
         # CCEA (CVEA)
         mr_adc.h1.ccea = slice(mr_adc.h1.s_ccea, mr_adc.h1.f_ccea)
         if mr_adc.nval > 0:
@@ -144,27 +144,27 @@ def compute_excitation_manifolds(mr_adc):
             mr_adc.h1.f_cvea__abab = mr_adc.h1.s_cvea__abab + mr_adc.h1.n_cvea
             mr_adc.h1.s_cvea__baab = mr_adc.h1.f_cvea__abab
             mr_adc.h1.f_cvea__baab = mr_adc.h1.s_cvea__baab + mr_adc.h1.n_cvea
-    
+
             mr_adc.h1.cvea__abab = slice(mr_adc.h1.s_cvea__abab, mr_adc.h1.f_cvea__abab)
             mr_adc.h1.cvea__baab = slice(mr_adc.h1.s_cvea__baab, mr_adc.h1.f_cvea__baab)
- 
+
         # CCEE (CVEE)
         mr_adc.h1.ccee = slice(mr_adc.h1.s_ccee, mr_adc.h1.f_ccee)
         if mr_adc.nval > 0:
             mr_adc.h1.cvee = slice(mr_adc.h1.s_cvee, mr_adc.h1.f_cvee)
- 
+
         # CAEE  
         mr_adc.h1.caee = slice(mr_adc.h1.s_caee, mr_adc.h1.f_caee)
- 
+
         # CAAA
         mr_adc.h1.s_caaa__aaaa = mr_adc.h1.s_caaa
         mr_adc.h1.f_caaa__aaaa = mr_adc.h1.s_caaa__aaaa + mr_adc.h1.n_caaa_tril
         mr_adc.h1.s_caaa__abab = mr_adc.h1.f_caaa__aaaa
         mr_adc.h1.f_caaa__abab = mr_adc.h1.s_caaa__abab + mr_adc.h1.n_caaa
- 
+
         mr_adc.h1.caaa__aaaa = slice(mr_adc.h1.s_caaa__aaaa, mr_adc.h1.f_caaa__aaaa)
         mr_adc.h1.caaa__abab = slice(mr_adc.h1.s_caaa__abab, mr_adc.h1.f_caaa__abab)
- 
+
         # CAEA
         mr_adc.h1.s_caea__aaaa = mr_adc.h1.s_caea
         mr_adc.h1.f_caea__aaaa = mr_adc.h1.s_caea__aaaa + mr_adc.h1.n_caea
@@ -26345,12 +26345,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma_KW -= einsum('Kixy,iWyz,xwuz,uw->KW', X, t1_xaaa, v_aaaa, rdm_ca, optimize = einsum_type)
         sigma_KW += 2 * einsum('Kixy,iWyz,xzwu,wu->KW', X, t1_xaaa, v_aaaa, rdm_ca, optimize = einsum_type)
         sigma_KW -= einsum('Kixy,iWyz,zwuv,xuwv->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvsuz->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvszu->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvusz->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/3 * einsum('Kixy,iWzw,wuvs,xyvuzs->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvzsu->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvzus->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_KW += 1/2 * einsum('Kixy,iWzw,wuvs,xyvuzs->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,iWzw,wuzv,xyuv->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,iWzw,xuvw,yuzv->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,iWzw,xuvz,yuvw->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
@@ -26381,12 +26376,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma_KW -= einsum('Kixy,iz,Wxzw,yw->KW', X, t1_xa, v_aaaa, rdm_ca, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,iz,Wyzw,xw->KW', X, t1_xa, v_aaaa, rdm_ca, optimize = einsum_type)
         sigma_KW -= 1/2 * einsum('Kixy,izwu,Wvsz,xysvwu->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzsvw->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzswv->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzvsw->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/3 * einsum('Kixy,izwu,Wvus,xyzvws->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzwsv->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzwvs->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_KW += 1/2 * einsum('Kixy,izwu,Wvus,xyzvws->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,izwu,Wvux,yzwv->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,izwu,Wvuy,xzvw->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,izwu,Wvws,xyzvsu->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
@@ -26402,12 +26392,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma_KW -= 1/2 * einsum('Kixy,izwu,Wyvz,xvwu->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,izwu,Wywv,xzvu->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW -= einsum('Kixy,izwu,Wywx,zu->KW', X, t1_xaaa, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvsuw->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvswu->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvusw->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/3 * einsum('Kixy,izwu,Wzvs,xyvuws->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvwsu->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvwus->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_KW -= 1/2 * einsum('Kixy,izwu,Wzvs,xyvuws->KW', X, t1_xaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_KW -= 1/2 * einsum('Kixy,izwu,Wzvx,yvwu->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW -= 1/2 * einsum('Kixy,izwu,Wzvy,xvuw->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW -= 1/2 * einsum('Kixy,izwx,Wuvz,yvwu->KW', X, t1_xaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
@@ -26562,12 +26547,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma_KW -= einsum('Kixy,iWyz,xwuz,uw->KW', X, t1_vaaa, v_aaaa, rdm_ca, optimize = einsum_type)
         sigma_KW += 2 * einsum('Kixy,iWyz,xzwu,wu->KW', X, t1_vaaa, v_aaaa, rdm_ca, optimize = einsum_type)
         sigma_KW -= einsum('Kixy,iWyz,zwuv,xuwv->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvsuz->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvszu->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvusz->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/3 * einsum('Kixy,iWzw,wuvs,xyvuzs->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvzsu->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,iWzw,wuvs,xyvzus->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_KW += 1/2 * einsum('Kixy,iWzw,wuvs,xyvuzs->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,iWzw,wuzv,xyuv->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,iWzw,xuvw,yuzv->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,iWzw,xuvz,yuvw->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
@@ -26598,12 +26578,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma_KW -= einsum('Kixy,iz,Wxzw,yw->KW', X, t1_va, v_aaaa, rdm_ca, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,iz,Wyzw,xw->KW', X, t1_va, v_aaaa, rdm_ca, optimize = einsum_type)
         sigma_KW -= 1/2 * einsum('Kixy,izwu,Wvsz,xysvwu->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzsvw->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzswv->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzvsw->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/3 * einsum('Kixy,izwu,Wvus,xyzvws->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzwsv->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/6 * einsum('Kixy,izwu,Wvus,xyzwvs->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_KW += 1/2 * einsum('Kixy,izwu,Wvus,xyzvws->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,izwu,Wvux,yzwv->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,izwu,Wvuy,xzvw->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,izwu,Wvws,xyzvsu->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
@@ -26619,12 +26594,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma_KW -= 1/2 * einsum('Kixy,izwu,Wyvz,xvwu->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW += 1/2 * einsum('Kixy,izwu,Wywv,xzvu->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW -= einsum('Kixy,izwu,Wywx,zu->KW', X, t1_vaaa, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvsuw->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvswu->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvusw->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW -= 1/3 * einsum('Kixy,izwu,Wzvs,xyvuws->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvwsu->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_KW += 1/6 * einsum('Kixy,izwu,Wzvs,xyvwus->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_KW -= 1/2 * einsum('Kixy,izwu,Wzvs,xyvuws->KW', X, t1_vaaa, v_aaaa, rdm_cccaaa, optimize = einsum_type)
         sigma_KW -= 1/2 * einsum('Kixy,izwu,Wzvx,yvwu->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW -= 1/2 * einsum('Kixy,izwu,Wzvy,xvuw->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
         sigma_KW -= 1/2 * einsum('Kixy,izwx,Wuvz,yvwu->KW', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
@@ -27073,7 +27043,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma_KC += einsum('Kiax,ixCa->KC', X_baab, v_vaee, optimize = einsum_type)
         sigma_KC -= einsum('Kiax,iyCa,xy->KC', X_abab, v_vaee, rdm_ca, optimize = einsum_type)
         sigma_KC -= 1/2 * einsum('Kiax,iyCa,xy->KC', X_baab, v_vaee, rdm_ca, optimize = einsum_type)
- 
+
         mr_adc.log.timer_debug("contracting v2e.vaee", *cput1)
 
         return sigma_KC
@@ -27093,7 +27063,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma_KC -= 2 * einsum('Kiax,iaCx->KC', X_baab, v_veea, optimize = einsum_type)
         sigma_KC += 1/2 * einsum('Kiax,iaCy,xy->KC', X_abab, v_veea, rdm_ca, optimize = einsum_type)
         sigma_KC += einsum('Kiax,iaCy,xy->KC', X_baab, v_veea, rdm_ca, optimize = einsum_type)
- 
+
         mr_adc.log.timer_debug("contracting v2e.veea", *cput1)
 
         return sigma_KC
@@ -31835,7 +31805,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVAA(mr_adc, X, sigma)
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVAA(mr_adc, X, sigma)
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVAA(mr_adc, X, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVAA(mr_adc, X, sigma)        
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVAA(mr_adc, X, sigma)
 
     # CVEA
     if nval > 0 and ncas > 0 and nextern > 0:    
@@ -31894,7 +31864,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
            del(sigma_KLCW_abab, sigma_KLCW_baab)
 
     # CVEE
-    if nval > 0 and nextern > 0:    
+    if nval > 0 and nextern > 0:
         X = np.ascontiguousarray(Xt[cvee].reshape(ncvs, nval, nextern, nextern))
 
         ## h0-h1 contributions
@@ -31949,7 +31919,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CVEE(mr_adc, X, sigma)
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CVEE(mr_adc, X, sigma)
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CVEE(mr_adc, X, sigma)
-            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X, sigma)        
+            h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X, sigma)
     mr_adc.log.timer_debug("computing sigma vector", *cput0)
 
     return np.ascontiguousarray(sigma)
@@ -31975,7 +31945,7 @@ def compute_trans_moments(mr_adc, U):
         temp = Y_KW.copy()
         temp -= 1/2 * einsum('RPx,Qx->RPQ', Y_KW, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
- 
+
         mr_adc.log.timer_debug("computing T q0-h0 CA", *cput1)
 
     def compute_TY__q0_h0__CE(mr_adc, Y_KC, TY):
@@ -31987,7 +31957,7 @@ def compute_trans_moments(mr_adc, U):
         einsum_type = mr_adc.interface.einsum_type
 
         TY[:, s_c:f_c, s_e:f_e] += Y_KC.copy()
- 
+
         mr_adc.log.timer_debug("computing T q0-h0 CE", *cput1)
 
     def compute_TY__q1_h0__CA(mr_adc, Y_KW, TY):
