@@ -138,6 +138,8 @@ class NEVPT:
 
         #Test for SOC code
         self.interface.soc = self.soc
+        self.interface.uncontract = self.uncontract
+        self.interface.soc_order = self.soc_order
         if self.soc: 
           from prism import general_somf
           import numpy as np
