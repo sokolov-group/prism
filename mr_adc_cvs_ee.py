@@ -24859,8 +24859,6 @@ def compute_preconditioner(mr_adc):
         precond_ccaa -= 1/2 * einsum('YxyZ,II,JJ,WX,yx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
         precond_ccaa -= 1/2 * einsum('Zxyz,II,JJ,WX,Yyxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(ncvs), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
 
-        #precond_ccaa__aaaa = precond_ccaa - precond_ccaa.transpose(0,1,2,3,5,4)
-
         precond_ccaa = precond_ccaa.reshape(ncvs, ncvs, ncas**2, ncas**2)
         precond_ccaa = einsum('IJXY,XP,YP->IJP', precond_ccaa, S12_ccaa, S12_ccaa, optimize = einsum_type) 
 
@@ -24941,19 +24939,9 @@ def compute_preconditioner(mr_adc):
         precond_cvaa -= 1/2 * einsum('YxyZ,II,JJ,WX,yx->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ca, optimize = einsum_type)
         precond_cvaa -= 1/2 * einsum('Zxyz,II,JJ,WX,Yyxz->IJXYWZ', v_aaaa, np.identity(ncvs), np.identity(nval), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
 
-        #precond_cvaa__aaaa = precond_cvaa - precond_cvaa.transpose(0,1,2,3,5,4)
-
         precond_cvaa = precond_cvaa.reshape(ncvs, nval, ncas**2, ncas**2)
         precond_cvaa = einsum('IJXY,XP,YP->IJP', precond_cvaa, S12_ccaa, S12_ccaa, optimize = einsum_type) 
 
-        #S12_ccaa_aa = mr_adc.S12.ccaa_aa
-
-        #precond_cvaa__aaaa = precond_cvaa__aaaa[:,:,:,:,aa_tril_ind[0], aa_tril_ind[1]]
-        #precond_cvaa__aaaa = precond_cvaa__aaaa[:,:,aa_tril_ind[0], aa_tril_ind[1]]
- 
-        #precond_cvaa__aaaa = einsum('IJXY,XP,YP->IJP', precond_cvaa__aaaa, S12_ccaa_aa, S12_ccaa_aa, optimize = einsum_type) 
- 
-        #return precond_cvaa__aaaa, precond_cvaa
         return precond_cvaa
 
     ## CCEA
@@ -25648,12 +25636,8 @@ def compute_preconditioner(mr_adc):
 
         ## Two-electron integrals
         v_aaaa = mr_adc.v2e.aaaa
-        v_xeex = mr_adc.v2e.xeex
-        v_xxee = mr_adc.v2e.xxee
         v_xxaa = mr_adc.v2e.xxaa
         v_xaax = mr_adc.v2e.xaax
-        v_aaee = mr_adc.v2e.aaee
-        v_aeea = mr_adc.v2e.aeea
 
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
@@ -25734,12 +25718,6 @@ def compute_preconditioner(mr_adc):
             v_xeex = mr_adc.v2e.xeex[:, s_chunk:f_chunk, s_chunk:f_chunk, :]
             v_xxee = mr_adc.v2e.xxee[:, :, s_chunk:f_chunk, s_chunk:f_chunk]
 
-            #temp__aa_aaaa  = 1/2 * einsum('IAAI,XY->IAXY', v_xeex, rdm_ca, optimize = einsum_type)
-            #temp__aa_aaaa -= 1/2 * einsum('IIAA,XY->IAXY', v_xxee, rdm_ca, optimize = einsum_type)
-
-            #temp__aa_abab  = 1/2 * einsum('IAAI,XY->IAXY', v_xeex, rdm_ca, optimize = einsum_type)
-            #temp__aa_abab -= 1/2 * einsum('IIAA,XY->IAXY', v_xxee, rdm_ca, optimize = einsum_type)
-
             temp  = 1/2 * einsum('IAAI,XY->IAXY', v_xeex, rdm_ca, optimize = einsum_type)
             temp -= 1/2 * einsum('IIAA,XY->IAXY', v_xxee, rdm_ca, optimize = einsum_type)
 
@@ -25772,7 +25750,7 @@ def compute_preconditioner(mr_adc):
         precond_caea__aaaa -= 1/2 * einsum('I,AA,II,YZ,WX->IAXYWZ', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
         precond_caea__aaaa -= 1/2 * einsum('Wx,AA,II,YZ,Xx->IAXYWZ', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
         precond_caea__aaaa -= 1/2 * einsum('Wxyz,AA,II,YZ,Xyxz->IAXYWZ', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
- 
+
         ## diagonal: baab
         precond_caea__baab =- 1/3 * einsum('A,AA,II,WYXZ->IAXYWZ', e_extern, np.identity(nextern), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
         precond_caea__baab -= 1/6 * einsum('A,AA,II,WYZX->IAXYWZ', e_extern, np.identity(nextern), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
@@ -25799,7 +25777,7 @@ def compute_preconditioner(mr_adc):
         precond_caea__baab -= 1/2 * einsum('I,AA,II,YZ,WX->IAXYWZ', e_cvs, np.identity(nextern), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
         precond_caea__baab -= 1/2 * einsum('Wx,AA,II,YZ,Xx->IAXYWZ', h_aa, np.identity(nextern), np.identity(ncvs), np.identity(ncas), rdm_ca, optimize = einsum_type)
         precond_caea__baab -= 1/2 * einsum('Wxyz,AA,II,YZ,Xyxz->IAXYWZ', v_aaaa, np.identity(nextern), np.identity(ncvs), np.identity(ncas), rdm_ccaa, optimize = einsum_type)
- 
+
         ## off-diagonal terms
         precond_caea__aaaa_abab  = 1/6 * einsum('A,AA,II,WYXZ->IAXYWZ', e_extern, np.identity(nextern), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
         precond_caea__aaaa_abab += 1/3 * einsum('A,AA,II,WYZX->IAXYWZ', e_extern, np.identity(nextern), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
@@ -25825,19 +25803,19 @@ def compute_preconditioner(mr_adc):
         dim_XY = ncas * ncas
         dim_ce_caea = 3 * dim_XY
         s_aa = 1
-        f_aa = s_aa + dim_XY 
+        f_aa = s_aa + dim_XY
         s_bb = f_aa
-        f_bb = s_bb + dim_XY 
+        f_bb = s_bb + dim_XY
         s_ab = f_bb
-        f_ab = s_ab + dim_XY 
+        f_ab = s_ab + dim_XY
 
         precond_caea = np.zeros((ncvs, nextern,  (1 + dim_ce_caea), (1 + dim_ce_caea)))
-        
+
         precond_caea[:, :, 0, 0] = np.diag(M_00[ce, ce]).reshape(ncvs, nextern).copy()
-        
+
         precond_caea[:, :, 0, s_aa:f_aa] = precond_ce_caea__aa_aaaa.reshape(ncvs, nextern, dim_XY).copy()
         precond_caea[:, :, 0, s_bb:f_bb] = precond_ce_caea__aa_abab.reshape(ncvs, nextern, dim_XY).copy()
-        
+
         precond_caea[:, :, s_aa:f_ab, 0] = precond_caea[:, :, 0, s_aa:f_ab].copy()
 
         precond_caea[:, :, s_aa:f_aa, s_aa:f_aa] = precond_caea__aaaa.reshape(ncvs, nextern, dim_XY, dim_XY).copy()
@@ -25847,7 +25825,7 @@ def compute_preconditioner(mr_adc):
         precond_caea[:, :, s_bb:f_bb, s_aa:f_aa] = precond_caea__aaaa_abab.reshape(ncvs, nextern, dim_XY, dim_XY).transpose(0,1,3,2).copy()
 
         precond_caea[:, :, s_ab:f_ab, s_ab:f_ab] = precond_caea__baab.reshape(ncvs, nextern, dim_XY, dim_XY).copy()
- 
+
         precond_caea = einsum("IAXY,XP,YP->IPA", precond_caea, S12_ce_caea, S12_ce_caea, optimize = einsum_type)
 
         return precond_caea
@@ -25890,22 +25868,22 @@ def compute_preconditioner(mr_adc):
         if mr_adc.h_orth.dim_ccaa:
             precond_ccaa = compute_preconditioner__CCAA(mr_adc)
             precond[ho_ccaa] = precond_ccaa.reshape(-1) 
- 
+
         ## CCEA preconditioner
         if mr_adc.h_orth.dim_ccea:
             precond_ccea = compute_preconditioner__CCEA(mr_adc)
             precond[ho_ccea] = precond_ccea.reshape(-1)
- 
+
         ## CCEE preconditioner
         if mr_adc.h_orth.dim_ccee:
             precond_ccee = compute_preconditioner__CCEE(mr_adc)
             precond[ho_ccee] = precond_ccee.reshape(-1) 
- 
+
         ## CAEE preconditioner
         if mr_adc.h_orth.dim_caee:
             precond_caee = compute_preconditioner__CAEE(mr_adc)
             precond[ho_caee] = precond_caee.reshape(-1)
- 
+
         ## CAAA preconditioner
         if mr_adc.h_orth.dim_ca_caaa:
             precond_caaa = compute_preconditioner__CAAA(mr_adc)
@@ -25915,17 +25893,16 @@ def compute_preconditioner(mr_adc):
         if mr_adc.h_orth.dim_ce_caea:
             precond_caea = compute_preconditioner__CAEA(mr_adc)
             precond[ho_ce_caea] = precond_caea.reshape(-1).copy() 
-        
+
         if nval > 0:
             ## Excitation Manifolds
             ho_cvaa = mr_adc.h_orth.cvaa
 
-            #ho_cvea__aaaa = mr_adc.h_orth.cvea__aaaa
             ho_cvea__abab = mr_adc.h_orth.cvea__abab
             ho_cvea__baab = mr_adc.h_orth.cvea__baab
 
             ho_cvee = mr_adc.h_orth.cvee 
-   
+
             # Compute preconditioner diagonal blocks
             ## CVAA preconditioner
             if mr_adc.h_orth.dim_cvaa:
@@ -25942,7 +25919,7 @@ def compute_preconditioner(mr_adc):
             if mr_adc.h_orth.dim_cvee:
                 precond_cvee = compute_preconditioner__CVEE(mr_adc)
                 precond[ho_cvee] = precond_cvee.reshape(-1)
- 
+
     mr_adc.log.timer("computing preconditioner", *cput0)
     sys.stdout.flush()
 
@@ -25974,15 +25951,6 @@ def define_effective_hamiltonian(mr_adc):
         # Effective Hamiltonian for MR-ADC(2), MR-ADC(2)-SX, and MR-ADC(2)-X
 
         ## Create intermediates
-       # if hasattr(mr_adc.tmpfile, 'rdm'):
-       #     #rdm_ints = mr_adc.tmpfile.rdm
-       #     #with rdm_ints as f:
-       #     #    #INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, \
-       #     #    #INT09, INT10, INT11, INT12, INT13, INT14, INT15, INT16 = [f[k][:] for k in sorted(f.keys())]
-       #     #    ints =  [f[k][:] for k in sorted(f.keys())]
-       #     ints = mr_adc_intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
-       # else:
-       #     ints = None
         ints = None
         if mr_adc.h_orth.dim_ca_caaa:
             ints = mr_adc_intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
@@ -26049,7 +26017,7 @@ def apply_S_12(mr_adc, X, transpose = False):
 
             # CE
             Xt[ho_ce_caea] = X[ce].copy()
- 
+
         # Transformation to non-orthogonal basis
         else:
             if (X.shape[0] != (mr_adc.h_orth.dim)):
@@ -26070,7 +26038,7 @@ def apply_S_12(mr_adc, X, transpose = False):
 
         ## Indices
         aa_tril_ind = mr_adc.h1.aa_tril_ind 
- 
+
         # Non-orthogonal Excitation Manifolds
         ccaa = mr_adc.h1.ccaa
         ccea = mr_adc.h1.ccea
@@ -26088,7 +26056,7 @@ def apply_S_12(mr_adc, X, transpose = False):
             cvea__baab = mr_adc.h1.cvea__baab
 
             cvee = mr_adc.h1.cvee 
-    
+
         # Orthogonal Excitation Manifolds
         ho_ce_caea = mr_adc.h_orth.ce_caea  
         ho_ca_caaa = mr_adc.h_orth.ca_caaa
@@ -26103,7 +26071,7 @@ def apply_S_12(mr_adc, X, transpose = False):
             ho_cvea__baab = mr_adc.h_orth.cvea__baab
 
             ho_cvee = mr_adc.h_orth.cvee 
-  
+
         # Overlap matrices
         S12_ccaa = mr_adc.S12.ccaa
         S12_ccea = mr_adc.S12.ccea
@@ -26133,7 +26101,7 @@ def apply_S_12(mr_adc, X, transpose = False):
         f_aaa = s_aaa + dim_XYZ_tril ##aaa -> aaaa
         s_bba = f_aaa
         f_bba = s_bba + dim_XYZ ##bba -> abab
-     
+
        # Transformation to orthonormal basis
         if transpose:
             if (X.shape[0] != (mr_adc.h0.dim + mr_adc.h1.dim)):
@@ -26184,12 +26152,12 @@ def apply_S_12(mr_adc, X, transpose = False):
                 Xt[ho_ca_caaa] = np.dot(temp, S12_ca_caaa).reshape(-1)
 
             # CVAA
-            if nval > 0 and ncas > 0:    
+            if nval > 0 and ncas > 0:
                 temp = X[cvaa].reshape(ncvs * nval, -1).copy()
                 Xt[ho_cvaa] = np.einsum("IX,XP->IP", temp, S12_ccaa).reshape(-1)
 
             # CVEA
-            if nval > 0 and ncas > 0 and nextern > 0:    
+            if nval > 0 and ncas > 0 and nextern > 0:
 
                 temp = X[cvea__abab].reshape(-1, nextern, S12_ccea.shape[0]).copy()
                 Xt[ho_cvea__abab] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
@@ -26198,7 +26166,7 @@ def apply_S_12(mr_adc, X, transpose = False):
                 Xt[ho_cvea__baab] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
 
             # CVEE
-            if nval > 0 and nextern > 0:    
+            if nval > 0 and nextern > 0:
                 Xt[ho_cvee] = X[cvee].copy()
 
         # Transformation to non-orthogonal basis
@@ -26207,7 +26175,7 @@ def apply_S_12(mr_adc, X, transpose = False):
                 raise Exception("Dimensions do not match when applying S_12")
 
             Xt = np.zeros(mr_adc.h0.dim + mr_adc.h1.dim)
-            
+
             # CCAA
             if ncas > 0 and S12_ccaa.shape[1] > 0:
                 temp = X[ho_ccaa].reshape(-1, S12_ccaa.shape[1]).copy()
@@ -26254,9 +26222,9 @@ def apply_S_12(mr_adc, X, transpose = False):
             if nval > 0 and ncas > 0:
                 temp = X[ho_cvaa].reshape(ncvs * nval, -1).copy()
                 Xt[cvaa] = np.einsum("IP,XP->IX", temp, S12_ccaa).reshape(-1)
- 
+
             # CVEA
-            if nval > 0 and ncas > 0 and nextern > 0 and S12_ccea.shape[1] > 0:    
+            if nval > 0 and ncas > 0 and nextern > 0 and S12_ccea.shape[1] > 0:
                 temp = X[ho_cvea__abab].reshape(-1, S12_ccea.shape[1], nextern).copy()
                 Xt[cvea__abab] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
 
@@ -26264,7 +26232,7 @@ def apply_S_12(mr_adc, X, transpose = False):
                 Xt[cvea__baab] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
                
             # CVEE
-            if nval > 0 and nextern > 0:    
+            if nval > 0 and nextern > 0:
                 Xt[cvee] = X[ho_cvee].copy()
 
     return Xt
@@ -26296,7 +26264,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
     ## h0 <- h1 coupling contributions
     # CA <- CCAA
-    def compute_sigma_vector__H1__h0_h1__CA_CCAA(mr_adc, X, sigma): 
+    def compute_sigma_vector__H1__h0_h1__CA_CCAA(mr_adc, X, sigma):
 
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -26315,11 +26283,11 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         v_xxxa = mr_adc.v2e.xxxa
         v_aaaa = mr_adc.v2e.aaaa
         v_xaaa = mr_adc.v2e.xaaa
- 
+
         ## Amplitudes
         t1_xa = mr_adc.t1.xa
         t1_xaaa = mr_adc.t1.xaaa
- 
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa

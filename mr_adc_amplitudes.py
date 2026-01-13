@@ -24,7 +24,6 @@ from functools import reduce
 
 import prism.mr_adc_intermediates as mr_adc_intermediates
 import prism.mr_adc_overlap as mr_adc_overlap
-import prism.mr_adc_integrals as mr_adc_integrals
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -1099,9 +1098,6 @@ def compute_t2_0p_singles(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("Computing T[0']^(2) amplitudes...")
 
-    # Import Prism interface
-    interface = mr_adc.interface
-
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -1906,9 +1902,6 @@ def compute_t2_m1p_singles(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing T[-1']^(2) amplitudes...")
 
-    # Import Prism interface
-    interface = mr_adc.interface
-
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -2569,9 +2562,6 @@ def compute_t2_p1p_singles(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing T[+1']^(2) amplitudes...")
-
-    # Import Prism interface
-    interface = mr_adc.interface
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -4125,7 +4115,7 @@ def compute_t2_p1p_singles(mr_adc):
     # Compute T[+1']^(2) amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V1, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
-    S_12_V_p1p *= d_ip ###S_12_V_p1p = einsum("ip,ip->ip", d_ip, S_12_V_p1p, optimize = einsum_type)
+    S_12_V_p1p *= d_ip
     S_12_V_p1p = einsum("mp,ip->im", evecs, S_12_V_p1p, optimize = einsum_type)
     del(V1, d_ip, evals, evecs)
 
@@ -4142,13 +4132,6 @@ def compute_t2_0pp_singles(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing T[0'']^(2) amplitudes...")
-
-    # Import Prism interface
-    interface = mr_adc.interface
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
 
     # Variables from kernel
     ncore   = mr_adc.ncore
@@ -4168,7 +4151,7 @@ def compute_t2_0pp_singles(mr_adc):
 
     if np.any(evals) and (np.amin(np.absolute(evals)) < 1e-6):
         mr_adc.log.warn("Small denominator of %e is detected in the T[0'']^(2) amplitude equations...", np.amin(np.absolute(evals)))
- 
+
     # Define functions to compute amplitude contributions to V1  
     ## t1_aaee
     def compute_V1__t1_m2(mr_adc, V1):
@@ -4193,10 +4176,10 @@ def compute_t2_0pp_singles(mr_adc):
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.aeae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-    
+
             ## Two-electron integrals
             v_aeae = mr_adc.v2e.aeae[:, s_chunk:f_chunk, :, :]
- 
+
             ## Amplitudes
             t1_aaee = mr_adc.t1.aaee[:, :, s_chunk:f_chunk, :]
 
@@ -4204,7 +4187,7 @@ def compute_t2_0pp_singles(mr_adc):
             temp -= 1/2 * einsum('xyab,Yazb,Xzxy->XY', t1_aaee, v_aeae, rdm_ccaa, optimize = einsum_type)
             temp -= 1/4 * einsum('xyab,zawb,XxyYzw->XY', t1_aaee, v_aeae, rdm_cccaaa, optimize = einsum_type)
             temp -= 1/4 * einsum('xyab,zawb,XzwYxy->XY', t1_aaee, v_aeae, rdm_cccaaa, optimize = einsum_type)
- 
+
             V1_m2 += temp
             mr_adc.log.timer_debug("contracting v2e.aeae", *cput1)
             del(t1_aaee, v_aeae)
@@ -4212,10 +4195,10 @@ def compute_t2_0pp_singles(mr_adc):
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
- 
+
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
- 
+
             ## Amplitudes
             t1_aaee = mr_adc.t1.aaee[:, :, s_chunk:f_chunk, :]
 
@@ -4355,10 +4338,10 @@ def compute_t2_0pp_singles(mr_adc):
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-    
+
             ## Two-electron integrals
             v_ceae = mr_adc.v2e.ceae[:, s_chunk:f_chunk, :, :]
- 
+
             ## Amplitudes
             t1_caee = mr_adc.t1.caee[:, :, s_chunk:f_chunk, :]
 
@@ -4375,7 +4358,7 @@ def compute_t2_0pp_singles(mr_adc):
 
             ## Two-electron integrals
             v_ceae = mr_adc.v2e.ceae[:, :, :, s_chunk:f_chunk]
- 
+
             ## Amplitudes
             t1_caee = mr_adc.t1.caee[:, :, s_chunk:f_chunk, :]
 
@@ -4391,7 +4374,7 @@ def compute_t2_0pp_singles(mr_adc):
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-    
+
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
 
@@ -4458,10 +4441,10 @@ def compute_t2_0pp_singles(mr_adc):
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.cece [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-  
+
             ## Two-electron integrals
             v_cece = mr_adc.v2e.cece[:, s_chunk:f_chunk, :, :]
- 
+
             ## Amplitudes
             t1_ccee = mr_adc.t1.ccee[:, :, s_chunk:f_chunk, :]
 
@@ -4475,18 +4458,18 @@ def compute_t2_0pp_singles(mr_adc):
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("t1.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
- 
+
             ## Molecular Orbitals Energies
             e_extern = mr_adc.mo_energy.e[s_chunk:f_chunk]
    
             ## Amplitudes
             t1_ccee = mr_adc.t1.ccee[:, :, s_chunk:f_chunk, :]
- 
+
             temp =- 2 * einsum('a,ijab,ijab,XY->XY', e_extern, t1_ccee, t1_ccee, rdm_ca, optimize = einsum_type)
             temp += einsum('a,ijab,jiab,XY->XY', e_extern, t1_ccee, t1_ccee, rdm_ca, optimize = einsum_type)
             temp += 2 * einsum('i,ijab,ijab,XY->XY', e_core, t1_ccee, t1_ccee, rdm_ca, optimize = einsum_type)
             temp -= einsum('i,ijab,jiab,XY->XY', e_core, t1_ccee, t1_ccee, rdm_ca, optimize = einsum_type)
- 
+
             V1_0 += temp
             mr_adc.log.timer_debug("contracting t1.ccee", *cput1)
             del(e_extern, t1_ccee)
@@ -6493,37 +6476,42 @@ def compute_t2_0pp_singles(mr_adc):
     compute_V1__t1_m1p(mr_adc, V1)
     ## T - T^{\dag}: CA-CAAA
     compute_V1__t1_p1p(mr_adc, V1)
- 
+
     # V1 block: - 1/2 < Psi_0 | (a^{\dag}_X a_Y - a^{\dag}_Y a_X) [V + H^{(1)}, T - T^\dag] | Psi_0 > 
     V1 -= V1.T
 
     tril_ind = np.tril_indices(ncas, k=-1)
 
     V1_sym = V1[tril_ind[0], tril_ind[1]]
-    V1_sym = np.stack((V1_sym, V1_sym))
-    V1 = V1_sym.reshape(-1) 
+    #V1_sym = np.stack((V1_sym, V1_sym))
+    #V1 = V1_sym.reshape(-1)
+    V1 = np.tile(V1_sym, 2)
     del(V1_sym)
 
     # Compute denominators
     evals = evals**(-1)
- 
+
     # Compute T[0'']^(2) amplitudes 
-    S_12_V_0pp = np.einsum("P,Pm->m", V1, S_0p_12_inv_act)
-    S_12_V_0pp = np.einsum("mp,m->p", evecs, S_12_V_0pp)
+    #S_12_V_0pp = np.einsum("P,Pm->m", V1, S_0p_12_inv_act)
+    #S_12_V_0pp = np.einsum("mp,m->p", evecs, S_12_V_0pp)
+    #S_12_V_0pp *= evals
+    #S_12_V_0pp = np.einsum("mp,p->m", evecs, S_12_V_0pp)
+    S_12_V_0pp = V1 @ S_0p_12_inv_act
+    S_12_V_0pp = evecs.T @ S_12_V_0pp
     S_12_V_0pp *= evals
-    S_12_V_0pp = np.einsum("mp,p->m", evecs, S_12_V_0pp)
+    S_12_V_0pp = evecs @ S_12_V_0pp
     del(V1, evals, evecs)
 
     ## Compute T[0'']^(2) t2_aa tensor
-    t_0p = np.einsum("m,Pm->P", S_12_V_0pp, S_0p_12_inv_act)
+    #t_0p = np.einsum("m,Pm->P", S_12_V_0pp, S_0p_12_inv_act)
+    t_0p = S_0p_12_inv_act @ S_12_V_0pp
     t_0p = np.split(t_0p, 2)[0]
 
     t2_aa = np.zeros((ncas, ncas)) 
-    t2_aa[tril_ind[0], tril_ind[1]] += t_0p
-    t2_aa[tril_ind[1], tril_ind[0]] -= t_0p
- 
+    t2_aa[tril_ind[0], tril_ind[1]] =  t_0p
+    t2_aa[tril_ind[1], tril_ind[0]] = -t_0p
+
     mr_adc.log.extra("Norm of T[0'']^(2):                          %20.12f" % np.linalg.norm(t2_aa))
     mr_adc.log.timer("computing T[0'']^(2) amplitudes", *cput0)
 
     return t2_aa
-
