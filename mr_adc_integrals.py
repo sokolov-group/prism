@@ -652,7 +652,8 @@ def get_oeee_df(mr_adc, Loe, Lee, s_chunk_occ, f_chunk_occ):
 
     # Variables from kernel
     nextern = mr_adc.nextern
-    naux = mr_adc.naux
+
+    naux = Loe.shape[0]
 
     chunk_size_occ = f_chunk_occ - s_chunk_occ
 
@@ -683,13 +684,9 @@ def get_ooee_df(mr_adc, Lpq, Lrs, s_chunk_p, f_chunk_p):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
 
-    # Variables from kernel
-    naux = mr_adc.naux
-
     chunk_p = f_chunk_p - s_chunk_p
-    q = Lpq.shape[2]
-    r = Lrs.shape[1]
-    s = Lrs.shape[2]
+    naux, _, q = Lpq.shape
+    _, r, s = Lrs.shape
 
     chunks_aux = tools.calculate_double_chunks(mr_adc, naux, [chunk_p, q], [r, s],
                                                        extra_tensors=[[chunk_p, q, r, s],
@@ -718,11 +715,8 @@ def get_v2e_df(mr_adc, Lpq, Lrs, pqrs_string = None):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
 
-    # Variables from kernel
-    naux = mr_adc.naux
-    
-    p, q = Lpq.shape[1], Lpq.shape[2]
-    r, s = Lrs.shape[1], Lrs.shape[2]
+    naux, p, q = Lpq.shape
+    _, r, s = Lrs.shape
 
     Lpq_temp = np.ascontiguousarray(Lpq.transpose(1,2,0).reshape(-1, naux))
     Lrs_temp = np.ascontiguousarray(Lrs.reshape(naux, -1))
@@ -1123,7 +1117,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
     mr_adc.v2e.xxve = tools.create_dataset('xxve', tmpfile, (ncvs, ncvs, nval, nextern))
     mr_adc.v2e.vxxe = tools.create_dataset('vxxe', tmpfile, (nval, ncvs, ncvs, nextern))
 
-
     mr_adc.v2e.xxxa[:] = mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :]
     tools.flush(tmpfile)
 
@@ -1133,7 +1126,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
     mr_adc.v2e.vxxa[:] = mr_adc.v2e.ccca[ncvs:, :ncvs, :ncvs, :]
     tools.flush(tmpfile)
     del(mr_adc.v2e.ccca)
-
 
     mr_adc.v2e.xxxe[:] = mr_adc.v2e.ccce[:ncvs, :ncvs, :ncvs, :]
     tools.flush(tmpfile)
@@ -1923,8 +1915,9 @@ def get_eeee_df(mr_adc, Lee, s_chunk_ext, f_chunk_ext, pack=True):
     cput0 = (logger.process_clock(), logger.perf_counter())
 
     # Variables from kernel
-    naux = mr_adc.naux
     nextern = mr_adc.nextern
+
+    naux = Lee.shape[0]
 
     chunk_size_ext = f_chunk_ext - s_chunk_ext
 
