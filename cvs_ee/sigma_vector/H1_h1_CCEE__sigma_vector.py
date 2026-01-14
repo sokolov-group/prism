@@ -173,24 +173,55 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X, sigma):
 
     ## Two-electron integrals
     v_xxxx = mr_adc.v2e.xxxx
-    v_xxee = mr_adc.v2e.xxee
-    v_xeex = mr_adc.v2e.xeex
+    #v_xxee = mr_adc.v2e.xxee
+    #v_xeex = mr_adc.v2e.xeex
     #v_eeee = mr_adc.v2e.eeee
 
     # Variables from kernel
     ncvs = mr_adc.ncvs
     nextern = mr_adc.nextern
 
-    #sigma_KLCD  = einsum('KLab,CaDb->KLCD', X, v_eeee, optimize = einsum_type)
-    sigma_KLCD  = 2 * einsum('KiCa,LDai->KLCD', X, v_xeex, optimize = einsum_type)
-    sigma_KLCD -= einsum('KiCa,iLDa->KLCD', X, v_xxee, optimize = einsum_type)
-    sigma_KLCD -= einsum('KiaC,LDai->KLCD', X, v_xeex, optimize = einsum_type)
-    sigma_KLCD -= einsum('KiaD,iLCa->KLCD', X, v_xxee, optimize = einsum_type)
-    sigma_KLCD += 2 * einsum('LiDa,KCai->KLCD', X, v_xeex, optimize = einsum_type)
-    sigma_KLCD -= einsum('LiDa,iKCa->KLCD', X, v_xxee, optimize = einsum_type)
-    sigma_KLCD -= einsum('LiaC,iKDa->KLCD', X, v_xxee, optimize = einsum_type)
-    sigma_KLCD -= einsum('LiaD,KCai->KLCD', X, v_xeex, optimize = einsum_type)
-    sigma_KLCD += einsum('ijCD,KiLj->KLCD', X, v_xxxx, optimize = einsum_type)
+    ##sigma_KLCD  = einsum('KLab,CaDb->KLCD', X, v_eeee, optimize = einsum_type)
+    #sigma_KLCD  = 2 * einsum('KiCa,LDai->KLCD', X, v_xeex, optimize = einsum_type)
+    #sigma_KLCD -= einsum('KiCa,iLDa->KLCD', X, v_xxee, optimize = einsum_type)
+    #sigma_KLCD -= einsum('KiaC,LDai->KLCD', X, v_xeex, optimize = einsum_type)
+    #sigma_KLCD -= einsum('KiaD,iLCa->KLCD', X, v_xxee, optimize = einsum_type)
+    #sigma_KLCD += 2 * einsum('LiDa,KCai->KLCD', X, v_xeex, optimize = einsum_type)
+    #sigma_KLCD -= einsum('LiDa,iKCa->KLCD', X, v_xxee, optimize = einsum_type)
+    #sigma_KLCD -= einsum('LiaC,iKDa->KLCD', X, v_xxee, optimize = einsum_type)
+    #sigma_KLCD -= einsum('LiaD,KCai->KLCD', X, v_xeex, optimize = einsum_type)
+    #sigma_KLCD += einsum('ijCD,KiLj->KLCD', X, v_xxxx, optimize = einsum_type)
+
+    sigma_KLCD = einsum('ijCD,KiLj->KLCD', X, v_xxxx, optimize = einsum_type)
+
+    # v_xxee, v_xeex
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 4)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.xxee v2e.xeex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integral
+        v_xxee = mr_adc.v2e.xxee[:, :, :, s_chunk:f_chunk]
+        v_xeex = mr_adc.v2e.xeex[:, :, s_chunk:f_chunk, :]
+
+        ## CCEE block
+        X_a = X[:, :, :, s_chunk:f_chunk]
+
+        sigma_KLCD -= einsum('KiCa,iLDa->KLCD', X_a, v_xxee, optimize = einsum_type)
+        sigma_KLCD -= einsum('LiDa,iKCa->KLCD', X_a, v_xxee, optimize = einsum_type)
+        sigma_KLCD += 2 * einsum('KiCa,LDai->KLCD', X_a, v_xeex, optimize = einsum_type)
+        sigma_KLCD += 2 * einsum('LiDa,KCai->KLCD', X_a, v_xeex, optimize = einsum_type)
+
+        ## CCEE block
+        X_a = X[:, :, s_chunk:f_chunk, :]
+
+        sigma_KLCD -= einsum('KiaD,iLCa->KLCD', X_a, v_xxee, optimize = einsum_type)
+        sigma_KLCD -= einsum('LiaC,iKDa->KLCD', X_a, v_xxee, optimize = einsum_type)
+        sigma_KLCD -= einsum('KiaC,LDai->KLCD', X_a, v_xeex, optimize = einsum_type)
+        sigma_KLCD -= einsum('LiaD,KCai->KLCD', X_a, v_xeex, optimize = einsum_type)
+
+        mr_adc.log.timer_debug("v2e.xxee v2e.xeex contractions", *cput1)
+        del(v_xxee, v_xeex)
 
     # Pack X for ladder contractions
     X = ascontiguousarray(X.reshape(ncvs*ncvs, -1).T)
@@ -210,8 +241,8 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CCEE(mr_adc, X, sigma):
         # Contractions using dot products
         temp[s_chunk:f_chunk] += dot(v_eeee, X).reshape(-1, nextern, ncvs*ncvs)
 
-        del(v_eeee)
         mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
+        del(v_eeee)
 
     sigma_KLCD += temp.transpose(2,0,1).reshape((ncvs, ncvs, nextern, nextern))
     del(temp, X)
