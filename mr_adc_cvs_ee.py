@@ -31165,7 +31165,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
             ## CCEE block
             X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
-  
+
             temp = compute_sigma_vector__H1__h0_h1__CA_CCEE__V_XEAE(mr_adc, X, v_xeae)
 
             sigma_KW[:, s_chunk:f_chunk] += temp
@@ -31189,7 +31189,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
             ## CAEE block
             X = np.ascontiguousarray(Xt[caee].reshape(ncvs, ncas, nextern, nextern))
-  
+
             temp = compute_sigma_vector__H1__h0_h1__CA_CAEE__V_AEAE(mr_adc, X, sigma, v_aeae)
 
             sigma_KW[:, s_chunk:f_chunk] += temp
@@ -31225,10 +31225,10 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
     if ncas > 0:
         sigma[ca] += np.ascontiguousarray(sigma_KW).reshape(-1)
- 
+
     #CE
     X = np.ascontiguousarray(Xt[ce].reshape(ncvs, nextern))
- 
+
     ## h1-h0 contributions 
     compute_sigma_vector__H1__h1_h0__CCEE_CE(mr_adc, X, sigma)
     if ncas > 0:
@@ -31245,9 +31245,9 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         compute_sigma_vector__H1__h1_h0__CVEE_CE(mr_adc, X, sigma)
 
     sigma_KC = np.zeros_like(X)
- 
+
     # v_xeee
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nextern, nextern], ntensors = 1)
+    chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.xeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -31263,13 +31263,13 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
         ## CCEE block
         X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
-    
+
         temp = compute_sigma_vector__H1__h0_h1__CE_CCEE__V_XEEE(mr_adc, X, v_xeee)
         sigma_KC[:, s_chunk:f_chunk] += temp
 
         mr_adc.log.timer_debug("v2e.xeee contractions", *cput1)
         del(X, v_xeee)
-  
+
     if ncas > 0 and nextern > 0:
 
         # v_xaee, v_xeea
@@ -31412,11 +31412,11 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
             temp = compute_sigma_vector__H1__h0_h1__CE_CVEE__V_VEEE(mr_adc, X, v_veee)
             sigma_KC[:, s_chunk:f_chunk] += temp
-    
+
             mr_adc.log.timer_debug("v2e.veee contractions", *cput1)
             del(X, v_veee)
 
-    if nval > 0 and ncas > 0 and nextern > 0:    
+    if nval > 0 and ncas > 0 and nextern > 0:
 
         # v_vaee, v_veea
         chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 2)
@@ -31427,7 +31427,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             ## Two-electron integral
             v_vaee = mr_adc.v2e.vaee[:, :, s_chunk:f_chunk, :]
             v_veea = mr_adc.v2e.veea[:, :, s_chunk:f_chunk, :]
- 
+
             ## CE block
             X = np.ascontiguousarray(Xt[ce].reshape(ncvs, nextern))
             X = X[:, s_chunk:f_chunk]
@@ -31470,7 +31470,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             if nval > 0:
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVAA_CCAA(mr_adc, X, sigma)
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CCAA(mr_adc, X, sigma)
- 
+
     # CCEA
     if ncas > 0 and nextern > 0:
         X = np.ascontiguousarray(Xt[ccea].reshape(ncvs, ncvs, nextern, ncas))
@@ -31512,7 +31512,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
                 ## CCEE block
                 X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
- 
+
                 temp = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEE__V_AEEE(mr_adc, X, sigma, v_aeee)
 
                 sigma_KLCW[:, :, s_chunk:f_chunk, :] += temp
@@ -31525,7 +31525,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
     # CCEE
     if nextern > 0:
         X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
- 
+
         ## h0-h1 contributions 
         compute_sigma_vector__H1__h0_h1__CE_CCEE(mr_adc, X, sigma)
 
@@ -31547,10 +31547,10 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
                 X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
                 X = X[:, :, :, s_chunk:f_chunk] 
- 
+
                 ## CCEE block
                 compute_sigma_vector__H1__h0_h1__CA_CCEE__T1_XAEE(mr_adc, X, sigma, t1_xaee_ab, t1_xaee_ba, e_extern_b)
- 
+
                 ## CA block
                 X = np.ascontiguousarray(Xt[ca].reshape(ncvs, ncas))
 
@@ -31608,7 +31608,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
             compute_sigma_vector__H1__h0_h1__CA_CAEE__T1_AAEE(mr_adc, X[:, :, :, s_chunk:f_chunk], sigma, t1_aaee_ab, t1_aaee_ba, e_extern_b) 
             del(t1_aaee_ba)
- 
+
             ## CA block
             X = np.ascontiguousarray(Xt[ca].reshape(ncvs, ncas))
 
@@ -31694,7 +31694,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             sigma_KWCU_aaaa = np.zeros_like((X_aaaa))
             sigma_KWCU_abab = np.zeros_like((X_abab))
             sigma_KWCU_baab = np.zeros_like((X_baab))
- 
+
             # v_xeee
             chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nextern, nextern], ntensors = 5)
             for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
@@ -31713,7 +31713,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
                 ## CCEE block
                 X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
- 
+
                 temp = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CAEA_CCEE__V_XEEE(mr_adc, X, sigma, v_xeee)
 
                 sigma_KWCU_aaaa[:, :, s_chunk:f_chunk, :] += temp
@@ -31787,17 +31787,17 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             sigma[caea__abab] += np.ascontiguousarray(sigma_KWCU_abab).reshape(-1)
             sigma[caea__baab] += np.ascontiguousarray(sigma_KWCU_baab).reshape(-1)
             del(sigma_KWCU_aaaa, sigma_KWCU_abab, sigma_KWCU_baab)
- 
-    # CVAA 
+
+    # CVAA
     if nval > 0 and ncas > 0:
         X = np.ascontiguousarray(Xt[cvaa].reshape(ncvs, nval, ncas, ncas))
-    
+
         ## h0-h1 contributions
         compute_sigma_vector__H1__h0_h1__CA_CVAA(mr_adc, X, sigma)
         compute_sigma_vector__H1__h0_h1__CE_CVAA(mr_adc, X, sigma)
         # h1-h1 contributions
         compute_sigma_vector__H0__h1_h1__CVAA(mr_adc, X, sigma)
-    
+
         if mr_adc.method == "mr-adc(2)-x":
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCAA_CVAA(mr_adc, X, sigma)
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CVAA(mr_adc, X, sigma)
@@ -31808,14 +31808,14 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CVAA(mr_adc, X, sigma)
 
     # CVEA
-    if nval > 0 and ncas > 0 and nextern > 0:    
+    if nval > 0 and ncas > 0 and nextern > 0:
         X_abab = np.ascontiguousarray(Xt[cvea__abab].reshape(ncvs, nval, nextern, ncas))
         X_baab = np.ascontiguousarray(Xt[cvea__baab].reshape(ncvs, nval, nextern, ncas))
-    
+
         ### h0-h1 contributions
         compute_sigma_vector__H1__h0_h1__CA_CVEA(mr_adc, X_abab, X_baab, sigma)
         compute_sigma_vector__H1__h0_h1__CE_CVEA(mr_adc, X_abab, X_baab, sigma)
-        ## h1-h1 contributions 
+        ## h1-h1 contributions
         compute_sigma_vector__H0__h1_h1__CVEA(mr_adc, X_abab, X_baab, sigma)
 
         if mr_adc.method == "mr-adc(2)-x":
@@ -31892,7 +31892,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
                 ## CVEE block
                 compute_sigma_vector__H1__h0_h1__CA_CVEE__T1_VAEE(mr_adc, X, sigma, t1_vaee_ab, t1_vaee_ba, e_extern_b) 
                 del (t1_vaee_ab)
-     
+
                 ## CA block
                 X = np.ascontiguousarray(Xt[ca].reshape(ncvs, ncas))
 
@@ -31907,7 +31907,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
             X = np.ascontiguousarray(Xt[cvee].reshape(ncvs, nval, nextern, nextern))
 
-        ## h1-h1 contributions  
+        ## h1-h1 contributions
         compute_sigma_vector__H0__h1_h1__CVEE(mr_adc, X, sigma)
 
         if mr_adc.method == "mr-adc(2)-x":
@@ -31938,7 +31938,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
@@ -31951,10 +31951,6 @@ def compute_trans_moments(mr_adc, U):
     def compute_TY__q0_h0__CE(mr_adc, Y_KC, TY):
 
         cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
 
         TY[:, s_c:f_c, s_e:f_e] += Y_KC.copy()
 
@@ -31997,7 +31993,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/2 * einsum('RPx,Qyzw,xyzw->RPQ', Y_KW, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('RPx,Qyzx,yz->RPQ', Y_KW, t1_xaaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp = einsum('RiQ,iP->RPQ', Y_KW, t1_xa, optimize = einsum_type)
         temp += einsum('RiQ,ixPy,yx->RPQ', Y_KW, t1_xaaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiQ,ixyP,yx->RPQ', Y_KW, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -32010,14 +32006,14 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('Rix,iyxP,Qy->RPQ', Y_KW, t1_xaaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rix,iyzP,Qzyx->RPQ', Y_KW, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp =- einsum('RPx,Qx->RPQ', Y_KW, t1_va, optimize = einsum_type)
         temp += 1/2 * einsum('RPx,Qy,xy->RPQ', Y_KW, t1_va, rdm_ca, optimize = einsum_type)
         temp -= einsum('RPx,Qyxz,yz->RPQ', Y_KW, t1_vaaa, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RPx,Qyzw,xyzw->RPQ', Y_KW, t1_vaaa, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('RPx,Qyzx,yz->RPQ', Y_KW, t1_vaaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp = 2 * einsum('Rix,PiQx->RPQ', Y_KW, t1_xxaa, optimize = einsum_type)
         temp -= einsum('Rix,PixQ->RPQ', Y_KW, t1_xxaa, optimize = einsum_type)
         temp -= einsum('Rix,PiQy,xy->RPQ', Y_KW, t1_xxaa, rdm_ca, optimize = einsum_type)
@@ -32026,7 +32022,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= einsum('Rix,Piyx,Qy->RPQ', Y_KW, t1_xxaa, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('Rix,Piyz,Qxyz->RPQ', Y_KW, t1_xxaa, rdm_ccaa, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp = 2 * einsum('Rix,PiQx->RPQ', Y_KW, t1_vxaa, optimize = einsum_type)
         temp -= einsum('Rix,PixQ->RPQ', Y_KW, t1_vxaa, optimize = einsum_type)
         temp -= einsum('Rix,PiQy,xy->RPQ', Y_KW, t1_vxaa, rdm_ca, optimize = einsum_type)
@@ -32035,7 +32031,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= einsum('Rix,Piyx,Qy->RPQ', Y_KW, t1_vxaa, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('Rix,Piyz,Qxyz->RPQ', Y_KW, t1_vxaa, rdm_ccaa, optimize = einsum_type)
         TY[:, s_v:f_v, s_a:f_a] += temp
-        
+
         temp = einsum('RPx,xQ->RPQ', Y_KW, t1_ae, optimize = einsum_type)
         temp -= einsum('Rix,PixQ->RPQ', Y_KW, t1_xxae, optimize = einsum_type)
         temp += 2 * einsum('Rix,iPxQ->RPQ', Y_KW, t1_xxae, optimize = einsum_type)
@@ -32046,13 +32042,13 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/2 * einsum('Rix,PiyQ,xy->RPQ', Y_KW, t1_xxae, rdm_ca, optimize = einsum_type)
         temp -= einsum('Rix,iPyQ,xy->RPQ', Y_KW, t1_xxae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_e:f_e] += temp
-        
+
         temp =- einsum('Rix,PixQ->RPQ', Y_KW, t1_vxae, optimize = einsum_type)
         temp += 2 * einsum('Rix,iPxQ->RPQ', Y_KW, t1_xvae, optimize = einsum_type)
         temp += 1/2 * einsum('Rix,PiyQ,xy->RPQ', Y_KW, t1_vxae, rdm_ca, optimize = einsum_type)
         temp -= einsum('Rix,iPyQ,xy->RPQ', Y_KW, t1_xvae, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_e:f_e] += temp
-        
+
         temp = einsum('RiP,iQ->RPQ', Y_KW, t1_xe, optimize = einsum_type)
         temp += einsum('RiP,ixQy,yx->RPQ', Y_KW, t1_xaea, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiP,ixyQ,yx->RPQ', Y_KW, t1_xaae, rdm_ca, optimize = einsum_type)
@@ -32072,7 +32068,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
- 
+
         ## Amplitudes
         t1_xa = mr_adc.t1.xa
         t1_xe = mr_adc.t1.xe
@@ -32086,13 +32082,13 @@ def compute_trans_moments(mr_adc, U):
         t1_xaaa = mr_adc.t1.xaaa
         t1_xaee = mr_adc.t1.xaee
         t1_aaae = mr_adc.t1.aaae
-        
+
         t1_xvae = mr_adc.t1.xvae
         t1_vxae = mr_adc.t1.vxae
         t1_vxee = mr_adc.t1.vxee
         t1_vaea = mr_adc.t1.vaea
         t1_vaae = mr_adc.t1.vaae
- 
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
@@ -32100,23 +32096,23 @@ def compute_trans_moments(mr_adc, U):
         temp -= einsum('RPa,Qxay,xy->RPQ', Y_KC, t1_xaea, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RPa,Qxya,xy->RPQ', Y_KC, t1_xaae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp =- einsum('Ria,iQax,Px->RPQ', Y_KC, t1_xaea, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('Ria,iQxa,Px->RPQ', Y_KC, t1_xaae, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Ria,ixPa,Qx->RPQ', Y_KC, t1_xaae, rdm_ca, optimize = einsum_type)
         temp += einsum('Ria,ixaP,Qx->RPQ', Y_KC, t1_xaea, rdm_ca, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp = einsum('RiQ,iP->RPQ', Y_KC, t1_xe, optimize = einsum_type)
         temp += einsum('RiQ,ixPy,yx->RPQ', Y_KC, t1_xaea, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiQ,ixyP,yx->RPQ', Y_KC, t1_xaae, rdm_ca, optimize = einsum_type)
         TY[:, s_e:f_e, s_e:f_e] += temp
-        
+
         temp =- einsum('RPa,Qa->RPQ', Y_KC, t1_ve, optimize = einsum_type)
         temp -= einsum('RPa,Qxay,xy->RPQ', Y_KC, t1_vaea, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RPa,Qxya,xy->RPQ', Y_KC, t1_vaae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp =- einsum('RPa,Qa->RPQ', Y_KC, t1_ae, optimize = einsum_type)
         temp += 2 * einsum('Ria,PiQa->RPQ', Y_KC, t1_xxae, optimize = einsum_type)
         temp -= einsum('Ria,iPQa->RPQ', Y_KC, t1_xxae, optimize = einsum_type)
@@ -32125,21 +32121,21 @@ def compute_trans_moments(mr_adc, U):
         temp -= einsum('Ria,Pixa,Qx->RPQ', Y_KC, t1_xxae, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('Ria,iPxa,Qx->RPQ', Y_KC, t1_xxae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp = 2 * einsum('Ria,PiQa->RPQ', Y_KC, t1_vxae, optimize = einsum_type)
         temp -= einsum('Ria,iPQa->RPQ', Y_KC, t1_xvae, optimize = einsum_type)
         temp -= einsum('Ria,Pixa,Qx->RPQ', Y_KC, t1_vxae, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('Ria,iPxa,Qx->RPQ', Y_KC, t1_xvae, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_a:f_a] += temp
-        
+
         temp = 2 * einsum('Ria,PiQa->RPQ', Y_KC, t1_xxee, optimize = einsum_type)
         temp -= einsum('Ria,PiaQ->RPQ', Y_KC, t1_xxee, optimize = einsum_type)
         TY[:, s_c:f_c, s_e:f_e] += temp
-        
+
         temp = 2 * einsum('Ria,PiQa->RPQ', Y_KC, t1_vxee, optimize = einsum_type)
         temp -= einsum('Ria,PiaQ->RPQ', Y_KC, t1_vxee, optimize = einsum_type)
         TY[:, s_v:f_v, s_e:f_e] += temp
-        
+
         temp = einsum('RiQ,iP->RPQ', Y_KC, t1_xa, optimize = einsum_type)
         temp += einsum('RiQ,ixPy,yx->RPQ', Y_KC, t1_xaaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiQ,ixyP,yx->RPQ', Y_KC, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -32156,7 +32152,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -32167,7 +32163,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/3 * einsum('RPxyz,Qxyz->RPQ', Y_KWUV__abab, rdm_ccaa, optimize = einsum_type)
         temp -= 1/6 * einsum('RPxyz,Qxzy->RPQ', Y_KWUV__abab, rdm_ccaa, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
- 
+
         mr_adc.log.timer_debug("computing T q0-h1 CAAA", *cput1)
 
     def compute_TY__q1_h1__CAAA(mr_adc, Y_KWUV__aaaa, Y_KWUV__abab, TY):
@@ -32177,7 +32173,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -32186,10 +32182,10 @@ def compute_trans_moments(mr_adc, U):
         ## Amplitudes
         t1_xa = mr_adc.t1.xa
         t1_va = mr_adc.t1.va
- 
+
         t1_xe = mr_adc.t1.xe
         t1_ve = mr_adc.t1.ve
- 
+
         t1_ae = mr_adc.t1.ae
 
         t1_xxaa = mr_adc.t1.xxaa 
@@ -32199,11 +32195,11 @@ def compute_trans_moments(mr_adc, U):
         t1_xaae = mr_adc.t1.xaae
         t1_xaaa = mr_adc.t1.xaaa
         t1_aaae = mr_adc.t1.aaae
- 
+
         t1_xvae = mr_adc.t1.xvae
         t1_vxae = mr_adc.t1.vxae
         t1_vaaa = mr_adc.t1.vaaa
-        t1_vxaa = mr_adc.t1.vxaa        
+        t1_vxaa = mr_adc.t1.vxaa
 
         temp = 1/6 * einsum('RPxyz,Qw,xwzy->RPQ', Y_KWUV__aaaa, t1_xa, rdm_ccaa, optimize = einsum_type)
         temp += 1/6 * einsum('RPxyz,Qwuv,xuvzyw->RPQ', Y_KWUV__aaaa, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
@@ -32227,7 +32223,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/2 * einsum('RPxyz,Qwyz,xw->RPQ', Y_KWUV__abab, t1_xaaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RPxyz,Qy,xz->RPQ', Y_KWUV__abab, t1_xa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp = 1/2 * einsum('RixQy,iP,xy->RPQ', Y_KWUV__aaaa, t1_xa, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RixQy,izPw,xwyz->RPQ', Y_KWUV__aaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('RixQy,izPy,xz->RPQ', Y_KWUV__aaaa, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -32279,7 +32275,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/6 * einsum('Rixyz,iwuP,Qxuzyw->RPQ', Y_KWUV__abab, t1_xaaa, rdm_cccaaa, optimize = einsum_type)
         temp += 1/2 * einsum('Rixyz,iwyP,Qxwz->RPQ', Y_KWUV__abab, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp = 1/6 * einsum('RPxyz,Qw,xwzy->RPQ', Y_KWUV__aaaa, t1_va, rdm_ccaa, optimize = einsum_type)
         temp += 1/6 * einsum('RPxyz,Qwuv,xuvzyw->RPQ', Y_KWUV__aaaa, t1_vaaa, rdm_cccaaa, optimize = einsum_type)
         temp -= 1/6 * einsum('RPxyz,Qwuy,xuwz->RPQ', Y_KWUV__aaaa, t1_vaaa, rdm_ccaa, optimize = einsum_type)
@@ -32302,7 +32298,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/2 * einsum('RPxyz,Qwyz,xw->RPQ', Y_KWUV__abab, t1_vaaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RPxyz,Qy,xz->RPQ', Y_KWUV__abab, t1_va, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp =- 1/3 * einsum('Rixyz,PiQw,xwzy->RPQ', Y_KWUV__aaaa, t1_xxaa, rdm_ccaa, optimize = einsum_type)
         temp += einsum('Rixyz,PiQy,xz->RPQ', Y_KWUV__aaaa, t1_xxaa, rdm_ca, optimize = einsum_type)
         temp += 1/6 * einsum('Rixyz,PiwQ,xwzy->RPQ', Y_KWUV__aaaa, t1_xxaa, rdm_ccaa, optimize = einsum_type)
@@ -32327,7 +32323,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/3 * einsum('Rixyz,Pizw,Qyxw->RPQ', Y_KWUV__abab, t1_xxaa, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixyz,Pizy,Qx->RPQ', Y_KWUV__abab, t1_xxaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp =- 1/3 * einsum('Rixyz,PiQw,xwzy->RPQ', Y_KWUV__aaaa, t1_vxaa, rdm_ccaa, optimize = einsum_type)
         temp += einsum('Rixyz,PiQy,xz->RPQ', Y_KWUV__aaaa, t1_vxaa, rdm_ca, optimize = einsum_type)
         temp += 1/6 * einsum('Rixyz,PiwQ,xwzy->RPQ', Y_KWUV__aaaa, t1_vxaa, rdm_ccaa, optimize = einsum_type)
@@ -32352,7 +32348,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/3 * einsum('Rixyz,Pizw,Qyxw->RPQ', Y_KWUV__abab, t1_vxaa, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixyz,Pizy,Qx->RPQ', Y_KWUV__abab, t1_vxaa, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_a:f_a] += temp
-        
+
         temp =- 1/6 * einsum('RPxyz,wQ,xwzy->RPQ', Y_KWUV__aaaa, t1_ae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/6 * einsum('RPxyz,wuvQ,xuwzyv->RPQ', Y_KWUV__aaaa, t1_aaae, rdm_cccaaa, optimize = einsum_type)
         temp += 1/2 * einsum('RPxyz,wyuQ,xwzu->RPQ', Y_KWUV__aaaa, t1_aaae, rdm_ccaa, optimize = einsum_type)
@@ -32382,7 +32378,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 2/3 * einsum('Rixyz,iPwQ,xwzy->RPQ', Y_KWUV__abab, t1_xxae, rdm_ccaa, optimize = einsum_type)
         temp += einsum('Rixyz,iPyQ,xz->RPQ', Y_KWUV__abab, t1_xxae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_e:f_e] += temp
-        
+
         temp = 1/6 * einsum('Rixyz,PiwQ,xwzy->RPQ', Y_KWUV__aaaa, t1_vxae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixyz,PiyQ,xz->RPQ', Y_KWUV__aaaa, t1_vxae, rdm_ca, optimize = einsum_type)
         temp -= 1/3 * einsum('Rixyz,iPwQ,xwzy->RPQ', Y_KWUV__aaaa, t1_xvae, rdm_ccaa, optimize = einsum_type)
@@ -32394,7 +32390,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 2/3 * einsum('Rixyz,iPwQ,xwzy->RPQ', Y_KWUV__abab, t1_xvae, rdm_ccaa, optimize = einsum_type)
         temp += einsum('Rixyz,iPyQ,xz->RPQ', Y_KWUV__abab, t1_xvae, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_e:f_e] += temp
-        
+
         temp = 1/2 * einsum('RixPy,iQ,xy->RPQ', Y_KWUV__aaaa, t1_xe, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RixPy,izQw,xwyz->RPQ', Y_KWUV__aaaa, t1_xaea, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('RixPy,izQy,xz->RPQ', Y_KWUV__aaaa, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -32440,7 +32436,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
@@ -32457,10 +32453,10 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         ## Amplitudes
         t1_xa = mr_adc.t1.xa
- 
+
         t1_xe = mr_adc.t1.xe
         t1_ve = mr_adc.t1.ve
 
@@ -32473,13 +32469,13 @@ def compute_trans_moments(mr_adc, U):
         t1_xaaa = mr_adc.t1.xaaa
         t1_xaee = mr_adc.t1.xaee
         t1_aaae = mr_adc.t1.aaae
- 
+
         t1_xvae = mr_adc.t1.xvae
         t1_vxae = mr_adc.t1.vxae
         t1_vxee = mr_adc.t1.vxee
         t1_vaea = mr_adc.t1.vaea
         t1_vaae = mr_adc.t1.vaae
- 
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -32499,7 +32495,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/3 * einsum('RPxay,Qzwa,xwzy->RPQ', Y_KWCU__baab, t1_xaae, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('RPxay,Qzya,xz->RPQ', Y_KWCU__baab, t1_xaae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp =- 1/2 * einsum('RixaQ,iyPa,xy->RPQ', Y_KWCU__aaaa, t1_xaae, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RixaQ,iyaP,xy->RPQ', Y_KWCU__aaaa, t1_xaea, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixay,iQay,Px->RPQ', Y_KWCU__aaaa, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -32525,7 +32521,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/3 * einsum('Rixay,izPa,Qxyz->RPQ', Y_KWCU__baab, t1_xaae, rdm_ccaa, optimize = einsum_type)
         temp += 1/6 * einsum('Rixay,izPa,Qxzy->RPQ', Y_KWCU__baab, t1_xaae, rdm_ccaa, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp = 1/2 * einsum('RixQy,iP,xy->RPQ', Y_KWCU__aaaa, t1_xe, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RixQy,izPw,xwyz->RPQ', Y_KWCU__aaaa, t1_xaea, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('RixQy,izPy,xz->RPQ', Y_KWCU__aaaa, t1_xaea, rdm_ca, optimize = einsum_type)
@@ -32541,7 +32537,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/3 * einsum('RixQy,izwP,xwzy->RPQ', Y_KWCU__baab, t1_xaae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('RixQy,izyP,xz->RPQ', Y_KWCU__baab, t1_xaae, rdm_ca, optimize = einsum_type)
         TY[:, s_e:f_e, s_e:f_e] += temp
-        
+
         temp =- 1/2 * einsum('RPxay,Qa,xy->RPQ', Y_KWCU__aaaa, t1_ve, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RPxay,Qzaw,xwyz->RPQ', Y_KWCU__aaaa, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('RPxay,Qzay,xz->RPQ', Y_KWCU__aaaa, t1_vaea, rdm_ca, optimize = einsum_type)
@@ -32557,7 +32553,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/3 * einsum('RPxay,Qzwa,xwzy->RPQ', Y_KWCU__baab, t1_vaae, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('RPxay,Qzya,xz->RPQ', Y_KWCU__baab, t1_vaae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp =- 1/2 * einsum('RPxay,Qa,xy->RPQ', Y_KWCU__aaaa, t1_ae, rdm_ca, optimize = einsum_type)
         temp += 1/6 * einsum('RPxay,Qzwa,xwyz->RPQ', Y_KWCU__aaaa, t1_aaae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/6 * einsum('RPxay,Qzwa,xwzy->RPQ', Y_KWCU__aaaa, t1_aaae, rdm_ccaa, optimize = einsum_type)
@@ -32589,7 +32585,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/3 * einsum('Rixay,iPza,Qyxz->RPQ', Y_KWCU__baab, t1_xxae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/6 * einsum('Rixay,iPza,Qyzx->RPQ', Y_KWCU__baab, t1_xxae, rdm_ccaa, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp = einsum('Rixay,PiQa,xy->RPQ', Y_KWCU__aaaa, t1_vxae, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixay,Piya,Qx->RPQ', Y_KWCU__aaaa, t1_vxae, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixay,Piza,Qyzx->RPQ', Y_KWCU__aaaa, t1_vxae, rdm_ccaa, optimize = einsum_type)
@@ -32607,19 +32603,19 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/3 * einsum('Rixay,iPza,Qyxz->RPQ', Y_KWCU__baab, t1_xvae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/6 * einsum('Rixay,iPza,Qyzx->RPQ', Y_KWCU__baab, t1_xvae, rdm_ccaa, optimize = einsum_type)
         TY[:, s_v:f_v, s_a:f_a] += temp
-        
+
         temp = einsum('Rixay,PiQa,xy->RPQ', Y_KWCU__aaaa, t1_xxee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixay,PiaQ,xy->RPQ', Y_KWCU__aaaa, t1_xxee, rdm_ca, optimize = einsum_type)
         temp += einsum('Rixay,PiQa,xy->RPQ', Y_KWCU__abab, t1_xxee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixay,PiaQ,xy->RPQ', Y_KWCU__abab, t1_xxee, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_e:f_e] += temp
-        
+
         temp = einsum('Rixay,PiQa,xy->RPQ', Y_KWCU__aaaa, t1_vxee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixay,PiaQ,xy->RPQ', Y_KWCU__aaaa, t1_vxee, rdm_ca, optimize = einsum_type)
         temp += einsum('Rixay,PiQa,xy->RPQ', Y_KWCU__abab, t1_vxee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rixay,PiaQ,xy->RPQ', Y_KWCU__abab, t1_vxee, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_e:f_e] += temp
-        
+
         temp = 1/2 * einsum('RixQy,iP,xy->RPQ', Y_KWCU__aaaa, t1_xa, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RixQy,izPw,xwyz->RPQ', Y_KWCU__aaaa, t1_xaaa, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('RixQy,izPy,xz->RPQ', Y_KWCU__aaaa, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -32657,13 +32653,13 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         ## Amplitudes
         t1_xxaa = mr_adc.t1.xxaa
         t1_vxaa = mr_adc.t1.vxaa
         t1_xaaa = mr_adc.t1.xaaa
         t1_xxae = mr_adc.t1.xxae
- 
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
         rdm_ccaa = mr_adc.rdm.ccaa
@@ -32676,7 +32672,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/2 * einsum('RPixy,Qizx,yz->RPQ', Y_KLWU, t1_xxaa, rdm_ca, optimize = einsum_type)
         temp += einsum('RPixy,Qizy,xz->RPQ', Y_KLWU, t1_xxaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp = 2 * einsum('RijQx,ijPx->RPQ', Y_KLWU, t1_xxaa, optimize = einsum_type)
         temp -= einsum('RijQx,jiPx->RPQ', Y_KLWU, t1_xxaa, optimize = einsum_type)
         temp -= einsum('RijQx,ijPy,xy->RPQ', Y_KLWU, t1_xxaa, rdm_ca, optimize = einsum_type)
@@ -32685,7 +32681,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/2 * einsum('Rijxy,ijPz,Qzxy->RPQ', Y_KLWU, t1_xxaa, rdm_ccaa, optimize = einsum_type)
         temp -= einsum('Rijxy,jiPx,Qy->RPQ', Y_KLWU, t1_xxaa, rdm_ca, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp =- 2 * einsum('RPixy,Qixy->RPQ', Y_KLWU, t1_vxaa, optimize = einsum_type)
         temp += einsum('RPixy,Qiyx->RPQ', Y_KLWU, t1_vxaa, optimize = einsum_type)
         temp += einsum('RPixy,Qixz,yz->RPQ', Y_KLWU, t1_vxaa, rdm_ca, optimize = einsum_type)
@@ -32694,7 +32690,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/2 * einsum('RPixy,Qizx,yz->RPQ', Y_KLWU, t1_vxaa, rdm_ca, optimize = einsum_type)
         temp += einsum('RPixy,Qizy,xz->RPQ', Y_KLWU, t1_vxaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp = einsum('RPixy,iQxy->RPQ', Y_KLWU, t1_xaaa, optimize = einsum_type)
         temp -= 2 * einsum('RPixy,iQyx->RPQ', Y_KLWU, t1_xaaa, optimize = einsum_type)
         temp -= 1/2 * einsum('RPixy,iQxz,yz->RPQ', Y_KLWU, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -32703,7 +32699,7 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('RPixy,iQzx,yz->RPQ', Y_KLWU, t1_xaaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RPixy,iQzy,xz->RPQ', Y_KLWU, t1_xaaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp =- einsum('RijPx,ijxQ->RPQ', Y_KLWU, t1_xxae, optimize = einsum_type)
         temp += 2 * einsum('RijPx,jixQ->RPQ', Y_KLWU, t1_xxae, optimize = einsum_type)
         temp += 1/2 * einsum('RijPx,ijyQ,xy->RPQ', Y_KLWU, t1_xxae, rdm_ca, optimize = einsum_type)
@@ -32745,7 +32741,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/2 * einsum('RPixy,Qizx,yz->RPQ', Y_KLWU, t1_xvaa, rdm_ca, optimize = einsum_type)
         temp += einsum('RPixy,Qizy,xz->RPQ', Y_KLWU, t1_xvaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp = einsum('RiPxy,Qixy->RPQ', Y_KLWU, t1_vxaa, optimize = einsum_type)
         temp -= 2 * einsum('RiPxy,Qiyx->RPQ', Y_KLWU, t1_vxaa, optimize = einsum_type)
         temp -= 1/2 * einsum('RiPxy,Qixz,yz->RPQ', Y_KLWU, t1_vxaa, rdm_ca, optimize = einsum_type)
@@ -32754,7 +32750,7 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('RiPxy,Qizx,yz->RPQ', Y_KLWU, t1_vxaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiPxy,Qizy,xz->RPQ', Y_KLWU, t1_vxaa, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_v:f_v] += temp
-        
+
         temp = 2 * einsum('RijQx,ijPx->RPQ', Y_KLWU, t1_xvaa, optimize = einsum_type)
         temp -= einsum('RijQx,jiPx->RPQ', Y_KLWU, t1_vxaa, optimize = einsum_type)
         temp -= einsum('RijxQ,ijPx->RPQ', Y_KLWU, t1_xvaa, optimize = einsum_type)
@@ -32770,7 +32766,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/2 * einsum('Rijxy,jiPy,Qx->RPQ', Y_KLWU, t1_vxaa, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('Rijxy,jiPz,Qzyx->RPQ', Y_KLWU, t1_vxaa, rdm_ccaa, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp =- 2 * einsum('RPixy,Qixy->RPQ', Y_KLWU, t1_vvaa, optimize = einsum_type)
         temp += einsum('RPixy,Qiyx->RPQ', Y_KLWU, t1_vvaa, optimize = einsum_type)
         temp += einsum('RiQxy,Pixy->RPQ', Y_KLWU, t1_xxaa, optimize = einsum_type)
@@ -32786,7 +32782,7 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('RiQxy,Pizx,yz->RPQ', Y_KLWU, t1_xxaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiQxy,Pizy,xz->RPQ', Y_KLWU, t1_xxaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp = einsum('RPixy,iQxy->RPQ', Y_KLWU, t1_vaaa, optimize = einsum_type)
         temp -= 2 * einsum('RPixy,iQyx->RPQ', Y_KLWU, t1_vaaa, optimize = einsum_type)
         temp -= 1/2 * einsum('RPixy,iQxz,yz->RPQ', Y_KLWU, t1_vaaa, rdm_ca, optimize = einsum_type)
@@ -32795,7 +32791,7 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('RPixy,iQzx,yz->RPQ', Y_KLWU, t1_vaaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RPixy,iQzy,xz->RPQ', Y_KLWU, t1_vaaa, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp =- 2 * einsum('RiPxy,iQxy->RPQ', Y_KLWU, t1_xaaa, optimize = einsum_type)
         temp += einsum('RiPxy,iQyx->RPQ', Y_KLWU, t1_xaaa, optimize = einsum_type)
         temp += einsum('RiPxy,iQxz,yz->RPQ', Y_KLWU, t1_xaaa, rdm_ca, optimize = einsum_type)
@@ -32804,7 +32800,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= 1/2 * einsum('RiPxy,iQzx,yz->RPQ', Y_KLWU, t1_xaaa, rdm_ca, optimize = einsum_type)
         temp += einsum('RiPxy,iQzy,xz->RPQ', Y_KLWU, t1_xaaa, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_a:f_a] += temp
-        
+
         temp =- einsum('RijPx,ijxQ->RPQ', Y_KLWU, t1_xvae, optimize = einsum_type)
         temp += 2 * einsum('RijPx,jixQ->RPQ', Y_KLWU, t1_vxae, optimize = einsum_type)
         temp += 2 * einsum('RijxP,ijxQ->RPQ', Y_KLWU, t1_xvae, optimize = einsum_type)
@@ -32830,7 +32826,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         ## Amplitudes
         t1_xxaa = mr_adc.t1.xxaa
         t1_xxae = mr_adc.t1.xxae
@@ -32852,19 +32848,19 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('RiPax,Qiya,xy->RPQ', Y_KLCW, t1_xxae, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiPax,iQya,xy->RPQ', Y_KLCW, t1_xxae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp =- einsum('RijaQ,ijPa->RPQ', Y_KLCW, t1_xxae, optimize = einsum_type)
         temp += 2 * einsum('RijaQ,jiPa->RPQ', Y_KLCW, t1_xxae, optimize = einsum_type)
         temp += 1/2 * einsum('Rijax,ijPa,Qx->RPQ', Y_KLCW, t1_xxae, rdm_ca, optimize = einsum_type)
         temp -= einsum('Rijax,jiPa,Qx->RPQ', Y_KLCW, t1_xxae, rdm_ca, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp =- einsum('RijQx,ijxP->RPQ', Y_KLCW, t1_xxae, optimize = einsum_type)
         temp += 2 * einsum('RijQx,jixP->RPQ', Y_KLCW, t1_xxae, optimize = einsum_type)
         temp += 1/2 * einsum('RijQx,ijyP,xy->RPQ', Y_KLCW, t1_xxae, rdm_ca, optimize = einsum_type)
         temp -= einsum('RijQx,jiyP,xy->RPQ', Y_KLCW, t1_xxae, rdm_ca, optimize = einsum_type)
         TY[:, s_e:f_e, s_e:f_e] += temp
-        
+
         temp = einsum('RPiax,Qixa->RPQ', Y_KLCW, t1_vxae, optimize = einsum_type)
         temp -= 2 * einsum('RPiax,iQxa->RPQ', Y_KLCW, t1_xvae, optimize = einsum_type)
         temp -= 2 * einsum('RiPax,Qixa->RPQ', Y_KLCW, t1_vxae, optimize = einsum_type)
@@ -32874,7 +32870,7 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('RiPax,Qiya,xy->RPQ', Y_KLCW, t1_vxae, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiPax,iQya,xy->RPQ', Y_KLCW, t1_xvae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp = einsum('RPiax,iQax->RPQ', Y_KLCW, t1_xaea, optimize = einsum_type)
         temp -= 2 * einsum('RPiax,iQxa->RPQ', Y_KLCW, t1_xaae, optimize = einsum_type)
         temp -= 2 * einsum('RiPax,iQax->RPQ', Y_KLCW, t1_xaea, optimize = einsum_type)
@@ -32884,7 +32880,7 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('RiPax,iQay,xy->RPQ', Y_KLCW, t1_xaea, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RiPax,iQya,xy->RPQ', Y_KLCW, t1_xaae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp = 2 * einsum('RijQx,ijPx->RPQ', Y_KLCW, t1_xxaa, optimize = einsum_type)
         temp -= einsum('RijQx,jiPx->RPQ', Y_KLCW, t1_xxaa, optimize = einsum_type)
         temp -= einsum('RijaP,ijQa->RPQ', Y_KLCW, t1_xxee, optimize = einsum_type)
@@ -32904,7 +32900,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         ## Amplitudes
         t1_xvae = mr_adc.t1.xvae
         t1_vxae = mr_adc.t1.vxae
@@ -32931,7 +32927,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= einsum('RPiax,Qiya,xy->RPQ', Y_KLCW__baab, t1_xvae, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RPiax,iQya,xy->RPQ', Y_KLCW__baab, t1_vxae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp =- 2 * einsum('RiPax,Qixa->RPQ', Y_KLCW__abab, t1_vxae, optimize = einsum_type)
         temp += einsum('RiPax,iQxa->RPQ', Y_KLCW__abab, t1_xvae, optimize = einsum_type)
         temp -= einsum('RiPax,Qixa->RPQ', Y_KLCW__baab, t1_vxae, optimize = einsum_type)
@@ -32941,7 +32937,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/2 * einsum('RiPax,Qiya,xy->RPQ', Y_KLCW__baab, t1_vxae, rdm_ca, optimize = einsum_type)
         temp -= einsum('RiPax,iQya,xy->RPQ', Y_KLCW__baab, t1_xvae, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_v:f_v] += temp
-        
+
         temp =- einsum('RijaQ,ijPa->RPQ', Y_KLCW__abab, t1_xvae, optimize = einsum_type)
         temp += 2 * einsum('RijaQ,jiPa->RPQ', Y_KLCW__abab, t1_vxae, optimize = einsum_type)
         temp -= 2 * einsum('RijaQ,ijPa->RPQ', Y_KLCW__baab, t1_xvae, optimize = einsum_type)
@@ -32951,7 +32947,7 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('Rijax,ijPa,Qx->RPQ', Y_KLCW__baab, t1_xvae, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('Rijax,jiPa,Qx->RPQ', Y_KLCW__baab, t1_vxae, rdm_ca, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp =- einsum('RijQx,ijxP->RPQ', Y_KLCW__abab, t1_xvae, optimize = einsum_type)
         temp += 2 * einsum('RijQx,jixP->RPQ', Y_KLCW__abab, t1_vxae, optimize = einsum_type)
         temp -= 2 * einsum('RijQx,ijxP->RPQ', Y_KLCW__baab, t1_xvae, optimize = einsum_type)
@@ -32961,7 +32957,7 @@ def compute_trans_moments(mr_adc, U):
         temp += einsum('RijQx,ijyP,xy->RPQ', Y_KLCW__baab, t1_xvae, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RijQx,jiyP,xy->RPQ', Y_KLCW__baab, t1_vxae, rdm_ca, optimize = einsum_type)
         TY[:, s_e:f_e, s_e:f_e] += temp
-        
+
         temp = einsum('RPiax,Qixa->RPQ', Y_KLCW__abab, t1_vvae, optimize = einsum_type)
         temp -= 2 * einsum('RPiax,iQxa->RPQ', Y_KLCW__abab, t1_vvae, optimize = einsum_type)
         temp -= 2 * einsum('RiQax,Pixa->RPQ', Y_KLCW__abab, t1_xxae, optimize = einsum_type)
@@ -32979,7 +32975,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/2 * einsum('RiQax,Piya,xy->RPQ', Y_KLCW__baab, t1_xxae, rdm_ca, optimize = einsum_type)
         temp -= einsum('RiQax,iPya,xy->RPQ', Y_KLCW__baab, t1_xxae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp = einsum('RPiax,iQax->RPQ', Y_KLCW__abab, t1_vaea, optimize = einsum_type)
         temp -= 2 * einsum('RPiax,iQxa->RPQ', Y_KLCW__abab, t1_vaae, optimize = einsum_type)
         temp += 2 * einsum('RPiax,iQax->RPQ', Y_KLCW__baab, t1_vaea, optimize = einsum_type)
@@ -32989,7 +32985,7 @@ def compute_trans_moments(mr_adc, U):
         temp -= einsum('RPiax,iQay,xy->RPQ', Y_KLCW__baab, t1_vaea, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RPiax,iQya,xy->RPQ', Y_KLCW__baab, t1_vaae, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp =- 2 * einsum('RiPax,iQax->RPQ', Y_KLCW__abab, t1_xaea, optimize = einsum_type)
         temp += einsum('RiPax,iQxa->RPQ', Y_KLCW__abab, t1_xaae, optimize = einsum_type)
         temp -= einsum('RiPax,iQax->RPQ', Y_KLCW__baab, t1_xaea, optimize = einsum_type)
@@ -32999,7 +32995,7 @@ def compute_trans_moments(mr_adc, U):
         temp += 1/2 * einsum('RiPax,iQay,xy->RPQ', Y_KLCW__baab, t1_xaea, rdm_ca, optimize = einsum_type)
         temp -= einsum('RiPax,iQya,xy->RPQ', Y_KLCW__baab, t1_xaae, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_a:f_a] += temp
-        
+
         temp = 2 * einsum('RijQx,ijPx->RPQ', Y_KLCW__abab, t1_xvaa, optimize = einsum_type)
         temp -= einsum('RijQx,jiPx->RPQ', Y_KLCW__abab, t1_vxaa, optimize = einsum_type)
         temp -= einsum('RijaP,ijQa->RPQ', Y_KLCW__abab, t1_xvee, optimize = einsum_type)
@@ -33027,7 +33023,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         ## Amplitudes
         t1_xxee = mr_adc.t1.xxee
         t1_vxee = mr_adc.t1.vxee
@@ -33037,19 +33033,19 @@ def compute_trans_moments(mr_adc, U):
         temp =- 2 * einsum('RPiab,Qiab->RPQ', Y_KLCD, t1_xxee, optimize = einsum_type)
         temp += einsum('RPiab,Qiba->RPQ', Y_KLCD, t1_xxee, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp = 2 * einsum('RijQa,ijPa->RPQ', Y_KLCD, t1_xxee, optimize = einsum_type)
         temp -= einsum('RijQa,jiPa->RPQ', Y_KLCD, t1_xxee, optimize = einsum_type)
         TY[:, s_e:f_e, s_e:f_e] += temp
-        
+
         temp =- 2 * einsum('RPiab,Qiab->RPQ', Y_KLCD, t1_vxee, optimize = einsum_type)
         temp += einsum('RPiab,Qiba->RPQ', Y_KLCD, t1_vxee, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp = einsum('RPiab,iQab->RPQ', Y_KLCD, t1_xaee, optimize = einsum_type)
         temp -= 2 * einsum('RPiab,iQba->RPQ', Y_KLCD, t1_xaee, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp = 2 * einsum('RijQa,ijPa->RPQ', Y_KLCD, t1_xxae, optimize = einsum_type)
         temp -= einsum('RijQa,jiPa->RPQ', Y_KLCD, t1_xxae, optimize = einsum_type)
         TY[:, s_a:f_a, s_e:f_e] += temp
@@ -33077,31 +33073,31 @@ def compute_trans_moments(mr_adc, U):
         temp =- 2 * einsum('RPiab,Qiab->RPQ', Y_KLCD, t1_xvee, optimize = einsum_type)
         temp += einsum('RPiab,Qiba->RPQ', Y_KLCD, t1_xvee, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp = einsum('RiPab,Qiab->RPQ', Y_KLCD, t1_vxee, optimize = einsum_type)
         temp -= 2 * einsum('RiPab,Qiba->RPQ', Y_KLCD, t1_vxee, optimize = einsum_type)
         TY[:, s_v:f_v, s_v:f_v] += temp
-        
+
         temp = 2 * einsum('RijQa,ijPa->RPQ', Y_KLCD, t1_xvee, optimize = einsum_type)
         temp -= einsum('RijQa,jiPa->RPQ', Y_KLCD, t1_vxee, optimize = einsum_type)
         temp -= einsum('RijaQ,ijPa->RPQ', Y_KLCD, t1_xvee, optimize = einsum_type)
         temp += 2 * einsum('RijaQ,jiPa->RPQ', Y_KLCD, t1_vxee, optimize = einsum_type)
         TY[:, s_e:f_e, s_e:f_e] += temp
-        
+
         temp =- 2 * einsum('RPiab,Qiab->RPQ', Y_KLCD, t1_vvee, optimize = einsum_type)
         temp += einsum('RPiab,Qiba->RPQ', Y_KLCD, t1_vvee, optimize = einsum_type)
         temp += einsum('RiQab,Piab->RPQ', Y_KLCD, t1_xxee, optimize = einsum_type)
         temp -= 2 * einsum('RiQab,Piba->RPQ', Y_KLCD, t1_xxee, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp = einsum('RPiab,iQab->RPQ', Y_KLCD, t1_vaee, optimize = einsum_type)
         temp -= 2 * einsum('RPiab,iQba->RPQ', Y_KLCD, t1_vaee, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp =- 2 * einsum('RiPab,iQab->RPQ', Y_KLCD, t1_xaee, optimize = einsum_type)
         temp += einsum('RiPab,iQba->RPQ', Y_KLCD, t1_xaee, optimize = einsum_type)
         TY[:, s_v:f_v, s_a:f_a] += temp
-        
+
         temp = 2 * einsum('RijQa,ijPa->RPQ', Y_KLCD, t1_xvae, optimize = einsum_type)
         temp -= einsum('RijQa,jiPa->RPQ', Y_KLCD, t1_vxae, optimize = einsum_type)
         temp -= einsum('RijaQ,ijPa->RPQ', Y_KLCD, t1_xvae, optimize = einsum_type)
@@ -33117,7 +33113,7 @@ def compute_trans_moments(mr_adc, U):
         # Einsum definition from kernel
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
-    
+
         ## Amplitudes
         t1_xaee = mr_adc.t1.xaee
         t1_vaee = mr_adc.t1.vaee
@@ -33129,38 +33125,38 @@ def compute_trans_moments(mr_adc, U):
 
         t1_xaae = mr_adc.t1.xaae
         t1_xaea = mr_adc.t1.xaea
- 
+
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
         temp =- einsum('RPxab,Qyab,xy->RPQ', Y_KWCD, t1_xaee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RPxab,Qyba,xy->RPQ', Y_KWCD, t1_xaee, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_c:f_c] += temp
-        
+
         temp =- einsum('Rixab,iQab,Px->RPQ', Y_KWCD, t1_xaee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('Rixab,iQba,Px->RPQ', Y_KWCD, t1_xaee, rdm_ca, optimize = einsum_type)
         TY[:, s_a:f_a, s_a:f_a] += temp
-        
+
         temp = einsum('RixQa,iyPa,xy->RPQ', Y_KWCD, t1_xaee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RixQa,iyaP,xy->RPQ', Y_KWCD, t1_xaee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RixaQ,iyPa,xy->RPQ', Y_KWCD, t1_xaee, rdm_ca, optimize = einsum_type)
         temp += einsum('RixaQ,iyaP,xy->RPQ', Y_KWCD, t1_xaee, rdm_ca, optimize = einsum_type)
         TY[:, s_e:f_e, s_e:f_e] += temp
-        
+
         temp =- einsum('RPxab,Qyab,xy->RPQ', Y_KWCD, t1_vaee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RPxab,Qyba,xy->RPQ', Y_KWCD, t1_vaee, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_v:f_v] += temp
-        
+
         temp =- einsum('RPxab,Qyab,xy->RPQ', Y_KWCD, t1_aaee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('RPxab,Qyba,xy->RPQ', Y_KWCD, t1_aaee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('Rixab,Piab,Qx->RPQ', Y_KWCD, t1_xxee, rdm_ca, optimize = einsum_type)
         temp -= einsum('Rixab,Piba,Qx->RPQ', Y_KWCD, t1_xxee, rdm_ca, optimize = einsum_type)
         TY[:, s_c:f_c, s_a:f_a] += temp
-        
+
         temp = 1/2 * einsum('Rixab,Piab,Qx->RPQ', Y_KWCD, t1_vxee, rdm_ca, optimize = einsum_type)
         temp -= einsum('Rixab,Piba,Qx->RPQ', Y_KWCD, t1_vxee, rdm_ca, optimize = einsum_type)
         TY[:, s_v:f_v, s_a:f_a] += temp
-        
+
         temp = einsum('RixQa,iyPa,xy->RPQ', Y_KWCD, t1_xaae, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RixQa,iyaP,xy->RPQ', Y_KWCD, t1_xaea, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('RixaQ,iyPa,xy->RPQ', Y_KWCD, t1_xaae, rdm_ca, optimize = einsum_type)
@@ -33206,7 +33202,7 @@ def compute_trans_moments(mr_adc, U):
     f_a = s_a + ncas
     s_e = f_a
     f_e = s_e + nextern
- 
+
     # MR-ADC(0) terms
     dim = mr_adc.h0.dim
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
@@ -33592,7 +33588,7 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
             h1_cvaa = mr_adc.h1.cvaa
             h1_cvea__abab = mr_adc.h1.cvea__abab
             h1_cvea__baab = mr_adc.h1.cvea__baab
-            h1_cvee = mr_adc.h1.cvee 
+            h1_cvee = mr_adc.h1.cvee
 
         # Renormalize eigenvectors for second-order methods
         U = renormalize_eigenvectors(mr_adc, U)
@@ -33705,13 +33701,15 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
 
     for state, singles, doubles in result:
         mr_adc.log.info(f"{mr_adc.method_type.upper()}-{mr_adc.method.upper()} | State {state+1:d} | dE (eV) = {de_ev[state]:12.4f}")
-        mr_adc.log.info("\n1p1h block:")
-        for p, q, p_label, q_label, val in singles:
-            mr_adc.log.info(f"{p_label}({p:4d}) -> {q_label}({q:4d}) = {val:7.4f}")
+        if singles:
+            mr_adc.log.info("\n1p1h block:")
+            for p, q, p_label, q_label, val in singles:
+                mr_adc.log.info(f"{p_label}({p:4d}) -> {q_label}({q:4d}) = {val:7.4f}")
 
-        mr_adc.log.info("\n2p2h block:")
-        for p, q, r, s, p_label, q_label, r_label, s_label, val in doubles:
-            mr_adc.log.info(f"{p_label},{q_label}({p:4d}, {q:4d}) -> {r_label},{s_label}({r:4d}, {s:4d}) = {val:7.4f}")
+        if doubles:
+            mr_adc.log.info("\n2p2h block:")
+            for p, q, r, s, p_label, q_label, r_label, s_label, val in doubles:
+                mr_adc.log.info(f"{p_label},{q_label}({p:4d}, {q:4d}) -> {r_label},{s_label}({r:4d}, {s:4d}) = {val:7.4f}")
         mr_adc.log.info('')
 
     mr_adc.log.info("*"*55)
