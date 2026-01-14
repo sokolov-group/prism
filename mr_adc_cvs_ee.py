@@ -33547,14 +33547,15 @@ def renormalize_eigenvectors(mr_adc, U):
     return renormU
 
 def analyze_eigenvectors(mr_adc, de_ev, U):
-
-    mr_adc.log.info("")
-    mr_adc.log.info("*"*55)
-    mr_adc.log.info("Eigenvector Magnitude Analysis")
+    cput0 = (logger.process_clock(), logger.perf_counter())
 
     print_thresh = 1e-2
 
-    mr_adc.log.extra(f"eigenvector elements threshold: {print_thresh:.2e}\n")
+    mr_adc.log.info("")
+    mr_adc.log.info("="*60)
+    mr_adc.log.info("Eigenvector Magnitude Analysis")
+    mr_adc.log.extra(f"> eigenvector elements threshold: {print_thresh:.2e}")
+    mr_adc.log.info("="*60)
 
     # Variables from kernel
     ncvs    = mr_adc.ncvs
@@ -33712,5 +33713,5 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
                 mr_adc.log.info(f"{p_label},{q_label}({p:4d}, {q:4d}) -> {r_label},{s_label}({r:4d}, {s:4d}) = {val:7.4f}")
         mr_adc.log.info('')
 
-    mr_adc.log.info("*"*55)
+    mr_adc.log.timer("computing eigenvector analysis", *cput0)
 
