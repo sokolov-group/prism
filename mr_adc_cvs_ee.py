@@ -19,11 +19,9 @@
 #              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
-import sys
 import numpy as np
 import prism.mr_adc_overlap as mr_adc_overlap
 import prism.mr_adc_intermediates as mr_adc_intermediates
-import prism.mr_adc_integrals as mr_adc_integrals
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -271,8 +269,6 @@ def compute_excitation_manifolds(mr_adc):
     mr_adc.log.extra("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
     mr_adc.log.extra("Dimension of the orthogonalized excitation manifold:       %d" % (mr_adc.h_orth.dim))
 
-    sys.stdout.flush()
-
     if (mr_adc.h_orth.dim < mr_adc.nroots):
         mr_adc.nroots = mr_adc.h_orth.dim
 
@@ -283,8 +279,6 @@ def compute_M_00(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing M(h0-h0) block...")
-
-    sys.stdout.flush()
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
@@ -24733,7 +24727,6 @@ def compute_M_00(mr_adc):
     if np.linalg.norm(M_00-M_00.T) > 1e-4:
         mr_adc.log.warn("significant asymmetry in M(h0-h0) block!")
 
-    sys.stdout.flush()
 #    return M_00
 
 def compute_preconditioner(mr_adc):
@@ -24741,8 +24734,6 @@ def compute_preconditioner(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing preconditioner...")
 
-    sys.stdout.flush()
- 
     # Matrix Blocks
     M_00 = mr_adc.M_00
     
@@ -25842,12 +25833,12 @@ def compute_preconditioner(mr_adc):
         ## CA preconditioner 
         precond_ca = compute_preconditioner__CA(mr_adc)
 
-        precond[ho_ca_caaa] = precond_ca.reshape(-1).copy() 
+        precond[ho_ca_caaa] = precond_ca.reshape(-1)
 
         ## CE preconditioner
         precond_ce = compute_preconditioner__CE(mr_adc)
 
-        precond[ho_ce_caea] = precond_ce.reshape(-1).copy() 
+        precond[ho_ce_caea] = precond_ce.reshape(-1)
 
     ## Second-order manifolds
     elif mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
@@ -25887,12 +25878,12 @@ def compute_preconditioner(mr_adc):
         ## CAAA preconditioner
         if mr_adc.h_orth.dim_ca_caaa:
             precond_caaa = compute_preconditioner__CAAA(mr_adc)
-            precond[ho_ca_caaa] = precond_caaa.reshape(-1).copy() 
+            precond[ho_ca_caaa] = precond_caaa.reshape(-1)
 
         ## CAEA preconditioner
         if mr_adc.h_orth.dim_ce_caea:
             precond_caea = compute_preconditioner__CAEA(mr_adc)
-            precond[ho_ce_caea] = precond_caea.reshape(-1).copy() 
+            precond[ho_ce_caea] = precond_caea.reshape(-1)
 
         if nval > 0:
             ## Excitation Manifolds
@@ -25921,7 +25912,6 @@ def compute_preconditioner(mr_adc):
                 precond[ho_cvee] = precond_cvee.reshape(-1)
 
     mr_adc.log.timer("computing preconditioner", *cput0)
-    sys.stdout.flush()
 
     return np.ascontiguousarray(precond)
 
@@ -33606,13 +33596,10 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
         Y_sq = np.abs(Y) ** 2
         ind_idx = np.argsort(-Y_sq)
 
-        Y_sq = Y_sq[ind_idx]
-        Y_sorted = Y[ind_idx]
-
         # Filter by tolerance
-        mask = Y_sq > print_thresh**2
+        mask = Y_sq[ind_idx] > print_thresh**2
         ind_idx = ind_idx[mask]
-        Y_sorted = Y_sorted[mask]
+        Y_sorted = Y[ind_idx]
 
         for orb_idx, eigval in zip(ind_idx, Y_sorted):
             value = np.linalg.norm(eigval)**2
