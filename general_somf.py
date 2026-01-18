@@ -431,19 +431,19 @@ def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0,
 
 ## DKH-2 specific functionalities:
 
-def get_hxr(mol):
+def get_hxr_dkh2(mol):
 
     c = LIGHT_SPEED
     t = mol.intor_symmetric('int1e_kin')
     v = mol.intor_symmetric('int1e_nuc')
     s = mol.intor_symmetric('int1e_ovlp')
     w = mol.intor_symmetric('int1e_pnucp')
-    h1p, x, rp, h1m, xb, rm = _x2c1e_hxrmat(t, v, w, s, c)
+    h1p, x, rp, h1m, xb, rm = _x2c1e_hxrmat_dkh2(t, v, w, s, c)
     
     return s, t, h1p, x, rp, h1m, xb, rm
 
 
-def _x2c1e_hxrmat(t, v, w, s, c):
+def _x2c1e_hxrmat_dkh2(t, v, w, s, c):
     nao = s.shape[0]
     n2 = nao * 2
     h = np.zeros((n2, n2), dtype=v.dtype)
@@ -489,7 +489,7 @@ def _x2c1e_hxrmat(t, v, w, s, c):
 
 def get_hso1e_x2c2(mol):
     '''One electron DKH-2 type operator'''
-    s, t, h1p, x, rp, h1m, xb, rm = get_hxr(mol)
+    s, t, h1p, x, rp, h1m, xb, rm = get_hxr_dkh2(mol)
     c = LIGHT_SPEED
     ep, cp = scipy.linalg.eigh(h1p, s)
     em, cm = scipy.linalg.eigh(h1m, ((0.5/c**2)*t))
