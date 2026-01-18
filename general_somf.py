@@ -84,8 +84,8 @@ from socutils.somf import somf
 #
 #   return h_soc_total #hsocint
 
-def getSOC_integrals(interface, unc=True):
-    print("unc=",unc)
+def getSOC_integrals(interface):
+    print("Basis functions are uncontracted dkh-1/dkh-2")
     mo = interface.mo
     nmo = interface.nmo
     nao = interface.mo.shape[1]
@@ -96,31 +96,31 @@ def getSOC_integrals(interface, unc=True):
     # Build 1e-density matrix
     rdm1ao = interface.mc.make_rdm1() 
 
-    # Uncontract basis:
-    xmol, contr_coeff = None, None
-    if unc:
-        xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
-        rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-    else:
-        xmol, contr_coeff = mol, np.eye(mol.nao_nr())
-
     # Get integrals:
     nbasis = xmol.nao_nr()
     hsocint = np.zeros((3, nbasis, nbasis))
    
     if (interface.soc=="breit-pauli"):
+        xmol, contr_coeff = mol, np.eye(mol.nao_nr())
+
         hsocint = np.zeros((3, nbasis, nbasis))
-        hsocint += prefactor * somf.get_wso(xmol)
+        hsocint += prefactor * somf.get_wso(xmol, unc=False)
         hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
 
-    elif (interface.soc=="x2c-1"):
+    elif (interface.soc=="x2c-1"):   
+        xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
+        rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
+      
         hsocint = np.zeros((3, nbasis, nbasis))
-        hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
+        hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
     
     elif (interface.soc=="x2c-2"):
+        xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
+        rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
+
         hsocint = np.zeros((3, nbasis, nbasis))
-        hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
+        hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint += prefactor * get_hso1e_x2c2(xmol) 
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
 
