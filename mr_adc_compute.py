@@ -164,7 +164,7 @@ def kernel(mr_adc):
 
     # Analyze eigenvectors
     #if mr_adc.method_type == "cvs-ee":
-    if mr_adc.method_type == "cvs-ee" and mr_adc.analyze_spec_factor
+    if mr_adc.method_type == "cvs-ee" and mr_adc.analyze_spec_factor:
         mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, de_ev, U)
 
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
@@ -333,8 +333,8 @@ def compute_trans_properties(mr_adc, de, U):
     else:
         spec_intensity = 2.0 * np.sum(X**2, axis=0)
 
-    if mr_adc.method_type == "cvs-ee" and mr_adc.compute_NTOs:
-        mr_adc_cvs_ee.compute_NTOs(mr_adc, TY)
+    if mr_adc.method_type == "cvs-ee" and mr_adc.compute_ntos:
+        mr_adc_cvs_ee.compute_ntos(mr_adc, TY)
 
     # Analyze spectroscopic factors if requested
     #if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4): 

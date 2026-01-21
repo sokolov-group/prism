@@ -96,6 +96,7 @@ class MRADC:
         ## Analysis Settings
         self.analyze_spec_factor = False        # Spectroscopic factors analysis
         self.spec_factor_print_tol = 0.01       # Tolerance for spectroscopic factors analysis
+        self.compute_ntos = False               # Option to compute natural transition orbitals (NTOs)
 
         ## Other Settings
         self.outcore_expensive_tensors = True   # Store expensive (ooee) integrals and amplitudes on disk

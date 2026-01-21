@@ -33702,7 +33702,7 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
 
     mr_adc.log.timer("computing eigenvector analysis", *cput0)
 
-def compute_NTOs(mr_adc, X):
+def compute_ntos(mr_adc, X):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("\nComputing natural transition orbitals...")
@@ -33745,20 +33745,27 @@ def compute_NTOs(mr_adc, X):
         C_hole = mo_coeff[:, hole_idx] @ U
         C_particle = mo_coeff[:, particle_idx] @ V
 
+        # number of NTOs
+        n_nto = C_hole.shape[1]
+
         # phase consistency (relative to largest-magnitude AO coefficient)
-        for k in range(C_hole.shape[1]):
+        for k in range(n_nto):
             idx = np.argmax(np.abs(C_hole[:, k]))
             if C_hole[idx, k] < 0:
                 C_hole[:, k] *= -1
                 C_particle[:, k] *= -1
 
-        with open(f"nto_hole_S{i+1}.molden", "w") as f:
-            molden.header(mol, f)
-            molden.orbital_coeff(mol, f, C_hole, occ = nto_weights)
+        C_nto = np.zeros((C_hole.shape[0], 2 * n_nto))
+        for k in range(n_nto):
+            C_nto[:, 2*k] = C_hole[:, k]
+            C_nto[:, 2*k + 1] = C_particle[:, k]
 
-        with open(f"nto_particle_S{i+1}.molden", "w") as f:
+        occ_nto = np.repeat(nto_weights, 2)
+
+        filename = f"nto_S{i+1}.molden"
+        with open(filename, "w") as f:
             molden.header(mol, f)
-            molden.orbital_coeff(mol, f, C_particle, occ = nto_weights)
+            molden.orbital_coeff(mol, f, C_nto, occ=occ_nto)
 
         tot = np.sum(nto_weights)          # sum of NTO occupation numbers
         w = nto_weights / tot
