@@ -33702,3 +33702,70 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
 
     mr_adc.log.timer("computing eigenvector analysis", *cput0)
 
+def compute_NTOs(mr_adc, X):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    mr_adc.log.info("\nComputing natural transition orbitals...")
+
+    from pyscf.tools import molden
+
+    # Variables from kernel
+    ncvs = mr_adc.ncvs
+    nval = mr_adc.nval
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+
+    nmo = mr_adc.nmo
+    nroots = mr_adc.nroots
+
+    mo_coeff = mr_adc.mo
+    mol = mr_adc.interface.mol
+
+    # Particle-Hole
+    hole_idx = list(range(ncvs + nval + ncas))
+    particle_idx = list(range(ncas + nextern))
+
+    # Threshold
+    nto_thresh = 1e-3
+
+    mr_adc.log.info(f"{'State':<10} {'Ω':>10} {'PR':>10} {'S_HE':>10}")
+    for i in range(nroots):
+
+        TDM = X[i][np.ix_(hole_idx, particle_idx)]
+        U, s, Vh =  np.linalg.svd(TDM, full_matrices = False)
+
+        assert np.allclose(U.T @ U, np.eye(U.shape[1]))
+        assert np.allclose(Vh @ Vh.T, np.eye(Vh.shape[0]))
+
+        nto_weights = s**2
+        mask = nto_weights > nto_thresh
+        U, V = U[:, mask], Vh.T[:, mask]
+
+        # MO to AO
+        C_hole = mo_coeff[:, hole_idx] @ U
+        C_particle = mo_coeff[:, particle_idx] @ V
+
+        # phase consistency (relative to largest-magnitude AO coefficient)
+        for k in range(C_hole.shape[1]):
+            idx = np.argmax(np.abs(C_hole[:, k]))
+            if C_hole[idx, k] < 0:
+                C_hole[:, k] *= -1
+                C_particle[:, k] *= -1
+
+        with open(f"nto_hole_S{i+1}.molden", "w") as f:
+            molden.header(mol, f)
+            molden.orbital_coeff(mol, f, C_hole, occ = nto_weights)
+
+        with open(f"nto_particle_S{i+1}.molden", "w") as f:
+            molden.header(mol, f)
+            molden.orbital_coeff(mol, f, C_particle, occ = nto_weights)
+
+        tot = np.sum(nto_weights)          # sum of NTO occupation numbers
+        w = nto_weights / tot
+        PR = 1.0 / np.sum(w**2)            # NTO participation ratio
+        S = -np.sum(w * np.log(w + 1e-16)) # entanglement entropy
+
+        mr_adc.log.info(f"{i+1:<10} {tot:10.5f} {PR:10.2f} {S:10.3f}")
+
+    mr_adc.log.timer("computing natural transition orbitals", *cput0)
+
