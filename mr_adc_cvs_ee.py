@@ -33672,7 +33672,7 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
 def compute_ntos(mr_adc, X):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    mr_adc.log.info("\nComputing natural transition orbitals...")
+    mr_adc.log.info("\nComputing natural transition orbitals...\n")
 
     from pyscf.tools import molden
 
@@ -33682,7 +33682,6 @@ def compute_ntos(mr_adc, X):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
-    nmo = mr_adc.nmo
     nroots = mr_adc.nroots
 
     mo_coeff = mr_adc.mo
@@ -33695,7 +33694,6 @@ def compute_ntos(mr_adc, X):
     # Threshold
     nto_thresh = 1e-3
 
-    mr_adc.log.info(f"{'State':<10} {'Ω':>10} {'PR':>10} {'S_HE':>10}")
     for i in range(nroots):
 
         TDM = X[i][np.ix_(hole_idx, particle_idx)]
@@ -33734,12 +33732,19 @@ def compute_ntos(mr_adc, X):
             molden.header(mol, f)
             molden.orbital_coeff(mol, f, C_nto, occ=occ_nto)
 
-        tot = np.sum(nto_weights)          # sum of NTO occupation numbers
+        tot = np.sum(nto_weights)              # sum of NTO occupation numbers
         w = nto_weights / tot
-        PR = 1.0 / np.sum(w**2)            # NTO participation ratio
-        S = -np.sum(w * np.log(w + 1e-16)) # entanglement entropy
+        PR = 1.0 / np.sum(w**2)                # NTO participation ratio
+        S = -np.sum(w * np.log(w + 1e-16))     # entanglement entropy
+        Z = np.exp(S)                          # number of entangled states
 
-        mr_adc.log.info(f"{i+1:<10} {tot:10.5f} {PR:10.2f} {S:10.3f}")
+        mr_adc.log.info(f"State {i+1}:")
+        mr_adc.log.info(f"   Sum of SVs (Omega):               {tot:.6f}")
+        mr_adc.log.info(f"   Participation ratio (PR_NTO):     {PR:.6f}")
+        mr_adc.log.info(f"   Entanglement entropy (S_HE):      {S:.6f}")
+        mr_adc.log.info(f"   Nr of entangled states (Z_HE):    {Z:.6f}")
+        mr_adc.log.info(f"   Renormalized S_HE/Z_HE:  {S/Z:.6f} / {1.0:.6f}")
+        mr_adc.log.info("")
 
     mr_adc.log.timer("computing natural transition orbitals", *cput0)
 
