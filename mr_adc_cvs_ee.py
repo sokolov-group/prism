@@ -33593,6 +33593,11 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
         # Transform eigenvectors to the non-orthogonal basis
         Y = apply_S_12(mr_adc, U[state], transpose = False)
 
+        # Normalize Y
+        Y_norm = np.linalg.norm(Y)
+        if Y_norm > 0:
+            Y = Y / Y_norm
+
         Y_sq = np.abs(Y) ** 2
         ind_idx = np.argsort(-Y_sq)
 
@@ -33601,102 +33606,64 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
         ind_idx = ind_idx[mask]
         Y_sorted = Y[ind_idx]
 
-        for orb_idx, eigval in zip(ind_idx, Y_sorted):
-            value = np.linalg.norm(eigval)**2
+        # Tensor configurations: (tensor_obj, shape, offsets, labels, list_type)
+        # Singles
+        tensor_configs = [
+            (h0_ca, (ncvs, ncas), (1, 1+ncvs+nval), ('CVS', 'CAS'), 'singles'),
+            (h0_ce, (ncvs, nextern), (1, 1+ncvs+nval+ncas), ('CVS', 'EXT'), 'singles')]
 
-            # Singles
-            if orb_idx in range(h0_ca.start, h0_ca.stop):
-                local_idx = orb_idx - h0_ca.start
-                p, q = np.unravel_index(local_idx, (ncvs, ncas))
-                _singles.append((p + 1, q + 1 + ncvs + nval, 'CVS', 'CAS', value))
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
 
-            elif orb_idx in range(h0_ce.start, h0_ce.stop):
-                local_idx = orb_idx - h0_ce.start
-                p, q = np.unravel_index(local_idx, (ncvs, nextern))
-                _singles.append((p + 1, q + 1 + ncvs + nval + ncas, 'CVS', 'EXT', value))
+            # Doubles
+            tensor_configs += [
+                (h1_ccaa, (ncvs, ncvs, ncas, ncas), (1, 1, 1+ncvs+nval, 1+ncvs+nval), ('CVS', 'CVS', 'CAS', 'CAS'), 'doubles'),
+                (h1_ccea, (ncvs, ncvs, nextern, ncas), (1, 1, 1+ncvs+nval+ncas, 1+ncvs+nval), ('CVS', 'CVS', 'EXT', 'CAS'), 'doubles'),
+                (h1_ccee, (ncvs, ncvs, nextern, nextern), (1, 1, 1+ncvs+nval+ncas, 1+ncvs+nval+ncas), ('CVS', 'CVS', 'EXT', 'EXT'), 'doubles'),
+                (h1_cvaa, (ncvs, nval, ncas, ncas), (1, ncvs+1, 1+ncvs+nval, 1+ncvs+nval), ('CVS', 'VAL', 'CAS', 'CAS'), 'doubles'),
+                (h1_cvea__abab, (ncvs, nval, nextern, ncas), (1, ncvs+1, 1+ncvs+nval+ncas, 1+ncvs+nval), ('CVS', 'VAL', 'EXT', 'CAS'), 'doubles'),
+                (h1_cvea__baab, (ncvs, nval, nextern, ncas), (1, ncvs+1, 1+ncvs+nval+ncas, 1+ncvs+nval), ('CVS', 'VAL', 'EXT', 'CAS'), 'doubles'),
+                (h1_cvee, (ncvs, nval, nextern, nextern), (1, ncvs+1, 1+ncvs+nval+ncas, 1+ncvs+nval+ncas), ('CVS', 'VAL', 'EXT', 'EXT'), 'doubles'),
+                (h1_caee, (ncvs, ncas, nextern, nextern), (1, 1+ncvs+nval, 1+ncvs+nval+ncas, 1+ncvs+nval+ncas), ('CVS', 'CAS', 'EXT', 'EXT'), 'doubles'),
+                (h1_caaa__aaaa, (ncvs, ncas, ncas, ncas), (1, 1+ncvs+nval, 1+ncvs+nval, 1+ncvs+nval), ('CVS', 'CAS', 'CAS', 'CAS'), 'doubles'),
+                (h1_caaa__abab, (ncvs, ncas, ncas, ncas), (1, 1+ncvs+nval, 1+ncvs+nval, 1+ncvs+nval), ('CVS', 'CAS', 'CAS', 'CAS'), 'doubles'),
+                (h1_caea__aaaa, (ncvs, ncas, nextern, ncas), (1, 1+ncvs+nval, 1+ncvs+nval+ncas, 1+ncvs+nval), ('CVS', 'CAS', 'EXT', 'CAS'), 'doubles'),
+                (h1_caea__abab, (ncvs, ncas, nextern, ncas), (1, 1+ncvs+nval, 1+ncvs+nval+ncas, 1+ncvs+nval), ('CVS', 'CAS', 'EXT', 'CAS'), 'doubles'),
+                (h1_caea__baab, (ncvs, ncas, nextern, ncas), (1, 1+ncvs+nval, 1+ncvs+nval+ncas, 1+ncvs+nval), ('CVS', 'CAS', 'EXT', 'CAS'), 'doubles'),
+            ]
 
-            elif orb_idx in range(h1_ccaa.start, h1_ccaa.start):
-                local_idx = orb_idx - h1_ccaa.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncvs, ncas, ncas))
-                _doubles.append((p+1, q+1, r+1+ncvs+nval, s+1+ncvs+nval, 'CVS', 'CVS', 'CAS', 'CAS', value))
+        for orb_idx, eigvec in zip(ind_idx, Y_sorted):
+            value = np.abs(eigvec)**2
 
-            elif orb_idx in range(h1_ccea.start, h1_ccea.start):
-                local_idx = orb_idx - h1_ccea.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncvs, nextern, ncas))
-                _doubles.append((p+1, q+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'CVS', 'EXT', 'CAS', value))
+            for tensor, shape, offsets, labels, list_type in tensor_configs:
+                if orb_idx in range(tensor.start, tensor.stop):
+                    local_idx = orb_idx - tensor.start
+                    indices = np.unravel_index(local_idx, shape)
+                    values = tuple(idx + offset for idx, offset in zip(indices, offsets))
+                    entry = values + labels + (value,)
 
-            elif orb_idx in range(h1_ccee.start, h1_ccee.stop):
-                local_idx = orb_idx - h1_ccee.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncvs, nextern, nextern))
-                _doubles.append((p+1, q+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval+ncas, 'CVS', 'CVS', 'EXT', 'EXT', value))
-
-            elif orb_idx in range(h1_cvaa.start, h1_cvaa.stop):
-                local_idx = orb_idx - h1_cvaa.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, nval, ncas, ncas))
-                _doubles.append((p+1, q+ncvs+1, r+1+ncvs+nval, s+1+ncvs+nval, 'CVS', 'VAL', 'CAS', 'CAS', value))
-
-            elif orb_idx in range(h1_cvea__abab.start, h1_cvea__abab.stop):
-                local_idx = orb_idx - h1_cvea__abab.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, nval, nextern, ncas))
-                _doubles.append((p+1, q+ncvs+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'VAL', 'EXT', 'CAS', value))
-
-            elif orb_idx in range(h1_cvea__baab.start, h1_cvea__baab.stop):
-                local_idx = orb_idx - h1_cvea__baab.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, nval, nextern, ncas))
-                _doubles.append((p+1, q+ncvs+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'VAL', 'EXT', 'CAS', value))
-
-            elif orb_idx in range(h1_cvee.start, h1_cvee.stop):
-                local_idx = orb_idx - h1_cvee.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, nval, nextern, nextern))
-                _doubles.append((p+1, q+ncvs+1, r+1+ncvs+nval+ncas, s+1+ncvs+nval+ncas, 'CVS', 'VAL', 'EXT', 'EXT', value))
-
-            elif orb_idx in range(h1_caee.start, h1_caee.stop):
-                local_idx = orb_idx - h1_caee.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, nextern))
-                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval+ncas, 'CVS', 'CAS', 'EXT', 'EXT', value))
-
-            elif orb_idx in range(h1_caee.start, h1_caee.stop):
-                local_idx = orb_idx - h1_caee.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, nextern))
-                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval+ncas, 'CVS', 'CAS', 'EXT', 'EXT', value))
-
-            elif orb_idx in range(h1_caaa__aaaa.start, h1_caaa__aaaa.stop):
-                local_idx = orb_idx - h1_caaa__aaaa.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, ncas, ncas))
-                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval, s+1+ncvs+nval, 'CVS', 'CAS', 'CAS', 'CAS', value))
-
-            elif orb_idx in range(h1_caaa__abab.start, h1_caaa__abab.stop):
-                local_idx = orb_idx - h1_caaa__abab.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, ncas, ncas))
-                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval, s+1+ncvs+nval, 'CVS', 'CAS', 'CAS', 'CAS', value))
-
-            elif orb_idx in range(h1_caea__aaaa.start, h1_caea__aaaa.stop):
-                local_idx = orb_idx - h1_caea__aaaa.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, ncas))
-                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'CAS', 'EXT', 'CAS', value))
-
-            elif orb_idx in range(h1_caea__abab.start, h1_caea__abab.stop):
-                local_idx = orb_idx - h1_caea__abab.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, ncas))
-                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'CAS', 'EXT', 'CAS', value))
-
-            elif orb_idx in range(h1_caea__baab.start, h1_caea__baab.stop):
-                local_idx = orb_idx - h1_caea__baab.start
-                p, q, r, s = np.unravel_index(local_idx, (ncvs, ncas, nextern, ncas))
-                _doubles.append((p+1, q+1+ncvs+nval, r+1+ncvs+nval+ncas, s+1+ncvs+nval, 'CVS', 'CAS', 'EXT', 'CAS', value))
+                    if list_type == 'singles':
+                        _singles.append(entry)
+                    else:
+                        _doubles.append(entry)
+                    break
 
         result.append((state, _singles, _doubles))
 
     for state, singles, doubles in result:
         mr_adc.log.info(f"{mr_adc.method_type.upper()}-{mr_adc.method.upper()} | State {state+1:d} | dE (eV) = {de_ev[state]:12.4f}")
-        if singles:
+
+        # Filter and sort singles by significance
+        sig_singles = sorted([s for s in singles if s[4] > print_thresh], key=lambda x: x[4], reverse=True)
+        if sig_singles:
             mr_adc.log.info("\n1p1h block:")
-            for p, q, p_label, q_label, val in singles:
+            for p, q, p_label, q_label, val in sig_singles:
                 mr_adc.log.info(f"{p_label}({p:4d}) -> {q_label}({q:4d}) = {val:7.4f}")
 
-        if doubles:
+        # Filter and sort doubles by significance
+        sig_doubles = sorted([d for d in doubles if d[8] > print_thresh], key=lambda x: x[8], reverse=True)
+        if sig_doubles:
             mr_adc.log.info("\n2p2h block:")
-            for p, q, r, s, p_label, q_label, r_label, s_label, val in doubles:
+            for p, q, r, s, p_label, q_label, r_label, s_label, val in sig_doubles:
                 mr_adc.log.info(f"{p_label},{q_label}({p:4d}, {q:4d}) -> {r_label},{s_label}({r:4d}, {s:4d}) = {val:7.4f}")
         mr_adc.log.info('')
 
