@@ -33392,7 +33392,7 @@ def compute_trans_moments(mr_adc, U):
 
             del Y_KLCW__abab, Y_KLCW__baab
 
-    #analyze_mo_cont(mr_adc, TY)
+    analyze_mo_cont(mr_adc, TY)
 
     dX = compute_dX(mr_adc, TY)
 
@@ -33401,69 +33401,65 @@ def compute_trans_moments(mr_adc, U):
     return TY, dX
 
 def analyze_mo_cont(mr_adc, TY):
+    mr_adc.log.info("Computing orbital contributions to transition moments matrix...")
 
-    mr_adc.log.info("\nORBITAL CONTRIBUTIONS")
-
-    print_thresh = 1e-6
+    print_thresh = 1e-2
 
     # Variables from kernel
     ncvs    = mr_adc.ncvs
-    nval    = mr_adc.nval
-    ncas    = mr_adc.ncas
-    nextern = mr_adc.nextern
+    ncore   = mr_adc.ncore
+    nocc    = mr_adc.nocc
+    nmo     = mr_adc.nmo
 
     nroots  = mr_adc.nroots
 
     def classify_orbital(idx):
         if idx < ncvs:
             return "cvs"
-        elif idx < ncvs + nval:
+        elif idx < ncore:
             return "val"
-        elif idx < ncvs + nval + ncas:
+        elif idx < nocc:
             return "cas"
-        elif idx < ncvs + nval + ncas + nextern:
+        elif idx < nmo:
             return "ext"
         else:
-            return "out_of_range"
+            mr_adc.log.warn(f"Warning: Orbital index {idx} out of range")
+            return None
 
     results = []
 
     for state in range(nroots):
-        norm = np.linalg.norm(TY[state])
+        sq_norm = np.abs(TY[state]) ** 2
+        total = sq_norm.sum()
 
-        if norm > print_thresh:
-            sq_norm = np.abs(TY[state]) ** 2
-            total = sq_norm.sum()
+        # Sort contributions by magnitude
+        flat_idx = np.argsort(sq_norm.ravel())[::-1]
 
-            flat_idx = np.argsort(sq_norm.ravel())[::-1]
-            #top_mo = flat_idx[:3]
-            top_mo = flat_idx[:10]
+        top_mo_cont = []
+        for mo_idx in flat_idx:
+            p, q = np.unravel_index(mo_idx, (nmo, nmo))
+            frac = sq_norm[p, q] / total * 100
 
-            top_mo_cont = []
-            for mo_idx in top_mo:
-                p, q = np.unravel_index(mo_idx, sq_norm.shape)
-                frac = sq_norm[p, q] / total * 100
+            if frac < print_thresh:
+                break
 
-                # Classify p and q
-                p_label = classify_orbital(p)
-                q_label = classify_orbital(q)
+            p_label = classify_orbital(p)
+            q_label = classify_orbital(q)
 
-                # Skip or flag invalid indices
-                if "out_of_range" in (p_label, q_label):
-                    mr_adc.log.warn(f"Warning: Orbital index {p, q} out of range in state {state + 1}")
-                    continue
+            # Skip invalid indices
+            if p_label is None or q_label is None:
+                continue
 
-                top_mo_cont.append((p, q, p_label, q_label, frac))
+            top_mo_cont.append((p, q, p_label, q_label, frac))
 
-            results.append((state, top_mo_cont))
+        results.append((state, top_mo_cont))
 
     # Report results
     for state, mos in results:
         mr_adc.log.info(f"\nState {state + 1}")
         for p, q, p_label, q_label, frac in mos:
             mr_adc.log.info(
-                f"{p_label.upper()}({p+1:4d}) -> {q_label.upper()}({q+1:4d}) "
-                f"= {frac:6.2f}%")
+                f"{p_label.upper()}({p+1:4d}) -> {q_label.upper()}({q+1:4d}) = {frac:6.2f}%")
     mr_adc.log.info("")
 
 def renormalize_eigenvectors(mr_adc, U):
