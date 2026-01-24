@@ -174,7 +174,7 @@ def compute_excitation_manifolds(mr_adc):
         mr_adc.h1.caea__aaaa = slice(mr_adc.h1.s_caea__aaaa, mr_adc.h1.f_caea__aaaa)
         mr_adc.h1.caea__abab = slice(mr_adc.h1.s_caea__abab, mr_adc.h1.f_caea__abab)
         mr_adc.h1.caea__baab = slice(mr_adc.h1.s_caea__baab, mr_adc.h1.f_caea__baab)
- 
+
         mr_adc.log.extra("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
 
         # Orthogonalized zeroth- and first-order manifold
@@ -187,7 +187,7 @@ def compute_excitation_manifolds(mr_adc):
 
         mr_adc.S12.ca_caaa = mr_adc_overlap.compute_S12_p1p_projector(mr_adc)
         mr_adc.S12.ce_caea = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
-    
+
         # double-core excitations
         mr_adc.h_orth.n_ccaa = mr_adc.ncvs * mr_adc.ncvs * mr_adc.S12.ccaa.shape[1]
         mr_adc.h_orth.n_ccea = mr_adc.ncvs * mr_adc.ncvs * mr_adc.nextern * mr_adc.S12.ccea.shape[1]
@@ -238,15 +238,15 @@ def compute_excitation_manifolds(mr_adc):
         ## Case Indices
         # CA_CAAA
         mr_adc.h_orth.ca_caaa = slice(mr_adc.h_orth.s_ca_caaa, mr_adc.h_orth.f_ca_caaa)
- 
+
         # CE_CAEA
         mr_adc.h_orth.ce_caea = slice(mr_adc.h_orth.s_ce_caea, mr_adc.h_orth.f_ce_caea)
- 
+
         # CCAA (CVAA)
         mr_adc.h_orth.ccaa = slice(mr_adc.h_orth.s_ccaa, mr_adc.h_orth.f_ccaa)
         if mr_adc.nval > 0:
             mr_adc.h_orth.cvaa = slice(mr_adc.h_orth.s_cvaa, mr_adc.h_orth.f_cvaa)
- 
+
         # CCEA (CVEA)
         mr_adc.h_orth.ccea = slice(mr_adc.h_orth.s_ccea, mr_adc.h_orth.f_ccea)
         if mr_adc.nval > 0:
@@ -254,15 +254,15 @@ def compute_excitation_manifolds(mr_adc):
             mr_adc.h_orth.f_cvea__abab = mr_adc.h_orth.s_cvea__abab + mr_adc.h_orth.n_cvea
             mr_adc.h_orth.s_cvea__baab = mr_adc.h_orth.f_cvea__abab
             mr_adc.h_orth.f_cvea__baab = mr_adc.h_orth.s_cvea__baab + mr_adc.h_orth.n_cvea
-    
+
             mr_adc.h_orth.cvea__abab = slice(mr_adc.h_orth.s_cvea__abab, mr_adc.h_orth.f_cvea__abab)
             mr_adc.h_orth.cvea__baab = slice(mr_adc.h_orth.s_cvea__baab, mr_adc.h_orth.f_cvea__baab)
-  
+
         # CCEE (CVEE)
         mr_adc.h_orth.ccee = slice(mr_adc.h_orth.s_ccee, mr_adc.h_orth.f_ccee)
         if mr_adc.nval > 0:
             mr_adc.h_orth.cvee = slice(mr_adc.h_orth.s_cvee, mr_adc.h_orth.f_cvee)
- 
+
         # CAEE
         mr_adc.h_orth.caee = slice(mr_adc.h_orth.s_caee, mr_adc.h_orth.f_caee)
 
@@ -284,6 +284,13 @@ def compute_M_00(mr_adc):
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
 
+    # Dimensions
+    ce = mr_adc.h0.ce
+    ca = mr_adc.h0.ca
+
+    n_ce = mr_adc.h0.n_ce
+    n_ca = mr_adc.h0.n_ca
+
     # Variables from kernel
     ncvs    = mr_adc.ncvs
     nval    = mr_adc.nval
@@ -295,33 +302,18 @@ def compute_M_00(mr_adc):
     e_val    = mr_adc.mo_energy.v
     e_extern = mr_adc.mo_energy.e
 
-    ## One-electron integrals
-    h_aa = mr_adc.h1eff.aa
-        
-    ## Two-electron integrals
-    v_aaaa = mr_adc.v2e.aaaa
-
-    ## Dimensions
-    ce = mr_adc.h0.ce
-    ca = mr_adc.h0.ca
-
-    n_ce = mr_adc.h0.n_ce
-    n_ca = mr_adc.h0.n_ca
-
-    dim = mr_adc.h0.dim
-
-    # Reduced Density Matrices
+    ## Reduced Density Matrices
     rdm_ca = mr_adc.rdm.ca
-    rdm_ccaa = mr_adc.rdm.ccaa
 
-    M_00 = np.zeros((dim, dim))
+    # M(h0-h0) Block
+    M_00 = np.zeros((mr_adc.h0.dim, mr_adc.h0.dim))
 
     ## Zeroth-order terms
     cput1 = (logger.process_clock(), logger.perf_counter())
 
     # CE - CE
     d_ai = e_extern[:, None] - e_cvs
-    np.fill_diagonal(M_00[ce, ce], d_ai.transpose().reshape(-1))
+    np.fill_diagonal(M_00[ce, ce], d_ai.T.ravel())
 
     temp = M_00[ce, ce]
     mr_adc.log.extra(f"CE-CE H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
@@ -340,6 +332,7 @@ def compute_M_00(mr_adc):
 
     mr_adc.log.extra(f"CA-CA H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}\n")
     del temp, K_ac
+
     mr_adc.log.timer_debug("computing M(h0-h0) H1", *cput1)
 
     ## First-order terms
@@ -347,20 +340,25 @@ def compute_M_00(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
         ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
         h_ae = mr_adc.h1eff.ae
             
         ## Two-electron integrals
-        v_aaae = mr_adc.v2e.aaae
         v_xxaa = mr_adc.v2e.xxaa
-        v_xaax = mr_adc.v2e.xaax
         v_xxae = mr_adc.v2e.xxae
-        v_xaex = mr_adc.v2e.xaex
         #v_xxee = mr_adc.v2e.xxee
+        v_xaax = mr_adc.v2e.xaax
+        v_xaex = mr_adc.v2e.xaex
         #v_xeex = mr_adc.v2e.xeex
+        v_aaaa = mr_adc.v2e.aaaa
+        v_aaae = mr_adc.v2e.aaae
 
         ## Amplitudes
         t1_ae = mr_adc.t1.ae
         t1_aaae = mr_adc.t1.aaae
+
+        ## Reduced Density Matrices
+        rdm_ccaa = mr_adc.rdm.ccaa
 
         # CE - CE
         temp = np.zeros((ncvs, nextern, ncvs, nextern))
@@ -374,13 +372,10 @@ def compute_M_00(mr_adc):
             v_xeex = mr_adc.v2e.xeex[:, s_chunk:f_chunk, :, :]
             v_xxee = mr_adc.v2e.xxee[:, :, s_chunk:f_chunk, :]
 
-            temp_A  = 2 * v_xeex.transpose(0, 1, 3, 2)
-            temp_A -= v_xxee.transpose(1, 2, 0, 3)
+            temp[:, s_chunk:f_chunk] += 2 * v_xeex.transpose(0, 1, 3, 2) - v_xxee.transpose(1, 2, 0, 3)
 
-            temp[:, s_chunk:f_chunk] += temp_A
-
-            del temp_A, v_xeex, v_xxee
             mr_adc.log.timer_debug("computing v2e.xeex v2e.xxee", *cput2)
+            del v_xeex, v_xxee
 
         temp.shape = (n_ce, n_ce)
         M_00[ce, ce] += temp
@@ -452,13 +447,13 @@ def compute_M_00(mr_adc):
     ## Second-order terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
         cput1 = (logger.process_clock(), logger.perf_counter())
-    
+
         ## One-electron integrals
         h_xa = mr_adc.h1eff.xa
         h_va = mr_adc.h1eff.va
         h_xe = mr_adc.h1eff.xe
         h_ve = mr_adc.h1eff.ve
-    
+
         ## Two-electron integrals
         v_xxxa = mr_adc.v2e.xxxa
         v_xxva = mr_adc.v2e.xxva
@@ -485,28 +480,28 @@ def compute_M_00(mr_adc):
 
         v_xaae = mr_adc.v2e.xaae
         v_vaae = mr_adc.v2e.vaae
-        
+
         v_xaea = mr_adc.v2e.xaea
         v_vaea = mr_adc.v2e.vaea
 
         v_xeaa = mr_adc.v2e.xeaa
         v_veaa = mr_adc.v2e.veaa
-        
+
         #v_xeea = mr_adc.v2e.xeea
         #v_veea = mr_adc.v2e.veea
-        
+
         #v_xaee = mr_adc.v2e.xaee
         #v_vaee = mr_adc.v2e.vaee
-        
+
         #v_xeae = mr_adc.v2e.xeae
         v_veae = mr_adc.v2e.veae
-        
+
         v_xaaa = mr_adc.v2e.xaaa
         v_vaaa = mr_adc.v2e.vaaa
-        
+
         #v_xeee = mr_adc.v2e.xeee
         #v_veee = mr_adc.v2e.veee
-        
+
         v_aaee = mr_adc.v2e.aaee
         #v_aeae = mr_adc.v2e.aeae
         #v_aeea = mr_adc.v2e.aeea
@@ -531,7 +526,7 @@ def compute_M_00(mr_adc):
         t1_xvae = mr_adc.t1.xvae
         t1_vxae = mr_adc.t1.vxae
         t1_vvae = mr_adc.t1.vvae
-        
+
         #t1_xxee = mr_adc.t1.xxee
         #t1_xvee = mr_adc.t1.xvee
         #t1_vxee = mr_adc.t1.vxee
@@ -539,16 +534,16 @@ def compute_M_00(mr_adc):
 
         t1_xaaa = mr_adc.t1.xaaa
         t1_vaaa = mr_adc.t1.vaaa
-        
+
         t1_xaae = mr_adc.t1.xaae
         t1_vaae = mr_adc.t1.vaae
-        
+
         t1_xaea = mr_adc.t1.xaea
         t1_vaea = mr_adc.t1.vaea
-        
+
         t1_xaee = mr_adc.t1.xaee
         t1_vaee = mr_adc.t1.vaee
-        
+
         t1_aaee = mr_adc.t1.aaee
 
         # Reduced Density Matrices
@@ -570,7 +565,7 @@ def compute_M_00(mr_adc):
         #v_veea = mr_adc.v2e.veea
         
         #v_aeae = mr_adc.v2e.aeae
- 
+
 #        temp  = 2 * einsum('Ia,JBAa->IAJB', t1_xe, v_xeee, optimize = einsum_type)
 #        temp -= einsum('Ia,JaAB->IAJB', t1_xe, v_xeee, optimize = einsum_type)
 #        temp += 4 * einsum('IiAa,JBia->IAJB', t1_xxee, v_xexe, optimize = einsum_type)
@@ -33474,12 +33469,12 @@ def analyze_mo_cont(mr_adc, TY):
 def renormalize_eigenvectors(mr_adc, U):
 
     # Variables from kernel
-    ncvs    = mr_adc.ncvs
-    nval    = mr_adc.nval
-    ncas    = mr_adc.ncas
+    ncvs = mr_adc.ncvs
+    nval = mr_adc.nval
+    ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
-    nroots  = mr_adc.nroots
+    nroots = mr_adc.nroots
 
     # Dot product
     dot = mr_adc.interface.dot
@@ -33498,41 +33493,42 @@ def renormalize_eigenvectors(mr_adc, U):
         cvea__baab = mr_adc.h_orth.cvea__baab
         cvee = mr_adc.h_orth.cvee
 
-    # Antisymmetric Dot Product
-    def antisym_dot(tensor, asym_axes):
-        tensor_flat = tensor.ravel()
-        tensor_swap = np.swapaxes(tensor, *asym_axes).ravel()
-        return dot(tensor_flat, tensor_flat) - 0.5 * dot(tensor_flat, tensor_swap)
-
-    def square(tensor):
+    def square_norm(tensor):
         tensor_flat = tensor.ravel()
         return dot(tensor_flat, tensor_flat)
 
+    def antisym_norm(tensor, asym_axes):
+        tensor_flat = tensor.ravel()
+        tensor_swap = np.swapaxes(tensor, *asym_axes).ravel()
+        return square_norm(tensor_flat) - 0.5 * dot(tensor_flat, tensor_swap)
+
     renormU = U.copy()
 
-    for state in range(nroots):
+    for i in range(nroots):
+        state = U[i]
+
         # Semi-Internal
-        UdotU = square(U[state, ce_caea]) + square(U[state, ca_caaa])
+        UdotU = square_norm(state[ce_caea]) + square_norm(state[ca_caaa])
 
         # Doubles
         UdotU += (
-              antisym_dot(U[state, ccaa].reshape(ncvs, ncvs, -1), (0, 1))
-            + antisym_dot(U[state, ccee].reshape(ncvs, ncvs, nextern, nextern), (2, 3))
-            + 2 * antisym_dot(U[state, ccea].reshape(ncvs, ncvs, nextern, -1), (0, 1))
-            + 2 * antisym_dot(U[state, caee].reshape(ncvs, -1, nextern, nextern), (2, 3))
+              antisym_norm(state[ccaa].reshape(ncvs, ncvs, -1), (0, 1))
+            + antisym_norm(state[ccee].reshape(ncvs, ncvs, nextern, nextern), (2, 3))
+            + 2 * antisym_norm(state[ccea].reshape(ncvs, ncvs, nextern, -1), (0, 1))
+            + 2 * antisym_norm(state[caee].reshape(ncvs, -1, nextern, nextern), (2, 3))
         )
 
         if nval > 0:
             UdotU += (
-                  2 * antisym_dot(U[state, cvaa].reshape(ncvs, nval, -1), (0, 1))
-                + 2 * antisym_dot(U[state, cvee].reshape(ncvs, nval, nextern, nextern), (2, 3))
-
-                + 2 * square(U[state, cvea__abab].reshape(ncvs, nval, nextern, -1))
-                + 2 * square(U[state, cvea__baab].reshape(ncvs, nval, nextern, -1))
-                + 2 * dot(U[state, cvea__abab].reshape(ncvs, nval, nextern, -1).ravel(), U[state, cvea__baab].reshape(ncvs, nval, nextern, -1).ravel())
+                  2 * antisym_norm(state[cvaa].reshape(ncvs, nval, -1), (0, 1))
+                + 2 * antisym_norm(state[cvee].reshape(ncvs, nval, nextern, nextern), (2, 3))
+                + 2 * square_norm(state[cvea__abab].reshape(ncvs, nval, nextern, -1))
+                + 2 * square_norm(state[cvea__baab].reshape(ncvs, nval, nextern, -1))
+                + 2 * dot(state[cvea__abab].reshape(ncvs, nval, nextern, -1).ravel(),
+                          state[cvea__baab].reshape(ncvs, nval, nextern, -1).ravel())
             )
 
-        renormU[state] /= np.sqrt(UdotU)
+        renormU[i] /= np.sqrt(UdotU)
 
     return renormU
 
@@ -33723,7 +33719,7 @@ def compute_ntos(mr_adc, X):
         C_nto = np.zeros((C_hole.shape[0], 2 * n_nto))
         for k in range(n_nto):
             C_nto[:, 2*k] = C_hole[:, k]
-            C_nto[:, 2*k + 1] = C_particle[:, k]
+            C_nto[:, 2*k+1] = C_particle[:, k]
 
         occ_nto = np.repeat(nto_weights, 2)
 
@@ -33747,4 +33743,3 @@ def compute_ntos(mr_adc, X):
         mr_adc.log.info("")
 
     mr_adc.log.timer("computing natural transition orbitals", *cput0)
-
