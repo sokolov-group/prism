@@ -134,6 +134,12 @@ def compute_t1_amplitudes(mr_adc):
         mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
         mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
+    corr_dict = {'[0\']': e_0p, '[+1\']': e_p1p, '[-1\']': e_m1p, '[0]':e_0, '[+1]':e_p1, '[-1]':e_m1, '[+2]':e_p2, '[-2]':e_m2}
+    positive = [k for k, v in corr_dict.items() if v > 0]
+    if positive:
+        mr_adc.log.warn(f'Positive correlation energies found for {", ".join(positive)}. This may indicate false intruder states.')
+    #e_corr = sum(corr_dict.values())
+
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
     e_tot = mr_adc.e_ref[0] + e_corr
 
