@@ -33392,18 +33392,22 @@ def compute_trans_moments(mr_adc, U):
 
             del Y_KLCW__abab, Y_KLCW__baab
 
-    analyze_mo_cont(mr_adc, TY)
-
     dX = compute_dX(mr_adc, TY)
 
     mr_adc.log.timer("computing transition moments matrix", *cput0)
 
     return TY, dX
 
-def analyze_mo_cont(mr_adc, TY):
-    mr_adc.log.info("Computing orbital contributions to transition moments matrix...")
+def analyze_spec_factor(mr_adc, TY, spec_intensity):
 
+    cput0 = (logger.process_clock(), logger.perf_counter())
     print_thresh = 1e-2
+
+    mr_adc.log.info("")
+    mr_adc.log.info("="*60)
+    mr_adc.log.info("Spectroscopic Factors Analysis")
+    mr_adc.log.extra(f"> transition moments elements threshold: {print_thresh:.2e}")
+    mr_adc.log.info("="*60)
 
     # Variables from kernel
     ncvs    = mr_adc.ncvs
@@ -33412,6 +33416,13 @@ def analyze_mo_cont(mr_adc, TY):
     nmo     = mr_adc.nmo
 
     nroots  = mr_adc.nroots
+
+    # Get group symmetries if available
+    if not mr_adc.symmetry:
+        group_repr_symm = np.repeat(['A'], nmo)
+    else:
+        group_repr_symm = mr_adc.group_repr_symm
+        group_repr_symm = np.array(group_repr_symm)
 
     def classify_orbital(idx):
         if idx < ncvs:
@@ -33438,6 +33449,8 @@ def analyze_mo_cont(mr_adc, TY):
         top_mo_cont = []
         for mo_idx in flat_idx:
             p, q = np.unravel_index(mo_idx, (nmo, nmo))
+            p, q = min(p, q), max(p, q)
+
             frac = sq_norm[p, q] / total * 100
 
             if frac < print_thresh:
@@ -33450,17 +33463,22 @@ def analyze_mo_cont(mr_adc, TY):
             if p_label is None or q_label is None:
                 continue
 
-            top_mo_cont.append((p, q, p_label, q_label, frac))
+            # Get symmetry labels
+            sym_p = group_repr_symm[p]
+            sym_q = group_repr_symm[q]
+
+            top_mo_cont.append((p, q, p_label, q_label, sym_p, sym_q, frac))
 
         results.append((state, top_mo_cont))
 
     # Report results
     for state, mos in results:
-        mr_adc.log.info(f"\nState {state + 1}")
-        for p, q, p_label, q_label, frac in mos:
-            mr_adc.log.info(
-                f"{p_label.upper()}({p+1:4d}) -> {q_label.upper()}({q+1:4d}) = {frac:6.2f}%")
+        mr_adc.log.info(f"\n{mr_adc.method_type.upper()}-{mr_adc.method.upper()} | State {state+1:d} | Intensity = {spec_intensity[state]:10.6f}")
+        for p, q, p_label, q_label, sym_p, sym_q, frac in mos:
+            mr_adc.log.info(f"{p_label.upper()}({p+1:3d}) -> {q_label.upper()}({q+1:3d})  [{sym_p:>3} -> {sym_q:>3}] = {frac:6.2f}%")
     mr_adc.log.info("")
+
+    mr_adc.log.timer("computing spectroscopic factors analysis", *cput0)
 
 def renormalize_eigenvectors(mr_adc, U):
 
@@ -33712,7 +33730,7 @@ def compute_ntos(mr_adc, X):
                 C_hole[:, k] *= -1
                 C_particle[:, k] *= -1
 
-        C_nto = np.zeros((C_hole.shape[0], 2 * n_nto))
+        C_nto = np.zeros((C_hole.shape[0], 2*n_nto))
         for k in range(n_nto):
             C_nto[:, 2*k] = C_hole[:, k]
             C_nto[:, 2*k+1] = C_particle[:, k]

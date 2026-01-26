@@ -162,11 +162,6 @@ def kernel(mr_adc):
     else:
         mr_adc.log.warn('No convergence reached for Davidson iterations!')
 
-    # Analyze eigenvectors
-    #if mr_adc.method_type == "cvs-ee":
-    if mr_adc.method_type == "cvs-ee" and mr_adc.analyze_spec_factor:
-        mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, de_ev, U)
-
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
     #return de_ev, spec_intensity, X
@@ -303,7 +298,6 @@ def compute_MRADC_guess_vectors(mr_adc, precond, ascending = True):
 
     return [x0[:, p] for p in range(roots)]
 
-## TODO: add in NTOs!
 def compute_trans_properties(mr_adc, de, U):
 
     X = None
@@ -317,19 +311,14 @@ def compute_trans_properties(mr_adc, de, U):
     elif mr_adc.method_type == "ee":
         X = mr_adc_ee.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "cvs-ee":
-        X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
+        TY, X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
     else:
         msg = "Unknown Method Type ..."
         mr_adc.log.error(msg)
         raise Exception(msg)
 
-    # X is a tuple for CVS-EE
-    if isinstance(X, tuple):
-        TY, X = X[0], X[1]
-        if mr_adc.method == "mr-adc(0)":
-            spec_intensity = np.sum(X**2, axis=0)
-        else:
-            spec_intensity = 2.0 * np.sum(X**2, axis=0)
+    if mr_adc.method == "mr-adc(0)" and mr_adc.method_type == "cvs-ee":
+        spec_intensity = np.sum(X**2, axis=0)
     else:
         spec_intensity = 2.0 * np.sum(X**2, axis=0)
 
@@ -337,10 +326,16 @@ def compute_trans_properties(mr_adc, de, U):
         mr_adc_cvs_ee.compute_ntos(mr_adc, TY)
 
     # Analyze spectroscopic factors if requested
-    #if mr_adc.analyze_spec_factor or (mr_adc.verbose > 4): 
-    if mr_adc.analyze_spec_factor: 
-        analyze_mo_overlap(mr_adc)
-        #analyze_spec_factor(mr_adc, X, spec_intensity)
+    if mr_adc.analyze_spec_factor or mr_adc.verbose > 4:
+        if mr_adc.method_type == "cvs-ip":
+            mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
+        elif mr_adc.method_type == "cvs-ee":
+            mr_adc_cvs_ee.analyze_spec_factor(mr_adc, TY, spec_intensity)
+            de_ev = de * mr_adc.interface.hartree_to_ev
+            mr_adc_cvs_ee.analyze_eigenvectors(mr_adc, de_ev, U)
+
+    #if mr_adc.analyze_spec_factor: 
+    #    analyze_mo_overlap(mr_adc)
 
     return spec_intensity, X
 
@@ -383,75 +378,6 @@ def dyall_hamiltonian(mr_adc):
     temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
 
     print("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))
-
-def analyze_spec_factor(mr_adc, X, spec_intensity):
-    """Analyze and print spectroscopic factors for each state above a given threshold."""
-
-    print_thresh = mr_adc.spec_factor_print_tol
-    mr_adc.log.info(f"\nSpectroscopic factors analysis (threshold = {print_thresh:.2e}): ")
-
-    #X_squared = np.square(X.T, order='C')
-
-    #if mr_adc.method_type == 'cvs-ip':
-    #    X_squared *= 2.0
-
-    if (mr_adc.method_type == "cvs-ee" and mr_adc.method == "mr-adc(0)"):
-        X_squared = np.square(X.T, order='C')
-    else:
-        X_squared = 2 * np.square(X.T, order='C')
-
-    results = []
-
-    # Analyze states
-    for state in range(X_squared.shape[0]):
-
-        sort_ind = np.argsort(-X_squared[state])
-        sorted_cont = X_squared[state][sort_ind]
-       
-        # If symmetry is not used or symmetry labels are unavailable, assign all orbitals to 'A'
-        if not mr_adc.symmetry or not hasattr(mr_adc, 'group_repr_symm'):
-            orb_symm_labels = np.repeat(['A'], sorted_cont.shape[0])
-        else:
-            orb_symm_labels = np.array(mr_adc.group_repr_symm)[sort_ind]
-
-        # check if any contributions meet given threshold
-        if not np.any(sorted_cont > print_thresh):
-            continue
-
-        # apply threshold to contributions
-        spec_contribution = sorted_cont[sorted_cont > print_thresh]
-        orb_index = sort_ind[sorted_cont > print_thresh] + 1
-        orb_symm_labels = orb_symm_labels[sorted_cont > print_thresh]
-
-        # compute contribution by state
-        partial_cont = spec_contribution / spec_intensity[state]
-
-        # apply another threshold (is this necessary?)
-        filtered_spec_contribution = spec_contribution[partial_cont > 1e-6]
-        orb_index = orb_index[partial_cont > 1e-6]
-        partial_cont = partial_cont[partial_cont > 1e-6]
-        orb_symm_labels = orb_symm_labels[partial_cont > 1e-6]
-
-        # Store results for this state
-        for idx, sym, contrib, partial in zip(orb_index, orb_symm_labels, filtered_spec_contribution, partial_cont):
-            results.append((state + 1, idx, sym, contrib, partial))
-
-    # Print results
-    if results:
-        current_state = None
-        mr_adc.log.info("="*60)
-        mr_adc.log.info("                             Spectral            Partial")
-        mr_adc.log.info("  State       MO         Contribution       Contribution")
-        mr_adc.log.info("="*60)
-        
-        for state_num, mo_idx, symmetry, spec_contrib, partial_contrib in results:
-            if current_state is not None and state_num != current_state:
-                mr_adc.log.info("") ## line break for new states
-            mr_adc.log.info(f"  {state_num:>3d}    {mo_idx:>4d} ({symmetry:<4})     {spec_contrib:8e}       {partial_contrib:8e}")
-            current_state = state_num
-        mr_adc.log.info("="*60)
-    else:
-        mr_adc.log.info(f"No significant spectroscopic contributions found above threshold = {print_thresh:.2e}.")
 
 def analyze_mo_overlap(mr_adc):
     """Analyze and print overlap of CASSCF and HF spatial MOs."""
