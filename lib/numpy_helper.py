@@ -200,12 +200,16 @@ def einsum(scripts, *tensors, **kwargs):
     if len(tensors) <= 2:
         return _contract(subscripts, *tensors, **kwargs)
 
-    ##NOTE: NumPy >= 2.4 returns 3 values instead of 5 for einsum_path
     _, contraction_list = _einsum_path(subscripts, *tensors, optimize=optimize, einsum_call=True)
 
     ##TODO: add in handling of in-place contraction (see numpy/numpy/blob/v2.4.0/numpy/_core/einsumfunc.py)
     operands = list(tensors)
-    for inds, _, einsum_str, _, _ in contraction_list:
+    for num, contraction in enumerate(contraction_list):
+        # NumPy 2.4.0 >= returns 3 values instead of 5 for einsum path
+        if len(contraction) == 3:
+            inds, einsum_str, _ = contraction
+        else:
+            inds, _, einsum_str, _, _ = contraction
         ops = [operands[i] for i in inds]
         fn = _contract if len(ops) == 2 else _numpy_einsum
         result = fn(einsum_str, *ops, **kwargs)
