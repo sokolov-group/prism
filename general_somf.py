@@ -39,86 +39,42 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-#ef getSOC_integrals_old(interface, unc = True):
-#   print("Use old version SOC...")
-#   mo = interface.mo
-#   nmo = interface.nmo
-#   nao = interface.mo.shape[0]
-#
-#   prefactor = 0.5 / ((LIGHT_SPEED)**2)
-#   mol = interface.mol
-#
-#   # Build 1e-density matrix
-#   rdm1ao = interface.mc.make_rdm1() 
-#
-#   if unc:
-#       xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
-#       rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-#   else:
-#       xmol, contr_coeff = interface.mol, np.eye(interface.mol.nao_nr())
-#
-#   nbasis = xmol.nao_nr()
-#   hsocint = np.zeros((3, nbasis, nbasis))
-#
-#   if interface.soc == "breit-pauli":
-#       hsocint += prefactor * somf.get_wso(xmol)
-#       hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
-#   elif interface.soc == "x2c-1":
-#       hsocint += prefactor * somf.get_hso1e_x2c1(xmol)
-#       hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
-#   else:
-#       raise Exception("Incorrect SOC flag in input file!!")
-#
-#   ###contract########
-#   h_soc_all_contr = np.zeros((3, nao, nao))
-#   for comp in range(3):
-#       h_soc_all_contr[comp] = reduce(np.dot, (contr_coeff.T, hsocint[comp], contr_coeff))
-#
-#   ##### Convert to MO basis:
-#   h_soc_all_contr = np.einsum('xpq,pi,qj->xij',h_soc_all_contr, mo, mo)
-#
-#   h_soc_total = np.zeros((3, nmo, nmo), dtype = 'complex')    
-#   for comp in range(3):
-#       h_soc_total[comp] =-1j*(h_soc_all_contr[comp].astype('complex'))
-#
-#
-#   return h_soc_total #hsocint
-
 def getSOC_integrals(interface):
     print("Basis functions are uncontracted dkh-1/dkh-2")
     mo = interface.mo
     nmo = interface.nmo
     nao = interface.mo.shape[1]
-
     prefactor = 0.5 / ((LIGHT_SPEED)**2)
     mol = interface.mol
 
     # Build 1e-density matrix
     rdm1ao = interface.mc.make_rdm1() 
 
-    # Get integrals:
-    nbasis = xmol.nao_nr()
-    hsocint = np.zeros((3, nbasis, nbasis))
-   
     if (interface.soc=="breit-pauli"):
         xmol, contr_coeff = mol, np.eye(mol.nao_nr())
-
+        nbasis = xmol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis))
+ 
         hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_wso(xmol, unc=False)
         hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
 
     elif (interface.soc=="x2c-1"):   
         xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
+        nbasis = xmol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis))
+ 
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-      
         hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
     
     elif (interface.soc=="x2c-2"):
         xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
+        nbasis = xmol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis))
+        
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-
         hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint += prefactor * get_hso1e_x2c2(xmol) 
