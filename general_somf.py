@@ -56,7 +56,7 @@ def getSOC_integrals(interface):
         hsocint = np.zeros((3, nbasis, nbasis))
  
         hsocint = np.zeros((3, nbasis, nbasis))
-        hsocint += prefactor * somf.get_wso(xmol, unc=False)
+        hsocint += prefactor * somf.get_wso(xmol) #, unc=False)
         hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
 
     elif (interface.soc=="x2c-1"):   
@@ -116,7 +116,7 @@ def generalSOC(interface, en, rdm, S, ms):
             rdm_wigner[I,J] = T_z 
 
     # Get SOC integrals:
-    h_soc = getSOC_integrals(interface, unc=unc)
+    h_soc = getSOC_integrals(interface) #, unc=unc)
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
     h1_zero = h_soc[2]
