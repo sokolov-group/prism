@@ -15,6 +15,8 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
 import sys
@@ -64,9 +66,11 @@ def kernel(mr_adc):
     mr_adc.log.info("Temporary directory path:                          %s" % mr_adc.temp_dir)
 
     mr_adc.log.info("\nInternal contraction:                              %s" % "Full")
-    mr_adc.log.info("Overlap truncation parameter (singles):            %e" % mr_adc.s_thresh_singles)
-    mr_adc.log.info("Overlap truncation parameter (doubles):            %e" % mr_adc.s_thresh_doubles)
+    mr_adc.log.info("Overlap truncation parameter (singles):            %.2e" % mr_adc.s_thresh_singles)
+    mr_adc.log.info("Overlap truncation parameter (doubles):            %.2e" % mr_adc.s_thresh_doubles)
     mr_adc.log.info("Projector for the semi-internal amplitudes:        %s" % mr_adc.semi_internal_projector)
+
+    mr_adc.log.info("\nEinsum Backend:                                    %s" % mr_adc.interface.einsum_backend)
 
     # Print info about CASCI states
     if mr_adc.ncasci > 0:
@@ -75,9 +79,7 @@ def kernel(mr_adc):
     if mr_adc.e_cas_ci is not None:
         mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas)))
 
-    davidson_verbose = 3
-    if mr_adc.verbose > 3:
-        davidson_verbose = 6
+    davidson_verbose = 6 if mr_adc.verbose > 3 else 3
 
     # Compute amplitudes
     mr_adc_amplitudes.compute_amplitudes(mr_adc)

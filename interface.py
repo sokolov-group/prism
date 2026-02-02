@@ -15,7 +15,9 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          James D. Serna <jserna456@gmail.com>
+#                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <donna.odhiambo@proton.me>
+#                 James D. Serna <jserna456@gmail.com>
 
 import os
 import tempfile
@@ -24,7 +26,7 @@ import numpy as np
 import prism.lib.logger as logger
 class PYSCF:
 
-    def __init__(self, mf, mc = None, opt_einsum = False, select_reference = None):
+    def __init__(self, mf, mc = None, opt_einsum = False, pytblis = False, select_reference = None):
 
         if mc is None:
             self.stdout = mf.stdout
@@ -51,7 +53,6 @@ class PYSCF:
 
         # Unit conversions
         self.hartree_to_ev = 27.2113862459817
-#        self.hartree_to_ev = 27.2114
         self.hartree_to_inv_cm = 219474.63136314
 
         log.info("Collecting reference wavefunction information...")
@@ -177,7 +178,10 @@ class PYSCF:
 # Removing the spin manifold code for now
 
             # Print reference info
-            self.ref_wfn_spin_mult = self.print_reference_info(ci, self.ncas, mc.nelecas, e_ref, e_cas)
+            if self.ncas > 0:
+                self.ref_wfn_spin_mult = self.print_reference_info(ci, self.ncas, mc.nelecas, e_ref, e_cas)
+            else:
+                self.ref_wfn_spin_mult = [1]
 
             self.ref_wfn = ci
             self.ref_nelecas = len(ci) * [mc.nelecas, ]
@@ -225,14 +229,22 @@ class PYSCF:
         # Dipole moments
         self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
-        # Whether to use opt_einsum
-        if opt_einsum:
-            from opt_einsum import contract
-            self.einsum = contract
-            self.einsum_type = "greedy"
-        else:
-            self.einsum = np.einsum
-            self.einsum_type = "greedy"
+        # Einsum Backend
+        PYSCF.opt_einsum = bool(opt_einsum)
+        PYSCF.pytblis = bool(pytblis)
+
+        self._einsum = None
+        self.einsum_backend = None
+        self.einsum_type = "greedy"
+        self.dot = np.dot
+
+    @property
+    def einsum(self):
+        if self._einsum is None:
+            from prism.lib import numpy_helper
+            self._einsum = numpy_helper.einsum
+            self.einsum_backend = numpy_helper.EINSUM_BACKEND
+        return self._einsum
 
     @property
     def with_df(self):
