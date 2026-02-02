@@ -70,7 +70,9 @@ def kernel(nevpt):
     e_corr = []
     mstate = 0
     osc_str = None
-
+    nevpt.corr_ss_1rdm = []
+    nevpt.corr_tr_1rdm = []
+    
     e_0 = 0.0
     t1_0 = None
     t1 = []
@@ -105,8 +107,10 @@ def kernel(nevpt):
 
         e_corr.append(e_corr_state)
         e_tot.append(e_tot_state)
-
+                
         if nevpt.method == "qd-nevpt2":
+            t1.append(t1_state)
+        elif nevpt.method == "nevpt2" and n_states > 1:
             t1.append(t1_state)
         else:
             del (t1_state)
@@ -114,28 +118,29 @@ def kernel(nevpt):
         del (rdms)
 
         mstate += deg
-
+        
     # Quasidegenerate NEVPT2 calculation
     if nevpt.method == "qd-nevpt2":
         nevpt.log.info("\nComputing the QD-NEVPT2 effective Hamiltonian...")
 
         # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
         e_tot, h_evec = qd_nevpt2.compute_energy(nevpt, e_tot, t1, t1_0)
-
+    
         # Update correlation energies
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
 
-        del (t1)
+        #del (t1)
 
-    del (t1_0)
+    #del (t1_0)
 
     if n_states > 1:
         # Get Oscillator Strengths
         if nevpt.method == "qd-nevpt2":
-            osc_str = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec)
+            osc_str, osc_str_corr = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec, t1, t1_0)
         else:
-            osc_str = nevpt2.osc_strength(nevpt, e_tot)
+            nevpt.corr_1rdm = nevpt2.compute_corr_1rdm(nevpt, t1, t1_0, 0,0) 
+            osc_str, osc_str_corr = nevpt2.osc_strength(nevpt, e_tot, t1, t1_0)
 
         # Update spin multiplicity
         spin_mult = nevpt.ref_wfn_spin_mult
@@ -147,9 +152,9 @@ def kernel(nevpt):
 
         nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method.upper(), nevpt.interface.reference.upper()))
 
-        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
-        nevpt.log.info("  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. ")
-        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("----------------------------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.     Osc Str. (corr)")
+        nevpt.log.info("----------------------------------------------------------------------------------------------------------------------------------")
 
         e_gs = e_tot[0]
 
@@ -161,19 +166,20 @@ def kernel(nevpt):
                 nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), spin_mult[p], e_tot[p], de, de_ev, " ", de_cm, " "))
             else:
                 de_nm = 10000000 / de_cm
-                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), spin_mult[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f %12.8f" % ((p+1), spin_mult[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1], osc_str_corr[p-1]))
 
-        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("----------------------------------------------------------------------------------------------------------------------------------")
     
-    if nevpt.verbose >= 5:
-        print_osc_str(nevpt, e_tot, osc_str)
+        if nevpt.verbose >= 5:
+            print_osc_str(nevpt, e_tot, osc_str)
+            print_osc_str(nevpt, e_tot, osc_str_corr, 1)
     
     sys.stdout.flush()
     nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
     
     return e_tot, e_corr, osc_str
 
-def print_osc_str(nevpt, e_tot, osc_str):
+def print_osc_str(nevpt, e_tot, osc_str, correlated = 0):
     # Oscillator Strengths
     num_states = len(e_tot) # total states
     col_width = 18  # characters per column
@@ -196,7 +202,10 @@ def print_osc_str(nevpt, e_tot, osc_str):
 
     # Print header and transitions
     separator = "-" * total_line_width
-    nevpt.log.info("\n\nOscillator Strengths: state i -> state f")
+    if correlated == 0: 
+        nevpt.log.info("\n\nOscillator Strengths: state i -> state f")
+    elif correlated == 1:
+        nevpt.log.info("\n\nCorrelated Oscillator Strengths: state i -> state f")
     nevpt.log.info(separator)
 
     # Final print

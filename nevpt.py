@@ -72,7 +72,9 @@ class NEVPT:
         self.semi_internal_projector = "gno"      # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
         self.s_thresh_singles = 1e-8
         self.s_thresh_doubles = 1e-8
-
+        
+        self.p1p_shift_type = None
+        self.m1p_shift_type = None
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
 
         self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk
