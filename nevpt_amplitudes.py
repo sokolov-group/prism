@@ -25,6 +25,7 @@ import prism.nevpt_overlap as nevpt_overlap
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
+import sys
 
 def compute_t1_0(nevpt):
 
@@ -1032,8 +1033,30 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
 
     ## Compute denominators
     d_ip = (-e_core[:,None] + evals)
-    d_ip = d_ip**(-1)
 
+    if nevpt.p1p_shift_type == 'imaginary':
+        #delta = d_ip
+        print("shift_epsilon(imaginary) =", nevpt.p1p_shift_epsilon)
+        epsilon = nevpt.p1p_shift_epsilon * np.ones(d_ip.shape)
+        d_ip = d_ip / (d_ip**2 + epsilon**2)
+        print("smallest Denominator(shift):", np.min(np.abs(1/d_ip)))
+        
+    elif nevpt.p1p_shift_type == 'real':
+        print("shift_epsilon(real) =", nevpt.p1p_shift_epsilon)
+        epsilon = nevpt.p1p_shift_epsilon * np.ones(d_ip.shape)
+        d_ip = 1 / (d_ip + epsilon)
+        print("smallest Denominator(shift):", np.min(np.abs(1/d_ip)))
+        
+    elif nevpt.p1p_shift_type == 'DSRG':
+        print("shift_epsilon(DSRG) =", nevpt.p1p_shift_epsilon)
+        flow = nevpt.p1p_shift_epsilon**(-2) * np.ones(d_ip.shape)
+        factor =  np.ones(d_ip.shape) - np.exp(-flow * (d_ip)**2)
+        d_ip = (factor) / d_ip
+        print("smallest Denominator(shift):", np.min(np.abs(1/d_ip)))
+        
+    else:
+        d_ip = d_ip**(-1)
+        
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
@@ -1159,7 +1182,27 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
 
     ## Compute denominators
     d_pa = (evals[:,None] + e_extern)
-    d_pa = d_pa**(-1)
+
+    if nevpt.m1p_shift_type == 'imaginary':
+        print("shift_epsilon(imaginary) =", nevpt.m1p_shift_epsilon)
+        epsilon = nevpt.m1p_shift_epsilon * np.ones(d_pa.shape)
+        d_pa = d_pa / (d_pa**2 + epsilon**2)
+        print("smallest Denominator(shift):", np.min(np.abs(1/d_pa)))
+        
+    elif nevpt.m1p_shift_type == 'real':
+        print("shift_epsilon(real) =", nevpt.p1p_shift_epsilon)
+        epsilon = nevpt.m1p_shift_epsilon * np.ones(d_pa.shape)
+        d_pa = 1 / (d_pa + epsilon)
+        print("smallest Denominator(shift):", np.min(np.abs(1/d_pa)))
+        
+    elif nevpt.m1p_shift_type == 'DSRG':
+        print("shift_epsilon(DSRG) =", nevpt.m1p_shift_epsilon)
+        flow = nevpt.m1p_shift_epsilon**(-2) * np.ones(d_pa.shape)
+        factor =  np.ones(d_pa.shape) - np.exp(-flow * (d_pa)**2)
+        d_pa = (factor) / d_pa
+        print("smallest Denominator(shift):", np.min(np.abs(1/d_pa)))
+    else:
+        d_pa = d_pa**(-1)
 
     # Compute T[-1'] amplitudes
     S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
