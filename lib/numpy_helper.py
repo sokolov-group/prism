@@ -31,7 +31,9 @@ _HAS_OPT_EINSUM = _has_module('opt_einsum')
 # Backend priority: provided flags > pytblis > opt_einsum > numpy fallback
 if OPT_EINSUM and _HAS_OPT_EINSUM:
     EINSUM_BACKEND = "opt_einsum"
-elif PYTBLIS or _HAS_PYTBLIS:
+elif PYTBLIS and _HAS_PYTBLIS:
+    EINSUM_BACKEND = "pytblis"
+elif  _HAS_PYTBLIS:
     EINSUM_BACKEND = "pytblis"
 elif _HAS_OPT_EINSUM:
     EINSUM_BACKEND = "opt_einsum"

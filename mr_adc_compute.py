@@ -326,7 +326,8 @@ def compute_trans_properties(mr_adc, de, U):
         mr_adc_cvs_ee.compute_ntos(mr_adc, TY)
 
     # Analyze spectroscopic factors if requested
-    if mr_adc.analyze_spec_factor or mr_adc.verbose > 4:
+    #if mr_adc.analyze_spec_factor or mr_adc.verbose > 4:
+    if mr_adc.analyze_spec_factor:
         if mr_adc.method_type == "cvs-ip":
             mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
         elif mr_adc.method_type == "cvs-ee":

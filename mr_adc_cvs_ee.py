@@ -33483,7 +33483,7 @@ def analyze_spec_factor(mr_adc, TY, spec_intensity):
     for state, mos in results:
         mr_adc.log.info(f"\n{mr_adc.method_type.upper()}-{mr_adc.method.upper()} | State {state+1:d} | Intensity = {spec_intensity[state]:10.6f}")
         for p, q, p_label, q_label, sym_p, sym_q, frac in mos:
-            mr_adc.log.info(f"{p_label.upper()}({p+1:3d}) -> {q_label.upper()}({q+1:3d})  [{sym_p:>3} -> {sym_q:>3}] = {frac:6.2f}%")
+            mr_adc.log.info(f"{p_label.upper()}({p+1:3d}) -> {q_label.upper()}({q+1:3d})  [{sym_p:>4} -> {sym_q:>4}] = {frac:6.2f}%")
     mr_adc.log.info("")
 
     mr_adc.log.timer("computing spectroscopic factors analysis", *cput0)
