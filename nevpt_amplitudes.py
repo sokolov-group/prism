@@ -1035,7 +1035,6 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
     d_ip = (-e_core[:,None] + evals)
 
     if nevpt.p1p_shift_type == 'imaginary':
-        #delta = d_ip
         print("shift_epsilon(imaginary) =", nevpt.p1p_shift_epsilon)
         epsilon = nevpt.p1p_shift_epsilon * np.ones(d_ip.shape)
         d_ip = d_ip / (d_ip**2 + epsilon**2)

@@ -75,6 +75,16 @@ class NEVPT:
         
         self.p1p_shift_type = None
         self.m1p_shift_type = None
+        
+        self.p1p_shift_epsilon = None
+        self.m1p_shift_epsilon = None
+        
+        if self.p1p_shift_epsilon is None:
+            self.p1p_shift_epsilon = 0.01         # Default value
+            
+        if self.m1p_shift_epsilon is None:
+            self.m1p_shift_epsilon = 0.01         # Default value
+        
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
 
         self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk
@@ -107,7 +117,15 @@ class NEVPT:
             msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
             log.error(msg)
             raise Exception(msg)
+        
+        avail_shifts = ['real', 'imaginary', 'DSRG']
+        
+        if self.m1p_shift_type is not None and self.m1p_shift_type not in avail_shifts:
+            raise ValueError(f"Invalid {'m1p_shift_type'}: '{self.m1p_shift_type}'. Available options are {avail_shifts}.")
 
+        if self.p1p_shift_type is not None and self.p1p_shift_type not in avail_shifts:
+            raise ValueError(f"Invalid {'p1p_shift_type'}: '{self.p1p_shift_type}'. Available options are {avail_shifts}.")
+        
         # Transform one- and two-electron integrals
         log.info("\nTransforming integrals to MO basis...")
         nevpt_integrals.transform_integrals_1e(self)
