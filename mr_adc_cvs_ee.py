@@ -502,7 +502,7 @@ def compute_M_00(mr_adc):
         #v_xeee = mr_adc.v2e.xeee
         #v_veee = mr_adc.v2e.veee
 
-        v_aaee = mr_adc.v2e.aaee
+        #v_aaee = mr_adc.v2e.aaee
         #v_aeae = mr_adc.v2e.aeae
         #v_aeea = mr_adc.v2e.aeea
         #v_aeee = mr_adc.v2e.aeee
@@ -542,7 +542,7 @@ def compute_M_00(mr_adc):
         t1_vaea = mr_adc.t1.vaea
 
         t1_xaee = mr_adc.t1.xaee
-        t1_vaee = mr_adc.t1.vaee
+        #t1_vaee = mr_adc.t1.vaee
 
         t1_aaee = mr_adc.t1.aaee
 
@@ -1743,15 +1743,15 @@ def compute_M_00(mr_adc):
         temp -= 1/4 * einsum('IJ,A,ijxA,jiyB,xy->IAJB', np.identity(ncvs), e_extern, t1_vxae, t1_xvae, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,A,ijxA,ijyB,xy->IAJB', np.identity(ncvs), e_extern, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,A,ijxA,jiyB,xy->IAJB', np.identity(ncvs), e_extern, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('IJ,A,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('IJ,A,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/2 * einsum('IJ,A,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/4 * einsum('IJ,A,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,A,ixAy,iB,yx->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_ve, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,A,ixAy,izBw,yzxw->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,A,ixAy,izBy,xz->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_vaea, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,A,ixAy,izwB,yzxw->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_vaae, rdm_ccaa, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,A,ixAy,izyB,xz->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_vaae, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('IJ,A,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('IJ,A,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/4 * einsum('IJ,A,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/2 * einsum('IJ,A,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,A,ixyA,iB,yx->IAJB', np.identity(ncvs), e_extern, t1_vaae, t1_ve, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,A,ixyA,izBw,yzxw->IAJB', np.identity(ncvs), e_extern, t1_vaae, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,A,ixyA,izBy,xz->IAJB', np.identity(ncvs), e_extern, t1_vaae, t1_vaea, rdm_ca, optimize = einsum_type)
@@ -1795,15 +1795,15 @@ def compute_M_00(mr_adc):
         temp -= 1/4 * einsum('IJ,B,ijxA,jiyB,xy->IAJB', np.identity(ncvs), e_extern, t1_vxae, t1_xvae, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,B,ijxA,ijyB,xy->IAJB', np.identity(ncvs), e_extern, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,B,ijxA,jiyB,xy->IAJB', np.identity(ncvs), e_extern, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('IJ,B,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('IJ,B,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/2 * einsum('IJ,B,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/4 * einsum('IJ,B,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,B,ixAy,iB,yx->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_ve, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,B,ixAy,izBw,yzxw->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,B,ixAy,izBy,xz->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_vaea, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,B,ixAy,izwB,yzxw->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_vaae, rdm_ccaa, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,B,ixAy,izyB,xz->IAJB', np.identity(ncvs), e_extern, t1_vaea, t1_vaae, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('IJ,B,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('IJ,B,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/4 * einsum('IJ,B,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/2 * einsum('IJ,B,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,B,ixyA,iB,yx->IAJB', np.identity(ncvs), e_extern, t1_vaae, t1_ve, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,B,ixyA,izBw,yzxw->IAJB', np.identity(ncvs), e_extern, t1_vaae, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,B,ixyA,izBy,xz->IAJB', np.identity(ncvs), e_extern, t1_vaae, t1_vaea, rdm_ca, optimize = einsum_type)
@@ -1829,14 +1829,14 @@ def compute_M_00(mr_adc):
         temp -= 1/2 * einsum('IJ,a,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,a,ixaB,iyAa,xy->IAJB', np.identity(ncvs), e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,a,ixaB,iyaA,xy->IAJB', np.identity(ncvs), e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('IJ,a,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('IJ,a,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('IJ,a,ixBa,iyAa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('IJ,a,ixBa,iyaA,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('IJ,a,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('IJ,a,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('IJ,a,ixaB,iyAa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('IJ,a,ixaB,iyaA,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/2 * einsum('IJ,a,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/4 * einsum('IJ,a,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/2 * einsum('IJ,a,ixBa,iyAa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/4 * einsum('IJ,a,ixBa,iyaA,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/4 * einsum('IJ,a,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/2 * einsum('IJ,a,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/4 * einsum('IJ,a,ixaB,iyAa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/2 * einsum('IJ,a,ixaB,iyaA,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,a,xyAa,zwBa,xyzw->IAJB', np.identity(ncvs), e_extern, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,a,xyBa,zwAa,xyzw->IAJB', np.identity(ncvs), e_extern, t1_aaee, t1_aaee, rdm_ccaa, optimize = einsum_type)
         temp -= 3/4 * einsum('IJ,i,ijxA,ijyB,xy->IAJB', np.identity(ncvs), e_cvs, t1_xxae, t1_xxae, rdm_ca, optimize = einsum_type)
@@ -1881,20 +1881,20 @@ def compute_M_00(mr_adc):
         temp += 1/2 * einsum('IJ,i,ijxA,jiyB,xy->IAJB', np.identity(ncvs), e_val, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,i,ijxB,ijyA,xy->IAJB', np.identity(ncvs), e_val, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,i,ijxB,jiyA,xy->IAJB', np.identity(ncvs), e_val, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,i,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,i,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,i,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,i,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp += einsum('IJ,i,ixAy,iB,yx->IAJB', np.identity(ncvs), e_val, t1_vaea, t1_ve, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,i,ixAy,izBw,yzxw->IAJB', np.identity(ncvs), e_val, t1_vaea, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,i,ixAy,izBy,xz->IAJB', np.identity(ncvs), e_val, t1_vaea, t1_vaea, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,i,ixBa,iyAa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,i,ixBa,iyaA,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,i,ixBa,iyAa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,i,ixBa,iyaA,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp += einsum('IJ,i,ixBy,iA,yx->IAJB', np.identity(ncvs), e_val, t1_vaea, t1_ve, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,i,ixBy,izAw,yzxw->IAJB', np.identity(ncvs), e_val, t1_vaea, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,i,ixBy,izAy,xz->IAJB', np.identity(ncvs), e_val, t1_vaea, t1_vaea, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,i,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,i,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,i,ixaB,iyAa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,i,ixaB,iyaA,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,i,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,i,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,i,ixaB,iyAa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,i,ixaB,iyaA,xy->IAJB', np.identity(ncvs), e_val, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,i,ixyA,iB,yx->IAJB', np.identity(ncvs), e_val, t1_vaae, t1_ve, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,i,ixyA,izBw,yzxw->IAJB', np.identity(ncvs), e_val, t1_vaae, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('IJ,i,ixyA,izBy,xz->IAJB', np.identity(ncvs), e_val, t1_vaae, t1_vaea, rdm_ca, optimize = einsum_type)
@@ -2104,24 +2104,24 @@ def compute_M_00(mr_adc):
         temp -= 1/4 * einsum('IJ,xy,ijxA,jizB,yz->IAJB', np.identity(ncvs), h_aa, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xy,ijxB,ijzA,yz->IAJB', np.identity(ncvs), h_aa, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xy,ijxB,jizA,yz->IAJB', np.identity(ncvs), h_aa, t1_vvae, t1_vvae, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,xy,ixAa,izBa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,xy,ixAa,izaB,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,xy,ixAa,izBa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,xy,ixAa,izaB,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xy,ixAz,iB,yz->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_ve, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xy,ixAz,iwBu,yuzw->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xy,ixAz,iwBz,yw->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_vaea, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xy,ixAz,iwuB,yuzw->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_vaae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xy,ixAz,iwzB,yw->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_vaae, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,xy,ixBa,izAa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,xy,ixBa,izaA,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,xy,ixBa,izAa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,xy,ixBa,izaA,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xy,ixBz,iA,yz->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_ve, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xy,ixBz,iwAu,yuzw->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xy,ixBz,iwAz,yw->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_vaea, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xy,ixBz,iwuA,yuzw->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_vaae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xy,ixBz,iwzA,yw->IAJB', np.identity(ncvs), h_aa, t1_vaea, t1_vaae, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,xy,ixaA,izBa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,xy,ixaA,izaB,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,xy,ixaB,izAa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,xy,ixaB,izaA,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,xy,ixaA,izBa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,xy,ixaA,izaB,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,xy,ixaB,izAa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,xy,ixaB,izaA,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee, t1_vaee, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xy,ixzA,iB,yz->IAJB', np.identity(ncvs), h_aa, t1_vaae, t1_ve, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xy,ixzA,iwBu,yuzw->IAJB', np.identity(ncvs), h_aa, t1_vaae, t1_vaea, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xy,ixzA,iwBz,yw->IAJB', np.identity(ncvs), h_aa, t1_vaae, t1_vaea, rdm_ca, optimize = einsum_type)
@@ -2829,8 +2829,8 @@ def compute_M_00(mr_adc):
         temp -= 1/12 * einsum('IJ,xyzw,iuxB,ivAs,zusyvw->IAJB', np.identity(ncvs), v_aaaa, t1_vaae, t1_vaea, rdm_cccaaa, optimize = einsum_type)
         temp -= 1/12 * einsum('IJ,xyzw,iuxB,ivAs,zusywv->IAJB', np.identity(ncvs), v_aaaa, t1_vaae, t1_vaea, rdm_cccaaa, optimize = einsum_type)
         temp += 1/4 * einsum('IJ,xyzw,iuxB,ivsA,zuswvy->IAJB', np.identity(ncvs), v_aaaa, t1_vaae, t1_vaae, rdm_cccaaa, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,xyzw,ixAa,iuBa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,xyzw,ixAa,iuaB,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,xyzw,ixAa,iuBa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,xyzw,ixAa,iuaB,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xyzw,ixAu,iB,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_ve, rdm_ccaa, optimize = einsum_type)
         temp -= 1/6 * einsum('IJ,xyzw,ixAu,ivBs,zuvswy->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaea, rdm_cccaaa, optimize = einsum_type)
         temp -= 1/6 * einsum('IJ,xyzw,ixAu,ivBs,zuvsyw->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaea, rdm_cccaaa, optimize = einsum_type)
@@ -2848,8 +2848,8 @@ def compute_M_00(mr_adc):
         temp += 1/12 * einsum('IJ,xyzw,ixAu,ivsB,zuvyws->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaae, rdm_cccaaa, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xyzw,ixAu,ivuB,zvwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaae, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xyzw,ixAu,ivzB,ywuv->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaae, rdm_ccaa, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,xyzw,ixBa,iuAa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,xyzw,ixBa,iuaA,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,xyzw,ixBa,iuAa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,xyzw,ixBa,iuaA,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('IJ,xyzw,ixBu,iA,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_ve, rdm_ccaa, optimize = einsum_type)
         temp -= 1/6 * einsum('IJ,xyzw,ixBu,ivAs,zuvswy->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaea, rdm_cccaaa, optimize = einsum_type)
         temp -= 1/6 * einsum('IJ,xyzw,ixBu,ivAs,zuvsyw->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaea, rdm_cccaaa, optimize = einsum_type)
@@ -2865,10 +2865,10 @@ def compute_M_00(mr_adc):
         temp += 1/12 * einsum('IJ,xyzw,ixBu,ivsA,zuvysw->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaae, rdm_cccaaa, optimize = einsum_type)
         temp += 1/12 * einsum('IJ,xyzw,ixBu,ivsA,zuvyws->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaae, rdm_cccaaa, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xyzw,ixBu,ivuA,zvwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaea, t1_vaae, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,xyzw,ixaA,iuBa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,xyzw,ixaA,iuaB,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/4 * einsum('IJ,xyzw,ixaB,iuAa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
-        temp += 1/2 * einsum('IJ,xyzw,ixaB,iuaA,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,xyzw,ixaA,iuBa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,xyzw,ixaA,iuaB,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
+#        temp -= 1/4 * einsum('IJ,xyzw,ixaB,iuAa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
+#        temp += 1/2 * einsum('IJ,xyzw,ixaB,iuaA,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee, t1_vaee, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('IJ,xyzw,ixuA,iB,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaae, t1_ve, rdm_ccaa, optimize = einsum_type)
         temp += 1/12 * einsum('IJ,xyzw,ixuA,ivBs,zuvswy->IAJB', np.identity(ncvs), v_aaaa, t1_vaae, t1_vaea, rdm_cccaaa, optimize = einsum_type)
         temp += 1/12 * einsum('IJ,xyzw,ixuA,ivBs,zuvsyw->IAJB', np.identity(ncvs), v_aaaa, t1_vaae, t1_vaea, rdm_cccaaa, optimize = einsum_type)
@@ -3659,6 +3659,68 @@ def compute_M_00(mr_adc):
             mr_adc.log.timer_debug("computing v2e.veae", *cput2)
             del (v_veae_aA, v_veae_Aa, t1_vaee)
 
+        ## t1_vaee
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            ## Molecular Orbitals Energies
+            e_extern_a = mr_adc.mo_energy.e[s_chunk:f_chunk]
+
+            ## Amplitudes
+            t1_vaee_Aa = mr_adc.t1.vaee[:, :, :, s_chunk:f_chunk]
+            t1_vaee_aA = mr_adc.t1.vaee[:, :, s_chunk:f_chunk, :]
+
+            temp_chunk =- 1/2 * einsum('IJ,A,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee_Aa, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/4 * einsum('IJ,A,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee_Aa, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/4 * einsum('IJ,A,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee_aA, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/2 * einsum('IJ,A,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee_aA, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+
+            temp_chunk -= 1/2 * einsum('IJ,B,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee_Aa, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/4 * einsum('IJ,B,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee_Aa, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/4 * einsum('IJ,B,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee_aA, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/2 * einsum('IJ,B,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern, t1_vaee_aA, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+
+            temp_chunk -= 1/2 * einsum('IJ,a,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_extern_a, t1_vaee_Aa, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/4 * einsum('IJ,a,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_extern_a, t1_vaee_Aa, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/2 * einsum('IJ,a,ixBa,iyAa,xy->IAJB', np.identity(ncvs), e_extern_a, t1_vaee_Aa, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/4 * einsum('IJ,a,ixBa,iyaA,xy->IAJB', np.identity(ncvs), e_extern_a, t1_vaee_Aa, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/4 * einsum('IJ,a,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_extern_a, t1_vaee_aA, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/2 * einsum('IJ,a,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_extern_a, t1_vaee_aA, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/4 * einsum('IJ,a,ixaB,iyAa,xy->IAJB', np.identity(ncvs), e_extern_a, t1_vaee_aA, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/2 * einsum('IJ,a,ixaB,iyaA,xy->IAJB', np.identity(ncvs), e_extern_a, t1_vaee_aA, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+
+            temp_chunk += 1/2 * einsum('IJ,i,ixAa,iyBa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee_Aa, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,i,ixAa,iyaB,xy->IAJB', np.identity(ncvs), e_val, t1_vaee_Aa, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,i,ixBa,iyAa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee_Aa, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,i,ixBa,iyaA,xy->IAJB', np.identity(ncvs), e_val, t1_vaee_Aa, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,i,ixaA,iyBa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee_aA, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,i,ixaA,iyaB,xy->IAJB', np.identity(ncvs), e_val, t1_vaee_aA, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,i,ixaB,iyAa,xy->IAJB', np.identity(ncvs), e_val, t1_vaee_aA, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,i,ixaB,iyaA,xy->IAJB', np.identity(ncvs), e_val, t1_vaee_aA, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+
+            temp_chunk += 1/2 * einsum('IJ,xy,ixAa,izBa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee_Aa, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,xy,ixAa,izaB,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee_Aa, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,xy,ixBa,izAa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee_Aa, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,xy,ixBa,izaA,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee_Aa, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,xy,ixaA,izBa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee_aA, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,xy,ixaA,izaB,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee_aA, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,xy,ixaB,izAa,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee_aA, t1_vaee_Aa, rdm_ca, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,xy,ixaB,izaA,yz->IAJB', np.identity(ncvs), h_aa, t1_vaee_aA, t1_vaee_aA, rdm_ca, optimize = einsum_type)
+
+            temp_chunk += 1/2 * einsum('IJ,xyzw,ixAa,iuBa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee_Aa, t1_vaee_Aa, rdm_ccaa, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,xyzw,ixAa,iuaB,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee_Aa, t1_vaee_aA, rdm_ccaa, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,xyzw,ixBa,iuAa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee_Aa, t1_vaee_Aa, rdm_ccaa, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,xyzw,ixBa,iuaA,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee_Aa, t1_vaee_aA, rdm_ccaa, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,xyzw,ixaA,iuBa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee_aA, t1_vaee_Aa, rdm_ccaa, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,xyzw,ixaA,iuaB,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee_aA, t1_vaee_aA, rdm_ccaa, optimize = einsum_type)
+            temp_chunk -= 1/4 * einsum('IJ,xyzw,ixaB,iuAa,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee_aA, t1_vaee_Aa, rdm_ccaa, optimize = einsum_type)
+            temp_chunk += 1/2 * einsum('IJ,xyzw,ixaB,iuaA,zuwy->IAJB', np.identity(ncvs), v_aaaa, t1_vaee_aA, t1_vaee_aA, rdm_ccaa, optimize = einsum_type)
+
+            temp += temp_chunk
+            mr_adc.log.timer_debug("computing t1.vaee", *cput2)
+            del (t1_vaee_aA, t1_vaee_Aa)
+
         ## t1_xxee
         chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern])
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
@@ -3852,6 +3914,7 @@ def compute_M_00(mr_adc):
 
         t1_xaee = mr_adc.t1.xaee
         t1_vaee = mr_adc.t1.vaee
+
         v_xeae = mr_adc.v2e.xeae
         v_veae = mr_adc.v2e.veae
 
