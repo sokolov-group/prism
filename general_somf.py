@@ -194,7 +194,7 @@ def generalSOC(interface, en, rdm, S, ms):
             de_nm = 10000000 / de_cm
             print("%5d       %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), en_soc[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
     print("-----------------------------------------------------------------------------------------------------------------")
-    return en_soc, evec_soc, S_total, ms_total, I_total 
+    return en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf
 
 #def osc_strength_soc(interface, en_soc, evec_soc, rdm,  I_total, gs_index = 0):
 #
