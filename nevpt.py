@@ -73,19 +73,20 @@ class NEVPT:
         self.s_thresh_singles = 1e-8
         self.s_thresh_doubles = 1e-8
         
-        self.p1p_shift_type = None
-        self.m1p_shift_type = None
+        self.p1p_shift_type = None                # Possible shift types: real, imaginary, DSRG
+        self.m1p_shift_type = None                # Possible shift types: real, imaginary, DSRG
         
-        self.p1p_shift_epsilon = None
+        self.p1p_shift_epsilon = None             # Level shift value
         self.m1p_shift_epsilon = None
         
         if self.p1p_shift_epsilon is None:
-            self.p1p_shift_epsilon = 0.01         # Default value
+            self.p1p_shift_epsilon = 0.01         # Default level shift value
             
         if self.m1p_shift_epsilon is None:
-            self.m1p_shift_epsilon = 0.01         # Default value
+            self.m1p_shift_epsilon = 0.01         # Default level shift value
         
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
+        
 
         self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk
 
@@ -96,6 +97,10 @@ class NEVPT:
 
         self.mo_energy.c = interface.mo_energy[:self.ncore]
         self.mo_energy.e = interface.mo_energy[self.nocc:]
+        
+        # Correlated 1rdm
+        self.compute_corr_1rdm = False            # Explicitly compute SS-1RDM(s) (multiple for multistate calculations)
+        self.compute_trans_corr_1rdm = False      # Explicitly compute transition 1RDMs for multistate calculations
 
     def kernel(self):
 

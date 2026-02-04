@@ -70,8 +70,6 @@ def kernel(nevpt):
     e_corr = []
     mstate = 0
     osc_str = None
-    nevpt.corr_ss_1rdm = []
-    nevpt.corr_tr_1rdm = []
     
     e_0 = 0.0
     t1_0 = None
@@ -83,7 +81,11 @@ def kernel(nevpt):
         e_0, t1_0 = nevpt_amplitudes.compute_t1_0(nevpt)
     else:
         t1_0 = np.zeros((ncore, ncore, nevpt.nextern, nevpt.nextern))
-
+    
+    if n_states == 1 and nevpt.compute_trans_corr_1rdm is True:
+        msg = "WARNING: Transition 1RDMS are only avaible for multistate calculations"
+        nevpt.log.info(msg)
+    
     for state in range(n_states):
         deg = nevpt.ref_wfn_deg[state]
 
@@ -107,10 +109,14 @@ def kernel(nevpt):
 
         e_corr.append(e_corr_state)
         e_tot.append(e_tot_state)
-                
+        
+        if nevpt.compute_corr_1rdm is True and n_states < 1:
+            corr_1rdm = nevpt2.compute_corr_1rdm(nevpt, t1_state, t1_0) 
+        
         if nevpt.method == "qd-nevpt2":
             t1.append(t1_state)
         elif nevpt.method == "nevpt2" and n_states > 1:
+            corr_1rdm = []
             t1.append(t1_state)
         else:
             del (t1_state)
@@ -118,7 +124,11 @@ def kernel(nevpt):
         del (rdms)
 
         mstate += deg
-        
+
+    if nevpt.method == "nevpt2" and nevpt.compute_corr_1rdm is True and n_states > 1:
+        for state in range(n_states):
+            corr_1rdm.append(nevpt2.compute_corr_1rdm(nevpt, t1, t1_0, gs_idx = state, es_idx = state))     
+
     # Quasidegenerate NEVPT2 calculation
     if nevpt.method == "qd-nevpt2":
         nevpt.log.info("\nComputing the QD-NEVPT2 effective Hamiltonian...")
@@ -139,7 +149,6 @@ def kernel(nevpt):
         if nevpt.method == "qd-nevpt2":
             osc_str, osc_str_corr = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec, t1, t1_0)
         else:
-            nevpt.corr_1rdm = nevpt2.compute_corr_1rdm(nevpt, t1, t1_0, 0,0) 
             osc_str, osc_str_corr = nevpt2.osc_strength(nevpt, e_tot, t1, t1_0)
 
         # Update spin multiplicity
@@ -173,10 +182,13 @@ def kernel(nevpt):
         if nevpt.verbose >= 5:
             print_osc_str(nevpt, e_tot, osc_str)
             print_osc_str(nevpt, e_tot, osc_str_corr, 1)
-    
+
+    if len(corr_1rdm) > 0:
+        nevpt.corr_1rdm = corr_1rdm
+        
     sys.stdout.flush()
     nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
-    
+     
     return e_tot, e_corr, osc_str
 
 def print_osc_str(nevpt, e_tot, osc_str, correlated = 0):

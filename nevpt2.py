@@ -432,9 +432,9 @@ def compute_corr_1rdm(nevpt, t1, t1_0, gs_idx = None, es_idx = None):
     elif gs_idx != es_idx: 
         # OFF-DIAGS #
         # COR-ACT #
-        rdm[:ncore, ncore:ncore + ncas] += einsum('IxXy,xy->IX', t1_caaa, rdm_ca, optimize = einsum_type)
-        rdm[:ncore, ncore:ncore + ncas] -= 1/2 * einsum('IxyX,xy->IX', t1_caaa, rdm_ca, optimize = einsum_type)
-        rdm[:ncore, ncore:ncore + ncas] -= 1/2 * einsum('Ixyz,Xxyz->IX', t1_caaa, rdm_ccaa, optimize = einsum_type)
+        rdm[:ncore, ncore:ncore + ncas] += einsum('IxXy,yx->IX', t1_caaa, rdm_ca, optimize = einsum_type)
+        rdm[:ncore, ncore:ncore + ncas] -= 1/2 * einsum('IxyX,yx->IX', t1_caaa, rdm_ca, optimize = einsum_type)
+        rdm[:ncore, ncore:ncore + ncas] -= 1/2 * einsum('Ixyz,yzXx->IX', t1_caaa, rdm_ccaa, optimize = einsum_type)
         
         # ACT-COR #
         rdm[ncore:ncore + ncas, :ncore] += einsum('IxXy,xy->XI', t1_caaa_, rdm_ca, optimize = einsum_type)
@@ -446,8 +446,8 @@ def compute_corr_1rdm(nevpt, t1, t1_0, gs_idx = None, es_idx = None):
         rdm[:ncore, ncore + ncas:ncore + ncas + nextern] -= 1/2 * einsum('IxyA,yx->IA', t1_caae_, rdm_ca, optimize = einsum_type)
         
         # EXT-COR #
-        rdm[ncore + ncas:ncore + ncas + nextern, :ncore] += einsum('IxAy,yx->AI', t1_caea, rdm_ca, optimize = einsum_type)
-        rdm[ncore + ncas:ncore + ncas + nextern, :ncore] -= 1/2 * einsum('IxyA,yx->AI', t1_caae, rdm_ca, optimize = einsum_type)
+        rdm[ncore + ncas:ncore + ncas + nextern, :ncore] += einsum('IxAy,xy->AI', t1_caea, rdm_ca, optimize = einsum_type)
+        rdm[ncore + ncas:ncore + ncas + nextern, :ncore] -= 1/2 * einsum('IxyA,xy->AI', t1_caae, rdm_ca, optimize = einsum_type)
         
         # ACT-EXT #
         rdm[ncore:ncore + ncas, ncore + ncas:ncore + ncas + nextern] += 1/2 * einsum('xyzA,Xzyx->XA', t1_aaae_, rdm_ccaa, optimize = einsum_type)
