@@ -19,6 +19,7 @@
 
 import prism.nevpt_integrals as nevpt_integrals
 import prism.nevpt_compute as nevpt_compute
+import time
 
 class NEVPT:
     def __init__(self, interface):
@@ -141,6 +142,7 @@ class NEVPT:
         self.interface.uncontract = self.uncontract
         self.interface.soc_order = self.soc_order
         if self.soc: 
+          start_time = time.time()
           from prism import general_somf
           import numpy as np
           print("\n \n \nInitialize SOC program...")
@@ -176,7 +178,8 @@ class NEVPT:
           #generalSOC requires spin-free energy...
           en = self.en
 
-          en_soc, evec_soc, S_total, ms_total, I_total = general_somf.generalSOC(self.interface, en, rdm, S, ms)
+          print("Time for computing RDM_aa,bb:                    %f sec\n" % (time.time() - start_time))
+          en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf  = general_somf.generalSOC(self.interface, en, rdm, S, ms)
           
           #rdm_mo = rdm[0] + rdm[1]
           #I_evec_soc = []
@@ -191,7 +194,7 @@ class NEVPT:
           if self.gtensor is True:
             general_somf.gtensor_general(self.interface,evec_soc,rdm, S_total, I_total,origin_type=self.origin_type)
         
-        return e_tot, e_corr, osc
+        return e_tot, e_corr, osc , en_soc, evec_soc, rdm, S_total, I_total,HSOC, H_sf
 
     @property
     def verbose(self):

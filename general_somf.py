@@ -30,6 +30,7 @@ from pyscf.fci.direct_spin1 import trans_rdm1s
 from prism import qd_nevpt2
 from prism import nevpt2
 import scipy
+import time
 
 # Add python path for socutils:
 prism_path = os.path.dirname(os.path.abspath(__file__)) 
@@ -106,6 +107,7 @@ def generalSOC(interface, en, rdm, S, ms):
     unc = interface.uncontract
     nstate = len(en)
 
+    start_time = time.time()
     print("calculate Wigner's rdm...")
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     for I in range(nstate):
@@ -115,8 +117,13 @@ def generalSOC(interface, en, rdm, S, ms):
             T_z = 1/np.sqrt(2) * (rdm[0,I,J] - rdm[1,I,J]) / cg
             rdm_wigner[I,J] = T_z 
 
+    wiger_time = time.time()
+
     # Get SOC integrals:
     h_soc = getSOC_integrals(interface) #, unc=unc)
+
+    soc_int_time = time.time()
+    
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
     h1_zero = h_soc[2]
@@ -124,6 +131,8 @@ def generalSOC(interface, en, rdm, S, ms):
     H_minus = np.einsum('pq,ijpq->ij',h1_minus,rdm_wigner) * (-1/2)
     H_zero = np.einsum('pq,ijpq->ij',h1_zero,rdm_wigner) / np.sqrt(2)
     H_plus = np.einsum('pq,ijpq->ij',h1_plus,rdm_wigner) / 2
+
+    soc_sphere_time = time.time()
 
     S_total = []
     ms_total = []
@@ -167,8 +176,18 @@ def generalSOC(interface, en, rdm, S, ms):
     H_sf = np.diag(E_spinstate).astype('complex')
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
 
+    HSOC_time = time.time()
+
     #calculate Osc Str
     osc_str = interface.osc_strength_general(en_soc,rdm[0]+rdm[1], (I_total,evec_soc))
+
+    str_time = time.time()
+
+    print("\nTime for computing wiger_RDM: %f sec" % (wiger_time - start_time))
+    print("Time for computing getSOC_integrals: %f sec" % (soc_int_time - wiger_time))
+    print("Time for transform hsoc in sphereical coordinate: %f sec" % (soc_sphere_time - soc_int_time))
+    print("Time for computing HSOC: %f sec" % (HSOC_time - soc_sphere_time))
+    print("Time for computing osc_strength: %f sec\n" % (str_time - HSOC_time))
 
     h2ev = interface.hartree_to_ev
     h2cm = interface.hartree_to_inv_cm
