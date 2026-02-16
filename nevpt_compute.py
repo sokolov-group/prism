@@ -183,8 +183,6 @@ def kernel(nevpt):
             print_osc_str(nevpt, e_tot, osc_str)
             print_osc_str(nevpt, e_tot, osc_str_corr, 1)
 
-    if len(corr_1rdm) > 0:
-        nevpt.corr_1rdm = corr_1rdm
         
     sys.stdout.flush()
     nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)

@@ -140,7 +140,7 @@ def osc_strength(nevpt, en, t1, t1_0, gs_index = 0):
         rdm_ca = nevpt.interface.compute_rdm1(nevpt.ref_wfn[gs_index], nevpt.ref_wfn[state], nevpt.ref_nelecas[gs_index])
         rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = rdm_ca
 
-        rdm_mo_corr = compute_corr_1rdm(nevpt, t1, t1_0, gs_idx = gs_index, es_idx = state)
+        rdm_mo_corr = nevpt.make_rdm1(t1, t1_0, m = gs_index, n = state)
 
         # Create Dipole Moment Operator with RDM
         dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo)
