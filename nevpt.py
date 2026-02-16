@@ -397,7 +397,7 @@ class NEVPT:
                     
                     rdm_qd += np.conj(evec)[I, n] * rdm_mo * evec[J, m]
 
-        #self.rdm1 = rdm1
+        #self.rdm1 = rdm1 ### DECIDE WHAT TO DO
         return rdm_qd
     
     def kernel(self):
