@@ -21,10 +21,6 @@ import os
 import tempfile
 import numpy as np
 
-#os.environ["OMP_NUM_THREADS"] = '12'
-#os.environ["MKL_NUM_THREADS"] = '12'
-#os.environ["OPENBLAS_NUM_THREADS"] = '12'
-
 import prism.lib.logger as logger
 class PYSCF:
 
@@ -77,12 +73,31 @@ class PYSCF:
 
             if self.symmetry:
                 from pyscf import symm
-                if hasattr(mf._scf.mo_coeff, 'orbsym'):
-                    self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf._scf.mo_coeff.orbsym]
+                if hasattr(mf.mo_coeff, 'orbsym'):
+                    self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf.mo_coeff.orbsym]
                 else:
                     self.group_repr_symm = None
             else:
                 self.group_repr_symm = None
+
+            # MO
+            self.mo_scf = self.mo
+            self.ovlp = mf.get_ovlp(mf.mol)
+            self.ncore = self.nelec//2 ## (self.nelec \pm 1)//2
+            self.nextern = self.nmo - self.ncore
+            self.ncas = 0
+
+            #if self.nelec % 2:
+            #    ncore = ((self.nelec+1)//2, (self.nelec-1)//2)
+            #else:
+            #    ncore = (self.nelec//2, self.nelec//2)
+
+            # Reference wavefunction (for compatibility with MR code)
+            self.e_ref_cas = [0]
+            self.ref_nelecas = [(0,0)]
+            self.ref_wfn_spin_mult = [1]
+            self.ref_wfn = None
+            self.ref_wfn_deg = None
         else:
             # Determine reference type
             from pyscf.mcscf.casci import CASCI
@@ -139,9 +154,14 @@ class PYSCF:
             self.nextern = self.nmo - self.ncore - self.ncas
             self.e_ref = e_ref
             self.e_ref_cas = e_cas
-            self.davidson_only = mc.fcisolver.davidson_only
-            self.pspace_size = mc.fcisolver.pspace_size
-            self.enforce_degeneracy = True
+
+# Attributes for CASCI states in valence MR-ADC
+####            self.davidson_only = mc.fcisolver.davidson_only
+####            self.pspace_size = mc.fcisolver.pspace_size
+####            self.enforce_degeneracy = True
+####            # If set to a list, can be used to select certain CASCI states during MR-ADC computations
+####            self.select_casci = None
+# Attributes for CASCI states in valence MR-ADC
 
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df
@@ -200,15 +220,9 @@ class PYSCF:
             else:
                 self.group_repr_symm = None
 
-            from pyscf import ao2mo
-            self.transform_2e_chem_incore = ao2mo.general
-            self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
-
-            self.davidson = lib.linalg_helper.davidson1
-            self.davidson_nosym = lib.linalg_helper.davidson_nosym1
-
-            # If set to a list, can be used to select certain CASCI states during MR-ADC computations
-            self.select_casci = None
+        # Davidson Algorithm
+        self.davidson = lib.linalg_helper.davidson1
+        self.davidson_nosym = lib.linalg_helper.davidson_nosym1
 
         # Current Memory
         self.current_memory = lib.current_memory
@@ -228,6 +242,11 @@ class PYSCF:
 
         self.with_df = None
         self.naux = None
+
+        # Integral Functions
+        from pyscf import ao2mo
+        self.transform_2e_chem_incore = ao2mo.general
+        self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
 
         # Dipole moments
         self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)

@@ -40,9 +40,12 @@ class MRADC:
 
         log.info("\nInitializing MR-ADC...")
 
-        if interface.reference not in ("casscf", "casci"):
-            log.info("MR-ADC requires CAS reference")
-            raise Exception(f"MR-ADC requires a CAS reference, got reference {interface.reference}")
+        #if interface.reference not in ("casscf", "casci"):
+        #    log.info("MR-ADC requires CAS reference")
+        #    raise Exception(f"MR-ADC requires a CAS reference, got reference {interface.reference}")
+
+        if interface.reference == "scf":
+            log.info("SCF reference given...defaulting to SR-ADC calculation.")
 
         self.stdout = interface.stdout
         self.verbose = interface.verbose
