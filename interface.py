@@ -66,31 +66,18 @@ class PYSCF:
             self.symmetry = mf.mol.symmetry
             self.e_ref = [mf.e_tot]
 
-            if getattr(mf, 'with_df', None):
-                self.reference_df = mf.with_df
-            else:
-                self.reference_df = None
+            self.reference_df = getattr(mf, 'with_df', None)
 
-            if self.symmetry:
+            self.group_repr_symm = None
+            if self.symmetry and hasattr(mf.mo_coeff, 'orbsym'):
                 from pyscf import symm
-                if hasattr(mf.mo_coeff, 'orbsym'):
-                    self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf.mo_coeff.orbsym]
-                else:
-                    self.group_repr_symm = None
-            else:
-                self.group_repr_symm = None
+                self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf.mo_coeff.orbsym]
 
-            # MO
             self.mo_scf = self.mo
             self.ovlp = mf.get_ovlp(mf.mol)
-            self.ncore = self.nelec//2 ## (self.nelec \pm 1)//2
+            self.ncore = self.nelec//2
             self.nextern = self.nmo - self.ncore
             self.ncas = 0
-
-            #if self.nelec % 2:
-            #    ncore = ((self.nelec+1)//2, (self.nelec-1)//2)
-            #else:
-            #    ncore = (self.nelec//2, self.nelec//2)
 
             # Reference wavefunction (for compatibility with MR code)
             self.e_ref_cas = [0]
@@ -163,10 +150,7 @@ class PYSCF:
 ####            self.select_casci = None
 # Attributes for CASCI states in valence MR-ADC
 
-            if getattr(mc, 'with_df', None):
-                self.reference_df = mc.with_df
-            else:
-                self.reference_df = None
+            self.reference_df = getattr(mc, 'with_df', None)
 
             # Compute state-averaged 1-RDM with respect to the reference manifold
             ref_rdm1 = np.zeros((mc.ncas, mc.ncas))
@@ -211,14 +195,11 @@ class PYSCF:
 
             # TODO: Check if this is done correctly when canonicalization changes the order of orbitals
             self.symmetry = mc.mol.symmetry
-            if self.symmetry:
+            self.group_repr_symm = None
+            if self.symmetry and hasattr(mc._scf.mo_coeff, 'orbsym'):
                 from pyscf import symm
-                if hasattr(mc._scf.mo_coeff, 'orbsym'):
-                    self.group_repr_symm = [symm.irrep_id2name(mc.mol.groupname, x) for x in mc._scf.mo_coeff.orbsym]
-                else:
-                    self.group_repr_symm = None
-            else:
-                self.group_repr_symm = None
+                self.group_repr_symm = [symm.irrep_id2name(mc.mol.groupname, x) for x in mc._scf.mo_coeff.orbsym]
+
 
         # Davidson Algorithm
         self.davidson = lib.linalg_helper.davidson1
