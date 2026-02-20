@@ -75,20 +75,15 @@ class NEVPT:
         self.s_thresh_doubles = 1e-8
         
         self.p1p_shift_type = None                # Possible shift types: real, imaginary, DSRG
-        self.m1p_shift_type = None                # Possible shift types: real, imaginary, DSRG
+        self.m1p_shift_type = None                
+        self._0p_shift_type = None
         
         self.p1p_shift_epsilon = None             # Level shift value
-        self.m1p_shift_epsilon = None
-        
-        if self.p1p_shift_epsilon is None:
-            self.p1p_shift_epsilon = 0.01         # Default level shift value
-            
-        if self.m1p_shift_epsilon is None:
-            self.m1p_shift_epsilon = 0.01         # Default level shift value
+        self.m1p_shift_epsilon = None             # default value 0.01 hartree
+        self._0p_shift_epsilon = None
         
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
         
-
         self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk
         self.rdm_order = 2
 
@@ -428,6 +423,19 @@ class NEVPT:
 
         if self.p1p_shift_type is not None and self.p1p_shift_type not in avail_shifts:
             raise ValueError(f"Invalid {'p1p_shift_type'}: '{self.p1p_shift_type}'. Available options are {avail_shifts}.")
+        
+        if self.p1p_shift_type is not None and self._0p_shift_type not in avail_shifts:
+            raise ValueError(f"Invalid {'0p_shift_type'}: '{self._0p_shift_type}'. Available options are {avail_shifts}.")
+        
+        # Default level shift of 0.01 hartree if not specified
+        if self.p1p_shift_epsilon is None and self.p1p_shift_type is not None:
+            self.p1p_shift_epsilon = 0.01        
+            
+        if self.m1p_shift_epsilon is None and self.m1p_shift_type is not None:
+            self.m1p_shift_epsilon = 0.01        
+        
+        if self._0p_shift_epsilon is None and self._0p_shift_type is not None:
+            self._0p_shift_epsilon = 0.01        
         
         # Transform one- and two-electron integrals
         log.info("\nTransforming integrals to MO basis...")

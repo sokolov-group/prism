@@ -900,8 +900,13 @@ def compute_t1_0p_no_singles(nevpt, rdms):
     ## Compute denominators
     d_ai = (e_extern[:,None] - e_core).reshape(-1)
     d_aip = (d_ai[:,None] + evals).reshape(nextern, ncore, -1)
-    d_aip = d_aip**(-1)
 
+    ## Level shift
+    if nevpt._0p_shift_type is not None:    
+        d_aip = add_level_shift(nevpt, nevpt._0p_shift_type, nevpt._0p_shift_epsilon, d_aip)
+    else:
+        d_aip = d_aip**(-1)
+        
     # Compute T[0'] amplitudes
     S_12_V_0p = einsum("iaP,Pm->iam", V_0p, S_0p_12_inv_act, optimize = einsum_type)
     S_12_V_0p = einsum("mp,iam->iap", evecs, S_12_V_0p, optimize = einsum_type)
@@ -1034,25 +1039,9 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
     ## Compute denominators
     d_ip = (-e_core[:,None] + evals)
 
-    if nevpt.p1p_shift_type == 'imaginary':
-        print("shift_epsilon(imaginary) =", nevpt.p1p_shift_epsilon)
-        epsilon = nevpt.p1p_shift_epsilon * np.ones(d_ip.shape)
-        d_ip = d_ip / (d_ip**2 + epsilon**2)
-        print("smallest Denominator(shift):", np.min(np.abs(1/d_ip)))
-        
-    elif nevpt.p1p_shift_type == 'real':
-        print("shift_epsilon(real) =", nevpt.p1p_shift_epsilon)
-        epsilon = nevpt.p1p_shift_epsilon * np.ones(d_ip.shape)
-        d_ip = 1 / (d_ip + epsilon)
-        print("smallest Denominator(shift):", np.min(np.abs(1/d_ip)))
-        
-    elif nevpt.p1p_shift_type == 'DSRG':
-        print("shift_epsilon(DSRG) =", nevpt.p1p_shift_epsilon)
-        flow = nevpt.p1p_shift_epsilon**(-2) * np.ones(d_ip.shape)
-        factor =  np.ones(d_ip.shape) - np.exp(-flow * (d_ip)**2)
-        d_ip = (factor) / d_ip
-        print("smallest Denominator(shift):", np.min(np.abs(1/d_ip)))
-        
+    ## Level shift
+    if nevpt.p1p_shift_type is not None:    
+        d_ip = add_level_shift(nevpt, nevpt.p1p_shift_type, nevpt.p1p_shift_epsilon, d_ip)
     else:
         d_ip = d_ip**(-1)
         
@@ -1182,24 +1171,9 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
     ## Compute denominators
     d_pa = (evals[:,None] + e_extern)
 
-    if nevpt.m1p_shift_type == 'imaginary':
-        print("shift_epsilon(imaginary) =", nevpt.m1p_shift_epsilon)
-        epsilon = nevpt.m1p_shift_epsilon * np.ones(d_pa.shape)
-        d_pa = d_pa / (d_pa**2 + epsilon**2)
-        print("smallest Denominator(shift):", np.min(np.abs(1/d_pa)))
-        
-    elif nevpt.m1p_shift_type == 'real':
-        print("shift_epsilon(real) =", nevpt.p1p_shift_epsilon)
-        epsilon = nevpt.m1p_shift_epsilon * np.ones(d_pa.shape)
-        d_pa = 1 / (d_pa + epsilon)
-        print("smallest Denominator(shift):", np.min(np.abs(1/d_pa)))
-        
-    elif nevpt.m1p_shift_type == 'DSRG':
-        print("shift_epsilon(DSRG) =", nevpt.m1p_shift_epsilon)
-        flow = nevpt.m1p_shift_epsilon**(-2) * np.ones(d_pa.shape)
-        factor =  np.ones(d_pa.shape) - np.exp(-flow * (d_pa)**2)
-        d_pa = (factor) / d_pa
-        print("smallest Denominator(shift):", np.min(np.abs(1/d_pa)))
+    ## Level shift
+    if nevpt.m1p_shift_type is not None:
+        d_pa = add_level_shift(nevpt, nevpt.m1p_shift_type, nevpt.m1p_shift_epsilon, d_pa)
     else:
         d_pa = d_pa**(-1)
 
@@ -1234,3 +1208,31 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
     nevpt.log.timer("computing T[-1']^(1) amplitudes", *cput0)
 
     return e_m1p, t1_aaae
+        
+def add_level_shift(nevpt, ls_type, shift, d):
+    '''
+    ls_type: string, level shift type. Options: imaginary, real, DSRG
+    t_type: string, amplitude class
+    d: input unshifted denominator
+    shift: float, level shift value
+    '''
+    if ls_type == 'imaginary':
+        print("shift_epsilon(imaginary) =", shift)
+        epsilon = shift * np.ones(d.shape)
+        d = d / (d**2 + epsilon**2)
+        print("smallest Denominator(shift):", np.min(np.abs(1/d)))
+        
+    elif ls_type == 'real':
+        print("shift_epsilon(real) =", shift)
+        epsilon = shift * np.ones(d.shape)
+        d  = 1 / (d + epsilon)
+        print("smallest Denominator(shift):", np.min(np.abs(1/d)))
+        
+    elif ls_type == 'DSRG':
+        print("shift_epsilon(DSRG) =", shift)
+        flow = shift**(-2) * np.ones(d.shape)
+        factor =  np.ones(d.shape) - np.exp(-flow * (d)**2)
+        d = (factor) / d
+        print("smallest Denominator(shift):", np.min(np.abs(1/d)))
+        
+    return d
