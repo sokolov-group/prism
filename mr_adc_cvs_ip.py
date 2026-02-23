@@ -2681,19 +2681,20 @@ def apply_S_12(mr_adc, X, transpose = False):
         ## CCE
         Xt[ho_s_cce:ho_f_cce] = X[s_cce:f_cce].copy()
 
-        ## CAE
-        temp = X[s_cae__aaa:f_cae__aaa].reshape(ncvs, S12_cae.shape[0], nextern).copy()
-        Xt[ho_s_cae__aaa:ho_f_cae__aaa] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
-
-        temp = X[s_cae__abb:f_cae__abb].reshape(ncvs, S12_cae.shape[0], nextern).copy()
-        Xt[ho_s_cae__abb:ho_f_cae__abb] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
-
-        temp = X[s_cae__bab:f_cae__bab].reshape(ncvs, S12_cae.shape[0], nextern).copy()
-        Xt[ho_s_cae__bab:ho_f_cae__bab] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
-
-        ## CCA
-        temp = X[s_cca:f_cca].reshape(-1, S12_cca.shape[0]).copy()
-        Xt[ho_s_cca:ho_f_cca] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+        if ncas > 0:
+            ## CAE
+            temp = X[s_cae__aaa:f_cae__aaa].reshape(ncvs, S12_cae.shape[0], nextern).copy()
+            Xt[ho_s_cae__aaa:ho_f_cae__aaa] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+    
+            temp = X[s_cae__abb:f_cae__abb].reshape(ncvs, S12_cae.shape[0], nextern).copy()
+            Xt[ho_s_cae__abb:ho_f_cae__abb] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+    
+            temp = X[s_cae__bab:f_cae__bab].reshape(ncvs, S12_cae.shape[0], nextern).copy()
+            Xt[ho_s_cae__bab:ho_f_cae__bab] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+    
+            ## CCA
+            temp = X[s_cca:f_cca].reshape(-1, S12_cca.shape[0]).copy()
+            Xt[ho_s_cca:ho_f_cca] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
         if nval > 0:
 
@@ -2713,9 +2714,10 @@ def apply_S_12(mr_adc, X, transpose = False):
             ## CVE
             Xt[ho_s_cve:ho_f_cve] = X[s_cve:f_cve].copy()
 
-            ## CVA
-            temp = X[s_cva:f_cva].reshape(-1, S12_cca.shape[0]).copy()
-            Xt[ho_s_cva:ho_f_cva] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+            if ncas > 0:
+                ## CVA
+                temp = X[s_cva:f_cva].reshape(-1, S12_cca.shape[0]).copy()
+                Xt[ho_s_cva:ho_f_cva] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
     else:
         if (X.shape[0] != (mr_adc.h_orth.dim)):
@@ -2735,19 +2737,20 @@ def apply_S_12(mr_adc, X, transpose = False):
         ## CCE
         Xt[s_cce:f_cce] = X[ho_s_cce:ho_f_cce].copy()
 
-        ## CAE
-        temp = X[ho_s_cae__aaa:ho_f_cae__aaa].reshape(ncvs, S12_cae.shape[1], nextern).copy()
-        Xt[s_cae__aaa:f_cae__aaa] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+        if ncas > 0:
+            ## CAE
+            temp = X[ho_s_cae__aaa:ho_f_cae__aaa].reshape(ncvs, S12_cae.shape[1], nextern).copy()
+            Xt[s_cae__aaa:f_cae__aaa] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
 
-        temp = X[ho_s_cae__abb:ho_f_cae__abb].reshape(ncvs, S12_cae.shape[1], nextern).copy()
-        Xt[s_cae__abb:f_cae__abb] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+            temp = X[ho_s_cae__abb:ho_f_cae__abb].reshape(ncvs, S12_cae.shape[1], nextern).copy()
+            Xt[s_cae__abb:f_cae__abb] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
 
-        temp = X[ho_s_cae__bab:ho_f_cae__bab].reshape(ncvs, S12_cae.shape[1], nextern).copy()
-        Xt[s_cae__bab:f_cae__bab] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
+            temp = X[ho_s_cae__bab:ho_f_cae__bab].reshape(ncvs, S12_cae.shape[1], nextern).copy()
+            Xt[s_cae__bab:f_cae__bab] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
 
-        ## CCA
-        temp = X[ho_s_cca:ho_f_cca].reshape(-1, S12_cca.shape[1]).copy()
-        Xt[s_cca:f_cca] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+            ## CCA
+            temp = X[ho_s_cca:ho_f_cca].reshape(-1, S12_cca.shape[1]).copy()
+            Xt[s_cca:f_cca] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
         if nval > 0:
 
@@ -2767,9 +2770,10 @@ def apply_S_12(mr_adc, X, transpose = False):
             # CVE
             Xt[s_cve:f_cve] = X[ho_s_cve:ho_f_cve].copy()
 
-            ## CVA
-            temp = X[ho_s_cva:ho_f_cva].reshape(-1, S12_cca.shape[1]).copy()
-            Xt[s_cva:f_cva] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+            if ncas > 0:
+                ## CVA
+                temp = X[ho_s_cva:ho_f_cva].reshape(-1, S12_cca.shape[1]).copy()
+                Xt[s_cva:f_cva] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
     return Xt
 
@@ -11783,23 +11787,24 @@ def compute_sigma_vector(mr_adc, Xt):
         compute_sigma_vector__H1__h1_h1__CVE_CAE(mr_adc, X_aaa, X_abb, X_bab, sigma)
 
     ### CCA block
-    X_aaa = np.zeros((ncvs, ncvs, ncas))
-    X_aaa[cvs_tril_ind[0], cvs_tril_ind[1]] =  Xt[s_cca__aaa:f_cca__aaa].reshape(-1, ncas).copy()
-    X_aaa[cvs_tril_ind[1], cvs_tril_ind[0]] =- Xt[s_cca__aaa:f_cca__aaa].reshape(-1, ncas).copy()
-
-    X_abb = Xt[s_cca__abb:f_cca__abb].reshape(ncvs, ncvs, ncas)
-
-    compute_sigma_vector__H0__h1_h1__CCA(mr_adc, X_aaa, X_abb, sigma)
-
-    if mr_adc.method == "mr-adc(2)-x":
-        compute_sigma_vector__H1__h1_h1__CAA_CCA(mr_adc, X_aaa, X_abb, sigma)
-        compute_sigma_vector__H1__h1_h1__CCE_CCA(mr_adc, X_aaa, X_abb, sigma)
-        compute_sigma_vector__H1__h1_h1__CAE_CCA(mr_adc, X_aaa, X_abb, sigma)
-        compute_sigma_vector__H1__h1_h1__CCA_CCA(mr_adc, X_aaa, X_abb, sigma)
-
-    if mr_adc.method == "mr-adc(2)-x" and nval > 0:
-        compute_sigma_vector__H1__h1_h1__CVA_CCA(mr_adc, X_aaa, X_abb, sigma)
-        compute_sigma_vector__H1__h1_h1__CVE_CCA(mr_adc, X_aaa, X_abb, sigma)
+    if ncas > 0:
+        X_aaa = np.zeros((ncvs, ncvs, ncas))
+        X_aaa[cvs_tril_ind[0], cvs_tril_ind[1]] =  Xt[s_cca__aaa:f_cca__aaa].reshape(-1, ncas).copy()
+        X_aaa[cvs_tril_ind[1], cvs_tril_ind[0]] =- Xt[s_cca__aaa:f_cca__aaa].reshape(-1, ncas).copy()
+    
+        X_abb = Xt[s_cca__abb:f_cca__abb].reshape(ncvs, ncvs, ncas)
+    
+        compute_sigma_vector__H0__h1_h1__CCA(mr_adc, X_aaa, X_abb, sigma)
+    
+        if mr_adc.method == "mr-adc(2)-x":
+            compute_sigma_vector__H1__h1_h1__CAA_CCA(mr_adc, X_aaa, X_abb, sigma)
+            compute_sigma_vector__H1__h1_h1__CCE_CCA(mr_adc, X_aaa, X_abb, sigma)
+            compute_sigma_vector__H1__h1_h1__CAE_CCA(mr_adc, X_aaa, X_abb, sigma)
+            compute_sigma_vector__H1__h1_h1__CCA_CCA(mr_adc, X_aaa, X_abb, sigma)
+    
+        if mr_adc.method == "mr-adc(2)-x" and nval > 0:
+            compute_sigma_vector__H1__h1_h1__CVA_CCA(mr_adc, X_aaa, X_abb, sigma)
+            compute_sigma_vector__H1__h1_h1__CVE_CCA(mr_adc, X_aaa, X_abb, sigma)
 
     if nval > 0:
         ## Excitation Manifolds
@@ -20865,74 +20870,75 @@ def compute_trans_moments(mr_adc, U):
 
         X[ncvs:ncore, :] = np.dot(T, U.T)
 
-    # ACTIVE terms
-    T = np.zeros((ncas, dim))
-
-    # MR-ADC(1) terms
-    ## < [ q^(1), h^(0)^\dag ] >
-    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-
-        ### ACTIVE(1) - C
-        compute_T__q1_h0__A_C(mr_adc, T)
-
-    # MR-ADC(2) terms
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-
-        ## < [ q^(1), h^(1)^\dag ] >
-        ### ACTIVE(1) - CAA
-        compute_T__q1_h1__A_CAA(mr_adc, T)
-
-        ### ACTIVE(1) - CCE
-        compute_T__q1_h1__A_CCE(mr_adc, T)
-
-        ### ACTIVE(1) - CAE
-        compute_T__q1_h1__A_CAE(mr_adc, T)
-
-        ### ACTIVE(1) - CCA
-        compute_T__q1_h1__A_CCA(mr_adc, T)
-
-        if nval > 0:
-            ### ACTIVE(1) - CVE
-            compute_T__q1_h1__A_CVE(mr_adc, T)
-
-            ### ACTIVE(1) - CVA
-            compute_T__q1_h1__A_CVA(mr_adc, T)
-
-        ## < [ q^(1), h^(1)^\dag ] >
-        ### ACTIVE(2) - C
-        compute_T__q2_h0__A_C(mr_adc, T)
-
-    # MR-ADC(2)-X terms
-    ## {q^(2)| h^(1)^dag}
-    if mr_adc.method == "mr-adc(2)-x":
-
-        ### ACTIVE(2) - CAA
-        compute_T__q2_h1__A_CAA(mr_adc, T)
-
-        ### ACTIVE(2) - CCE
-        compute_T__q2_h1__A_CCE(mr_adc, T)
-
-        ### ACTIVE(2) - CAE
-        compute_T__q2_h1__A_CAE(mr_adc, T)
-
-        ### ACTIVE(2) - CCA
-        compute_T__q2_h1__A_CCA(mr_adc, T)
-
-        if nval > 0:
-            ### ACTIVE(2) - CVE
-            compute_T__q2_h1__A_CVE(mr_adc, T)
-
-            ### ACTIVE(2) - CVA
-            compute_T__q2_h1__A_CVA(mr_adc, T)
-
-    # Transform to the orthogonal basis
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-        T_ortho = np.zeros((T.shape[0], mr_adc.h_orth.dim))
-        for p in range(T.shape[0]):
-            T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
-        T = T_ortho
-
-    X[ncore:nocc, :] = np.dot(T, U.T)
+    if ncas > 0:
+        # ACTIVE terms
+        T = np.zeros((ncas, dim))
+    
+        # MR-ADC(1) terms
+        ## < [ q^(1), h^(0)^\dag ] >
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+    
+            ### ACTIVE(1) - C
+            compute_T__q1_h0__A_C(mr_adc, T)
+    
+        # MR-ADC(2) terms
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+    
+            ## < [ q^(1), h^(1)^\dag ] >
+            ### ACTIVE(1) - CAA
+            compute_T__q1_h1__A_CAA(mr_adc, T)
+    
+            ### ACTIVE(1) - CCE
+            compute_T__q1_h1__A_CCE(mr_adc, T)
+    
+            ### ACTIVE(1) - CAE
+            compute_T__q1_h1__A_CAE(mr_adc, T)
+    
+            ### ACTIVE(1) - CCA
+            compute_T__q1_h1__A_CCA(mr_adc, T)
+    
+            if nval > 0:
+                ### ACTIVE(1) - CVE
+                compute_T__q1_h1__A_CVE(mr_adc, T)
+    
+                ### ACTIVE(1) - CVA
+                compute_T__q1_h1__A_CVA(mr_adc, T)
+    
+            ## < [ q^(1), h^(1)^\dag ] >
+            ### ACTIVE(2) - C
+            compute_T__q2_h0__A_C(mr_adc, T)
+    
+        # MR-ADC(2)-X terms
+        ## {q^(2)| h^(1)^dag}
+        if mr_adc.method == "mr-adc(2)-x":
+    
+            ### ACTIVE(2) - CAA
+            compute_T__q2_h1__A_CAA(mr_adc, T)
+    
+            ### ACTIVE(2) - CCE
+            compute_T__q2_h1__A_CCE(mr_adc, T)
+    
+            ### ACTIVE(2) - CAE
+            compute_T__q2_h1__A_CAE(mr_adc, T)
+    
+            ### ACTIVE(2) - CCA
+            compute_T__q2_h1__A_CCA(mr_adc, T)
+    
+            if nval > 0:
+                ### ACTIVE(2) - CVE
+                compute_T__q2_h1__A_CVE(mr_adc, T)
+    
+                ### ACTIVE(2) - CVA
+                compute_T__q2_h1__A_CVA(mr_adc, T)
+    
+        # Transform to the orthogonal basis
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+            T_ortho = np.zeros((T.shape[0], mr_adc.h_orth.dim))
+            for p in range(T.shape[0]):
+                T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
+            T = T_ortho
+    
+        X[ncore:nocc, :] = np.dot(T, U.T)
 
     # EXTERNAL terms
     T = np.zeros((nextern, dim))
