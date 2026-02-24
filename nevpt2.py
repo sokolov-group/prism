@@ -116,14 +116,14 @@ def compute_energy(nevpt, rdms, e_0 = None):
     return e_corr, t1
 
 
-def osc_strength(nevpt, en, t1, t1_0, gs_index = 0):
+def osc_strength(nevpt, en, gs_index = 0):
 
-    ncore = nevpt.ncore 
+    t1 = nevpt.t1
+    t1_0 = nevpt.t1_0
+    
     n_micro_states = sum(nevpt.ref_wfn_deg)
     dip_mom_ao = nevpt.interface.dip_mom_ao
     mo_coeff = nevpt.mo
-    nmo = nevpt.nmo
-    ncas = nevpt.ncas
 
     dip_mom_mo = np.zeros_like(dip_mom_ao)
 
@@ -133,42 +133,23 @@ def osc_strength(nevpt, en, t1, t1_0, gs_index = 0):
 
     # List to store Osc. Strength Values
     osc_total = []
-    osc_total_corr = []
 
     for state in range(gs_index + 1, n_micro_states):
-        rdm_mo = np.zeros((nmo, nmo))
-        rdm_ca = nevpt.interface.compute_rdm1(nevpt.ref_wfn[gs_index], nevpt.ref_wfn[state], nevpt.ref_nelecas[gs_index])
-        rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = rdm_ca
-
-        rdm_mo_corr = nevpt.make_rdm1(t1, t1_0, m = gs_index, n = state)
-
+        # Get 1rdm
+        rdm_mo = nevpt.make_rdm1(m = gs_index, n = state)
+         
         # Create Dipole Moment Operator with RDM
         dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo)
         dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo)
         dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo)
         
-        # Create Dipole Moment Operator with Correlated RDM
-        dip_evec_x_corr = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo_corr)
-        dip_evec_y_corr = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo_corr)
-        dip_evec_z_corr = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo_corr)
-
-        # Uncorrelated
         osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
         osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
         osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
 
-        # Add Dipole Moment Components
         osc_total.append((osc_x + osc_y + osc_z).real)
         
-        # Correlated
-        osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x_corr)*dip_evec_x_corr)
-        osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y_corr)*dip_evec_y_corr)
-        osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z_corr)*dip_evec_z_corr)
-
-        # Add Dipole Moment Components
-        osc_total_corr.append((osc_x + osc_y + osc_z).real)
-        
-    return (osc_total, osc_total_corr)
+    return (osc_total)
 
 
 def compute_corr_1rdm(nevpt, t1, t1_0, gs_idx = None, es_idx = None):

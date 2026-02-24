@@ -84,8 +84,7 @@ class NEVPT:
         
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
         
-        self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk
-        self.rdm_order = 2
+        self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk   
 
         # Integrals
         self.mo_energy = lambda:None
@@ -96,11 +95,17 @@ class NEVPT:
         self.mo_energy.e = interface.mo_energy[self.nocc:]
         
         # Correlated 1rdm
-        self.compute_corr_1rdm = False            # Explicitly compute SS-1RDM(s) (multiple for multistate calculations)
-        self.compute_trans_corr_1rdm = False      # Explicitly compute transition 1RDMs for multistate calculations
+        self.rdm_order = 0                       # Default value of 0 (uncorrelated), 2 for correlated
         
-    def make_rdm1(self, t1, t1_0, m = None, n = None, evec = None):
-        method = self.method
+        # Amplitudes
+        self.t1 = None
+        self.t1_0 = None 
+        self.keep_amplitudes = False
+        
+        #Eigenvectors
+        self.h_evec = None
+        
+    def make_rdm1(self, evec = None, t1 = None, t1_0 = None, m = None, n = None):
         ncore = self.ncore
         ncas = self.ncas
         nextern = self.nextern
@@ -115,11 +120,21 @@ class NEVPT:
         
         if n is None:
             n = 0       
+            
+        if t1 is None:
+            t1 = self.t1
         
-        if self.method != "qd-nevpt2":
+        if t1_0 is None:
+            t1_0 = self.t1_0
+        
+        if self.method != "qd-nevpt2" and evec is None:
             evec = np.identity(n_micro_states)
+            
+        elif evec is None: 
+            evec = self.h_evec
 
-        rdm_qd = np.zeros((nmo, nmo))
+        # Initial rdm array
+        rdm_final = np.zeros((nmo, nmo))
 
         # Looping over states I,J
         for I in range(n_micro_states):
@@ -131,7 +146,6 @@ class NEVPT:
             L_t1_ccaa = t1[I].ccaa
             L_t1_caee = t1[I].caee 
             L_t1_aaee = t1[I].aaee
-            L_t1_aaea = t1[I].aaae.transpose(1,0,3,2)
 
             for J in range(n_micro_states): 
                 R_t1_caea = t1[J].caea
@@ -142,7 +156,6 @@ class NEVPT:
                 R_t1_ccaa = t1[J].ccaa
                 R_t1_caee = t1[J].caee 
                 R_t1_aaee = t1[J].aaee
-                R_t1_aaea = t1[J].aaae.transpose(0,1,3,2)
                 
                 t1_ccee = t1_0
                 
@@ -151,10 +164,10 @@ class NEVPT:
                 rdm_mo[ncore:ncore + ncas, ncore:ncore + ncas] = trdm_ca
                 
                 if I == J:
-                    if self.rdm_order == 2:
-                        #uncorrelated diagonal terms
-                        rdm_mo[:ncore, :ncore] = 2 * np.identity(ncore)
+                    #uncorrelated diagonal terms
+                    rdm_mo[:ncore, :ncore] = 2 * np.identity(ncore)
                     
+                    if self.rdm_order == 2:
                         # CORE-CORE #
                         rdm_mo[:ncore, :ncore] -= 4 * einsum('Iiab,Jiab->IJ', t1_ccee, t1_ccee, optimize = einsum_type)
                         rdm_mo[:ncore, :ncore] += 2 * einsum('Iiab,Jiba->IJ', t1_ccee, t1_ccee, optimize = einsum_type)
@@ -361,7 +374,10 @@ class NEVPT:
                         rdm_mo[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern] -= 1/3 * einsum('xyzA,wuvB,zuwyxv->AB', L_t1_aaae, R_t1_aaae, trdm_cccaaa, optimize = einsum_type)
                         rdm_mo[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern] += einsum('xyzA,wuzB,yxuw->AB', L_t1_aaae, R_t1_aaae, trdm_ccaa, optimize = einsum_type)
 
-                    rdm_qd += np.conj(evec)[I, n] * rdm_mo * evec[J, m]
+                        rdm_final += np.conj(evec)[I, n] * rdm_mo * evec[J, m]
+                        
+                    elif self.rdm_order == 0:
+                        rdm_final += np.conj(evec)[I, n] * rdm_mo * evec[J, m]
                     
                 else:
                     if self.rdm_order == 2:
@@ -390,10 +406,13 @@ class NEVPT:
                         # EXT-ACT #
                         rdm_mo[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas] += 1/2 * einsum('xyzA,Xzyx->AX', L_t1_aaae, trdm_ccaa, optimize = einsum_type)
                     
-                    rdm_qd += np.conj(evec)[I, n] * rdm_mo * evec[J, m]
-
-        #self.rdm1 = rdm1 ### DECIDE WHAT TO DO
-        return rdm_qd
+                        rdm_final += np.conj(evec)[I, n] * rdm_mo * evec[J, m]
+                        
+                    elif self.rdm_order == 0:
+                        
+                        rdm_final += np.conj(evec)[I, n] * rdm_mo * evec[J, m]             
+                       
+        return rdm_final
     
     def kernel(self):
 
@@ -416,6 +435,9 @@ class NEVPT:
             log.error(msg)
             raise Exception(msg)
         
+        if self.rdm_order not in [0,2]:
+             raise ValueError(f"Invalid {'rdm_order'}: '{self.rdm_order}'. Available options are {0,2}.")
+         
         avail_shifts = ['real', 'imaginary', 'DSRG']
         
         if self.m1p_shift_type is not None and self.m1p_shift_type not in avail_shifts:
@@ -450,6 +472,10 @@ class NEVPT:
         # Run NEVPT computation
         e_tot, e_corr, osc = nevpt_compute.kernel(self)
 
+        if self.keep_amplitudes is False:
+            del(self.t1)
+            del(self.t1_0)
+            
         return e_tot, e_corr, osc
 
     @property
