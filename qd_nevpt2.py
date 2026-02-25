@@ -225,14 +225,9 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
 
 def osc_strength(nevpt, en, gs_index = 0):
 
-    t1 = nevpt.t1
-    t1_0 = nevpt.t1_0
-    ncore = nevpt.ncore 
     n_micro_states = sum(nevpt.ref_wfn_deg)
     dip_mom_ao = nevpt.interface.dip_mom_ao
     mo_coeff = nevpt.mo
-    nmo = nevpt.nmo
-    ncas = nevpt.ncas
 
     dip_mom_mo = np.zeros_like(dip_mom_ao)
 
@@ -242,8 +237,7 @@ def osc_strength(nevpt, en, gs_index = 0):
 
     # List to store Osc. Strength Values
     osc_total = []
-    osc_total_corr = []
-
+    
     # Looping over CAS States
     for state in range(gs_index + 1, n_micro_states):
         rdm_qd = nevpt.make_rdm1(m = gs_index, n = state)

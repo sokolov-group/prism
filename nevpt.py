@@ -132,10 +132,18 @@ class NEVPT:
             
         elif evec is None: 
             evec = self.h_evec
+            
+        # Warning for incorrect state request
+        if n_micro_states == 1 and (m > 0 or n > 0):
+            raise ValueError(f"Invalid {'m,n values'}: '{m,n}'. m, n greater than 0 only available for multistate calculations.")
 
         # Initial rdm array
         rdm_final = np.zeros((nmo, nmo))
-
+        
+        # Compute uncorrelated density seprately for stability checks
+        if self.rdm_order == 2:
+            rdm1_0 = np.zeros((nmo, nmo))
+    
         # Looping over states I,J
         for I in range(n_micro_states):
             L_t1_caea = t1[I].caea
@@ -162,12 +170,14 @@ class NEVPT:
                 rdm_mo = np.zeros((nmo, nmo)) 
                 trdm_ca, trdm_ccaa, trdm_cccaaa, trdm_ccccaaaa = self.interface.compute_rdm1234(self.ref_wfn[I], self.ref_wfn[J], self.ref_nelecas[I])
                 rdm_mo[ncore:ncore + ncas, ncore:ncore + ncas] = trdm_ca
-                
+                    
                 if I == J:
                     #uncorrelated diagonal terms
                     rdm_mo[:ncore, :ncore] = 2 * np.identity(ncore)
                     
                     if self.rdm_order == 2:
+                        rdm1_0 += np.conj(evec)[I, n] * rdm_mo * evec[J, m]
+                        
                         # CORE-CORE #
                         rdm_mo[:ncore, :ncore] -= 4 * einsum('Iiab,Jiab->IJ', t1_ccee, t1_ccee, optimize = einsum_type)
                         rdm_mo[:ncore, :ncore] += 2 * einsum('Iiab,Jiba->IJ', t1_ccee, t1_ccee, optimize = einsum_type)
@@ -381,6 +391,8 @@ class NEVPT:
                     
                 else:
                     if self.rdm_order == 2:
+                        rdm1_0 += np.conj(evec)[I, n] * rdm_mo * evec[J, m]
+                        
                         # OFF-DIAGS #
                         # COR-ACT #
                         rdm_mo[:ncore, ncore:ncore + ncas] += einsum('IxXy,yx->IX', R_t1_caaa, trdm_ca, optimize = einsum_type)
@@ -410,7 +422,21 @@ class NEVPT:
                         
                     elif self.rdm_order == 0:
                         
-                        rdm_final += np.conj(evec)[I, n] * rdm_mo * evec[J, m]             
+                        rdm_final += np.conj(evec)[I, n] * rdm_mo * evec[J, m]   
+                                  
+        # RDM warning    
+        if self.rdm_order == 2:
+            norm_check = np.linalg.norm(rdm_final - rdm1_0)
+            error_msg = (
+                f"Instability detected in correlated 1RDM. "
+                "Consider loosening truncation thresholds."
+            )
+            
+            if norm_check > 5 and m == n:
+                print(f"WARNING: {error_msg}")
+                
+            if norm_check > 1 and m != n:
+                print(f"WARNING: {error_msg}")
                        
         return rdm_final
     

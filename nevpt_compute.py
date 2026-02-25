@@ -111,7 +111,7 @@ def kernel(nevpt):
         elif nevpt.method == "nevpt2" and n_states > 1:
             t1.append(t1_state)
         else:
-            nevpt.t1 = t1_state # single-state 
+            nevpt.t1 = [t1_state] # single-state 
             del (t1_state)
 
         del (rdms)
@@ -129,14 +129,15 @@ def kernel(nevpt):
         # Update correlation energies
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
-
+    
     # Store amplitudes in nevpt class
-    nevpt.t1 = t1
-        
+    if n_states > 1:
+        nevpt.t1 = t1
+
     del(t1)
         
     nevpt.t1_0 = t1_0
-    
+
     del(t1_0)
 
     if n_states > 1:
@@ -175,7 +176,15 @@ def kernel(nevpt):
         nevpt.log.info("----------------------------------------------------------------------------------------------------------------")
     
         if nevpt.verbose >= 5:
-            print_osc_str(nevpt, e_tot, osc_str)
+            osc_str_full = osc_str
+            # Compute all transitions starting from each state
+            for gs_index in range(len(e_tot) - 1):  
+                if nevpt.method == "qd-nevpt2":
+                    osc_str_full.extend(qd_nevpt2.osc_strength(nevpt, e_tot, gs_index))
+                else:
+                    osc_str_full.extend(nevpt2.osc_strength(nevpt, e_tot, gs_index))
+
+            print_osc_str(nevpt, e_tot, osc_str_full)
 
         
     sys.stdout.flush()
@@ -183,7 +192,7 @@ def kernel(nevpt):
      
     return e_tot, e_corr, osc_str
 
-def print_osc_str(nevpt, e_tot, osc_str, correlated = 0):
+def print_osc_str(nevpt, e_tot, osc_str):
     # Oscillator Strengths
     num_states = len(e_tot) # total states
     col_width = 18  # characters per column
@@ -192,9 +201,11 @@ def print_osc_str(nevpt, e_tot, osc_str, correlated = 0):
     transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
     osc_val = [[] for _ in range(num_states - 1)] 
     
+    index = 0
     for i in range(num_states - 1):
         for j in range(i + 1, num_states):
-            f_ij = osc_str[j - i - 1]
+            f_ij = osc_str[index]
+            index += 1
             osc_val.append(f_ij)
             
             f_val_str = f"{f_ij:.8f}"
@@ -206,10 +217,7 @@ def print_osc_str(nevpt, e_tot, osc_str, correlated = 0):
 
     # Print header and transitions
     separator = "-" * total_line_width
-    if correlated == 0: 
-        nevpt.log.info("\n\nOscillator Strengths: state i -> state f")
-    elif correlated == 1:
-        nevpt.log.info("\n\nCorrelated Oscillator Strengths: state i -> state f")
+    nevpt.log.info("\n\nOscillator Strengths: state i -> state f")
     nevpt.log.info(separator)
 
     # Final print
