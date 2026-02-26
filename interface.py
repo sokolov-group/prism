@@ -663,4 +663,55 @@ class PYSCF:
 
         return osc_total
     
-  
+    def osc_strength_general_2(self, en, rdm_mo, S_total, ms_total, I_evec_soc=None, gs_index = 0):
+        ncore = self.ncore 
+        dip_mom_ao = self.dip_mom_ao
+        mo_coeff = self.mo
+        nmo = self.nmo
+        ncas = self.ncas
+        dip_mom_mo = np.zeros_like(dip_mom_ao)
+        n_states = len(en)
+        n_micro_states = n_states
+            
+        #If spin-free:
+        if I_evec_soc is None:
+            I_total=np.arange(n_states)
+            evec_soc = np.identity(n_states)
+        else:
+            I_total = I_evec_soc[0]
+            evec_soc = I_evec_soc[1]
+
+        # Transform dipole moments from AO to MO basis
+        for d in range(dip_mom_ao.shape[0]):
+            dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+
+
+        # List to store Osc. Strength Values
+        osc_total = []
+        # Looping over CAS States
+        dip_evec = np.zeros((3,n_micro_states,n_micro_states),dtype='complex')
+        for I in range(n_micro_states):
+            for J in range(n_micro_states):
+                if J>=I:
+                    #if  (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
+                    i = I_total[I]
+                    j = I_total[J]
+                    #l_mat[0,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[0])
+                    #l_mat[1,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[1])
+                    #l_mat[2,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[2])
+                    dip_evec[0,I,J] = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[i,j])
+                    dip_evec[1,I,J] = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[i,j])
+                    dip_evec[2,I,J] = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[i,j])
+        dip_evec[0] = dip_evec[0] + np.conj(dip_evec[0]).T
+        dip_evec[1] = dip_evec[1] + np.conj(dip_evec[1]).T
+        dip_evec[2] = dip_evec[2] + np.conj(dip_evec[2]).T
+
+        dip_evec_soc = np.einsum('ai,kib,bj->kaj',np.conj(evec_soc).T , dip_evec , evec_soc)
+
+        for state in range(gs_index + 1, n_states):
+            osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_soc[0,gs_index,state])*dip_evec_soc[0,gs_index,state])
+            osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_soc[1,gs_index,state])*dip_evec_soc[1,gs_index,state])
+            osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_soc[2,gs_index,state])*dip_evec_soc[2,gs_index,state])
+            osc_total.append((osc_x + osc_y + osc_z).real)
+        
+        return osc_total, dip_evec_soc

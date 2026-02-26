@@ -114,9 +114,10 @@ def generalSOC(interface, en, rdm, S, ms):
         for J in range(nstate):
             cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
             cg = float(cg)
-            T_z = 1/np.sqrt(2) * (rdm[0,I,J] - rdm[1,I,J]) / cg
-            rdm_wigner[I,J] = T_z 
-
+            if np.abs(cg) > 1e-5:               
+                T_z = 1/np.sqrt(2) * (rdm[0,I,J] - rdm[1,I,J]) / cg
+                rdm_wigner[I,J] = T_z 
+            
     wiger_time = time.time()
 
     # Get SOC integrals:
@@ -323,14 +324,23 @@ def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0,
         origin = origin / total_charge
         print("origin=",origin)
         mf.mol.set_common_orig(origin)
+        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
+
     elif origin_type == 'atom1':
         print("origin=",mf.mol.atom_coord(0))
         mf.mol.set_common_orig(mf.mol.atom_coord(0))
+        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
+    
+    elif origin_type == 'GIAO':
+        print("origin=GIAO")
+        #mf.mol.set_common_orig([0,0,3.399617298093])
+        #print("mf.mol.set_common_orig([0,0,3.399617298093])")
+        l1_ao = -1j * mf.mol.intor('int1e_giao_irjxp_sph', comp=3)
+
     else:
         print("origin=",origin_type)
         mf.mol.set_common_orig(origin_type)
-    l1_ao = 0 
-    l1_ao += -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)#, hermi=1) #cint1e_cg_irxp_sph int1e_giao_irjxp_sph
+        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)#, hermi=1) #cint1e_cg_irxp_sph int1e_giao_irjxp_sph
     
     # AO -> MO basis:
     l1_mo = np.einsum('xpq,pi,qj->xij',l1_ao,mo,mo) 

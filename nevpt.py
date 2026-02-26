@@ -174,6 +174,9 @@ class NEVPT:
                 tmprdm_aabb = trans_rdm1s(wfn[J], wfn[I], self.ncas, self.ref_nelecas[I])
                 rdm[0, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[0]
                 rdm[1, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[1]
+          
+          for I in range(nstate): 
+            rdm[:, I, I, : self.ncore, :self.ncore] += np.identity(self.ncore)
 
           #generalSOC requires spin-free energy...
           en = self.en
