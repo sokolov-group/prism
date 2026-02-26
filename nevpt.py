@@ -105,7 +105,7 @@ class NEVPT:
         #Eigenvectors
         self.h_evec = None
         
-    def make_rdm1(self, evec = None, t1 = None, t1_0 = None, m = None, n = None):
+    def make_rdm1(self, evec = None, t1 = None, t1_0 = None, m = 0, n = 0):
         ncore = self.ncore
         ncas = self.ncas
         nextern = self.nextern
@@ -115,12 +115,6 @@ class NEVPT:
         einsum_type = self.interface.einsum_type
         nmo = self.nmo
 
-        if m is None:
-            m = 0
-        
-        if n is None:
-            n = 0       
-            
         if t1 is None:
             t1 = self.t1
         
@@ -134,9 +128,9 @@ class NEVPT:
             evec = self.h_evec
             
         # Warning for incorrect state request
-        if n_micro_states == 1 and (m > 0 or n > 0):
-            raise ValueError(f"Invalid {'m,n values'}: '{m,n}'. m, n greater than 0 only available for multistate calculations.")
-
+        if m > n_micro_states or n > n_micro_states:
+           raise ValueError(f"Invalid indices: m={m}, n={n}. "f"Maximum allowed index is {n_micro_states - 1}.")
+       
         # Initial rdm array
         rdm_final = np.zeros((nmo, nmo))
         
@@ -168,7 +162,7 @@ class NEVPT:
                 t1_ccee = t1_0
                 
                 rdm_mo = np.zeros((nmo, nmo)) 
-                trdm_ca, trdm_ccaa, trdm_cccaaa, trdm_ccccaaaa = self.interface.compute_rdm1234(self.ref_wfn[I], self.ref_wfn[J], self.ref_nelecas[I])
+                trdm_ca, trdm_ccaa, trdm_cccaaa = self.interface.compute_rdm123(self.ref_wfn[I], self.ref_wfn[J], self.ref_nelecas[I])
                 rdm_mo[ncore:ncore + ncas, ncore:ncore + ncas] = trdm_ca
                     
                 if I == J:
@@ -464,7 +458,7 @@ class NEVPT:
         if self.rdm_order not in [0,2]:
              raise ValueError(f"Invalid {'rdm_order'}: '{self.rdm_order}'. Available options are {0,2}.")
          
-        avail_shifts = ['real', 'imaginary', 'DSRG']
+        avail_shifts = ['imaginary', 'DSRG']
         
         if self.m1p_shift_type is not None and self.m1p_shift_type not in avail_shifts:
             raise ValueError(f"Invalid {'m1p_shift_type'}: '{self.m1p_shift_type}'. Available options are {avail_shifts}.")

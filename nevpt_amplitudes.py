@@ -25,7 +25,6 @@ import prism.nevpt_overlap as nevpt_overlap
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
-import sys
 
 def compute_t1_0(nevpt):
 
@@ -1217,22 +1216,16 @@ def add_level_shift(nevpt, ls_type, shift, d):
     shift: float, level shift value
     '''
     if ls_type == 'imaginary':
-        print("shift_epsilon(imaginary) =", shift)
+        nevpt.log.info("shift_epsilon(imaginary) =", shift)
         epsilon = shift * np.ones(d.shape)
         d = d / (d**2 + epsilon**2)
-        print("smallest Denominator(shift):", np.min(np.abs(1/d)))
-        
-    elif ls_type == 'real':
-        print("shift_epsilon(real) =", shift)
-        epsilon = shift * np.ones(d.shape)
-        d  = 1 / (d + epsilon)
-        print("smallest Denominator(shift):", np.min(np.abs(1/d)))
+        nevpt.log.info("smallest Denominator(shift):", np.min(np.abs(1/d)))
         
     elif ls_type == 'DSRG':
-        print("shift_epsilon(DSRG) =", shift)
+        nevpt.log.info("shift_epsilon(DSRG) =", shift)
         flow = shift**(-2) * np.ones(d.shape)
         factor =  np.ones(d.shape) - np.exp(-flow * (d)**2)
         d = (factor) / d
-        print("smallest Denominator(shift):", np.min(np.abs(1/d)))
+        nevpt.log.info("smallest Denominator(shift):", np.min(np.abs(1/d)))
         
     return d
