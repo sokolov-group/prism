@@ -178,7 +178,7 @@ def kernel(nevpt):
         if nevpt.verbose >= 5:
             osc_str_full = osc_str
             # Compute all transitions starting from each state
-            for gs_index in range(len(e_tot) - 1):  
+            for gs_index in range(1, len(e_tot)):  
                 if nevpt.method == "qd-nevpt2":
                     osc_str_full.extend(qd_nevpt2.osc_strength(nevpt, e_tot, gs_index))
                 else:

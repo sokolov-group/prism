@@ -48,7 +48,7 @@ print("CASSCF energy: %f\n" % emc)
 # QD-NEVPT2 with all electrons correlated
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "qd-nevpt2"
+nevpt.method = "nevpt2"
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-6
 nevpt.keep_amplitudes = True 
@@ -96,7 +96,7 @@ tot_es_dip = [es1_dip, es2_dip, es3_dip]
 tr_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, tr_1rdm) 
 
 print()
-header = "*   1RDM Dipole Moment Contracted Integrals (QD-NEVPT2)   *"
+header = "*   1RDM Dipole Moment Contracted Integrals (Multistate NEVPT2)   *"
 print("*" * len(header))
 print(header)
 print("*" * len(header))

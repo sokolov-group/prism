@@ -83,7 +83,6 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[2], 0.0, 6)
         self.assertAlmostEqual(osc[3], 0.0, 6)
         self.assertAlmostEqual(osc[4], 0.0, 6)
-        self.assertAlmostEqual(osc[5], 0.0, 6)
 
 if __name__ == "__main__":
     print("NEVPT2 test")

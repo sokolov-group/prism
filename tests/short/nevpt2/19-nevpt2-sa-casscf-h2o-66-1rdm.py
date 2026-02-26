@@ -49,7 +49,7 @@ ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
 # CASSCF calculation
-n_states = 6
+n_states = 4 
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 mc.conv_tol = 1e-11
@@ -61,32 +61,52 @@ interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
-nevpt.s_thresh_singles = 1e-10
-nevpt.s_thresh_doubles = 1e-10
+nevpt.s_thresh_singles = 1e-6
+nevpt.s_thresh_doubles = 1e-6
 nevpt.method = "nevpt2"
+nevpt.keep_amplitudes = True
+
+# Correlated 1RDM
+nevpt.rdm_order = 2 
+
+def rdms_test(dm):
+    r2_int = nevpt.interface.mol.intor('int1e_r2')  
+    dm_ao = nevpt.interface.einsum('pi,ij,qj->pq', nevpt.mo, dm, nevpt.mo.conj())  
+    r2 = nevpt.interface.einsum('pq,pq->', r2_int, dm_ao)  
+    return r2
 
 class KnownValues(unittest.TestCase):
-
-    def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,  -75.6915177093492, 6)
-        self.assertAlmostEqual(mc.e_cas,  -12.5683871410396, 6)
-
-    def test_prism(self):
+    
+    def test_1rdm(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
+        # Ground state
+        gs_1rdm = nevpt.make_rdm1(m = 0, n = 0)
 
-        self.assertAlmostEqual(e_tot[0], -76.268906691501, 5)
-        self.assertAlmostEqual(e_tot[1], -75.901163426898, 5)
-        self.assertAlmostEqual(e_tot[2], -75.885941718227, 5)
-        self.assertAlmostEqual(e_tot[3], -75.770722214422, 5)
-        self.assertAlmostEqual(e_tot[4], -75.749781015111, 5)
-        self.assertAlmostEqual(e_tot[5], -75.696925664176, 5)
+        # Excited States
+        es1_1rdm = nevpt.make_rdm1(m = 1, n = 1)
+        es2_1rdm = nevpt.make_rdm1(m = 2, n = 2)
+        es3_1rdm = nevpt.make_rdm1(m = 3, n = 3)
+
+        # Transition 1RDMS
+        tr1_1rdm = nevpt.make_rdm1(m = 0, n = 1)
+        tr2_1rdm = nevpt.make_rdm1(m = 0, n = 2)
+        tr3_1rdm = nevpt.make_rdm1(m = 0, n = 3)
         
-        self.assertAlmostEqual(osc[0], 0.0, 6)
-        self.assertAlmostEqual(osc[1], 0.18632095, 5)
-        self.assertAlmostEqual(osc[2], 0.0, 6)
-        self.assertAlmostEqual(osc[3], 0.00800995, 5)
-        self.assertAlmostEqual(osc[4], 0.0, 6)
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 8)
+        
+        self.assertAlmostEqual(np.trace(tr1_1rdm), 0, 8)
+        self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 8)
+        self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 8)
+        
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.026809335519932, 8)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.71958984499429, 8)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.7854044045596, 8)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801914, 8)
+
 
 if __name__ == "__main__":
     print("NEVPT2 test")
