@@ -269,5 +269,55 @@ def determine_spin_mult(nevpt, evec):
     return spin_mult_new
 
 
+def make_rdm1(nevpt, L = None, R = None, t1 = None, t1_0 = None, evec = None):
+
+    if evec is None: 
+        evec = nevpt.h_evec
+        
+    ncore = nevpt.ncore
+    ncas = nevpt.ncas
+    nextern = nevpt.nextern
+    n_micro_states = sum(nevpt.ref_wfn_deg)
+    einsum = nevpt.interface.einsum
+    
+    einsum_type = nevpt.interface.einsum_type
+    nmo = nevpt.nmo
+
+    if t1 is None:
+        t1 = nevpt.t1
+    
+    if t1_0 is None:
+        t1_0 = nevpt.t1_0
+
+    # Warning for incorrect state request
+    L_states = 1
+    R_states = 1
+    L_list = None
+    R_list = None
+
+    if L is None:
+        L_states = n_micro_states
+        L_list = np.arange(L_states)
+    else:
+        L_list = [L]
+        if L > n_micro_states:
+            raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
+
+    if R is None:
+        R_states = n_micro_states
+        R_list = np.arange(R_states)
+    else:
+        R_list = [R]
+        if R > n_micro_states:
+            raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
+   
+    # Initial rdm array
+    rdm_final = np.zeros((L_states, R_states, nmo, nmo))
+    rdm_casci = nevpt2.make_rdm1(nevpt)
+    #rdm_final = einsum
+    
+                   
+    return rdm_final
+
 
 
