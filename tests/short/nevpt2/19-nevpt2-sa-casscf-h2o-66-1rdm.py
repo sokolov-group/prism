@@ -80,6 +80,8 @@ class KnownValues(unittest.TestCase):
     def test_1rdm(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
+        
+        # Using L,R
         # Ground state
         gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
 
@@ -92,6 +94,11 @@ class KnownValues(unittest.TestCase):
         tr1_1rdm = nevpt.make_rdm1(L = 0, R = 1)
         tr2_1rdm = nevpt.make_rdm1(L = 0, R = 2)
         tr3_1rdm = nevpt.make_rdm1(L = 0, R = 3)
+        
+        # Store norms for different type check
+        tr1_norm = np.linalg.norm(tr1_1rdm)
+        tr2_norm = np.linalg.norm(tr2_1rdm)
+        tr3_norm = np.linalg.norm(tr3_1rdm)
         
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
         self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)
@@ -107,7 +114,63 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(rdms_test(es2_1rdm), 39.7854044045596, 8)
         self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801914, 8)
 
+        # Using 'all' flag
+        # Ground state
+        rdms = nevpt.make_rdm1(type = 'all')
+        
+        # Ground state
+        gs_1rdm = rdms[0,0]
+        
+        # Excited States
+        es1_1rdm = rdms[1,1]
+        es2_1rdm = rdms[2,2]
+        es3_1rdm = rdms[3,3]
 
+        # Transition 1RDMS
+        tr1_1rdm = rdms[0,1]
+        tr2_1rdm = rdms[0,2]
+        tr3_1rdm = rdms[0,3]
+        
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 8)
+        
+        self.assertAlmostEqual(np.trace(tr1_1rdm), 0, 8)
+        self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 8)
+        self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 8)
+        
+        # Check different type returns same transition 1RDMS
+        self.assertAlmostEqual(np.linalg.norm(tr1_1rdm), tr1_norm, 8)
+        self.assertAlmostEqual(np.linalg.norm(tr2_1rdm), tr2_norm, 8)
+        self.assertAlmostEqual(np.linalg.norm(tr3_1rdm), tr3_norm, 8)
+        
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.026809335519932, 8)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.71958984499429, 8)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.7854044045596, 8)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801914, 8)
+        
+        # Using ss flag
+        rdms = nevpt.make_rdm1(type = 'ss')
+        
+        # Ground state
+        gs_1rdm = rdms[0]
+
+        # Excited States
+        es1_1rdm = rdms[1]
+        es2_1rdm = rdms[2]
+        es3_1rdm = rdms[3]
+        
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 8)
+        
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.026809335519932, 8)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.71958984499429, 8)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.7854044045596, 8)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801914, 8)
+        
 if __name__ == "__main__":
     print("NEVPT2 test")
     unittest.main()
