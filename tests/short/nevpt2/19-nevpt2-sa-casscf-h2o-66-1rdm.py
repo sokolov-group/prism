@@ -81,17 +81,17 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
         # Ground state
-        gs_1rdm = nevpt.make_rdm1(m = 0, n = 0)
+        gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
 
         # Excited States
-        es1_1rdm = nevpt.make_rdm1(m = 1, n = 1)
-        es2_1rdm = nevpt.make_rdm1(m = 2, n = 2)
-        es3_1rdm = nevpt.make_rdm1(m = 3, n = 3)
+        es1_1rdm = nevpt.make_rdm1(L = 1, R = 1)
+        es2_1rdm = nevpt.make_rdm1(L = 2, R = 2)
+        es3_1rdm = nevpt.make_rdm1(L = 3, R = 3)
 
         # Transition 1RDMS
-        tr1_1rdm = nevpt.make_rdm1(m = 0, n = 1)
-        tr2_1rdm = nevpt.make_rdm1(m = 0, n = 2)
-        tr3_1rdm = nevpt.make_rdm1(m = 0, n = 3)
+        tr1_1rdm = nevpt.make_rdm1(L = 0, R = 1)
+        tr2_1rdm = nevpt.make_rdm1(L = 0, R = 2)
+        tr3_1rdm = nevpt.make_rdm1(L = 0, R = 3)
         
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
         self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)

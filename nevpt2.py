@@ -130,15 +130,15 @@ def osc_strength(nevpt, en, gs_index = 0):
 
     # List to store Osc. Strength Values
     osc_total = []
+    
+    # Get 1rdms
+    rdm_mo = make_rdm1(nevpt, L = gs_index, type = 'tr')
 
     for state in range(gs_index + 1, n_micro_states):
-        # Get 1rdm
-        rdm_mo = nevpt.make_rdm1(m = gs_index, n = state)
-         
         # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo)
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo)
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo)
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[0,state])
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[0,state])
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[0,state])
         
         osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
         osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
@@ -151,7 +151,7 @@ def osc_strength(nevpt, en, gs_index = 0):
 
 # Compute 1-RDM for either all CASCI states or a specific states
 # L is initial, R is final
-def make_rdm1(nevpt, L = None, R = None, t1 = None, t1_0 = None):
+def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     ncore = nevpt.ncore
     ncas = nevpt.ncas
     nextern = nevpt.nextern
@@ -167,9 +167,8 @@ def make_rdm1(nevpt, L = None, R = None, t1 = None, t1_0 = None):
     if t1_0 is None:
         t1_0 = nevpt.t1_0
 
-    # Warning for incorrect state request
-    L_states = 1
-    R_states = 1
+    L_states = 0
+    R_states = 0
     L_list = None
     R_list = None
 
@@ -177,15 +176,16 @@ def make_rdm1(nevpt, L = None, R = None, t1 = None, t1_0 = None):
         L_states = n_micro_states
         L_list = np.arange(L_states)
     else:
-        L_list = [L]
+        L_list = np.array([L])
         if L > n_micro_states:
             raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
 
     if R is None:
         R_states = n_micro_states
         R_list = np.arange(R_states)
+        
     else:
-        R_list = [R]
+        R_list = np.array([R])
         if R > n_micro_states:
             raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
 
@@ -195,12 +195,12 @@ def make_rdm1(nevpt, L = None, R = None, t1 = None, t1_0 = None):
     )
 
     # Initial rdm array
-    rdm_final = np.zeros((L_states, R_states, nmo, nmo))
-
+    rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], nmo, nmo))
+    
     t1_ccee = t1_0
 
     # Looping over states I,J
-    for ind_I, I in enumerate(L_states):
+    for ind_I, I in enumerate(L_list):
         L_t1_caea = t1[I].caea
         L_t1_caae = t1[I].caae
         L_t1_caaa = t1[I].caaa
@@ -209,8 +209,15 @@ def make_rdm1(nevpt, L = None, R = None, t1 = None, t1_0 = None):
         L_t1_ccaa = t1[I].ccaa
         L_t1_caee = t1[I].caee 
         L_t1_aaee = t1[I].aaee
+            
+        for ind_J, J in enumerate(R_list): 
+            
+            if type in ("ss", "state-specific") and I != J:
+                continue
 
-        for ind_J, J in enumerate(R_states): 
+            if type in ("tr", "transition") and I == J:
+                continue
+            
             R_t1_caea = t1[J].caea
             R_t1_caae = t1[J].caae
             R_t1_caaa = t1[J].caaa
@@ -219,14 +226,14 @@ def make_rdm1(nevpt, L = None, R = None, t1 = None, t1_0 = None):
             R_t1_ccaa = t1[J].ccaa
             R_t1_caee = t1[J].caee 
             R_t1_aaee = t1[J].aaee
-
+            
             # Zeroth-order contributions
             trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
             rdm_final[ind_I, ind_J, ncore:ncore + ncas, ncore:ncore + ncas] = trdm_ca
 
             if I == J:
                 #uncorrelated diagonal terms
-                rdm_final[:ncore, :ncore] = 2 * np.identity(ncore)
+                rdm_final[ind_I, ind_J, :ncore, :ncore] = 2 * np.identity(ncore)
 
             rdm_corr = np.zeros((nmo, nmo))
 
@@ -467,14 +474,18 @@ def make_rdm1(nevpt, L = None, R = None, t1 = None, t1_0 = None):
 
                 # Add the correlated contribution
                 rdm_final[ind_I, ind_J, :, :] += rdm_corr
-
+                    
                 # RDM warning
                 norm_check = np.linalg.norm(rdm_corr) / nevpt.nelec
 
-                if norm_check > 5 and I == J:
-                    print(f"WARNING: {error_msg}")
-
-                if norm_check > 1 and I != J:
-                    print(f"WARNING: {error_msg}")
-
+                if norm_check > 0.1:
+                    nevpt.log.info(f"WARNING: {error_msg}")
+        
+    if L is not None and R is not None:
+        rdm_final = rdm_final[0,0]
+    
+    elif type in ('ss', 'state-specific'):
+        # Extract diagonal
+        rdm_final = np.moveaxis(np.diagonal(rdm_final, axis1=0, axis2=1), -1, 0)
+        
     return rdm_final

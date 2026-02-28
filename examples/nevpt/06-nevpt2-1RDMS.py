@@ -71,25 +71,24 @@ charges = nevpt.interface.mol.atom_charges()
 coords  = nevpt.interface.mol.atom_coords()
 nucl_dip = nevpt.interface.einsum('i,ix->x', charges, coords)
 
-# Compute 1RDMS
-# Ground state
-gs_1rdm = nevpt.make_rdm1(m = 0, n = 0)
+# Compute all state-specific 1RDMS
+rdms = nevpt.make_rdm1(type = "ss")
 
-# Excited States
-es1_1rdm = nevpt.make_rdm1(m = 1, n = 1)
-es2_1rdm = nevpt.make_rdm1(m = 2, n = 2)
-es3_1rdm = nevpt.make_rdm1(m = 3, n = 3)
-es4_1rdm = nevpt.make_rdm1(m = 4, n = 4)
+# Extract GS 1RDM
+gs_1rdm = rdms[0]
+
+# Extract ES 1RDMS
+es_1rdms = rdms[1:]
 
 # Transition 1RDM 1 -> 3
-tr_1rdm = nevpt.make_rdm1(m = 0, n = 2) #Root 0 indexing
+tr_1rdm = nevpt.make_rdm1(L = 0, R = 2) #Root 0 indexing
 
 # Compute dipoles
 ref_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, gs_1rdm) + nucl_dip
 
-es1_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es1_1rdm) + nucl_dip
-es2_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es2_1rdm) + nucl_dip
-es3_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es3_1rdm) + nucl_dip
+es1_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es_1rdms[0]) + nucl_dip
+es2_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es_1rdms[1]) + nucl_dip
+es3_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es_1rdms[2]) + nucl_dip
 
 tot_es_dip = [es1_dip, es2_dip, es3_dip]
 

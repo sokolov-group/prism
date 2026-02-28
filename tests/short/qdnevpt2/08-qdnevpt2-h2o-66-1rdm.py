@@ -81,17 +81,17 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
         # Ground state
-        gs_1rdm = nevpt.make_rdm1(m = 0, n = 0)
+        gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
 
         # Excited States
-        es1_1rdm = nevpt.make_rdm1(m = 1, n = 1)
-        es2_1rdm = nevpt.make_rdm1(m = 2, n = 2)
-        es3_1rdm = nevpt.make_rdm1(m = 3, n = 3)
+        es1_1rdm = nevpt.make_rdm1(L = 1, R = 1)
+        es2_1rdm = nevpt.make_rdm1(L = 2, R = 2)
+        es3_1rdm = nevpt.make_rdm1(L = 3, R = 3)
 
         # Transition 1RDMS
-        tr1_1rdm = nevpt.make_rdm1(m = 0, n = 1)
-        tr2_1rdm = nevpt.make_rdm1(m = 0, n = 2)
-        tr3_1rdm = nevpt.make_rdm1(m = 0, n = 3)
+        tr1_1rdm = nevpt.make_rdm1(L = 0, R = 1)
+        tr2_1rdm = nevpt.make_rdm1(L = 0, R = 2)
+        tr3_1rdm = nevpt.make_rdm1(L = 0, R = 3)
 
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
         self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)
@@ -102,10 +102,10 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 8)
         self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 8)
         
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 19.945084327275357, 8)
-        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.2763862992903, 8)
-        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.8671294127902, 8)
-        self.assertAlmostEqual(rdms_test(es3_1rdm), 39.05984123369986, 8)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 8)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 8)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 8)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 8)
 
 
 if __name__ == "__main__":

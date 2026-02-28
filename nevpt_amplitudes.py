@@ -901,8 +901,8 @@ def compute_t1_0p_no_singles(nevpt, rdms):
     d_aip = (d_ai[:,None] + evals).reshape(nextern, ncore, -1)
 
     ## Level shift
-    if nevpt._0p_shift_type is not None:    
-        d_aip = add_level_shift(nevpt, nevpt._0p_shift_type, nevpt._0p_shift_epsilon, d_aip)
+    if nevpt.shift_type_0p is not None:    
+        d_aip = add_level_shift(nevpt, nevpt.shift_type_0p, d_aip)
     else:
         d_aip = d_aip**(-1)
         
@@ -1039,8 +1039,8 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
     d_ip = (-e_core[:,None] + evals)
 
     ## Level shift
-    if nevpt.p1p_shift_type is not None:    
-        d_ip = add_level_shift(nevpt, nevpt.p1p_shift_type, nevpt.p1p_shift_epsilon, d_ip)
+    if nevpt.shift_type_p1p is not None:    
+        d_ip = add_level_shift(nevpt, nevpt.shift_type_p1p, d_ip)
     else:
         d_ip = d_ip**(-1)
         
@@ -1171,8 +1171,8 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
     d_pa = (evals[:,None] + e_extern)
 
     ## Level shift
-    if nevpt.m1p_shift_type is not None:
-        d_pa = add_level_shift(nevpt, nevpt.m1p_shift_type, nevpt.m1p_shift_epsilon, d_pa)
+    if nevpt.shift_type_m1p is not None:
+        d_pa = add_level_shift(nevpt, nevpt.shift_type_m1p, d_pa)
     else:
         d_pa = d_pa**(-1)
 
@@ -1208,13 +1208,14 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
 
     return e_m1p, t1_aaae
         
-def add_level_shift(nevpt, ls_type, shift, d):
+def add_level_shift(nevpt, ls_type, d):
     '''
     ls_type: string, level shift type. Options: imaginary, real, DSRG
     t_type: string, amplitude class
     d: input unshifted denominator
     shift: float, level shift value
     '''
+    shift = nevpt.shift_epsilon
     if ls_type == 'imaginary':
         nevpt.log.info("shift_epsilon(imaginary) =", shift)
         epsilon = shift * np.ones(d.shape)
