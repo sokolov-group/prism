@@ -132,13 +132,13 @@ def osc_strength(nevpt, en, gs_index = 0):
     osc_total = []
     
     # Get 1rdms
-    rdm_mo = make_rdm1(nevpt, L = gs_index, type = 'tr')
+    rdm_mo = make_rdm1(nevpt, L = gs_index)
 
     for state in range(gs_index + 1, n_micro_states):
         # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[0,state])
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[0,state])
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[0,state])
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[gs_index,state])
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[gs_index,state])
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[gs_index,state])
         
         osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
         osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
@@ -194,11 +194,15 @@ def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
         "Consider loosening truncation thresholds."
     )
 
+    avail_types = ["all", "ss", "state-specific"]
+    if type not in avail_types:
+        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
+        
     # Initial rdm array
     rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], nmo, nmo))
     
     t1_ccee = t1_0
-
+    
     # Looping over states I,J
     for ind_I, I in enumerate(L_list):
         L_t1_caea = t1[I].caea
@@ -215,9 +219,6 @@ def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
             if type in ("ss", "state-specific") and I != J:
                 continue
 
-            if type in ("tr", "transition") and I == J:
-                continue
-            
             R_t1_caea = t1[J].caea
             R_t1_caae = t1[J].caae
             R_t1_caaa = t1[J].caaa
@@ -481,11 +482,13 @@ def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
                 if norm_check > 0.1:
                     nevpt.log.info(f"WARNING: {error_msg}")
         
+    # Single pair of states
     if L is not None and R is not None:
         rdm_final = rdm_final[0,0]
-    
-    elif type in ('ss', 'state-specific'):
-        # Extract diagonal
-        rdm_final = np.moveaxis(np.diagonal(rdm_final, axis1=0, axis2=1), -1, 0)
+        
+    # State-specific
+    if type in ("ss", "state-specific"):
+        rdm_final = np.diagonal(rdm_final, axis1=0, axis2=1)
+        rdm_final = np.moveaxis(rdm_final, -1, 0)
         
     return rdm_final

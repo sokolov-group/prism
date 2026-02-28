@@ -239,13 +239,13 @@ def osc_strength(nevpt, en, gs_index = 0):
     # List to store Osc. Strength Values
     osc_total = []
     
-    rdm_qd = make_rdm1(nevpt, L = gs_index, type = 'tr')
+    rdm_qd = make_rdm1(nevpt, L = gs_index)
 
     for state in range(gs_index + 1, n_micro_states):
         # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd[state])
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd[state])
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd[state])
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd[gs_index, state])
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd[gs_index, state])
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd[gs_index, state])
         
         osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
         osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
@@ -306,28 +306,34 @@ def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None, e
         R_list = np.array([R])
         if R > n_micro_states:
             raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
-
-    # Initial rdm array
+        
+    avail_types = ["all", "ss", "state-specific"]
+    if type not in avail_types:
+        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
+    
+    # Initial rdm array 
     rdm_final = np.zeros((evec.shape[1], evec.shape[1], nmo, nmo))
+    
+    # Compute model state 1RDM
     rdm_casci = nevpt2.make_rdm1(nevpt)
     
     # Compute qdnevpt2 1RDMS
     rdm_qd = einsum('Im,IJpq,Jn->mnpq', evec, rdm_casci, evec)
-
-    # Return conditions
-    if type in ("tr", "transition") and len(L_list) == 1:
-        L_ind = L_list[0]
-        rdm_final = rdm_qd[L_ind, :]
-
-    elif type in ("ss", "state-specific"):
-        rdm_final =  np.diagonal(rdm_qd, axis1=0, axis2=1)
-        
-    elif L is not None and R is not None:
+    
+    # Store in rdm_final
+    for L_ind in L_list:
+        for R_ind in R_list:
+            rdm_final[L_ind, R_ind, :, :] = rdm_qd[L_ind, R_ind, :, :]
+    
+    # Single pair of states      
+    if L is not None and R is not None:
         rdm_final = rdm_final[L,R]
-         
-    else:
-        rdm_final = rdm_qd
-
+        
+    # State-specific
+    if type in ("ss", "state-specific"):
+        rdm_final = np.diagonal(rdm_final, axis1=0, axis2=1)
+        rdm_final = np.moveaxis(rdm_final, -1, 0)
+        
     return rdm_final
 
 

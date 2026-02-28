@@ -23,7 +23,6 @@ mol.atom = [
             ['H', (0.0,   x,   y)]]
 
 mol.basis = 'aug-cc-pvdz'
-mol.symmetry = False
 mol.verbose = 4
 mol.build()
 
@@ -78,7 +77,9 @@ rdms = nevpt.make_rdm1(type = "ss")
 gs_1rdm = rdms[0]
 
 # Extract ES 1RDMS
-es_1rdms = rdms[1:]
+es1_1rdm = rdms[1]
+es2_1rdm = rdms[2]
+es3_1rdm = rdms[3]
 
 # Transition 1RDM 1 -> 3
 tr_1rdm = nevpt.make_rdm1(L = 0, R = 2) #Root 0 indexing
@@ -86,9 +87,9 @@ tr_1rdm = nevpt.make_rdm1(L = 0, R = 2) #Root 0 indexing
 # Compute dipoles
 ref_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, gs_1rdm) + nucl_dip
 
-es1_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es_1rdms[0]) + nucl_dip
-es2_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es_1rdms[1]) + nucl_dip
-es3_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es_1rdms[2]) + nucl_dip
+es1_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es1_1rdm) + nucl_dip
+es2_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es2_1rdm) + nucl_dip
+es3_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, es3_1rdm) + nucl_dip
 
 tot_es_dip = [es1_dip, es2_dip, es3_dip]
 

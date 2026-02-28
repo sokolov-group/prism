@@ -109,5 +109,5 @@ class KnownValues(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print("NEVPT2 test")
+    print("QD-NEVPT2 test")
     unittest.main()

@@ -1210,23 +1210,19 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
         
 def add_level_shift(nevpt, ls_type, d):
     '''
-    ls_type: string, level shift type. Options: imaginary, real, DSRG
-    t_type: string, amplitude class
     d: input unshifted denominator
     shift: float, level shift value
     '''
     shift = nevpt.shift_epsilon
     if ls_type == 'imaginary':
-        nevpt.log.info("shift_epsilon(imaginary) =", shift)
+        nevpt.log.info("shift_epsilon(imaginary) = %s" % shift)
         epsilon = shift * np.ones(d.shape)
         d = d / (d**2 + epsilon**2)
-        nevpt.log.info("smallest Denominator(shift):", np.min(np.abs(1/d)))
         
     elif ls_type == 'DSRG':
-        nevpt.log.info("shift_epsilon(DSRG) =", shift)
+        nevpt.log.info("shift_epsilon(DSRG) = %s" % shift)
         flow = shift**(-2) * np.ones(d.shape)
         factor =  np.ones(d.shape) - np.exp(-flow * (d)**2)
         d = (factor) / d
-        nevpt.log.info("smallest Denominator(shift):", np.min(np.abs(1/d)))
         
     return d
