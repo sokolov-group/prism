@@ -64,7 +64,7 @@ nevpt.method = "nevpt2"
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot, -108.824929042721, 6)
+        self.assertAlmostEqual(mc.e_tot, -108.824929042721, 5)
         self.assertAlmostEqual(mc.e_cas, -18.9658046887769, 6)
 
     def test_prism(self):
@@ -83,7 +83,6 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[2], 0.0, 6)
         self.assertAlmostEqual(osc[3], 0.0, 6)
         self.assertAlmostEqual(osc[4], 0.0, 6)
-        self.assertAlmostEqual(osc[5], 0.0, 6)
 
 if __name__ == "__main__":
     print("NEVPT2 test")

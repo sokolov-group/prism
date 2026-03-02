@@ -19,7 +19,8 @@
 
 import prism.nevpt_integrals as nevpt_integrals
 import prism.nevpt_compute as nevpt_compute
-
+import prism.nevpt2 as nevpt2
+import prism.qd_nevpt2 as qdnevpt2
 class NEVPT:
     def __init__(self, interface):
 
@@ -72,10 +73,16 @@ class NEVPT:
         self.semi_internal_projector = "gno"      # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
         self.s_thresh_singles = 1e-8
         self.s_thresh_doubles = 1e-8
+        
+        self.shift_type_p1p = None                # Possible shift types: imaginary, DSRG
+        self.shift_type_m1p = None                
+        self.shift_type_0p = None
+        
+        self.shift_epsilon = 0.01                 # Level shift value, default 0.01 Hartree
 
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
-
-        self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk
+        
+        self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk   
 
         # Integrals
         self.mo_energy = lambda:None
@@ -84,7 +91,25 @@ class NEVPT:
 
         self.mo_energy.c = interface.mo_energy[:self.ncore]
         self.mo_energy.e = interface.mo_energy[self.nocc:]
+        
+        # Correlated 1rdm
+        self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
+        
+        # Amplitudes
+        self.t1 = None
+        self.t1_0 = None 
+        self.keep_amplitudes = False
+        
+        #Eigenvectors
+        self.h_evec = None
+        
+        if self.method == "nevpt2":
+            make_rdm1 = nevpt2.make_rdm1
+        else:
+            make_rdm1 = qdnevpt2.make_rdm1
 
+        self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
+            
     def kernel(self):
 
         log = self.log
@@ -105,7 +130,21 @@ class NEVPT:
             msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
             log.error(msg)
             raise Exception(msg)
+        
+        if self.rdm_order not in [0,2]:
+             raise ValueError(f"Invalid {'rdm_order'}: '{self.rdm_order}'. Available options are {0,2}.")
+         
+        avail_shifts = ['imaginary', 'DSRG']
+        
+        if self.shift_type_m1p is not None and self.shift_type_m1p not in avail_shifts:
+            raise ValueError(f"Invalid {'shift_type_m1p'}: '{self.shift_type_m1p}'. Available options are {avail_shifts}.")
 
+        if self.shift_type_p1p is not None and self.shift_type_p1p not in avail_shifts:
+            raise ValueError(f"Invalid {'shift_type_p1p'}: '{self.shift_type_p1p}'. Available options are {avail_shifts}.")
+        
+        if self.shift_type_0p is not None and self.shift_type_0p not in avail_shifts:
+            raise ValueError(f"Invalid {'shift_type_0p'}: '{self.shift_type_0p}'. Available options are {avail_shifts}.")
+        
         # Transform one- and two-electron integrals
         log.info("\nTransforming integrals to MO basis...")
         nevpt_integrals.transform_integrals_1e(self)
@@ -119,6 +158,10 @@ class NEVPT:
         # Run NEVPT computation
         e_tot, e_corr, osc = nevpt_compute.kernel(self)
 
+        if self.keep_amplitudes is False:
+            del(self.t1)
+            del(self.t1_0)
+            
         return e_tot, e_corr, osc
 
     @property

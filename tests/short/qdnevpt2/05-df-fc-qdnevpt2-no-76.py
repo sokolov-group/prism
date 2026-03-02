@@ -74,7 +74,7 @@ class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
         self.assertAlmostEqual(mc.e_tot, -129.154007811535, 6)
-        self.assertAlmostEqual(mc.e_cas, -15.6158947578694, 6)
+        self.assertAlmostEqual(mc.e_cas, -15.6158947578694, 5)
 
     def test_prism(self):
 

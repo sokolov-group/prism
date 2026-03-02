@@ -70,7 +70,7 @@ def kernel(nevpt):
     e_corr = []
     mstate = 0
     osc_str = None
-
+    
     e_0 = 0.0
     t1_0 = None
     t1 = []
@@ -81,7 +81,7 @@ def kernel(nevpt):
         e_0, t1_0 = nevpt_amplitudes.compute_t1_0(nevpt)
     else:
         t1_0 = np.zeros((ncore, ncore, nevpt.nextern, nevpt.nextern))
-
+    
     for state in range(n_states):
         deg = nevpt.ref_wfn_deg[state]
 
@@ -105,35 +105,45 @@ def kernel(nevpt):
 
         e_corr.append(e_corr_state)
         e_tot.append(e_tot_state)
-
+        
         if nevpt.method == "qd-nevpt2":
             t1.append(t1_state)
+        elif nevpt.method == "nevpt2" and n_states > 1:
+            t1.append(t1_state)
         else:
+            nevpt.t1 = [t1_state] # single-state 
             del (t1_state)
 
         del (rdms)
 
         mstate += deg
-
+         
     # Quasidegenerate NEVPT2 calculation
     if nevpt.method == "qd-nevpt2":
         nevpt.log.info("\nComputing the QD-NEVPT2 effective Hamiltonian...")
 
         # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
         e_tot, h_evec = qd_nevpt2.compute_energy(nevpt, e_tot, t1, t1_0)
-
+        nevpt.h_evec = h_evec
+         
         # Update correlation energies
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
+    
+    # Store amplitudes in nevpt class
+    if n_states > 1:
+        nevpt.t1 = t1
 
-        del (t1)
+    del(t1)
+        
+    nevpt.t1_0 = t1_0
 
-    del (t1_0)
+    del(t1_0)
 
     if n_states > 1:
         # Get Oscillator Strengths
         if nevpt.method == "qd-nevpt2":
-            osc_str = qd_nevpt2.osc_strength(nevpt, e_tot, h_evec)
+            osc_str = qd_nevpt2.osc_strength(nevpt, e_tot)
         else:
             osc_str = nevpt2.osc_strength(nevpt, e_tot)
 
@@ -147,9 +157,9 @@ def kernel(nevpt):
 
         nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method.upper(), nevpt.interface.reference.upper()))
 
-        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
-        nevpt.log.info("  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. ")
-        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
+        nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
 
         e_gs = e_tot[0]
 
@@ -163,14 +173,23 @@ def kernel(nevpt):
                 de_nm = 10000000 / de_cm
                 nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), spin_mult[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
 
-        nevpt.log.info("-----------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("----------------------------------------------------------------------------------------------------------------")
     
-    if nevpt.verbose >= 5:
-        print_osc_str(nevpt, e_tot, osc_str)
-    
+        if nevpt.verbose >= 5:
+            osc_str_full = osc_str
+            # Compute all transitions starting from each state
+            for gs_index in range(1, len(e_tot)):  
+                if nevpt.method == "qd-nevpt2":
+                    osc_str_full.extend(qd_nevpt2.osc_strength(nevpt, e_tot, gs_index))
+                else:
+                    osc_str_full.extend(nevpt2.osc_strength(nevpt, e_tot, gs_index))
+
+            print_osc_str(nevpt, e_tot, osc_str_full)
+
+        
     sys.stdout.flush()
     nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
-    
+     
     return e_tot, e_corr, osc_str
 
 def print_osc_str(nevpt, e_tot, osc_str):
@@ -182,9 +201,11 @@ def print_osc_str(nevpt, e_tot, osc_str):
     transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
     osc_val = [[] for _ in range(num_states - 1)] 
     
+    index = 0
     for i in range(num_states - 1):
         for j in range(i + 1, num_states):
-            f_ij = osc_str[j - i - 1]
+            f_ij = osc_str[index]
+            index += 1
             osc_val.append(f_ij)
             
             f_val_str = f"{f_ij:.8f}"

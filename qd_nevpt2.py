@@ -21,6 +21,8 @@ from functools import reduce
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
+import prism.nevpt_amplitudes as nevpt_amplitudes
+import prism.nevpt2 as nevpt2
 
 def compute_energy(nevpt, e_diag, t1, t1_0):
 
@@ -222,14 +224,11 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
     return h_eval, h_evec
 
 
-def osc_strength(nevpt, en, evec, gs_index = 0):
+def osc_strength(nevpt, en, gs_index = 0):
 
-    ncore = nevpt.ncore 
     n_micro_states = sum(nevpt.ref_wfn_deg)
     dip_mom_ao = nevpt.interface.dip_mom_ao
     mo_coeff = nevpt.mo
-    nmo = nevpt.nmo
-    ncas = nevpt.ncas
 
     dip_mom_mo = np.zeros_like(dip_mom_ao)
 
@@ -239,34 +238,19 @@ def osc_strength(nevpt, en, evec, gs_index = 0):
 
     # List to store Osc. Strength Values
     osc_total = []
+    
+    rdm_qd = make_rdm1(nevpt, L = gs_index)
 
-    # Looping over CAS States
     for state in range(gs_index + 1, n_micro_states):
-        # Reset final transformed RDM
-        rdm_qd = np.zeros((nmo, nmo))
-
-        # Looping over states I,J
-        for I in range(n_micro_states):
-            for J in range(n_micro_states):
-                rdm_mo = np.zeros((nmo, nmo))  # Reset RDM in MO Basis   
-                trdm_ca = nevpt.interface.compute_rdm1(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
-                rdm_mo[ncore:ncore + ncas ,ncore:ncore + ncas] = trdm_ca
-
-                if I == J:
-                    rdm_mo[:ncore, :ncore] = 2 * np.eye(nevpt.ncore)
-                    rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
-                else:
-                    rdm_qd += np.conj(evec)[I, state] * rdm_mo * evec[J, gs_index]
-
         # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
- 
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd[gs_index, state])
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd[gs_index, state])
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd[gs_index, state])
+        
         osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
         osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
         osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
-
+        
         # Add Dipole Moment Components
         osc_total.append((osc_x + osc_y + osc_z).real)
 
@@ -283,4 +267,74 @@ def determine_spin_mult(nevpt, evec):
         spin_mult_new.append(spin_mult_old[index])
 
     return spin_mult_new
+
+
+def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None, evec = None):
+
+    if evec is None: 
+        evec = nevpt.h_evec
+        
+    n_micro_states = sum(nevpt.ref_wfn_deg)
+    einsum = nevpt.interface.einsum
+    
+    einsum_type = nevpt.interface.einsum_type
+    nmo = nevpt.nmo
+
+    if t1 is None:
+        t1 = nevpt.t1
+    
+    if t1_0 is None:
+        t1_0 = nevpt.t1_0
+
+    L_states = 0
+    R_states = 0
+    L_list = None
+    R_list = None
+
+    if L is None:
+        L_states = n_micro_states
+        L_list = np.arange(L_states)
+    else:
+        L_list = np.array([L])
+        if L > n_micro_states:
+            raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
+
+    if R is None:
+        R_states = n_micro_states
+        R_list = np.arange(R_states)
+    else:
+        R_list = np.array([R])
+        if R > n_micro_states:
+            raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
+        
+    avail_types = ["all", "ss", "state-specific"]
+    if type not in avail_types:
+        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
+    
+    # Initial rdm array 
+    rdm_final = np.zeros((evec.shape[1], evec.shape[1], nmo, nmo))
+    
+    # Compute model state 1RDM
+    rdm_casci = nevpt2.make_rdm1(nevpt)
+    
+    # Compute qdnevpt2 1RDMS
+    rdm_qd = einsum('Im,IJpq,Jn->mnpq', evec, rdm_casci, evec)
+    
+    # Store in rdm_final
+    for L_ind in L_list:
+        for R_ind in R_list:
+            rdm_final[L_ind, R_ind, :, :] = rdm_qd[L_ind, R_ind, :, :]
+    
+    # Single pair of states      
+    if L is not None and R is not None:
+        rdm_final = rdm_final[L,R]
+        
+    # State-specific
+    if type in ("ss", "state-specific"):
+        rdm_final = np.diagonal(rdm_final, axis1=0, axis2=1)
+        rdm_final = np.moveaxis(rdm_final, -1, 0)
+        
+    return rdm_final
+
+
 

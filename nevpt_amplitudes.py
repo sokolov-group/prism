@@ -899,8 +899,13 @@ def compute_t1_0p_no_singles(nevpt, rdms):
     ## Compute denominators
     d_ai = (e_extern[:,None] - e_core).reshape(-1)
     d_aip = (d_ai[:,None] + evals).reshape(nextern, ncore, -1)
-    d_aip = d_aip**(-1)
 
+    ## Level shift
+    if nevpt.shift_type_0p is not None:    
+        d_aip = add_level_shift(nevpt, nevpt.shift_type_0p, d_aip)
+    else:
+        d_aip = d_aip**(-1)
+        
     # Compute T[0'] amplitudes
     S_12_V_0p = einsum("iaP,Pm->iam", V_0p, S_0p_12_inv_act, optimize = einsum_type)
     S_12_V_0p = einsum("mp,iam->iap", evecs, S_12_V_0p, optimize = einsum_type)
@@ -1032,8 +1037,13 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
 
     ## Compute denominators
     d_ip = (-e_core[:,None] + evals)
-    d_ip = d_ip**(-1)
 
+    ## Level shift
+    if nevpt.shift_type_p1p is not None:    
+        d_ip = add_level_shift(nevpt, nevpt.shift_type_p1p, d_ip)
+    else:
+        d_ip = d_ip**(-1)
+        
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
@@ -1159,7 +1169,12 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
 
     ## Compute denominators
     d_pa = (evals[:,None] + e_extern)
-    d_pa = d_pa**(-1)
+
+    ## Level shift
+    if nevpt.shift_type_m1p is not None:
+        d_pa = add_level_shift(nevpt, nevpt.shift_type_m1p, d_pa)
+    else:
+        d_pa = d_pa**(-1)
 
     # Compute T[-1'] amplitudes
     S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
@@ -1192,3 +1207,22 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
     nevpt.log.timer("computing T[-1']^(1) amplitudes", *cput0)
 
     return e_m1p, t1_aaae
+        
+def add_level_shift(nevpt, ls_type, d):
+    '''
+    d: input unshifted denominator
+    shift: float, level shift value
+    '''
+    shift = nevpt.shift_epsilon
+    if ls_type == 'imaginary':
+        nevpt.log.info("shift_epsilon(imaginary) = %s" % shift)
+        epsilon = shift * np.ones(d.shape)
+        d = d / (d**2 + epsilon**2)
+        
+    elif ls_type == 'DSRG':
+        nevpt.log.info("shift_epsilon(DSRG) = %s" % shift)
+        flow = shift**(-2) * np.ones(d.shape)
+        factor =  np.ones(d.shape) - np.exp(-flow * (d)**2)
+        d = (factor) / d
+        
+    return d
