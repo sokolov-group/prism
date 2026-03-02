@@ -1,0 +1,6 @@
+[submodule "external"]
+	path = external
+	url = https://github.com/xubwa/socutils.git
+[submodule "socutils"]
+	path = socutils
+	url = https://github.com/xubwa/socutils.git

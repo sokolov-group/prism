@@ -125,7 +125,8 @@ def kernel(nevpt):
         # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
         e_tot, h_evec = qd_nevpt2.compute_energy(nevpt, e_tot, t1, t1_0)
         nevpt.h_evec = h_evec
-         
+        nevpt.en = e_tot
+        
         # Update correlation energies
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
@@ -145,12 +146,27 @@ def kernel(nevpt):
         if nevpt.method == "qd-nevpt2":
             osc_str = qd_nevpt2.osc_strength(nevpt, e_tot)
         else:
-            osc_str = nevpt2.osc_strength(nevpt, e_tot)
+            evec =  h_evec
+
+        #wfn = np.einsum('ij,iab->jab',h_evec,nevpt.ref_wfn)
+        #wfn = list(wfn)
+        #rdm_mo = np.zeros((n_states,n_states,nevpt.nmo, nevpt.nmo), dtype='complex')
+        #for I in range(n_states):
+        #    for J in range(n_states): 
+        #        rdm_ca = nevpt.interface.compute_rdm1(wfn[I], wfn[J], nevpt.ref_nelecas[I])
+        #        rdm_mo[I,J,nevpt.ncore:nevpt.ncore + nevpt.ncas ,nevpt.ncore:nevpt.ncore + nevpt.ncas] = rdm_ca
+        #    if I == J:
+        #        rdm_mo[I,J,:nevpt.ncore, :nevpt.ncore] = 2 * np.eye(nevpt.ncore)
+        #
+        #osc_str = nevpt.interface.osc_strength_general(e_tot, rdm_mo)
 
         # Update spin multiplicity
         spin_mult = nevpt.ref_wfn_spin_mult
         if nevpt.method == "qd-nevpt2":
             spin_mult = qd_nevpt2.determine_spin_mult(nevpt, h_evec)
+        
+        #SOC calculation requires method's spin multiplicity
+        nevpt.spin_mult = spin_mult
 
         h2ev = nevpt.interface.hartree_to_ev
         h2cm = nevpt.interface.hartree_to_inv_cm
