@@ -10,7 +10,6 @@ dot = numpy.dot
 asarray = numpy.asarray
 
 ##TODO: create attribute for user defined flop threshold
-#FLOP_THRESHOLD = 1e4
 FLOP_THRESHOLD = 5e6
 
 # Interface flags
@@ -44,8 +43,6 @@ else:
 try:
     if EINSUM_BACKEND == "pytblis":
         import pytblis
-        ## TODO: fine tune values for thread control
-        pytblis.set_num_threads(8)
     elif EINSUM_BACKEND == "opt_einsum":
         import opt_einsum
 except Exception:
