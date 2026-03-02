@@ -21,8 +21,6 @@ import prism.nevpt_integrals as nevpt_integrals
 import prism.nevpt_compute as nevpt_compute
 import prism.nevpt2 as nevpt2
 import prism.qd_nevpt2 as qdnevpt2
-import numpy as np
-
 class NEVPT:
     def __init__(self, interface):
 

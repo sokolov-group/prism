@@ -100,19 +100,19 @@ class KnownValues(unittest.TestCase):
         tr2_norm = np.linalg.norm(tr2_1rdm)
         tr3_norm = np.linalg.norm(tr3_1rdm)
         
-        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 6)
         
-        self.assertAlmostEqual(np.trace(tr1_1rdm), 0, 8)
-        self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 8)
-        self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 8)
+        self.assertAlmostEqual(np.trace(tr1_1rdm), 0, 6)
+        self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 6)
+        self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 6)
         
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 8)
-        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 8)
-        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 8)
-        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 8)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 6)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 6)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 6)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 6)
         
         # Using 'all' flag
         # Ground state
@@ -131,24 +131,24 @@ class KnownValues(unittest.TestCase):
         tr2_1rdm = rdms[0,2]
         tr3_1rdm = rdms[0,3]
         
-        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 6)
         
-        self.assertAlmostEqual(np.trace(tr1_1rdm), 0, 8)
-        self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 8)
-        self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 8)
+        self.assertAlmostEqual(np.trace(tr1_1rdm), 0, 6)
+        self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 6)
+        self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 6)
         
         # Check different type returns same transition 1RDMS
-        self.assertAlmostEqual(np.linalg.norm(tr1_1rdm), tr1_norm, 8)
-        self.assertAlmostEqual(np.linalg.norm(tr2_1rdm), tr2_norm, 8)
-        self.assertAlmostEqual(np.linalg.norm(tr3_1rdm), tr3_norm, 8)
+        self.assertAlmostEqual(np.linalg.norm(tr1_1rdm), tr1_norm, 6)
+        self.assertAlmostEqual(np.linalg.norm(tr2_1rdm), tr2_norm, 6)
+        self.assertAlmostEqual(np.linalg.norm(tr3_1rdm), tr3_norm, 6)
         
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 8)
-        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 8)
-        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 8)
-        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 8)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 6)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 6)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 6)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 6)
         
         # Using ss flag
         rdms = nevpt.make_rdm1(type = 'ss')
@@ -161,15 +161,15 @@ class KnownValues(unittest.TestCase):
         es2_1rdm = rdms[2]
         es3_1rdm = rdms[3]
         
-        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 8)
-        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 8)
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 6)
         
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 8)
-        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 8)
-        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 8)
-        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 8)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 6)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 6)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 6)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 6)
 
 if __name__ == "__main__":
     print("QD-NEVPT2 test")

@@ -234,12 +234,13 @@ def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
 
             if I == J:
                 #uncorrelated diagonal terms
-                rdm_final[ind_I, ind_J, :ncore, :ncore] = 2 * np.identity(ncore)
-
-            rdm_corr = np.zeros((nmo, nmo))
+                rdm_final[ind_I, ind_J, :ncore, :ncore] = 2 * np.identity(ncore)    
 
             if nevpt.rdm_order == 2:
-
+                
+                # Initial rdm array for correlated contributions
+                rdm_corr = np.zeros((nmo, nmo))
+                
                 # DIAGS #
                 if I == J:
                     # CORE-CORE #

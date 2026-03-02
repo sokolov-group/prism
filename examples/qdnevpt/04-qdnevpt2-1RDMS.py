@@ -111,7 +111,7 @@ print(f"    Z: {ref_dip[2]:15.6e}")
 print(hline)
 
 for es in range(len(tot_es_dip)):
-    print("Excited state 1 dipole moment (a.u.):")
+    print(f"Excited state {es + 1} dipole moment (a.u.):")
     print(f"    X: {tot_es_dip[es][0]:15.6e}")
     print(f"    Y: {tot_es_dip[es][1]:15.6e}")
     print(f"    Z: {tot_es_dip[es][2]:15.6e}")
