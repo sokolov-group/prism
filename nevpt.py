@@ -118,16 +118,16 @@ class NEVPT:
         self.soc_order = 1
         self.interface.uncontract = self.uncontract
         self.interface.soc_order = self.soc_order
-        self.evec = None
+        #self.evec = None
         self.en = None
         self.spin_mult = None
         self.gtensor = False
         self.origin_type = 'charge'
 
         #For SOC in temporary
-        self.ncasci = None
-        self.rdm_so = lambda:None
-        self.h_soc = None
+        #self.ncasci = None
+        #self.rdm_so = lambda:None
+        #self.h_soc = None
 
     def kernel(self):
 
@@ -227,7 +227,10 @@ class NEVPT:
           en = self.en
 
           print("Time for computing RDM_aa,bb:                    %f sec\n" % (time.time() - start_time))
-          en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf  = general_somf.generalSOC(self.interface, en, rdm, S, ms)
+
+          rdm_test = nevpt2.make_rdm1s(self)
+
+          en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf  = general_somf.generalSOC(self.interface, en, rdm_test, S, ms)
           
           #rdm_mo = rdm[0] + rdm[1]
           #I_evec_soc = []
@@ -242,7 +245,7 @@ class NEVPT:
           if self.gtensor is True:
             general_somf.gtensor_general(self.interface,evec_soc,rdm, S_total, I_total,origin_type=self.origin_type)
         
-        return e_tot, e_corr, osc , en_soc, evec_soc, rdm, S_total, I_total,HSOC, H_sf
+        return e_tot, e_corr, osc 
 
     @property
     def verbose(self):

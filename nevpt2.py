@@ -26,6 +26,7 @@ import prism.nevpt_amplitudes as nevpt_amplitudes
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
+from pyscf.fci.direct_spin1 import trans_rdm1s
 
 def compute_energy(nevpt, rdms, e_0 = None):
 
@@ -491,5 +492,104 @@ def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     if type in ("ss", "state-specific"):
         rdm_final = np.diagonal(rdm_final, axis1=0, axis2=1)
         rdm_final = np.moveaxis(rdm_final, -1, 0)
+        
+    return rdm_final
+
+def make_rdm1s(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
+    ncore = nevpt.ncore
+    ncas = nevpt.ncas
+    nextern = nevpt.nextern
+    n_micro_states = sum(nevpt.ref_wfn_deg)
+    einsum = nevpt.interface.einsum
+    
+    einsum_type = nevpt.interface.einsum_type
+    nmo = nevpt.nmo
+
+    #if t1 is None:
+    #    t1 = nevpt.t1
+    
+    #if t1_0 is None:
+    #    t1_0 = nevpt.t1_0
+
+    L_states = 0
+    R_states = 0
+    L_list = None
+    R_list = None
+
+    if L is None:
+        L_states = n_micro_states
+        L_list = np.arange(L_states)
+    else:
+        L_list = np.array([L])
+        if L > n_micro_states:
+            raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
+
+    if R is None:
+        R_states = n_micro_states
+        R_list = np.arange(R_states)
+        
+    else:
+        R_list = np.array([R])
+        if R > n_micro_states:
+            raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
+
+    error_msg = (
+        f"Instability detected in correlated 1RDM. "
+        "Consider loosening truncation thresholds."
+    )
+
+    avail_types = ["all", "ss", "state-specific"]
+    if type not in avail_types:
+        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
+        
+    # Initial rdm array
+    rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], nmo, nmo))
+    
+    #NEVPT's wfn
+    wfn = np.einsum('ij,iab->jab',nevpt.h_evec,nevpt.ref_wfn)
+    wfn = list(wfn)
+    
+    
+    # Looping over states I,J
+    for ind_I, I in enumerate(L_list):
+ 
+            
+        for ind_J, J in enumerate(R_list): 
+            
+            if type in ("ss", "state-specific") and I != J:
+                continue
+
+
+            tmprdm_aabb = trans_rdm1s(wfn[J], wfn[I], nevpt.ncas, nevpt.ref_nelecas[ind_I])
+            rdm_final[0, ind_I, ind_J, nevpt.ncore:nevpt.ncore+nevpt.ncas, nevpt.ncore:nevpt.ncore+nevpt.ncas] = tmprdm_aabb[0]
+            rdm_final[1, ind_I, ind_J, nevpt.ncore:nevpt.ncore+nevpt.ncas, nevpt.ncore:nevpt.ncore+nevpt.ncas] = tmprdm_aabb[1]            
+
+
+            if I == J:
+                #uncorrelated diagonal terms
+                rdm_final[:,ind_I, ind_J, :ncore, :ncore] =   np.identity(ncore)    
+
+            if nevpt.rdm_order == 2:
+                raise ValueError(f"Invalid type: corelation not implement in SOC. ")
+                
+
+                
+   
+                    
+                
+                    
+  
+        
+    # Single pair of states
+    if L is not None and R is not None:
+        rdm_final = rdm_final[:,0,0]
+        
+    # State-specific
+    if type in ("ss", "state-specific"):
+        rdm_final[0] = np.diagonal(rdm_final[0], axis1=0, axis2=1)
+        rdm_final[0] = np.moveaxis(rdm_final[0], -1, 0)
+
+        rdm_final[1] = np.diagonal(rdm_final[1], axis1=0, axis2=1)
+        rdm_final[1] = np.moveaxis(rdm_final[1], -1, 0)
         
     return rdm_final

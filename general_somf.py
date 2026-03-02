@@ -180,7 +180,7 @@ def generalSOC(interface, en, rdm, S, ms):
     HSOC_time = time.time()
 
     #calculate Osc Str
-    osc_str = interface.osc_strength_general(en_soc,rdm[0]+rdm[1], (I_total,evec_soc))
+    osc_str = osc_strength_general(interface,en_soc,rdm[0]+rdm[1], (I_total,evec_soc))
 
     str_time = time.time()
 
@@ -216,49 +216,55 @@ def generalSOC(interface, en, rdm, S, ms):
     print("-----------------------------------------------------------------------------------------------------------------")
     return en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf
 
-#def osc_strength_soc(interface, en_soc, evec_soc, rdm,  I_total, gs_index = 0):
-#
-#   ncore = interface.ncore 
-#   n_states = len(rdm[0,0])
-#   n_micro_states = len(en_soc)
-#   dip_mom_ao = interface.dip_mom_ao
-#   mo_coeff = interface.mo
-#   nmo = interface.nmo
-#   ncas = interface.ncas
-#   dip_mom_mo = np.zeros_like(dip_mom_ao)
-#
-#   # Transform dipole moments from AO to MO basis
-#   for d in range(dip_mom_ao.shape[0]):
-#       dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
-#
-#   # List to store Osc. Strength Values
-#   osc_total = []
-#   # Looping over CAS States
-#   for state in range(gs_index + 1, n_micro_states):
-#       # Reset final transformed RDM
-#       rdm_qd = np.zeros((nmo, nmo),dtype='complex')
-#
-#       # Looping over states I,J
-#       for I in range(n_micro_states):
-#           for J in range(n_micro_states):
-#               i = I_total[I]
-#               j = I_total[J]
-#               rdm_mo = rdm[0,i,j] + rdm[1,i,j]
-#               rdm_qd += np.conj(evec_soc)[I, state] * rdm_mo * evec_soc[J, gs_index]
-#
-#       # Create Dipole Moment Operator with RDM
-#       dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
-#       dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
-#       dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
-#
-#       osc_x = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
-#       osc_y = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
-#       osc_z = ((2/3)*(en_soc[state] - en_soc[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
-#
-#       # Add Dipole Moment Components
-#       osc_total.append((osc_x + osc_y + osc_z).real)
-#
-#   return osc_total
+def osc_strength_general(interface, en, rdm_mo, I_evec_soc=None, gs_index = 0):
+        ncore = interface.ncore 
+        dip_mom_ao = interface.dip_mom_ao
+        mo_coeff = interface.mo
+        nmo = interface.nmo
+        ncas = interface.ncas
+        dip_mom_mo = np.zeros_like(dip_mom_ao)
+        n_states = len(en)
+    
+        #If spin-free:
+        if I_evec_soc is None:
+            I_total=np.arange(n_states)
+            evec_soc = np.identity(n_states)
+        else:
+            I_total = I_evec_soc[0]
+            evec_soc = I_evec_soc[1]
+
+        # Transform dipole moments from AO to MO basis
+        for d in range(dip_mom_ao.shape[0]):
+            dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+
+        # List to store Osc. Strength Values
+        osc_total = []
+        # Looping over CAS States
+        for state in range(gs_index + 1, n_states):
+            # Reset final transformed RDM
+            rdm_qd = np.zeros((nmo, nmo),dtype='complex')
+
+            # Looping over states i,j    
+            for i in range(n_states):
+                for j in range(n_states):
+                    I = I_total[i]
+                    J = I_total[j]
+                    rdm_qd += np.conj(evec_soc)[i, state] * rdm_mo[I,J] * evec_soc[j, gs_index]
+
+            # Create Dipole Moment Operator with RDM
+            dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
+            dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
+            dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
+    
+            osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
+            osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
+            osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
+
+            # Add Dipole Moment Components
+            osc_total.append((osc_x + osc_y + osc_z).real)
+
+        return osc_total
+
             
 def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0,origin_type = 'charge'):
     print("Calculating g-tensor(general)...")
