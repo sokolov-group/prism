@@ -99,12 +99,12 @@ def getSOC_integrals(interface):
     return h_soc_total #hsocint
 
 
-def generalSOC(interface, en, rdm, S, ms):
+def generalSOC(interface, en, rdm_aabb, S, ms):
     print("\nSpin-Free Framework: Employ Wigner–Eckart’s theorem")
     print("Consider spin-orbit coupling effect...")
     nmo = interface.nmo
     soc = interface.soc
-    unc = interface.uncontract
+    #unc = interface.uncontract
     nstate = len(en)
 
     start_time = time.time()
@@ -115,7 +115,7 @@ def generalSOC(interface, en, rdm, S, ms):
             cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
             cg = float(cg)
             if np.abs(cg) > 1e-5:               
-                T_z = 1/np.sqrt(2) * (rdm[0,I,J] - rdm[1,I,J]) / cg
+                T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
                 rdm_wigner[I,J] = T_z 
             
     wiger_time = time.time()
@@ -180,10 +180,16 @@ def generalSOC(interface, en, rdm, S, ms):
     HSOC_time = time.time()
 
     #calculate Osc Str
-    osc_str = osc_strength_general(interface,en_soc,rdm[0]+rdm[1], (I_total,evec_soc))
+    rdm_sf = rdm_aabb[0] + rdm_aabb[1]
+    rdm_mo = np.zeros((nstate_total, nstate_total, nmo, nmo),dtype='complex')
+    for I in range(nstate_total):
+        for J in  range(nstate_total):
+            rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
+    rdm_mo_soc = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
+    osc_str =    nevpt2.osc_strength(interface, en_soc, rdm_mo_soc)      
+    
 
     str_time = time.time()
-
     print("\nTime for computing wiger_RDM: %f sec" % (wiger_time - start_time))
     print("Time for computing getSOC_integrals: %f sec" % (soc_int_time - wiger_time))
     print("Time for transform hsoc in sphereical coordinate: %f sec" % (soc_sphere_time - soc_int_time))
@@ -266,12 +272,12 @@ def osc_strength_general(interface, en, rdm_mo, I_evec_soc=None, gs_index = 0):
         return osc_total
 
             
-def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0,origin_type = 'charge'):
+def gtensor_general(interface, evec_soc, rdm_sf, S_total, I_total,target_index = 0,origin_type = 'charge'):
     print("Calculating g-tensor(general)...")
     mf = interface.mf
     mo = interface.mo
     ncore = interface.ncore 
-    n_states = len(rdm[0,0])
+    n_states = len(rdm_sf[0])
     n_micro_states = len(evec_soc)
     mo_coeff = interface.mo
     nmo = interface.nmo
@@ -359,7 +365,7 @@ def gtensor_general(interface, evec_soc, rdm, S_total, I_total,target_index = 0,
                     j = I_total[J]
 
                     rdm_mo = np.zeros((nmo, nmo),dtype='complex')  # Reset RDM in MO Basis   
-                    rdm_mo = rdm[0,i,j] + rdm[1,i,j]
+                    rdm_mo += rdm_sf[i,j]
 
                     l_mat[0,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[0])
                     l_mat[1,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[1])

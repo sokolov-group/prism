@@ -143,9 +143,11 @@ def kernel(nevpt):
     if n_states > 1:
         # Get Oscillator Strengths
         if nevpt.method == "qd-nevpt2":
-            osc_str = qd_nevpt2.osc_strength(nevpt, e_tot)
+            rdm_mo = qd_nevpt2.make_rdm1(nevpt, L = 0)
+            osc_str = nevpt2.osc_strength(nevpt.interface, e_tot, rdm_mo)
         else:
-            osc_str = nevpt2.osc_strength(nevpt, e_tot)
+            rdm_mo = nevpt2.make_rdm1(nevpt, L = 0)
+            osc_str = nevpt2.osc_strength(nevpt.interface, e_tot, rdm_mo)
 
         #wfn = np.einsum('ij,iab->jab',h_evec,nevpt.ref_wfn)
         #wfn = list(wfn)
@@ -195,9 +197,11 @@ def kernel(nevpt):
             # Compute all transitions starting from each state
             for gs_index in range(1, len(e_tot)):  
                 if nevpt.method == "qd-nevpt2":
-                    osc_str_full.extend(qd_nevpt2.osc_strength(nevpt, e_tot, gs_index))
+                    rdm_mo = qd_nevpt2.make_rdm1(nevpt, L = gs_index)
+                    osc_str_full.extend(nevpt2.osc_strength(nevpt.interface, e_tot, rdm_mo, gs_index))
                 else:
-                    osc_str_full.extend(nevpt2.osc_strength(nevpt, e_tot, gs_index))
+                    rdm_mo = nevpt2.make_rdm1(nevpt, L = gs_index)
+                    osc_str_full.extend(nevpt2.osc_strength(nevpt.interface, e_tot, rdm_mo, gs_index))
 
             print_osc_str(nevpt, e_tot, osc_str_full)
 

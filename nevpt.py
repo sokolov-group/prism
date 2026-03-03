@@ -247,7 +247,8 @@ class NEVPT:
 
 
           if self.gtensor is True:
-            general_somf.gtensor_general(self.interface,evec_soc,rdm_aabb, S_total, I_total,origin_type=self.origin_type)
+            rdm_sf = rdm_aabb[0] + rdm_aabb[1]
+            general_somf.gtensor_general(self.interface,evec_soc,rdm_sf, S_total, I_total,origin_type=self.origin_type)
         
         return e_tot, e_corr, osc 
 
