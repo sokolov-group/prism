@@ -548,8 +548,11 @@ def make_rdm1s(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], nmo, nmo))
     
     #NEVPT's wfn
-    wfn = np.einsum('ij,iab->jab',nevpt.h_evec,nevpt.ref_wfn)
-    wfn = list(wfn)
+    if nevpt.method == "qd-nevpt2":
+        wfn = np.einsum('ij,iab->jab',nevpt.h_evec,nevpt.ref_wfn)
+        wfn = list(wfn)
+    else:
+        wfn = list(nevpt.ref_wfn)
     
     
     # Looping over states I,J

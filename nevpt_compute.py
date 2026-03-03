@@ -125,7 +125,6 @@ def kernel(nevpt):
         # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
         e_tot, h_evec = qd_nevpt2.compute_energy(nevpt, e_tot, t1, t1_0)
         nevpt.h_evec = h_evec
-        nevpt.en = e_tot
         
         # Update correlation energies
         for state in range(n_states):

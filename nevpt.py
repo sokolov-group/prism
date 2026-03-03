@@ -176,6 +176,7 @@ class NEVPT:
 
         # Run NEVPT computation
         e_tot, e_corr, osc = nevpt_compute.kernel(self)
+        self.en = e_tot
 
         if self.keep_amplitudes is False:
             del(self.t1)
@@ -192,8 +193,11 @@ class NEVPT:
           import numpy as np
           print("\n \n \nInitialize SOC program...")
           # Rotate CAS Wavefunction:
-          wfn = np.einsum('ij,iab->jab',self.h_evec,self.ref_wfn)
-          wfn = list(wfn)
+          if self.method == "qd-nevpt2":
+              wfn = np.einsum('ij,iab->jab',self.h_evec,self.ref_wfn)
+              wfn = list(wfn)
+          else:
+              wfn = list(self.ref_wfn)
 
           # calculate method's S:
           from prism import qd_nevpt2
@@ -202,7 +206,7 @@ class NEVPT:
 
           # calculate method's Ms: 
           ms = []
-          nstate = len(wfn)
+          nstate = len(S)
           for I in range(nstate):
             sz = self.interface.apply_S_z(wfn[I],self.ncas,self.ref_nelecas[I])
             ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
@@ -211,26 +215,26 @@ class NEVPT:
 
           # calculate method's rdm_aa, rdm_bb:
           print("calculate rdm_aabb...")
-          from pyscf.fci.direct_spin1 import trans_rdm1s
-          rdm = np.zeros((2, nstate, nstate, self.nmo, self.nmo))
+          #from pyscf.fci.direct_spin1 import trans_rdm1s
+          #rdm = np.zeros((2, nstate, nstate, self.nmo, self.nmo))
           
-          for I in range(nstate):
-            for J in range(nstate):
-                tmprdm_aabb = trans_rdm1s(wfn[J], wfn[I], self.ncas, self.ref_nelecas[I])
-                rdm[0, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[0]
-                rdm[1, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[1]
+          #for I in range(nstate):
+          #  for J in range(nstate):
+          #      tmprdm_aabb = trans_rdm1s(wfn[J], wfn[I], self.ncas, self.ref_nelecas[I])
+          #      rdm[0, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[0]
+          #      rdm[1, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[1]
           
-          for I in range(nstate): 
-            rdm[:, I, I, : self.ncore, :self.ncore] += np.identity(self.ncore)
+          #for I in range(nstate): 
+          #  rdm[:, I, I, : self.ncore, :self.ncore] += np.identity(self.ncore)
 
           #generalSOC requires spin-free energy...
           en = self.en
 
           print("Time for computing RDM_aa,bb:                    %f sec\n" % (time.time() - start_time))
 
-          rdm_test = nevpt2.make_rdm1s(self)
+          rdm_aabb = nevpt2.make_rdm1s(self)
 
-          en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf  = general_somf.generalSOC(self.interface, en, rdm_test, S, ms)
+          en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf  = general_somf.generalSOC(self.interface, en, rdm_aabb, S, ms)
           
           #rdm_mo = rdm[0] + rdm[1]
           #I_evec_soc = []
@@ -243,7 +247,7 @@ class NEVPT:
 
 
           if self.gtensor is True:
-            general_somf.gtensor_general(self.interface,evec_soc,rdm, S_total, I_total,origin_type=self.origin_type)
+            general_somf.gtensor_general(self.interface,evec_soc,rdm_aabb, S_total, I_total,origin_type=self.origin_type)
         
         return e_tot, e_corr, osc 
 

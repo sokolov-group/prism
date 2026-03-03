@@ -65,7 +65,7 @@ nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-6
 nevpt.method = "nevpt2"
 nevpt.keep_amplitudes = True
-nevpt.verbose = 5
+
 # Correlated 1RDM
 nevpt.rdm_order = 2 
 

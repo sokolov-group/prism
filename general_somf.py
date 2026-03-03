@@ -56,7 +56,7 @@ def getSOC_integrals(interface):
         nbasis = xmol.nao_nr()
         hsocint = np.zeros((3, nbasis, nbasis))
  
-        hsocint = np.zeros((3, nbasis, nbasis))
+        #hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_wso(xmol) #, unc=False)
         hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
 
@@ -66,7 +66,7 @@ def getSOC_integrals(interface):
         hsocint = np.zeros((3, nbasis, nbasis))
  
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-        hsocint = np.zeros((3, nbasis, nbasis))
+        #hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
     
@@ -76,7 +76,7 @@ def getSOC_integrals(interface):
         hsocint = np.zeros((3, nbasis, nbasis))
         
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-        hsocint = np.zeros((3, nbasis, nbasis))
+        #hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint += prefactor * get_hso1e_x2c2(xmol) 
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
