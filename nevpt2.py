@@ -23,6 +23,7 @@ from functools import reduce
 import prism.nevpt_intermediates as nevpt_intermediates
 import prism.nevpt_overlap as nevpt_overlap
 import prism.nevpt_amplitudes as nevpt_amplitudes
+import prism.qd_nevpt2 as qd_nevpt2
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -131,9 +132,10 @@ def osc_strength(nevpt, en, gs_index = 0):
 
     # List to store Osc. Strength Values
     osc_total = []
-    
+
     # Get 1rdms
     rdm_mo = make_rdm1(nevpt, L = gs_index)
+    #rdm_qd = qd_nevpt2.make_rdm1(nevpt, L = gs_index)
 
     for state in range(gs_index + 1, n_micro_states):
         # Create Dipole Moment Operator with RDM

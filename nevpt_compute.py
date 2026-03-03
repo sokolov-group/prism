@@ -146,7 +146,7 @@ def kernel(nevpt):
         if nevpt.method == "qd-nevpt2":
             osc_str = qd_nevpt2.osc_strength(nevpt, e_tot)
         else:
-            evec =  h_evec
+            osc_str = nevpt2.osc_strength(nevpt, e_tot)
 
         #wfn = np.einsum('ij,iab->jab',h_evec,nevpt.ref_wfn)
         #wfn = list(wfn)
