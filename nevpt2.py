@@ -139,9 +139,9 @@ def osc_strength(nevpt, en, gs_index = 0):
 
     for state in range(gs_index + 1, n_micro_states):
         # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[gs_index,state])
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[gs_index,state])
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[gs_index,state])
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[0, state])
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[0, state])
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[0, state])
         
         osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
         osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
