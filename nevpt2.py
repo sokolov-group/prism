@@ -27,7 +27,7 @@ import prism.qd_nevpt2 as qd_nevpt2
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
-from pyscf.fci.direct_spin1 import trans_rdm1s
+
 
 def compute_energy(nevpt, rdms, e_0 = None):
 
@@ -120,7 +120,7 @@ def compute_energy(nevpt, rdms, e_0 = None):
 
 def osc_strength(method, en, rdm_mo, gs_index = 0):
 
-    n_micro_states = len(en) #sum(interface.ref_wfn_deg)
+    n_micro_states = len(en) 
     dip_mom_ao = method.interface.dip_mom_ao
     mo_coeff = method.mo
 
@@ -133,15 +133,11 @@ def osc_strength(method, en, rdm_mo, gs_index = 0):
     # List to store Osc. Strength Values
     osc_total = []
 
-    # Get 1rdms
-    #rdm_mo = make_rdm1(nevpt, L = gs_index)
-    #rdm_qd = qd_nevpt2.make_rdm1(nevpt, L = gs_index)
-
     for state in range(gs_index + 1, n_micro_states):
         # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[0, state])
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[0, state])
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[0, state])
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[gs_index, state])
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[gs_index, state])
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[gs_index, state])
         
         osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
         osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
@@ -503,16 +499,9 @@ def make_rdm1s(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     ncas = nevpt.ncas
     nextern = nevpt.nextern
     n_micro_states = sum(nevpt.ref_wfn_deg)
-    einsum = nevpt.interface.einsum
-    
+    einsum = nevpt.interface.einsum   
     einsum_type = nevpt.interface.einsum_type
     nmo = nevpt.nmo
-
-    #if t1 is None:
-    #    t1 = nevpt.t1
-    
-    #if t1_0 is None:
-    #    t1_0 = nevpt.t1_0
 
     L_states = 0
     R_states = 0
@@ -555,21 +544,17 @@ def make_rdm1s(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     else:
         wfn = list(nevpt.ref_wfn)
     
-    
     # Looping over states I,J
     for ind_I, I in enumerate(L_list):
- 
-            
         for ind_J, J in enumerate(R_list): 
             
             if type in ("ss", "state-specific") and I != J:
                 continue
 
-
+            from pyscf.fci.direct_spin1 import trans_rdm1s
             tmprdm_aabb = trans_rdm1s(wfn[J], wfn[I], nevpt.ncas, nevpt.ref_nelecas[ind_I])
             rdm_final[0, ind_I, ind_J, nevpt.ncore:nevpt.ncore+nevpt.ncas, nevpt.ncore:nevpt.ncore+nevpt.ncas] = tmprdm_aabb[0]
             rdm_final[1, ind_I, ind_J, nevpt.ncore:nevpt.ncore+nevpt.ncas, nevpt.ncore:nevpt.ncore+nevpt.ncas] = tmprdm_aabb[1]            
-
 
             if I == J:
                 #uncorrelated diagonal terms
@@ -578,14 +563,6 @@ def make_rdm1s(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
             if nevpt.rdm_order == 2:
                 raise ValueError(f"Invalid type: corelation not implement in SOC. ")
                 
-
-                
-   
-                    
-                
-                    
-  
-        
     # Single pair of states
     if L is not None and R is not None:
         rdm_final = rdm_final[:,0,0]

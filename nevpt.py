@@ -113,7 +113,7 @@ class NEVPT:
             
         #For SOC
         self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-        self.en_sf = None
+        self.en_tot = None
         self.spin_mult = None
         self.gtensor = False
         self.origin_type = 'charge'  # Possible methods: charge, GIAO, atom1 or User define point(list)
@@ -168,7 +168,7 @@ class NEVPT:
 
         # Run NEVPT computation
         e_tot, e_corr, osc = nevpt_compute.kernel(self)
-        self.en_sf = e_tot
+        self.en_tot = e_tot
 
         if self.keep_amplitudes is False:
             del(self.t1)
@@ -187,26 +187,24 @@ class NEVPT:
           else:
               wfn = list(self.ref_wfn)
 
-          # calculate method's S:
-          from prism import qd_nevpt2
-          spin_mult_wfn = self.spin_mult
-          S = [round((spin_mult-1)/2,2) for spin_mult in spin_mult_wfn] 
-
-          # calculate method's Ms: 
+          # Calculate method's S, Ms: 
+          S  = []
           ms = []
-          nstate = len(S)
+          nstate = len(self.en_tot)
           for I in range(nstate):
             sz = self.interface.apply_S_z(wfn[I],self.ncas,self.ref_nelecas[I])
             ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
 
+            SS = self.interface.compute_spin_square(wfn[I], self.ncas, self.ref_nelecas[I])
+            S.append((-1+np.sqrt(1+4*SS))/2)
+
           ms = [round(elem,2) for elem in ms]
+          S  = [round(elem,2) for elem in S]
 
-          #generalSOC requires spin-free energy...
-          en = self.en_sf
-
+          # Calculate RDM_aabb
           rdm_aabb = nevpt2.make_rdm1s(self)
 
-          en_soc, evec_soc = general_somf.state_interaction_SOC(self, en, rdm_aabb, S, ms)
+          en_soc, evec_soc = general_somf.state_interaction_SOC(self, self.en_tot, rdm_aabb, S, ms)
           
           if self.gtensor is True:
             rdm_sf = rdm_aabb[0] + rdm_aabb[1]

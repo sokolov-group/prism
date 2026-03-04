@@ -224,39 +224,6 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
     return h_eval, h_evec
 
 
-def osc_strength(nevpt, en, gs_index = 0):
-
-    n_micro_states = sum(nevpt.ref_wfn_deg)
-    dip_mom_ao = nevpt.interface.dip_mom_ao
-    mo_coeff = nevpt.mo
-
-    dip_mom_mo = np.zeros_like(dip_mom_ao)
-
-    # Transform dipole moments from AO to MO basis
-    for d in range(dip_mom_ao.shape[0]):
-        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
-
-    # List to store Osc. Strength Values
-    osc_total = []
-    
-    rdm_qd = make_rdm1(nevpt, L = gs_index)
-
-    for state in range(gs_index + 1, n_micro_states):
-        # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd[0, state])
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd[0, state])
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd[0, state])
-        
-        osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
-        osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
-        osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
-        
-        # Add Dipole Moment Components
-        osc_total.append((osc_x + osc_y + osc_z).real)
-
-    return osc_total
-
-
 def determine_spin_mult(nevpt, evec):
 
     spin_mult_old = nevpt.ref_wfn_spin_mult

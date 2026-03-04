@@ -13,8 +13,7 @@
 #
 # Available at https://github.com/sokolov-group/prism
 #
-# Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
-#          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Rajat S. Majumder <majumder.rajat071@gmail.com>
 #          Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 #
@@ -28,7 +27,6 @@ from pyscf.lib.parameters import LIGHT_SPEED
 from pyscf.x2c import sfx2c1e
 from pyscf.x2c import x2c
 from sympy.physics.quantum.cg import CG
-from pyscf.fci.direct_spin1 import trans_rdm1s
 from prism import qd_nevpt2
 from prism import nevpt2
 from prism import nevpt_compute
@@ -43,16 +41,11 @@ if prism_path not in sys.path:
 from socutils.somf import somf
 
 def getSOC_integrals(method):
-    #method.log.info("Basis functions are uncontracted dkh-1/dkh-2")
     mo = method.mo
     nmo = method.nmo
     nao = method.mo.shape[1]
     prefactor = 0.5 / ((LIGHT_SPEED)**2)
     mol = method.interface.mol
-
-    #Identity SOC
-    #if (method.soc=="breit-pauli" or "BP" or "bp"):
-
 
     # Build 1e-density matrix
     rdm1ao = method.interface.mc.make_rdm1() 
@@ -62,7 +55,6 @@ def getSOC_integrals(method):
         nbasis = xmol.nao_nr()
         hsocint = np.zeros((3, nbasis, nbasis))
  
-        #hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_wso(xmol) #, unc=False)
         hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
 
@@ -72,7 +64,6 @@ def getSOC_integrals(method):
         hsocint = np.zeros((3, nbasis, nbasis))
  
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-        #hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
     
@@ -83,7 +74,6 @@ def getSOC_integrals(method):
         hsocint = np.zeros((3, nbasis, nbasis))
         
         rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-        #hsocint = np.zeros((3, nbasis, nbasis))
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint += prefactor * get_hso1e_x2c2(xmol) 
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
@@ -102,15 +92,14 @@ def getSOC_integrals(method):
     for comp in range(3):
         h_soc_total[comp] =-1j*(h_soc_all_contr[comp].astype('complex'))
 
-
-    return h_soc_total #hsocint
+    return h_soc_total 
 
 
 def state_interaction_SOC(method, en, rdm_aabb, S, ms):
     cput0 = (logger.process_clock(), logger.perf_counter())
     method.log.info("Spin-Free Framework: Employ Wigner–Eckart’s theorem")
     method.log.info("Consider spin-orbit coupling effect...")
-    nmo = len(rdm_aabb[0,0,0,0])#interface.nmo
+    nmo = len(rdm_aabb[0,0,0,0])
     nstate = len(en)
 
     if (method.soc=="Breit-Pauli" or method.soc=="BP"):
@@ -137,7 +126,7 @@ def state_interaction_SOC(method, en, rdm_aabb, S, ms):
                 rdm_wigner[I,J] = T_z 
             
     # Get SOC integrals:
-    h_soc = getSOC_integrals(method) #, unc=unc)
+    h_soc = getSOC_integrals(method)
     
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
@@ -224,9 +213,7 @@ def state_interaction_SOC(method, en, rdm_aabb, S, ms):
         osc_str_full = osc_str
         # Compute all transitions starting from each state
         for gs_index in range(1, len(en_soc)): 
-            rdm_mo_soc_gs =  np.zeros((1, nstate_total, nmo, nmo),dtype='complex')
-            rdm_mo_soc_gs += rdm_mo_soc[gs_index, :, :, :]
-            osc_str_full.extend(nevpt2.osc_strength(method, en_soc, rdm_mo_soc_gs, gs_index))
+            osc_str_full.extend(nevpt2.osc_strength(method, en_soc, rdm_mo_soc, gs_index))
 
         nevpt_compute.print_osc_str(method, en_soc, osc_str_full)
     
@@ -277,7 +264,6 @@ def gtensor(method, evec_soc, rdm_sf, S,target_index = 0,origin_type = 'charge')
         Sx = C/2
         Sx = np.diag(Sx,1)
         Sx = Sx + Sx.T
-        #print(Sx)
         s_mat[0,A:A+multiplicity[I],A:A+multiplicity[I]]=Sx
         
         #Sy
@@ -312,7 +298,7 @@ def gtensor(method, evec_soc, rdm_sf, S,target_index = 0,origin_type = 'charge')
     else:
         method.log.info("origin(Bohr)= %s", origin_type)
         mf.mol.set_common_orig(origin_type)
-        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)#, hermi=1) #cint1e_cg_irxp_sph int1e_giao_irjxp_sph
+        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
     
     # AO -> MO basis:
     l1_mo = np.einsum('xpq,pi,qj->xij',l1_ao,mo,mo) 
@@ -386,7 +372,7 @@ def gtensor(method, evec_soc, rdm_sf, S,target_index = 0,origin_type = 'charge')
     method.log.info("g-factor=")
     method.log.info("%14.6f, %14.6f, %14.6f, ge=2.002319"%(G_sq_en[0],G_sq_en[1],G_sq_en[2]))
     method.log.info("%14.6f, %14.6f, %14.6f"%(G_sq_en[0]-2.002319,G_sq_en[1]-2.002319,G_sq_en[2]-2.002319))
-    method.log.info("%14.3f, %14.3f, %14.3f, ptt(general)"%(1000*(G_sq_en[0]-2.002319),1000*(G_sq_en[1]-2.002319),1000*(G_sq_en[2]-2.002319)))
+    method.log.info("%14.3f, %14.3f, %14.3f, ptt"%(1000*(G_sq_en[0]-2.002319),1000*(G_sq_en[1]-2.002319),1000*(G_sq_en[2]-2.002319)))
 
     return G_sq_en, G_evec
 

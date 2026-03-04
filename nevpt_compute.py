@@ -143,10 +143,10 @@ def kernel(nevpt):
     if n_states > 1:
         # Get Oscillator Strengths
         if nevpt.method == "qd-nevpt2":
-            rdm_mo = qd_nevpt2.make_rdm1(nevpt, L = 0)
+            rdm_mo = qd_nevpt2.make_rdm1(nevpt)
             osc_str = nevpt2.osc_strength(nevpt, e_tot, rdm_mo)
         else:
-            rdm_mo = nevpt2.make_rdm1(nevpt, L = 0)
+            rdm_mo = nevpt2.make_rdm1(nevpt)
             osc_str = nevpt2.osc_strength(nevpt, e_tot, rdm_mo)
 
         # Update spin multiplicity
@@ -185,10 +185,10 @@ def kernel(nevpt):
             # Compute all transitions starting from each state
             for gs_index in range(1, len(e_tot)):  
                 if nevpt.method == "qd-nevpt2":
-                    rdm_mo = qd_nevpt2.make_rdm1(nevpt, L = gs_index)
+                    rdm_mo = qd_nevpt2.make_rdm1(nevpt)
                     osc_str_full.extend(nevpt2.osc_strength(nevpt, e_tot, rdm_mo, gs_index))
                 else:
-                    rdm_mo = nevpt2.make_rdm1(nevpt, L = gs_index)
+                    rdm_mo = nevpt2.make_rdm1(nevpt)
                     osc_str_full.extend(nevpt2.osc_strength(nevpt, e_tot, rdm_mo, gs_index))
 
             print_osc_str(nevpt, e_tot, osc_str_full)
