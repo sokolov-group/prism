@@ -21,7 +21,6 @@ import prism.nevpt_integrals as nevpt_integrals
 import prism.nevpt_compute as nevpt_compute
 import prism.nevpt2 as nevpt2
 import prism.qd_nevpt2 as qdnevpt2
-import time
 
 class NEVPT:
     def __init__(self, interface):
@@ -113,21 +112,14 @@ class NEVPT:
         self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
             
         #For SOC
-        self.soc = None
-        self.uncontract = False
-        self.soc_order = 1
-        self.interface.uncontract = self.uncontract
-        self.interface.soc_order = self.soc_order
-        #self.evec = None
-        self.en = None
+        self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+        self.en_sf = None
         self.spin_mult = None
         self.gtensor = False
-        self.origin_type = 'charge'
+        self.origin_type = 'charge'  # Possible methods: charge, GIAO, atom1 or User define point(list)
+        self.target_index = 0  #target state for gtensor calculation. Default is the ground state.
 
-        #For SOC in temporary
-        #self.ncasci = None
-        #self.rdm_so = lambda:None
-        #self.h_soc = None
+
 
     def kernel(self):
 
@@ -176,22 +168,18 @@ class NEVPT:
 
         # Run NEVPT computation
         e_tot, e_corr, osc = nevpt_compute.kernel(self)
-        self.en = e_tot
+        self.en_sf = e_tot
 
         if self.keep_amplitudes is False:
             del(self.t1)
             del(self.t1_0)
             
 
-        #Test for SOC code
-        self.interface.soc = self.soc
-        self.interface.uncontract = self.uncontract
-        self.interface.soc_order = self.soc_order
+        #Calculate SOC properties
         if self.soc: 
-          start_time = time.time()
           from prism import general_somf
           import numpy as np
-          print("\n \n \nInitialize SOC program...")
+          print("\nInitialize SOC program...")
           # Rotate CAS Wavefunction:
           if self.method == "qd-nevpt2":
               wfn = np.einsum('ij,iab->jab',self.h_evec,self.ref_wfn)
@@ -213,42 +201,16 @@ class NEVPT:
 
           ms = [round(elem,2) for elem in ms]
 
-          # calculate method's rdm_aa, rdm_bb:
-          print("calculate rdm_aabb...")
-          #from pyscf.fci.direct_spin1 import trans_rdm1s
-          #rdm = np.zeros((2, nstate, nstate, self.nmo, self.nmo))
-          
-          #for I in range(nstate):
-          #  for J in range(nstate):
-          #      tmprdm_aabb = trans_rdm1s(wfn[J], wfn[I], self.ncas, self.ref_nelecas[I])
-          #      rdm[0, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[0]
-          #      rdm[1, I, J, self.ncore:self.ncore+self.ncas, self.ncore:self.ncore+self.ncas] = tmprdm_aabb[1]
-          
-          #for I in range(nstate): 
-          #  rdm[:, I, I, : self.ncore, :self.ncore] += np.identity(self.ncore)
-
           #generalSOC requires spin-free energy...
-          en = self.en
-
-          print("Time for computing RDM_aa,bb:                    %f sec\n" % (time.time() - start_time))
+          en = self.en_sf
 
           rdm_aabb = nevpt2.make_rdm1s(self)
 
-          en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf  = general_somf.generalSOC(self.interface, en, rdm_aabb, S, ms)
+          en_soc, evec_soc = general_somf.state_interaction_SOC(self, en, rdm_aabb, S, ms)
           
-          #rdm_mo = rdm[0] + rdm[1]
-          #I_evec_soc = []
-          #I_evec_soc.append(I_total)
-          #I_evec_soc.append(evec_soc)
-          #osc = general_somf.osc_strength_soc(self.interface, en_soc, evec_soc,rdm, I_total)
-          #print("Oscillator strenth:")
-          #for i in osc:
-          #   print("%14.8f"%((i)))
-
-
           if self.gtensor is True:
             rdm_sf = rdm_aabb[0] + rdm_aabb[1]
-            general_somf.gtensor_general(self.interface,evec_soc,rdm_sf, S_total, I_total,origin_type=self.origin_type)
+            general_somf.gtensor(self,evec_soc,rdm_sf, S, target_index = self.target_index, origin_type=self.origin_type)
         
         return e_tot, e_corr, osc 
 

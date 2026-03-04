@@ -144,22 +144,10 @@ def kernel(nevpt):
         # Get Oscillator Strengths
         if nevpt.method == "qd-nevpt2":
             rdm_mo = qd_nevpt2.make_rdm1(nevpt, L = 0)
-            osc_str = nevpt2.osc_strength(nevpt.interface, e_tot, rdm_mo)
+            osc_str = nevpt2.osc_strength(nevpt, e_tot, rdm_mo)
         else:
             rdm_mo = nevpt2.make_rdm1(nevpt, L = 0)
-            osc_str = nevpt2.osc_strength(nevpt.interface, e_tot, rdm_mo)
-
-        #wfn = np.einsum('ij,iab->jab',h_evec,nevpt.ref_wfn)
-        #wfn = list(wfn)
-        #rdm_mo = np.zeros((n_states,n_states,nevpt.nmo, nevpt.nmo), dtype='complex')
-        #for I in range(n_states):
-        #    for J in range(n_states): 
-        #        rdm_ca = nevpt.interface.compute_rdm1(wfn[I], wfn[J], nevpt.ref_nelecas[I])
-        #        rdm_mo[I,J,nevpt.ncore:nevpt.ncore + nevpt.ncas ,nevpt.ncore:nevpt.ncore + nevpt.ncas] = rdm_ca
-        #    if I == J:
-        #        rdm_mo[I,J,:nevpt.ncore, :nevpt.ncore] = 2 * np.eye(nevpt.ncore)
-        #
-        #osc_str = nevpt.interface.osc_strength_general(e_tot, rdm_mo)
+            osc_str = nevpt2.osc_strength(nevpt, e_tot, rdm_mo)
 
         # Update spin multiplicity
         spin_mult = nevpt.ref_wfn_spin_mult
@@ -198,10 +186,10 @@ def kernel(nevpt):
             for gs_index in range(1, len(e_tot)):  
                 if nevpt.method == "qd-nevpt2":
                     rdm_mo = qd_nevpt2.make_rdm1(nevpt, L = gs_index)
-                    osc_str_full.extend(nevpt2.osc_strength(nevpt.interface, e_tot, rdm_mo, gs_index))
+                    osc_str_full.extend(nevpt2.osc_strength(nevpt, e_tot, rdm_mo, gs_index))
                 else:
                     rdm_mo = nevpt2.make_rdm1(nevpt, L = gs_index)
-                    osc_str_full.extend(nevpt2.osc_strength(nevpt.interface, e_tot, rdm_mo, gs_index))
+                    osc_str_full.extend(nevpt2.osc_strength(nevpt, e_tot, rdm_mo, gs_index))
 
             print_osc_str(nevpt, e_tot, osc_str_full)
 

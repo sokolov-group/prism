@@ -118,11 +118,11 @@ def compute_energy(nevpt, rdms, e_0 = None):
     return e_corr, t1
 
 
-def osc_strength(interface, en, rdm_mo, gs_index = 0):
+def osc_strength(method, en, rdm_mo, gs_index = 0):
 
     n_micro_states = len(en) #sum(interface.ref_wfn_deg)
-    dip_mom_ao = interface.dip_mom_ao
-    mo_coeff = interface.mo
+    dip_mom_ao = method.interface.dip_mom_ao
+    mo_coeff = method.mo
 
     dip_mom_mo = np.zeros_like(dip_mom_ao)
 
@@ -496,6 +496,7 @@ def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
         rdm_final = np.moveaxis(rdm_final, -1, 0)
         
     return rdm_final
+
 
 def make_rdm1s(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     ncore = nevpt.ncore

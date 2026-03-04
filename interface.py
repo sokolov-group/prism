@@ -82,12 +82,6 @@ class PYSCF:
             else:
                 self.group_repr_symm = None
         else:
-            #from interface in prisim_beta for SOC
-            from pyscf import fci
-            self.cre_a = fci.addons.cre_a
-            self.cre_b = fci.addons.cre_b
-            self.des_a = fci.addons.des_a
-            self.des_b = fci.addons.des_b
 
             # Determine reference type
             from pyscf.mcscf.casci import CASCI
@@ -148,9 +142,8 @@ class PYSCF:
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
             # SOC params:
-            self.soc = None
-            self.uncontract = False
-            self.soc_order = None
+            self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+
 
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df

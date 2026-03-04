@@ -15,6 +15,8 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Rajat S. Majumder <majumder.rajat071@gmail.com>
+#          Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 #
 #
 
@@ -29,8 +31,8 @@ from sympy.physics.quantum.cg import CG
 from pyscf.fci.direct_spin1 import trans_rdm1s
 from prism import qd_nevpt2
 from prism import nevpt2
-import scipy
-import time
+from prism import nevpt_compute
+import prism.lib.logger as logger
 
 # Add python path for socutils:
 prism_path = os.path.dirname(os.path.abspath(__file__)) 
@@ -40,18 +42,22 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def getSOC_integrals(interface):
-    print("Basis functions are uncontracted dkh-1/dkh-2")
-    mo = interface.mo
-    nmo = interface.nmo
-    nao = interface.mo.shape[1]
+def getSOC_integrals(method):
+    #method.log.info("Basis functions are uncontracted dkh-1/dkh-2")
+    mo = method.mo
+    nmo = method.nmo
+    nao = method.mo.shape[1]
     prefactor = 0.5 / ((LIGHT_SPEED)**2)
-    mol = interface.mol
+    mol = method.interface.mol
+
+    #Identity SOC
+    #if (method.soc=="breit-pauli" or "BP" or "bp"):
+
 
     # Build 1e-density matrix
-    rdm1ao = interface.mc.make_rdm1() 
+    rdm1ao = method.interface.mc.make_rdm1() 
 
-    if (interface.soc=="breit-pauli"):
+    if (method.soc=="Breit-Pauli" or method.soc=="BP"):
         xmol, contr_coeff = mol, np.eye(mol.nao_nr())
         nbasis = xmol.nao_nr()
         hsocint = np.zeros((3, nbasis, nbasis))
@@ -60,7 +66,7 @@ def getSOC_integrals(interface):
         hsocint += prefactor * somf.get_wso(xmol) #, unc=False)
         hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
 
-    elif (interface.soc=="x2c-1"):   
+    elif (method.soc=="x2c1" or method.soc=="DKH1"):   
         xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
         nbasis = xmol.nao_nr()
         hsocint = np.zeros((3, nbasis, nbasis))
@@ -70,7 +76,8 @@ def getSOC_integrals(interface):
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
         hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
     
-    elif (interface.soc=="x2c-2"):
+    elif (method.soc=="x2c2" or method.soc=="DKH2"):
+        raise Exception("The sf-X2C-1e+so-DKH2 implementation is not complete yet in Prism.")
         xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
         nbasis = xmol.nao_nr()
         hsocint = np.zeros((3, nbasis, nbasis))
@@ -99,16 +106,27 @@ def getSOC_integrals(interface):
     return h_soc_total #hsocint
 
 
-def generalSOC(interface, en, rdm_aabb, S, ms):
-    print("\nSpin-Free Framework: Employ Wigner–Eckart’s theorem")
-    print("Consider spin-orbit coupling effect...")
-    nmo = interface.nmo
-    soc = interface.soc
-    #unc = interface.uncontract
+def state_interaction_SOC(method, en, rdm_aabb, S, ms):
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    method.log.info("Spin-Free Framework: Employ Wigner–Eckart’s theorem")
+    method.log.info("Consider spin-orbit coupling effect...")
+    nmo = len(rdm_aabb[0,0,0,0])#interface.nmo
     nstate = len(en)
 
-    start_time = time.time()
-    print("calculate Wigner's rdm...")
+    if (method.soc=="Breit-Pauli" or method.soc=="BP"):
+        soc = "Breit-Pauli"
+    
+    elif(method.soc=="x2c-1" or method.soc=="DKH1"):
+        method.log.info("\nNote that SOC Hamiltionian is sf-X2C-1e+so-DKH1 instead of usual DKH. \n")  
+        soc = "sf-X2C-1e+so-DKH1"
+    
+    elif(method.soc=="x2c-2" or method.soc=="DKH2"):
+        raise Exception("The sf-X2C-1e+so-DKH2 implementation is not complete yet in Prism.")
+    
+    else:
+        raise Exception("Incorrect SOC flag in input file!!")
+        
+    method.log.info("Calculate Wigner's rdm...")
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     for I in range(nstate):
         for J in range(nstate):
@@ -118,12 +136,8 @@ def generalSOC(interface, en, rdm_aabb, S, ms):
                 T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
                 rdm_wigner[I,J] = T_z 
             
-    wiger_time = time.time()
-
     # Get SOC integrals:
-    h_soc = getSOC_integrals(interface) #, unc=unc)
-
-    soc_int_time = time.time()
+    h_soc = getSOC_integrals(method) #, unc=unc)
     
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
@@ -132,8 +146,6 @@ def generalSOC(interface, en, rdm_aabb, S, ms):
     H_minus = np.einsum('pq,ijpq->ij',h1_minus,rdm_wigner) * (-1/2)
     H_zero = np.einsum('pq,ijpq->ij',h1_zero,rdm_wigner) / np.sqrt(2)
     H_plus = np.einsum('pq,ijpq->ij',h1_plus,rdm_wigner) / 2
-
-    soc_sphere_time = time.time()
 
     S_total = []
     ms_total = []
@@ -177,7 +189,6 @@ def generalSOC(interface, en, rdm_aabb, S, ms):
     H_sf = np.diag(E_spinstate).astype('complex')
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
 
-    HSOC_time = time.time()
 
     #calculate Osc Str
     rdm_sf = rdm_aabb[0] + rdm_aabb[1]
@@ -186,27 +197,15 @@ def generalSOC(interface, en, rdm_aabb, S, ms):
         for J in  range(nstate_total):
             rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
     rdm_mo_soc = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
-    osc_str =    nevpt2.osc_strength(interface, en_soc, rdm_mo_soc)      
+    osc_str =    nevpt2.osc_strength(method, en_soc, rdm_mo_soc)      
     
+    h2ev = method.interface.hartree_to_ev
+    h2cm = method.interface.hartree_to_inv_cm
 
-    str_time = time.time()
-    print("\nTime for computing wiger_RDM: %f sec" % (wiger_time - start_time))
-    print("Time for computing getSOC_integrals: %f sec" % (soc_int_time - wiger_time))
-    print("Time for transform hsoc in sphereical coordinate: %f sec" % (soc_sphere_time - soc_int_time))
-    print("Time for computing HSOC: %f sec" % (HSOC_time - soc_sphere_time))
-    print("Time for computing osc_strength: %f sec\n" % (str_time - HSOC_time))
-
-    h2ev = interface.hartree_to_ev
-    h2cm = interface.hartree_to_inv_cm
-
-    #print("\n Absolute energies in a.u |||| Excitation energies in a.u ||  eV ||  cm-1\n*****************************")
-    #for e in en_soc:
-    #    print("%14.6f ||||  %14.6f  ||  %14.6f  ||   %8.2f"%((e), (e-en_soc[0]),((e-en_soc[0])*27.2114),((e-en_soc[0])*219474.63)))
-    print("\nSummary of results for the SOC calculation with the %s Hamiltionian:" % (soc))
-
-    print("-----------------------------------------------------------------------------------------------------------------")
-    print("  State            E(total)           dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. ")
-    print("-----------------------------------------------------------------------------------------------------------------")
+    method.log.info("\nSummary of results for the SOC calculation with the %s Hamiltionian:" % (soc))
+    method.log.info("-----------------------------------------------------------------------------------------------------------------")
+    method.log.info("  State            E(total)           dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. ")
+    method.log.info("-----------------------------------------------------------------------------------------------------------------")
     
     e_gs = en_soc[0]
 
@@ -215,90 +214,53 @@ def generalSOC(interface, en, rdm_aabb, S, ms):
         de_ev = de * h2ev
         de_cm = de * h2cm
         if p == 0 or abs(de) < 1e-5:
-            print("%5d       %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), en_soc[p], de, de_ev, " ", de_cm, " "))
+            method.log.info("%5d       %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), en_soc[p], de, de_ev, " ", de_cm, " "))
         else:
             de_nm = 10000000 / de_cm
-            print("%5d       %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), en_soc[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
-    print("-----------------------------------------------------------------------------------------------------------------")
-    return en_soc, evec_soc, S_total, ms_total, I_total , HSOC, H_sf
-
-def osc_strength_general(interface, en, rdm_mo, I_evec_soc=None, gs_index = 0):
-        ncore = interface.ncore 
-        dip_mom_ao = interface.dip_mom_ao
-        mo_coeff = interface.mo
-        nmo = interface.nmo
-        ncas = interface.ncas
-        dip_mom_mo = np.zeros_like(dip_mom_ao)
-        n_states = len(en)
+            method.log.info("%5d       %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), en_soc[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+    method.log.info("-----------------------------------------------------------------------------------------------------------------")
     
-        #If spin-free:
-        if I_evec_soc is None:
-            I_total=np.arange(n_states)
-            evec_soc = np.identity(n_states)
-        else:
-            I_total = I_evec_soc[0]
-            evec_soc = I_evec_soc[1]
+    if method.verbose >= 5:
+        osc_str_full = osc_str
+        # Compute all transitions starting from each state
+        for gs_index in range(1, len(en_soc)): 
+            rdm_mo_soc_gs =  np.zeros((1, nstate_total, nmo, nmo),dtype='complex')
+            rdm_mo_soc_gs += rdm_mo_soc[gs_index, :, :, :]
+            osc_str_full.extend(nevpt2.osc_strength(method, en_soc, rdm_mo_soc_gs, gs_index))
 
-        # Transform dipole moments from AO to MO basis
-        for d in range(dip_mom_ao.shape[0]):
-            dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
-
-        # List to store Osc. Strength Values
-        osc_total = []
-        # Looping over CAS States
-        for state in range(gs_index + 1, n_states):
-            # Reset final transformed RDM
-            rdm_qd = np.zeros((nmo, nmo),dtype='complex')
-
-            # Looping over states i,j    
-            for i in range(n_states):
-                for j in range(n_states):
-                    I = I_total[i]
-                    J = I_total[j]
-                    rdm_qd += np.conj(evec_soc)[i, state] * rdm_mo[I,J] * evec_soc[j, gs_index]
-
-            # Create Dipole Moment Operator with RDM
-            dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
-            dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
-            dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
+        nevpt_compute.print_osc_str(method, en_soc, osc_str_full)
     
-            osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
-            osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
-            osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
+    sys.stdout.flush()
+    method.log.timer0("total %s calculation" % soc, *cput0)
+    
+    return en_soc, evec_soc
 
-            # Add Dipole Moment Components
-            osc_total.append((osc_x + osc_y + osc_z).real)
 
-        return osc_total
-
-            
-def gtensor_general(interface, evec_soc, rdm_sf, S_total, I_total,target_index = 0,origin_type = 'charge'):
-    print("Calculating g-tensor(general)...")
-    mf = interface.mf
-    mo = interface.mo
-    ncore = interface.ncore 
+def gtensor(method, evec_soc, rdm_sf, S,target_index = 0,origin_type = 'charge'):
+    method.log.info("\nCalculating g-tensor...")
+    mf = method.interface.mf
+    mo = method.mo
+    ncore = method.ncore 
     n_states = len(rdm_sf[0])
     n_micro_states = len(evec_soc)
-    mo_coeff = interface.mo
-    nmo = interface.nmo
-    ncas = interface.ncas
-    
-    # Calculate spin-free S
-    S = np.zeros(n_states)
-    for i in range(n_micro_states):
-        I = I_total[i]
-        S[I] = S_total[i]
+    mo_coeff = method.mo
+    nmo = method.nmo
+    ncas = method.ncas
 
     # Calculate spin-free multiplicity
     multiplicity=[]
     for I in range(n_states):
         multiplicity.append(int(S[I]*2 + 1))
     
-    # Calculate ms_total
+    # Calculate quantum number of spin-orbit state
     ms_total = []
+    S_total = []
+    I_total = []
     for I in range(n_states):
         for i in range(multiplicity[I]):
             ms_total.append(S[I]-i)
+            S_total.append(S[I])
+            I_total.append(I)
 
     #contruct S matrix
     s_mat = np.zeros((3,n_micro_states,n_micro_states),dtype='complex')
@@ -334,23 +296,21 @@ def gtensor_general(interface, evec_soc, rdm_sf, S_total, I_total,target_index =
             origin += mf.mol.atom_coord(atm) * mf.mol.atom_charge(atm)
             total_charge += mf.mol.atom_charge(atm)
         origin = origin / total_charge
-        print("origin=",origin)
+        method.log.info("origin(Bohr)= %s", origin) 
         mf.mol.set_common_orig(origin)
         l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
 
     elif origin_type == 'atom1':
-        print("origin=",mf.mol.atom_coord(0))
+        method.log.info("origin(Bohr)= %s", mf.mol.atom_coord(0))
         mf.mol.set_common_orig(mf.mol.atom_coord(0))
         l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
     
     elif origin_type == 'GIAO':
-        print("origin=GIAO")
-        #mf.mol.set_common_orig([0,0,3.399617298093])
-        #print("mf.mol.set_common_orig([0,0,3.399617298093])")
+        method.log.info("origin=GIAO")
         l1_ao = -1j * mf.mol.intor('int1e_giao_irjxp_sph', comp=3)
 
     else:
-        print("origin=",origin_type)
+        method.log.info("origin(Bohr)= %s", origin_type)
         mf.mol.set_common_orig(origin_type)
         l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)#, hermi=1) #cint1e_cg_irxp_sph int1e_giao_irjxp_sph
     
@@ -375,19 +335,24 @@ def gtensor_general(interface, evec_soc, rdm_sf, S_total, I_total,target_index =
     l_mat[1] = l_mat[1] + np.conj(l_mat[1]).T
     l_mat[2] = l_mat[2] + np.conj(l_mat[2]).T
 
-    target_index = 0 
-    print("Target State index=",target_index)
-    S = S[target_index]
-    target_multiplicity = multiplicity[target_index]
-    print("Calculating g-tensor for multiplicity = ", target_multiplicity)
-    Kramer_pair  = evec_soc[:,target_index:target_index+target_multiplicity] 
-    
+    method.log.info("Target State index = %s", target_index)
+    S_target = S[target_index]
+    target_multiplicity = int(2*S_target+1)
+
+    target_index_soc = 0
+    if target_index >= 1:
+        for i in range(target_index):
+            target_index_soc += int(2*S[i]+1)
+
+    method.log.info("Calculating g-tensor for multiplicity = %s", target_multiplicity)
+    Kramer_pair  = evec_soc[:,target_index_soc:target_index_soc+target_multiplicity] 
+ 
     # define unique Kramer's doublet
     S_old = np.einsum('ai,kib,bj->kaj',np.conj(Kramer_pair).T , s_mat , Kramer_pair)
     L_old = np.einsum('ai,kib,bj->kaj',np.conj(Kramer_pair).T , l_mat , Kramer_pair)
     Hab_old = L_old + S_old * 2.002319
 
-    print("Use Jz to transform...")
+    method.log.info("Use Jz to transform...")
     z_en, z_evec = np.linalg.eigh(Hab_old[2])
     Kramer_pair_2 = Kramer_pair @ z_evec
     Kramer_pair_new =  Kramer_pair_2   
@@ -402,26 +367,26 @@ def gtensor_general(interface, evec_soc, rdm_sf, S_total, I_total,target_index =
  
     g=np.zeros([3,3])
     for i in range(3):
-      g[i,0] = np.real(Hab[i,0,1]) *2/np.sqrt(S*2)
-      g[i,1] = np.imag(Hab[i,0,1]) *(-2)/np.sqrt(S*2)
-      g[i,2] = np.real(Hab[i,0,0])/S
+      g[i,0] = np.real(Hab[i,0,1]) *2/np.sqrt(S_target*2)
+      g[i,1] = np.imag(Hab[i,0,1]) *(-2)/np.sqrt(S_target*2)
+      g[i,2] = np.real(Hab[i,0,0])/S_target
     
     G = np.einsum('km,lm->kl',g,g)
-    print("g=")
-    print(g)
-    print("G=")
-    print(G)
+    method.log.info("g=")
+    method.log.info("%s", np.array2string(g, precision=6, suppress_small=True))
+    method.log.info("G=")
+    method.log.info("%s", np.array2string(G, precision=6, suppress_small=True))
 
     G_en, G_evec = np.linalg.eigh(G)
     #G_tensor_en, G_tensor_evec = np.linalg.eigh(G_tensor)
     G_sq_en = np.sqrt(G_en)
     #G_tensor_sq_en = np.sqrt(G_tensor_en)
-    print("magnetic axis=")
-    print(G_evec)
-    print("g-factor=")
-    print("%14.6f, %14.6f, %14.6f, ge=2.002319"%(G_sq_en[0],G_sq_en[1],G_sq_en[2]))
-    print("%14.6f, %14.6f, %14.6f"%(G_sq_en[0]-2.002319,G_sq_en[1]-2.002319,G_sq_en[2]-2.002319))
-    print("%14.3f, %14.3f, %14.3f, ptt(general)"%(1000*(G_sq_en[0]-2.002319),1000*(G_sq_en[1]-2.002319),1000*(G_sq_en[2]-2.002319)))
+    method.log.info("magnetic axis=")
+    method.log.info("%s", np.array2string(G_evec, precision=6, suppress_small=True))
+    method.log.info("g-factor=")
+    method.log.info("%14.6f, %14.6f, %14.6f, ge=2.002319"%(G_sq_en[0],G_sq_en[1],G_sq_en[2]))
+    method.log.info("%14.6f, %14.6f, %14.6f"%(G_sq_en[0]-2.002319,G_sq_en[1]-2.002319,G_sq_en[2]-2.002319))
+    method.log.info("%14.3f, %14.3f, %14.3f, ptt(general)"%(1000*(G_sq_en[0]-2.002319),1000*(G_sq_en[1]-2.002319),1000*(G_sq_en[2]-2.002319)))
 
     return G_sq_en, G_evec
 
