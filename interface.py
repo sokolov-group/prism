@@ -24,6 +24,8 @@ import tempfile
 import numpy as np
 
 import prism.lib.logger as logger
+import prism.lib.numpy_helper as np_helper
+
 class PYSCF:
 
     def __init__(self, mf, mc = None, opt_einsum = False, pytblis = False, select_reference = None):
@@ -230,21 +232,20 @@ class PYSCF:
         self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
         # Einsum Backend
-        PYSCF.opt_einsum = bool(opt_einsum)
-        PYSCF.pytblis = bool(pytblis)
+        self.opt_einsum = bool(opt_einsum)
+        self.pytblis = bool(pytblis)
 
-        self._einsum = None
-        self.einsum_backend = None
+        self._einsum_backend = None
         self.einsum_type = "greedy"
         self.dot = np.dot
 
+        np_helper.set_einsum(self)
+
     @property
-    def einsum(self):
-        if self._einsum is None:
-            from prism.lib import numpy_helper
-            self._einsum = numpy_helper.einsum
-            self.einsum_backend = numpy_helper.EINSUM_BACKEND
-        return self._einsum
+    def einsum_backend(self):
+        if self._einsum_backend is None:
+            self._einsum_backend = np_helper.einsum_backend(self)
+        return self._einsum_backend
 
     @property
     def with_df(self):
