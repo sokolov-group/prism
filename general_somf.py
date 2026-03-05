@@ -55,8 +55,8 @@ def getSOC_integrals(method):
         hsocint -= prefactor * somf.get_fso2e_bp(mol, rdm1ao)
 
     elif (method.soc=="x2c1" or method.soc=="DKH1"): 
-        hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
-        hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao, unc=False)
+        hsocint += prefactor * somf.get_hso1e_x2c1(mol, unc=False)
+        hsocint -= prefactor * somf.get_fso2e_x2c(mol, rdm1ao, unc=False)
     
     else:
         raise Exception("Incorrect SOC flag in input file!!")
