@@ -3,7 +3,6 @@
 Extension to numpy
 '''
 import numpy
-from prism.interface import PYSCF
 from functools import lru_cache
 
 dot = numpy.dot
@@ -11,10 +10,6 @@ asarray = numpy.asarray
 
 ##TODO: create attribute for user defined flop threshold
 FLOP_THRESHOLD = 5e6
-
-# Interface flags
-PYTBLIS = getattr(PYSCF, 'pytblis', False)
-OPT_EINSUM = getattr(PYSCF, 'opt_einsum', False)
 
 # Detect backends
 def _has_module(name):
@@ -24,30 +19,45 @@ def _has_module(name):
     except (ImportError, OSError):
         return False
 
-_HAS_PYTBLIS = _has_module('pytblis')
-_HAS_OPT_EINSUM = _has_module('opt_einsum')
+def einsum_backend(PYSCF):
+    # Interface flags
+    PYTBLIS = getattr(PYSCF, 'pytblis', False)
+    OPT_EINSUM = getattr(PYSCF, 'opt_einsum', False)
 
-# Backend priority: provided flags > pytblis > opt_einsum > numpy fallback
-if OPT_EINSUM and _HAS_OPT_EINSUM:
-    EINSUM_BACKEND = "opt_einsum"
-elif PYTBLIS and _HAS_PYTBLIS:
-    EINSUM_BACKEND = "pytblis"
-elif  _HAS_PYTBLIS:
-    EINSUM_BACKEND = "pytblis"
-elif _HAS_OPT_EINSUM:
-    EINSUM_BACKEND = "opt_einsum"
-else:
-    EINSUM_BACKEND = "numpy"
+    _HAS_PYTBLIS = _has_module('pytblis')
+    _HAS_OPT_EINSUM = _has_module('opt_einsum')
+
+    # Backend priority: provided flags > pytblis > opt_einsum > numpy fallback
+    if OPT_EINSUM and _HAS_OPT_EINSUM:
+        EINSUM_BACKEND = "opt_einsum"
+    elif PYTBLIS and _HAS_PYTBLIS:
+        EINSUM_BACKEND = "pytblis"
+    elif  _HAS_PYTBLIS:
+        EINSUM_BACKEND = "pytblis"
+    elif _HAS_OPT_EINSUM:
+        EINSUM_BACKEND = "opt_einsum"
+    else:
+        EINSUM_BACKEND = "numpy"
+
+    log = PYSCF.log
+    if OPT_EINSUM and EINSUM_BACKEND != "opt_einsum":
+        log.info(
+            "opt_einsum was requested (OPT_EINSUM=True) but is not available. "
+            "Falling back to %s.", EINSUM_BACKEND
+        )
+    if PYTBLIS and EINSUM_BACKEND != "pytblis":
+        log.info(
+            "pytblis was requested (PYTBLIS=True) but is not available. "
+            "Falling back to %s.", EINSUM_BACKEND
+        )
+
+    return EINSUM_BACKEND
 
 # Import backend
 try:
-    if EINSUM_BACKEND == "pytblis":
-        import pytblis
-    elif EINSUM_BACKEND == "opt_einsum":
-        import opt_einsum
+    import pytblis
 except Exception:
-    EINSUM_BACKEND = "numpy"
-
+    import opt_einsum
 _numpy_einsum = numpy.einsum
 
 try:
@@ -60,7 +70,7 @@ except ImportError:
 def _compiled_opt_expr(subscripts, shapes, optimize):
     return _opt_einsum.contract_expression(subscripts, *shapes, optimize=optimize)
 
-def contract(subscripts, A, B, **kwargs):
+def contract(self, subscripts, A, B, **kwargs):
     '''
     Perform tensor contraction using einsum notation
     C = alpha * einsum(subscripts, A, B) + beta * C
@@ -73,7 +83,10 @@ def contract(subscripts, A, B, **kwargs):
         out : ndarray, optional
             Output tensor to store the result.
     '''
+    EINSUM_BACKEND = self.einsum_backend
+
     idx_str = subscripts.replace(" ","")
+
     # Call numpy.asarray because A or B may be HDF5 Datasets
     A, B = asarray(A), asarray(B)
 
@@ -169,7 +182,7 @@ def contract(subscripts, A, B, **kwargs):
     out_arr[...] = Cres
     return out
 
-def einsum(scripts, *tensors, **kwargs):
+def einsum(self, scripts, *tensors, **kwargs):
     '''
     Perform a more efficient einsum via reshaping to a matrix multiply.
 
@@ -178,6 +191,8 @@ def einsum(scripts, *tensors, **kwargs):
     and appears only twice (i.e. no 'ij,ik,il->jkl'). The output indices must
     be explicitly specified (i.e. 'ij,j->i' and not 'ij,j').
     '''
+    EINSUM_BACKEND = self.einsum_backend
+
     subscripts = scripts.replace(" ","")
     tensors = tuple(asarray(t) for t in tensors)
 
@@ -198,7 +213,7 @@ def einsum(scripts, *tensors, **kwargs):
 
     _contract = kwargs.pop('_contract', contract)
     if len(tensors) <= 2:
-        return _contract(subscripts, *tensors, **kwargs)
+        return _contract(self, subscripts, *tensors, **kwargs)
 
     _, contraction_list = _einsum_path(subscripts, *tensors, optimize=optimize, einsum_call=True)
 
@@ -211,8 +226,10 @@ def einsum(scripts, *tensors, **kwargs):
         else:
             inds, _, einsum_str, _, _ = contraction
         ops = [operands[i] for i in inds]
-        fn = _contract if len(ops) == 2 else _numpy_einsum
-        result = fn(einsum_str, *ops, **kwargs)
+        if len(ops)==2:
+            result = _contract(self, einsum_str, *ops, **kwargs)
+        else:
+            result = _numpy_einsum(einsum_str, *ops, **kwargs)
         operands = [op for i, op in enumerate(operands) if i not in inds]
         operands.append(result)
         del ops, result
@@ -283,3 +300,15 @@ def _analyze_indices(idx_str):
     permC = [out_idx.index(i) for i in idxC]
 
     return idxA, idxB, idxC, orderA, orderB, permC, shared
+
+def set_einsum(PYSCF):
+    import types
+
+    if not hasattr(PYSCF, 'einsum_backend'):
+        raise AttributeError(
+            f"Expected object with 'einsum_backend' attribute, "
+            f"got {type(PYSCF).__name__}"
+        )
+    PYSCF.einsum = types.MethodType(einsum, PYSCF)
+    PYSCF.contract = types.MethodType(contract, PYSCF)
+
