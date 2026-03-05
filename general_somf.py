@@ -22,10 +22,8 @@
 import sys
 import os
 import numpy as np
+import scipy
 from functools import reduce
-from pyscf.lib.parameters import LIGHT_SPEED
-from pyscf.x2c import sfx2c1e
-from pyscf.x2c import x2c
 from sympy.physics.quantum.cg import CG
 from prism import qd_nevpt2
 from prism import nevpt2
@@ -44,55 +42,32 @@ def getSOC_integrals(method):
     mo = method.mo
     nmo = method.nmo
     nao = method.mo.shape[1]
-    prefactor = 0.5 / ((LIGHT_SPEED)**2)
+    prefactor = 0.5 / ((method.interface.light_speed)**2)
     mol = method.interface.mol
+    nbasis = mol.nao_nr()
+    hsocint = np.zeros((3, nbasis, nbasis))
 
     # Build 1e-density matrix
     rdm1ao = method.interface.mc.make_rdm1() 
 
     if (method.soc=="Breit-Pauli" or method.soc=="BP"):
-        xmol, contr_coeff = mol, np.eye(mol.nao_nr())
-        nbasis = xmol.nao_nr()
-        hsocint = np.zeros((3, nbasis, nbasis))
- 
-        hsocint += prefactor * somf.get_wso(xmol) #, unc=False)
-        hsocint -= prefactor * somf.get_fso2e_bp(xmol, rdm1ao)
+        hsocint += prefactor * somf.get_wso(mol)
+        hsocint -= prefactor * somf.get_fso2e_bp(mol, rdm1ao)
 
-    elif (method.soc=="x2c1" or method.soc=="DKH1"):   
-        xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
-        nbasis = xmol.nao_nr()
-        hsocint = np.zeros((3, nbasis, nbasis))
- 
-        rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
+    elif (method.soc=="x2c1" or method.soc=="DKH1"): 
         hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
-        hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
+        hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao, unc=False)
     
-    elif (method.soc=="x2c2" or method.soc=="DKH2"):
-        raise Exception("The sf-X2C-1e+so-DKH2 implementation is not complete yet in Prism.")
-        xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
-        nbasis = xmol.nao_nr()
-        hsocint = np.zeros((3, nbasis, nbasis))
-        
-        rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-        hsocint += prefactor * somf.get_hso1e_x2c1(xmol, unc=False)
-        hsocint += prefactor * get_hso1e_x2c2(xmol) 
-        hsocint -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
-
     else:
         raise Exception("Incorrect SOC flag in input file!!")
 
-    ### Recontract the basis:
-    h_soc_all_contr = np.zeros((3, nao, nao))
-    for comp in range(3):
-        h_soc_all_contr[comp] = reduce(np.dot, (contr_coeff.T, hsocint[comp], contr_coeff))
-
     ### Convert to MO basis:
-    h_soc_all_contr = np.einsum('xpq,pi,qj->xij',h_soc_all_contr, mo, mo)
-    h_soc_total = np.zeros((3, nmo, nmo), dtype = 'complex')    
+    hsoc_mo = np.einsum('xpq,pi,qj->xij',hsocint, mo, mo)
+    hsoc = np.zeros((3, nmo, nmo), dtype = 'complex')    
     for comp in range(3):
-        h_soc_total[comp] =-1j*(h_soc_all_contr[comp].astype('complex'))
+        hsoc[comp] = -1j*(hsoc_mo[comp].astype('complex'))
 
-    return h_soc_total 
+    return hsoc 
 
 
 def state_interaction_SOC(method, en, rdm_aabb, S, ms):
@@ -379,9 +354,10 @@ def gtensor(method, evec_soc, rdm_sf, S,target_index = 0,origin_type = 'charge')
 
 ## DKH-2 specific functionalities:
 
-def get_hxr_dkh2(mol):
+def get_hxr_dkh2(method):
 
-    c = LIGHT_SPEED
+    mol = method.interface.mol
+    c = method.interface.light_speed
     t = mol.intor_symmetric('int1e_kin')
     v = mol.intor_symmetric('int1e_nuc')
     s = mol.intor_symmetric('int1e_ovlp')
@@ -415,8 +391,8 @@ def _x2c1e_hxrmat_dkh2(t, v, w, s, c):
     h1 = (h[:nao, :nao] + h[:nao, nao:].dot(x) + x.T.conj().dot(h[nao:, :nao]) +
           reduce(np.dot, (x.T.conj(), h[nao:, nao:], x)))
 
-    sa = x2c._invsqrt(s)
-    sb = x2c._invsqrt(reduce(np.dot, (sa, s1, sa)))
+    sa = scipy.linalg.invsqrt(s)
+    sb = scipy.linalg.invsqrt(reduce(np.dot, (sa, s1, sa)))
     r = reduce(np.dot, (sa, sb, sa, s))
     h1_plus = reduce(np.dot, (r.T.conj(), h1, r))
 
@@ -424,8 +400,8 @@ def _x2c1e_hxrmat_dkh2(t, v, w, s, c):
     x_bar = -(reduce(np.dot, (np.linalg.inv(s), x.T.conj(), (0.5 / c**2)*t))) 
     
     s_min_bar = (0.5 / c**2)*t + reduce(np.dot, (x_bar.T.conj(), s, x_bar))
-    s2_invsqrt = x2c._invsqrt((0.5/c**2)*t)
-    s2_smin_s2_invsqrt = x2c._invsqrt(reduce(np.dot, (s2_invsqrt, s_min_bar, s2_invsqrt)))
+    s2_invsqrt = scipy.linalg.invsqrt((0.5/c**2)*t)
+    s2_smin_s2_invsqrt = scipy.linalg.invsqrt(reduce(np.dot, (s2_invsqrt, s_min_bar, s2_invsqrt)))
     r_min = reduce(np.dot, (s2_invsqrt, s2_smin_s2_invsqrt, s2_invsqrt, ((0.5/c**2)*t)))
     
     l_min = (h[nao:, nao:] + h[nao:, :nao].dot(x_bar) + (x_bar.T.conj()).dot(h[:nao, nao:]) + 
@@ -435,10 +411,11 @@ def _x2c1e_hxrmat_dkh2(t, v, w, s, c):
     return h1_plus, x, r, h1_min, x_bar, r_min
 
 
-def get_hso1e_x2c2(mol):
+def get_hso1e_x2c2(method):
     '''One electron DKH-2 type operator'''
+    mol = method.interface.mol
     s, t, h1p, x, rp, h1m, xb, rm = get_hxr_dkh2(mol)
-    c = LIGHT_SPEED
+    c = method.interface.light_speed
     ep, cp = scipy.linalg.eigh(h1p, s)
     em, cm = scipy.linalg.eigh(h1m, ((0.5/c**2)*t))
     
@@ -482,21 +459,24 @@ def get_hso1e_x2c2(mol):
     h1e_sox2c2[2] += np.dot(W1[0],tinv_o1[1]) - np.dot(W1[1],tinv_o1[0])
 
     # Sanity checks:
-    print(np.linalg.norm(h1e_sox2c2[0] + h1e_sox2c2[0].T.conj()))
-    print(np.linalg.norm(h1e_sox2c2[1] + h1e_sox2c2[1].T.conj()))
-    print(np.linalg.norm(h1e_sox2c2[2] + h1e_sox2c2[2].T.conj()))
+    method.log.info("Check DKH-2 h1e Matrix Hemiticity")
+    method.log.info("Norm of X-comp: %14.6f" % (np.linalg.norm(h1e_sox2c2[0] + h1e_sox2c2[0].T.conj())))
+    method.log.info("Norm of Y-comp: %14.6f" % (np.linalg.norm(h1e_sox2c2[1] + h1e_sox2c2[1].T.conj())))
+    method.log.info("Norm of X-comp: %14.6f" % (np.linalg.norm(h1e_sox2c2[2] + h1e_sox2c2[2].T.conj())))
 
     return h1e_sox2c2
 
 
-def get_hsf1e_x2c2(mol, unc=True):
+def get_hsf1e_x2c2(method, unc=True):
     
+    mol = method.interface.mol
     if unc:
-        xmol, contr_coeff = sfx2c1e.SpinFreeX2C(mol).get_xmol()
+        xmol = method.xmol
+        contr_coeff = method.contr_coeff
 
     '''One electron DKH-2 type operator'''
     s, t, h1p, x, rp, h1m, xb, rm = get_hxr(mol)
-    c = LIGHT_SPEED
+    c = method.interface.light_speed
     ep, cp = scipy.linalg.eigh(h1p, s)
     em, cm = scipy.linalg.eigh(h1m, ((0.5/c**2)*t))
 

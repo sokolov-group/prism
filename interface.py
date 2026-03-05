@@ -52,8 +52,9 @@ class PYSCF:
 
         # Unit conversions
         self.hartree_to_ev = 27.2113862459817
-#        self.hartree_to_ev = 27.2114
         self.hartree_to_inv_cm = 219474.63136314
+        # Constants
+        self.light_speed = lib.parameters.LIGHT_SPEED
 
         log.info("Collecting reference wavefunction information...")
         if mc is None:
@@ -143,7 +144,11 @@ class PYSCF:
             self.enforce_degeneracy = True
             # SOC params:
             self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-
+            self.unc = None
+            # Basis set uncontraction objects: xmol, contraction coefficients.
+            self.xmol = None
+            self.contr_coeff = None
+            
 
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df
