@@ -74,7 +74,7 @@ def state_interaction_SOC(method, en, rdm_aabb, S, ms):
     cput0 = (logger.process_clock(), logger.perf_counter())
     method.log.info("Spin-Free Framework: Employ Wigner–Eckart’s theorem")
     method.log.info("Consider spin-orbit coupling effect...")
-    nmo = len(rdm_aabb[0,0,0,0])
+    nmo = method.nmo
     nstate = len(en)
 
     if (method.soc=="Breit-Pauli" or method.soc=="BP"):
@@ -161,7 +161,10 @@ def state_interaction_SOC(method, en, rdm_aabb, S, ms):
         for J in  range(nstate_total):
             rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
     rdm_mo_soc = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
-    osc_str =    nevpt2.osc_strength(method, en_soc, rdm_mo_soc)      
+    osc_str_soc =    nevpt2.osc_strength(method, en_soc, rdm_mo_soc)  
+
+    #debug osc: osc with soc has conflict up to 5 decimal place
+    #method.osc_str_soc_test = osc_strength_general(method, en_soc, rdm_sf,(I_total,evec_soc))     
     
     h2ev = method.interface.hartree_to_ev
     h2cm = method.interface.hartree_to_inv_cm
@@ -181,11 +184,11 @@ def state_interaction_SOC(method, en, rdm_aabb, S, ms):
             method.log.info("%5d       %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), en_soc[p], de, de_ev, " ", de_cm, " "))
         else:
             de_nm = 10000000 / de_cm
-            method.log.info("%5d       %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), en_soc[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+            method.log.info("%5d       %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), en_soc[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
     method.log.info("-----------------------------------------------------------------------------------------------------------------")
     
     if method.verbose >= 5:
-        osc_str_full = osc_str
+        osc_str_full = osc_str_soc
         # Compute all transitions starting from each state
         for gs_index in range(1, len(en_soc)): 
             osc_str_full.extend(nevpt2.osc_strength(method, en_soc, rdm_mo_soc, gs_index))
@@ -195,7 +198,7 @@ def state_interaction_SOC(method, en, rdm_aabb, S, ms):
     sys.stdout.flush()
     method.log.timer0("total %s calculation" % soc, *cput0)
     
-    return en_soc, evec_soc
+    return en_soc, evec_soc, osc_str_soc
 
 
 def gtensor(method, evec_soc, rdm_sf, S,target_index = 0,origin_type = 'charge'):
@@ -350,6 +353,50 @@ def gtensor(method, evec_soc, rdm_sf, S,target_index = 0,origin_type = 'charge')
     method.log.info("%14.3f, %14.3f, %14.3f, ptt"%(1000*(G_sq_en[0]-2.002319),1000*(G_sq_en[1]-2.002319),1000*(G_sq_en[2]-2.002319)))
 
     return G_sq_en, G_evec
+
+## For SOC osc debug:
+def osc_strength_general(method, en, rdm_mo, I_evec_soc=None, gs_index = 0):
+    ncore = method.ncore 
+    dip_mom_ao = method.interface.dip_mom_ao
+    mo_coeff = method.mo
+    nmo = method.nmo
+    ncas = method.ncas
+    dip_mom_mo = np.zeros_like(dip_mom_ao)
+    n_states = len(en)
+
+    #If spin-free:
+    if I_evec_soc is None:
+        I_total=np.arange(n_states)
+        evec_soc = np.identity(n_states)
+    else:
+        I_total = I_evec_soc[0]
+        evec_soc = I_evec_soc[1]
+    # Transform dipole moments from AO to MO basis
+    for d in range(dip_mom_ao.shape[0]):
+        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+    # List to store Osc. Strength Values
+    osc_total = []
+    # Looping over CAS States
+    for state in range(gs_index + 1, n_states):
+        # Reset final transformed RDM
+        rdm_qd = np.zeros((nmo, nmo),dtype='complex')
+        # Looping over states i,j    
+        for i in range(n_states):
+            for j in range(n_states):
+                I = I_total[i]
+                J = I_total[j]
+                rdm_qd += np.conj(evec_soc)[i, state] * rdm_mo[I,J] * evec_soc[j, gs_index]
+        # Create Dipole Moment Operator with RDM
+        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_qd)
+        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_qd)
+        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_qd)
+
+        osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
+        osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
+        osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
+        # Add Dipole Moment Components
+        osc_total.append((osc_x + osc_y + osc_z).real)
+    return osc_total
 
 
 ## DKH-2 specific functionalities:

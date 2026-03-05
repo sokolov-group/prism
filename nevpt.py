@@ -112,10 +112,9 @@ class NEVPT:
         self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
             
         #For SOC
-        self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-        self.en_tot = None
-        self.spin_mult = None
+        self.en_tot = None 
         self.gtensor = False
+        self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.origin_type = 'charge'  # Possible methods: charge, GIAO, atom1 or User define point(list)
         self.target_index = 0  #target state for gtensor calculation. Default is the ground state.
 
@@ -204,11 +203,23 @@ class NEVPT:
           # Calculate RDM_aabb
           rdm_aabb = nevpt2.make_rdm1s(self)
 
-          en_soc, evec_soc = general_somf.state_interaction_SOC(self, self.en_tot, rdm_aabb, S, ms)
+          en_soc, evec_soc, osc_str_soc = general_somf.state_interaction_SOC(self, self.en_tot, rdm_aabb, S, ms)
           
           if self.gtensor is True:
             rdm_sf = rdm_aabb[0] + rdm_aabb[1]
-            general_somf.gtensor(self,evec_soc,rdm_sf, S, target_index = self.target_index, origin_type=self.origin_type)
+            self.g_factor, G_evec = general_somf.gtensor(self,evec_soc,rdm_sf, S, target_index = self.target_index, origin_type=self.origin_type)
+          
+          #Calculate SOC e_corr respect with CASSCF energy
+          e_ref_spinstate = []
+          for i in range(nstate):
+            n = int(S[i]*2 + 1)
+            for j in range(n):
+                e_ref_spinstate.append(self.e_ref[i])
+        
+          e_corr_soc = en_soc - e_ref_spinstate
+
+          (e_tot, e_corr, osc) = (en_soc, e_corr_soc, osc_str_soc)
+
         
         return e_tot, e_corr, osc 
 
