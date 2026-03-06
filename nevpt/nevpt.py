@@ -17,10 +17,10 @@
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
-import prism.nevpt_integrals as nevpt_integrals
-import prism.nevpt_compute as nevpt_compute
-import prism.nevpt2 as nevpt2
-import prism.qd_nevpt2 as qdnevpt2
+from prism.nevpt import integrals
+from prism.nevpt import compute
+from prism.nevpt import nevpt2
+from prism.nevpt import qd_nevpt2
 
 class NEVPT:
     def __init__(self, interface):
@@ -107,7 +107,7 @@ class NEVPT:
         if self.method == "nevpt2":
             make_rdm1 = nevpt2.make_rdm1
         else:
-            make_rdm1 = qdnevpt2.make_rdm1
+            make_rdm1 = qd_nevpt2.make_rdm1
 
         self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
             
@@ -157,16 +157,16 @@ class NEVPT:
         
         # Transform one- and two-electron integrals
         log.info("\nTransforming integrals to MO basis...")
-        nevpt_integrals.transform_integrals_1e(self)
+        integrals.transform_integrals_1e(self)
         if self.interface.with_df:
-            nevpt_integrals.transform_Heff_integrals_2e_df(self)
-            nevpt_integrals.transform_integrals_2e_df(self)
+            integrals.transform_Heff_integrals_2e_df(self)
+            integrals.transform_integrals_2e_df(self)
         else:
             # TODO: this actually handles out-of-core integrals too, rename the function
-            nevpt_integrals.transform_integrals_2e_incore(self)
+            integrals.transform_integrals_2e_incore(self)
 
         # Run NEVPT computation
-        e_tot, e_corr, osc = nevpt_compute.kernel(self)
+        e_tot, e_corr, osc = compute.kernel(self)
         self.en_tot = e_tot
 
         if self.keep_amplitudes is False:

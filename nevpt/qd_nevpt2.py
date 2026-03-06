@@ -21,8 +21,8 @@ from functools import reduce
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
-import prism.nevpt_amplitudes as nevpt_amplitudes
-import prism.nevpt2 as nevpt2
+from prism.nevpt import amplitudes
+from prism.nevpt import nevpt2
 
 def compute_energy(nevpt, e_diag, t1, t1_0):
 

@@ -20,11 +20,12 @@
 import sys
 import numpy as np
 
+from prism.nevpt import rdms
+from prism.nevpt import amplitudes
+from prism.nevpt import nevpt2
+from prism.nevpt import qd_nevpt2
+
 import prism.lib.logger as logger
-import prism.nevpt_rdms as nevpt_rdms
-import prism.nevpt_amplitudes as nevpt_amplitudes
-import prism.nevpt2 as nevpt2
-import prism.qd_nevpt2 as qd_nevpt2
 
 def kernel(nevpt):
 
@@ -78,7 +79,7 @@ def kernel(nevpt):
     ncore = nevpt.ncore - nevpt.nfrozen
 
     if ncore > 0 and nevpt.nextern > 0:
-        e_0, t1_0 = nevpt_amplitudes.compute_t1_0(nevpt)
+        e_0, t1_0 = amplitudes.compute_t1_0(nevpt)
     else:
         t1_0 = np.zeros((ncore, ncore, nevpt.nextern, nevpt.nextern))
     
@@ -91,10 +92,10 @@ def kernel(nevpt):
         nevpt.log.info("Number of active electrons:                        %s" % str(nevpt.ref_nelecas[mstate:(mstate+deg)]))
 
         # Compute reduced density matrices for a specific state
-        rdms = nevpt_rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+deg)], nevpt.ref_nelecas[mstate:(mstate+deg)])
+        rdms_ref = rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+deg)], nevpt.ref_nelecas[mstate:(mstate+deg)])
 
         # Compute amplitudes and correlation energy
-        e_corr_state, t1_state = nevpt2.compute_energy(nevpt, rdms, e_0)
+        e_corr_state, t1_state = nevpt2.compute_energy(nevpt, rdms_ref, e_0)
         e_tot_state = nevpt.e_ref[state] + e_corr_state
 
         ref_name = nevpt.interface.reference.upper()
@@ -114,7 +115,7 @@ def kernel(nevpt):
             nevpt.t1 = [t1_state] # single-state 
             del (t1_state)
 
-        del (rdms)
+        del (rdms_ref)
 
         mstate += deg
          

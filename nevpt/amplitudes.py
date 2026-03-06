@@ -20,8 +20,8 @@
 import numpy as np
 from functools import reduce
 
-import prism.nevpt_intermediates as nevpt_intermediates
-import prism.nevpt_overlap as nevpt_overlap
+from prism.nevpt import intermediates
+from prism.nevpt import overlap
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -109,10 +109,10 @@ def compute_t1_p1(nevpt, rdms):
     rdm_ca = rdms.ca
 
     # Compute K_ac matrix
-    K_ac = nevpt_intermediates.compute_K_ac(nevpt, rdms)
+    K_ac = intermediates.compute_K_ac(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1_12_inv_act = nevpt_overlap.compute_S12_p1(nevpt, rdms)
+    S_p1_12_inv_act = overlap.compute_S12_p1(nevpt, rdms)
 
     if hasattr(nevpt.S12, "cca"):
         nevpt.S12.cca = S_p1_12_inv_act.copy()
@@ -187,10 +187,10 @@ def compute_t1_m1(nevpt, rdms):
     rdm_ca = rdms.ca
 
     # Compute K_ca matrix
-    K_ca = nevpt_intermediates.compute_K_ca(nevpt, rdms)
+    K_ca = intermediates.compute_K_ca(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1_12_inv_act = nevpt_overlap.compute_S12_m1(nevpt, rdms)
+    S_m1_12_inv_act = overlap.compute_S12_m1(nevpt, rdms)
 
     if hasattr(nevpt.S12, "cae"):
         nevpt.S12.cae = S_m1_12_inv_act.copy()
@@ -269,10 +269,10 @@ def compute_t1_p2(nevpt, rdms):
     rdm_ccaa = rdms.ccaa
 
     # Compute K_aaccc matrix
-    K_aacc = nevpt_intermediates.compute_K_aacc(nevpt, rdms)
+    K_aacc = intermediates.compute_K_aacc(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p2_12_inv_act = nevpt_overlap.compute_S12_p2(nevpt, rdms)
+    S_p2_12_inv_act = overlap.compute_S12_p2(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p2_12_inv_act.T, K_aacc, S_p2_12_inv_act))
@@ -343,10 +343,10 @@ def compute_t1_m2(nevpt, rdms):
     rdm_ccaa = rdms.ccaa
 
     # Compute K_ccaa matrix
-    K_ccaa = nevpt_intermediates.compute_K_ccaa(nevpt, rdms)
+    K_ccaa = intermediates.compute_K_ccaa(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m2_12_inv_act = nevpt_overlap.compute_S12_m2(nevpt, rdms)
+    S_m2_12_inv_act = overlap.compute_S12_m2(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m2_12_inv_act.T, K_ccaa, S_m2_12_inv_act))
@@ -430,10 +430,10 @@ def compute_t1_0p(nevpt, rdms):
     rdm_ccaa = rdms.ccaa
 
     # Compute K_caca matrix
-    K_caca = nevpt_intermediates.compute_K_caca(nevpt, rdms)
+    K_caca = intermediates.compute_K_caca(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_0p_12_inv_act = nevpt_overlap.compute_S12_0p_gno_projector(nevpt, rdms)
+    S_0p_12_inv_act = overlap.compute_S12_0p_gno_projector(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_0p_12_inv_act[1:,:].T, K_caca, S_0p_12_inv_act[1:,:]))
@@ -556,13 +556,13 @@ def compute_t1_p1p(nevpt, rdms):
     rdm_cccaaa = rdms.cccaaa
 
     # Compute K_p1p matrix
-    K_p1p = nevpt_intermediates.compute_K_p1p(nevpt, rdms)
+    K_p1p = intermediates.compute_K_p1p(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     if nevpt.semi_internal_projector == "gno":
-        S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_gno_projector(nevpt, rdms)
+        S_p1p_12_inv_act = overlap.compute_S12_p1p_gno_projector(nevpt, rdms)
     else:
-        S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_gs_projector(nevpt, rdms)
+        S_p1p_12_inv_act = overlap.compute_S12_p1p_gs_projector(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
@@ -716,13 +716,13 @@ def compute_t1_m1p(nevpt, rdms):
     rdm_cccaaa = rdms.cccaaa
 
     # Compute K_m1p matrix
-    K_m1p = nevpt_intermediates.compute_K_m1p(nevpt, rdms)
+    K_m1p = intermediates.compute_K_m1p(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     if nevpt.semi_internal_projector == "gno":
-        S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_gno_projector(nevpt, rdms)
+        S_m1p_12_inv_act = overlap.compute_S12_m1p_gno_projector(nevpt, rdms)
     else:
-        S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_gs_projector(nevpt, rdms)
+        S_m1p_12_inv_act = overlap.compute_S12_m1p_gs_projector(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
@@ -853,10 +853,10 @@ def compute_t1_0p_no_singles(nevpt, rdms):
     rdm_ccaa = rdms.ccaa
 
     # Compute K_caca matrix
-    K_caca = nevpt_intermediates.compute_K_caca(nevpt, rdms)
+    K_caca = intermediates.compute_K_caca(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_0p_12_inv_act = nevpt_overlap.compute_S12_0p_no_singles(nevpt, rdms)
+    S_0p_12_inv_act = overlap.compute_S12_0p_no_singles(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_0p_12_inv_act.T, K_caca, S_0p_12_inv_act))
@@ -971,10 +971,10 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
     rdm_cccaaa = rdms.cccaaa
 
     # Compute K_p1p matrix
-    K_p1p = nevpt_intermediates.compute_K_p1p_no_singles(nevpt, rdms)
+    K_p1p = intermediates.compute_K_p1p_no_singles(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1p_12_inv_act = nevpt_overlap.compute_S12_p1p_no_singles(nevpt, rdms)
+    S_p1p_12_inv_act = overlap.compute_S12_p1p_no_singles(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
@@ -1113,10 +1113,10 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
     rdm_cccaaa = rdms.cccaaa
 
     # Compute K_m1p matrix
-    K_m1p = nevpt_intermediates.compute_K_m1p_no_singles(nevpt, rdms)
+    K_m1p = intermediates.compute_K_m1p_no_singles(nevpt, rdms)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1p_12_inv_act = nevpt_overlap.compute_S12_m1p_no_singles(nevpt, rdms)
+    S_m1p_12_inv_act = overlap.compute_S12_m1p_no_singles(nevpt, rdms)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))

@@ -20,10 +20,8 @@
 import numpy as np
 from functools import reduce
 
-import prism.nevpt_intermediates as nevpt_intermediates
-import prism.nevpt_overlap as nevpt_overlap
-import prism.nevpt_amplitudes as nevpt_amplitudes
-import prism.qd_nevpt2 as qd_nevpt2
+from prism.nevpt import amplitudes
+from prism.nevpt import qd_nevpt2
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -44,38 +42,38 @@ def compute_energy(nevpt, rdms, e_0 = None):
     # With singles
     if nevpt.compute_singles_amplitudes:
         if ncore > 0 and nextern > 0 and ncas > 0:
-            e_0p, t1.ce, t1.caea, t1.caae = nevpt_amplitudes.compute_t1_0p(nevpt, rdms)
+            e_0p, t1.ce, t1.caea, t1.caae = amplitudes.compute_t1_0p(nevpt, rdms)
         else:
             t1.ce = np.zeros((ncore, nextern))
             t1.caea = np.zeros((ncore, ncas, nextern, ncas))
             t1.caae = np.zeros((ncore, ncas, ncas, nextern))
 
         if ncore > 0 and ncas > 0:
-            e_p1p, t1.ca, t1.caaa = nevpt_amplitudes.compute_t1_p1p(nevpt, rdms)
+            e_p1p, t1.ca, t1.caaa = amplitudes.compute_t1_p1p(nevpt, rdms)
         else:
             t1.ca = np.zeros((ncore, ncas))
             t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
 
         if nextern > 0 and ncas > 0:
-            e_m1p, t1.ae, t1.aaae = nevpt_amplitudes.compute_t1_m1p(nevpt, rdms)
+            e_m1p, t1.ae, t1.aaae = amplitudes.compute_t1_m1p(nevpt, rdms)
         else:
             t1.ae = np.zeros((ncas, nextern))
             t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
     # Without singles
     else:
         if ncore > 0 and nextern > 0 and ncas > 0:
-            e_0p, t1.caea, t1.caae = nevpt_amplitudes.compute_t1_0p_no_singles(nevpt, rdms)
+            e_0p, t1.caea, t1.caae = amplitudes.compute_t1_0p_no_singles(nevpt, rdms)
         else:
             t1.caea = np.zeros((ncore, ncas, nextern, ncas))
             t1.caae = np.zeros((ncore, ncas, ncas, nextern))
 
         if ncore > 0 and ncas > 0:
-            e_p1p, t1.caaa = nevpt_amplitudes.compute_t1_p1p_no_singles(nevpt, rdms)
+            e_p1p, t1.caaa = amplitudes.compute_t1_p1p_no_singles(nevpt, rdms)
         else:
             t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
 
         if nextern > 0 and ncas > 0:
-            e_m1p, t1.aaae = nevpt_amplitudes.compute_t1_m1p_no_singles(nevpt, rdms)
+            e_m1p, t1.aaae = amplitudes.compute_t1_m1p_no_singles(nevpt, rdms)
         else:
             t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
 
@@ -86,28 +84,28 @@ def compute_energy(nevpt, rdms, e_0 = None):
         nelecas_total = sum(nelecas)
 
     if ncore > 0 and nextern > 0 and ncas > 0:
-        e_p1, t1.ccae = nevpt_amplitudes.compute_t1_p1(nevpt, rdms)
+        e_p1, t1.ccae = amplitudes.compute_t1_p1(nevpt, rdms)
     else:
         t1.ccae = np.zeros((ncore, ncore, ncas, nextern))
 
     if ncore > 0 and nextern > 0 and ncas > 0 and nelecas_total > 0:
-        e_m1, t1.caee = nevpt_amplitudes.compute_t1_m1(nevpt, rdms)
+        e_m1, t1.caee = amplitudes.compute_t1_m1(nevpt, rdms)
     else:
         t1.caee = np.zeros((ncore, ncas, nextern, nextern))
 
     if ncore > 0 and ncas > 0:
-        e_p2, t1.ccaa = nevpt_amplitudes.compute_t1_p2(nevpt, rdms)
+        e_p2, t1.ccaa = amplitudes.compute_t1_p2(nevpt, rdms)
     else:
         t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
 
     if nextern > 0 and ncas > 0 and nelecas_total > 1:
-        e_m2, t1.aaee = nevpt_amplitudes.compute_t1_m2(nevpt, rdms)
+        e_m2, t1.aaee = amplitudes.compute_t1_m2(nevpt, rdms)
     else:
         t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
     if e_0 is None:
         if ncore > 0 and nextern > 0:
-            e_0, t1.ccee = nevpt_amplitudes.compute_t1_0(nevpt)
+            e_0, t1.ccee = amplitudes.compute_t1_0(nevpt)
         else:
             t1.ccee = np.zeros((ncore, ncore, nextern, nextern))
     else:
