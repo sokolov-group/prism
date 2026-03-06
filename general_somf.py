@@ -25,9 +25,8 @@ import numpy as np
 import scipy
 from functools import reduce
 from sympy.physics.quantum.cg import CG
-from prism import qd_nevpt2
-from prism import nevpt2
-from prism import nevpt_compute
+from prism.nevpt import nevpt2
+from prism.nevpt import compute
 import prism.lib.logger as logger
 
 # Add python path for socutils:
@@ -207,7 +206,7 @@ def state_interaction_SOC(method, en, rdm_aabb, S, ms):
         for gs_index in range(1, len(en_soc)): 
             osc_str_full.extend(nevpt2.osc_strength(method, en_soc, rdm_mo_soc, gs_index))
 
-        nevpt_compute.print_osc_str(method, en_soc, osc_str_full)
+        compute.print_osc_str(method, en_soc, osc_str_full)
     
     sys.stdout.flush()
     method.log.timer0("total %s calculation" % soc, *cput0)
