@@ -64,10 +64,10 @@ def getSOC_integrals(method):
         if (nbasis != nbasis_unc):
             hsocint_unc = np.zeros((3, nbasis_unc, nbasis_unc))
             rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-            hsocint_unc += prefactor * somf.get_hso1e_x2c1(mol)
-            hsocint_unc -= prefactor * somf.get_fso2e_x2c(mol, rdm1ao)
-            hsocint = np.einsum('pi, aij, qj -> apq', contr_coeff, hsocint_unc, contr_coeff)
-            
+            hsocint_unc += prefactor * somf.get_hso1e_x2c1(xmol)
+            hsocint_unc -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
+            hsocint = np.einsum('pi,xpq,qj->xij', contr_coeff, hsocint_unc, contr_coeff)
+
         else:
             hsocint += prefactor * somf.get_hso1e_x2c1(mol)
             hsocint -= prefactor * somf.get_fso2e_x2c(mol, rdm1ao)
