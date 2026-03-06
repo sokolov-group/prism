@@ -33602,7 +33602,7 @@ def renormalize_eigenvectors(mr_adc, U):
     ccea = mr_adc.h_orth.ccea
     ccee = mr_adc.h_orth.ccee
     caee = mr_adc.h_orth.caee
-    if mr_adc.nval > 0:
+    if nval > 0:
         cvaa = mr_adc.h_orth.cvaa
         cvea__abab = mr_adc.h_orth.cvea__abab
         cvea__baab = mr_adc.h_orth.cvea__baab
@@ -33686,7 +33686,7 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
         h1_cvea__abab = slice(0,0)
         h1_cvea__baab = slice(0,0)
         h1_cvee = slice(0,0)
-        if mr_adc.nval > 0:
+        if nval > 0:
             h1_cvaa = mr_adc.h1.cvaa
             h1_cvea__abab = mr_adc.h1.cvea__abab
             h1_cvea__baab = mr_adc.h1.cvea__baab
@@ -33788,40 +33788,66 @@ def compute_ntos(mr_adc, X):
     from pyscf.tools import molden
 
     # Variables from kernel
-    ncvs = mr_adc.ncvs
-    nval = mr_adc.nval
+    ncore = mr_adc.ncore
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
     nroots = mr_adc.nroots
 
-    mo_coeff = mr_adc.mo
+    mo = mr_adc.mo
     mol = mr_adc.interface.mol
 
-    # Particle-Hole
-    hole_idx = list(range(ncvs + nval + ncas))
-    particle_idx = list(range(ncas + nextern))
+    # Hole/Particle
+    hole_idx = list(range(ncore + ncas))
+    particle_idx = list(range(ncore, ncore + ncas + nextern))
+
+    # AO Integrals
+    R_ao = mol.intor("int1e_r")
+    R2_ao = mol.intor("int1e_r2")
+
+    # Transform to MO basis
+    R_mo  = np.einsum('pi,npq,qj->nij', mo, R_ao, mo)
+    R2_mo = mo.T @ R2_ao @ mo
+
+    # Restrict to hole/particle spaces
+    Rh  = R_mo[:, hole_idx][:,:,hole_idx]
+    Re  = R_mo[:, particle_idx][:,:,particle_idx]
+
+    R2h = R2_mo[np.ix_(hole_idx, hole_idx)]
+    R2e = R2_mo[np.ix_(particle_idx, particle_idx)]
+
+    # Orbital Centroids
+    rh_orb = np.stack([np.diag(Rh[a]) for a in range(3)], axis=1)
+    re_orb = np.stack([np.diag(Re[a]) for a in range(3)], axis=1)
 
     # Threshold
-    nto_thresh = 1e-3
-
+    NTO_THRESH = 1e-3
     for i in range(nroots):
 
         TDM = X[i][np.ix_(hole_idx, particle_idx)]
         U, s, Vh =  np.linalg.svd(TDM, full_matrices = False)
-
-        assert np.allclose(U.T @ U, np.eye(U.shape[1]))
-        assert np.allclose(Vh @ Vh.T, np.eye(Vh.shape[0]))
-
         nto_weights = s**2
-        mask = nto_weights > nto_thresh
+
+        assert np.allclose(U.T @ U, np.eye(U.shape[1])), "U is not unitary"
+        assert np.allclose(Vh @ Vh.T, np.eye(Vh.shape[0])), "Vh is not unitary"
+
+        # NTO Metrics
+        omega = np.sum(nto_weights)            # sum of NTO occupation numbers
+        w = nto_weights / omega                # normalized weights
+        PR = 1.0 / np.sum(w**2)                # NTO participation ratio
+        S = -np.sum(w * np.log(w + 1e-16))     # entanglement entropy
+        Z = np.exp(S)                          # number of entangled states
+
+        # Exciton Metrics
+        exciton = _compute_exciton_analysis(TDM, Rh, Re, R2h, R2e, rh_orb, re_orb, omega)
+
+        # Molden Output
+        mask = nto_weights > NTO_THRESH
         U, V = U[:, mask], Vh.T[:, mask]
 
         # MO to AO
-        C_hole = mo_coeff[:, hole_idx] @ U
-        C_particle = mo_coeff[:, particle_idx] @ V
-
-        # number of NTOs
+        C_hole = mo[:, hole_idx] @ U
+        C_particle = mo[:, particle_idx] @ V
         n_nto = C_hole.shape[1]
 
         # phase consistency (relative to largest-magnitude AO coefficient)
@@ -33831,30 +33857,81 @@ def compute_ntos(mr_adc, X):
                 C_hole[:, k] *= -1
                 C_particle[:, k] *= -1
 
+        # Interleave pairs
+        # [hole_0, particle_0, hole_1, particle_1, ...]
         C_nto = np.zeros((C_hole.shape[0], 2*n_nto))
-        for k in range(n_nto):
-            C_nto[:, 2*k] = C_hole[:, k]
-            C_nto[:, 2*k+1] = C_particle[:, k]
-
-        occ_nto = np.repeat(nto_weights, 2)
+        C_nto[:, 0::2] = C_hole
+        C_nto[:, 1::2] = C_particle
+        occ_nto = np.repeat(nto_weights[mask], 2)
 
         filename = f"nto_S{i+1}.molden"
         with open(filename, "w") as f:
             molden.header(mol, f)
             molden.orbital_coeff(mol, f, C_nto, occ=occ_nto)
 
-        tot = np.sum(nto_weights)              # sum of NTO occupation numbers
-        w = nto_weights / tot
-        PR = 1.0 / np.sum(w**2)                # NTO participation ratio
-        S = -np.sum(w * np.log(w + 1e-16))     # entanglement entropy
-        Z = np.exp(S)                          # number of entangled states
-
         mr_adc.log.info(f"State {i+1}:")
-        mr_adc.log.info(f"   Sum of SVs (Omega):               {tot:.6f}")
-        mr_adc.log.info(f"   Participation ratio (PR_NTO):     {PR:.6f}")
-        mr_adc.log.info(f"   Entanglement entropy (S_HE):      {S:.6f}")
-        mr_adc.log.info(f"   Nr of entangled states (Z_HE):    {Z:.6f}")
-        mr_adc.log.info(f"   Renormalized S_HE/Z_HE:  {S/Z:.6f} / {1.0:.6f}")
+        mr_adc.log.info(f"   Sum of SVs (Omega):               {omega: .6f}")
+        mr_adc.log.info(f"   Participation ratio (PR_NTO):     {PR: .6f}")
+        mr_adc.log.info(f"   Entanglement entropy (S_HE):      {S: .6f}")
+        mr_adc.log.info(f"   Nr of entangled states (Z_HE):    {Z: .6f}")
+        mr_adc.log.info(f"   Renormalized S_HE/Z_HE:  {S/Z:.6f} / {1.0: .6f}")
+
+        mr_adc.log.info("\n   === Exciton Analysis ===")
+
+        fmt = lambda x: f"{float(x): .3f}"
+        rh = np.array2string(exciton['rh'], formatter={'float_kind': fmt})
+        re = np.array2string(exciton['re'], formatter={'float_kind': fmt})
+        mr_adc.log.info(f"   Mean position of hole:            {rh}")
+        mr_adc.log.info(f"   Mean position of electron:        {re}")
+        mr_adc.log.info(f"   Linear e-h distance:              {exciton['d_lin']: .6f}")
+        mr_adc.log.info(f"   Hole size [Ang]:                  {exciton['sigma_h']: .6f}")
+        mr_adc.log.info(f"   Electron size [Ang]:              {exciton['sigma_e']: .6f}")
+        mr_adc.log.info(f"   RMS e-h separation [Ang]:         {exciton['d_exc']: .6f}")
+        mr_adc.log.info(f"   e-h covariance [Ang^2]:           {exciton['cov']: .6f}")
+        mr_adc.log.info(f"   e-h correlation coeff:            {exciton['corr']: .6f}")
         mr_adc.log.info("")
 
     mr_adc.log.timer("computing natural transition orbitals", *cput0)
+
+
+def _compute_exciton_analysis(TDM, Rh, Re, R2h, R2e, rh_orb, re_orb, omega):
+
+    # h/e densities
+    rho_h = TDM @ TDM.T
+    rho_e = TDM.T @ TDM
+
+    # raw second moments (<r^2>)
+    rh2 = np.einsum('ij,ij->', R2h, rho_h) / omega
+    re2 = np.einsum('ij,ij->', R2e, rho_e) / omega
+
+    # e-h dot product
+    dot_he = np.sum((TDM**2) * (rh_orb @ re_orb.T)) / omega
+
+    # mean positions: <r>
+    rh = np.einsum('nij,ij->n', Rh, rho_h) / omega
+    re = np.einsum('nij,ij->n', Re, rho_e) / omega
+
+    # RMS sizes (sigma_h, sigma_e)
+    sigma_h = np.sqrt(max(rh2 - np.dot(rh, rh), 0.0))
+    sigma_e = np.sqrt(max(re2 - np.dot(re, re), 0.0))
+
+    # e-h separation
+    d_lin = np.linalg.norm(re - rh)
+    d_exc = np.sqrt(max(re2 + rh2 - 2 * dot_he, 0.0))
+
+    # e-h covariance, correlation
+    cov = dot_he - rh @ re
+    denom = sigma_h * sigma_e
+    corr  = cov / denom if denom > 1e-16 else 0.0
+
+    BOHR_TO_ANG = 0.529177210544
+    return {
+        "rh":      rh      * BOHR_TO_ANG,
+        "re":      re      * BOHR_TO_ANG,
+        "sigma_h": sigma_h * BOHR_TO_ANG,
+        "sigma_e": sigma_e * BOHR_TO_ANG,
+        "d_lin":   d_lin   * BOHR_TO_ANG,
+        "d_exc":   d_exc   * BOHR_TO_ANG,
+        "cov":     cov     * BOHR_TO_ANG ** 2,
+        "corr":    corr,
+    }
