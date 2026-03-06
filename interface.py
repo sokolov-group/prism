@@ -146,8 +146,8 @@ class PYSCF:
             self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
             self.unc = None
             # Basis set uncontraction objects: xmol, contraction coefficients.
-            self.xmol = None
-            self.contr_coeff = None
+            from pyscf.x2c import x2c
+            self.xmol, self.contr_coeff = x2c.X2C(mf.mol).get_xmol()
             
 
             if getattr(mc, 'with_df', None):

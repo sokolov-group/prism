@@ -44,25 +44,39 @@ def getSOC_integrals(method):
     nao = method.mo.shape[1]
     prefactor = 0.5 / ((method.interface.light_speed)**2)
     mol = method.interface.mol
-    nbasis = mol.nao_nr()
-    hsocint = np.zeros((3, nbasis, nbasis))
+    xmol = method.interface.xmol
+    contr_coeff = method.interface.contr_coeff
 
     # Build 1e-density matrix
     rdm1ao = method.interface.mc.make_rdm1() 
 
     if (method.soc=="Breit-Pauli" or method.soc=="BP"):
+        nbasis = mol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis)) 
         hsocint += prefactor * somf.get_wso(mol)
         hsocint -= prefactor * somf.get_fso2e_bp(mol, rdm1ao)
 
-    elif (method.soc=="x2c1" or method.soc=="DKH1"): 
-        hsocint += prefactor * somf.get_hso1e_x2c1(mol, unc=False)
-        hsocint -= prefactor * somf.get_fso2e_x2c(mol, rdm1ao, unc=False)
-    
+    elif (method.soc=="x2c1" or method.soc=="DKH1"):
+        nbasis_unc = xmol.nao_nr()
+        nbasis = mol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis))
+
+        if (nbasis != nbasis_unc):
+            hsocint_unc = np.zeros((3, nbasis_unc, nbasis_unc))
+            rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
+            hsocint_unc += prefactor * somf.get_hso1e_x2c1(mol)
+            hsocint_unc -= prefactor * somf.get_fso2e_x2c(mol, rdm1ao)
+            hsocint = np.einsum('pi, aij, qj -> apq', contr_coeff, hsocint_unc, contr_coeff)
+            
+        else:
+            hsocint += prefactor * somf.get_hso1e_x2c1(mol)
+            hsocint -= prefactor * somf.get_fso2e_x2c(mol, rdm1ao)
+       
     else:
         raise Exception("Incorrect SOC flag in input file!!")
 
     ### Convert to MO basis:
-    hsoc_mo = np.einsum('xpq,pi,qj->xij',hsocint, mo, mo)
+    hsoc_mo = np.einsum('xpq,pi,qj->xij', hsocint, mo, mo)
     hsoc = np.zeros((3, nmo, nmo), dtype = 'complex')    
     for comp in range(3):
         hsoc[comp] = -1j*(hsoc_mo[comp].astype('complex'))
