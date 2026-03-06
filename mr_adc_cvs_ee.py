@@ -33502,7 +33502,7 @@ def compute_trans_moments(mr_adc, U):
 def analyze_spec_factor(mr_adc, TY, spec_intensity):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    print_thresh = 1e-2
+    print_thresh = 1e-4
 
     mr_adc.log.info("")
     mr_adc.log.info("="*60)
@@ -33552,7 +33552,7 @@ def analyze_spec_factor(mr_adc, TY, spec_intensity):
             p, q = np.unravel_index(mo_idx, (nmo, nmo))
             p, q = min(p, q), max(p, q)
 
-            frac = sq_norm[p, q] / total * 100
+            frac = sq_norm[p, q] / total
 
             if frac < print_thresh:
                 break
@@ -33576,7 +33576,7 @@ def analyze_spec_factor(mr_adc, TY, spec_intensity):
     for state, mos in results:
         mr_adc.log.info(f"\n{mr_adc.method_type.upper()}-{mr_adc.method.upper()} | State {state+1:d} | Intensity = {spec_intensity[state]:10.6f}")
         for p, q, p_label, q_label, sym_p, sym_q, frac in mos:
-            mr_adc.log.info(f"{p_label.upper()}({p+1:3d}) -> {q_label.upper()}({q+1:3d})  [{sym_p:>4} -> {sym_q:>4}] = {frac:6.2f}%")
+            mr_adc.log.info(f"{p_label.upper()}({p+1:3d}) -> {q_label.upper()}({q+1:3d})  [{sym_p:>4} -> {sym_q:>4}] = {frac:7.4f}")
     mr_adc.log.info("")
 
     mr_adc.log.timer("computing spectroscopic factors analysis", *cput0)
@@ -33912,8 +33912,8 @@ def _compute_exciton_analysis(TDM, Rh, Re, R2h, R2e, rh_orb, re_orb, omega):
     re = np.einsum('nij,ij->n', Re, rho_e) / omega
 
     # RMS sizes (sigma_h, sigma_e)
-    sigma_h = np.sqrt(max(rh2 - np.dot(rh, rh), 0.0))
-    sigma_e = np.sqrt(max(re2 - np.dot(re, re), 0.0))
+    sigma_h = np.sqrt(max(rh2 - rh @ rh, 0.0))
+    sigma_e = np.sqrt(max(re2 - re @ re, 0.0))
 
     # e-h separation
     d_lin = np.linalg.norm(re - rh)
