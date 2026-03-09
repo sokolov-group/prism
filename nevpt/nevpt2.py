@@ -180,18 +180,21 @@ def compute_energy_state(nevpt, rdms, e_0 = None):
 
 
 def compute_properties(nevpt):
+
     # Determine spin multiplicity
     spin_mult = nevpt.ref_wfn_spin_mult
-    if nevpt.method == "qd-nevpt2":
-        spin_mult = qd_nevpt2.determine_spin_mult(nevpt, h_evec)
 
     # Get Oscillator Strengths
-    if nevpt.method == "qd-nevpt2":
-        rdm_mo = qd_nevpt2.make_rdm1(nevpt)
-        osc_str = nevpt2.osc_strength(nevpt, e_tot, rdm_mo)
-    else:
-        rdm_mo = make_rdm1(nevpt)
-        osc_str = osc_strength(nevpt, rdm_mo)
+    rdm_mo = make_rdm1(nevpt)
+    osc_str = osc_strength(nevpt, rdm_mo)
+
+    # Compute all transitions starting from each state
+    if nevpt.verbose >= 5:
+        osc_str_full = osc_str
+        for gs_index in range(1, len(nevpt.e_tot)):  
+            osc_str_full.extend(osc_strength(nevpt, rdm_mo, gs_index))
+
+        print_osc_str(nevpt, osc_str_full)
 
     return osc_str, spin_mult
 
@@ -656,3 +659,47 @@ def make_rdm1s(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
         rdm_final[1] = np.moveaxis(rdm_final[1], -1, 0)
         
     return rdm_final
+
+
+def print_osc_str(nevpt, osc_str):
+
+    e_tot = nevpt.e_tot
+
+    # Oscillator Strengths
+    num_states = len(e_tot) # total states
+    col_width = 18  # characters per column
+
+    # Collect all transitions per ground state
+    transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
+    osc_val = [[] for _ in range(num_states - 1)] 
+    
+    index = 0
+    for i in range(num_states - 1):
+        for j in range(i + 1, num_states):
+            f_ij = osc_str[index]
+            index += 1
+            osc_val.append(f_ij)
+            
+            f_val_str = f"{f_ij:.8f}"
+            transition_data[i].append(f"{i + 1} -> {j + 1}: {f_val_str}")
+
+    # Compute max rows needed and total line width
+    max_len = max(len(col) for col in transition_data)
+    total_line_width = (col_width + 4) * len(transition_data) # Needed for adjusting printout
+
+    # Print header and transitions
+    separator = "-" * total_line_width
+    nevpt.log.info("\n\nOscillator Strengths: state i -> state f")
+    nevpt.log.info(separator)
+
+    # Final print
+    for row in range(max_len):
+        row_data = []
+        for col in transition_data:
+            if row < len(col):
+                row_data.append(col[row].ljust(col_width))
+            else:
+                row_data.append("".ljust(col_width))
+        nevpt.log.info("    ".join(row_data))
+
+    nevpt.log.info(separator)

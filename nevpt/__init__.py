@@ -21,7 +21,7 @@
 from prism.nevpt import compute
 from prism.nevpt import nevpt2
 from prism.nevpt import qd_nevpt2
-#import prism.qd_nevpt as qd_nevpt
+
 
 class NEVPT:
     def __init__(self, interface):
@@ -69,7 +69,7 @@ class NEVPT:
         self.ref_wfn_deg = interface.ref_wfn_deg
 
         # NEVPT specific variables
-        self.method = "nevpt2"                    # Possible methods: nevpt2, qd-nevpt2 (qdnevpt2)
+        self.method = "nevpt2"                    # Possible methods: nevpt2
         self.nfrozen = None                       # Number of lowest-energy (core) orbitals that will be left uncorrelated ("frozen core")
         self.compute_singles_amplitudes = False   # Include singles amplitudes in the NEVPT2 energy?
         self.semi_internal_projector = "gno"      # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
@@ -95,25 +95,19 @@ class NEVPT:
 
         self.mo_energy.c = interface.mo_energy[:self.ncore]
         self.mo_energy.e = interface.mo_energy[self.nocc:]
-        
+
         # Correlated 1rdm
         self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
-        
+
         # Amplitudes
         self.t1 = None
         self.t1_0 = None 
         self.keep_amplitudes = False
-        
-        #Eigenvectors
-        self.h_evec = None
-        
-        if self.method == "nevpt2":
-            make_rdm1 = nevpt2.make_rdm1
-        else:
-            make_rdm1 = qd_nevpt2.make_rdm1
 
+        # Compute correlated RDMs
+        make_rdm1 = nevpt2.make_rdm1
         self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
-            
+
         #For SOC
         self.gtensor = False
         self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
@@ -184,6 +178,45 @@ class NEVPT:
     def compute_energy(self):
 
         return nevpt2.compute_energy(self)
+
+
+    def compute_properties(self):
+
+        return nevpt2.compute_properties(self)
+
+
+    @property
+    def verbose(self):
+        return self._verbose
+
+
+    @verbose.setter
+    def verbose(self, obj):
+        self._verbose = obj
+        self.log.verbose = obj
+
+
+class QDNEVPT(NEVPT):
+
+    def __init__(self, interface):
+
+        super().__init__(interface)
+
+        # Eigenvectors of effective Hamiltonian
+        self.h_evec = None
+
+        # Compute correlated RDMs
+        make_rdm1 = qd_nevpt2.make_rdm1
+        self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
+
+    def compute_energy(self):
+
+        return qd_nevpt2.compute_energy(self)
+
+
+    def compute_properties(self):
+
+        return qd_nevpt2.compute_properties(self)
 
 
     @property

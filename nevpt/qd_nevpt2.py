@@ -24,16 +24,42 @@ import prism.lib.tools as tools
 from prism.nevpt import amplitudes
 from prism.nevpt import nevpt2
 
-def compute_energy(nevpt, e_diag, t1, t1_0):
+def compute_energy(method):
+
+    # Run state-specific NEVPT first
+    nevpt2.compute_energy(method)
+
+    method.log.info("\nComputing the QD-NEVPT2 effective Hamiltonian...")
+
+    # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
+    e_tot, h_evec = diagonalize_eff_H(method)
+    
+    # Update correlation energies
+    e_corr = method.e_corr
+    n_states = len(method.ref_wfn_deg)
+    for state in range(n_states):
+        e_corr[state] = e_tot[state] - method.e_ref[state]
+
+    # Update class objects
+    method.e_tot = e_tot
+    method.e_corr = e_corr
+    method.h_evec = h_evec
+
+
+def diagonalize_eff_H(method):
+
+    e_diag = method.e_tot
+    t1 = method.t1
+    t1_0 = method.t1_0
 
     # Einsum definition from kernel
-    einsum = nevpt.interface.einsum
-    einsum_type = nevpt.interface.einsum_type
+    einsum = method.interface.einsum
+    einsum_type = method.interface.einsum_type
 
-    ncore = nevpt.ncore - nevpt.nfrozen
-    ncas = nevpt.ncas
-    nelecas = nevpt.ref_nelecas
-    nextern = nevpt.nextern
+    ncore = method.ncore - method.nfrozen
+    ncas = method.ncas
+    nelecas = method.ref_nelecas
+    nextern = method.nextern
 
     h_eff = np.diag(e_diag)
     dim = h_eff.shape[0]
@@ -41,23 +67,23 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
     t1_ccee = t1_0
 
     ## One-electron integrals
-    h_ca = nevpt.h1eff.ca
-    h_ce = nevpt.h1eff.ce
-    h_ae = nevpt.h1eff.ae
+    h_ca = method.h1eff.ca
+    h_ce = method.h1eff.ce
+    h_ae = method.h1eff.ae
 
     ## Two-electron integrals
-    v_cace = nevpt.v2e.cace
-    v_caca = nevpt.v2e.caca
-    v_ceaa = nevpt.v2e.ceaa
-    v_caae = nevpt.v2e.caae
-    v_caaa = nevpt.v2e.caaa
-    v_aaae = nevpt.v2e.aaae
+    v_cace = method.v2e.cace
+    v_caca = method.v2e.caca
+    v_ceaa = method.v2e.ceaa
+    v_caae = method.v2e.caae
+    v_caaa = method.v2e.caaa
+    v_aaae = method.v2e.aaae
 
     # Compute the effective Hamiltonian matrix elements
     for I in range(dim):
         for J in range(I):
             # Compute transition density matrices
-            trdm_ca, trdm_ccaa, trdm_cccaaa = nevpt.interface.compute_rdm123(nevpt.ref_wfn[I], nevpt.ref_wfn[J], nevpt.ref_nelecas[I])
+            trdm_ca, trdm_ccaa, trdm_cccaaa = method.interface.compute_rdm123(method.ref_wfn[I], method.ref_wfn[J], method.ref_nelecas[I])
 
             # 0.5 * < Psi_I | V * T | Psi_J >
             t1_caea = t1[J].caea
@@ -107,35 +133,35 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             H_IJ += 1/2 * einsum('xyza,wzua,wuxy', t1_aaae, v_aaae, trdm_ccaa, optimize = einsum_type)
 
             if ncore > 0 and nextern > 0 and ncas > 0:
-                chunks = tools.calculate_chunks(nevpt, nextern, [ncore, ncas, nextern], ntensors = 3)
+                chunks = tools.calculate_chunks(method, nextern, [ncore, ncas, nextern], ntensors = 3)
                 for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
                     cput1 = (logger.process_clock(), logger.perf_counter())
-                    nevpt.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                    method.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
                     t1_caee = t1[J].caee[:,:,s_chunk:f_chunk,:]
-                    v_ceae = nevpt.v2e.ceae[:,s_chunk:f_chunk,:,:]
+                    v_ceae = method.v2e.ceae[:,s_chunk:f_chunk,:,:]
 
                     H_IJ += einsum('ixab,iayb,yx', t1_caee, v_ceae, trdm_ca, optimize = einsum_type)
 
-                    v_ceae = nevpt.v2e.ceae[:,:,:,s_chunk:f_chunk]
+                    v_ceae = method.v2e.ceae[:,:,:,s_chunk:f_chunk]
 
                     H_IJ -= 1/2 * einsum('ixab,ibya,yx', t1_caee, v_ceae, trdm_ca, optimize = einsum_type)
 
-                    nevpt.log.timer_debug("contracting t1.xaee", *cput1)
+                    method.log.timer_debug("contracting t1.xaee", *cput1)
                     del (t1_caee, v_ceae)
 
             if nextern > 0 and ncas > 0:
-                chunks = tools.calculate_chunks(nevpt, nextern, [ncas, ncas, nextern], ntensors = 3)
+                chunks = tools.calculate_chunks(method, nextern, [ncas, ncas, nextern], ntensors = 3)
                 for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
                     cput1 = (logger.process_clock(), logger.perf_counter())
-                    nevpt.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                    method.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
                     t1_aaee = t1[J].aaee[:,:,s_chunk:f_chunk,:]
-                    v_aeae = nevpt.v2e.aeae[:,s_chunk:f_chunk,:,:]
+                    v_aeae = method.v2e.aeae[:,s_chunk:f_chunk,:,:]
 
                     H_IJ += 1/4 * einsum('xyab,zawb,zwxy', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
 
-                    nevpt.log.timer_debug("contracting t1.aeae", *cput1)
+                    method.log.timer_debug("contracting t1.aeae", *cput1)
                     del (t1_aaee, v_aeae)
 
             t1_caea = t1[I].caea
@@ -186,34 +212,34 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
             H_IJ += 1/2 * einsum('xyza,wzua,xywu', t1_aaae, v_aaae, trdm_ccaa, optimize = einsum_type)
 
             if ncore > 0 and nextern > 0 and ncas > 0:
-                chunks = tools.calculate_chunks(nevpt, nextern, [ncore, ncas, nextern], ntensors = 3)
+                chunks = tools.calculate_chunks(method, nextern, [ncore, ncas, nextern], ntensors = 3)
                 for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
                     cput1 = (logger.process_clock(), logger.perf_counter())
-                    nevpt.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                    method.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
                     t1_caee = t1[I].caee[:,:,s_chunk:f_chunk,:]
-                    v_ceae = nevpt.v2e.ceae[:,s_chunk:f_chunk,:,:]
+                    v_ceae = method.v2e.ceae[:,s_chunk:f_chunk,:,:]
 
                     H_IJ += einsum('ixab,iayb,xy', t1_caee, v_ceae, trdm_ca, optimize = einsum_type)
 
-                    v_ceae = nevpt.v2e.ceae[:,:,:,s_chunk:f_chunk]
+                    v_ceae = method.v2e.ceae[:,:,:,s_chunk:f_chunk]
 
                     H_IJ -= 1/2 * einsum('ixab,ibya,xy', t1_caee, v_ceae, trdm_ca, optimize = einsum_type)
 
                     del (t1_caee, v_ceae)
 
             if nextern > 0 and ncas > 0:
-                chunks = tools.calculate_chunks(nevpt, nextern, [ncas, ncas, nextern], ntensors = 3)
+                chunks = tools.calculate_chunks(method, nextern, [ncas, ncas, nextern], ntensors = 3)
                 for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
                     cput1 = (logger.process_clock(), logger.perf_counter())
-                    nevpt.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                    method.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
                     t1_aaee = t1[I].aaee[:,:,s_chunk:f_chunk,:]
-                    v_aeae = nevpt.v2e.aeae[:,s_chunk:f_chunk,:,:]
+                    v_aeae = method.v2e.aeae[:,s_chunk:f_chunk,:,:]
 
                     H_IJ += 1/4 * einsum('xyab,zawb,xyzw', t1_aaee, v_aeae, trdm_ccaa, optimize = einsum_type)
 
-                    nevpt.log.timer_debug("contracting t1.aeae", *cput1)
+                    method.log.timer_debug("contracting t1.aeae", *cput1)
                     del (t1_aaee, v_aeae)
 
             h_eff[I, J] = H_IJ
@@ -224,9 +250,30 @@ def compute_energy(nevpt, e_diag, t1, t1_0):
     return h_eval, h_evec
 
 
-def determine_spin_mult(nevpt, evec):
+def compute_properties(method):
+    # Determine spin multiplicity
+    spin_mult = determine_spin_mult(method)
 
-    spin_mult_old = nevpt.ref_wfn_spin_mult
+    # Get Oscillator Strengths
+    rdm_mo = make_rdm1(method)
+    osc_str = nevpt2.osc_strength(method, rdm_mo)
+
+    if method.verbose >= 5:
+        osc_str_full = osc_str
+        # Compute all transitions starting from each state
+        for gs_index in range(1, len(method.e_tot)):  
+            osc_str_full.extend(nevpt2.osc_strength(method, rdm_mo, gs_index))
+
+        nevpt2.print_osc_str(method, osc_str_full)
+
+    return osc_str, spin_mult
+
+
+def determine_spin_mult(method):
+
+    evec = method.h_evec
+
+    spin_mult_old = method.ref_wfn_spin_mult
     spin_mult_new = []
 
     for root in range(evec.shape[1]):
@@ -236,22 +283,22 @@ def determine_spin_mult(nevpt, evec):
     return spin_mult_new
 
 
-def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None, evec = None):
+def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None, evec = None):
 
     if evec is None: 
-        evec = nevpt.h_evec
+        evec = method.h_evec
         
-    n_micro_states = sum(nevpt.ref_wfn_deg)
-    einsum = nevpt.interface.einsum
+    n_micro_states = sum(method.ref_wfn_deg)
+    einsum = method.interface.einsum
     
-    einsum_type = nevpt.interface.einsum_type
-    nmo = nevpt.nmo
+    einsum_type = method.interface.einsum_type
+    nmo = method.nmo
 
     if t1 is None:
-        t1 = nevpt.t1
+        t1 = method.t1
     
     if t1_0 is None:
-        t1_0 = nevpt.t1_0
+        t1_0 = method.t1_0
 
     L_states = 0
     R_states = 0
@@ -279,7 +326,7 @@ def make_rdm1(nevpt, L = None, R = None, type = 'all', t1 = None, t1_0 = None, e
         raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
     
     # Compute model state 1RDM
-    rdm_casci = nevpt2.make_rdm1(nevpt)
+    rdm_casci = nevpt2.make_rdm1(method)
     
     # Compute qdnevpt2 1RDMS
     rdm_qd = einsum('Im,IJpq,Jn->mnpq', evec, rdm_casci, evec)
