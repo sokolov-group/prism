@@ -19,8 +19,8 @@
 
 
 from prism.nevpt import compute
-from prism.nevpt import nevpt2
-from prism.nevpt import qd_nevpt2
+from prism.nevpt import nevpt
+from prism.nevpt import qd_nevpt
 
 
 class NEVPT:
@@ -105,7 +105,7 @@ class NEVPT:
         self.keep_amplitudes = False
 
         # Compute correlated RDMs
-        make_rdm1 = nevpt2.make_rdm1
+        make_rdm1 = nevpt.make_rdm1
         self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
 
         #For SOC
@@ -152,7 +152,7 @@ class NEVPT:
           S  = [round(elem,2) for elem in S]
 
           # Calculate RDM_aabb
-          rdm_aabb = nevpt2.make_rdm1s(self)
+          rdm_aabb = nevpt.make_rdm1s(self)
 
           en_soc, evec_soc, osc_str_soc = general_somf.state_interaction_SOC(self, self.en_tot, rdm_aabb, S, ms)
           
@@ -177,12 +177,12 @@ class NEVPT:
 
     def compute_energy(self):
 
-        return nevpt2.compute_energy(self)
+        return nevpt.compute_energy(self)
 
 
     def compute_properties(self):
 
-        return nevpt2.compute_properties(self)
+        return nevpt.compute_properties(self)
 
 
     @property
@@ -206,17 +206,17 @@ class QDNEVPT(NEVPT):
         self.h_evec = None
 
         # Compute correlated RDMs
-        make_rdm1 = qd_nevpt2.make_rdm1
+        make_rdm1 = qd_nevpt.make_rdm1
         self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
 
     def compute_energy(self):
 
-        return qd_nevpt2.compute_energy(self)
+        return qd_nevpt.compute_energy(self)
 
 
     def compute_properties(self):
 
-        return qd_nevpt2.compute_properties(self)
+        return qd_nevpt.compute_properties(self)
 
 
     @property

@@ -22,7 +22,6 @@ import numpy as np
 
 from prism.nevpt import integrals
 from prism.nevpt import amplitudes
-from prism.nevpt import qd_nevpt2
 
 import prism.lib.logger as logger
 

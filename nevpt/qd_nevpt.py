@@ -22,12 +22,12 @@ from functools import reduce
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 from prism.nevpt import amplitudes
-from prism.nevpt import nevpt2
+from prism.nevpt import nevpt
 
 def compute_energy(method):
 
     # Run state-specific NEVPT first
-    nevpt2.compute_energy(method)
+    nevpt.compute_energy(method)
 
     method.log.info("\nComputing the QD-NEVPT2 effective Hamiltonian...")
 
@@ -256,15 +256,15 @@ def compute_properties(method):
 
     # Get Oscillator Strengths
     rdm_mo = make_rdm1(method)
-    osc_str = nevpt2.osc_strength(method, rdm_mo)
+    osc_str = nevpt.osc_strength(method, rdm_mo)
 
     if method.verbose >= 5:
         osc_str_full = osc_str
         # Compute all transitions starting from each state
         for gs_index in range(1, len(method.e_tot)):  
-            osc_str_full.extend(nevpt2.osc_strength(method, rdm_mo, gs_index))
+            osc_str_full.extend(nevpt.osc_strength(method, rdm_mo, gs_index))
 
-        nevpt2.print_osc_str(method, osc_str_full)
+        nevpt.print_osc_str(method, osc_str_full)
 
     return osc_str, spin_mult
 
@@ -326,7 +326,7 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None, 
         raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
     
     # Compute model state 1RDM
-    rdm_casci = nevpt2.make_rdm1(method)
+    rdm_casci = nevpt.make_rdm1(method)
     
     # Compute qdnevpt2 1RDMS
     rdm_qd = einsum('Im,IJpq,Jn->mnpq', evec, rdm_casci, evec)
