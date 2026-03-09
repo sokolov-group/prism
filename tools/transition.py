@@ -55,20 +55,19 @@ def osc_strength(interface, e_diff, trdm_mo):
 def print_osc_strength(interface, osc_str):
 
     # Oscillator Strengths
-    num_states = len(osc_str[0]) # total states
     col_width = 18  # characters per column
 
     # Collect all transitions per ground state
-    transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
-    osc_val = [[] for _ in range(num_states - 1)] 
+    transition_data = [[] for _ in range(len(osc_str))] 
     
-    for i in range(num_states - 1):
-        for j in range(i + 1, len(osc_str[i])):
-            f_ij = osc_str[i][j]
-            osc_val.append(f_ij)
+    for i in range(len(osc_str)):
+        transitions = osc_str[i]
+
+        for j in range(len(transitions)):
+            f_ij = transitions[j]
 
             f_val_str = f"{f_ij:.8f}"
-            transition_data[i].append(f"{i + 1} -> {j + 1}: {f_val_str}")
+            transition_data[i].append(f"{i+1} -> {i+j+2}: {f_val_str}")
 
     # Compute max rows needed and total line width
     max_len = max(len(col) for col in transition_data)
