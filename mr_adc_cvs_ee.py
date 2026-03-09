@@ -33806,7 +33806,7 @@ def compute_ntos(mr_adc, X):
     R2_ao = mol.intor("int1e_r2")
 
     # Transform to MO basis
-    R_mo  = np.einsum('pi,npq,qj->nij', mo, R_ao, mo)
+    R_mo  = np.einsum('pi,rpq,qj->rij', mo, R_ao, mo)
     R2_mo = mo.T @ R2_ao @ mo
 
     # Restrict to hole/particle spaces
@@ -33883,12 +33883,12 @@ def compute_ntos(mr_adc, X):
         re = np.array2string(exciton['re'], formatter={'float_kind': fmt})
         mr_adc.log.info(f"   Mean position of hole:            {rh}")
         mr_adc.log.info(f"   Mean position of electron:        {re}")
-        mr_adc.log.info(f"   Linear e-h distance:              {exciton['d_lin']: .6f}")
+        mr_adc.log.info(f"   Linear e-h distance [Ang]:        {exciton['d_lin']: .6f}")
         mr_adc.log.info(f"   Hole size [Ang]:                  {exciton['sigma_h']: .6f}")
         mr_adc.log.info(f"   Electron size [Ang]:              {exciton['sigma_e']: .6f}")
         mr_adc.log.info(f"   RMS e-h separation [Ang]:         {exciton['d_exc']: .6f}")
-        mr_adc.log.info(f"   e-h covariance [Ang^2]:           {exciton['cov']: .6f}")
-        mr_adc.log.info(f"   e-h correlation coeff:            {exciton['corr']: .6f}")
+        mr_adc.log.info(f"   Covariance [Ang^2]:               {exciton['cov']: .6f}")
+        mr_adc.log.info(f"   Correlation coefficient:          {exciton['corr']: .6f}")
         mr_adc.log.info("")
 
     mr_adc.log.timer("computing natural transition orbitals", *cput0)
@@ -33896,11 +33896,11 @@ def compute_ntos(mr_adc, X):
 
 def _compute_exciton_analysis(TDM, Rh, Re, R2h, R2e, rh_orb, re_orb, omega):
 
-    # h/e densities
+    # e/h densities
     rho_h = TDM @ TDM.T
     rho_e = TDM.T @ TDM
 
-    # raw second moments (<r^2>)
+    # raw second moments: <r^2>
     rh2 = np.einsum('ij,ij->', R2h, rho_h) / omega
     re2 = np.einsum('ij,ij->', R2e, rho_e) / omega
 
@@ -33908,14 +33908,14 @@ def _compute_exciton_analysis(TDM, Rh, Re, R2h, R2e, rh_orb, re_orb, omega):
     dot_he = np.sum((TDM**2) * (rh_orb @ re_orb.T)) / omega
 
     # mean positions: <r>
-    rh = np.einsum('nij,ij->n', Rh, rho_h) / omega
-    re = np.einsum('nij,ij->n', Re, rho_e) / omega
+    rh = np.einsum('rij,ij->r', Rh, rho_h) / omega
+    re = np.einsum('rij,ij->r', Re, rho_e) / omega
 
-    # RMS sizes (sigma_h, sigma_e)
+    # RMS sizes: sigma
     sigma_h = np.sqrt(max(rh2 - rh @ rh, 0.0))
     sigma_e = np.sqrt(max(re2 - re @ re, 0.0))
 
-    # e-h separation
+    # e-h separation metrics
     d_lin = np.linalg.norm(re - rh)
     d_exc = np.sqrt(max(re2 + rh2 - 2 * dot_he, 0.0))
 
