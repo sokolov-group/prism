@@ -20,6 +20,7 @@
 import numpy as np
 from functools import reduce
 
+from prism.nevpt import rdms
 from prism.nevpt import amplitudes
 from prism.nevpt import qd_nevpt2
 
@@ -27,7 +28,69 @@ import prism.lib.logger as logger
 import prism.lib.tools as tools
 
 
-def compute_energy(nevpt, rdms, e_0 = None):
+def compute_energy(nevpt):
+
+    n_states = len(nevpt.ref_wfn_deg)
+    n_micro_states = sum(nevpt.ref_wfn_deg)
+
+    e_tot = []
+    e_corr = []
+    mstate = 0
+
+    e_0 = 0.0
+    t1_0 = None
+    t1 = []
+
+    ncore = nevpt.ncore - nevpt.nfrozen
+
+    if ncore > 0 and nevpt.nextern > 0:
+        e_0, t1_0 = amplitudes.compute_t1_0(nevpt)
+    else:
+        t1_0 = np.zeros((ncore, ncore, nevpt.nextern, nevpt.nextern))
+    
+    for state in range(n_states):
+        deg = nevpt.ref_wfn_deg[state]
+
+        nevpt.log.info("\nComputing energy of state #%d..." % (state + 1))
+        nevpt.log.info("Reference state active-space energy:         %20.12f" % nevpt.e_ref_cas[state])
+        nevpt.log.info("Reference state spin multiplicity:                 %d" % nevpt.ref_wfn_spin_mult[state])
+        nevpt.log.info("Number of active electrons:                        %s" % str(nevpt.ref_nelecas[mstate:(mstate+deg)]))
+
+        # Compute reduced density matrices for a specific state
+        rdms_ref = rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+deg)], nevpt.ref_nelecas[mstate:(mstate+deg)])
+
+        # Compute amplitudes and correlation energy
+        e_corr_state, t1_state = compute_energy_state(nevpt, rdms_ref, e_0)
+        e_tot_state = nevpt.e_ref[state] + e_corr_state
+
+        ref_name = nevpt.interface.reference.upper()
+        method_name = "NEVPT2"
+        nevpt.log.info("%s reference state total energy: %s  %20.12f" % (ref_name.upper(), (12-len(ref_name)) * " ", nevpt.e_ref[state]))
+        nevpt.log.info("%s correlation energy:           %s  %20.12f" % (method_name, (12-len(method_name)) * " ", e_corr_state))
+        nevpt.log.info("Total %s energy:                 %s  %20.12f" % (method_name, (12-len(method_name)) * " ", e_tot_state))
+
+        e_corr.append(e_corr_state)
+        e_tot.append(e_tot_state)
+
+        t1.append(t1_state)
+
+        del (rdms_ref)
+
+        mstate += deg
+
+    # Store amplitudes and energies in nevpt class
+    nevpt.e_corr = e_corr
+    nevpt.e_tot = e_tot
+
+    nevpt.t1 = t1
+    nevpt.t1_0 = t1_0
+
+    del(t1)
+    del(t1_state)
+    del(t1_0)
+
+
+def compute_energy_state(nevpt, rdms, e_0 = None):
 
     ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
@@ -116,7 +179,26 @@ def compute_energy(nevpt, rdms, e_0 = None):
     return e_corr, t1
 
 
-def osc_strength(method, en, rdm_mo, gs_index = 0):
+def compute_properties(nevpt):
+    # Determine spin multiplicity
+    spin_mult = nevpt.ref_wfn_spin_mult
+    if nevpt.method == "qd-nevpt2":
+        spin_mult = qd_nevpt2.determine_spin_mult(nevpt, h_evec)
+
+    # Get Oscillator Strengths
+    if nevpt.method == "qd-nevpt2":
+        rdm_mo = qd_nevpt2.make_rdm1(nevpt)
+        osc_str = nevpt2.osc_strength(nevpt, e_tot, rdm_mo)
+    else:
+        rdm_mo = make_rdm1(nevpt)
+        osc_str = osc_strength(nevpt, rdm_mo)
+
+    return osc_str, spin_mult
+
+
+def osc_strength(method, rdm_mo, gs_index = 0):
+
+    en = method.e_tot
 
     n_micro_states = len(en) 
     dip_mom_ao = method.interface.dip_mom_ao

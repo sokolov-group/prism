@@ -20,7 +20,7 @@
 import sys
 import numpy as np
 
-from prism.nevpt import rdms
+from prism.nevpt import integrals
 from prism.nevpt import amplitudes
 from prism.nevpt import nevpt2
 from prism.nevpt import qd_nevpt2
@@ -28,6 +28,49 @@ from prism.nevpt import qd_nevpt2
 import prism.lib.logger as logger
 
 def kernel(nevpt):
+
+    # Initial checks
+    nevpt.method = nevpt.method.lower()
+
+    if nevpt.method == "qdnevpt2":
+        nevpt.method = "qd-nevpt2"
+
+    if nevpt.method not in ("nevpt2", "qd-nevpt2"):
+        msg = "Unknown method %s" % nevpt.method
+        nevpt.log.info(msg)
+        raise Exception(msg)
+
+    if nevpt.nfrozen is None:
+        nevpt.nfrozen = 0
+
+    if nevpt.nfrozen > nevpt.ncore:
+        msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
+        nevpt.log.error(msg)
+        raise Exception(msg)
+    
+    if nevpt.rdm_order not in [0,2]:
+         raise ValueError(f"Invalid {'rdm_order'}: '{nevpt.rdm_order}'. Available options are {0,2}.")
+     
+    avail_shifts = ['imaginary', 'DSRG']
+    
+    if nevpt.shift_type_m1p is not None and nevpt.shift_type_m1p not in avail_shifts:
+        raise ValueError(f"Invalid {'shift_type_m1p'}: '{nevpt.shift_type_m1p}'. Available options are {avail_shifts}.")
+
+    if nevpt.shift_type_p1p is not None and nevpt.shift_type_p1p not in avail_shifts:
+        raise ValueError(f"Invalid {'shift_type_p1p'}: '{nevpt.shift_type_p1p}'. Available options are {avail_shifts}.")
+    
+    if nevpt.shift_type_0p is not None and nevpt.shift_type_0p not in avail_shifts:
+        raise ValueError(f"Invalid {'shift_type_0p'}: '{nevpt.shift_type_0p}'. Available options are {avail_shifts}.")
+    
+    # Transform one- and two-electron integrals
+    nevpt.log.info("\nTransforming integrals to MO basis...")
+    integrals.transform_integrals_1e(nevpt)
+    if nevpt.interface.with_df:
+        integrals.transform_Heff_integrals_2e_df(nevpt)
+        integrals.transform_integrals_2e_df(nevpt)
+    else:
+        # TODO: this actually handles out-of-core integrals too, rename the function
+        integrals.transform_integrals_2e_incore(nevpt)
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.info("\nComputing NEVPT energies...\n")
@@ -67,58 +110,8 @@ def kernel(nevpt):
         nevpt.log.info("Projector for the semi-internal amplitudes:        %s" % nevpt.semi_internal_projector)
 
     # State-specific NEVPT calculation
-    e_tot = []
-    e_corr = []
-    mstate = 0
-    osc_str = None
-    
-    e_0 = 0.0
-    t1_0 = None
-    t1 = []
+    nevpt.compute_energy()
 
-    ncore = nevpt.ncore - nevpt.nfrozen
-
-    if ncore > 0 and nevpt.nextern > 0:
-        e_0, t1_0 = amplitudes.compute_t1_0(nevpt)
-    else:
-        t1_0 = np.zeros((ncore, ncore, nevpt.nextern, nevpt.nextern))
-    
-    for state in range(n_states):
-        deg = nevpt.ref_wfn_deg[state]
-
-        nevpt.log.info("\nComputing energy of state #%d..." % (state + 1))
-        nevpt.log.info("Reference state active-space energy:         %20.12f" % nevpt.e_ref_cas[state])
-        nevpt.log.info("Reference state spin multiplicity:                 %d" % nevpt.ref_wfn_spin_mult[state])
-        nevpt.log.info("Number of active electrons:                        %s" % str(nevpt.ref_nelecas[mstate:(mstate+deg)]))
-
-        # Compute reduced density matrices for a specific state
-        rdms_ref = rdms.compute_reference_rdms(nevpt, nevpt.ref_wfn[mstate:(mstate+deg)], nevpt.ref_nelecas[mstate:(mstate+deg)])
-
-        # Compute amplitudes and correlation energy
-        e_corr_state, t1_state = nevpt2.compute_energy(nevpt, rdms_ref, e_0)
-        e_tot_state = nevpt.e_ref[state] + e_corr_state
-
-        ref_name = nevpt.interface.reference.upper()
-        method_name = "NEVPT2"
-        nevpt.log.info("%s reference state total energy: %s  %20.12f" % (ref_name.upper(), (12-len(ref_name)) * " ", nevpt.e_ref[state]))
-        nevpt.log.info("%s correlation energy:           %s  %20.12f" % (method_name, (12-len(method_name)) * " ", e_corr_state))
-        nevpt.log.info("Total %s energy:                 %s  %20.12f" % (method_name, (12-len(method_name)) * " ", e_tot_state))
-
-        e_corr.append(e_corr_state)
-        e_tot.append(e_tot_state)
-        
-        if nevpt.method == "qd-nevpt2":
-            t1.append(t1_state)
-        elif nevpt.method == "nevpt2" and n_states > 1:
-            t1.append(t1_state)
-        else:
-            nevpt.t1 = [t1_state] # single-state 
-            del (t1_state)
-
-        del (rdms_ref)
-
-        mstate += deg
-         
     # Quasidegenerate NEVPT2 calculation
     if nevpt.method == "qd-nevpt2":
         nevpt.log.info("\nComputing the QD-NEVPT2 effective Hamiltonian...")
@@ -130,33 +123,13 @@ def kernel(nevpt):
         # Update correlation energies
         for state in range(n_states):
             e_corr[state] = e_tot[state] - nevpt.e_ref[state]
-    
-    # Store amplitudes in nevpt class
+
+    # Compute properties
+    osc_str = None
     if n_states > 1:
-        nevpt.t1 = t1
 
-    del(t1)
-        
-    nevpt.t1_0 = t1_0
-
-    del(t1_0)
-
-    if n_states > 1:
-        # Get Oscillator Strengths
-        if nevpt.method == "qd-nevpt2":
-            rdm_mo = qd_nevpt2.make_rdm1(nevpt)
-            osc_str = nevpt2.osc_strength(nevpt, e_tot, rdm_mo)
-        else:
-            rdm_mo = nevpt2.make_rdm1(nevpt)
-            osc_str = nevpt2.osc_strength(nevpt, e_tot, rdm_mo)
-
-        # Update spin multiplicity
-        spin_mult = nevpt.ref_wfn_spin_mult
-        if nevpt.method == "qd-nevpt2":
-            spin_mult = qd_nevpt2.determine_spin_mult(nevpt, h_evec)
-        
-        #SOC calculation requires method's spin multiplicity
-        nevpt.spin_mult = spin_mult
+        # Compute properties and spin multiplicity
+        osc_str, spin_mult = nevpt.compute_properties()
 
         h2ev = nevpt.interface.hartree_to_ev
         h2cm = nevpt.interface.hartree_to_inv_cm
@@ -167,10 +140,11 @@ def kernel(nevpt):
         nevpt.log.info("  State    (2S+1)         E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
         nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
 
-        e_gs = e_tot[0]
+        e_gs = nevpt.e_tot[0]
+        e_tot = nevpt.e_tot
 
         for p in range(n_states):
-            de = e_tot[p] - e_gs
+            de = nevpt.e_tot[p] - e_gs
             de_ev = de * h2ev
             de_cm = de * h2cm
             if p == 0 or abs(de) < 1e-5:
@@ -198,7 +172,8 @@ def kernel(nevpt):
     sys.stdout.flush()
     nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
      
-    return e_tot, e_corr, osc_str
+    return nevpt.e_tot, nevpt.e_corr, osc_str
+
 
 def print_osc_str(nevpt, e_tot, osc_str):
     # Oscillator Strengths
