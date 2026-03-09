@@ -96,9 +96,6 @@ class NEVPT:
         self.mo_energy.c = interface.mo_energy[:self.ncore]
         self.mo_energy.e = interface.mo_energy[self.nocc:]
 
-        # Correlated 1rdm
-        self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
-
         # Amplitudes
         self.t1 = None
         self.t1_0 = None 
@@ -107,6 +104,7 @@ class NEVPT:
         # Compute correlated RDMs
         make_rdm1 = nevpt.make_rdm1
         self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
+        self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
 
         #For SOC
         self.gtensor = False

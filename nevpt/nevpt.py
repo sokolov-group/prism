@@ -233,14 +233,15 @@ def osc_strength(method, rdm_mo, gs_index = 0):
 # Compute 1-RDM for either all CASCI states or a specific states
 # L is initial, R is final
 def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
+
     ncore = method.ncore
     ncas = method.ncas
     nextern = method.nextern
-    n_micro_states = sum(method.ref_wfn_deg)
-    einsum = method.interface.einsum
-    
-    einsum_type = method.interface.einsum_type
     nmo = method.nmo
+    n_micro_states = sum(method.ref_wfn_deg)
+
+    einsum = method.interface.einsum
+    einsum_type = method.interface.einsum_type
 
     if t1 is None:
         t1 = method.t1
@@ -256,19 +257,22 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     if L is None:
         L_states = n_micro_states
         L_list = np.arange(L_states)
-    else:
+    elif isinstance(L, int):
         L_list = np.array([L])
         if L > n_micro_states:
             raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
+    else:
+         raise ValueError(f"Value L={L} not supported")
 
     if R is None:
         R_states = n_micro_states
         R_list = np.arange(R_states)
-        
-    else:
+    elif isinstance(R, int):
         R_list = np.array([R])
         if R > n_micro_states:
             raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
+    else:
+         raise ValueError(f"Value R={R} not supported")
 
     error_msg = (
         f"Instability detected in correlated 1RDM. "
@@ -567,7 +571,14 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     # Single pair of states
     if L is not None and R is not None:
         rdm_final = rdm_final[0,0]
-        
+
+    # One state on the left or right
+    if L_list.shape[0] == 1 and R_list.shape[0] > 1:
+        rdm_final = rdm_final[0]
+
+    if L_list.shape[0] > 1 and R_list.shape[0] == 1:
+        rdm_final = rdm_final[:, 0, :, :]
+
     # State-specific
     if type in ("ss", "state-specific"):
         rdm_final = np.diagonal(rdm_final, axis1=0, axis2=1)
