@@ -22,6 +22,7 @@ from functools import reduce
 
 from prism.nevpt import rdms
 from prism.nevpt import amplitudes
+from prism.tools import transition
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -183,51 +184,25 @@ def compute_properties(method):
     # Determine spin multiplicity
     spin_mult = method.ref_wfn_spin_mult
 
-    # Get Oscillator Strengths
-    rdm_mo = make_rdm1(method)
-    osc_str = osc_strength(method, rdm_mo)
+    # Get Oscillator Strengths for transitions from ground state
+    e_diff = method.e_tot - method.e_tot[0]
+    e_diff = e_diff[1:]
+
+    rdm_mo = make_rdm1(method, L = 0)
+    osc_str = transition.osc_strength(method.interface, e_diff, rdm_mo[1:])
 
     # Compute all transitions starting from each state
     if method.verbose >= 5:
-        osc_str_full = osc_str
+        osc_str_full = [osc_str.tolist()]
         for gs_index in range(1, len(method.e_tot)):  
-            osc_str_full.extend(osc_strength(method, rdm_mo, gs_index))
+            e_diff = method.e_tot - method.e_tot[gs_index]
+            e_diff = e_diff[gs_index+1:]
+            rdm_mo = make_rdm1(method, L = gs_index)
+            osc_str_full.append(transition.osc_strength(method.interface, e_diff, rdm_mo[gs_index+1:]))
 
-        print_osc_str(method, osc_str_full)
+        transition.print_osc_strength(method.interface, osc_str_full)
 
     return osc_str, spin_mult
-
-
-def osc_strength(method, rdm_mo, gs_index = 0):
-
-    en = method.e_tot
-
-    n_micro_states = len(en) 
-    dip_mom_ao = method.interface.dip_mom_ao
-    mo_coeff = method.mo
-
-    dip_mom_mo = np.zeros_like(dip_mom_ao)
-
-    # Transform dipole moments from AO to MO basis
-    for d in range(dip_mom_ao.shape[0]):
-        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
-
-    # List to store Osc. Strength Values
-    osc_total = []
-
-    for state in range(gs_index + 1, n_micro_states):
-        # Create Dipole Moment Operator with RDM
-        dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], rdm_mo[gs_index, state])
-        dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], rdm_mo[gs_index, state])
-        dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], rdm_mo[gs_index, state])
-        
-        osc_x = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_x)*dip_evec_x)
-        osc_y = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_y)*dip_evec_y)
-        osc_z = ((2/3)*(en[state] - en[gs_index]))*(np.conj(dip_evec_z)*dip_evec_z)
-
-        osc_total.append((osc_x + osc_y + osc_z).real)
-        
-    return (osc_total)
 
 
 # Compute 1-RDM for either all CASCI states or a specific states
@@ -671,45 +646,3 @@ def make_rdm1s(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None)
     return rdm_final
 
 
-def print_osc_str(method, osc_str):
-
-    e_tot = method.e_tot
-
-    # Oscillator Strengths
-    num_states = len(e_tot) # total states
-    col_width = 18  # characters per column
-
-    # Collect all transitions per ground state
-    transition_data = [[] for _ in range(num_states - 1)]  # last state has no transitions
-    osc_val = [[] for _ in range(num_states - 1)] 
-    
-    index = 0
-    for i in range(num_states - 1):
-        for j in range(i + 1, num_states):
-            f_ij = osc_str[index]
-            index += 1
-            osc_val.append(f_ij)
-            
-            f_val_str = f"{f_ij:.8f}"
-            transition_data[i].append(f"{i + 1} -> {j + 1}: {f_val_str}")
-
-    # Compute max rows needed and total line width
-    max_len = max(len(col) for col in transition_data)
-    total_line_width = (col_width + 4) * len(transition_data) # Needed for adjusting printout
-
-    # Print header and transitions
-    separator = "-" * total_line_width
-    method.log.info("\n\nOscillator Strengths: state i -> state f")
-    method.log.info(separator)
-
-    # Final print
-    for row in range(max_len):
-        row_data = []
-        for col in transition_data:
-            if row < len(col):
-                row_data.append(col[row].ljust(col_width))
-            else:
-                row_data.append("".ljust(col_width))
-        method.log.info("    ".join(row_data))
-
-    method.log.info(separator)

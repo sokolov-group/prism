@@ -19,10 +19,13 @@
 import numpy as np
 from functools import reduce
 
-import prism.lib.logger as logger
-import prism.lib.tools as tools
 from prism.nevpt import amplitudes
 from prism.nevpt import nevpt
+from prism.tools import transition
+
+import prism.lib.logger as logger
+import prism.lib.tools as tools
+
 
 def compute_energy(method):
 
@@ -255,16 +258,33 @@ def compute_properties(method):
     spin_mult = determine_spin_mult(method)
 
     # Get Oscillator Strengths
-    rdm_mo = make_rdm1(method)
-    osc_str = nevpt.osc_strength(method, rdm_mo)
+#    rdm_mo = make_rdm1(method)
+#    osc_str = nevpt.osc_strength(method, rdm_mo)
+#
+#    if method.verbose >= 5:
+#        osc_str_full = osc_str
+#        # Compute all transitions starting from each state
+#        for gs_index in range(1, len(method.e_tot)):  
+#            osc_str_full.extend(nevpt.osc_strength(method, rdm_mo, gs_index))
+#
+#        nevpt.print_osc_str(method, osc_str_full)
+    # Get Oscillator Strengths for transitions from ground state
+    e_diff = method.e_tot - method.e_tot[0]
+    e_diff = e_diff[1:]
 
+    rdm_mo = make_rdm1(method, L = 0)
+    osc_str = transition.osc_strength(method.interface, e_diff, rdm_mo[1:])
+
+    # Compute all transitions starting from each state
     if method.verbose >= 5:
-        osc_str_full = osc_str
-        # Compute all transitions starting from each state
+        osc_str_full = [osc_str.tolist()]
         for gs_index in range(1, len(method.e_tot)):  
-            osc_str_full.extend(nevpt.osc_strength(method, rdm_mo, gs_index))
+            e_diff = method.e_tot - method.e_tot[gs_index]
+            e_diff = e_diff[gs_index+1:]
+            rdm_mo = make_rdm1(method, L = gs_index)
+            osc_str_full.append(transition.osc_strength(method.interface, e_diff, rdm_mo[gs_index+1:]))
 
-        nevpt.print_osc_str(method, osc_str_full)
+        transition.print_osc_strength(method.interface, osc_str_full)
 
     return osc_str, spin_mult
 
