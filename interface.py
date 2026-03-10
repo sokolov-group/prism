@@ -55,6 +55,7 @@ class PYSCF:
         self.hartree_to_inv_cm = 219474.63136314
         # Constants
         self.light_speed = lib.parameters.LIGHT_SPEED
+        self.g_free_elec = 2.002319
 
         log.info("Collecting reference wavefunction information...")
         if mc is None:

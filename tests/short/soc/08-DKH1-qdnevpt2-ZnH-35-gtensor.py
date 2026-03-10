@@ -59,12 +59,12 @@ mc.analyze()
 
 # QD-NEVPT2 with all electrons correlated
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
-nevpt.method = "qd-nevpt2"
+nevpt.method = "nevpt2"
 nevpt.soc = "DKH1" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 nevpt.verbose = 4
 nevpt.gtensor = True

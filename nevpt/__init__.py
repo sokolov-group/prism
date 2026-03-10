@@ -110,14 +110,13 @@ class NEVPT:
         self.gtensor = False
         self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.origin_type = 'charge'  # Possible methods: charge, GIAO, atom1 or User define point(list)
-        self.target_index = 0  #target state for gtensor calculation. Default is the ground state.
+        self.target_state = 0  #target state for gtensor calculation. Default is the ground state (target_state = 0).
 
 
     def kernel(self):
 
         # Run NEVPT computation
         e_tot, e_corr, osc = compute.kernel(self)
-        self.en_tot = e_tot
 
         if self.keep_amplitudes is False:
             del(self.t1)
@@ -125,20 +124,20 @@ class NEVPT:
 
         #Calculate SOC properties
         if self.soc: 
-          from prism import general_somf
+          from prism.soc import general_somf
           import numpy as np
           print("\nInitialize SOC program...")
           # Rotate CAS Wavefunction:
-          if self.method == "qd-nevpt2":
+          if not hasattr(self, 'h_evec'):
+              wfn = list(self.ref_wfn)
+          else:
               wfn = np.einsum('ij,iab->jab',self.h_evec,self.ref_wfn)
               wfn = list(wfn)
-          else:
-              wfn = list(self.ref_wfn)
 
           # Calculate method's S, Ms: 
           S  = []
           ms = []
-          nstate = len(self.en_tot)
+          nstate = len(self.e_tot)
           for I in range(nstate):
             sz = self.interface.apply_S_z(wfn[I],self.ncas,self.ref_nelecas[I])
             ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
@@ -152,11 +151,13 @@ class NEVPT:
           # Calculate RDM_aabb
           rdm_aabb = nevpt.make_rdm1s(self)
 
-          en_soc, evec_soc, osc_str_soc = general_somf.state_interaction_SOC(self, self.en_tot, rdm_aabb, S, ms)
-          
+          en_soc, evec_soc, osc_str_soc = general_somf.state_interaction_SOC(self.interface, self.e_tot, rdm_aabb, S, ms, self.soc, self.verbose)
+          self.e_tot = en_soc
+
           if self.gtensor is True:
+            from prism.soc import magnetic
             rdm_sf = rdm_aabb[0] + rdm_aabb[1]
-            self.g_factor, G_evec = general_somf.gtensor(self,evec_soc,rdm_sf, S, target_index = self.target_index, origin_type=self.origin_type)
+            self.g_factor, G_evec = magnetic.gtensor(self.interface,evec_soc,rdm_sf, S, target_state = self.target_state, origin_type=self.origin_type)
           
           #Calculate SOC e_corr respect with CASSCF energy
           e_ref_spinstate = []

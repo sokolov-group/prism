@@ -629,7 +629,7 @@ def make_rdm1s(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None)
                 rdm_final[:,ind_I, ind_J, :ncore, :ncore] =   np.identity(ncore)    
 
             if method.rdm_order == 2:
-                raise ValueError(f"Invalid type: corelation not implement in SOC. ")
+                raise ValueError(f"Invalid type: corelation not implement in spin-orbital RDM. ")
                 
     # Single pair of states
     if L is not None and R is not None:
