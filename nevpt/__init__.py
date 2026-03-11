@@ -124,7 +124,7 @@ class NEVPT:
 
         #Calculate SOC properties
         if self.soc: 
-          from prism.soc import general_somf
+          from prism.libsoc import general_somf
           import numpy as np
           print("\nInitialize SOC program...")
           # Rotate CAS Wavefunction:
@@ -155,7 +155,7 @@ class NEVPT:
           self.e_tot = en_soc
 
           if self.gtensor is True:
-            from prism.soc import magnetic
+            from prism.libsoc import magnetic
             rdm_sf = rdm_aabb[0] + rdm_aabb[1]
             self.g_factor, G_evec = magnetic.gtensor(self.interface,evec_soc,rdm_sf, S, target_state = self.target_state, origin_type=self.origin_type)
           
