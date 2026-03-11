@@ -87,6 +87,7 @@ class NEVPT:
         self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk   
         self.e_tot = None 
         self.e_corr = None 
+        self.spin_mult = self.ref_wfn_spin_mult
 
         # Integrals
         self.mo_energy = lambda:None
@@ -102,8 +103,8 @@ class NEVPT:
         self.keep_amplitudes = False
 
         # Compute correlated RDMs
-        make_rdm1 = nevpt.make_rdm1
-        self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
+#        make_rdm1 = nevpt.make_rdm1
+#        self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
         self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
 
         #For SOC
@@ -111,6 +112,7 @@ class NEVPT:
         self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.origin_type = 'charge'  # Possible methods: charge, GIAO, atom1 or User define point(list)
         self.target_state = 0  #target state for gtensor calculation. Default is the ground state (target_state = 0).
+        self.h_evec_soc = None
 
 
     def kernel(self):
@@ -122,61 +124,41 @@ class NEVPT:
             del(self.t1)
             del(self.t1_0)
 
-        #Calculate SOC properties
-        if self.soc: 
-          from prism.libsoc import general_somf
-          import numpy as np
-          print("\nInitialize SOC program...")
-          # Rotate CAS Wavefunction:
-          if not hasattr(self, 'h_evec'):
-              wfn = list(self.ref_wfn)
-          else:
-              wfn = np.einsum('ij,iab->jab',self.h_evec,self.ref_wfn)
-              wfn = list(wfn)
-
-          # Calculate method's S, Ms: 
-          S  = []
-          ms = []
-          nstate = len(self.e_tot)
-          for I in range(nstate):
-            sz = self.interface.apply_S_z(wfn[I],self.ncas,self.ref_nelecas[I])
-            ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
-
-            SS = self.interface.compute_spin_square(wfn[I], self.ncas, self.ref_nelecas[I])
-            S.append((-1+np.sqrt(1+4*SS))/2)
-
-          ms = [round(elem,2) for elem in ms]
-          S  = [round(elem,2) for elem in S]
-
-          # Calculate RDM_aabb
-          rdm_aabb = nevpt.make_rdm1s(self)
-
-          en_soc, evec_soc, osc_str_soc = general_somf.state_interaction_SOC(self.interface, self.e_tot, rdm_aabb, S, ms, self.soc, self.verbose)
-          self.e_tot = en_soc
-
-          if self.gtensor is True:
-            from prism.libsoc import magnetic
-            rdm_sf = rdm_aabb[0] + rdm_aabb[1]
-            self.g_factor, G_evec = magnetic.gtensor(self.interface,evec_soc,rdm_sf, S, target_state = self.target_state, origin_type=self.origin_type)
-          
-          #Calculate SOC e_corr respect with CASSCF energy
-          e_ref_spinstate = []
-          for i in range(nstate):
-            n = int(S[i]*2 + 1)
-            for j in range(n):
-                e_ref_spinstate.append(self.e_ref[i])
-        
-          e_corr_soc = en_soc - e_ref_spinstate
-
-          (e_tot, e_corr, osc) = (en_soc, e_corr_soc, osc_str_soc)
-
-        
         return e_tot, e_corr, osc 
 
 
     def compute_energy(self):
 
-        return nevpt.compute_energy(self)
+        e_tot, e_corr = nevpt.compute_energy(self)
+
+        # State-interaction spin–orbit coupling
+        if self.soc:
+            from prism.nevpt import soc
+            e_tot, e_corr = soc.state_interaction_soc(self)
+
+        return e_tot, e_corr
+
+
+    def make_rdm1(self, L = None, R = None, type = 'all'):
+
+        # For state-interaction spin–orbit coupling, transform to microstate basis
+        if self.soc:
+            rdm1 = nevpt.make_rdm1(self)
+
+            from prism.nevpt import soc
+            rdm1 = soc.transform_rdm1(self, rdm1, L, R, type)
+
+        else:
+            rdm1 = nevpt.make_rdm1(self, L, R, type)
+
+        return rdm1
+
+
+    def make_rdm1s(self, L = None, R = None, type = 'all'):
+
+        rdm1s = nevpt.make_rdm1s(self, L, R, type)
+
+        return rdm1s
 
 
     def compute_properties(self):
@@ -204,13 +186,41 @@ class QDNEVPT(NEVPT):
         # Eigenvectors of effective Hamiltonian
         self.h_evec = None
 
-        # Compute correlated RDMs
-        make_rdm1 = qd_nevpt.make_rdm1
-        self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
+#        # Compute correlated RDMs
+#        make_rdm1 = qd_nevpt.make_rdm1
+#        self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
 
     def compute_energy(self):
 
-        return qd_nevpt.compute_energy(self)
+        e_tot, e_corr = qd_nevpt.compute_energy(self)
+
+        # State-interaction spin–orbit coupling
+        if self.soc:
+            from prism.nevpt import soc
+            e_tot, e_corr = soc.state_interaction_soc(self)
+
+        return e_tot, e_corr
+
+
+    def make_rdm1(self, L = None, R = None, type = 'all'):
+
+        if self.soc:
+            rdm1 = qd_nevpt.make_rdm1(self)
+
+            from prism.nevpt import soc
+            rdm1 = soc.transform_rdm1(self, rdm1, L, R, type)
+
+        else:
+            rdm1 = qd_nevpt.make_rdm1(self, L, R, type)
+
+        return rdm1
+
+
+    def make_rdm1s(self, L = None, R = None, type = 'all'):
+
+        rdm1s = qd_nevpt.make_rdm1s(self, L, R, type)
+
+        return rdm1s
 
 
     def compute_properties(self):

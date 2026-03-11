@@ -21,6 +21,7 @@ from functools import reduce
 
 from prism.nevpt import amplitudes
 from prism.nevpt import nevpt
+from prism.nevpt import soc
 from prism.tools import transition
 
 import prism.lib.logger as logger
@@ -47,6 +48,11 @@ def compute_energy(method):
     method.e_tot = e_tot
     method.e_corr = e_corr
     method.h_evec = h_evec
+
+    # Determine spin multiplicity for the QDNEVPT states
+    method.spin_mult = determine_spin_mult(method)
+
+    return e_tot, e_corr
 
 
 def diagonalize_eff_H(method):
@@ -254,25 +260,11 @@ def diagonalize_eff_H(method):
 
 
 def compute_properties(method):
-    # Determine spin multiplicity
-    spin_mult = determine_spin_mult(method)
-
-    # Get Oscillator Strengths
-#    rdm_mo = make_rdm1(method)
-#    osc_str = nevpt.osc_strength(method, rdm_mo)
-#
-#    if method.verbose >= 5:
-#        osc_str_full = osc_str
-#        # Compute all transitions starting from each state
-#        for gs_index in range(1, len(method.e_tot)):  
-#            osc_str_full.extend(nevpt.osc_strength(method, rdm_mo, gs_index))
-#
-#        nevpt.print_osc_str(method, osc_str_full)
     # Get Oscillator Strengths for transitions from ground state
     e_diff = method.e_tot - method.e_tot[0]
     e_diff = e_diff[1:]
 
-    rdm_mo = make_rdm1(method, L = 0)
+    rdm_mo = method.make_rdm1(L = 0)
     osc_str = transition.osc_strength(method.interface, e_diff, rdm_mo[1:])
 
     # Compute all transitions starting from each state
@@ -286,7 +278,16 @@ def compute_properties(method):
 
         transition.print_osc_strength(method.interface, osc_str_full)
 
-    return osc_str, spin_mult
+    # Compute magnetic properties
+    if method.gtensor and method.soc:
+
+        # Call make_rdm1 function directly to bypass including SOC effects
+        rdm_sf = make_rdm1(method)
+
+        # Compute g-values
+        soc.compute_magnetic_properties(method, rdm_sf)
+
+    return osc_str
 
 
 def determine_spin_mult(method):
@@ -381,3 +382,93 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None, 
 
     return rdm_final
 
+
+def make_rdm1s(method, L = None, R = None, type = 'all'):
+    ncore = method.ncore
+    ncas = method.ncas
+    nextern = method.nextern
+    n_micro_states = sum(method.ref_wfn_deg)
+    einsum = method.interface.einsum   
+    einsum_type = method.interface.einsum_type
+    nmo = method.nmo
+
+    L_states = 0
+    R_states = 0
+    L_list = None
+    R_list = None
+
+    if method.rdm_order == 2:
+        raise ValueError(f"Invalid type: corelation not implement in spin-orbital RDM. ")
+
+    if L is None:
+        L_states = n_micro_states
+        L_list = np.arange(L_states)
+    elif isinstance(L, int):
+        L_list = np.array([L])
+        if L > n_micro_states:
+            raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
+    else:
+         raise ValueError(f"Value L={L} not supported")
+
+    if R is None:
+        R_states = n_micro_states
+        R_list = np.arange(R_states)
+    elif isinstance(R, int):
+        R_list = np.array([R])
+        if R > n_micro_states:
+            raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
+    else:
+         raise ValueError(f"Value R={R} not supported")
+
+    error_msg = (
+        f"Instability detected in correlated 1RDM. "
+        "Consider loosening truncation thresholds."
+    )
+
+    avail_types = ["all", "ss", "state-specific"]
+    if type not in avail_types:
+        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
+        
+    # Initial rdm array
+    rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], nmo, nmo))
+    
+    #method's wfn
+    wfn = np.einsum('ij,iab->jab',method.h_evec,method.ref_wfn)
+    wfn = list(wfn)
+
+    # Looping over states I,J
+    for ind_I, I in enumerate(L_list):
+        for ind_J, J in enumerate(R_list): 
+
+            if type in ("ss", "state-specific") and I != J:
+                continue
+
+            tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], method.ncas, method.ref_nelecas[ind_I])
+            rdm_final[0, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[0]
+            rdm_final[1, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[1]            
+
+            if I == J:
+                #uncorrelated diagonal terms
+                rdm_final[:,ind_I, ind_J, :ncore, :ncore] =   np.identity(ncore)    
+
+    # Single pair of states
+    if L is not None and R is not None:
+        rdm_final = rdm_final[:,0,0]
+
+    # One state on the left or right
+    if L_list.shape[0] == 1 and R_list.shape[0] > 1:
+        rdm_final[0] = rdm_final[0, 0, :, :]
+        rdm_final[1] = rdm_final[1, 0, :, :]
+
+    if L_list.shape[0] > 1 and R_list.shape[0] == 1:
+        rdm_final = rdm_final[:, 0, :, :]
+
+    # State-specific
+    if type in ("ss", "state-specific"):
+        rdm_final[0] = np.diagonal(rdm_final[0], axis1=0, axis2=1)
+        rdm_final[0] = np.moveaxis(rdm_final[0], -1, 0)
+
+        rdm_final[1] = np.diagonal(rdm_final[1], axis1=0, axis2=1)
+        rdm_final[1] = np.moveaxis(rdm_final[1], -1, 0)
+        
+    return rdm_final

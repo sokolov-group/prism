@@ -35,7 +35,7 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def getSOC_integrals(interface,soc):
+def get_soc_integrals(interface,soc):
     mo = interface.mo
     nmo = interface.nmo
     nao = interface.mo.shape[1]
@@ -82,17 +82,12 @@ def getSOC_integrals(interface,soc):
     return hsoc 
 
 
-def state_interaction_SOC(interface, en, rdm_aabb, S, ms, soc = "breit-pauli",verbose = 4):
+def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli",verbose = 4):
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Spin-Free Framework: Employ Wigner–Eckart’s theorem")
     interface.log.info("Consider spin-orbit coupling effect...")
     nmo = interface.nmo
     nstate = len(en)
-
-    #Make sure ms:
-    for I in range(nstate):
-        if (np.abs(ms[I]-ms[0])>1e-8):
-            raise Exception("Each state's ms should be same for state_interaction_SOC function")
 
     #Make sure SOC flag:
     soc = soc.lower()
@@ -113,14 +108,14 @@ def state_interaction_SOC(interface, en, rdm_aabb, S, ms, soc = "breit-pauli",ve
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     for I in range(nstate):
         for J in range(nstate):
-            cg = CG(S[I],ms[I], 1, 0, S[J],ms[J]).doit()
+            cg = CG(S[I], ms, 1, 0, S[J], ms).doit()
             cg = float(cg)
             if np.abs(cg) > 1e-5:               
                 T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
                 rdm_wigner[I,J] = T_z 
             
     # Get SOC integrals:
-    h_soc = getSOC_integrals(interface,soc)
+    h_soc = get_soc_integrals(interface, soc)
     
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
@@ -173,55 +168,10 @@ def state_interaction_SOC(interface, en, rdm_aabb, S, ms, soc = "breit-pauli",ve
     H_sf = np.diag(E_spinstate).astype('complex')
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
 
-    #calculate Osc Str
-    rdm_sf = rdm_aabb[0] + rdm_aabb[1]
-    rdm_mo = np.zeros((nstate_total, nstate_total, nmo, nmo),dtype='complex')
-    for I in range(nstate_total):
-        for J in  range(nstate_total):
-            #if (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
-            rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
-    rdm_mo_soc = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
-
-    e_diff = en_soc - en_soc[0]    
-    osc_str_soc =    transition.osc_strength(interface, e_diff[1:], rdm_mo_soc[0,1:])  
-
-    #debug osc: osc with soc has conflict up to 5 decimal place
-    #interface.osc_str_soc_test = osc_strength_general(interface, en_soc, rdm_sf,(I_total,evec_soc))     
-    
-    h2ev = interface.hartree_to_ev
-    h2cm = interface.hartree_to_inv_cm
-
-    interface.log.info("\nSummary of results for the SOC calculation with the %s Hamiltionian:" % (soc_name))
-    interface.log.info("-----------------------------------------------------------------------------------------------------------------")
-    interface.log.info("  State            E(total)           dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str. ")
-    interface.log.info("-----------------------------------------------------------------------------------------------------------------")
-    
-    e_gs = en_soc[0]
-
-    for p in range(nstate_total):
-        de = en_soc[p] - e_gs
-        de_ev = de * h2ev
-        de_cm = de * h2cm
-        if p == 0 or abs(de) < 1e-5:
-            interface.log.info("%5d       %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), en_soc[p], de, de_ev, " ", de_cm, " "))
-        else:
-            de_nm = 10000000 / de_cm
-            interface.log.info("%5d       %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), en_soc[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
-    interface.log.info("-----------------------------------------------------------------------------------------------------------------")
-    
-    if  verbose >= 5:
-        osc_str_full = [osc_str_soc.tolist()]
-        # Compute all transitions starting from each state
-        for gs_index in range(1, len(en_soc)): 
-            e_diff = en_soc - en_soc[gs_index]   
-            osc_str_full.append(transition.osc_strength(interface, e_diff[gs_index+1:], rdm_mo_soc[gs_index,gs_index+1:]))
-
-        transition.print_osc_strength(interface, osc_str_full)
-    
     sys.stdout.flush()
     interface.log.timer0("total %s calculation" % soc, *cput0)
-    
-    return en_soc, evec_soc, osc_str_soc
+
+    return en_soc, evec_soc
 
 
 ## DKH-2 specific functionalities:

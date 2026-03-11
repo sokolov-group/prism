@@ -211,6 +211,8 @@ class PYSCF:
 
             self.davidson = lib.linalg_helper.davidson1
 
+            from pyscf.fci.direct_spin1 import trans_rdm1s
+            self.trans_rdm1s = trans_rdm1s
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
             self.select_casci = None
 
