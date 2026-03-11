@@ -22,9 +22,10 @@
 import sys
 import os
 import numpy as np
+
 from functools import reduce
 from sympy.physics.quantum.cg import CG
-from prism.tools import transition
+
 import prism.lib.logger as logger
 
 # Add python path for socutils:
@@ -35,54 +36,7 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def get_soc_integrals(interface,soc):
-    mo = interface.mo
-    nmo = interface.nmo
-    nao = interface.mo.shape[1]
-    prefactor = 0.5 / ((interface.light_speed)**2)
-    mol = interface.mol
-    xmol = interface.xmol
-    contr_coeff = interface.contr_coeff
-
-    # Build 1e-density matrix
-    rdm1ao = interface.mc.make_rdm1() 
-
-    soc = soc.lower()
-    if (soc=="breit-pauli" or soc=="bp"):
-        nbasis = mol.nao_nr()
-        hsocint = np.zeros((3, nbasis, nbasis)) 
-        hsocint += prefactor * somf.get_wso(mol)
-        hsocint -= prefactor * somf.get_fso2e_bp(mol, rdm1ao)
-
-    elif (soc=="x2c1" or soc=="dkh1"):
-        nbasis_unc = xmol.nao_nr()
-        nbasis = mol.nao_nr()
-        hsocint = np.zeros((3, nbasis, nbasis))
-
-        if (nbasis != nbasis_unc):
-            hsocint_unc = np.zeros((3, nbasis_unc, nbasis_unc))
-            rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
-            hsocint_unc += prefactor * somf.get_hso1e_x2c1(xmol)
-            hsocint_unc -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
-            hsocint = np.einsum('pi,xpq,qj->xij', contr_coeff, hsocint_unc, contr_coeff)
-
-        else:
-            hsocint += prefactor * somf.get_hso1e_x2c1(mol)
-            hsocint -= prefactor * somf.get_fso2e_x2c(mol, rdm1ao)
-       
-    else:
-        raise Exception("Incorrect SOC flag in input file!!")
-
-    ### Convert to MO basis:
-    hsoc_mo = np.einsum('xpq,pi,qj->xij', hsocint, mo, mo)
-    hsoc = np.zeros((3, nmo, nmo), dtype = 'complex')    
-    for comp in range(3):
-        hsoc[comp] = -1j*(hsoc_mo[comp].astype('complex'))
-
-    return hsoc 
-
-
-def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli",verbose = 4):
+def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", verbose = 4):
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Spin-Free Framework: Employ Wigner–Eckart’s theorem")
     interface.log.info("Consider spin-orbit coupling effect...")
@@ -172,6 +126,53 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli",ve
     interface.log.timer0("total %s calculation" % soc, *cput0)
 
     return en_soc, evec_soc
+
+
+def get_soc_integrals(interface, soc):
+    mo = interface.mo
+    nmo = interface.nmo
+    nao = interface.mo.shape[1]
+    prefactor = 0.5 / ((interface.light_speed)**2)
+    mol = interface.mol
+    xmol = interface.xmol
+    contr_coeff = interface.contr_coeff
+
+    # Build 1e-density matrix
+    rdm1ao = interface.mc.make_rdm1() 
+
+    soc = soc.lower()
+    if (soc=="breit-pauli" or soc=="bp"):
+        nbasis = mol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis)) 
+        hsocint += prefactor * somf.get_wso(mol)
+        hsocint -= prefactor * somf.get_fso2e_bp(mol, rdm1ao)
+
+    elif (soc=="x2c1" or soc=="dkh1"):
+        nbasis_unc = xmol.nao_nr()
+        nbasis = mol.nao_nr()
+        hsocint = np.zeros((3, nbasis, nbasis))
+
+        if (nbasis != nbasis_unc):
+            hsocint_unc = np.zeros((3, nbasis_unc, nbasis_unc))
+            rdm1ao = reduce(np.dot, (contr_coeff, rdm1ao, contr_coeff.T))
+            hsocint_unc += prefactor * somf.get_hso1e_x2c1(xmol)
+            hsocint_unc -= prefactor * somf.get_fso2e_x2c(xmol, rdm1ao)
+            hsocint = np.einsum('pi,xpq,qj->xij', contr_coeff, hsocint_unc, contr_coeff)
+
+        else:
+            hsocint += prefactor * somf.get_hso1e_x2c1(mol)
+            hsocint -= prefactor * somf.get_fso2e_x2c(mol, rdm1ao)
+       
+    else:
+        raise Exception("Incorrect SOC flag in input file!!")
+
+    ### Convert to MO basis:
+    hsoc_mo = np.einsum('xpq,pi,qj->xij', hsocint, mo, mo)
+    hsoc = np.zeros((3, nmo, nmo), dtype = 'complex')    
+    for comp in range(3):
+        hsoc[comp] = -1j*(hsoc_mo[comp].astype('complex'))
+
+    return hsoc 
 
 
 ## DKH-2 specific functionalities:
