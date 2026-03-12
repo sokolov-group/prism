@@ -115,41 +115,15 @@ def kernel(nevpt):
         # Compute properties and spin multiplicity
         osc_str = nevpt.compute_properties()
 
-        print_results(nevpt, osc_str)
+
 
     sys.stdout.flush()
-    nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
+    if nevpt.soc:
+        nevpt.log.timer0("total %s calculation" % ("SOC-"+nevpt.method.upper()), *cput0)
+    else:
+        nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
 
     return nevpt.e_tot, nevpt.e_corr, osc_str
 
 
-def print_results(nevpt, osc_str):
 
-    h2ev = nevpt.interface.hartree_to_ev
-    h2cm = nevpt.interface.hartree_to_inv_cm
-
-    nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method.upper(), nevpt.interface.reference.upper()))
-
-    nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
-    nevpt.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
-    nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
-
-    e_gs = nevpt.e_tot[0]
-    e_tot = nevpt.e_tot
-
-    n_states = len(e_tot)
-
-    for p in range(n_states):
-        deg = 1
-        if not nevpt.soc:
-            deg = nevpt.spin_mult[p]
-        de = nevpt.e_tot[p] - e_gs
-        de_ev = de * h2ev
-        de_cm = de * h2cm
-        if p == 0 or abs(de) < 1e-5:
-            nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
-        else:
-            de_nm = 10000000 / de_cm
-            nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
-
-    nevpt.log.info("----------------------------------------------------------------------------------------------------------------")

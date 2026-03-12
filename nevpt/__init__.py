@@ -127,6 +127,40 @@ class NEVPT:
         return e_tot, e_corr, osc 
 
 
+    def print_results(self, osc_str):
+
+        h2ev = self.interface.hartree_to_ev
+        h2cm = self.interface.hartree_to_inv_cm
+
+        if self.soc:
+            self.log.info("\nSummary of results for the %s calculation with the %s reference:" % (self.soc.upper()+"-"+self.method.upper(), self.interface.reference.upper()))
+        else:
+            self.log.info("\nSummary of results for the %s calculation with the %s reference:" % (self.method.upper(), self.interface.reference.upper()))
+
+        self.log.info("------------------------------------------------------------------------------------------------------------------")
+        self.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
+        self.log.info("------------------------------------------------------------------------------------------------------------------")
+
+        e_gs = self.e_tot[0]
+        e_tot = self.e_tot
+
+        n_states = len(e_tot)
+
+        for p in range(n_states):
+            deg = 1
+            if not self.soc:
+                deg = self.spin_mult[p]
+            de = self.e_tot[p] - e_gs
+            de_ev = de * h2ev
+            de_cm = de * h2cm
+            if p == 0 or abs(de) < 1e-5:
+                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
+            else:
+                de_nm = 10000000 / de_cm
+                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+
+        self.log.info("----------------------------------------------------------------------------------------------------------------")
+
     def compute_energy(self):
 
         e_tot, e_corr = nevpt.compute_energy(self)
