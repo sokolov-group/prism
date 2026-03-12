@@ -20,9 +20,9 @@
 import numpy as np
 from functools import reduce
 
-import prism.mr_adc_intermediates as mr_adc_intermediates
-import prism.mr_adc_overlap as mr_adc_overlap
-import prism.mr_adc_integrals as mr_adc_integrals
+from prism.mr_adc import intermediates
+from prism.mr_adc import overlap
+from prism.mr_adc import integrals
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -370,10 +370,10 @@ def compute_t1_p1(mr_adc):
     rdm_ca = mr_adc.rdm.ca
 
     # Compute K_ac matrix
-    K_ac = mr_adc_intermediates.compute_K_ac(mr_adc)
+    K_ac = intermediates.compute_K_ac(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1_12_inv_act = mr_adc_overlap.compute_S12_p1(mr_adc)
+    S_p1_12_inv_act = overlap.compute_S12_p1(mr_adc)
 
     if hasattr(mr_adc.S12, "cca"):
         mr_adc.S12.cca = S_p1_12_inv_act.copy()
@@ -445,10 +445,10 @@ def compute_t1_m1(mr_adc):
     rdm_ca = mr_adc.rdm.ca
 
     # Compute K_ca matrix
-    K_ca = mr_adc_intermediates.compute_K_ca(mr_adc)
+    K_ca = intermediates.compute_K_ca(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1_12_inv_act = mr_adc_overlap.compute_S12_m1(mr_adc)
+    S_m1_12_inv_act = overlap.compute_S12_m1(mr_adc)
 
     if hasattr(mr_adc.S12, "cae"):
         mr_adc.S12.cae = S_m1_12_inv_act.copy()
@@ -527,10 +527,10 @@ def compute_t1_p2(mr_adc):
     rdm_ccaa = mr_adc.rdm.ccaa
 
     # Compute K_aaccc matrix
-    K_aacc = mr_adc_intermediates.compute_K_aacc(mr_adc)
+    K_aacc = intermediates.compute_K_aacc(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p2_12_inv_act = mr_adc_overlap.compute_S12_p2(mr_adc)
+    S_p2_12_inv_act = overlap.compute_S12_p2(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p2_12_inv_act.T, K_aacc, S_p2_12_inv_act))
@@ -598,10 +598,10 @@ def compute_t1_m2(mr_adc):
     rdm_ccaa = mr_adc.rdm.ccaa
 
     # Compute K_ccaa matrix
-    K_ccaa = mr_adc_intermediates.compute_K_ccaa(mr_adc)
+    K_ccaa = intermediates.compute_K_ccaa(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m2_12_inv_act = mr_adc_overlap.compute_S12_m2(mr_adc)
+    S_m2_12_inv_act = overlap.compute_S12_m2(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m2_12_inv_act.T, K_ccaa, S_m2_12_inv_act))
@@ -685,10 +685,10 @@ def compute_t1_0p(mr_adc):
     rdm_ccaa = mr_adc.rdm.ccaa
 
     # Compute K_caca matrix
-    K_caca = mr_adc_intermediates.compute_K_caca(mr_adc)
+    K_caca = intermediates.compute_K_caca(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_0p_12_inv_act = mr_adc_overlap.compute_S12_0p_gno_projector(mr_adc)
+    S_0p_12_inv_act = overlap.compute_S12_0p_gno_projector(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_0p_12_inv_act[1:,:].T, K_caca, S_0p_12_inv_act[1:,:]))
@@ -811,13 +811,13 @@ def compute_t1_p1p(mr_adc):
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
     # Compute K_p1p matrix
-    K_p1p = mr_adc_intermediates.compute_K_p1p(mr_adc)
+    K_p1p = intermediates.compute_K_p1p(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     if mr_adc.semi_internal_projector == "gno":
-        S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_gno_projector(mr_adc)
+        S_p1p_12_inv_act = overlap.compute_S12_p1p_gno_projector(mr_adc)
     else:
-        S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1p_gs_projector(mr_adc)
+        S_p1p_12_inv_act = overlap.compute_S12_p1p_gs_projector(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
@@ -971,13 +971,13 @@ def compute_t1_m1p(mr_adc):
     rdm_cccaaa = mr_adc.rdm.cccaaa
 
     # Compute K_m1p matrix
-    K_m1p = mr_adc_intermediates.compute_K_m1p(mr_adc)
+    K_m1p = intermediates.compute_K_m1p(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     if mr_adc.semi_internal_projector == "gno":
-        S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gno_projector(mr_adc)
+        S_m1p_12_inv_act = overlap.compute_S12_m1p_gno_projector(mr_adc)
     else:
-        S_m1p_12_inv_act = mr_adc_overlap.compute_S12_m1p_gs_projector(mr_adc)
+        S_m1p_12_inv_act = overlap.compute_S12_m1p_gs_projector(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1p_12_inv_act.T, K_m1p, S_m1p_12_inv_act))
@@ -2001,10 +2001,10 @@ def compute_t2_0p_singles(mr_adc):
         mr_adc.log.debug("v2e.ceee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         if interface.with_df:
-            v_ceee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, s_chunk, f_chunk)
+            v_ceee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lee, s_chunk, f_chunk)
 
         else:
-            v_ceee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee[s_chunk:f_chunk])
+            v_ceee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee[s_chunk:f_chunk])
 
         ## Amplitudes
         t1_ccee = mr_adc.t1.ccee[:,s_chunk:f_chunk]
@@ -2022,9 +2022,9 @@ def compute_t2_0p_singles(mr_adc):
         mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_v_chunk + 1, len(chunks), s_v_chunk, f_v_chunk)
 
         if interface.with_df:
-            v_aeee = mr_adc_integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, f_v_chunk)
+            v_aeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, f_v_chunk)
         else:
-            v_aeee = mr_adc_integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_v_chunk:f_v_chunk])
+            v_aeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_v_chunk:f_v_chunk])
 
         for s_t_chunk, f_t_chunk in chunks:
 

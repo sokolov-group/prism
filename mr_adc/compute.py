@@ -21,9 +21,9 @@ import sys
 import numpy as np
 from functools import reduce
 
-import prism.mr_adc_amplitudes as mr_adc_amplitudes
-import prism.mr_adc_integrals as mr_adc_integrals
-import prism.mr_adc_cvs_ip as mr_adc_cvs_ip
+from prism.mr_adc import amplitudes
+from prism.mr_adc import integrals
+from prism.mr_adc import cvs_ip
 
 import prism.lib.logger as logger
 
@@ -80,14 +80,14 @@ def kernel(mr_adc):
         davidson_verbose = 6
 
     # Compute amplitudes
-    mr_adc_amplitudes.compute_amplitudes(mr_adc)
+    amplitudes.compute_amplitudes(mr_adc)
 
     # Compute CVS integrals
     if mr_adc.method_type == "cvs-ip":
         if mr_adc.interface.with_df:
-            mr_adc_integrals.compute_cvs_integrals_2e_df(mr_adc)
+            integrals.compute_cvs_integrals_2e_df(mr_adc)
         else:
-            mr_adc_integrals.compute_cvs_integrals_2e_incore(mr_adc)
+            integrals.compute_cvs_integrals_2e_incore(mr_adc)
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
     if mr_adc.method_type == "ip":
@@ -100,7 +100,7 @@ def kernel(mr_adc):
         mr_adc = mr_adc_ee.compute_excitation_manifolds(mr_adc)
 
     elif mr_adc.method_type == "cvs-ip":
-        mr_adc = mr_adc_cvs_ip.compute_excitation_manifolds(mr_adc)
+        mr_adc = cvs_ip.compute_excitation_manifolds(mr_adc)
 
     elif mr_adc.method_type == "cvs-ee":
         mr_adc = mr_adc_cvs_ee.compute_excitation_manifolds(mr_adc)
@@ -174,11 +174,11 @@ def setup_davidson(mr_adc):
 
     elif mr_adc.method_type == "cvs-ip":
         # Compute h0-h0 block of the effective Hamiltonian matrix
-        mr_adc_cvs_ip.compute_M_00(mr_adc)
+        cvs_ip.compute_M_00(mr_adc)
 
         # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc_cvs_ip.compute_M_01(mr_adc)
+            cvs_ip.compute_M_01(mr_adc)
 
     elif mr_adc.method_type == "cvs-ee":
         # Compute h0-h0 block of the effective Hamiltonian matrix
@@ -194,7 +194,7 @@ def setup_davidson(mr_adc):
 
     # Apply Core-Valence Separation Approximation (CVS)
     elif mr_adc.method_type == "cvs-ip":
-        precond = mr_adc_cvs_ip.compute_preconditioner(mr_adc)
+        precond = cvs_ip.compute_preconditioner(mr_adc)
     elif mr_adc.method_type == "cvs-ee":
         precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc, M_00)
 
@@ -210,7 +210,7 @@ def setup_davidson(mr_adc):
     elif mr_adc.method_type == "ee":
         apply_M = mr_adc_ee.define_effective_hamiltonian(mr_adc, M_00, M_01)
     elif mr_adc.method_type == "cvs-ip":
-        apply_M = mr_adc_cvs_ip.define_effective_hamiltonian(mr_adc)
+        apply_M = cvs_ip.define_effective_hamiltonian(mr_adc)
     elif mr_adc.method_type == "cvs-ee":
         apply_M = mr_adc_cvs_ee.define_effective_hamiltonian(mr_adc, M_00)
 
@@ -244,7 +244,7 @@ def compute_trans_properties(mr_adc, E, U):
     if mr_adc.method_type == "ip":
         X = mr_adc_ip.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "cvs-ip":
-        X = mr_adc_cvs_ip.compute_trans_moments(mr_adc, U)
+        X = cvs_ip.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "ea":
         X = mr_adc_ea.compute_trans_moments(mr_adc, U)
     elif mr_adc.method_type == "ee":
@@ -262,14 +262,14 @@ def compute_trans_properties(mr_adc, E, U):
         osc_strength = (2.0/3.0) * E * spec_intensity
 
     if (mr_adc.analyze_spec_factor or mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
-        mr_adc_cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
+        cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
 
     return spec_intensity, X
 
 def dyall_hamiltonian(mr_adc):
     """Zeroth Order Dyall Hamiltonian"""
 
-    from prism.mr_adc_integrals import mr_adc_integrals
+    from prism.integrals import integrals
 
     # Testing Dyall Hamiltonian expected value
     print("Calculating the Spin-Adapted Dyall Hamiltonian...")
@@ -290,7 +290,7 @@ def dyall_hamiltonian(mr_adc):
     h_cc = 2.0 * mr_adc.h1e[:mr_adc.ncore, :mr_adc.ncore].copy()
 
     ## Calculating v_cccc term
-    v_cccc = mr_adc_integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
+    v_cccc = integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
 
     # Calculating temp_E_fc
     temp_E_fc  = einsum('ii', h_cc, optimize = True)

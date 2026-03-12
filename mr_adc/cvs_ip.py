@@ -18,7 +18,7 @@
 #
 
 import numpy as np
-import prism.mr_adc_overlap as mr_adc_overlap
+from prism.mr_adc import overlap
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -157,11 +157,9 @@ def compute_excitation_manifolds(mr_adc):
         mr_adc.log.info("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
 
         # Overlap for c-caa
-        mr_adc.S12.c_caa = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
-        if not hasattr(mr_adc.S12, "cae"):
-            mr_adc.S12.cae = mr_adc_overlap.compute_S12_m1(mr_adc)
-        if not hasattr(mr_adc.S12, "cca"):
-            mr_adc.S12.cca = mr_adc_overlap.compute_S12_p1(mr_adc)
+        mr_adc.S12.c_caa = overlap.compute_S12_0p_projector(mr_adc)
+        mr_adc.S12.cae = overlap.compute_S12_m1(mr_adc)
+        mr_adc.S12.cca = overlap.compute_S12_p1(mr_adc)
 
         # Determine dimensions of orthogonalized excitation spaces
         mr_adc.h_orth.n_c_caa    = mr_adc.ncvs * mr_adc.S12.c_caa.shape[1]

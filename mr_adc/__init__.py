@@ -17,9 +17,9 @@
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
-import prism.mr_adc_integrals as mr_adc_integrals
-import prism.mr_adc_rdms as mr_adc_rdms
-import prism.mr_adc_compute as mr_adc_compute
+from prism.mr_adc import compute
+from prism.mr_adc import integrals
+from prism.mr_adc import rdms
 
 class MRADC:
     def __init__(self, interface):
@@ -169,22 +169,22 @@ class MRADC:
 
         # Transform one- and two-electron integrals
         log.info("\nTransforming integrals to MO basis...")
-        mr_adc_integrals.transform_integrals_1e(self)
+        integrals.transform_integrals_1e(self)
         if self.interface.with_df:
-            mr_adc_integrals.transform_Heff_integrals_2e_df(self)
-            mr_adc_integrals.transform_integrals_2e_df(self)
+            integrals.transform_Heff_integrals_2e_df(self)
+            integrals.transform_integrals_2e_df(self)
         else: 
             # TODO: this actually handles out-of-core integrals too, rename the function
-            mr_adc_integrals.transform_integrals_2e_incore(self)
+            integrals.transform_integrals_2e_incore(self)
 
         # Compute CASCI energies and reduced density matrices
-        mr_adc_rdms.compute_reference_rdms(self)
+        rdms.compute_reference_rdms(self)
 
         # TODO: Compute CASCI wavefunctions for excited states in the active space
-        # mr_adc_rdms.compute_es_rdms(self)
+        # rdms.compute_es_rdms(self)
 
         # Run MR-ADC computation
-        ee, spec_factors, X = mr_adc_compute.kernel(self)
+        ee, spec_factors, X = compute.kernel(self)
 
         return ee, spec_factors, X
 
