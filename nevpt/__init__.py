@@ -228,12 +228,3 @@ class QDNEVPT(NEVPT):
         return qd_nevpt.compute_properties(self)
 
 
-    @property
-    def verbose(self):
-        return self._verbose
-
-
-    @verbose.setter
-    def verbose(self, obj):
-        self._verbose = obj
-        self.log.verbose = obj

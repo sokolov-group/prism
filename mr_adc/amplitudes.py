@@ -27,7 +27,7 @@ from prism.mr_adc import integrals
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
-def compute_amplitudes(mr_adc):
+def compute_reference_energy(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("\nComputing NEVPT2 amplitudes...")
@@ -49,6 +49,8 @@ def compute_amplitudes(mr_adc):
     mr_adc.log.info("Total NEVPT2 energy:                         %20.12f" % e_tot)
 
     mr_adc.log.timer("computing amplitudes", *cput0)
+
+    return e_tot, e_corr
 
 def compute_t1_amplitudes(mr_adc):
 

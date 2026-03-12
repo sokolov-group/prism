@@ -18,8 +18,6 @@
 #
 
 from prism.mr_adc import compute
-from prism.mr_adc import integrals
-from prism.mr_adc import rdms
 
 class MRADC:
     def __init__(self, interface):
@@ -68,7 +66,7 @@ class MRADC:
 
         # MR-ADC specific variables
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
-        self.method_type = "ip"         # Possible method types: ee, ip, ea
+        self.method_type = "cvs-ip"     # Possible method types: cvs-ip
         # self.max_t_order = 1          # Maximum order of t amplitudes to compute
         self.ncasci = 6                 # Number of CASCI roots requested
         self.nroots = 6                 # Number of MR-ADC roots requested
@@ -99,7 +97,6 @@ class MRADC:
 
         # Parameters for the CVS implementation
         self.ncvs = None
-        self.nval = None
 
         # Integrals
         self.mo_energy = lambda:None
@@ -117,74 +114,17 @@ class MRADC:
         self.M_00 = None
         self.M_01 = lambda:None
 
+#    def kernel_gs():
+#        # Link to amplitudes.compute_reference_energy
+
     def kernel(self):
 
-        log = self.log
-        self.method = self.method.lower()
-        self.method_type = self.method_type.lower()
-
-        if self.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            msg = "Unknown method %s" % self.method
-            log.error(msg)
-            raise Exception(msg)
-
-        if self.method_type not in ("ee", "ip", "ea", "cvs-ip", "cvs-ee"):
-            msg = "Unknown method type %s" % self.method_type
-            log.error(msg)
-            raise Exception(msg)
-
-        if self.interface.with_df and self.method_type not in ('cvs-ip'):
-            msg = "Density-fitting currently only compatible with CVS-IP method type."
-            log.error(msg)
-            raise Exception(msg)
-
-        if self.method_type == "cvs-ip" and self.ncvs is None:
-            msg = "Method type %s requires setting the ncvs parameter" % self.method_type
-            log.error(msg)
-            raise Exception(msg)
-
-        if self.method_type in ("cvs-ip", "cvs-ee"):
-
-            if isinstance (self.ncvs, int):
-                if self.ncvs < 1 or self.ncvs > self.ncore:
-                    msg = '''Method type %s requires setting the ncvs parameter as a
-                             positive integer that is smaller than ncore''' % self.method_type
-                    log.error(msg)
-                    raise Exception(msg)
-
-                self.nval = self.ncore - self.ncvs
-
-            else:
-                msg = "Method type %s requires setting the ncvs parameter as a positive integer" % self.method_type
-                log.error(msg)
-                raise Exception(msg)
-
-            self.ncasci = 0
-
-        # TODO: Temporary check of what methods are implemented in this version
-        if self.method_type not in ("cvs-ip"):
-            msg = "This spin-adapted version does not currently support method type %s" % self.method_type
-            log.error(msg)
-            raise Exception(msg)
-
-        # Transform one- and two-electron integrals
-        log.info("\nTransforming integrals to MO basis...")
-        integrals.transform_integrals_1e(self)
-        if self.interface.with_df:
-            integrals.transform_Heff_integrals_2e_df(self)
-            integrals.transform_integrals_2e_df(self)
-        else: 
-            # TODO: this actually handles out-of-core integrals too, rename the function
-            integrals.transform_integrals_2e_incore(self)
-
-        # Compute CASCI energies and reduced density matrices
-        rdms.compute_reference_rdms(self)
-
-        # TODO: Compute CASCI wavefunctions for excited states in the active space
-        # rdms.compute_es_rdms(self)
+        method = None
+        if self.method_type == "cvs-ip":
+            method = CVSIPMRADC(self.interface)
 
         # Run MR-ADC computation
-        ee, spec_factors, X = compute.kernel(self)
+        ee, spec_factors, X = compute.kernel(method)
 
         return ee, spec_factors, X
 
@@ -195,3 +135,24 @@ class MRADC:
     def verbose(self, obj):
         self._verbose = obj
         self.log.verbose = obj
+
+
+class CVSIPMRADC(MRADC):
+
+    def __init__(self, interface):
+
+        super().__init__(interface)
+
+        self.method_type = "cvs-ip"         # Possible method types: ee, ip, ea
+
+        # Parameters for the CVS implementation
+        self.ncvs = None
+        self.nval = None
+
+
+    def kernel(self):
+
+        # Run MR-ADC computation
+        ee, spec_factors, X = compute.kernel(self)
+
+        return ee, spec_factors, X

@@ -23,13 +23,79 @@ from functools import reduce
 
 from prism.mr_adc import amplitudes
 from prism.mr_adc import integrals
+from prism.mr_adc import rdms
 from prism.mr_adc import cvs_ip
 
 import prism.lib.logger as logger
 
 def kernel(mr_adc):
 
+    # Initial checks
+    log = mr_adc.log
+    mr_adc.method = mr_adc.method.lower()
+    mr_adc.method_type = mr_adc.method_type.lower()
+
+    if mr_adc.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        msg = "Unknown method %s" % mr_adc.method
+        log.error(msg)
+        raise Exception(msg)
+
+    if mr_adc.method_type not in ("cvs-ip"):
+        msg = "Unknown method type %s" % mr_adc.method_type
+        log.error(msg)
+        raise Exception(msg)
+
+    if mr_adc.interface.with_df and mr_adc.method_type not in ('cvs-ip'):
+        msg = "Density-fitting currently only compatible with CVS-IP method type."
+        log.error(msg)
+        raise Exception(msg)
+
+    if mr_adc.method_type == "cvs-ip" and mr_adc.ncvs is None:
+        msg = "Method type %s requires setting the ncvs parameter" % mr_adc.method_type
+        log.error(msg)
+        raise Exception(msg)
+
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
+
+        if isinstance (mr_adc.ncvs, int):
+            if mr_adc.ncvs < 1 or mr_adc.ncvs > mr_adc.ncore:
+                msg = '''Method type %s requires setting the ncvs parameter as a
+                         positive integer that is smaller than ncore''' % mr_adc.method_type
+                log.error(msg)
+                raise Exception(msg)
+
+            mr_adc.nval = mr_adc.ncore - mr_adc.ncvs
+
+        else:
+            msg = "Method type %s requires setting the ncvs parameter as a positive integer" % mr_adc.method_type
+            log.error(msg)
+            raise Exception(msg)
+
+        mr_adc.ncasci = 0
+
+    # TODO: Temporary check of what methods are implemented in this version
+    if mr_adc.method_type not in ("cvs-ip"):
+        msg = "This spin-adapted version does not currently support method type %s" % mr_adc.method_type
+        log.error(msg)
+        raise Exception(msg)
+
+    # Transform one- and two-electron integrals
+    log.info("\nTransforming integrals to MO basis...")
+    integrals.transform_integrals_1e(mr_adc)
+    if mr_adc.interface.with_df:
+        integrals.transform_Heff_integrals_2e_df(mr_adc)
+        integrals.transform_integrals_2e_df(mr_adc)
+    else: 
+        # TODO: this actually handles out-of-core integrals too, rename the function
+        integrals.transform_integrals_2e_incore(mr_adc)
+
+    # Compute CASCI energies and reduced density matrices
+    rdms.compute_reference_rdms(mr_adc)
+
+    # TODO: Compute CASCI wavefunctions for excited states in the active space
+    # rdms.compute_es_rdms(mr_adc)
     cput0 = (logger.process_clock(), logger.perf_counter())
+
     mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
 
     h2ev = mr_adc.interface.hartree_to_ev
@@ -80,7 +146,7 @@ def kernel(mr_adc):
         davidson_verbose = 6
 
     # Compute amplitudes
-    amplitudes.compute_amplitudes(mr_adc)
+    e_tot, e_corr = amplitudes.compute_reference_energy(mr_adc)
 
     # Compute CVS integrals
     if mr_adc.method_type == "cvs-ip":
