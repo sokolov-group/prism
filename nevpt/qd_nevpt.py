@@ -271,13 +271,14 @@ def compute_properties(method):
         else:
             break
 
+    rdm_mo = method.make_rdm1() # for all osc calculation
+
     osc_str_full=[]
     osc_str = np.zeros(len(method.e_tot)-1)
     for gs_index in range(deg_gs):
         e_diff = method.e_tot - method.e_tot[gs_index]
         e_diff = e_diff[gs_index+1:]
-        rdm_mo = method.make_rdm1(L = gs_index)
-        osc = transition.osc_strength(method.interface, e_diff, rdm_mo[gs_index+1:])
+        osc = transition.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
         osc_str_full.append(osc)
         osc_str[gs_index:] += osc 
 
@@ -289,7 +290,7 @@ def compute_properties(method):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
             rdm_mo = method.make_rdm1(L = gs_index)
-            osc_str_full.append(transition.osc_strength(method.interface, e_diff, rdm_mo[gs_index+1:]))
+            osc_str_full.append(transition.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:]))
 
         transition.print_osc_strength(method.interface, osc_str_full)
 
