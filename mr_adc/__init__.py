@@ -114,19 +114,32 @@ class MRADC:
         self.M_00 = None
         self.M_01 = lambda:None
 
-#    def kernel_gs():
-#        # Link to amplitudes.compute_reference_energy
+
+    def _make_method_instance(self):
+        cls_map = {
+            "cvs-ip": CVSIPMRADC,
+        }
+
+        try:
+            cls = cls_map[self.method_type]
+        except KeyError:
+            raise ValueError(f"Unknown method_type: {self.method_type}")
+
+        # Create child object without calling its __init__
+        method = cls.__new__(cls)
+
+        # Copy all current state from parent
+        method.__dict__ = self.__dict__.copy()
+
+        # Optional subclass-specific post-init
+        if hasattr(method, "_init_method"):
+            method._init_method()
+
+        return method
 
     def kernel(self):
-
-        method = None
-        if self.method_type == "cvs-ip":
-            method = CVSIPMRADC(self.interface)
-
-        # Run MR-ADC computation
-        ee, spec_factors, X = compute.kernel(method)
-
-        return ee, spec_factors, X
+        method = self._make_method_instance()
+        return compute.kernel(method)
 
     @property
     def verbose(self):
@@ -137,22 +150,15 @@ class MRADC:
         self.log.verbose = obj
 
 
+# Classes for specific MRADC flavors go below
+# Only attributes unique to each class should be added
 class CVSIPMRADC(MRADC):
 
     def __init__(self, interface):
-
         super().__init__(interface)
+        self._init_method()
 
-        self.method_type = "cvs-ip"         # Possible method types: ee, ip, ea
-
-        # Parameters for the CVS implementation
-        self.ncvs = None
+    def _init_method(self):
+        self.method_type = "cvs-ip"
         self.nval = None
 
-
-    def kernel(self):
-
-        # Run MR-ADC computation
-        ee, spec_factors, X = compute.kernel(self)
-
-        return ee, spec_factors, X
