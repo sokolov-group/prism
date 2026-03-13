@@ -18,6 +18,8 @@
 #
 
 from prism.mr_adc import compute
+from prism.mr_adc import cvs_ip
+
 
 class MRADC:
     def __init__(self, interface):
@@ -114,7 +116,6 @@ class MRADC:
         self.M_00 = None
         self.M_01 = lambda:None
 
-
     def _make_method_instance(self):
         cls_map = {
             "cvs-ip": CVSIPMRADC,
@@ -144,6 +145,7 @@ class MRADC:
     @property
     def verbose(self):
         return self._verbose
+
     @verbose.setter
     def verbose(self, obj):
         self._verbose = obj
@@ -161,4 +163,13 @@ class CVSIPMRADC(MRADC):
     def _init_method(self):
         self.method_type = "cvs-ip"
         self.nval = None
+
+    def compute_excitation_manifolds(self):
+        return cvs_ip.compute_excitation_manifolds(self)
+
+    def compute_M_00(self):
+        return cvs_ip.compute_M_00(self)
+
+    def compute_M_01(self):
+        return cvs_ip.compute_M_01(self)
 

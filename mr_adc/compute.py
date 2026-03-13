@@ -156,20 +156,7 @@ def kernel(mr_adc):
             integrals.compute_cvs_integrals_2e_incore(mr_adc)
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
-    if mr_adc.method_type == "ip":
-        mr_adc = mr_adc_ip.compute_excitation_manifolds(mr_adc)
-
-    elif mr_adc.method_type == "ea":
-        mr_adc = mr_adc_ea.compute_excitation_manifolds(mr_adc)
-
-    elif mr_adc.method_type == "ee":
-        mr_adc = mr_adc_ee.compute_excitation_manifolds(mr_adc)
-
-    elif mr_adc.method_type == "cvs-ip":
-        mr_adc = cvs_ip.compute_excitation_manifolds(mr_adc)
-
-    elif mr_adc.method_type == "cvs-ee":
-        mr_adc = mr_adc_cvs_ee.compute_excitation_manifolds(mr_adc)
+    mr_adc.compute_excitation_manifolds()
 
     # Setup Davidson algorithm parameters
     apply_M, precond, x0 = setup_davidson(mr_adc)
@@ -213,42 +200,9 @@ def setup_davidson(mr_adc):
 
     precond = None
 
-    # Compute M matrix sectors to be stored
-    if mr_adc.method_type == "ip":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00 = mr_adc_ip.compute_M_00(mr_adc)
-
-        # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            M_01 = mr_adc_ip.compute_M_01(mr_adc)
-
-    elif mr_adc.method_type == "ea":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00 = mr_adc_ea.compute_M_00(mr_adc)
-
-        # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            M_01 = mr_adc_ea.compute_M_01(mr_adc)
-
-    elif mr_adc.method_type == "ee":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00   = mr_adc_ee.compute_M_00(mr_adc)
-
-        # Compute parts of the h0-h1 and h1-h1 blocks of the effective Hamiltonian matrix
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            M_01 = mr_adc_ee.compute_M_01(mr_adc)
-
-    elif mr_adc.method_type == "cvs-ip":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        cvs_ip.compute_M_00(mr_adc)
-
-        # Compute parts of the h0-h1 block of the effective Hamiltonian matrix
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            cvs_ip.compute_M_01(mr_adc)
-
-    elif mr_adc.method_type == "cvs-ee":
-        # Compute h0-h0 block of the effective Hamiltonian matrix
-        M_00 = mr_adc_cvs_ee.compute_M_00(mr_adc)
+    mr_adc.compute_M_00()
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        mr_adc.compute_M_01()
 
     # Compute diagonal of the M matrix
     if mr_adc.method_type == "ip":
