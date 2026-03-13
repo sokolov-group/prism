@@ -25,6 +25,7 @@ from prism.libsoc import magnetic
 def state_interaction_soc(method):
 
     method.log.info("\nInitializing SOC program...")
+    method.interface.x2c_setup()
 
     # Rotate CAS Wavefunction:
     if not hasattr(method, 'h_evec'):
@@ -112,16 +113,31 @@ def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
 
     # Calculate indexing array
     I_total = []
+    S_total = []
+    ms_total = []
     for i in range(nstate):
         n = method.spin_mult[i]
+        s = (n-1)/2
         for j in range(n):
             I_total.append(i)
+            S_total.append(s)
+            m = s-j
+            ms_total.append(m)
 
     rdm_mo = np.zeros((nstate_total, nstate_total, nmo, nmo),dtype='complex')
     for I in range(nstate_total):
         for J in  range(nstate_total):
-            rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
-    rdm_final = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
+            if (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
+                rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
+    rdm_all = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
+
+    # Initial rdm array
+    rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], nmo, nmo, ),dtype='complex')
+
+    # Loop structure
+    for ind_I, I in enumerate(L_list):
+        for ind_J, J in enumerate(R_list):
+            rdm_final[ind_I, ind_J] = rdm_all[I, J]
 
     # Single pair of states
     if L is not None and R is not None:

@@ -41,12 +41,13 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     interface.log.info("Spin-Free Framework: Employ Wigner–Eckart’s theorem")
     interface.log.info("Consider spin-orbit coupling effect...")
     nmo = interface.nmo
+    mo = interface.mo
     nstate = len(en)
 
     #Make sure SOC flag:
     soc = soc.lower()
     if (soc=="breit-pauli" or soc=="bp"):
-        soc_name = "Breit-Pauli"
+        soc_name = "BP"
     
     elif(soc=="x2c-1" or soc=="dkh1"):
         interface.log.info("\nNote that SOC Hamiltionian is sf-X2C-1e+so-DKH1 instead of usual DKH. \n")  
@@ -69,7 +70,12 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
                 rdm_wigner[I,J] = T_z 
             
     # Get SOC integrals:
-    h_soc = get_soc_integrals(interface, soc)
+    rdm1mo = np.zeros((nmo,nmo))
+    for I in range(nstate):
+        rdm1mo += (rdm_aabb[0,I,I] + rdm_aabb[1,I,I]) / nstate
+    rdm1ao =  np.einsum('ai,ib,bj->aj',mo,rdm1mo,mo.T) 
+
+    h_soc = get_soc_integrals(interface, soc, rdm1ao)
     
     h1_plus = (h_soc[0] + (1j*h_soc[1])) 
     h1_minus = (h_soc[0] - (1j*h_soc[1])) 
@@ -123,12 +129,12 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
 
     sys.stdout.flush()
-    interface.log.timer0("total %s calculation" % soc, *cput0)
+    interface.log.timer0("total %s calculation" % soc_name, *cput0)
 
     return en_soc, evec_soc
 
 
-def get_soc_integrals(interface, soc):
+def get_soc_integrals(interface, soc, rdm1ao):
     mo = interface.mo
     nmo = interface.nmo
     nao = interface.mo.shape[1]
@@ -136,9 +142,6 @@ def get_soc_integrals(interface, soc):
     mol = interface.mol
     xmol = interface.xmol
     contr_coeff = interface.contr_coeff
-
-    # Build 1e-density matrix
-    rdm1ao = interface.mc.make_rdm1() 
 
     soc = soc.lower()
     if (soc=="breit-pauli" or soc=="bp"):

@@ -148,8 +148,9 @@ class PYSCF:
             self.unc = None
 
             # Basis set uncontraction objects: xmol, contraction coefficients.
-            from pyscf.x2c import x2c
-            self.xmol, self.contr_coeff = x2c.X2C(mf.mol).get_xmol()
+            # Use x2c_setup to obtain self.xmol and self.contr_coeff 
+            self.xmol = None
+            self.contr_coeff = None
 
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df
@@ -382,6 +383,11 @@ class PYSCF:
 
         return spin_multiplet, spin_multiplet_ne
 
+
+    # X2C set up:
+    def x2c_setup(self):
+        from pyscf.x2c import x2c
+        self.xmol, self.contr_coeff = x2c.X2C(self.mf.mol).get_xmol()
 
     # Apply S+ (spin raising) operator
     def apply_S_plus(self, psi, ncas, nelecas):
