@@ -81,7 +81,6 @@ class MRADC:
         self.s_thresh_doubles = 1e-10
         self.semi_internal_projector = "gno" # Possible values: gno, gs
 
-        self.analyze_spec_factor = False
         self.spec_factor_print_tol = 0.01
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
@@ -173,3 +172,14 @@ class CVSIPMRADC(MRADC):
     def compute_M_01(self):
         return cvs_ip.compute_M_01(self)
 
+    def compute_preconditioner(self):
+        return cvs_ip.compute_preconditioner(self)
+
+    def define_effective_hamiltonian(self):
+        return cvs_ip.define_effective_hamiltonian(self)
+
+    def compute_trans_moments(self, evec):
+        return cvs_ip.compute_trans_moments(self, evec)
+
+    def analyze_spec_factor(self, X, spec_intensity):
+        return cvs_ip.analyze_spec_factor(self, X, spec_intensity)

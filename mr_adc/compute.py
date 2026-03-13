@@ -201,38 +201,18 @@ def setup_davidson(mr_adc):
     precond = None
 
     mr_adc.compute_M_00()
+
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
         mr_adc.compute_M_01()
 
     # Compute diagonal of the M matrix
-    if mr_adc.method_type == "ip":
-        precond = mr_adc_ip.compute_preconditioner(mr_adc, M_00)
-    elif mr_adc.method_type == "ea":
-        precond = mr_adc_ea.compute_preconditioner(mr_adc, M_00)
-    elif mr_adc.method_type == "ee":
-        precond = mr_adc_ee.compute_preconditioner(mr_adc, M_00)
-
-    # Apply Core-Valence Separation Approximation (CVS)
-    elif mr_adc.method_type == "cvs-ip":
-        precond = cvs_ip.compute_preconditioner(mr_adc)
-    elif mr_adc.method_type == "cvs-ee":
-        precond = mr_adc_cvs_ee.compute_preconditioner(mr_adc, M_00)
+    precond = mr_adc.compute_preconditioner()
 
     # Compute guess vectors
     x0 = compute_guess_vectors(mr_adc, precond)
 
     # Define M * vec
-    apply_M = None
-    if mr_adc.method_type == "ip":
-        apply_M = mr_adc_ip.define_effective_hamiltonian(mr_adc, M_00, M_01, M_11)
-    elif mr_adc.method_type == "ea":
-        apply_M = mr_adc_ea.define_effective_hamiltonian(mr_adc, M_00, M_01, M_11)
-    elif mr_adc.method_type == "ee":
-        apply_M = mr_adc_ee.define_effective_hamiltonian(mr_adc, M_00, M_01)
-    elif mr_adc.method_type == "cvs-ip":
-        apply_M = cvs_ip.define_effective_hamiltonian(mr_adc)
-    elif mr_adc.method_type == "cvs-ee":
-        apply_M = mr_adc_cvs_ee.define_effective_hamiltonian(mr_adc, M_00)
+    apply_M = mr_adc.define_effective_hamiltonian()
 
     return apply_M, precond, x0
 
@@ -261,28 +241,15 @@ def compute_trans_properties(mr_adc, E, U):
 
     X = None
 
-    if mr_adc.method_type == "ip":
-        X = mr_adc_ip.compute_trans_moments(mr_adc, U)
-    elif mr_adc.method_type == "cvs-ip":
-        X = cvs_ip.compute_trans_moments(mr_adc, U)
-    elif mr_adc.method_type == "ea":
-        X = mr_adc_ea.compute_trans_moments(mr_adc, U)
-    elif mr_adc.method_type == "ee":
-        X = mr_adc_ee.compute_trans_moments(mr_adc, U)
-    elif mr_adc.method_type == "cvs-ee":
-        X = mr_adc_cvs_ee.compute_trans_moments(mr_adc, U)
-    else:
-        msg = "Unknown Method Type ..."
-        mr_adc.log.error(msg)
-        raise Exception(msg)
+    X = mr_adc.compute_trans_moments(U)
 
     spec_intensity = 2.0 * np.sum(X**2, axis=0)
 
     if mr_adc.method_type in ("cvs-ee", "ee"):
         osc_strength = (2.0/3.0) * E * spec_intensity
 
-    if (mr_adc.analyze_spec_factor or mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
-        cvs_ip.analyze_spec_factor(mr_adc, X, spec_intensity)
+    if (mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
+        mr_adc.analyze_spec_factor(X, spec_intensity)
 
     return spec_intensity, X
 
