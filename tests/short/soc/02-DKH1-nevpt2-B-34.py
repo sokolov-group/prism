@@ -37,7 +37,7 @@ mol.atom = [
 mol.basis = 'def2-tzvp' 
 mol.symmetry = False
 mol.spin = 1
-mol.verbose = 4
+mol.verbose = 1
 mol.build()
 
 
@@ -66,7 +66,7 @@ nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
 nevpt.method = "nevpt2"
 nevpt.soc = "DKH1" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-nevpt.verbose = 4
+nevpt.verbose = 1
 
 class KnownValues(unittest.TestCase):
 

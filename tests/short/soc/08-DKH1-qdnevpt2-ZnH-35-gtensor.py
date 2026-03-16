@@ -37,7 +37,7 @@ mol.atom = [
 mol.basis = 'def2-tzvp'
 mol.symmetry = False
 mol.spin = 1
-mol.verbose = 4
+mol.verbose = 1
 mol.build()
 
 
@@ -66,7 +66,7 @@ nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
 nevpt.method = "nevpt2"
 nevpt.soc = "DKH1" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-nevpt.verbose = 4
+nevpt.verbose = 1
 nevpt.gtensor = True
 nevpt.origin_type = 'charge' 
 
@@ -80,21 +80,40 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
+        #Prism
         self.assertAlmostEqual(e_tot[0], -1792.202314553556, 5)
-        self.assertAlmostEqual(e_tot[1], -1792.202314553556 , 5)
-        self.assertAlmostEqual(e_tot[2], -1792.098895453797, 5)
-        self.assertAlmostEqual(e_tot[3], -1792.098895453796, 5)
+        self.assertAlmostEqual(e_tot[1], -1792.202314553555, 5)
+        self.assertAlmostEqual(e_tot[2], -1792.098895453795, 5)
+        self.assertAlmostEqual(e_tot[3], -1792.098895453795, 5)
         self.assertAlmostEqual(e_tot[4], -1792.097655010426, 5)
-        self.assertAlmostEqual(e_tot[5], -1792.097655010426, 5)
+        self.assertAlmostEqual(e_tot[5], -1792.097655010425, 5)
         
-        self.assertAlmostEqual(osc[0], 0.0, 4)
-        self.assertAlmostEqual(osc[1], 0.05263598, 4)
-        self.assertAlmostEqual(osc[2], 0.05267549, 4)
-        self.assertAlmostEqual(osc[3], 0.05327178, 4)
-        self.assertAlmostEqual(osc[4], 0.05331541, 4)
+        self.assertAlmostEqual(osc[0], 0.0, 5)
+        self.assertAlmostEqual(osc[1], 0.05264138, 5)
+        self.assertAlmostEqual(osc[2], 0.05264138, 5)
+        self.assertAlmostEqual(osc[3], 0.05326893, 5)
+        self.assertAlmostEqual(osc[4], 0.05326893, 5)
 
         self.assertAlmostEqual(nevpt.g_factor[0], 1.985702, 5)
         self.assertAlmostEqual(nevpt.g_factor[1], 1.985702, 5)
+        self.assertAlmostEqual(nevpt.g_factor[2], 2.002216, 5)
+
+        #Prism_beta gtensor branch
+        self.assertAlmostEqual(e_tot[0], -1792.202315, 5)
+        self.assertAlmostEqual(e_tot[1], -1792.202315, 5)
+        self.assertAlmostEqual(e_tot[2], -1792.098894, 5)
+        self.assertAlmostEqual(e_tot[3], -1792.098894, 5)
+        self.assertAlmostEqual(e_tot[4], -1792.097653, 5)
+        self.assertAlmostEqual(e_tot[5], -1792.097653, 5)
+        
+        self.assertAlmostEqual(osc[0], 0, 5)
+        self.assertAlmostEqual(osc[1], 0.05263784, 5)
+        self.assertAlmostEqual(osc[2], 0.05263789, 5)
+        self.assertAlmostEqual(osc[3], 0.05326928, 5)
+        self.assertAlmostEqual(osc[4], 0.05326924, 5)
+
+        self.assertAlmostEqual(nevpt.g_factor[0], 1.985703, 5)
+        self.assertAlmostEqual(nevpt.g_factor[1], 1.985703, 5)
         self.assertAlmostEqual(nevpt.g_factor[2], 2.002216, 5)
 
 
