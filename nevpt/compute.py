@@ -17,7 +17,6 @@
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          James D. Serna <jserna456@gmail.com>
 
-import sys
 import numpy as np
 
 from prism.nevpt import integrals
@@ -30,6 +29,37 @@ def kernel(nevpt):
 
     # Initial checks
     nevpt.method = nevpt.method.lower()
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    nevpt.log.info("\nComputing NEVPT energies...\n")
+
+    # Initial checks
+    initialize(nevpt)
+
+    # Print calculation info
+    print_header(nevpt)
+
+    # Transform one- and two-electron integrals
+    integrals.transform_integrals(nevpt)
+
+    # Compute state-specific or quasidegenerate NEVPT energy
+    nevpt.compute_energy()
+
+    # Compute properties and spin multiplicity
+    osc_str = nevpt.compute_properties()
+
+    # Print results
+    print_results(nevpt, osc_str)
+
+    if nevpt.soc:
+        nevpt.log.timer0("total %s calculation" % ("SOC-"+nevpt.method.upper()), *cput0)
+    else:
+        nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
+
+    return nevpt.e_tot, nevpt.e_corr, osc_str
+
+
+def initialize(nevpt):
 
     if nevpt.method not in ("nevpt2"):
         msg = "Unknown method %s" % nevpt.method
@@ -57,19 +87,9 @@ def kernel(nevpt):
     
     if nevpt.shift_type_0p is not None and nevpt.shift_type_0p not in avail_shifts:
         raise ValueError(f"Invalid {'shift_type_0p'}: '{nevpt.shift_type_0p}'. Available options are {avail_shifts}.")
-    
-    # Transform one- and two-electron integrals
-    nevpt.log.info("\nTransforming integrals to MO basis...")
-    integrals.transform_integrals_1e(nevpt)
-    if nevpt.interface.with_df:
-        integrals.transform_Heff_integrals_2e_df(nevpt)
-        integrals.transform_integrals_2e_df(nevpt)
-    else:
-        # TODO: this actually handles out-of-core integrals too, rename the function
-        integrals.transform_integrals_2e_incore(nevpt)
 
-    cput0 = (logger.process_clock(), logger.perf_counter())
-    nevpt.log.info("\nComputing NEVPT energies...\n")
+
+def print_header(nevpt):
 
     n_states = len(nevpt.ref_wfn_deg)
     n_micro_states = sum(nevpt.ref_wfn_deg)
@@ -105,25 +125,38 @@ def kernel(nevpt):
     if nevpt.compute_singles_amplitudes:
         nevpt.log.info("Projector for the semi-internal amplitudes:        %s" % nevpt.semi_internal_projector)
 
-    # Compute state-specific or quasidegenerate NEVPT energy
-    nevpt.compute_energy()
 
-    # Compute properties
-    osc_str = None
-    if n_states > 1:
+def print_results(nevpt, osc_str):
 
-        # Compute properties and spin multiplicity
-        osc_str = nevpt.compute_properties()
+    h2ev = nevpt.interface.hartree_to_ev
+    h2cm = nevpt.interface.hartree_to_inv_cm
 
-
-
-    sys.stdout.flush()
     if nevpt.soc:
-        nevpt.log.timer0("total %s calculation" % ("SOC-"+nevpt.method.upper()), *cput0)
+        nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.soc.upper()+"-"+nevpt.method.upper(), nevpt.interface.reference.upper()))
     else:
-        nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
+        nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method.upper(), nevpt.interface.reference.upper()))
 
-    return nevpt.e_tot, nevpt.e_corr, osc_str
+    nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
+    nevpt.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
+    nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
 
+    e_gs = nevpt.e_tot[0]
+    e_tot = nevpt.e_tot
 
+    n_states = len(e_tot)
+
+    for p in range(n_states):
+        deg = 1
+        if not nevpt.soc:
+            deg = nevpt.spin_mult[p]
+        de = nevpt.e_tot[p] - e_gs
+        de_ev = de * h2ev
+        de_cm = de * h2cm
+        if p == 0 or abs(de) < 1e-5:
+            nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
+        else:
+            de_nm = 10000000 / de_cm
+            nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+
+    nevpt.log.info("----------------------------------------------------------------------------------------------------------------")
 

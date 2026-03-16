@@ -261,38 +261,42 @@ def diagonalize_eff_H(method):
 
 def compute_properties(method):
 
+    n_states = len(method.ref_wfn_deg)
+
     # Get Oscillator Strengths for transitions from ground state
-    
-    # Calculate ground state degeneracy:
-    deg_gs = 1
-    for i in range(len(method.e_tot)-1):
-        if (np.abs(method.e_tot[i+1]-method.e_tot[0])) < 1e-5:
-            deg_gs += 1
-        else:
-            break
+    if n_states > 1:
 
-    rdm_mo = method.make_rdm1() # for all osc calculation
+        # Calculate ground state degeneracy:
+        deg_gs = 1
+        for i in range(len(method.e_tot)-1):
+            if (np.abs(method.e_tot[i+1]-method.e_tot[0])) < 1e-5:
+                deg_gs += 1
+            else:
+                break
 
-    osc_str_full=[]
-    osc_str = np.zeros(len(method.e_tot)-1)
-    for gs_index in range(deg_gs):
-        e_diff = method.e_tot - method.e_tot[gs_index]
-        e_diff = e_diff[gs_index+1:]
-        osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
-        osc_str_full.append(osc)
-        osc_str[gs_index:] += osc 
+        rdm_mo = method.make_rdm1() # for all osc calculation
 
-    method.print_results(osc_str)
-
-    # Compute all transitions starting from each state
-    if method.verbose >= 5:
-        for gs_index in range(deg_gs, len(method.e_tot)):  
+        osc_str_full=[]
+        osc_str = np.zeros(len(method.e_tot)-1)
+        for gs_index in range(deg_gs):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
-            rdm_mo = method.make_rdm1(L = gs_index)
-            osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:]))
+            osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
+            osc_str_full.append(osc)
+            osc_str[gs_index:] += osc 
 
-        trans_prop.print_osc_strength(method.interface, osc_str_full)
+# TODO: Move the following if statement to analyze()
+# TODO: Move the following if statement to analyze()
+# TODO: Move the following if statement to analyze()
+        # Compute all transitions starting from each state
+        if method.verbose >= 5:
+            for gs_index in range(deg_gs, len(method.e_tot)):  
+                e_diff = method.e_tot - method.e_tot[gs_index]
+                e_diff = e_diff[gs_index+1:]
+                rdm_mo = method.make_rdm1(L = gs_index)
+                osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:]))
+
+            trans_prop.print_osc_strength(method.interface, osc_str_full)
 
     # Compute magnetic properties
     if method.gtensor and method.soc:

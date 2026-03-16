@@ -23,6 +23,18 @@ from functools import reduce
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
+def transform_integrals(nevpt):
+
+    nevpt.log.info("\nTransforming integrals to MO basis...")
+    transform_integrals_1e(nevpt)
+    if nevpt.interface.with_df:
+        transform_Heff_integrals_2e_df(nevpt)
+        transform_integrals_2e_df(nevpt)
+    else:
+        # TODO: this actually handles out-of-core integrals too, rename the function
+        transform_integrals_2e_incore(nevpt)
+
+
 def transform_integrals_1e(nevpt):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
