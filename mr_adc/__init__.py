@@ -18,6 +18,7 @@
 #
 
 from prism.mr_adc import compute
+from prism.mr_adc import amplitudes
 from prism.mr_adc import cvs_ip
 
 
@@ -80,6 +81,9 @@ class MRADC:
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
         self.semi_internal_projector = "gno" # Possible values: gno, gs
+        self.e_ref_nevpt2 = None        # NEVPT2 reference energy
+        self.e_diff = None              # MR-ADC excitation energies
+        self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
 
         self.spec_factor_print_tol = 0.01
 
@@ -99,7 +103,7 @@ class MRADC:
         # Parameters for the CVS implementation
         self.ncvs = None
 
-        # Integrals
+        # Integrals and amplitudes
         self.mo_energy = lambda:None
         self.h1eff = lambda:None
         self.v2e = lambda:None
@@ -140,6 +144,15 @@ class MRADC:
     def kernel(self):
         method = self._make_method_instance()
         return compute.kernel(method)
+
+    def compute_reference_energy(self):
+        return amplitudes.compute_reference_energy(self)
+
+    def compute_energy(self):
+        return compute.compute_energy(self)
+
+    def compute_properties(self):
+        return compute.compute_properties(self)
 
     @property
     def verbose(self):

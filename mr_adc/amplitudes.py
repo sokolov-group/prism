@@ -50,6 +50,8 @@ def compute_reference_energy(mr_adc):
 
     mr_adc.log.timer("computing amplitudes", *cput0)
 
+    mr_adc.e_ref_nevpt2 = e_tot
+
     return e_tot, e_corr
 
 def compute_t1_amplitudes(mr_adc):

@@ -24,16 +24,66 @@ from functools import reduce
 from prism.mr_adc import amplitudes
 from prism.mr_adc import integrals
 from prism.mr_adc import rdms
-from prism.mr_adc import cvs_ip
 
 import prism.lib.logger as logger
 
 def kernel(mr_adc):
 
-    # Initial checks
     log = mr_adc.log
     mr_adc.method = mr_adc.method.lower()
     mr_adc.method_type = mr_adc.method_type.lower()
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+
+    mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
+
+    # Initial checks
+    initialize(mr_adc)
+
+    # Print calculation info
+    print_header(mr_adc)
+
+    # Transform one- and two-electron integrals
+    integrals.transform_integrals(mr_adc)
+
+    # Compute CASCI energies and reduced density matrices
+    rdms.compute_reference_rdms(mr_adc)
+
+    # Compute amplitudes
+    e_tot, e_corr = mr_adc.compute_reference_energy()
+
+    # Compute CVS integrals
+    if mr_adc.method_type == "cvs-ip":
+        integrals.transform_cvs_integrals(mr_adc)
+
+    e_tot, de = mr_adc.compute_energy()
+
+    # Compute transition moments and spectroscopic factors
+    spec_intensity, X = mr_adc.compute_properties()
+
+    h2ev = mr_adc.interface.hartree_to_ev
+    h2cm = mr_adc.interface.hartree_to_inv_cm
+
+    mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
+
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+    mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+
+    de_ev = de * h2ev
+    de_cm = de * h2cm
+
+    for p in range(len(de)):
+        de_nm = 10000000 / de_cm[p]
+        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+
+    mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
+
+    return de_ev, spec_intensity, X
+
+def initialize(mr_adc):
 
     if mr_adc.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
         msg = "Unknown method %s" % mr_adc.method
@@ -79,27 +129,8 @@ def kernel(mr_adc):
         log.error(msg)
         raise Exception(msg)
 
-    # Transform one- and two-electron integrals
-    log.info("\nTransforming integrals to MO basis...")
-    integrals.transform_integrals_1e(mr_adc)
-    if mr_adc.interface.with_df:
-        integrals.transform_Heff_integrals_2e_df(mr_adc)
-        integrals.transform_integrals_2e_df(mr_adc)
-    else: 
-        # TODO: this actually handles out-of-core integrals too, rename the function
-        integrals.transform_integrals_2e_incore(mr_adc)
 
-    # Compute CASCI energies and reduced density matrices
-    rdms.compute_reference_rdms(mr_adc)
-
-    # TODO: Compute CASCI wavefunctions for excited states in the active space
-    # rdms.compute_es_rdms(mr_adc)
-    cput0 = (logger.process_clock(), logger.perf_counter())
-
-    mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
-
-    h2ev = mr_adc.interface.hartree_to_ev
-    h2cm = mr_adc.interface.hartree_to_inv_cm
+def print_header(mr_adc):
 
     ref_df = False
     df = False
@@ -107,6 +138,8 @@ def kernel(mr_adc):
         ref_df = True
     if mr_adc.interface.with_df:
         df = True
+
+    h2ev = mr_adc.interface.hartree_to_ev
 
     # Print general information
     mr_adc.log.info("Method:                                            %s-%s" % (mr_adc.method_type, mr_adc.method))
@@ -141,25 +174,18 @@ def kernel(mr_adc):
     if mr_adc.e_cas_ci is not None:
         mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas)))
 
-    davidson_verbose = 3
-    if mr_adc.verbose > 3:
-        davidson_verbose = 6
 
-    # Compute amplitudes
-    e_tot, e_corr = amplitudes.compute_reference_energy(mr_adc)
-
-    # Compute CVS integrals
-    if mr_adc.method_type == "cvs-ip":
-        if mr_adc.interface.with_df:
-            integrals.compute_cvs_integrals_2e_df(mr_adc)
-        else:
-            integrals.compute_cvs_integrals_2e_incore(mr_adc)
+def compute_energy(mr_adc):
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
     mr_adc.compute_excitation_manifolds()
 
     # Setup Davidson algorithm parameters
     apply_M, precond, x0 = setup_davidson(mr_adc)
+
+    davidson_verbose = 3
+    if mr_adc.verbose > 3:
+        davidson_verbose = 6
 
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     cput1 = (logger.process_clock(), logger.perf_counter())
@@ -171,30 +197,15 @@ def kernel(mr_adc):
                                            max_cycle = mr_adc.max_cycle,
                                            tol = mr_adc.tol_e,
                                            tol_residual = mr_adc.tol_r)
+
+    mr_adc.h_evec = np.array(U)
+    mr_adc.e_tot = mr_adc.e_ref_nevpt2 + de
+    mr_adc.e_diff = de
+
     mr_adc.log.timer("solving eigenvalue problem", *cput1)
 
-    # Compute transition moments and spectroscopic factors
-    U = np.array(U)
-    spec_intensity, X = compute_trans_properties(mr_adc, de, U)
+    return mr_adc.e_tot, mr_adc.e_diff
 
-    mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
-
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-    mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-
-    de_ev = de * h2ev
-    de_cm = de * h2cm
-
-    for p in range(len(de)):
-        de_nm = 10000000 / de_cm[p]
-        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
-
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-
-    mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
-
-    return de_ev, spec_intensity, X
 
 def setup_davidson(mr_adc):
 
@@ -237,7 +248,10 @@ def compute_guess_vectors(mr_adc, precond, ascending = True):
 
     return x0s
 
-def compute_trans_properties(mr_adc, E, U):
+def compute_properties(mr_adc):
+
+    E = mr_adc.e_diff
+    U = mr_adc.h_evec
 
     X = None
 
@@ -245,47 +259,8 @@ def compute_trans_properties(mr_adc, E, U):
 
     spec_intensity = 2.0 * np.sum(X**2, axis=0)
 
-    if mr_adc.method_type in ("cvs-ee", "ee"):
-        osc_strength = (2.0/3.0) * E * spec_intensity
-
     if (mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
         mr_adc.analyze_spec_factor(X, spec_intensity)
 
     return spec_intensity, X
 
-def dyall_hamiltonian(mr_adc):
-    """Zeroth Order Dyall Hamiltonian"""
-
-    from prism.integrals import integrals
-
-    # Testing Dyall Hamiltonian expected value
-    print("Calculating the Spin-Adapted Dyall Hamiltonian...")
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Variables needed
-    h_aa = mr_adc.h1eff[mr_adc.ncore:mr_adc.nocc, mr_adc.ncore:mr_adc.nocc].copy()
-    rdm_ca = mr_adc.rdm.ca
-    v_aaaa = mr_adc.v2e.aaaa
-    rdm_ccaa = mr_adc.rdm.ccaa
-    mo_c = mr_adc.mo[:, :mr_adc.ncore].copy()
-
-    # Calculating E_fc
-    ## Calculating h_cc term
-    h_cc = 2.0 * mr_adc.h1e[:mr_adc.ncore, :mr_adc.ncore].copy()
-
-    ## Calculating v_cccc term
-    v_cccc = integrals.transform_2e_phys_incore(mr_adc.interface, mo_c, mo_c, mo_c, mo_c)
-
-    # Calculating temp_E_fc
-    temp_E_fc  = einsum('ii', h_cc, optimize = True)
-    temp_E_fc += 2.0 * einsum('ijij', v_cccc, optimize = True)
-    temp_E_fc -= einsum('jiij', v_cccc, optimize = True)
-
-    # Calculating H_act
-    temp  = einsum('xy,xy', h_aa, rdm_ca, optimize = einsum_type)
-    temp += 1/2 * einsum('xyzw,xyzw', v_aaaa, rdm_ccaa, optimize = einsum_type)
-
-    print("\n>>> SA Expected value of Zeroth-order Dyall Hamiltonian: {:}".format(temp + temp_E_fc + mr_adc.interface.enuc))

@@ -23,6 +23,21 @@ from functools import reduce
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
+def transform_integrals(mr_adc):
+
+    log = mr_adc.log
+
+    log.info("\nTransforming integrals to MO basis...")
+
+    transform_integrals_1e(mr_adc)
+    if mr_adc.interface.with_df:
+        transform_Heff_integrals_2e_df(mr_adc)
+        transform_integrals_2e_df(mr_adc)
+    else: 
+        # TODO: this actually handles out-of-core integrals too, rename the function
+        transform_integrals_2e_incore(mr_adc)
+
+
 def transform_integrals_1e(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -578,6 +593,19 @@ def unpack_v2e_oeee(mr_adc, v2e_oeee):
         raise RuntimeError("ERI does not have a correct dimension")
 
     return v2e_oeee_
+
+
+def transform_cvs_integrals(mr_adc):
+
+    log = mr_adc.log
+
+    log.info("\nTransforming integrals for the CVS calculation...")
+
+    if mr_adc.interface.with_df:
+        compute_cvs_integrals_2e_df(mr_adc)
+    else:
+        compute_cvs_integrals_2e_incore(mr_adc)
+
 
 def compute_cvs_integrals_2e_incore(mr_adc):
 

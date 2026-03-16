@@ -220,10 +220,6 @@ class QDNEVPT(NEVPT):
         # Eigenvectors of effective Hamiltonian
         self.h_evec = None
 
-#        # Compute correlated RDMs
-#        make_rdm1 = qd_nevpt.make_rdm1
-#        self.make_rdm1 = lambda *args, **kwargs: make_rdm1(self, *args, **kwargs)
-
     def compute_energy(self):
 
         e_tot, e_corr = qd_nevpt.compute_energy(self)
