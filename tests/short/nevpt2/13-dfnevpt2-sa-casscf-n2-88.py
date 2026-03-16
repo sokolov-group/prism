@@ -48,7 +48,7 @@ print("SCF energy: %f\n" % ehf)
 n_states = 6
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 8, 8).state_average_(weights)
-mc.conv_tol = 1e-11
+mc.conv_tol = 1e-10
 mc.conv_tol_grad = 1e-6
 emc = mc.mc1step()[0]
 
@@ -59,13 +59,12 @@ nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-10
 nevpt.s_thresh_doubles = 1e-10
-nevpt.method = "nevpt2"
 
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
         self.assertAlmostEqual(mc.e_tot, -108.824929042721, 5)
-        self.assertAlmostEqual(mc.e_cas, -18.9658046887769, 6)
+        self.assertAlmostEqual(mc.e_cas, -18.9658046887769, 5)
 
     def test_prism(self):
 

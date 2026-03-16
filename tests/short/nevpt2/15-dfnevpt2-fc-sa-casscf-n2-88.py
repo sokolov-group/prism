@@ -60,7 +60,6 @@ nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-10
 nevpt.s_thresh_doubles = 1e-10
 nevpt.nfrozen = 2
-nevpt.method = "nevpt2"
 
 class KnownValues(unittest.TestCase):
 

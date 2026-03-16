@@ -62,13 +62,12 @@ emc = mc.mc1step()[0]
 
 # NEVPT2 calculation
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('cc-pvdz-ri')
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
 nevpt.nfrozen = 2
-nevpt.method = "qd-nevpt2"
 
 class KnownValues(unittest.TestCase):
 
@@ -100,8 +99,8 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[1], 0.0, 6)
         self.assertAlmostEqual(osc[2], 0.0, 6)
         self.assertAlmostEqual(osc[3], 0.0, 6)
-        self.assertAlmostEqual(osc[4] + osc[5], (0.00061126 + 0.00084377), 6)
-        
+        self.assertAlmostEqual(osc[4], 0.001455036, 6)
+        self.assertAlmostEqual(osc[5], 0.001455036, 6)
         
 if __name__ == "__main__":
     print("QD-NEVPT2 test")
