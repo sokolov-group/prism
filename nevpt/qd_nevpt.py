@@ -22,7 +22,7 @@ from functools import reduce
 from prism.nevpt import amplitudes
 from prism.nevpt import nevpt
 from prism.nevpt import soc
-from prism.tools import transition
+from prism.tools import trans_prop
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -278,7 +278,7 @@ def compute_properties(method):
     for gs_index in range(deg_gs):
         e_diff = method.e_tot - method.e_tot[gs_index]
         e_diff = e_diff[gs_index+1:]
-        osc = transition.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
+        osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
         osc_str_full.append(osc)
         osc_str[gs_index:] += osc 
 
@@ -290,9 +290,9 @@ def compute_properties(method):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
             rdm_mo = method.make_rdm1(L = gs_index)
-            osc_str_full.append(transition.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:]))
+            osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:]))
 
-        transition.print_osc_strength(method.interface, osc_str_full)
+        trans_prop.print_osc_strength(method.interface, osc_str_full)
 
     # Compute magnetic properties
     if method.gtensor and method.soc:
