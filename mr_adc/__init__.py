@@ -84,6 +84,7 @@ class MRADC:
         self.e_ref_nevpt2 = None        # NEVPT2 reference energy
         self.e_diff = None              # MR-ADC excitation energies
         self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
+        self.h_evec = None              # Eigenvectors of effective Hamiltonian
 
         self.spec_factor_print_tol = 0.01
 
@@ -111,9 +112,6 @@ class MRADC:
         self.t1 = lambda:None
         self.t2 = lambda:None
         self.dip_mom = None
-
-        self.mo_energy.c = interface.mo_energy[:self.ncore]
-        self.mo_energy.e = interface.mo_energy[self.nocc:]
 
         # Matrix blocks
         self.M_00 = None
