@@ -116,12 +116,8 @@ def initialize(mr_adc):
 
 def print_header(mr_adc):
 
-    ref_df = False
-    df = False
-    if mr_adc.interface.reference_df:
-        ref_df = True
-    if mr_adc.interface.with_df:
-        df = True
+    ref_df = bool(mr_adc.interface.reference_df)
+    df = bool(mr_adc.interface.with_df)
 
     h2ev = mr_adc.interface.hartree_to_ev
 
@@ -167,9 +163,7 @@ def compute_energy(mr_adc):
     # Setup Davidson algorithm parameters
     apply_M, precond, x0 = setup_davidson(mr_adc)
 
-    davidson_verbose = 3
-    if mr_adc.verbose > 3:
-        davidson_verbose = 6
+    davidson_verbose = 6 if mr_adc.verbose > 3 else 3
 
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     cput1 = (logger.process_clock(), logger.perf_counter())
