@@ -58,12 +58,11 @@ emc = mc.mc1step()[0]
 
 # NEVPT2 calculation
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-6
-nevpt.method = "qd-nevpt2"
 nevpt.keep_amplitudes = True
 
 # Correlated 1RDM
@@ -109,10 +108,10 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 6)
         self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 6)
         
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 6)
-        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 6)
-        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 6)
-        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 19.94508432724789, 6)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.276386299303475, 6)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.86712941277501, 6)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 39.05984123370054, 6)
         
         # Using 'all' flag
         # Ground state
@@ -145,10 +144,10 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(np.linalg.norm(tr2_1rdm), tr2_norm, 6)
         self.assertAlmostEqual(np.linalg.norm(tr3_1rdm), tr3_norm, 6)
         
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 6)
-        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 6)
-        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 6)
-        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 19.94508432724789, 6)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.276386299303475, 6)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.86712941277501, 6)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 39.05984123370054, 6)
         
         # Using ss flag
         rdms = nevpt.make_rdm1(type = 'ss')
@@ -166,10 +165,10 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 6)
         self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 6)
         
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.0268093354653, 6)
-        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.7195898465653, 6)
-        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.78540440455074, 6)
-        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801751, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 19.94508432724789, 6)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.276386299303475, 6)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.86712941277501, 6)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 39.05984123370054, 6)
 
 if __name__ == "__main__":
     print("QD-NEVPT2 test")

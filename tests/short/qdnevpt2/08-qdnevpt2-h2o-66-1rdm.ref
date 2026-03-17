@@ -291,7 +291,7 @@ Oscillator Strengths: state i -> state f
 > CPU time for total QD-NEVPT2 calculation    354.10 sec, wall time     14.97 sec
 
 # r^2 Calculations
-r^2 gs:   20.0268093354653
-r^2 es1:  37.7195898465653
-r^2 es2:  39.78540440455074
-r^2 es3:  38.61663768801751
+r^2 gs:   19.94508432724789
+r^2 es1:  37.276386299303475
+r^2 es2:  39.86712941277501
+r^2 es3:  39.05984123370054

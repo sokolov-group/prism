@@ -21,7 +21,6 @@ from functools import reduce
 
 from prism.nevpt import amplitudes
 from prism.nevpt import nevpt
-from prism.nevpt import soc
 from prism.tools import trans_prop
 
 import prism.lib.logger as logger
@@ -295,14 +294,13 @@ def compute_properties(method):
             for gs_index in range(deg_gs, len(method.e_tot)):  
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
-                rdm_mo = method.make_rdm1(L = gs_index)
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:]))
 
             trans_prop.print_osc_strength(method.interface, osc_str_full)
 
     # Compute magnetic properties
     if method.gtensor and method.soc:
-
+        from prism.nevpt import soc
         # Call make_rdm1 function directly to bypass including SOC effects
         rdm_sf = make_rdm1(method)
 

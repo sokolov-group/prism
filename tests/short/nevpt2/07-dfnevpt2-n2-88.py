@@ -58,7 +58,6 @@ nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gs"
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-10
-nevpt.method = "nevpt2"
 
 class KnownValues(unittest.TestCase):
 

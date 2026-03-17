@@ -32,8 +32,7 @@ mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 emc = mc.mc1step()[0]
 
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
-nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "qd-nevpt2"
+nevpt = prism.nevpt.QDNEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()
 
 # DF-SA-CASSCF reference, DF-QD-NEVPT2
@@ -43,6 +42,5 @@ mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights).density_fit('aug-cc-pv
 emc = mc.mc1step()[0]
 
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
-nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "qd-nevpt2"
+nevpt = prism.nevpt.QDNEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()

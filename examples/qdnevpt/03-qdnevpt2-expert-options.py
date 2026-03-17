@@ -35,28 +35,25 @@ emc = mc.mc1step()[0]
 
 # Increasing the truncation parameter for linear dependencies
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-6
-nevpt.method = "qd-nevpt2"
 e_tot, e_cor, oscr = nevpt.kernel()
 
 # Including the singles amplitudes in the QD-NEVPT2 energy
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.compute_singles_amplitudes = True
 nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
-nevpt.method = "qd-nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()
 
 # Selecting reference states
 ref_list = [1,5,6]
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True, select_reference = ref_list)
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
-nevpt.method = "qd-nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()

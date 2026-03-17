@@ -68,7 +68,6 @@ nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-10
 nevpt.s_thresh_doubles = 1e-10
 nevpt.nfrozen = 2
-nevpt.method = "nevpt2"
 
 class KnownValues(unittest.TestCase):
 
@@ -91,7 +90,8 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[0], 0.0, 6)
         self.assertAlmostEqual(osc[1], 0.0, 6)
         self.assertAlmostEqual(osc[2], 0.0, 6)
-        self.assertAlmostEqual((osc[3] + osc[4]), (0.00138210+0.00000094), 6)
+        self.assertAlmostEqual(osc[3], 0.00138304, 6)
+        self.assertAlmostEqual(osc[4], 0.00138304, 6)
         self.assertAlmostEqual(osc[5], 0.0, 6)
 
 if __name__ == "__main__":

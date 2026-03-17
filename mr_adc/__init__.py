@@ -78,12 +78,15 @@ class MRADC:
         self.tol_e = 1e-8               # Tolerance for the energy in the Davidson procedure
         self.tol_r = 1e-5        # Tolerance for the residual in the Davidson procedure
         self.s_thresh_singles = 1e-5
-        self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
         self.semi_internal_projector = "gno" # Possible values: gno, gs
+
         self.e_ref_nevpt2 = None        # NEVPT2 reference energy
         self.e_diff = None              # MR-ADC excitation energies
         self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
+        self.h_evec = None              # Eigenvectors of effective Hamiltonian
+        self.X = None                   # MR-ADC spectroscopic amplitudes
+        self.P = None                   # MR-ADC spectroscopic factors
 
         self.spec_factor_print_tol = 0.01
 
@@ -112,9 +115,6 @@ class MRADC:
         self.t2 = lambda:None
         self.dip_mom = None
 
-        self.mo_energy.c = interface.mo_energy[:self.ncore]
-        self.mo_energy.e = interface.mo_energy[self.nocc:]
-
         # Matrix blocks
         self.M_00 = None
         self.M_01 = lambda:None
@@ -133,7 +133,7 @@ class MRADC:
         method = cls.__new__(cls)
 
         # Copy all current state from parent
-        method.__dict__ = self.__dict__.copy()
+        method.__dict__ = self.__dict__
 
         # Optional subclass-specific post-init
         if hasattr(method, "_init_method"):
@@ -153,6 +153,10 @@ class MRADC:
 
     def compute_properties(self):
         return compute.compute_properties(self)
+
+    def analyze(self):
+        method = self._make_method_instance()
+        return compute.analyze(method)
 
     @property
     def verbose(self):
@@ -174,7 +178,6 @@ class CVSIPMRADC(MRADC):
 
     def _init_method(self):
         self.method_type = "cvs-ip"
-        self.nval = None
 
     def compute_excitation_manifolds(self):
         return cvs_ip.compute_excitation_manifolds(self)
@@ -191,8 +194,8 @@ class CVSIPMRADC(MRADC):
     def define_effective_hamiltonian(self):
         return cvs_ip.define_effective_hamiltonian(self)
 
-    def compute_trans_moments(self, evec):
-        return cvs_ip.compute_trans_moments(self, evec)
+    def compute_trans_moments(self):
+        return cvs_ip.compute_trans_moments(self)
 
-    def analyze_spec_factor(self, X, spec_intensity):
-        return cvs_ip.analyze_spec_factor(self, X, spec_intensity)
+    def analyze_spec_factor(self):
+        return cvs_ip.analyze_spec_factor(self)

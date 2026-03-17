@@ -19,7 +19,6 @@
 
 import numpy as np
 
-from prism.mr_adc import amplitudes
 from prism.mr_adc import integrals
 from prism.mr_adc import rdms
 
@@ -117,12 +116,8 @@ def initialize(mr_adc):
 
 def print_header(mr_adc):
 
-    ref_df = False
-    df = False
-    if mr_adc.interface.reference_df:
-        ref_df = True
-    if mr_adc.interface.with_df:
-        df = True
+    ref_df = bool(mr_adc.interface.reference_df)
+    df = bool(mr_adc.interface.with_df)
 
     h2ev = mr_adc.interface.hartree_to_ev
 
@@ -168,9 +163,7 @@ def compute_energy(mr_adc):
     # Setup Davidson algorithm parameters
     apply_M, precond, x0 = setup_davidson(mr_adc)
 
-    davidson_verbose = 3
-    if mr_adc.verbose > 3:
-        davidson_verbose = 6
+    davidson_verbose = 6 if mr_adc.verbose > 3 else 3
 
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     cput1 = (logger.process_clock(), logger.perf_counter())
@@ -237,19 +230,24 @@ def compute_guess_vectors(mr_adc, precond, ascending = True):
 
 def compute_properties(mr_adc):
 
-    E = mr_adc.e_diff
-    U = mr_adc.h_evec
+    # Spectrocopic amplitudes
+    X = mr_adc.compute_trans_moments()
 
-    X = None
+    # Spectrocopic factors
+    spec_factors = 2.0 * np.sum(X**2, axis=0)
 
-    X = mr_adc.compute_trans_moments(U)
+    mr_adc.X = X
+    mr_adc.P = spec_factors
 
-    spec_intensity = 2.0 * np.sum(X**2, axis=0)
+    return mr_adc.P, mr_adc.X
 
-    if (mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
-        mr_adc.analyze_spec_factor(X, spec_intensity)
+def analyze(mr_adc):
 
-    return spec_intensity, X
+    if mr_adc.X is not None:
+        mr_adc.analyze_spec_factor()
+    else:
+        mr_adc.log.error("No spectroscopic amplitudes to analyze.")
+
 
 
 def print_results(mr_adc, spec_intensity):

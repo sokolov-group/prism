@@ -37,7 +37,7 @@ mol.atom = [
 mol.basis = 'def2-tzvp'
 mol.symmetry = False
 mol.spin = 1
-mol.verbose = 4
+mol.verbose = 1
 mol.build()
 
 
@@ -66,7 +66,7 @@ nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
 nevpt.method = "nevpt2"
 nevpt.soc = "Breit-Pauli" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-nevpt.verbose = 4
+nevpt.verbose = 1
 nevpt.gtensor = True
 nevpt.origin_type = 'charge' 
 
@@ -80,18 +80,18 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -1792.202315004412, 5)
-        self.assertAlmostEqual(e_tot[1], -1792.202315004412, 5)
+        self.assertAlmostEqual(e_tot[0], -1792.202315004413, 5)
+        self.assertAlmostEqual(e_tot[1], -1792.202315004413, 5)
         self.assertAlmostEqual(e_tot[2], -1792.098920726345, 5)
-        self.assertAlmostEqual(e_tot[3], -1792.098920726344, 5)
-        self.assertAlmostEqual(e_tot[4], -1792.097629287013, 5)
-        self.assertAlmostEqual(e_tot[5], -1792.097629287013, 5)
+        self.assertAlmostEqual(e_tot[3], -1792.098920726345, 5)
+        self.assertAlmostEqual(e_tot[4], -1792.097629287014, 5)
+        self.assertAlmostEqual(e_tot[5], -1792.097629287014, 5)
         
-        self.assertAlmostEqual(osc[0], 0.0, 4)
-        self.assertAlmostEqual(osc[1], 0.05266583, 4)
-        self.assertAlmostEqual(osc[2], 0.05262300, 4)
-        self.assertAlmostEqual(osc[3], 0.05333058, 4)
-        self.assertAlmostEqual(osc[4], 0.05328699, 4)
+        self.assertAlmostEqual(osc[0], 0.0, 5)
+        self.assertAlmostEqual(osc[1], 0.05262883, 5)
+        self.assertAlmostEqual(osc[2], 0.05262883, 5)
+        self.assertAlmostEqual(osc[3], 0.05328202, 5)
+        self.assertAlmostEqual(osc[4], 0.05328202, 5)
 
         self.assertAlmostEqual(nevpt.g_factor[0], 1.985005, 5)
         self.assertAlmostEqual(nevpt.g_factor[1], 1.985005, 5)

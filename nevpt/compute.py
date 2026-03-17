@@ -21,7 +21,7 @@ import numpy as np
 
 from prism.nevpt import integrals
 from prism.nevpt import amplitudes
-from prism.nevpt import soc
+#from prism.nevpt import soc
 
 import prism.lib.logger as logger
 

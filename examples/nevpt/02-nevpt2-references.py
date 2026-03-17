@@ -33,7 +33,6 @@ emc = mc.mc1step()[0]
 
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()
 
 ####################
@@ -46,7 +45,6 @@ emc = mc.mc1step()[0]
 
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()
 
 ####################
@@ -59,5 +57,4 @@ emc = mc.casci()[0]
 
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()
