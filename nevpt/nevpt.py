@@ -22,7 +22,6 @@ from functools import reduce
 
 from prism.nevpt import rdms
 from prism.nevpt import amplitudes
-from prism.nevpt import soc
 from prism.tools import trans_prop
 
 import prism.lib.logger as logger
@@ -223,7 +222,7 @@ def compute_properties(method):
 
     # Compute magnetic properties
     if method.gtensor and method.soc:
-
+        from prism.nevpt import soc
         # Call make_rdm1 function directly to bypass including SOC effects
         rdm_sf = make_rdm1(method)
 
