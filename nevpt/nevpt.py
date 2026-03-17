@@ -186,6 +186,8 @@ def compute_properties(method):
 
     n_states = len(method.ref_wfn_deg)
 
+    osc_str = None
+
     # Get Oscillator Strengths for transitions from ground state
     if n_states > 1:
 
