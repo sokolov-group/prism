@@ -24,14 +24,14 @@ import h5py
 import numpy as np
 
 # Memory management tools
-def calculate_chunks(mr_adc, nmo_chunked, nmo_non_chunked, ntensors = 1, extra_tensors = [[]]):
+def calculate_chunks(method, nmo_chunked, nmo_non_chunked, ntensors = 1, extra_tensors = [[]]):
 
     extra_mem = 0
     extra_tensors = np.asarray(extra_tensors)
     for nmo_extra_tensor in extra_tensors:
         extra_mem += np.prod(nmo_extra_tensor[nmo_extra_tensor > 0]) * 8/1e6
 
-    avail_mem = (mr_adc.max_memory - extra_mem - current_memory()) * 0.9 / ntensors
+    avail_mem = (method.max_memory - extra_mem - current_memory()) * 0.9 / ntensors
 
     nmo_non_chunked = np.asarray(nmo_non_chunked)
     tensor_mem = np.prod(nmo_non_chunked[nmo_non_chunked > 0]) * 8/1e6
@@ -43,7 +43,7 @@ def calculate_chunks(mr_adc, nmo_chunked, nmo_non_chunked, ntensors = 1, extra_t
     if chunk_size <= 0:
         chunk_size = 1
 
-    mr_adc.log.debug("avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]", avail_mem, mr_adc.max_memory,
+    method.log.debug("avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]", avail_mem, method.max_memory,
                                                                                                   chunk_size * tensor_mem,
                                                                                                   nmo_chunked * tensor_mem,
                                                                                                   current_memory())
@@ -55,14 +55,14 @@ def calculate_chunks(mr_adc, nmo_chunked, nmo_non_chunked, ntensors = 1, extra_t
 
     return chunks_list
 
-def calculate_double_chunks(mr_adc, nmo_chunked, nmo_non_chunked_1, nmo_non_chunked_2, ntensors = 1, extra_tensors = [[]]):
+def calculate_double_chunks(method, nmo_chunked, nmo_non_chunked_1, nmo_non_chunked_2, ntensors = 1, extra_tensors = [[]]):
 
     extra_mem = 0
     extra_tensors = np.asarray(extra_tensors)
     for nmo_extra_tensor in extra_tensors:
         extra_mem += np.prod(nmo_extra_tensor[nmo_extra_tensor > 0]) * 8/1e6
 
-    avail_mem = (mr_adc.max_memory - extra_mem - current_memory()) * 0.9 / ntensors
+    avail_mem = (method.max_memory - extra_mem - current_memory()) * 0.9 / ntensors
 
     nmo_non_chunked_1 = np.asarray(nmo_non_chunked_1)
     nmo_non_chunked_2 = np.asarray(nmo_non_chunked_2)
@@ -77,7 +77,7 @@ def calculate_double_chunks(mr_adc, nmo_chunked, nmo_non_chunked_1, nmo_non_chun
     if chunk_size <= 0:
         chunk_size = 1
 
-    mr_adc.log.debug("avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]", avail_mem, mr_adc.max_memory,
+    method.log.debug("avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]", avail_mem, method.max_memory,
                                                                                                   chunk_size * (tensor_mem_1 + tensor_mem_2),
                                                                                                   nmo_chunked * (tensor_mem_1 + tensor_mem_2),
                                                                                                   current_memory())
@@ -97,9 +97,9 @@ def current_memory():
     return process.memory_info().rss / 1024**2
 
 # Disk managements tools
-def create_temp_file(mr_adc, mode='r+', *args, **kwargs):
+def create_temp_file(method, mode='r+', *args, **kwargs):
 
-    temp_file = tempfile.NamedTemporaryFile(dir=mr_adc.temp_dir, delete=True)
+    temp_file = tempfile.NamedTemporaryFile(dir=method.temp_dir, delete=True)
     filename = temp_file.name
 
     return h5py.File(filename, mode, *args, **kwargs)

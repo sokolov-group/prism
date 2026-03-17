@@ -152,10 +152,19 @@ def prism_header(self):
             PRISM: Open-Source implementation of ab initio methods
                     for excited states and spectroscopy
 
-                               Version 0.8
+                               Version 0.9
 
-                   Copyright (C) 2025 Prism Developers
-                   Contributors: Carlos E. V. de Moura
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Haden Dickerson
+                                 Ilia M. Mazin
+                                 Rajat Majumder
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 Aditya Roy
+                                 James Serna
+                                 Lakshan Weerasinghe
                                  Alexander Yu. Sokolov
 
             Unless required by applicable law or agreed to in
