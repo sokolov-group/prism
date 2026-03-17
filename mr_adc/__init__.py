@@ -78,7 +78,6 @@ class MRADC:
         self.tol_e = 1e-8               # Tolerance for the energy in the Davidson procedure
         self.tol_r = 1e-5        # Tolerance for the residual in the Davidson procedure
         self.s_thresh_singles = 1e-5
-        self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
         self.semi_internal_projector = "gno" # Possible values: gno, gs
 
@@ -134,7 +133,7 @@ class MRADC:
         method = cls.__new__(cls)
 
         # Copy all current state from parent
-        method.__dict__ = self.__dict__.copy()
+        method.__dict__ = self.__dict__
 
         # Optional subclass-specific post-init
         if hasattr(method, "_init_method"):
@@ -179,7 +178,6 @@ class CVSIPMRADC(MRADC):
 
     def _init_method(self):
         self.method_type = "cvs-ip"
-        self.nval = None
 
     def compute_excitation_manifolds(self):
         return cvs_ip.compute_excitation_manifolds(self)

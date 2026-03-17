@@ -19,7 +19,6 @@
 
 import numpy as np
 
-#from prism.mr_adc import amplitudes
 from prism.mr_adc import integrals
 from prism.mr_adc import rdms
 
