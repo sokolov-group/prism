@@ -58,12 +58,11 @@ emc = mc.mc1step()[0]
 
 # QD-NEVPT2 calculation
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
-nevpt.method = "qd-nevpt2"
 
 class KnownValues(unittest.TestCase):
 

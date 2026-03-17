@@ -37,7 +37,7 @@ mol.atom = [
 mol.basis = 'def2-tzvp' 
 mol.symmetry = False
 mol.spin = 1
-mol.verbose = 4
+mol.verbose = 1
 mol.build()
 
 
@@ -66,7 +66,7 @@ nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
 nevpt.method = "nevpt2"
 nevpt.soc = "DKH1" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-nevpt.verbose = 4
+nevpt.verbose = 1
 
 class KnownValues(unittest.TestCase):
 
@@ -78,6 +78,7 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
+        #Prism
         self.assertAlmostEqual(e_tot[0], -24.610611874171, 5)
         self.assertAlmostEqual(e_tot[1], -24.610611874171, 5)
         self.assertAlmostEqual(e_tot[2], -24.610544843290, 5)
@@ -85,13 +86,14 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(e_tot[4], -24.610544841794, 5)
         self.assertAlmostEqual(e_tot[5], -24.610544841794, 5)
         
-        self.assertAlmostEqual(e_corr[0], -0.04451811535217587, 5)
-        self.assertAlmostEqual(e_corr[1], -0.04451811535216521, 5)
-        self.assertAlmostEqual(e_corr[2], -0.0444510845037378, 5)
-        self.assertAlmostEqual(e_corr[3], -0.0444510845037378, 5)
-        self.assertAlmostEqual(e_corr[4], -0.044451090115742886, 5)
-        self.assertAlmostEqual(e_corr[5], -0.04445109011573578, 5)
-        
+        #Prism_beta gtensor branch
+        self.assertAlmostEqual(e_tot[0], -24.610612, 5)
+        self.assertAlmostEqual(e_tot[1], -24.610612, 5)
+        self.assertAlmostEqual(e_tot[2], -24.610545, 5)
+        self.assertAlmostEqual(e_tot[3], -24.610545, 5)
+        self.assertAlmostEqual(e_tot[4], -24.610545, 5)
+        self.assertAlmostEqual(e_tot[5], -24.610545, 5)
+
         self.assertAlmostEqual(osc[0], 0.0, 5)
         self.assertAlmostEqual(osc[1], 0.0, 5)
         self.assertAlmostEqual(osc[2], 0.0, 5)

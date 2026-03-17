@@ -17,9 +17,7 @@
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
-#import sys
 import numpy as np
-from functools import reduce
 
 #from prism.mr_adc import amplitudes
 from prism.mr_adc import integrals
@@ -34,7 +32,6 @@ def kernel(mr_adc):
     mr_adc.method_type = mr_adc.method_type.lower()
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-
     mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
 
     # Initial checks
@@ -58,30 +55,18 @@ def kernel(mr_adc):
 
     e_tot, de = mr_adc.compute_energy()
 
+    h2ev = mr_adc.interface.hartree_to_ev
+    de_ev = de * h2ev
+
     # Compute transition moments and spectroscopic factors
     spec_intensity, X = mr_adc.compute_properties()
 
-    h2ev = mr_adc.interface.hartree_to_ev
-    h2cm = mr_adc.interface.hartree_to_inv_cm
-
-    mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
-
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-    mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-
-    de_ev = de * h2ev
-    de_cm = de * h2cm
-
-    for p in range(len(de)):
-        de_nm = 10000000 / de_cm[p]
-        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
-
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+    print_results(mr_adc, spec_intensity)
 
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
     return de_ev, spec_intensity, X
+
 
 def initialize(mr_adc):
 
@@ -227,6 +212,7 @@ def setup_davidson(mr_adc):
 
     return apply_M, precond, x0
 
+
 def compute_guess_vectors(mr_adc, precond, ascending = True):
 
     sort_ind = None
@@ -247,6 +233,7 @@ def compute_guess_vectors(mr_adc, precond, ascending = True):
         x0s.append(x0[:,p])
 
     return x0s
+
 
 def compute_properties(mr_adc):
 
@@ -269,3 +256,25 @@ def analyze(mr_adc):
         mr_adc.log.error("No spectroscopic amplitudes to analyze.")
 
 
+
+def print_results(mr_adc, spec_intensity):
+
+    de = mr_adc.e_diff
+
+    h2ev = mr_adc.interface.hartree_to_ev
+    h2cm = mr_adc.interface.hartree_to_inv_cm
+
+    mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
+
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+    mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+
+    de_ev = de * h2ev
+    de_cm = de * h2cm
+
+    for p in range(len(de)):
+        de_nm = 10000000 / de_cm[p]
+        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
