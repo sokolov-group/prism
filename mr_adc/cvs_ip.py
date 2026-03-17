@@ -12307,7 +12307,7 @@ def compute_sigma_vector(mr_adc, Xt):
 
     return sigma
 
-def compute_trans_moments(mr_adc, U):
+def compute_trans_moments(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing transition moments matrix...")
@@ -20843,6 +20843,10 @@ def compute_trans_moments(mr_adc, U):
     else:
         dim = mr_adc.h0.dim
 
+    # Eigenvectors
+    U = mr_adc.h_evec
+
+    # Spectroscopic amplitudes
     X = np.zeros((nmo, nroots))
 
     # CORE terms
@@ -21074,12 +21078,15 @@ def compute_trans_moments(mr_adc, U):
 
     return X
 
-def analyze_spec_factor(mr_adc, X, spec_intensity):
+def analyze_spec_factor(mr_adc):
 
     print("\nSpectroscopic Factors Analysis:")
 
     print_thresh = mr_adc.spec_factor_print_tol
     mr_adc.log.extra("Print spectroscopic factors > %e" %  print_thresh)
+
+    X = mr_adc.X
+    spec_intensity = mr_adc.P
 
     X_2 = 2.0 * (X.T)**2
 

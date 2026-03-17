@@ -17,11 +17,11 @@
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
-import sys
+#import sys
 import numpy as np
 from functools import reduce
 
-from prism.mr_adc import amplitudes
+#from prism.mr_adc import amplitudes
 from prism.mr_adc import integrals
 from prism.mr_adc import rdms
 
@@ -250,17 +250,22 @@ def compute_guess_vectors(mr_adc, precond, ascending = True):
 
 def compute_properties(mr_adc):
 
-    E = mr_adc.e_diff
-    U = mr_adc.h_evec
+    # Spectrocopic amplitudes
+    X = mr_adc.compute_trans_moments()
 
-    X = None
+    # Spectrocopic factors
+    spec_factors = 2.0 * np.sum(X**2, axis=0)
 
-    X = mr_adc.compute_trans_moments(U)
+    mr_adc.X = X
+    mr_adc.P = spec_factors
 
-    spec_intensity = 2.0 * np.sum(X**2, axis=0)
+    return mr_adc.P, mr_adc.X
 
-    if (mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
-        mr_adc.analyze_spec_factor(X, spec_intensity)
+def analyze(mr_adc):
 
-    return spec_intensity, X
+    if mr_adc.X is not None:
+        mr_adc.analyze_spec_factor()
+    else:
+        mr_adc.log.error("No spectroscopic amplitudes to analyze.")
+
 

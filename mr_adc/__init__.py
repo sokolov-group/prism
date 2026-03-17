@@ -81,10 +81,13 @@ class MRADC:
         self.s_thresh_singles_t2 = 1e-3
         self.s_thresh_doubles = 1e-10
         self.semi_internal_projector = "gno" # Possible values: gno, gs
+
         self.e_ref_nevpt2 = None        # NEVPT2 reference energy
         self.e_diff = None              # MR-ADC excitation energies
         self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
         self.h_evec = None              # Eigenvectors of effective Hamiltonian
+        self.X = None                   # MR-ADC spectroscopic amplitudes
+        self.P = None                   # MR-ADC spectroscopic factors
 
         self.spec_factor_print_tol = 0.01
 
@@ -152,6 +155,10 @@ class MRADC:
     def compute_properties(self):
         return compute.compute_properties(self)
 
+    def analyze(self):
+        method = self._make_method_instance()
+        return compute.analyze(method)
+
     @property
     def verbose(self):
         return self._verbose
@@ -189,8 +196,8 @@ class CVSIPMRADC(MRADC):
     def define_effective_hamiltonian(self):
         return cvs_ip.define_effective_hamiltonian(self)
 
-    def compute_trans_moments(self, evec):
-        return cvs_ip.compute_trans_moments(self, evec)
+    def compute_trans_moments(self):
+        return cvs_ip.compute_trans_moments(self)
 
-    def analyze_spec_factor(self, X, spec_intensity):
-        return cvs_ip.analyze_spec_factor(self, X, spec_intensity)
+    def analyze_spec_factor(self):
+        return cvs_ip.analyze_spec_factor(self)
