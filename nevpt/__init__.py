@@ -152,9 +152,9 @@ class NEVPT:
         return rdm1
 
 
-    def make_rdm1s(self, L = None, R = None, type = 'all'):
+    def make_rdm1s(self, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
 
-        rdm1s = nevpt.make_rdm1s(self, L, R, type)
+        rdm1s = nevpt.make_rdm1s(self, wfn, wfn_ref_nelecas, L, R, type)
 
         return rdm1s
 
@@ -210,9 +210,9 @@ class QDNEVPT(NEVPT):
         return rdm1
 
 
-    def make_rdm1s(self, L = None, R = None, type = 'all'):
+    def make_rdm1s(self, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
 
-        rdm1s = qd_nevpt.make_rdm1s(self, L, R, type)
+        rdm1s = qd_nevpt.make_rdm1s(self, wfn, wfn_ref_nelecas, L, R, type)
 
         return rdm1s
 

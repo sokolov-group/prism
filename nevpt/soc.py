@@ -28,9 +28,9 @@ def state_interaction_soc(method):
     method.interface.x2c_setup()
 
     # Rotate CAS Wavefunction:
-    if not hasattr(method, 'h_evec'):
+    if method.__class__.__name__ == "NEVPT":
         wfn = list(method.ref_wfn)
-    else:
+    elif method.__class__.__name__ == "QDNEVPT":
         wfn = np.einsum('ij,iab->jab',method.h_evec,method.ref_wfn)
         wfn = list(wfn)
     
@@ -52,7 +52,20 @@ def state_interaction_soc(method):
         if (np.abs(ms[I]-ms[0])>1e-8):
             raise Exception("Each state's ms should be same for state_interaction_SOC function")
 
-    ms = ms[0]
+    #If Ms=0 , CG coefficent vanish...
+    wfn_ref_nelecas = method.ref_nelecas.copy()
+    if ms[0] == 0:
+        method.log.info("Apply S_plus due to Ms=0...")
+        for I in range(nstate):
+            if S[I] > 0 :
+                wfn[I], Sp_ne = method.interface.apply_S_plus(wfn[I],method.ncas,method.ref_nelecas[I])
+                # Upadate ref_nelecas
+                wfn_ref_nelecas[I] = Sp_ne
+                # Normalize the wfn
+                wfn[I] = wfn[I]/(np.sqrt( S[I]**2 + S[I] ))
+                # Upadate ms
+                ms[I] = 1
+
 
     # Make sure that S is consistent with spin_mult
     for I in range(nstate):
@@ -60,7 +73,7 @@ def state_interaction_soc(method):
             raise Exception("Spin value and multiplicity are not consistent")
 
     # Calculate RDM_aabb
-    rdm_aabb = method.make_rdm1s()
+    rdm_aabb = method.make_rdm1s(wfn, wfn_ref_nelecas)
 
     en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
 

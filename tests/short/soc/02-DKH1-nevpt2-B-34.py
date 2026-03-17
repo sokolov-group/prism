@@ -92,7 +92,7 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[4], 0.0, 5)
 
 if __name__ == "__main__":
-    print("SOC-QD-NEVPT2 test")
+    print("SOC-NEVPT2 test")
     unittest.main()
 
 

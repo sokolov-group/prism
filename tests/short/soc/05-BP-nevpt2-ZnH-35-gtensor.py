@@ -101,5 +101,5 @@ class KnownValues(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print("SOC-QD-NEVPT2 test")
+    print("SOC-NEVPT2 test")
     unittest.main()

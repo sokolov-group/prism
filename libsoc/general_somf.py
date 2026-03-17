@@ -63,11 +63,11 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     for I in range(nstate):
         for J in range(nstate):
-            cg = CG(S[I], ms, 1, 0, S[J], ms).doit()
+            cg = CG(S[J], ms[J], 1, 0, S[I], ms[I]).doit()
             cg = float(cg)
             if np.abs(cg) > 1e-5:               
                 T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
-                rdm_wigner[I,J] = T_z 
+                rdm_wigner[I,J] = T_z       
             
     # Get SOC integrals:
     rdm1mo = np.zeros((nmo,nmo))

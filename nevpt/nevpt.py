@@ -591,7 +591,7 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     return rdm_final
 
 
-def make_rdm1s(method, L = None, R = None, type = 'all'):
+def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
     ncore = method.ncore
     ncas = method.ncas
     nextern = method.nextern
@@ -641,7 +641,12 @@ def make_rdm1s(method, L = None, R = None, type = 'all'):
     rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], nmo, nmo))
     
     # Method's wfn
-    wfn = list(method.ref_wfn)
+    if wfn is None:
+        wfn = list(method.ref_wfn)
+
+    #wfn's ref_nelecas
+    if wfn_ref_nelecas is None:
+        wfn_ref_nelecas= method.ref_nelecas
 
     # Looping over states I,J
     for ind_I, I in enumerate(L_list):
@@ -649,14 +654,15 @@ def make_rdm1s(method, L = None, R = None, type = 'all'):
 
             if type in ("ss", "state-specific") and I != J:
                 continue
+            
+            if (wfn_ref_nelecas[I] == wfn_ref_nelecas[J]):
+                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], method.ncas, wfn_ref_nelecas[ind_I])
+                rdm_final[0, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[0]
+                rdm_final[1, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[1]            
 
-            tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], method.ncas, method.ref_nelecas[ind_I])
-            rdm_final[0, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[0]
-            rdm_final[1, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[1]            
-
-            if I == J:
-                #uncorrelated diagonal terms
-                rdm_final[:,ind_I, ind_J, :ncore, :ncore] =   np.identity(ncore)    
+                if I == J:
+                    #uncorrelated diagonal terms
+                    rdm_final[:,ind_I, ind_J, :ncore, :ncore] =   np.identity(ncore)     
 
     # Single pair of states
     if L is not None and R is not None:
