@@ -56,7 +56,7 @@ def state_interaction_soc(method):
     #If Ms=0 , CG coefficent vanish...
     wfn_ref_nelecas = method.ref_nelecas.copy()
     if ms[0] == 0:
-        raise Exception("Ms=0 situation  for state_interaction_SOC function not implement in state_interaction_SOC function.")
+        raise Exception("Ms=0 situation for state_interaction_SOC function not implement in state_interaction_SOC function.")
         method.log.info("Apply S_plus due to Ms=0...")
         for I in range(nstate):
             if S[I] > 0 :
@@ -180,6 +180,12 @@ def compute_magnetic_properties(method, rdm_sf):
     S = []
     for i in range(nstate):
         S.append(float((method.spin_mult[i] - 1) / 2))
+    method.log.info("\nCalculating g-tensor...")
 
-    method.g_factor, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_state = method.target_state, origin_type=method.origin_type)
+    target_state = method.target_state
+    if isinstance(target_state, int):
+        target_state = [target_state]
+
+    for I in target_state:
+        method.g_factor, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.origin_type)
 
