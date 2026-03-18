@@ -34,9 +34,9 @@ mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 2
 mr_adc.nroots = 8
 
-e_tot, osc_str, x = mr_adc.kernel()
+e_diff, intensity, x = mr_adc.kernel()
 
 # For spectrum
-from prism.tools.spectrum import spectrum_plot
-spectrum_plot(mr_adc, e_tot, osc_str)
+from prism.tools.spectrum import plot
+plot(e_diff, intensity, broadening = 0.5, omega_min = 410, omega_max = 415, plot = True, x_label = "Energy, eV", y_label = "Intensity", title = "XPS spectrum", filename = "mr_adc")
 
