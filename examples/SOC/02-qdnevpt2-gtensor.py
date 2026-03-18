@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+
+'''
+SOC QD-NEVPT2 calculation for ZnH g-tensor
+'''
+
 import numpy as np
 import math
 import pyscf.gto

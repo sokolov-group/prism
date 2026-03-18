@@ -1,4 +1,4 @@
-# Copyright 2025 Prism Developers. All Rights Reserved.
+# Copyright 2026 Prism Developers. All Rights Reserved.
 # Adapted from 2014-2018 PySCF
 #
 # Licensed under the GNU General Public License v3.0;
@@ -16,6 +16,7 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#
 
 '''
 Logging system
