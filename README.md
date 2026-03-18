@@ -7,13 +7,14 @@ Prism is being developed as a platform for calculating excited-state energies an
 # How to install
 ## Requirements
 - Python >= 3.7;
-- Numpy >= 1.13;
-- Scipy >= 1.3;
+- numpy >= 1.13;
+- scipy >= 1.3;
 - h5py >= 2.7;
+- psutil >= 7.0;
 - Optional: matplotlib >= 3.9 for plotting spectra;
-- Optional: sympy >= 1.12 for spin–orbit coupling calculations;
-- Optional: [socutils](https://github.com/xubwa/socutils) for g-tensor calculations;
-- Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions;
+- Optional: sympy >= 1.12 for spin–orbit coupling;
+- Optional: [socutils](https://github.com/xubwa/socutils) for spin–orbit coupling;
+- Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions.
 
 ## Installation
 1) Install [PySCF](https://github.com/pyscf/pyscf/) and make sure it is included in the ``$PYTHONPATH`` environment variable
