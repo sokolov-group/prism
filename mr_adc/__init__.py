@@ -77,7 +77,7 @@ class MRADC:
         self.max_space = 100            # Maximum size of the Davidson trial space
         self.max_cycle = 50             # Maximum number of iterations in the Davidson procedure
         self.tol_e = 1e-8               # Tolerance for the energy in the Davidson procedure
-        self.tol_r = 1e-5        # Tolerance for the residual in the Davidson procedure
+        self.tol_r = 1e-5               # Tolerance for the residual in the Davidson procedure
         self.s_thresh_singles = 1e-5
         self.s_thresh_doubles = 1e-10
         self.semi_internal_projector = "gno" # Possible values: gno, gs
@@ -87,7 +87,7 @@ class MRADC:
         self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
         self.h_evec = None              # Eigenvectors of effective Hamiltonian
         self.X = None                   # MR-ADC spectroscopic amplitudes
-        self.P = None                   # MR-ADC spectroscopic factors
+        self.P = None                   # MR-ADC spectroscopic probabilities
 
         self.spec_factor_print_tol = 0.01
 
@@ -143,6 +143,7 @@ class MRADC:
         return method
 
     def kernel(self):
+        self.method_type = self.method_type.lower()
         method = self._make_method_instance()
         return compute.kernel(method)
 

@@ -29,12 +29,12 @@ def state_interaction_soc(method):
     method.interface.x2c_setup()
 
     # Rotate CAS Wavefunction:
-    if method.__class__.__name__ == "NEVPT":
-        wfn = list(method.ref_wfn)
-    elif method.__class__.__name__ == "QDNEVPT":
+    if method.method_type == "qd":
         wfn = np.einsum('ij,iab->jab',method.h_evec,method.ref_wfn)
         wfn = list(wfn)
-    
+    else:
+        wfn = list(method.ref_wfn)
+
     # Calculate method's S, Ms:
     S  = []
     ms = []
