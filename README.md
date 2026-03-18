@@ -85,8 +85,9 @@ In the SS-NEVPT2 method, the first-order wavefunctions and second-order correlat
 Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calculated by diagonalizing the effective Hamiltonian evaluated to second order perturbation theory.
 This allows to incorporate the interaction between the first-order wavefunctions and correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
 
-Some important parameters for the NEVPT2 calculations are:
- - ```method``` (string): Chooses the flavor of NEVPT2 calculation. Use ```"nevpt2"``` for SS-NEVPT2 and ```"qd-nevpt2"``` for QD-NEVPT2. Default is ```"nevpt2"```.
+Some important parameters for the NEVPT calculations are:
+ - ```method``` (string): Chooses the NEVPT method. One one level of NEVPT theory is available: ```"nevpt2"```.
+ - ```method_type``` (string): Chooses the flavor of NEVPT calculation. Use ```"ss"``` for SS-NEVPT (default) and ```"qd"``` for QD-NEVPT.
  - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core"). Default is 0 or None.
  - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors. Default is set by PySCF.
  - ```rdm_order``` (integer): Paramater to set the order of the one-particle density matrix (1-RDM) used to evaluate one-particle properties (e.g., oscillator strengths or natural transition orbitals). 0 = reference (default), 2 = includes NEVPT2/QD-NEVPT2 correlation.
