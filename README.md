@@ -158,8 +158,7 @@ The g-tensor calculation can be performed after SOC calculation by setting ```gt
 
 Other parameters for g-tensor calculation are:
 - ```origin_type``` (string): The origin of coordinate system setting. Default is ```"charge"``` which indicates setting origin point at the center of nuclear charge. The other possible choices are ```"GIAO"```(using gauge-including atomic orbital), ```"atom1"``` (using the first atom position). Also, origin can be set to a particular point by providing a list of three coordinates (in Bohr).
- - ```target_state``` (integer or list): target state to calculate g-tensor. Default is 1 (lowest-energy state). The code will detect the spin multicity and will calculate g-tensor for the target state. Users can also asign a set of (nearly) degenerate states to calculate g-tensor by providing a list. For example, to compute g-tensor for a doubly degenerate first excited state set ```target_state = [2,3]```.
-
+ - ```target_state``` (integer or list): target state to calculate g-tensor. Default is 1 (lowest-energy state). The code will detect spin multiplicity and will calculate g-tensor for the target state. Users can also asign a set of (nearly) degenerate states to calculate g-tensor by providing a list. For example, to compute g-tensor for a doubly degenerate first excited state set ```target_state = [2,3]```.
 
 # Short summary of features:
 
