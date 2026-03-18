@@ -138,7 +138,7 @@ The reference CASSCF calculations can be run either using the exact or density-f
 Note that DF can significantly speed up the CASSCF calculation since the cost of integral transformation at every iteration is reduced.
 
 ## Spin-orbit coupling
-The spin-orbit coupling (SOC) is avaliable in NEVPT2 and QDNEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using: 
+The spin-orbit coupling (SOC) is avaliable in NEVPT2 and QD-NEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using: 
 
 ```python
 git submodule update --init --recursive
@@ -173,9 +173,9 @@ Other parameters for g-tensor calculation are:
 - State-interaction spin–orbit coupling with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
 - Molecular g-tensors via Kramers approach and state-interaction spin–orbit coupling
 
-## QDNEVPT2
-- Full internal contraction (equivalent to partially contracted QDNEVPT2)
-- Single- and multi-state state-specific QDNEVPT2 energies
+## QD-NEVPT2
+- Full internal contraction (equivalent to partially contracted QD-NEVPT2)
+- Single- and multi-state state-specific QD-NEVPT2 energies
 - Oscillator strengths
 - Frozen core approximation
 - Full support of density fitting

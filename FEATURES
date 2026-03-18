@@ -10,9 +10,9 @@
 - State-interaction spin–orbit coupling with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
 - Molecular g-tensors via Kramers approach and state-interaction spin–orbit coupling
 
-## QDNEVPT2
-- Full internal contraction (equivalent to partially contracted QDNEVPT2)
-- Single- and multi-state state-specific QDNEVPT2 energies
+## QD-NEVPT2
+- Full internal contraction (equivalent to partially contracted QD-NEVPT2)
+- Single- and multi-state state-specific QD-NEVPT2 energies
 - Oscillator strengths
 - Frozen core approximation
 - Full support of density fitting
