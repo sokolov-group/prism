@@ -56,6 +56,7 @@ def state_interaction_soc(method):
     #If Ms=0 , CG coefficent vanish...
     wfn_ref_nelecas = method.ref_nelecas.copy()
     if ms[0] == 0:
+        raise Exception("Ms=0 situation  for state_interaction_SOC function not implement in state_interaction_SOC function.")
         method.log.info("Apply S_plus due to Ms=0...")
         for I in range(nstate):
             if S[I] > 0 :
