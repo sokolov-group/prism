@@ -15,6 +15,7 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Donna Odhiambo <donna.odhiambo@proton.me>
 #
 
 from prism.mr_adc import compute
