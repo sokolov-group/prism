@@ -128,40 +128,31 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     return Mu
 
 
-def gtensor(interface, evec_soc, rdm_sf, S, target_state = 0,origin_type = 'charge'):
+def gtensor(interface, evec_soc, rdm_sf, S, target_index = 1,origin_type = 'charge'):
     ge = interface.g_free_elec
-    interface.log.info("\nCalculating g-tensor...")
 
+    interface.log.info("\nTarget State index = %s", target_index)
+    target_index -= 1
 
-    if target_state == 0:
-        target_index = 0
-        interface.log.info("Target State: Ground state")
-        S_target = S[target_index]
-        target_multiplicity = int(2*S_target+1)
-        interface.log.info("Calculating g-tensor for multiplicity = %s", target_multiplicity)
+    S_target = S[target_index]
+    target_multiplicity = int(2*S_target+1)
 
-        Kramer_pair  = evec_soc[:,0:0+target_multiplicity] 
-
-    else:
-        target_state = np.array(target_state)
-        interface.log.info("Target State = %s", target_state)
-        target_state -= 1 
-        target_multiplicity = len(target_state)
-        S_target = (target_multiplicity-1)/2
-        interface.log.info("Calculating g-tensor for multiplicity = %s", target_multiplicity)
-
-        Kramer_pair = np.zeros((len(evec_soc), target_multiplicity), dtype='complex')
-        for i in range(target_multiplicity):
-            Kramer_pair[:,i]  += evec_soc[:, target_state[i]] 
-
-
-    if (S_target < 1e-8):
+    if (target_multiplicity == 1):
         interface.log.info("Skip g-tensor calculation due to multiplicity=1")
         G_sq_en = np.array([ge, ge, ge])
         G_evec  = np.identity(3)
-
         return G_sq_en, G_evec
     
+    #Colloect Kramer_pair
+    target_index_soc = 0
+    if target_index >= 1:
+        for i in range(target_index):
+            target_index_soc += int(2*S[i]+1)
+    Kramer_pair  = evec_soc[:,target_index_soc:target_index_soc+target_multiplicity] 
+
+    interface.log.info("Micro state index: %s to %s", target_index_soc+1, (target_index_soc+target_multiplicity))
+    interface.log.info("Calculating g-tensor for multiplicity = %s", target_multiplicity)
+
     # Calculate magnetic dipole moment
     Mu = mag_dip(interface, rdm_sf, S, origin_type)
 
