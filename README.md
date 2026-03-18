@@ -1,11 +1,20 @@
 # Prism
 Prism is a Python implementation of electronic structure theories for simulating spectroscopic properties.
 Currently, Prism features the methods of N-electron valence perturbation theory (NEVPT) and multireference algebraic diagrammatic construction theory (MR-ADC).
+Additionally, capabilities for incorporating relativistic effects and simulating magnetic properties have been implemented.
+Prism is being developed as a platform for calculating excited-state energies and spectroscopic observables, with a particular focus on time-resolved electronic spectroscopies.
 
 # How to install
 ## Requirements
-- Python 3.7 or older, including its dependencies;
-- Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions
+- Python >= 3.7;
+- numpy >= 1.13;
+- scipy >= 1.3;
+- h5py >= 2.7;
+- psutil >= 7.0;
+- Optional: matplotlib >= 3.9 for plotting spectra;
+- Optional: sympy >= 1.12 for spin–orbit coupling;
+- Optional: [socutils](https://github.com/xubwa/socutils) for spin–orbit coupling;
+- Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions.
 
 ## Installation
 1) Install [PySCF](https://github.com/pyscf/pyscf/) and make sure it is included in the ``$PYTHONPATH`` environment variable
@@ -14,7 +23,7 @@ Currently, Prism features the methods of N-electron valence perturbation theory 
 git clone https://github.com/sokolov-group/prism.git
 ```
 3) Include the path to the folder where Prism is located in the ```$PYTHONPATH``` environment variable
-4) Optional: download [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) and include it in the ``$PYTHONPATH`` environment variable
+4) Install optional dependencies if necessary
 5) Run tests to make sure the code is working properly
 
 # How to use
@@ -76,11 +85,13 @@ In the SS-NEVPT2 method, the first-order wavefunctions and second-order correlat
 Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calculated by diagonalizing the effective Hamiltonian evaluated to second order perturbation theory.
 This allows to incorporate the interaction between the first-order wavefunctions and correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
 
-Some important parameters for the NEVPT2 calculations are:
- - ```method``` (string): Chooses the flavor of NEVPT2 calculation. Use ```"nevpt2"``` for SS-NEVPT2 and ```"qd-nevpt2"``` for QD-NEVPT2. Default is ```"nevpt2"```.
+Some important parameters for the NEVPT calculations are:
+ - ```method``` (string): Chooses the NEVPT method. So far, only one level of NEVPT theory is available: ```"nevpt2"```.
+ - ```method_type``` (string): Chooses the flavor of NEVPT calculation. Use ```"ss"``` for SS-NEVPT (default) and ```"qd"``` for QD-NEVPT.
  - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core"). Default is 0 or None.
  - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors. Default is set by PySCF.
- - ```compute_singles_amplitudes``` (bool): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. Default is False. For experts only.
+ - ```rdm_order``` (integer): Paramater to set the order of the one-particle density matrix (1-RDM) used to evaluate one-particle properties (e.g., oscillator strengths or natural transition orbitals). 0 = reference (default), 2 = includes NEVPT2/QD-NEVPT2 correlation.
+ - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. Default is False. For experts only.
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-8. For experts only. 
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-8. For experts only.
 
@@ -132,13 +143,13 @@ The reference CASSCF calculations can be run either using the exact or density-f
 Note that DF can significantly speed up the CASSCF calculation since the cost of integral transformation at every iteration is reduced.
 
 ## Spin-orbit coupling
-The spin-orbit coupling (SOC) is avaliable in NEVPT and QDNEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using: 
+The spin-orbit coupling (SOC) is avaliable in NEVPT2 and QD-NEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using: 
 
 ```python
 git submodule update --init --recursive
 ```
 
-The SOC calculation can be performed by set up ```soc```:
+The SOC calculation can be performed by seting the ```soc``` attribute:
 
 ```python
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
@@ -147,32 +158,35 @@ nevpt.soc = "Breit-Pauli"
 nevpt.kernel()
 ```
 
-The SOC calculations can be performed at two types of SOC Hamiltionian that are specified using the ```soc``` parameter: ```"Breit-Pauli"```, ```"DKH1"```
+The SOC calculations can be performed for two types of SOC Hamiltionian that are specified using the ```soc``` parameter: ```"BP"``` (Breit-Pauli), ```"DKH1"``` (exact two-component Douglas–Kroll–Hess).
 
-The g-tensor calculation can be performed after SOC calculation by setting ``gtensor``` is True.
+The g-tensor calculation can be performed after SOC calculation by setting ```gtensor``` to True.
 
 Other parameters for g-tensor calculation are:
-- ```origin_type``` (string): The origin point setting. Default is ```Charge``` which indicates setting origin point at center of nuclear charge. The other possible choices are ```GIAO```(using gauge-including atomic orbital), ```atom1``` (using the first atom position) and User define point(list).
- - ```target_state``` (integer): target state to calculate g-tensor. Default is 0. The code will detect ground state's spin multicity and calculate ground state's g-tensor. User can also asign a set of states to calculate g-tensor. For example, setting ```[2,3,4]``` means collect No.2, 3, 4 spin-obital coupling state to calculate g-tensor.
-
-
+- ```origin_type``` (string): The origin of coordinate system setting. Default is ```"charge"``` which indicates setting origin point at the center of nuclear charge. The other possible choices are ```"GIAO"```(using gauge-including atomic orbital), ```"atom1"``` (using the first atom position). Also, origin can be set to a particular point by providing a list of three coordinates (in Bohr).
+ - ```target_state``` (integer or list): target state to calculate g-tensor. Default is 1 (lowest-energy state). The code will detect spin multiplicity and will calculate g-tensor for the target state. Users can also asign a set of (nearly) degenerate states to calculate g-tensor by providing a list. For example, to compute g-tensor for a doubly degenerate first excited state set ```target_state = [2,3]```.
 
 # Short summary of features:
 
 ## NEVPT2
 - Full internal contraction (equivalent to partially contracted NEVPT2)
 - Single- and multi-state state-specific NEVPT2 energies
+- Oscillator strengths
 - Frozen core approximation
 - Full support of density fitting
-- SOC calculation, including g-tensor calculation
-- Oscillator strengths for multi-state NEVPT2 calculations
+- One-particle reduced density matrix (1-RDM) with second-order correlation contributions
+- State-interaction spin–orbit coupling with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
+- Molecular g-tensors via Kramers approach and state-interaction spin–orbit coupling
 
 ## QD-NEVPT2
 - Full internal contraction (equivalent to partially contracted QD-NEVPT2)
+- Single- and multi-state state-specific QD-NEVPT2 energies
+- Oscillator strengths
 - Frozen core approximation
 - Full support of density fitting
-- SOC calculation, including g-tensor calculation
-- Oscillator strengths
+- One-particle reduced density matrix (1-RDM) with second-order correlation contributions
+- State-interaction spin–orbit coupling with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
+- Molecular g-tensors via Kramers approach and state-interaction spin–orbit coupling
 
 ## CVS-IP-MR-ADC
 - Excitation energies up to MR-ADC(2)-X
@@ -180,6 +194,12 @@ Other parameters for g-tensor calculation are:
 - Dyson orbitals
 - Orbital analysis of contributions to spectroscopic factors
 - Full support of density fitting
+
+## General capabilities
+- Incorporating spin–orbit coupling via state-interaction approach with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
+- Calculating magnetic g-tensors via state-interaction approach with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
+- Natural transition orbitals
+- Plotting and visualizing spectra
 
 # How to cite
 If you include MR-ADC results from Prism in your publication, please cite:
@@ -197,9 +217,13 @@ Additional references for the MR-ADC methods:
 - "[Algebraic Diagrammatic Construction Theory for Simulating Charged Excited States and Photoelectron Spectra](https://doi.org/10.1021/acs.jctc.3c00251)", S. Banerjee, and A.Yu. Sokolov, J. Chem. Theory Comput. 19(11), 3037–3053 (2023).
 
 # Authors and significant contributors:
-
+List of significant contributions, in alphabetical order:
+- Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
-- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+- Rajat S. Majumder <majumder.rajat071@gmail.com>
+- Ilia M. Mazin
+- Donna H. Odhiambo <donna.odhiambo@proton.me>
 - James D. Serna <jserna456@gmail.com>
+- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 
-Check out AUTHORS for more details.
+Check out AUTHORS for all contributions.

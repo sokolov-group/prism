@@ -35,7 +35,7 @@ ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
 # SA-CASSCF calculation
-n_states = 6
+n_states = 15
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 mc.conv_tol = 1e-11
@@ -51,9 +51,8 @@ nevpt = prism.nevpt.QDNEVPT(interface)
 e_tot, e_corr, osc_str = nevpt.kernel()
 
 ## For spectrum
-from prism.tools.spectrum import spectrum_plot
-spectrum_plot(nevpt, e_tot, osc_str)
-
-
+from prism.tools.spectrum import plot
+e_diff = (e_tot[1:] - e_tot[0]) * interface.hartree_to_ev
+plot(e_diff, osc_str, broadening = 0.1, omega_min = 0, omega_max = 15, plot = True, x_label = "Energy, eV", y_label = "Intensity", title = "UV/vis spectrum", filename = "qdnevpt")
 
 

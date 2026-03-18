@@ -70,6 +70,7 @@ class NEVPT:
 
         # NEVPT specific variables
         self.method = "nevpt2"                    # Possible methods: nevpt2
+        self.method_type = "ss"                   # Possible methods: ss (state-specific) and qd (quasidegenerate)
         self.nfrozen = None                       # Number of lowest-energy (core) orbitals that will be left uncorrelated ("frozen core")
         self.compute_singles_amplitudes = False   # Include singles amplitudes in the NEVPT2 energy?
         self.semi_internal_projector = "gno"      # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
@@ -107,23 +108,51 @@ class NEVPT:
 
         #For SOC
         self.gtensor = False
-        self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-        self.origin_type = 'charge'  # Possible methods: charge, GIAO, atom1 or User define point(list)
-        self.target_state = 0  #target state for gtensor calculation. Default is the ground state (target_state = 0).
+        self.soc = None                            # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+        self.origin_type = 'charge'                # Possible methods: charge, GIAO, atom1 or User define point(list)
+        self.target_state = 1                      # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
 
+    def _make_method_instance(self):
+        cls_map = {
+            "qd": QDNEVPT,
+        }
+
+        try:
+            cls = cls_map[self.method_type]
+        except KeyError:
+            raise ValueError(f"Unknown method_type: {self.method_type}")
+
+        # Create child object without calling its __init__
+        method = cls.__new__(cls)
+
+        # Copy all current state from parent
+        method.__dict__ = self.__dict__
+
+        # Optional subclass-specific post-init
+        if hasattr(method, "_init_method"):
+            method._init_method()
+
+        return method
 
     def kernel(self):
 
+        self.method_type = self.method_type.lower()
+
+        method = None
+        if (self.method_type != "ss"):
+            method = self._make_method_instance()
+        else:
+            method = self
+
         # Run NEVPT computation
-        e_tot, e_corr, osc = compute.kernel(self)
+        e_tot, e_corr, osc = compute.kernel(method)
 
         if self.keep_amplitudes is False:
             del(self.t1)
             del(self.t1_0)
 
         return e_tot, e_corr, osc 
-
 
     def compute_energy(self):
 
@@ -135,7 +164,6 @@ class NEVPT:
             e_tot, e_corr = soc.state_interaction_soc(self)
 
         return e_tot, e_corr
-
 
     def make_rdm1(self, L = None, R = None, type = 'all'):
 
@@ -151,23 +179,19 @@ class NEVPT:
 
         return rdm1
 
-
     def make_rdm1s(self, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
 
         rdm1s = nevpt.make_rdm1s(self, wfn, wfn_ref_nelecas, L, R, type)
 
         return rdm1s
 
-
     def compute_properties(self):
 
         return nevpt.compute_properties(self)
 
-
     @property
     def verbose(self):
         return self._verbose
-
 
     @verbose.setter
     def verbose(self, obj):
@@ -175,14 +199,18 @@ class NEVPT:
         self.log.verbose = obj
 
 
+# Quasidegenerate NEVPT
+# Only attributes unique to each class should be added
 class QDNEVPT(NEVPT):
 
     def __init__(self, interface):
 
         super().__init__(interface)
+        self._init_method()
 
-        # Eigenvectors of effective Hamiltonian
-        self.h_evec = None
+    def _init_method(self):
+        self.method_type = "qd"
+        self.h_evec = None # Eigenvectors of effective Hamiltonian
 
     def compute_energy(self):
 
@@ -194,7 +222,6 @@ class QDNEVPT(NEVPT):
             e_tot, e_corr = soc.state_interaction_soc(self)
 
         return e_tot, e_corr
-
 
     def make_rdm1(self, L = None, R = None, type = 'all'):
 
@@ -209,13 +236,11 @@ class QDNEVPT(NEVPT):
 
         return rdm1
 
-
     def make_rdm1s(self, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
 
         rdm1s = qd_nevpt.make_rdm1s(self, wfn, wfn_ref_nelecas, L, R, type)
 
         return rdm1s
-
 
     def compute_properties(self):
 

@@ -158,14 +158,11 @@ def prism_header(self):
                    Copyright (C) 2026 Prism Developers
                    Contributors: Nicholas Yiching Chiang
                                  Carlos E. V. de Moura
-                                 Haden Dickerson
                                  Ilia M. Mazin
                                  Rajat Majumder
                                  Donna H. Odhiambo
-                                 Bryce Pickett
-                                 Aditya Roy
-                                 James Serna
-                                 Lakshan Weerasinghe
+                                 James D. Serna
+                                 Nishshanka M. Lakshan
                                  Alexander Yu. Sokolov
 
             Unless required by applicable law or agreed to in

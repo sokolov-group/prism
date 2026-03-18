@@ -35,3 +35,5 @@ mr_adc.ncvs = 2
 mr_adc.nroots = 8
 
 e, p, x = mr_adc.kernel()
+# Analyze the results
+mr_adc.analyze()
