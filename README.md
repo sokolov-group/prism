@@ -137,7 +137,7 @@ The reference CASSCF calculations can be run either using the exact or density-f
 Note that DF can significantly speed up the CASSCF calculation since the cost of integral transformation at every iteration is reduced.
 
 ## Spin-orbit coupling
-The spin-orbit coupling (SOC) is avaliable in NEVPT and QDNEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using: 
+The spin-orbit coupling (SOC) is avaliable in NEVPT2 and QDNEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using: 
 
 ```python
 git submodule update --init --recursive
@@ -152,12 +152,12 @@ nevpt.soc = "Breit-Pauli"
 nevpt.kernel()
 ```
 
-The SOC calculations can be performed for two types of SOC Hamiltionian that are specified using the ```soc``` parameter: ```BP``` (Breit-Pauli), ```DKH1``` (exact two-component Douglas–Kroll–Hess).
+The SOC calculations can be performed for two types of SOC Hamiltionian that are specified using the ```soc``` parameter: ```"BP"``` (Breit-Pauli), ```"DKH1"``` (exact two-component Douglas–Kroll–Hess).
 
 The g-tensor calculation can be performed after SOC calculation by setting ```gtensor``` to True.
 
 Other parameters for g-tensor calculation are:
-- ```origin_type``` (string): The origin of coordinate system setting. Default is ```Charge``` which indicates setting origin point at the center of nuclear charge. The other possible choices are ```GIAO```(using gauge-including atomic orbital), ```atom1``` (using the first atom position). Also, origin can be set to a particular point by providing a list of three coordinates (in Bohr).
+- ```origin_type``` (string): The origin of coordinate system setting. Default is ```"charge"``` which indicates setting origin point at the center of nuclear charge. The other possible choices are ```"GIAO"```(using gauge-including atomic orbital), ```"atom1"``` (using the first atom position). Also, origin can be set to a particular point by providing a list of three coordinates (in Bohr).
  - ```target_state``` (integer or list): target state to calculate g-tensor. Default is 1 (lowest-energy state). The code will detect the spin multicity and will calculate g-tensor for the target state. Users can also asign a set of (nearly) degenerate states to calculate g-tensor by providing a list. For example, to compute g-tensor for a doubly degenerate first excited state set ```target_state = [2,3]```.
 
 
