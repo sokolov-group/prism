@@ -126,6 +126,32 @@ We recommend to use the RI- (or RIFIT-) auxiliary basis sets to approximate the 
 The reference CASSCF calculations can be run either using the exact or density-fitted two-electron integrals approximated using the JKFIT-type auxiliary basis sets.
 Note that DF can significantly speed up the CASSCF calculation since the cost of integral transformation at every iteration is reduced.
 
+## Spin-orbit coupling
+The spin-orbit coupling (SOC) is avaliable in NEVPT and QDNEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using: 
+
+```python
+git submodule update --init --recursive
+```
+
+The SOC calculation can be performed by set up ```soc```:
+
+```python
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+nevpt = prism.nevpt.NEVPT(interface)
+nevpt.soc = "Breit-Pauli"
+nevpt.kernel()
+```
+
+The SOC calculations can be performed at two types of SOC Hamiltionian that are specified using the ```soc``` parameter: ```"Breit-Pauli"```, ```"DKH1"```
+
+The g-tensor calculation can be performed after SOC calculation by setting ``gtensor``` is True.
+
+Other parameters for g-tensor calculation are:
+- ```origin_type``` (string): The origin point setting. Default is ```Charge``` which indicates setting origin point at center of nuclear charge. The other possible choices are ```GIAO```(using gauge-including atomic orbital), ```atom1``` (using the first atom position) and User define point(list).
+ - ```target_state``` (integer): target state to calculate g-tensor. Default is 0. The code will detect ground state's spin multicity and calculate ground state's g-tensor. User can also asign a set of states to calculate g-tensor. For example, setting ```[2,3,4]``` means collect No.2, 3, 4 spin-obital coupling state to calculate g-tensor.
+
+
+
 # Short summary of features:
 
 ## NEVPT2
@@ -133,12 +159,14 @@ Note that DF can significantly speed up the CASSCF calculation since the cost of
 - Single- and multi-state state-specific NEVPT2 energies
 - Frozen core approximation
 - Full support of density fitting
+- SOC calculation, including g-tensor calculation
 - Oscillator strengths for multi-state NEVPT2 calculations
 
 ## QD-NEVPT2
 - Full internal contraction (equivalent to partially contracted QD-NEVPT2)
 - Frozen core approximation
 - Full support of density fitting
+- SOC calculation, including g-tensor calculation
 - Oscillator strengths
 
 ## CVS-IP-MR-ADC

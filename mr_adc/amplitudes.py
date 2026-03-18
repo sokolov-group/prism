@@ -1,4 +1,4 @@
-# Copyright 2025 Prism Developers. All Rights Reserved.
+# Copyright 2026 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Donna Odhiambo <donna.odhiambo@proton.me>
 #
 
 import numpy as np

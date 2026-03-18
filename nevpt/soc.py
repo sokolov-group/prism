@@ -1,4 +1,4 @@
-# Copyright 2025 Prism Developers. All Rights Reserved.
+# Copyright 2026 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 #
 
 import numpy as np
@@ -55,6 +56,7 @@ def state_interaction_soc(method):
     #If Ms=0 , CG coefficent vanish...
     wfn_ref_nelecas = method.ref_nelecas.copy()
     if ms[0] == 0:
+        raise Exception("Ms=0 situation  for state_interaction_SOC function not implement in state_interaction_SOC function.")
         method.log.info("Apply S_plus due to Ms=0...")
         for I in range(nstate):
             if S[I] > 0 :
