@@ -16,15 +16,22 @@
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          James D. Serna <jserna456@gmail.com>
+#          Donna H. Odhiambo <donna.odhiambo@proton.me>
+#
 
+import os
+import sys
 import numpy as np
+from pyscf.tools import molden
 
-# Compute oscillator strengths
-# Input: e_diff (excitation energies),
-# trdm_mo (transition 1-RDM between reference and excited state)
 def osc_strength(interface, e_diff, trdm_mo):
-
-    n_micro_states = len(e_diff) 
+    '''
+    Computes oscillator strengths between states given
+    an interface object (source of MO coefficients
+    and dipole moment integrals), an array of excitation energies,
+    and a transition density matrix.
+    '''
+    n_micro_states = len(e_diff)
     dip_mom_ao = interface.dip_mom_ao
     mo_coeff = interface.mo
 
@@ -53,7 +60,9 @@ def osc_strength(interface, e_diff, trdm_mo):
 
 
 def print_osc_strength(interface, osc_str):
-
+    '''
+    Prints table of given list of oscillator strengths.
+    '''
     # Oscillator Strengths
     col_width = 18  # characters per column
 
@@ -89,3 +98,19 @@ def print_osc_strength(interface, osc_str):
         interface.log.info("    ".join(row_data))
 
     interface.log.info(separator)
+
+def compute_dyson(interface, X):
+    '''
+    Computes Dyson orbitals given an interface object (source of MO coefficients
+    and PySCF mol object), and an array of spectroscopic amplitudes.
+    '''
+    interface.log.note("\nComputing Dyson orbitals...")
+    dyson_mos = np.dot(interface.mo, X)
+
+    filename = os.path.basename(sys.argv[0])
+    name = os.path.splitext(filename)[0]
+    molden.from_mo(interface.mol, f'{name}_dyson.molden', dyson_mos)
+
+    interface.log.note(f"Dyson orbitals written to {name}_dyson.molden")
+
+    return dyson_mos

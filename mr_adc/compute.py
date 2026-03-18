@@ -260,17 +260,22 @@ def compute_properties(mr_adc):
     return mr_adc.P, mr_adc.X
 
 def analyze(mr_adc):
+    from prism.tools import trans_prop
 
     if mr_adc.X is not None:
-        mr_adc.analyze_spec_factor()
-    else:
-        mr_adc.log.error("No spectroscopic amplitudes to analyze.")
-    if (mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
-        mr_adc.analyze_spec_factor(X, spec_intensity)
-   
-    return spec_intensity, X
+        if hasattr(mr_adc, "analyze_spec_factor"):
+            mr_adc.analyze_spec_factor()
+        else:
+            mr_adc.log.error(f"analyze_spec_factor not available for {mr_adc.method_type} method.")
 
+        if mr_adc.compute_dyson:
+            trans_prop.compute_dyson(mr_adc.interface, mr_adc.X)
 
+    if mr_adc.h_evec is not None:
+        if hasattr(mr_adc, "analyze_eigenvector"):
+            mr_adc.analyze_eigenvector()
+        else:
+            mr_adc.log.error(f"analyze_eigenvector not available for {mr_adc.method_type} method.")
 
 def print_results(mr_adc, spec_intensity):
 

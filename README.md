@@ -80,7 +80,7 @@ Some important parameters for the NEVPT2 calculations are:
  - ```method``` (string): Chooses the flavor of NEVPT2 calculation. Use ```"nevpt2"``` for SS-NEVPT2 and ```"qd-nevpt2"``` for QD-NEVPT2. Default is ```"nevpt2"```.
  - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core"). Default is 0 or None.
  - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors. Default is set by PySCF.
- - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. Default is False. For experts only.
+ - ```compute_singles_amplitudes``` (bool): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. Default is False. For experts only.
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-8. For experts only. 
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-8. For experts only.
 
@@ -99,20 +99,25 @@ Other important parameters are:
  - ```tol_e``` (float): Convergence tolerance for the excitation energies in the Davidson diagonalization (in Hartree). Default is 1e-8.
  - ```tol_r``` (float): Convergence tolerance for the residual in the Davidson diagonalization. Default is 1e-5.
  - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed up the calculation since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors. Default is set by PySCF.
- - ```analyze_spec_factor``` (boolean): Requests the orbital analysis of intensity contributions for states with the spectroscopic factor greater than ```spec_factor_print_tol``` (float). Default is False.
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-5. For experts only.
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-10. For experts only.
 
-The excited states with large spectroscopic factors can be visualized by generating the Dyson molecular orbitals:
-
+The spectroscopic factors and their orbital contributions can be analyzed by calling:
 ```python
-from prism.mr_adc_cvs_ip import compute_dyson_mo
-from pyscf.tools import molden
-dyson_mos = compute_dyson_mo(mr_adc, x)
-molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
+mr_adc.analyze()
 ```
 
-Here, ```mr_adc_dyson_mos.molden``` is the molden file that can be processed using a variety of orbital visualization software (e.g., JMOL).
+The following options control the analysis output:
+- `spec_factor_print_tol` (float, optional): Threshold for printing spectroscopic factor contributions. Default is 1e-1.
+- `compute_dyson` (bool, optional): If `True`, compute and write Dyson orbitals to a Molden file. Default is `False`.
+
+Alternatively, Dyson orbitals can be computed directly:
+```python
+from prism.tools import trans_prop
+dyson_mo = trans_prop.compute_dyson(interface, x)
+```
+
+The resulting `_dyson.molden` file can be visualized using orbital visualization software such as [JMOL](http://jmol.sourceforge.net/).
 
 ## Density fitting
 The memory and disk usage of NEVPT and MR-ADC calculations can be greatly reduced by approximating the two-electron integrals with density fitting (DF). 

@@ -89,6 +89,9 @@ class MRADC:
         self.X = None                   # MR-ADC spectroscopic amplitudes
         self.P = None                   # MR-ADC spectroscopic factors
 
+        self.compute_ntos = False       # Option for NTO computation
+        self.compute_dyson = False      # Option for Dyson orbital computation
+
         self.spec_factor_print_tol = 0.01
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
