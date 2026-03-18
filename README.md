@@ -215,6 +215,7 @@ Additional references for the MR-ADC methods:
 List of significant contributions, in alphabetical order:
 - Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
+- Nishshanka M. Lakshan
 - Rajat S. Majumder <majumder.rajat071@gmail.com>
 - Ilia M. Mazin
 - Donna H. Odhiambo <donna.odhiambo@proton.me>
