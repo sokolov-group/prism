@@ -86,7 +86,7 @@ Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calc
 This allows to incorporate the interaction between the first-order wavefunctions and correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
 
 Some important parameters for the NEVPT calculations are:
- - ```method``` (string): Chooses the NEVPT method. One one level of NEVPT theory is available: ```"nevpt2"```.
+ - ```method``` (string): Chooses the NEVPT method. So far, only one level of NEVPT theory is available: ```"nevpt2"```.
  - ```method_type``` (string): Chooses the flavor of NEVPT calculation. Use ```"ss"``` for SS-NEVPT (default) and ```"qd"``` for QD-NEVPT.
  - ```nfrozen``` (integer): Number of lowest-energy (core) molecular orbitals that will be left uncorrelated ("frozen core"). Default is 0 or None.
  - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors. Default is set by PySCF.
