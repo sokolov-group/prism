@@ -109,7 +109,7 @@ class NEVPT:
         self.gtensor = False
         self.soc = None  # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.origin_type = 'charge'  # Possible methods: charge, GIAO, atom1 or User define point(list)
-        self.target_state = 0  #target state for gtensor calculation. Default is the ground state (target_state = 0).
+        self.target_state = 1  # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
 
 
