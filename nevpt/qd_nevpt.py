@@ -498,3 +498,4 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         rdm_final[1] = np.moveaxis(rdm_final[1], -1, 0)
         
     return rdm_final
+

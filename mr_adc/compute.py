@@ -60,7 +60,24 @@ def kernel(mr_adc):
     # Compute transition moments and spectroscopic factors
     spec_intensity, X = mr_adc.compute_properties()
 
-    print_results(mr_adc, spec_intensity)
+
+    h2ev = mr_adc.interface.hartree_to_ev
+    h2cm = mr_adc.interface.hartree_to_inv_cm
+
+    mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
+
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+    mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+
+    de_ev = de * h2ev
+    de_cm = de * h2cm
+
+    for p in range(len(de)):
+        de_nm = 10000000 / de_cm[p]
+        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+
+    mr_adc.log.info("------------------------------------------------------------------------------------------------")
 
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
@@ -247,6 +264,10 @@ def analyze(mr_adc):
         mr_adc.analyze_spec_factor()
     else:
         mr_adc.log.error("No spectroscopic amplitudes to analyze.")
+    if (mr_adc.verbose > 4) and (mr_adc.method_type == "cvs-ip"):
+        mr_adc.analyze_spec_factor(X, spec_intensity)
+   
+    return spec_intensity, X
 
 
 
