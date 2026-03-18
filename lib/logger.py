@@ -162,6 +162,7 @@ def prism_header(self):
                                  Rajat Majumder
                                  Donna H. Odhiambo
                                  James D. Serna
+                                 Nishshanka M. Lakshan
                                  Alexander Yu. Sokolov
 
             Unless required by applicable law or agreed to in
