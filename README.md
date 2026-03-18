@@ -83,6 +83,7 @@ Some important parameters for the NEVPT2 calculations are:
  - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. Default is False. For experts only.
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-8. For experts only. 
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-8. For experts only.
+ - ```rdm_order``` (integer): Paramater to set the order of the one-particle density matrix (1RDM). 0 = reference (default), 2 = includes NEVPT2/QD-NEVPT2 correlation.
 
 ## Multireference algebraic diagrammatic construction theory
 Multireference algebraic diagrammatic construction theory can simulate a variety of excited electronic states (neutral excitations, ionization, electron attachment, core excitation and ionization).
@@ -142,9 +143,9 @@ nevpt.soc = "Breit-Pauli"
 nevpt.kernel()
 ```
 
-The SOC calculations can be performed at two types of SOC Hamiltionian that are specified using the ```soc``` parameter: ```"Breit-Pauli"```, ```"DKH1"```
+The SOC calculations can be performed for two types of SOC Hamiltionian that are specified using the ```soc``` parameter: ```"Breit-Pauli"```, ```"DKH1"```
 
-The g-tensor calculation can be performed after SOC calculation by setting ``gtensor``` is True.
+The g-tensor calculation can be performed after SOC calculation by setting ```gtensor``` to True.
 
 Other parameters for g-tensor calculation are:
 - ```origin_type``` (string): The origin point setting. Default is ```Charge``` which indicates setting origin point at center of nuclear charge. The other possible choices are ```GIAO```(using gauge-including atomic orbital), ```atom1``` (using the first atom position) and User define point(list).
@@ -196,5 +197,9 @@ Additional references for the MR-ADC methods:
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 - Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 - James D. Serna <jserna456@gmail.com>
+- Donna Odhiambo <donna.odhiambo@proton.me>
+- Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
+- Rajat S. Majumder <majumder.rajat071@gmail.com>
+- Nishshanka M. Lakshan <lakshanweerasinghecc@gmail.com> 
 
 Check out AUTHORS for more details.
