@@ -164,7 +164,7 @@ def prism_header(self):
                                  Donna H. Odhiambo
                                  Bryce Pickett
                                  Aditya Roy
-                                 James Serna
+                                 James D. Serna
                                  Lakshan Weerasinghe
                                  Alexander Yu. Sokolov
 

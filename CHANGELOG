@@ -47,3 +47,21 @@ Prism v0.8 (2025-03-26)
 * Fixes
   - Fixed bugs in CVS-IP-MR-ADC transition moments when using small max_memory
   - Fixed bugs in open-shell CVS-IP-MR-ADC calculations introduced during the interface update
+
+Prism v0.9 (2026-03-18)
+------------------------
+* Added:
+   - General state-interaction spin–orbit coupling code (SOC) within spin–orbit mean-field approximation with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians (currently restricted to half-integer spin systems)
+   - Calculations of magnetic g-tensors using the SOC-perturbed wavefunctions within Kramers approach (arXiv:2602.18590)
+   - Interface between the SOC code and NEVPT2/QDNEVPT2
+   - Helper functions to plot spectra, calculate oscillator strengths, natural transition orbitals
+   - Tests and examples for the SOC and g-tensor NEVPT2/QDNEVPT2 calculations
+
+* Improvements:
+   - More modular code and class structure with appropriate inheritance between the parent module class and method subclasses
+   - Functions that are used by more than one method are now moved into tools or appropriate libraries (e.g., libsoc)
+
+* Fixes:
+   - Bug fix in QDNEVPT2 second-order RDM contributions
+   - Updated reference values for the second-order RDM tests
+
