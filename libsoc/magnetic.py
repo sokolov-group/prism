@@ -128,7 +128,7 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     return Mu
 
 
-def gtensor(interface, evec_soc, rdm_sf, S, target_index = 1,origin_type = 'charge'):
+def gtensor(interface, evec_soc, rdm_sf, S, target_index = 1, origin_type = 'charge'):
     ge = interface.g_free_elec
 
     interface.log.info("\nTarget State index = %s", target_index)
