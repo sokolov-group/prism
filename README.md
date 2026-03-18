@@ -212,7 +212,7 @@ Additional references for the MR-ADC methods:
 - "[Algebraic Diagrammatic Construction Theory for Simulating Charged Excited States and Photoelectron Spectra](https://doi.org/10.1021/acs.jctc.3c00251)", S. Banerjee, and A.Yu. Sokolov, J. Chem. Theory Comput. 19(11), 3037–3053 (2023).
 
 # Authors and significant contributors:
-
+List of significant contributions, in alphabetical order:
 - Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 - Carlos E. V. de Moura <carlosevmoura@gmail.com>
 - Rajat S. Majumder <majumder.rajat071@gmail.com>
