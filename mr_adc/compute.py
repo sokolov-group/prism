@@ -22,6 +22,7 @@ import numpy as np
 
 from prism.mr_adc import integrals
 from prism.mr_adc import rdms
+from prism.tools import trans_prop
 
 import prism.lib.logger as logger
 
@@ -61,7 +62,7 @@ def kernel(mr_adc):
     # Compute transition moments and spectroscopic factors
     spec_intensity, X = mr_adc.compute_properties()
 
-    print_results(mr_adc, spec_intensity)
+    print_results(mr_adc)
 
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
@@ -237,31 +238,27 @@ def compute_properties(mr_adc):
     # Spectrocopic factors
     spec_factors = 2.0 * np.sum(X**2, axis=0)
 
-    mr_adc.X = X
-    mr_adc.P = spec_factors
+    mr_adc.properties["spec_amplitudes"] = X
+    mr_adc.properties["spec_probabilities"] = spec_factors
 
-    return mr_adc.P, mr_adc.X
+    return spec_factors, X
 
 
 def analyze(mr_adc):
-    from prism.tools import trans_prop
 
-    if mr_adc.X is not None:
+    if "spec_amplitudes" in mr_adc.properties:
         if hasattr(mr_adc, "analyze_spec_factor"):
             mr_adc.analyze_spec_factor()
-        else:
-            mr_adc.log.error(f"analyze_spec_factor not available for {mr_adc.method_type} method.")
 
         if mr_adc.compute_dyson:
-            trans_prop.compute_dyson(mr_adc.interface, mr_adc.X)
+            trans_prop.compute_dyson(mr_adc.interface, mr_adc.properties["spec_amplitudes"])
 
     if mr_adc.h_evec is not None:
         if hasattr(mr_adc, "analyze_eigenvector"):
             mr_adc.analyze_eigenvector()
-        else:
-            mr_adc.log.error(f"analyze_eigenvector not available for {mr_adc.method_type} method.")
 
-def print_results(mr_adc, spec_intensity):
+
+def print_results(mr_adc):
 
     de = mr_adc.e_diff
 
@@ -276,6 +273,8 @@ def print_results(mr_adc, spec_intensity):
 
     de_ev = de * h2ev
     de_cm = de * h2cm
+
+    spec_intensity = mr_adc.properties["spec_probabilities"]
 
     for p in range(len(de)):
         de_nm = 10000000 / de_cm[p]

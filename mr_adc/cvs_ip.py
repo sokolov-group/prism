@@ -21080,13 +21080,13 @@ def compute_trans_moments(mr_adc):
 
 def analyze_spec_factor(mr_adc):
 
-    print("\nSpectroscopic Factors Analysis:")
+    mr_adc.log.info("\nSpectroscopic Factors Analysis:")
 
     print_thresh = mr_adc.spec_factor_print_tol
-    mr_adc.log.extra("Print spectroscopic factors > %e" %  print_thresh)
+    mr_adc.log.info("Print spectroscopic factors > %e" %  print_thresh)
 
-    X = mr_adc.X
-    spec_intensity = mr_adc.P
+    X = mr_adc.properties["spec_amplitudes"]
+    spec_intensity = mr_adc.properties["spec_probabilities"]
 
     X_2 = 2.0 * (X.T)**2
 
@@ -21116,12 +21116,12 @@ def analyze_spec_factor(mr_adc):
         index_orb = index_orb[partial_Contribution > 1e-6]
         partial_Contribution = partial_Contribution[partial_Contribution > 1e-6]
 
-        print("\n%s | root %d \n" % (mr_adc.method, i))
-        print("  MO          Spec. Contribution       Partial Contribution")
-        print("-------------------------------------------------------------")
+        mr_adc.log.info("\n%s | root %d \n" % (mr_adc.method, i))
+        mr_adc.log.info("  MO          Spec. Contribution       Partial Contribution")
+        mr_adc.log.info("-------------------------------------------------------------")
 
         for c in range(index_orb.shape[0]):
-            print(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c],
+            mr_adc.log.info(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c],
                                                                             spec_Contribution[c],
                                                                             partial_Contribution[c]))
 

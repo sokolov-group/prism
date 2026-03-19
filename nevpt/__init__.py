@@ -85,11 +85,10 @@ class NEVPT:
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
         
         self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk   
-        self.e_tot = None 
-        self.e_corr = None 
-        self.spin_mult = self.ref_wfn_spin_mult
-        self.properties = {}
-
+        self.e_tot = None                         # Total energies
+        self.e_corr = None                        # Correlation energies
+        self.spin_mult = self.ref_wfn_spin_mult   # Spin multiplicities
+        self.properties = {}                      # Dictionary to store computed properties
         self.compute_ntos = False                 # Option for NTO computation
 
         # Integrals

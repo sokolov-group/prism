@@ -86,13 +86,12 @@ class MRADC:
         self.e_diff = None              # MR-ADC excitation energies
         self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
         self.h_evec = None              # Eigenvectors of effective Hamiltonian
-        self.X = None                   # MR-ADC spectroscopic amplitudes
-        self.P = None                   # MR-ADC spectroscopic probabilities
+        self.properties = {}            # Dictionary to store computed properties
 
         self.compute_ntos = False       # Option for NTO computation
         self.compute_dyson = False      # Option for Dyson orbital computation
 
-        self.spec_factor_print_tol = 0.01
+        self.spec_factor_print_tol = 0.01 # Print tolerance for the spectroscopic factor analysis
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states

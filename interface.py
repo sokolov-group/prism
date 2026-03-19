@@ -248,6 +248,10 @@ class PYSCF:
             self.einsum = np.einsum
             self.einsum_type = "greedy"
 
+        # Molden helper
+        from pyscf.tools import molden
+        self.molden = molden
+
     @property
     def with_df(self):
         return self._with_df

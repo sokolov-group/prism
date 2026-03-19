@@ -25,7 +25,7 @@ from prism.libsoc import magnetic
 
 def state_interaction_soc(method):
 
-    method.log.info("\nInitializing SOC program...")
+    method.log.info("\nInitializing state-interaction spin–orbit coupling program...")
     method.interface.x2c_setup()
 
     # Rotate CAS Wavefunction:
@@ -82,7 +82,7 @@ def state_interaction_soc(method):
     method.e_tot = en_soc
     method.h_evec_soc = evec_soc
 
-    #Calculate SOC e_corr respect with CASSCF energy
+    # Calculate SOC e_corr respect with CASSCF energy
     e_ref_spinstate = []
     for i in range(nstate):
         n = int(S[i]*2 + 1)
@@ -186,6 +186,13 @@ def compute_magnetic_properties(method, rdm_sf):
     if isinstance(target_state, int):
         target_state = [target_state]
 
+    g_factor = []
+    g_evector = []
     for I in target_state:
-        method.g_factor, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.gtensor_origin_type)
+        g_fac, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.gtensor_origin_type)
+        g_factor.append(g_fac)
+        g_evector.append(g_evec)
+
+    method.properties["g-factors"] = g_factor
+    method.properties["g-eigenvectors"] = g_evector
 

@@ -19,9 +19,9 @@
 #          Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 #
 
+import numpy as np
 from prism.nevpt import integrals
 from prism.tools import trans_prop
-
 import prism.lib.logger as logger
 
 def kernel(nevpt):
@@ -188,3 +188,18 @@ def print_results(nevpt):
 
     if "osc_strengths_full" in nevpt.properties:
         trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full"])
+
+    if "g-eigenvectors" in nevpt.properties:
+        G_evecs = nevpt.properties["g-eigenvectors"]
+        nevpt.interface.log.info("\nMagnetic g-tensor principal axes:")
+        for G_evec in G_evecs:
+            nevpt.interface.log.info("%s", np.array2string(G_evec, precision=6, suppress_small=True))
+    if "g-factors" in nevpt.properties:
+        ge = nevpt.interface.g_free_elec
+        G_sq = nevpt.properties["g-factors"]
+        nevpt.interface.log.info("\nMagnetic g-factors (ge = %s):" % ge)
+        for G_sq_en in G_sq:
+            nevpt.interface.log.info("%14.6f, %14.6f, %14.6f" % (G_sq_en[0], G_sq_en[1], G_sq_en[2]))
+            nevpt.interface.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
+            nevpt.interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
+

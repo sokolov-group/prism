@@ -23,7 +23,6 @@
 import os
 import sys
 import numpy as np
-from pyscf.tools import molden
 
 def osc_strength(interface, e_diff, trdm_mo):
     '''
@@ -110,7 +109,7 @@ def compute_dyson(interface, X):
 
     filename = os.path.basename(sys.argv[0])
     name = os.path.splitext(filename)[0]
-    molden.from_mo(interface.mol, f'{name}_dyson.molden', dyson_mos)
+    interface.molden.from_mo(interface.mol, f'{name}_dyson.molden', dyson_mos)
 
     interface.log.note(f"Dyson orbitals written to {name}_dyson.molden")
 
@@ -169,8 +168,8 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1):
     input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
     filename = f"{input_file}_nto_S{initial_state}_S{target_state}.molden"
     with open(filename, "w") as f:
-        molden.header(interface.mol, f)
-        molden.orbital_coeff(interface.mol, f, C_nto, occ=occ_nto)
+        interface.molden.header(interface.mol, f)
+        interface.molden.orbital_coeff(interface.mol, f, C_nto, occ=occ_nto)
 
     interface.log.note(f"NTOs written to {filename}")
 

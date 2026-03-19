@@ -37,8 +37,7 @@ from socutils.somf import somf
 
 def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", verbose = 4):
     cput0 = (logger.process_clock(), logger.perf_counter())
-    interface.log.info("Spin-Free Framework: Employ Wigner–Eckart’s theorem")
-    interface.log.info("Consider spin-orbit coupling effect...")
+    interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
     nmo = interface.nmo
     mo = interface.mo
     nstate = len(en)
@@ -58,7 +57,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     else:
         raise Exception("Incorrect SOC flag in input file!!")
         
-    interface.log.info("Calculate Wigner's rdm...")
+    interface.log.info("Calculating Wigner 1-RDM...")
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     for I in range(nstate):
         for J in range(nstate):

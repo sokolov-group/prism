@@ -85,21 +85,21 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
             origin += mf.mol.atom_coord(atm) * mf.mol.atom_charge(atm)
             total_charge += mf.mol.atom_charge(atm)
         origin = origin / total_charge
-        interface.log.info("origin(charge, Bohr)= %s", origin) 
+        interface.log.info("Coordinate system origin (charge, Bohr) = %s", origin) 
         mf.mol.set_common_orig(origin)
         l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
 
     elif origin_type == 'atom1':
-        interface.log.info("origin(atom1, Bohr)= %s", mf.mol.atom_coord(0))
+        interface.log.info("Coordinate system origin (atom1, Bohr) = %s", mf.mol.atom_coord(0))
         mf.mol.set_common_orig(mf.mol.atom_coord(0))
         l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
     
     elif origin_type == 'giao':
-        interface.log.info("origin=GIAO")
+        interface.log.info("Using GIAO to compute gauge-invariant g-tensor...")
         l1_ao = -1j * mf.mol.intor('int1e_giao_irjxp_sph', comp=3)
 
     else:
-        interface.log.info("origin(Bohr)= %s", origin_type)
+        interface.log.info("Coordinate system origin (Bohr) = %s", origin_type)
         mf.mol.set_common_orig(origin_type)
         l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
     
@@ -171,18 +171,12 @@ def gtensor(interface, evec_soc, rdm_sf, S, target_index = 1, origin_type = 'cha
       g[i,2] = np.real(Hab[i,0,0])/S_target
     
     G = np.einsum('km,lm->kl',g,g)
-    interface.log.info("g=")
-    interface.log.info("%s", np.array2string(g, precision=6, suppress_small=True))
-    interface.log.info("G=")
-    interface.log.info("%s", np.array2string(G, precision=6, suppress_small=True))
+    interface.log.extra("g=")
+    interface.log.extra("%s", np.array2string(g, precision=6, suppress_small=True))
+    interface.log.extra("G=")
+    interface.log.extra("%s", np.array2string(G, precision=6, suppress_small=True))
 
     G_en, G_evec = np.linalg.eigh(G)
     G_sq_en = np.sqrt(G_en)
-    interface.log.info("magnetic axis=")
-    interface.log.info("%s", np.array2string(G_evec, precision=6, suppress_small=True))
-    interface.log.info("g-factor=")
-    interface.log.info("%14.6f, %14.6f, %14.6f, ge=%s"%(G_sq_en[0],G_sq_en[1],G_sq_en[2],ge))
-    interface.log.info("%14.6f, %14.6f, %14.6f"%(G_sq_en[0]-ge, G_sq_en[1]-ge, G_sq_en[2]-ge))
-    interface.log.info("%14.3f, %14.3f, %14.3f, ptt"%(1000*(G_sq_en[0]-ge), 1000*(G_sq_en[1]-ge), 1000*(G_sq_en[2]-ge)))
 
     return G_sq_en, G_evec
