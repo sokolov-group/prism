@@ -20,7 +20,6 @@
 #
 
 import numpy as np
-from functools import reduce
 
 from prism.nevpt import rdms
 from prism.nevpt import amplitudes

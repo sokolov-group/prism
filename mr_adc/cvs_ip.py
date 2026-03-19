@@ -21125,11 +21125,3 @@ def analyze_spec_factor(mr_adc):
                                                                             spec_Contribution[c],
                                                                             partial_Contribution[c]))
 
-
-def compute_dyson_mo(mr_adc, X):
-
-    mr_adc.log.note("\nComputing Dyson molecular orbitals...")
-    mo_dyson = np.dot(mr_adc.mo, X)
-    mr_adc.log.note("Done!\n")
-
-    return mo_dyson

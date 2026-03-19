@@ -18,9 +18,7 @@
 #          Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 
 import numpy as np
-from functools import reduce
 
-from prism.nevpt import amplitudes
 from prism.nevpt import nevpt
 from prism.tools import trans_prop
 
@@ -67,7 +65,6 @@ def diagonalize_eff_H(method):
 
     ncore = method.ncore - method.nfrozen
     ncas = method.ncas
-    nelecas = method.ref_nelecas
     nextern = method.nextern
 
     h_eff = np.diag(e_diag)
@@ -373,7 +370,7 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None, 
     rdm_casci = nevpt.make_rdm1(method)
     
     # Compute qdnevpt2 1RDMS
-    rdm_qd = einsum('Im,IJpq,Jn->mnpq', evec, rdm_casci, evec)
+    rdm_qd = einsum('Im,IJpq,Jn->mnpq', evec, rdm_casci, evec, optimize = einsum_type)
     
     # Initial rdm array
     rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], nmo, nmo))
@@ -405,7 +402,6 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None, 
 def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type = 'all'):
     ncore = method.ncore
     ncas = method.ncas
-    nextern = method.nextern
     n_micro_states = sum(method.ref_wfn_deg)
     einsum = method.interface.einsum   
     einsum_type = method.interface.einsum_type
@@ -453,7 +449,7 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
     
     #method's wfn
     if wfn is None:
-        wfn = np.einsum('ij,iab->jab',method.h_evec,method.ref_wfn)
+        wfn = einsum('ij,iab->jab', method.h_evec, method.ref_wfn, optimize = einsum_type)
         wfn = list(wfn)
 
     #wfn's ref_nelecas
@@ -468,9 +464,9 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
                 continue
             
             if (wfn_ref_nelecas[I] == wfn_ref_nelecas[J]):
-                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], method.ncas, wfn_ref_nelecas[ind_I])
-                rdm_final[0, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[0]
-                rdm_final[1, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[1]            
+                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], ncas, wfn_ref_nelecas[ind_I])
+                rdm_final[0, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[0]
+                rdm_final[1, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[1]
 
                 if I == J:
                     #uncorrelated diagonal terms
