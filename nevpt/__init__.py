@@ -95,9 +95,6 @@ class NEVPT:
         self.h1eff = lambda:None
         self.v2e = lambda:None
 
-        self.mo_energy.c = interface.mo_energy[:self.ncore]
-        self.mo_energy.e = interface.mo_energy[self.nocc:]
-
         # Amplitudes
         self.t1 = None
         self.t1_0 = None 

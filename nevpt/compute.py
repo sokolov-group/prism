@@ -19,10 +19,7 @@
 #          Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 #
 
-import numpy as np
-
 from prism.nevpt import integrals
-from prism.nevpt import amplitudes
 #from prism.nevpt import soc
 
 import prism.lib.logger as logger
@@ -96,12 +93,8 @@ def print_header(nevpt):
     n_states = len(nevpt.ref_wfn_deg)
     n_micro_states = sum(nevpt.ref_wfn_deg)
 
-    ref_df = False
-    df = False
-    if nevpt.interface.reference_df:
-        ref_df = True
-    if nevpt.interface.with_df:
-        df = True
+    ref_df = bool(nevpt.interface.reference_df)
+    df = bool(nevpt.interface.with_df)
 
     # Print general information
     nevpt.log.info("Method:                                            %s" % nevpt.method)
