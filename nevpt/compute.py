@@ -26,9 +26,6 @@ import prism.lib.logger as logger
 
 def kernel(nevpt):
 
-    # Initial checks
-    nevpt.method = nevpt.method.lower()
-
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.info("\nComputing NEVPT energies...\n")
 
@@ -59,6 +56,12 @@ def kernel(nevpt):
 
 
 def initialize(nevpt):
+
+    # Initial checks
+    nevpt.method = nevpt.method.lower()
+    nevpt.method_type = nevpt.method_type.lower()
+    if nevpt.soc is not None:
+        nevpt.soc = nevpt.soc.lower()
 
     if nevpt.method not in ("nevpt2"):
         msg = "Unknown method %s" % nevpt.method
@@ -111,6 +114,7 @@ def print_header(nevpt):
 
     # Print general information
     nevpt.log.info("Method:                                            %s" % nevpt.method)
+    nevpt.log.info("Method type:                                       %s" % nevpt.method_type)
     nevpt.log.info("Nuclear repulsion energy:                    %20.12f" % nevpt.enuc)
     nevpt.log.info("Number of electrons:                               %d" % nevpt.nelec)
     nevpt.log.info("Number of basis functions:                         %d" % nevpt.nmo)
@@ -121,6 +125,20 @@ def print_header(nevpt):
     nevpt.log.info("Number of core orbitals:                           %d" % nevpt.ncore)
     nevpt.log.info("Number of active orbitals:                         %d" % nevpt.ncas)
     nevpt.log.info("Number of external orbitals:                       %d" % nevpt.nextern)
+    nevpt.log.info("Spin–orbit coupling:                               %s" % str(nevpt.soc))
+    nevpt.log.info("G-tensor:                                          %s" % str(nevpt.gtensor))
+    if nevpt.gtensor:
+        nevpt.log.info("G-tensor origin:                                   %s" % str(nevpt.gtensor_origin_type))
+        nevpt.log.info("G-tensor target state:                             %s" % str(nevpt.gtensor_target_state))
+
+    if nevpt.shift_type_p1p is not None:
+        nevpt.log.info("Level shift [+1']:                                 %s" % str(nevpt.shift_type_p1p))
+    if nevpt.shift_type_m1p is not None:
+        nevpt.log.info("Level shift [-1']:                                 %s" % str(nevpt.shift_type_m1p))
+    if nevpt.shift_type_0p is not None:
+        nevpt.log.info("Level shift [0']:                                  %s" % str(nevpt.shift_type_0p))
+    if nevpt.shift_type_0p is not None or nevpt.shift_type_m1p is not None or nevpt.shift_type_p1p is not None:
+        nevpt.log.info("Level shift value (a.u.):                          %s" % nevpt.shift_epsilon)
 
     nevpt.log.info("Reference density fitting?                         %s" % ref_df)
     nevpt.log.info("Correlation density fitting?                       %s" % df)

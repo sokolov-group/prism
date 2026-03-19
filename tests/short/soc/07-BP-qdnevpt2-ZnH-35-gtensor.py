@@ -68,7 +68,7 @@ nevpt.method = "nevpt2"
 nevpt.soc = "Breit-Pauli" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 nevpt.verbose = 1
 nevpt.gtensor = True
-nevpt.origin_type = 'charge' 
+nevpt.gtensor_origin_type = 'charge' 
 
 
 class KnownValues(unittest.TestCase):

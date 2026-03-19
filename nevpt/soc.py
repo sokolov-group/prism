@@ -182,10 +182,10 @@ def compute_magnetic_properties(method, rdm_sf):
         S.append(float((method.spin_mult[i] - 1) / 2))
     method.log.info("\nCalculating g-tensor...")
 
-    target_state = method.target_state
+    target_state = method.gtensor_target_state
     if isinstance(target_state, int):
         target_state = [target_state]
 
     for I in target_state:
-        method.g_factor, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.origin_type)
+        method.g_factor, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.gtensor_origin_type)
 
