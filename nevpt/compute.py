@@ -19,10 +19,7 @@
 #          Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
 #
 
-import numpy as np
-
 from prism.nevpt import integrals
-from prism.nevpt import amplitudes
 from prism.tools import trans_prop
 
 import prism.lib.logger as logger
@@ -93,18 +90,25 @@ def initialize(nevpt):
     if nevpt.shift_type_0p is not None and nevpt.shift_type_0p not in avail_shifts:
         raise ValueError(f"Invalid {'shift_type_0p'}: '{nevpt.shift_type_0p}'. Available options are {avail_shifts}.")
 
+def analyze(nevpt):
+
+    n_micro_states = sum(nevpt.ref_wfn_deg)
+    if nevpt.compute_ntos:
+        if n_micro_states == 1:
+            nevpt.log.warn('Only one state provided for NTO analysis.')
+        else:
+            # GS -> ES only
+            trdm = nevpt.make_rdm1(L=0)[1:]
+            for state, trdm_state in enumerate(trdm):
+                trans_prop.compute_ntos(nevpt.interface, trdm_state, initial_state=0, target_state=state+1)
 
 def print_header(nevpt):
 
     n_states = len(nevpt.ref_wfn_deg)
     n_micro_states = sum(nevpt.ref_wfn_deg)
 
-    ref_df = False
-    df = False
-    if nevpt.interface.reference_df:
-        ref_df = True
-    if nevpt.interface.with_df:
-        df = True
+    ref_df = bool(nevpt.interface.reference_df)
+    df = bool(nevpt.interface.with_df)
 
     # Print general information
     nevpt.log.info("Method:                                            %s" % nevpt.method)
