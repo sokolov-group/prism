@@ -1,4 +1,4 @@
-# Copyright 2025 Prism Developers. All Rights Reserved.
+# Copyright 2026 Prism Developers. All Rights Reserved.
 # Adapted from 2014-2018 PySCF
 #
 # Licensed under the GNU General Public License v3.0;
@@ -16,6 +16,7 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#
 
 '''
 Logging system
@@ -152,10 +153,17 @@ def prism_header(self):
             PRISM: Open-Source implementation of ab initio methods
                     for excited states and spectroscopy
 
-                               Version 0.8
+                               Version 0.9
 
-                   Copyright (C) 2025 Prism Developers
-                   Contributors: Carlos E. V. de Moura
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
                                  Alexander Yu. Sokolov
 
             Unless required by applicable law or agreed to in

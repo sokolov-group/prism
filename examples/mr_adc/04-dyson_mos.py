@@ -39,10 +39,14 @@ mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 3
 mr_adc.nroots = 8
 
+# Enable Dyson orbitals
+mr_adc.compute_dyson = True
+
 e, p, x = mr_adc.kernel()
 
-from prism.mr_adc_cvs_ip import compute_dyson_mo
-from pyscf.tools import molden
+# Compute and write dyson orbitals
+mr_adc.analyze()
 
-dyson_mos = compute_dyson_mo(mr_adc, x)
-molden.from_mo(mol, 'mr_adc_dyson_mos.molden', dyson_mos)
+# #Alternatively, compute Dyson orbitals directly from spectroscopic amplitudes
+# from prism.tools import trans_prop
+# dyson_mo = trans_prop.compute_dyson(interface, x)

@@ -48,12 +48,16 @@ print("CASSCF energy: %f\n" % emc)
 # QD-NEVPT2 with all electrons correlated
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.method = "qd-nevpt2"
+nevpt.method_type = "qd"
+e_tot, e_corr, osc = nevpt.kernel()
+
+# Alternative set up
+interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+nevpt = prism.nevpt.QDNEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()
 
 # QD-NEVPT2 with frozen core
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.nfrozen = 1
-nevpt.method = "qd-nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()

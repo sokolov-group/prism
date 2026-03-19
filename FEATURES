@@ -3,8 +3,22 @@
 ## NEVPT2
 - Full internal contraction (equivalent to partially contracted NEVPT2)
 - Single- and multi-state state-specific NEVPT2 energies
+- Oscillator strengths
 - Frozen core approximation
 - Full support of density fitting
+- One-particle reduced density matrix (1-RDM) with second-order correlation contributions
+- State-interaction spin–orbit coupling with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
+- Molecular g-tensors via Kramers approach and state-interaction spin–orbit coupling
+
+## QD-NEVPT2
+- Full internal contraction (equivalent to partially contracted QD-NEVPT2)
+- Single- and multi-state state-specific QD-NEVPT2 energies
+- Oscillator strengths
+- Frozen core approximation
+- Full support of density fitting
+- One-particle reduced density matrix (1-RDM) with second-order correlation contributions
+- State-interaction spin–orbit coupling with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
+- Molecular g-tensors via Kramers approach and state-interaction spin–orbit coupling
 
 ## CVS-IP-MR-ADC
 - Excitation energies up to MR-ADC(2)-X
@@ -12,3 +26,10 @@
 - Dyson orbitals
 - Orbital analysis of contributions to spectroscopic factors
 - Full support of density fitting
+
+## General capabilities
+- Incorporating spin–orbit coupling via state-interaction approach with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
+- Calculating magnetic g-tensors via state-interaction approach with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
+- Natural transition orbitals
+- Dyson orbitals
+- Plotting and visualizing spectra

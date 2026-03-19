@@ -1,4 +1,4 @@
-# Copyright 2025 Prism Developers. All Rights Reserved.
+# Copyright 2026 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -47,12 +47,15 @@ class PYSCF:
         self.enuc = mf.mol.energy_nuc()
         self.e_scf = mf.e_tot
         self.mf = mf
+        self.mc = mc
         self.log = log
 
         # Unit conversions
         self.hartree_to_ev = 27.2113862459817
-#        self.hartree_to_ev = 27.2114
         self.hartree_to_inv_cm = 219474.63136314
+        # Constants
+        self.light_speed = lib.parameters.LIGHT_SPEED
+        self.g_free_elec = 2.002319
 
         log.info("Collecting reference wavefunction information...")
         if mc is None:
@@ -81,6 +84,7 @@ class PYSCF:
             else:
                 self.group_repr_symm = None
         else:
+
             # Determine reference type
             from pyscf.mcscf.casci import CASCI
 
@@ -139,6 +143,14 @@ class PYSCF:
             self.davidson_only = mc.fcisolver.davidson_only
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
+            # SOC params:
+            self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+            self.unc = None
+
+            # Basis set uncontraction objects: xmol, contraction coefficients.
+            # Use x2c_setup to obtain self.xmol and self.contr_coeff 
+            self.xmol = None
+            self.contr_coeff = None
 
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df
@@ -200,6 +212,8 @@ class PYSCF:
 
             self.davidson = lib.linalg_helper.davidson1
 
+            from pyscf.fci.direct_spin1 import trans_rdm1s
+            self.trans_rdm1s = trans_rdm1s
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
             self.select_casci = None
 
@@ -233,6 +247,10 @@ class PYSCF:
         else:
             self.einsum = np.einsum
             self.einsum_type = "greedy"
+
+        # Molden helper
+        from pyscf.tools import molden
+        self.molden = molden
 
     @property
     def with_df(self):
@@ -369,6 +387,11 @@ class PYSCF:
 
         return spin_multiplet, spin_multiplet_ne
 
+
+    # X2C set up:
+    def x2c_setup(self):
+        from pyscf.x2c import x2c
+        self.xmol, self.contr_coeff = x2c.X2C(self.mf.mol).get_xmol()
 
     # Apply S+ (spin raising) operator
     def apply_S_plus(self, psi, ncas, nelecas):
@@ -601,3 +624,7 @@ class PYSCF:
         rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))
 
         return rdm1, rdm2, rdm3, rdm4
+    
+    
+    
+
