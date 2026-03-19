@@ -52,7 +52,11 @@ def kernel(nevpt):
     else:
         nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
 
-    return nevpt.e_tot, nevpt.e_corr, nevpt.properties["osc_strengths"]
+    osc_str = None
+    if "osc_strengths" in nevpt.properties:
+        osc_str = nevpt.properties["osc_strengths"]
+
+    return nevpt.e_tot, nevpt.e_corr, osc_str
 
 
 def initialize(nevpt):
@@ -155,8 +159,6 @@ def print_results(nevpt):
     h2ev = nevpt.interface.hartree_to_ev
     h2cm = nevpt.interface.hartree_to_inv_cm
 
-    osc_str = nevpt.properties["osc_strengths"]
-
     if nevpt.soc:
         nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.soc.upper()+"-"+nevpt.method_type.upper()+"-"+nevpt.method.upper(), nevpt.interface.reference.upper()))
     else:
@@ -170,6 +172,10 @@ def print_results(nevpt):
     e_tot = nevpt.e_tot
 
     n_states = len(e_tot)
+
+    osc_str = None
+    if n_states > 1:
+        osc_str = nevpt.properties["osc_strengths"]
 
     for p in range(n_states):
         deg = 1
