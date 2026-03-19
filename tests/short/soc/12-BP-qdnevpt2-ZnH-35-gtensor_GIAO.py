@@ -31,9 +31,9 @@ import prism.nevpt
 np.set_printoptions(suppress=True)
 
 mol = pyscf.gto.Mole()
-mol.atom = [
-            ['Zn', (0.0, 0.0, 0.0)],
-            ['H', (0.0,  0,  1.595 )]]
+mol.atom = [['Zn', (0.0, 0.0, 0.0)],
+            ['H', (0.0,  0,  1.595 )]
+            ]
 mol.basis = 'def2-tzvp'
 mol.symmetry = False
 mol.spin = 1
@@ -48,7 +48,7 @@ ehf = mf.scf()
 mf.analyze()
 
 # SA-CASSCF calculation
-n_states = 3
+n_states = 4
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 5, 3).state_average_(weights)
 mc.conv_tol = 1e-11
@@ -59,51 +59,57 @@ mc.analyze()
 
 # QD-NEVPT2 with all electrons correlated
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
-nevpt = prism.nevpt.NEVPT(interface)
+nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-8
 nevpt.s_thresh_doubles = 1e-8
 nevpt.method = "nevpt2"
-nevpt.soc = "DKH1" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+nevpt.soc = "Breit-Pauli" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 nevpt.verbose = 1
 nevpt.gtensor = True
-nevpt.gtensor_target_state = 1 
-nevpt.gtensor_origin_type = 'charge' 
+nevpt.gtensor_target_state = 1
+nevpt.gtensor_origin_type = 'GIAO' 
+
 
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,  -1791.47091112993, 6)
-        self.assertAlmostEqual(mc.e_cas,  -2.06221638208081, 6)
+        self.assertAlmostEqual(mc.e_tot,   -1791.44304512657, 6)
+        self.assertAlmostEqual(mc.e_cas,  -2.02048893196798, 6)
 
     def test_prism(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -1792.202314553555 , 5)
-        self.assertAlmostEqual(e_tot[1], -1792.202314553554 , 5)
-        self.assertAlmostEqual(e_tot[2], -1792.098895453795 , 5)
-        self.assertAlmostEqual(e_tot[3], -1792.098895453795 , 5)
-        self.assertAlmostEqual(e_tot[4], -1792.097655010426 , 5)
-        self.assertAlmostEqual(e_tot[5], -1792.097655010424 , 5)
-        
-        self.assertAlmostEqual(osc[0], 0.0, 5)
-        self.assertAlmostEqual(osc[1], 0.05264138, 5)
-        self.assertAlmostEqual(osc[2], 0.05264138, 5)
-        self.assertAlmostEqual(osc[3], 0.05326893, 5)
-        self.assertAlmostEqual(osc[4], 0.05326893, 5)
+        #Prism
+        self.assertAlmostEqual(e_tot[0], -1792.202766317774  , 5)
+        self.assertAlmostEqual(e_tot[1], -1792.202766317774  , 5)
+        self.assertAlmostEqual(e_tot[2], -1792.099589949303  , 5)
+        self.assertAlmostEqual(e_tot[3], -1792.099589949303  , 5)
+        self.assertAlmostEqual(e_tot[4], -1792.098209192674  , 5)
+        self.assertAlmostEqual(e_tot[5], -1792.098209192672  , 5)
+        self.assertAlmostEqual(e_tot[6], -1792.033455602738  , 5)
+        self.assertAlmostEqual(e_tot[7], -1792.033455602738  , 5)
 
-        self.assertAlmostEqual(nevpt.g_factor[0], 1.985702, 5)
-        self.assertAlmostEqual(nevpt.g_factor[1], 1.985702, 5)
-        self.assertAlmostEqual(nevpt.g_factor[2], 2.002216, 5)
+        self.assertAlmostEqual(osc[0], 0.0, 5)
+        self.assertAlmostEqual(osc[1],  0.05283955, 5)
+        self.assertAlmostEqual(osc[2],  0.05283955, 5)
+        self.assertAlmostEqual(osc[3],  0.05354203, 5)
+        self.assertAlmostEqual(osc[4],  0.05354203, 5)
+        self.assertAlmostEqual(osc[5],  0.05010837, 5)
+        self.assertAlmostEqual(osc[6],  0.05010837, 5)
+
+        self.assertAlmostEqual(nevpt.g_factor[0], 1.985586, 5)
+        self.assertAlmostEqual(nevpt.g_factor[1], 1.985586, 5)
+        self.assertAlmostEqual(nevpt.g_factor[2], 2.002211, 5)
+
+
 
 
 
 
 if __name__ == "__main__":
-    print("SOC-NEVPT2 test")
+    print("SOC-QD-NEVPT2 test")
     unittest.main()
-
-
 
