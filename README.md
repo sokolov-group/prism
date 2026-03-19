@@ -213,13 +213,14 @@ Additional references for the MR-ADC methods:
 
 # Authors and significant contributors:
 List of significant contributions, in alphabetical order:
-- Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
-- Carlos E. V. de Moura <carlosevmoura@gmail.com>
+- Nicholas Y. Chiang
+- Carlos E. V. de Moura
 - Nishshanka M. Lakshan
-- Rajat S. Majumder <majumder.rajat071@gmail.com>
+- Rajat S. Majumder
 - Ilia M. Mazin
-- Donna H. Odhiambo <donna.odhiambo@proton.me>
-- James D. Serna <jserna456@gmail.com>
-- Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+- Donna H. Odhiambo
+- Bryce Pickett
+- James D. Serna
+- Alexander Yu. Sokolov
 
 Check out AUTHORS for all contributions.

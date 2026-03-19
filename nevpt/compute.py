@@ -23,7 +23,7 @@ import numpy as np
 
 from prism.nevpt import integrals
 from prism.nevpt import amplitudes
-#from prism.nevpt import soc
+from prism.tools import trans_prop
 
 import prism.lib.logger as logger
 
@@ -45,17 +45,17 @@ def kernel(nevpt):
     nevpt.compute_energy()
 
     # Compute properties and spin multiplicity
-    osc_str = nevpt.compute_properties()
+    nevpt.compute_properties()
 
     # Print results
-    print_results(nevpt, osc_str)
+    print_results(nevpt)
 
     if nevpt.soc:
         nevpt.log.timer0("total %s calculation" % ("SOC-"+nevpt.method.upper()), *cput0)
     else:
         nevpt.log.timer0("total %s calculation" % nevpt.method.upper(), *cput0)
 
-    return nevpt.e_tot, nevpt.e_corr, osc_str
+    return nevpt.e_tot, nevpt.e_corr, nevpt.properties["osc_strengths"]
 
 
 def initialize(nevpt):
@@ -146,15 +146,17 @@ def print_header(nevpt):
         nevpt.log.info("Projector for the semi-internal amplitudes:        %s" % nevpt.semi_internal_projector)
 
 
-def print_results(nevpt, osc_str):
+def print_results(nevpt):
 
     h2ev = nevpt.interface.hartree_to_ev
     h2cm = nevpt.interface.hartree_to_inv_cm
 
+    osc_str = nevpt.properties["osc_strengths"]
+
     if nevpt.soc:
-        nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.soc.upper()+"-"+nevpt.method.upper(), nevpt.interface.reference.upper()))
+        nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.soc.upper()+"-"+nevpt.method_type.upper()+"-"+nevpt.method.upper(), nevpt.interface.reference.upper()))
     else:
-        nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method.upper(), nevpt.interface.reference.upper()))
+        nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method_type.upper()+"-"+nevpt.method.upper(), nevpt.interface.reference.upper()))
 
     nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
     nevpt.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
@@ -180,3 +182,5 @@ def print_results(nevpt, osc_str):
 
     nevpt.log.info("----------------------------------------------------------------------------------------------------------------")
 
+    if "osc_strengths_full" in nevpt.properties:
+        trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full"])

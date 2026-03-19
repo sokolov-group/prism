@@ -162,6 +162,7 @@ def prism_header(self):
                                  Rajat S. Majumder
                                  Ilia M. Mazin
                                  Donna H. Odhiambo
+                                 Bryce Pickett
                                  James D. Serna
                                  Alexander Yu. Sokolov
 
