@@ -82,7 +82,7 @@ The NEVPT2 calculations can be performed starting with one or several CASCI/CASS
 
 For multiple reference states, two flavors of NEVPT2 are available: 1) state-specific (SS-NEVPT2) and 2) quasidegenerate (QD-NEVPT2).
 In the SS-NEVPT2 method, the first-order wavefunctions and second-order correlation energies are computed for each electronic state.
-Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calculated by diagonalizing the effective Hamiltonian evaluated to second order perturbation theory.
+Alternatively, in QD-NEVPT2, the correlation energies and wavefunctions are calculated by diagonalizing the effective Hamiltonian evaluated to second order in perturbation theory.
 This allows to incorporate the interaction between the first-order wavefunctions and correctly describe nearly degenerate electronic states (e.g., in the vicinity of avoided crossings).
 
 Some important parameters for the NEVPT calculations are:
@@ -131,7 +131,7 @@ Other important parameters are:
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-5. For experts only.
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-10. For experts only.
 
-The spectroscopic factors and their orbital contributions can be analyzed by calling:
+The CVS-IP-MR-ADC spectroscopic intensities (so-called spectroscopic factors) and their orbital contributions can be analyzed by calling:
 ```python
 mr_adc.analyze()
 ```
@@ -167,12 +167,12 @@ The spin-orbit coupling (SOC) is avaliable in NEVPT2 and QD-NEVPT2. To run SOC c
 git submodule update --init --recursive
 ```
 
-The SOC calculation can be performed by seting the ```soc``` attribute:
+The SOC calculation can be performed by setting the ```soc``` attribute:
 
 ```python
 interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
 nevpt = prism.nevpt.NEVPT(interface)
-nevpt.soc = "Breit-Pauli"
+nevpt.soc = "BP"
 nevpt.kernel()
 ```
 
@@ -181,8 +181,8 @@ The SOC calculations can be performed for two types of SOC Hamiltionian that are
 The g-tensor calculation can be performed after SOC calculation by setting ```gtensor``` to True.
 
 Other parameters for g-tensor calculation are:
-- ```origin_type``` (string): The origin of coordinate system setting. Default is ```"charge"``` which indicates setting origin point at the center of nuclear charge. The other possible choices are ```"GIAO"```(using gauge-including atomic orbital), ```"atom1"``` (using the first atom position). Also, origin can be set to a particular point by providing a list of three coordinates (in Bohr).
- - ```target_state``` (integer or list): target state to calculate g-tensor. Default is 1 (lowest-energy state). The code will detect spin multiplicity and will calculate g-tensor for the target state. Users can also asign a set of (nearly) degenerate states to calculate g-tensor by providing a list. For example, to compute g-tensor for a doubly degenerate first excited state set ```target_state = [2,3]```.
+- ```origin_type``` (string): The origin of coordinate system setting. Default is ```"charge"```, which indicates setting origin point at the center of nuclear charge. The other possible choices are ```"GIAO"```(using gauge-including atomic orbital), ```"atom1"``` (using the first atom position). Also, origin can be set to a particular point by providing a list of three coordinates (in Bohr).
+ - ```target_state``` (integer or list): target state to calculate g-tensor. Default is 1 (lowest-energy state). The code will detect spin multiplicity and will calculate g-tensor for the target state. Users can also assign a set of (nearly) degenerate states to calculate g-tensor by providing a list. For example, to compute g-tensor for a doubly degenerate first excited state set ```target_state = [2,3]```.
 
 # Short summary of features:
 
@@ -217,6 +217,7 @@ Other parameters for g-tensor calculation are:
 - Incorporating spin–orbit coupling via state-interaction approach with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
 - Calculating magnetic g-tensors via state-interaction approach with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians
 - Natural transition orbitals
+- Dyson orbitals
 - Plotting and visualizing spectra
 
 # How to cite
