@@ -199,7 +199,7 @@ def compute_properties(method):
         
         rdm_mo = method.make_rdm1() # for all osc calculation
 
-        # Calculate Oscillator Strengths for transitions from all ground state
+        # Calculate oscillator strengths for transitions from the first state
         osc_str_full=[]
         osc_str = np.zeros(len(method.e_tot)-1)
         for gs_index in range(deg_gs):
@@ -209,17 +209,16 @@ def compute_properties(method):
             osc_str_full.append(osc)
             osc_str[gs_index:] += osc 
 
-# TODO: Move the following if statement to analyze()
-# TODO: Move the following if statement to analyze()
-# TODO: Move the following if statement to analyze()
-        # Compute all transitions starting from each state
+        method.properties["osc_strengths"] = osc_str
+
+        # Compute oscillator strengths starting from each state
         if method.verbose >= 5:
             for gs_index in range(deg_gs, len(method.e_tot)):  
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
 
-            trans_prop.print_osc_strength(method.interface, osc_str_full)
+            method.properties["osc_strengths_full"] = osc_str_full
 
     # Compute magnetic properties
     if method.gtensor and method.soc:
@@ -229,8 +228,6 @@ def compute_properties(method):
 
         # Compute g-values
         soc.compute_magnetic_properties(method, rdm_sf)
-
-    return osc_str
 
 
 # Compute 1-RDM for either all CASCI states or a specific states

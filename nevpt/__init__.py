@@ -77,11 +77,10 @@ class NEVPT:
         self.s_thresh_singles = 1e-8
         self.s_thresh_doubles = 1e-8
         
-        self.shift_type_p1p = None                # Possible shift types: imaginary, DSRG
-        self.shift_type_m1p = None                
-        self.shift_type_0p = None
-        
-        self.shift_epsilon = 0.01                 # Level shift value, default 0.01 Hartree
+        self.shift_type_p1p = None                # Level shift type for [+1']: imaginary, DSRG
+        self.shift_type_m1p = None                # Level shift type for [-1']: imaginary, DSRG
+        self.shift_type_0p = None                 # Level shift type for [0']: imaginary, DSRG
+        self.shift_epsilon = 0.01                 # Level shift value (in Hartree)
 
         self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
         
@@ -89,6 +88,7 @@ class NEVPT:
         self.e_tot = None 
         self.e_corr = None 
         self.spin_mult = self.ref_wfn_spin_mult
+        self.properties = {}
 
         self.compute_ntos = False                 # Option for NTO computation
 
@@ -100,16 +100,16 @@ class NEVPT:
         # Amplitudes
         self.t1 = None
         self.t1_0 = None 
-        self.keep_amplitudes = False
+        self.keep_amplitudes = True
 
         # Compute correlated RDMs
         self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
 
-        #For SOC
-        self.gtensor = False
-        self.soc = None                            # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-        self.gtensor_origin_type = 'charge'                # Possible methods: charge, GIAO, atom1 or User define point(list)
-        self.gtensor_target_state = 1                      # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
+        # For SOC
+        self.soc = None                            # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+        self.gtensor = False                       # Enable calculating g-tensors (requires soc)
+        self.gtensor_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)
+        self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
 
     def _make_method_instance(self):
