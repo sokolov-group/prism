@@ -137,9 +137,11 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[24],   0.04105223 , 5)
         self.assertAlmostEqual(osc[25],   0.04105223 , 5)
 
-        self.assertAlmostEqual(nevpt.g_factor[0], 2.002306, 5)
-        self.assertAlmostEqual(nevpt.g_factor[1], 2.007136, 5)
-        self.assertAlmostEqual(nevpt.g_factor[2], 2.007136, 5)
+        g_factor_all = nevpt.properties["g-factors"]
+        g_factor = g_factor_all[0]
+        self.assertAlmostEqual(g_factor[0], 2.002306, 5)
+        self.assertAlmostEqual(g_factor[1], 2.007136, 5)
+        self.assertAlmostEqual(g_factor[2], 2.007136, 5)
 
 if __name__ == "__main__":
     print("SOC-QD-NEVPT2 test")

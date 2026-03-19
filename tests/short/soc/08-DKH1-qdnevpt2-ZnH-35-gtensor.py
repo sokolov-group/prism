@@ -95,9 +95,11 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[3], 0.05326893, 5)
         self.assertAlmostEqual(osc[4], 0.05326893, 5)
 
-        self.assertAlmostEqual(nevpt.g_factor[0], 1.985702, 5)
-        self.assertAlmostEqual(nevpt.g_factor[1], 1.985702, 5)
-        self.assertAlmostEqual(nevpt.g_factor[2], 2.002216, 5)
+        g_factor_all = nevpt.properties["g-factors"]
+        g_factor = g_factor_all[0]
+        self.assertAlmostEqual(g_factor[0], 1.985702, 5)
+        self.assertAlmostEqual(g_factor[1], 1.985702, 5)
+        self.assertAlmostEqual(g_factor[2], 2.002216, 5)
 
         #Prism_beta gtensor branch
         self.assertAlmostEqual(e_tot[0], -1792.202315, 5)
@@ -113,9 +115,9 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[3], 0.05326928, 5)
         self.assertAlmostEqual(osc[4], 0.05326924, 5)
 
-        self.assertAlmostEqual(nevpt.g_factor[0], 1.985703, 5)
-        self.assertAlmostEqual(nevpt.g_factor[1], 1.985703, 5)
-        self.assertAlmostEqual(nevpt.g_factor[2], 2.002216, 5)
+        self.assertAlmostEqual(g_factor[0], 1.985703, 5)
+        self.assertAlmostEqual(g_factor[1], 1.985703, 5)
+        self.assertAlmostEqual(g_factor[2], 2.002216, 5)
 
 
 
