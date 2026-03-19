@@ -54,12 +54,13 @@ Prism v0.9 (2026-03-19)
    - General state-interaction spin–orbit coupling code (SOC) within spin–orbit mean-field approximation with Breit–Pauli and exact two-component Douglas–Kroll–Hess Hamiltonians (currently restricted to half-integer spin systems)
    - Calculations of magnetic g-tensors using the SOC-perturbed wavefunctions within Kramers approach (arXiv:2602.18590)
    - Interface between the SOC code and NEVPT2/QD-NEVPT2
-   - Helper functions to plot spectra, calculate oscillator strengths, natural transition orbitals
+   - Helper functions to plot spectra, calculate oscillator strengths, natural transition orbitals, Dyson orbitals
    - Tests and examples for the SOC and g-tensor NEVPT2/QD-NEVPT2 calculations
 
 * Improvements:
    - More modular code and class structure with appropriate inheritance between the parent module class and method subclasses
    - Functions that are used by more than one method are now moved into tools or appropriate libraries (e.g., libsoc)
+   - Better handling of storing and analyzing molecular properties via method.properties attribute of each method object
 
 * Fixes:
    - Bug fix in QD-NEVPT2 second-order RDM contributions
