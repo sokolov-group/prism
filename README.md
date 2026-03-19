@@ -95,6 +95,24 @@ Some important parameters for the NEVPT calculations are:
  - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-8. For experts only. 
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-8. For experts only.
 
+The natural transition orbitals for any multistate NEVPT calculation can be produced by calling:
+```python
+nevpt.analyze()
+```
+
+The following options control the analysis output:
+- `keep_amplitudes` (bool, optional): **Must be set to `True` for analysis to work.**
+- `compute_ntos` (bool, optional): If `True`, compute and write natural transition orbitals for ground to excited state transitions to a Molden file. Default is `False`.
+
+Alternatively, natural transition orbitals for any transition can be computed directly given the transition density matrix between the states:
+```python
+from prism.tools import trans_prop
+trdm = nevpt.make_rdm1(L=1, R=2)
+w, U, Vh = trans_prop.compute_ntos(interface, trdm, initial_state=1, target_state=2)
+```
+
+The resulting `_nto_S1_S2.molden` file can be visualized using orbital visualization software such as [JMOL](http://jmol.sourceforge.net/).
+
 ## Multireference algebraic diagrammatic construction theory
 Multireference algebraic diagrammatic construction theory can simulate a variety of excited electronic states (neutral excitations, ionization, electron attachment, core excitation and ionization).
 The type of excited states is controled by the ```method_type``` parameter of MR-ADC class.
