@@ -90,6 +90,8 @@ class NEVPT:
         self.e_corr = None 
         self.spin_mult = self.ref_wfn_spin_mult
 
+        self.compute_ntos = False                 # Option for NTO computation
+
         # Integrals
         self.mo_energy = lambda:None
         self.h1eff = lambda:None
@@ -145,7 +147,7 @@ class NEVPT:
         # Run NEVPT computation
         e_tot, e_corr, osc = compute.kernel(method)
 
-        if self.keep_amplitudes is False:
+        if not self.keep_amplitudes:
             del(self.t1)
             del(self.t1_0)
 
@@ -185,6 +187,18 @@ class NEVPT:
     def compute_properties(self):
 
         return nevpt.compute_properties(self)
+
+    def analyze(self):
+
+        self.method_type = self.method_type.lower()
+
+        if self.method_type == "ss":
+            method = self
+        else:
+            method = self._make_method_instance()
+        self.__dict__.update(method.__dict__)
+
+        return compute.analyze(method)
 
     @property
     def verbose(self):

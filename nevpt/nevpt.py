@@ -26,9 +26,6 @@ from prism.nevpt import rdms
 from prism.nevpt import amplitudes
 from prism.tools import trans_prop
 
-import prism.lib.logger as logger
-import prism.lib.tools as tools
-
 
 def compute_energy(method):
 
@@ -596,10 +593,7 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
 def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
     ncore = method.ncore
     ncas = method.ncas
-    nextern = method.nextern
     n_micro_states = sum(method.ref_wfn_deg)
-    einsum = method.interface.einsum   
-    einsum_type = method.interface.einsum_type
     nmo = method.nmo
 
     L_states = 0
@@ -658,9 +652,9 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type 
                 continue
             
             if (wfn_ref_nelecas[I] == wfn_ref_nelecas[J]):
-                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], method.ncas, wfn_ref_nelecas[ind_I])
-                rdm_final[0, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[0]
-                rdm_final[1, ind_I, ind_J, method.ncore:method.ncore+method.ncas, method.ncore:method.ncore+method.ncas] = tmprdm_aabb[1]            
+                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], ncas, wfn_ref_nelecas[ind_I])
+                rdm_final[0, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[0]
+                rdm_final[1, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[1]
 
                 if I == J:
                     #uncorrelated diagonal terms

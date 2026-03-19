@@ -87,6 +87,19 @@ def initialize(nevpt):
     if nevpt.shift_type_0p is not None and nevpt.shift_type_0p not in avail_shifts:
         raise ValueError(f"Invalid {'shift_type_0p'}: '{nevpt.shift_type_0p}'. Available options are {avail_shifts}.")
 
+def analyze(nevpt):
+
+    from prism.tools import trans_prop
+
+    n_micro_states = sum(nevpt.ref_wfn_deg)
+    if nevpt.compute_ntos:
+        if n_micro_states == 1:
+            nevpt.log.warn('Only one state provided for NTO analysis.')
+        else:
+            # GS -> ES only
+            trdm = nevpt.make_rdm1(L=0)[1:]
+            for state, trdm_state in enumerate(trdm):
+                trans_prop.compute_ntos(nevpt.interface, trdm_state, initial_state=0, target_state=state+1)
 
 def print_header(nevpt):
 

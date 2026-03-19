@@ -124,7 +124,7 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1):
     '''
     ## Needs mask dependent on nto_thresh
 
-    interface.log.info(f"\nComputing NTOs for State {initial_state} -> State {target_state}")
+    interface.log.info(f"\nComputing NTOs...")
 
     U, s, Vh =  np.linalg.svd(trdm, full_matrices = False)
     V = Vh.T
