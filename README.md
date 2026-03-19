@@ -230,10 +230,11 @@ Citation for the NEVPT2 method:
 Citation for the QD-NEVPT2 method:
 - "[A quasidegenerate formulation of the second order n-electron valence state perturbation theory approach](https://doi.org/10.1063/1.1778711)", C. Angeli, S. Borini, M. Cestari, and R. Cimiraglia, J. Chem. Phys. 121(9), 4043–4049 (2004).
 
-Additional references for the MR-ADC methods:
+Additional references for the MR-ADC and NEVPT methods:
 - "[Multi-reference algebraic diagrammatic construction theory for excited states: General formulation and first-order implementation](https://doi.org/10.1063/1.5055380)", A.Yu. Sokolov, J. Chem. Phys. 149(20), 204113 (2018).
 - "[Simulating X-ray photoelectron spectra with strong electron correlation using multireference algebraic diagrammatic construction theory](https://doi.org/10.1039/d1cp05476g)", C.E.V. de Moura and A.Yu. Sokolov, Phys. Chem. Chem. Phys. 24, 4769 – 4784 (2022).
 - "[Algebraic Diagrammatic Construction Theory for Simulating Charged Excited States and Photoelectron Spectra](https://doi.org/10.1021/acs.jctc.3c00251)", S. Banerjee, and A.Yu. Sokolov, J. Chem. Theory Comput. 19(11), 3037–3053 (2023).
+- "[Multireference perturbation theories based on the Dyall Hamiltonian](https://doi.org/10.1016/bs.aiq.2024.04.004)", A.Yu. Sokolov, Adv. Quantum Chem. 90, 121–155 (2024).
 
 # Authors and significant contributors:
 List of significant contributions, in alphabetical order:
