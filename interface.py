@@ -253,7 +253,7 @@ class PYSCF:
     @property
     def einsum_backend(self):
         if self._einsum_backend is None:
-            self._einsum_backend = np_helper.einsum_backend(self)
+            self._einsum_backend = np_helper.einsum_backend(self.opt_einsum, self.pytblis, self.log)
         return self._einsum_backend
 
     @property

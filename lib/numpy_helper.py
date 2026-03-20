@@ -19,39 +19,33 @@ def _has_module(name):
     except (ImportError, OSError):
         return False
 
-def einsum_backend(PYSCF):
-    # Interface flags
-    PYTBLIS = getattr(PYSCF, 'pytblis', False)
-    OPT_EINSUM = getattr(PYSCF, 'opt_einsum', False)
+def einsum_backend(opt_einsum, pytblis, log):
 
-    _HAS_PYTBLIS = _has_module('pytblis')
-    _HAS_OPT_EINSUM = _has_module('opt_einsum')
+    has_pytblis = _has_module("pytblis")
+    has_opt_einsum = _has_module("opt_einsum")
 
     # Backend priority: provided flags > pytblis > opt_einsum > numpy fallback
-    if OPT_EINSUM and _HAS_OPT_EINSUM:
-        EINSUM_BACKEND = "opt_einsum"
-    elif PYTBLIS and _HAS_PYTBLIS:
-        EINSUM_BACKEND = "pytblis"
-    elif  _HAS_PYTBLIS:
-        EINSUM_BACKEND = "pytblis"
-    elif _HAS_OPT_EINSUM:
-        EINSUM_BACKEND = "opt_einsum"
+    if opt_einsum and has_opt_einsum:
+        backend = "opt_einsum"
+    elif has_pytblis:
+        backend = "pytblis"
+    elif has_opt_einsum:
+        backend = "opt_einsum"
     else:
-        EINSUM_BACKEND = "numpy"
+        backend = "numpy"
 
-    log = PYSCF.log
-    if OPT_EINSUM and EINSUM_BACKEND != "opt_einsum":
-        log.info(
+    if opt_einsum and backend != "opt_einsum":
+        log.warn(
             "opt_einsum was requested (OPT_EINSUM=True) but is not available. "
-            "Falling back to %s.", EINSUM_BACKEND
+            "Falling back to %s.", backend
         )
-    if PYTBLIS and EINSUM_BACKEND != "pytblis":
-        log.info(
+    if pytblis and backend != "pytblis":
+        log.warn(
             "pytblis was requested (PYTBLIS=True) but is not available. "
-            "Falling back to %s.", EINSUM_BACKEND
+            "Falling back to %s.", backend
         )
 
-    return EINSUM_BACKEND
+    return backend
 
 # Import backend
 try:
