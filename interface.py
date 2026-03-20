@@ -30,11 +30,10 @@ class PYSCF:
 
     def __init__(self, mf, mc = None, opt_einsum = False, pytblis = False, select_reference = None):
 
+        self.stdout = mf.stdout
         if mc is None:
-            self.stdout = mf.stdout
             self.verbose = mf.verbose
         else:
-            self.stdout = mf.stdout
             self.verbose = mc.verbose
 
         log = logger.Logger(self.stdout, self.verbose)
@@ -44,6 +43,7 @@ class PYSCF:
 
         from pyscf import lib
         self.type = "pyscf"
+        self.log = log
 
         # General info
         self.mol = mf.mol
@@ -52,7 +52,6 @@ class PYSCF:
         self.e_scf = mf.e_tot
         self.mf = mf
         self.mc = mc
-        self.log = log
 
         # Unit conversions
         self.hartree_to_ev = 27.2113862459817
@@ -74,10 +73,7 @@ class PYSCF:
             self.symmetry = mf.mol.symmetry
             self.e_ref = [mf.e_tot]
 
-            if getattr(mf, 'with_df', None):
-                self.reference_df = mf.with_df
-            else:
-                self.reference_df = None
+            self.reference_df = getattr(mf, "with_df", None)
 
             if self.symmetry:
                 from pyscf import symm
@@ -97,12 +93,12 @@ class PYSCF:
             ci = mc.ci.copy()
 
             if isinstance(mc, CASCI):
-                if isinstance(ci, (list)):
+                if isinstance(ci, list):
                     self.reference = "ms-casci"
                 else:
                     self.reference = "casci"
             else:
-                if(hasattr(mc, 'weights') == True and isinstance(mc.ci, (list))):
+                if hasattr(mc, 'weights') and isinstance(mc.ci, list):
                     self.weights = mc.weights
                     self.reference = "sa-casscf"
                 else:
@@ -113,25 +109,17 @@ class PYSCF:
             if self.reference == "sa-casscf":
                 e_fzc = e_ref - e_cas
                 e_ref = mc.e_states
-                e_cas = []
-                for p in range(len(e_ref)):
-                    e_cas.append(e_ref[p]-e_fzc)
+                e_cas = [e - e_fzc for e in e_ref]
             elif self.reference in ("casscf", "casci"):
                 e_ref = [e_ref]
                 e_cas = [e_cas]
                 ci = [ci]
 
             if select_reference is not None:
-                e_ref_copy = []
-                e_cas_copy = []
-                ci_copy = []
-                for state in select_reference:
-                    e_ref_copy.append(e_ref[state-1])
-                    e_cas_copy.append(e_cas[state-1])
-                    ci_copy.append(ci[state-1])
-                e_ref = e_ref_copy
-                e_cas = e_cas_copy
-                ci = ci_copy
+                state_idx = [state-1 for state in select_reference]
+                e_ref = [e_ref[i] for i in state_idx]
+                e_cas = [e_cas[i] for i in state_idx]
+                ci = [ci[i] for i in state_idx]
                 log.info("\nReference states selected: %s" % str(select_reference))
 
             self.max_memory = mc.max_memory
@@ -156,10 +144,7 @@ class PYSCF:
             self.xmol = None
             self.contr_coeff = None
 
-            if getattr(mc, 'with_df', None):
-                self.reference_df = mc.with_df
-            else:
-                self.reference_df = None
+            self.reference_df = getattr(mc, "with_df", None)
 
             # Compute state-averaged 1-RDM with respect to the reference manifold
             ref_rdm1 = np.zeros((mc.ncas, mc.ncas))
@@ -265,7 +250,6 @@ class PYSCF:
         if self._einsum_backend is None:
             self._einsum_backend = np_helper.einsum_backend(self)
         return self._einsum_backend
-
 
     @property
     def with_df(self):
