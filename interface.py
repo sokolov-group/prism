@@ -236,8 +236,13 @@ class PYSCF:
         self.molden = molden
 
         # Einsum Backend
-        self.opt_einsum = bool(opt_einsum)
-        self.pytblis = bool(pytblis)
+        if not isinstance(opt_einsum, bool):
+            raise TypeError(f"opt_einsum must be bool, got {type(opt_einsum).__name__}")
+        if not isinstance(pytblis, bool):
+            raise TypeError(f"pytblis must be bool, got {type(pytblis).__name__}")
+
+        self.opt_einsum = opt_einsum
+        self.pytblis = pytblis
 
         self._einsum_backend = None
         self.einsum_type = "greedy"
