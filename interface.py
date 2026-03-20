@@ -246,6 +246,10 @@ class PYSCF:
         # Dipole moments
         self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
+        # Molden helper
+        from pyscf.tools import molden
+        self.molden = molden
+
         # Einsum Backend
         self.opt_einsum = bool(opt_einsum)
         self.pytblis = bool(pytblis)
@@ -262,9 +266,6 @@ class PYSCF:
             self._einsum_backend = np_helper.einsum_backend(self)
         return self._einsum_backend
 
-        # Molden helper
-        from pyscf.tools import molden
-        self.molden = molden
 
     @property
     def with_df(self):
