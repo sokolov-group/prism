@@ -158,8 +158,6 @@ def print_header(mr_adc):
     if mr_adc.e_cas_ci is not None:
         mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas)))
 
-    davidson_verbose = 6 if mr_adc.verbose > 3 else 3
-
 def compute_energy(mr_adc):
 
     # Define function for the matrix-vector product S^(-1/2) M S^(-1/2) vec
