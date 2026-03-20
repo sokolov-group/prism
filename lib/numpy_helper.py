@@ -64,7 +64,7 @@ except ImportError:
 def _compiled_opt_expr(subscripts, shapes, optimize):
     return _opt_einsum.contract_expression(subscripts, *shapes, optimize=optimize)
 
-def contract(self, subscripts, A, B, **kwargs):
+def contract(subscripts, A, B, backend, **kwargs):
     '''
     Perform tensor contraction using einsum notation
     C = alpha * einsum(subscripts, A, B) + beta * C
@@ -77,8 +77,6 @@ def contract(self, subscripts, A, B, **kwargs):
         out : ndarray, optional
             Output tensor to store the result.
     '''
-    EINSUM_BACKEND = self.einsum_backend
-
     idx_str = subscripts.replace(" ","")
 
     # Call numpy.asarray because A or B may be HDF5 Datasets
@@ -91,7 +89,7 @@ def contract(self, subscripts, A, B, **kwargs):
     #    expr = _compiled_opt_expr(idx_str, shapes, optimize)
     #    return expr(A, B, **kwargs)
 
-    if EINSUM_BACKEND == "pytblis":
+    if backend == "pytblis":
        return pytblis.contract(idx_str, A, B, **kwargs)
 
     # Linear algebra kwargs
@@ -176,7 +174,7 @@ def contract(self, subscripts, A, B, **kwargs):
     out_arr[...] = Cres
     return out
 
-def einsum(self, scripts, *tensors, **kwargs):
+def einsum(scripts, *tensors, backend, **kwargs):
     '''
     Perform a more efficient einsum via reshaping to a matrix multiply.
 
@@ -185,29 +183,26 @@ def einsum(self, scripts, *tensors, **kwargs):
     and appears only twice (i.e. no 'ij,ik,il->jkl'). The output indices must
     be explicitly specified (i.e. 'ij,j->i' and not 'ij,j').
     '''
-    EINSUM_BACKEND = self.einsum_backend
-
     subscripts = scripts.replace(" ","")
     tensors = tuple(asarray(t) for t in tensors)
 
     if len(tensors) <= 1 or '...' in subscripts:
         return _numpy_einsum(subscripts, *tensors, **kwargs)
 
-    #if EINSUM_BACKEND == "pytblis":
-    if EINSUM_BACKEND == "pytblis" and len(tensors) < 4:
+    if backend == "pytblis" and len(tensors) < 4:
         if kwargs.get("optimize") is True:
            kwargs["optimize"] = "optimal"
         return pytblis.einsum(subscripts, *tensors, **kwargs)
 
     optimize = kwargs.pop('optimize', True)
-    if EINSUM_BACKEND == "opt_einsum":
+    if backend == "opt_einsum":
         shapes = tuple(tuple(t.shape) for t in tensors)
         expr = _compiled_opt_expr(subscripts, shapes, optimize)
         return expr(*tensors)
 
     _contract = kwargs.pop('_contract', contract)
     if len(tensors) <= 2:
-        return _contract(self, subscripts, *tensors, **kwargs)
+        return _contract(subscripts, *tensors, backend=backend, **kwargs)
 
     _, contraction_list = _einsum_path(subscripts, *tensors, optimize=optimize, einsum_call=True)
 
@@ -221,7 +216,7 @@ def einsum(self, scripts, *tensors, **kwargs):
             inds, _, einsum_str, _, _ = contraction
         ops = [operands[i] for i in inds]
         if len(ops)==2:
-            result = _contract(self, einsum_str, *ops, **kwargs)
+            result = _contract(einsum_str, *ops, backend=backend, **kwargs)
         else:
             result = _numpy_einsum(einsum_str, *ops, **kwargs)
         operands = [op for i, op in enumerate(operands) if i not in inds]
@@ -241,7 +236,6 @@ def _analyze_indices(idx_str):
         permC
         shared
     '''
-
     # Split the strings into a list of idx char's
     try:
         idxA, idxBC = idx_str.split(",")
@@ -294,15 +288,3 @@ def _analyze_indices(idx_str):
     permC = [out_idx.index(i) for i in idxC]
 
     return idxA, idxB, idxC, orderA, orderB, permC, shared
-
-def set_einsum(PYSCF):
-    import types
-
-    if not hasattr(PYSCF, 'einsum_backend'):
-        raise AttributeError(
-            f"Expected object with 'einsum_backend' attribute, "
-            f"got {type(PYSCF).__name__}"
-        )
-    PYSCF.einsum = types.MethodType(einsum, PYSCF)
-    PYSCF.contract = types.MethodType(contract, PYSCF)
-

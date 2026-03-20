@@ -248,13 +248,17 @@ class PYSCF:
         self.einsum_type = "greedy"
         self.dot = np.dot
 
-        np_helper.set_einsum(self)
-
     @property
     def einsum_backend(self):
         if self._einsum_backend is None:
             self._einsum_backend = np_helper.einsum_backend(self.opt_einsum, self.pytblis, self.log)
         return self._einsum_backend
+
+    def einsum(self, scripts, *tensors, **kwargs):
+        return np_helper.einsum(scripts, *tensors, backend=self.einsum_backend, **kwargs)
+
+    def contract(self, subscripts, A, B, **kwargs):
+        return np_helper.contract(subscripts, A, B, backend=self.einsum_backend, **kwargs)
 
     @property
     def with_df(self):
