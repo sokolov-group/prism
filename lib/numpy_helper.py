@@ -5,7 +5,6 @@ Extension to numpy
 import numpy
 from functools import lru_cache
 
-dot = numpy.dot
 asarray = numpy.asarray
 
 ##TODO: create attribute for user defined flop threshold
@@ -49,15 +48,15 @@ def einsum_backend(opt_einsum, pytblis, log):
 
 # Import backend
 try:
-    import pytblis
-except Exception:
-    import opt_einsum
-_numpy_einsum = numpy.einsum
+    import pytblis as _pytblis
+except ImportError:
+    _pytblis = None
 
 try:
     import opt_einsum as _opt_einsum
     _einsum_path = getattr(_opt_einsum, "contract_path", numpy.einsum_path)
 except ImportError:
+    _opt_einsum = None
     _einsum_path = getattr(numpy, "einsum_path", None)
 
 @lru_cache(maxsize=256)
@@ -68,7 +67,6 @@ def contract(subscripts, A, B, backend, **kwargs):
     '''
     Perform tensor contraction using einsum notation
     C = alpha * einsum(subscripts, A, B) + beta * C
-
     Kwargs:
         alpha : scalar, optional
             Default value is 1.
@@ -90,7 +88,7 @@ def contract(subscripts, A, B, backend, **kwargs):
     #    return expr(A, B, **kwargs)
 
     if backend == "pytblis":
-       return pytblis.contract(idx_str, A, B, **kwargs)
+       return _pytblis.contract(idx_str, A, B, **kwargs)
 
     # Linear algebra kwargs
     alpha = kwargs.pop('alpha', 1)
@@ -99,12 +97,12 @@ def contract(subscripts, A, B, backend, **kwargs):
 
     # check: binary einsum with an explicit output?
     if "->" not in idx_str or idx_str.count(",") != 1:
-        return _numpy_einsum(idx_str, A, B, **kwargs)
+        return numpy.einsum(idx_str, A, B, **kwargs)
 
     # check: valid GEMM contraction?
     analysis = _analyze_indices(idx_str)
     if analysis is None:
-        return _numpy_einsum(idx_str, A, B, **kwargs)
+        return numpy.einsum(idx_str, A, B, **kwargs)
 
     idxA, idxB, idxC, orderA, orderB, permC, shared = analysis
 
@@ -119,7 +117,7 @@ def contract(subscripts, A, B, backend, **kwargs):
 
     # check: dimensions valid?
     if len(idxA) != A.ndim or len(idxB) != B.ndim:
-        return _numpy_einsum(idx_str, A, B, **kwargs)
+        return numpy.einsum(idx_str, A, B, **kwargs)
 
     shapeA = dict(zip(idxA, A.shape))
     shapeB = dict(zip(idxB, B.shape))
@@ -139,7 +137,7 @@ def contract(subscripts, A, B, backend, **kwargs):
 
     # check: FLOP threshold met?
     if flops < FLOP_THRESHOLD:
-        return _numpy_einsum(idx_str, A, B, **kwargs)
+        return numpy.einsum(idx_str, A, B, **kwargs)
 
     At = A.transpose(orderA).reshape(-1, inner_dim)
     Bt = B.transpose(orderB).reshape(inner_dim, -1)
@@ -149,7 +147,7 @@ def contract(subscripts, A, B, backend, **kwargs):
     if not Bt.flags.c_contiguous:
         Bt = asarray(Bt, order="C")
 
-    Cmat = dot(At, Bt)
+    Cmat = numpy.dot(At, Bt)
 
     out_shape = (
         [shapeA[i] for i in idxA if i not in shared] +
@@ -187,12 +185,12 @@ def einsum(scripts, *tensors, backend, **kwargs):
     tensors = tuple(asarray(t) for t in tensors)
 
     if len(tensors) <= 1 or '...' in subscripts:
-        return _numpy_einsum(subscripts, *tensors, **kwargs)
+        return numpy.einsum(subscripts, *tensors, **kwargs)
 
     if backend == "pytblis" and len(tensors) < 4:
         if kwargs.get("optimize") is True:
            kwargs["optimize"] = "optimal"
-        return pytblis.einsum(subscripts, *tensors, **kwargs)
+        return _pytblis.einsum(subscripts, *tensors, **kwargs)
 
     optimize = kwargs.pop('optimize', True)
     if backend == "opt_einsum":
@@ -218,7 +216,7 @@ def einsum(scripts, *tensors, backend, **kwargs):
         if len(ops)==2:
             result = _contract(einsum_str, *ops, backend=backend, **kwargs)
         else:
-            result = _numpy_einsum(einsum_str, *ops, **kwargs)
+            result = numpy.einsum(einsum_str, *ops, **kwargs)
         operands = [op for i, op in enumerate(operands) if i not in inds]
         operands.append(result)
         del ops, result
