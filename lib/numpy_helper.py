@@ -160,7 +160,7 @@ def contract(subscripts, A, B, backend, **kwargs):
 
     # alpha/beta/out semantics
     if out is None:
-        return Cres * alpha if alpha != 1 else Cres
+        return Cres * alpha if alpha != 1 else Cres.copy()
 
     # out provided
     out_arr = asarray(out)
@@ -169,7 +169,7 @@ def contract(subscripts, A, B, backend, **kwargs):
         numpy.add(Cres, out_arr * beta, out=Cres)
     # assign to output
     out_arr[...] = Cres
-    return out
+    return out_arr
 
 def einsum(scripts, *tensors, backend, **kwargs):
     '''
@@ -186,7 +186,7 @@ def einsum(scripts, *tensors, backend, **kwargs):
     if len(tensors) <= 1 or '...' in subscripts:
         return numpy.einsum(subscripts, *tensors, **kwargs)
 
-    if backend == "pytblis" and len(tensors) < 4:
+    if backend == "pytblis":
         if kwargs.get("optimize") is True:
            kwargs["optimize"] = "optimal"
         return _pytblis.einsum(subscripts, *tensors, **kwargs)
