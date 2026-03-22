@@ -80,12 +80,11 @@ def contract(subscripts, A, B, backend, **kwargs):
     # Call numpy.asarray because A or B may be HDF5 Datasets
     A, B = asarray(A), asarray(B)
 
-    #optimize = kwargs.pop('optimize', True)
-    #if EINSUM_BACKEND == "opt_einsum":
-    #    # compile/reuse cache expression keyed by shapes + optimize
-    #    shapes = (tuple(A.shape), tuple(B.shape))
-    #    expr = _compiled_opt_expr(idx_str, shapes, optimize)
-    #    return expr(A, B, **kwargs)
+    if backend == "opt_einsum":
+        optimize = kwargs.pop('optimize', True)
+        shapes = (tuple(A.shape), tuple(B.shape))
+        expr = _compiled_opt_expr(idx_str, shapes, optimize)
+        return expr(A, B, **kwargs)
 
     if backend == "pytblis":
        return _pytblis.contract(idx_str, A, B, **kwargs)
