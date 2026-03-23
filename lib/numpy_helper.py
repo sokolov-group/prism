@@ -59,7 +59,7 @@ except ImportError:
     _opt_einsum = None
     _einsum_path = getattr(numpy, "einsum_path", None)
 
-@lru_cache(maxsize=256)
+@lru_cache(maxsize=None)
 def _compiled_opt_expr(subscripts, shapes, optimize):
     return _opt_einsum.contract_expression(subscripts, *shapes, optimize=optimize)
 
