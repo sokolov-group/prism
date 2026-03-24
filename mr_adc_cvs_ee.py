@@ -24569,6 +24569,9 @@ def compute_preconditioner(mr_adc):
         ## Overlap Matrices
         S12_ca_caaa = mr_adc.S12.ca_caaa
 
+        ## Indices
+        aa_tril_ind = mr_adc.h1.aa_tril_ind 
+
         ## Intermediates
         #ints = mr_adc_intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
         #INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10 = ints
@@ -25137,7 +25140,7 @@ def compute_preconditioner(mr_adc):
         precond_ce_caea__aa_abab -= 1/2 * einsum('Xxyz,AA,II,Yyxz->IAXY', v_aaaa, np.identity(nextern), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
         precond_ce_caea__aa_abab += 1/2 * einsum('Yxyz,AA,II,Xyxz->IAXY', v_aaaa, np.identity(nextern), np.identity(ncvs), rdm_ccaa, optimize = einsum_type)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 4)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput2 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.aaee v2e.aeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -25167,7 +25170,7 @@ def compute_preconditioner(mr_adc):
             del(v_aaee, v_aeea)
             mr_adc.log.timer_debug("computing v2e.aaee v2e.aeea", *cput2)
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 4)
+        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput2 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.xxee v2e.xeex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -25296,22 +25299,16 @@ def compute_preconditioner(mr_adc):
         ho_ce_caea = mr_adc.h_orth.ce_caea  
         ho_ca_caaa = mr_adc.h_orth.ca_caaa
 
-        # Fill preconditioner matrix 
         ## CA preconditioner 
         precond_ca = compute_preconditioner__CA(mr_adc)
-
         precond[ho_ca_caaa] = precond_ca.reshape(-1)
 
         ## CE preconditioner
         precond_ce = compute_preconditioner__CE(mr_adc)
-
         precond[ho_ce_caea] = precond_ce.reshape(-1)
 
     ## Second-order manifolds
     elif mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
-
-        ## Indices
-        aa_tril_ind = mr_adc.h1.aa_tril_ind 
 
         ## Excitation manifolds
         ho_ccaa = mr_adc.h_orth.ccaa
@@ -25361,7 +25358,6 @@ def compute_preconditioner(mr_adc):
 
             ho_cvee = mr_adc.h_orth.cvee 
 
-            # Compute preconditioner diagonal blocks
             ## CVAA preconditioner
             if mr_adc.h_orth.dim_cvaa:
                 precond_cvaa = compute_preconditioner__CVAA(mr_adc)
@@ -25426,7 +25422,6 @@ def define_effective_hamiltonian(mr_adc):
 
     return apply_M
 
-## TODO: add parameters to deal with orbital and/or electron counts equaling 0
 def apply_S_12(mr_adc, X, transpose = False):
 
     # Einsum definition from kernel
@@ -25438,11 +25433,6 @@ def apply_S_12(mr_adc, X, transpose = False):
     nval    = mr_adc.nval
     ncas    = mr_adc.ncas
     nextern = mr_adc.nextern
-    nelecas = mr_adc.ref_nelecas
-    if isinstance(nelecas, (list)):
-        nelecas = sum(nelecas[0])
-    else:
-        nelecas = sum(nelecas)
 
     # Non-orthogonal dimension indices
     ce = mr_adc.h0.ce
@@ -25462,8 +25452,11 @@ def apply_S_12(mr_adc, X, transpose = False):
 
         # Transformation to orthogonal basis
         if transpose:
-            if (X.shape[0] != mr_adc.h0.dim):
-                raise Exception("Dimensions do not match when applying S_12 transpose")
+            if X.shape[0] != mr_adc.h0.dim:
+                raise ValueError(
+                    f"Shape mismatch in S_12 transpose: "
+                    f"expected X.shape[0] == {mr_adc.h0.dim}, got {X.shape[0]}"
+                )
 
             Xt = np.zeros(mr_adc.h_orth.dim)
 
@@ -25476,8 +25469,11 @@ def apply_S_12(mr_adc, X, transpose = False):
 
         # Transformation to non-orthogonal basis
         else:
-            if (X.shape[0] != (mr_adc.h_orth.dim)):
-                raise Exception(f"Dimensions do not match when applying S_12 (expected X shape to be {mr_adc.h_orth.dim}, got {X.shape[0]})")
+            if X.shape[0] != mr_adc.h_orth.dim:
+                raise ValueError(
+                    f"Shape mismatch in S_12 transpose: "
+                    f"expected X.shape[0] == {mr_adc.h_orth.dim}, got {X.shape[0]}"
+                )
 
             Xt = np.zeros(mr_adc.h0.dim)
 
@@ -25557,10 +25553,13 @@ def apply_S_12(mr_adc, X, transpose = False):
         s_bba = f_aaa
         f_bba = s_bba + dim_XYZ ##bba -> abab
 
-       # Transformation to orthonormal basis
+        # Transformation to orthonormal basis
         if transpose:
-            if (X.shape[0] != (mr_adc.h0.dim + mr_adc.h1.dim)):
-                raise Exception("Dimensions do not match when applying S_12 transpose")
+            if X.shape[0] != mr_adc.h0.dim + mr_adc.h1.dim:
+                raise ValueError(
+                    f"Shape mismatch in S_12 transpose: "
+                    f"expected X.shape[0] == {mr_adc.h0.dim + mr_adc.h1.dim}, got {X.shape[0]}"
+                )
 
             Xt = np.zeros(mr_adc.h_orth.dim)
            
@@ -25613,7 +25612,6 @@ def apply_S_12(mr_adc, X, transpose = False):
 
             # CVEA
             if nval > 0 and ncas > 0 and nextern > 0:
-
                 temp = X[cvea__abab].reshape(-1, nextern, S12_ccea.shape[0]).copy()
                 Xt[ho_cvea__abab] = np.einsum("IAX,XP->IPA", temp, S12_ccea).reshape(-1).copy()
 
@@ -25626,8 +25624,11 @@ def apply_S_12(mr_adc, X, transpose = False):
 
         # Transformation to non-orthogonal basis
         else:
-            if (X.shape[0] != (mr_adc.h_orth.dim)):
-                raise Exception("Dimensions do not match when applying S_12")
+            if X.shape[0] != mr_adc.h_orth.dim:
+                raise ValueError(
+                    f"Shape mismatch in S_12 transpose: "
+                    f"expected X.shape[0] == {mr_adc.h_orth.dim}, got {X.shape[0]}"
+                )
 
             Xt = np.zeros(mr_adc.h0.dim + mr_adc.h1.dim)
 
@@ -25655,7 +25656,7 @@ def apply_S_12(mr_adc, X, transpose = False):
                 temp = X[ho_ce_caea].reshape(ncvs, S12_ce_caea.shape[1], nextern).copy()
                 temp = np.einsum("IPA,XP->IAX", temp, S12_ce_caea)
                 Xt[ce] = temp[:, :, 0].reshape(-1).copy()
-                if ncas >  0:
+                if ncas > 0:
                     Xt[caea__aaaa] = temp[:, :, s_aa:f_aa].reshape(ncvs, nextern, ncas, ncas).transpose(0,2,1,3).reshape(-1).copy()
                     Xt[caea__abab] = temp[:, :, s_bb:f_bb].reshape(ncvs, nextern, ncas, ncas).transpose(0,2,1,3).reshape(-1).copy()
                     Xt[caea__baab] = temp[:, :, s_ab:f_ab].reshape(ncvs, nextern, ncas, ncas).transpose(0,2,1,3).reshape(-1).copy()
@@ -25685,7 +25686,7 @@ def apply_S_12(mr_adc, X, transpose = False):
 
                 temp = X[ho_cvea__baab].reshape(-1, S12_ccea.shape[1], nextern).copy()
                 Xt[cvea__baab] = np.einsum("IPA,XP->IAX", temp, S12_ccea).reshape(-1)
-               
+
             # CVEE
             if nval > 0 and nextern > 0:
                 Xt[cvee] = X[ho_cvee].copy()
@@ -25702,11 +25703,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
     nval = mr_adc.nval
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
-    nelecas = mr_adc.ref_nelecas
-    if isinstance(nelecas, (list)):
-        nelecas = sum(nelecas[0])
-    else:
-        nelecas = sum(nelecas)
 
     ## h0 <- h1 coupling contributions
     # CA <- CCAA
@@ -29908,10 +29904,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             - e_cvs[None, :, None, None]
         )
 
-        #sigma_KLCD  = einsum('KLCD,C->KLCD', X, e_extern, optimize = einsum_type)
-        #sigma_KLCD += einsum('KLCD,D->KLCD', X, e_extern, optimize = einsum_type)
-        #sigma_KLCD -= einsum('KLCD,K->KLCD', X, e_cvs, optimize = einsum_type)
-        #sigma_KLCD -= einsum('KLCD,L->KLCD', X, e_cvs, optimize = einsum_type)
         sigma[ccee] += np.ascontiguousarray(sigma_KLCD).reshape(-1) 
 
         mr_adc.log.timer_debug("computing sigma H0 h1 CCEE", *cput1)
@@ -29937,10 +29929,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             - e_val[None, :, None, None]
         )
 
-        #sigma_KLCD  = einsum('KLCD,C->KLCD', X, e_extern, optimize = einsum_type)
-        #sigma_KLCD += einsum('KLCD,D->KLCD', X, e_extern, optimize = einsum_type)
-        #sigma_KLCD -= einsum('KLCD,K->KLCD', X, e_cvs, optimize = einsum_type)
-        #sigma_KLCD -= einsum('KLCD,L->KLCD', X, e_val, optimize = einsum_type)
         sigma[cvee] += np.ascontiguousarray(sigma_KLCD).reshape(-1) 
 
         mr_adc.log.timer_debug("computing sigma H0 h1 CVEE", *cput1)
@@ -32639,16 +32627,9 @@ def compute_trans_moments(mr_adc, U):
     nval    = mr_adc.nval
     ncas    = mr_adc.ncas
     nextern = mr_adc.nextern
-    nelecas = mr_adc.ref_nelecas
-    if isinstance(nelecas, (list)):
-        nelecas = sum(nelecas[0])
-    else:
-        nelecas = sum(nelecas)
 
     nmo     = mr_adc.nmo
     nroots  = mr_adc.nroots
-
-    #mr_adc.verbose = 6
 
     # Dimensions
     s_c = 0
