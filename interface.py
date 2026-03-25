@@ -152,6 +152,9 @@ class PYSCF:
             self.xmol = None
             self.contr_coeff = None
 
+            if hasattr(mf, "with_solvent"):
+                self.v_pe = mf.with_solvent.v
+                
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df
             else:

@@ -110,6 +110,9 @@ class NEVPT:
         self.gtensor_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)
         self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
+        
+        # For PE
+        self.pe = None
 
     def _make_method_instance(self):
         cls_map = {

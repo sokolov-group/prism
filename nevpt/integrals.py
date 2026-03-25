@@ -22,6 +22,7 @@ from functools import reduce
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
+from prism.interface import PYSCF
 
 def transform_integrals(nevpt):
 
@@ -42,8 +43,12 @@ def transform_integrals_1e(nevpt):
 
     mo = nevpt.mo
 
+    if nevpt.pe is not None:
+        v_pe = nevpt.interface.mf.with_solvent.v
+        nevpt.interface.h1e_ao += v_pe
+        
     nevpt.h1e = reduce(np.dot, (mo.T, nevpt.interface.h1e_ao, mo))
-
+    
     nevpt.log.timer("transforming 1e integrals", *cput0)
 
 def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4, compacted=False):
