@@ -22,6 +22,7 @@ import numpy as np
 
 from prism.libsoc import general_somf
 from prism.libsoc import magnetic
+import pyscf.dft.LebedevGrid
 
 def state_interaction_soc(method):
 
@@ -180,19 +181,84 @@ def compute_magnetic_properties(method, rdm_sf):
     S = []
     for i in range(nstate):
         S.append(float((method.spin_mult[i] - 1) / 2))
-    method.log.info("\nCalculating g-tensor...")
 
-    target_state = method.gtensor_target_state
-    if isinstance(target_state, int):
-        target_state = [target_state]
+    #g-tensor
+    if method.gtensor:
+        method.log.info("\nCalculating g-tensor...")
 
-    g_factor = []
-    g_evector = []
-    for I in target_state:
-        g_fac, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.gtensor_origin_type)
-        g_factor.append(g_fac)
-        g_evector.append(g_evec)
+        target_state = method.gtensor_target_state
+        if isinstance(target_state, int):
+            target_state = [target_state]
 
-    method.properties["g-factors"] = g_factor
-    method.properties["g-eigenvectors"] = g_evector
+        g_factor = []
+        g_evector = []
+        for I in target_state:
+            g_fac, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.gtensor_origin_type)
+            g_factor.append(g_fac)
+            g_evector.append(g_evec)
+
+        method.properties["g-factors"] = g_factor
+        method.properties["g-eigenvectors"] = g_evector
+
+    #magnetic susceptibility
+    if method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor:
+        method.log.info("\nCalculating magnetic susceptibility or magnetization...")
+
+        en_soc = method.e_tot.copy()
+        h_evec_soc = method.h_evec_soc
+
+        Mu_sf = magnetic.mag_dip(method.interface, rdm_sf, S, origin_type = 'charge')
+        Mu = np.einsum('ai,kib,bj->kaj',np.conj(h_evec_soc).T, Mu_sf, h_evec_soc)
+
+        # Parameter
+
+  
+        h_s =method.step_h_s
+        print("h_s=",h_s,"T")
+
+
+        #Powder data information
+        print("Import LebedevGrid in pyscf...")
+        Powder_data_xyzw = pyscf.dft.LebedevGrid.MakeAngularGrid_266()
+        print("Number of LebedevGrid point:",len(Powder_data_xyzw))
+
+
+        ###Powder magnetization
+        if method.mag_av:
+            Bs_list = method.Bs_powder_M
+            T_list  = method.T_powder_M
+            M_av_all = magnetic.Powder_magnetization(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+            
+            method.properties["M_av"] = M_av_all
+
+
+        ###Powder susceptibility
+        if method.sus_av:
+            Bs_list = method.Bs_powder_chi
+            T_list  = method.T_powder_chi
+            chi_av_all = magnetic.Powder_susceptibility(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+           
+            method.properties["chi_av"] = chi_av_all
+
+
+
+        ###Vector magnetization
+        if method.mag_vec:
+            B_vec = method.B_vec_M
+            Bs_list = method.Bs_vec_M
+            T_list  = method.T_vec_M
+            M_xyz_all = magnetic.vector_magnetization(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
+
+            method.properties["M_xyz_all"] = M_xyz_all
+
+
+        ###Tensor  susceptibility
+        if method.sus_tensor:
+            B_vec = method.B_vec_chi
+            Bs_list = method.Bs_vec_chi
+            T_list  = method.T_vec_chi
+            chi_T_eval_all = magnetic.tensor_susceptibility(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
+
+            method.properties["chi_T_eval_all"] = chi_T_eval_all
+
 

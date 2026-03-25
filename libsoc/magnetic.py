@@ -180,3 +180,370 @@ def gtensor(interface, evec_soc, rdm_sf, S, target_index = 1, origin_type = 'cha
     G_sq_en = np.sqrt(G_en)
 
     return G_sq_en, G_evec
+
+
+def Powder_magnetization(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_s):
+    
+    M_av_all = np.zeros((len(T_list),len(Bs_list)))
+    for I in range(len(T_list)):
+        T = T_list[I]
+        for K in range(len(Bs_list)):
+            Bs = Bs_list[K]
+            M_av = 0
+            for i in range(len(powder_data)):
+                B_vec = powder_data[i,0:3]
+                B_vec = np.reshape(B_vec,3)
+                weight = powder_data[i,3]
+                #print(B_vec)
+                M_av += magnetization(interface,Bs,B_vec,en_soc,Mu,T,h_s) * weight
+                
+            M_av = float(M_av)
+            M_av_all[I,K] =  M_av
+
+    print("\nPowder_magnetization(Bohr magneton)" )
+    print("-----------------------------------")
+    print("TEMP(K)   B(T)    M(Bohr magneton)")
+    print("-----------------------------------")
+    
+    for  I in range(len(T_list)):
+        T = T_list[I]
+        for K in range(len(Bs_list)):
+            Bs = Bs_list[K]
+            print("%6.2f  %8.2f %14.6f " % (T, Bs, M_av_all[I,K]))
+    
+    return M_av_all
+
+
+def Powder_susceptibility(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_s):
+    
+    chi_av_all= np.zeros((len(T_list),len(Bs_list)))
+    for I in range(len(T_list)):
+        T = T_list[I]
+        for K in range(len(Bs_list)):
+            Bs = Bs_list[K]
+            chi_av = 0
+            for i in range(len(powder_data)):
+                B_vec1  = powder_data[i,0:3]
+                B_vec1  = np.reshape(B_vec1,3)
+                weight = powder_data[i,3]
+                #M_av += magnetization(H,B_vec,en_soc,J,T) * weight[i]
+                chi_av += susceptibility(interface,Bs,B_vec1,en_soc,Mu,T,h_s,dB_k=B_vec1) * weight
+            
+            chi_av_all[I,K] = chi_av
+
+    
+    print("\nPowder_susceptibility(cm3/mol)" )
+    print("--------------------------------------------")
+    print("TEMP(K)   B(T)         X_av          X_av*T")
+    print("--------------------------------------------")
+    
+    for  I in range(len(T_list)):
+        T = T_list[I]
+        for K in range(len(Bs_list)):
+            Bs = Bs_list[K]
+            print("%6.2f  %8.2f %14.6f %14.6f" % (T, Bs, chi_av_all[I,K],chi_av_all[I,K]*T))
+
+    return chi_av_all
+
+
+def vector_magnetization(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
+    B_unit = np.eye(3)
+    M_xyz_all= np.zeros((len(T_list),len(Bs_list),3))
+    for I in range(len(T_list)):
+        T = T_list[I]
+        for K in range(len(Bs_list)):
+            Bs = Bs_list[K]
+            M_xyz_all[I,K,0] = magnetization(interface,Bs,B_vec,en_soc,Mu,T,h_s,dB_k=B_unit[0])
+            M_xyz_all[I,K,1] = magnetization(interface,Bs,B_vec,en_soc,Mu,T,h_s,dB_k=B_unit[1])
+            M_xyz_all[I,K,2] = magnetization(interface,Bs,B_vec,en_soc,Mu,T,h_s,dB_k=B_unit[2])
+
+    
+    print("\nMagnetization vector (Bohr magneton) in B vector=",B_vec)
+    print("--------------------------------------------------------")
+    print("TEMP(K)   B(T)          Mx           My           Mz")
+    print("--------------------------------------------------------")
+    
+    for  I in range(len(T_list)):
+        T = T_list[I]
+        for K in range(len(Bs_list)):
+            Bs = Bs_list[K]
+            print("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, M_xyz_all[I,K,0],M_xyz_all[I,K,1],M_xyz_all[I,K,2]))
+
+    return M_xyz_all
+
+
+def tensor_susceptibility(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
+    print("Susceptibility tensor X*T (cm3/mol) in B vector=", B_vec)
+    B_unit = np.eye(3)
+    chi_T_eval_all= np.zeros((len(T_list),len(Bs_list),3))
+    for I in range(len(T_list)):
+        T = T_list[I]
+        for K in range(len(Bs_list)):
+            Bs = Bs_list[K]
+            chi = np.zeros((3,3))
+            for k in range(3):
+                for l in range(3):
+                    if k==l:
+                        B_k=B_unit[k]
+                        chi[k,k]= susceptibility(interface,Bs,B_vec,en_soc,Mu,T,h_s,dB_k=B_k) 
+                    else:
+                        B_k=B_unit[k]
+                        B_l=B_unit[l]
+                        chi[k,l]= susceptibility(interface,Bs,B_vec,en_soc,Mu,T,h_s,dB_k=B_k,dB_l=B_l) 
+
+            chi_T = chi * T
+            print("TEMP(K)=",T," Bs(T)=",Bs)
+            print(chi_T)
+            chi_T_eval, chi_T_evec = np.linalg.eigh(chi_T)
+            chi_T_eval_all[I,K] = chi_T_eval
+
+    print("\nEigenvalue of Susceptibility tensor * T (cm3K/mol)" )
+    print("--------------------------------------------------------")
+    print("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
+    print("--------------------------------------------------------")
+    
+    for  I in range(len(T_list)):
+        T = T_list[I]
+        for K in range(len(Bs_list)):
+            Bs = Bs_list[K]
+            print("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, chi_T_eval_all[I,K,0],chi_T_eval_all[I,K,1],chi_T_eval_all[I,K,2]))
+
+    return chi_T_eval_all
+
+    
+
+
+
+
+
+
+def magnetization(interface,B_s,B_vec,en_soc,J,T,h_s,dB_k=None):
+    
+    kb = interface.kb 
+    mu_B = interface.mu_B_Eh
+
+    n_micro_states = len(en_soc)
+    B_vec = B_vec / np.linalg.norm(B_vec)
+    if dB_k is None:
+        dB_k = B_vec
+    else:
+        dB_k = dB_k / np.linalg.norm(dB_k)
+    
+    #print("B_vec=",B_vec)
+    #print("dB_k=",dB_k)
+
+    #Set zero pint energy
+    zero = en_soc[0]
+    for i in range(n_micro_states):
+        en_soc[i] = (en_soc[i] - zero)
+
+
+    B_svec = B_s * B_vec
+    en_ze, evec_ze =  E_ze(B_svec,en_soc,J, mu_B)
+
+
+    #B1 = [i * (B_s + h_s) for i in B_vec]
+    #B2 = [i * (B_s - h_s) for i in B_vec]
+
+    #B1 =[]
+    #B2 =[]
+    #for i in B_vec:
+    #    B1.append(i * (B_s + h_s))
+    #    B2.append(i * (B_s - h_s))
+    B1 = B_svec + dB_k * h_s
+    B2 = B_svec - dB_k * h_s
+    #print("B1=",B1)
+    #print("B2=",B2)
+    '''
+    A1 = E_ze(B+h,en_soc,M)
+    A2 = E_ze(B-h,en_soc,M)
+    A3 = E_ze(B+2*h,en_soc,M)
+    A4 = E_ze(B-2*h,en_soc,M)
+    dE = np.zeros(n_micro_states)
+    for i in range(n_micro_states):
+        dE[i] =  4 * ( A1[i] - A2[i] ) / (2*h_s) 
+        dE[i] -=  ( A3[i] - A4[i]) / (4*h_s) 
+        dE[i] = dE[i] /3
+        dE[i] = (A1[i]-A2[i]) / (2*h_s)
+    print(dE)
+    '''
+    A1, evec_A1 = E_ze(B1,en_soc,J, mu_B)
+    A2, evec_A2 = E_ze(B2,en_soc,J, mu_B)
+    
+    dE = np.zeros(n_micro_states)
+    for i in range(n_micro_states):
+        dE[i] = (A1[i]-A2[i]) / (2*h_s)
+    #partial function
+    Z = partial_function(en_ze,T, kb)
+    
+    MM=0
+    for i in range(n_micro_states):
+        MM -= dE[i] * np.exp(-(en_ze[i])/(T*kb))/Z / mu_B
+    
+
+    #E1, evec_1 = E_ze(B1,en_soc,J,mu_B)
+    #E2, evec_2 = E_ze(B2,en_soc,J,mu_B)
+    #
+    #Z1 = partial_function(E1,T,kb)
+    #Z2 = partial_function(E2,T,kb)
+    #
+    #lnZ1 = np.log(Z1)
+    #lnZ2 = np.log(Z2)
+    #
+    #MM = kb * T * (lnZ1 - lnZ2)/(2*h_s) / mu_B
+
+    return MM #in Bohr magneton unit
+    
+
+    
+def susceptibility(interface,B_s,B_vec1,en_soc,J,T,h_s,dB_k=None,dB_l=None):
+
+    kb = interface.kb 
+    mu_B_Eh = interface.mu_B_Eh
+    mu_B_erg = interface.mu_B_erg
+    NA = interface.NA
+    T_to_G = interface.T_to_G
+
+    B_vec1 = B_vec1 / np.linalg.norm(B_vec1)
+    dB_k = dB_k / np.linalg.norm(dB_k)
+
+    n_micro_states = len(en_soc)
+    B_svec1 = B_s * B_vec1
+    en_ze, evec_ze =  E_ze(B_svec1,en_soc,J, mu_B_Eh)
+
+    #h=np.array([h_s,0,0])
+
+    #B1 = [i * (B_s + h_s) for i in B_vec]
+    #B2 = [i * (B_s - h_s) for i in B_vec]
+
+
+    #Set zero pint energy
+    zero = en_soc[0]
+    for i in range(n_micro_states):
+        en_soc[i] = (en_soc[i] - zero)
+
+    #same direction
+    if dB_l is None:
+        B1 =[]
+        B2 =[]
+        B3 =[]
+        #for i in dB_k:
+        #    B1.append(i * (B_s + h_s))
+        #    B2.append(i * B_s)
+        #    B3.append(i * (B_s - h_s))
+        B1 = B_svec1 + dB_k * h_s
+        B2 = B_svec1 
+        B3 = B_svec1 - dB_k * h_s
+        
+        #for i in range(3):
+        #    B1.append(B_svec1[i] + dB_k[i]*h_s )
+        #    B2.append(B_svec1[i])
+        #    B3.append(B_svec1[i]  - dB_k[i]*h_s)
+    
+        #print("B1=",B1)
+        #print("B2=",B2)
+        #print("B3=",B3)
+
+    
+        #print(en_soc)
+        E_ze1, evec_ze1 = E_ze(B1,en_soc,J, mu_B_Eh)  #* 219474.63136314
+        E_ze2, evec_ze2 = E_ze(B2,en_soc,J, mu_B_Eh)  #* 219474.63136314
+        E_ze3, evec_ze3 = E_ze(B3,en_soc,J, mu_B_Eh)  #* 219474.63136314
+
+        Z1 = partial_function(E_ze1,T, kb)
+        Z2 = partial_function(E_ze2,T, kb)
+        Z3 = partial_function(E_ze3,T, kb)
+
+        lnZ1 = np.log(Z1)
+        lnZ2 = np.log(Z2)
+        lnZ3 = np.log(Z3)
+
+        d2lnZ = (lnZ1-2*lnZ2+lnZ3)/(h_s**2)
+    
+        chi = kb * T * d2lnZ  / mu_B_Eh * mu_B_erg * NA / T_to_G
+
+        #chi_T = chi * T
+        #print("H=",B_s)
+        #print("chi_T=",chi_T)
+
+        #dlnZdH = (lnZ1 - lnZ3)/(2*h_s)
+        #test = kb * T * dlnZdH * 27.2113862459817/5.7883817982e-5
+        #print(test)
+        #dlnZdH = (lnZ1 - lnZ3)/(2*h_s)
+        #k_b =  scipy.constants.k * 2.294e+17 # 0.69503877
+        #B_2 = 4.66864374e-5*10000
+        #test = k_b * T * dlnZdH * 27.2113862459817/5.7883817982e-5
+        ##test = k_b * T * dlnZdH/B_2 # * 27.2113862459817/5.7883817982e-5
+        #print("test=",test)
+    else:
+        B1 =[]
+        B2 =[]
+        B3 =[]
+        B4 =[]
+        #for i in dB_k:
+        #    B1.append(i * (B_s + h_s))
+        #    B2.append(i * B_s)
+        #    B3.append(i * (B_s - h_s))
+        
+        B1 = B_svec1 + dB_k*h_s + dB_l*h_s
+        B2 = B_svec1 + dB_k*h_s - dB_l*h_s
+        B3 = B_svec1 - dB_k*h_s + dB_l*h_s
+        B4 = B_svec1 - dB_k*h_s - dB_l*h_s
+
+        E_ze1, evec_ze1 = E_ze(B1,en_soc,J, mu_B_Eh)  #* 219474.63136314
+        E_ze2, evec_ze2 = E_ze(B2,en_soc,J, mu_B_Eh)  #* 219474.63136314
+        E_ze3, evec_ze3 = E_ze(B3,en_soc,J, mu_B_Eh)  #* 219474.63136314
+        E_ze4, evec_ze4 = E_ze(B4,en_soc,J, mu_B_Eh)  #* 219474.63136314
+
+        Z1 = partial_function(E_ze1,T,kb)
+        Z2 = partial_function(E_ze2,T,kb)
+        Z3 = partial_function(E_ze3,T,kb)
+        Z4 = partial_function(E_ze4,T,kb)
+        
+
+        lnZ1 = np.log(Z1)
+        lnZ2 = np.log(Z2)
+        lnZ3 = np.log(Z3)
+        lnZ4 = np.log(Z4)
+
+        d2lnZ = (lnZ1 - lnZ2 - lnZ3 + lnZ4)/(4*h_s**2)
+    
+        chi = kb * T * d2lnZ   / mu_B_Eh * mu_B_erg * NA / T_to_G 
+
+
+
+
+
+
+    return chi #cm3/mole
+
+ 
+
+    
+
+
+
+
+
+def E_ze(B,en_soc,J,mu_B):
+    B = np.array(B) 
+    #B = B /10000 #Gauss to Telsa
+    B = B *mu_B #5.7883817982e-5/27.2113862459817#*2.14170097E-6# 2.14170097E-6=5.788e-5 (eV/T) * 0.0367493 (Eh/eV)               #/ (2.35051742e+5 ) Telsa to atomic unit from book
+    H0 = np.diag(en_soc)
+    Hze = np.einsum('k,kij->ij',B,J) 
+    H_total = H0+Hze
+    en_ze,evec_ze = np.linalg.eigh(H_total)
+
+    return en_ze,evec_ze #Hartree
+
+def partial_function(en_ze,T,kb):
+    
+    Z=0
+    ##print("en_ze=",en_ze)
+    #print("final=")
+    #print((en_ze[1]-en_ze[0] )/(T*kb)*4.3597482E-18)
+    for i in range(len(en_ze)):
+        Z += np.exp(-(en_ze[i])/(T*kb))
+
+    return Z
+

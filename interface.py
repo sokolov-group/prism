@@ -57,6 +57,12 @@ class PYSCF:
         self.light_speed = lib.parameters.LIGHT_SPEED
         self.g_free_elec = 2.002319
 
+        self.kb = 1.3806483e-23 / 4.3597447222060e-18 #(Eh/K)
+        self.mu_B_Eh =  5.7883817982e-5 / self.hartree_to_ev  #Bohr magneton(Eh/T)
+        self.mu_B_erg = 9.27401549e-21
+        self.T_to_G = 10000
+        self.NA = 6.0221367e23 # Avogadro constant
+
         log.info("Collecting reference wavefunction information...")
         if mc is None:
             self.reference = "scf"

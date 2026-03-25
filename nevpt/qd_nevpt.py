@@ -297,7 +297,7 @@ def compute_properties(method):
             method.properties["osc_strengths_full"] = osc_str_full
 
     # Compute magnetic properties
-    if method.gtensor and method.soc:
+    if (method.gtensor or method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor) and method.soc:
         from prism.nevpt import soc
         # Call make_rdm1 function directly to bypass including SOC effects
         rdm_sf = make_rdm1(method)

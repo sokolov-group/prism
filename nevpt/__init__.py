@@ -106,10 +106,49 @@ class NEVPT:
 
         # For SOC
         self.soc = None                            # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+
+        # For g-tensor
         self.gtensor = False                       # Enable calculating g-tensors (requires soc)
         self.gtensor_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)
         self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
+
+        # For magnetic susceptibility
+        self.mag_av = False
+        self.sus_av = False
+        self.mag_vec = False
+        self.sus_tensor = False
+
+        self.step_h_s = 0.001 
+
+        ###Powder magnetization
+        Bs_list = []
+        for i in range(15):
+            H = i * 0.5
+            Bs_list.append(H)
+
+        self.Bs_powder_M = Bs_list 
+        self.T_powder_M = [1.8]
+
+        ###Powder susceptibility
+        T_list = []
+        for i in range(21):
+            T = 14.75 * i + 5
+            T_list.append(T)
+
+        self.T_powder_chi = T_list
+        self.Bs_powder_chi = [0.1]
+
+        ###Vector magnetization
+        self.B_vec_M = [0,0,1]
+        self.Bs_vec_M = Bs_list 
+        self.T_vec_M = [1.8]
+
+        ###Tensor  susceptibility
+        self.B_vec_chi = [0,0,1]
+        self.Bs_vec_chi = [0.1]
+        self.T_vec_chi = [5,100,200,250]
+
 
     def _make_method_instance(self):
         cls_map = {
