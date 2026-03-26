@@ -18,33 +18,35 @@ def _has_module(name):
     except (ImportError, OSError):
         return False
 
-def einsum_backend(opt_einsum, pytblis, log):
-
+def einsum_backend(request, log):
+    '''
+    Specify einsum backend from either user request or auto-detection.
+    Available options: opt_einsum, pytblis, and numpy.
+    Backend priority for auto-detection is pytblis > opt_einsum > numpy.
+    '''
     has_pytblis = _has_module("pytblis")
     has_opt_einsum = _has_module("opt_einsum")
 
-    # Backend priority: provided flags > pytblis > opt_einsum > numpy fallback
-    if opt_einsum and has_opt_einsum:
-        backend = "opt_einsum"
-    elif has_pytblis:
-        backend = "pytblis"
+    _options = {
+        "pytblis": has_pytblis,
+        "opt_einsum": has_opt_einsum,
+        "numpy": True
+    }
+
+    if request is not None:
+        if _options[request]:
+            return request
+        log.warn(
+             "%s was requested but is not available. "
+             "Falling back to auto-detection.", request
+         )
+
+    if has_pytblis:
+        return "pytblis"
     elif has_opt_einsum:
-        backend = "opt_einsum"
+        return "opt_einsum"
     else:
-        backend = "numpy"
-
-    if opt_einsum and backend != "opt_einsum":
-        log.warn(
-            "opt_einsum was requested (OPT_EINSUM=True) but is not available. "
-            "Falling back to %s.", backend
-        )
-    if pytblis and backend != "pytblis":
-        log.warn(
-            "pytblis was requested (PYTBLIS=True) but is not available. "
-            "Falling back to %s.", backend
-        )
-
-    return backend
+        return "numpy"
 
 # Import backend
 try:
