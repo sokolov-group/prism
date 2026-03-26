@@ -177,10 +177,16 @@ def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
 def compute_magnetic_properties(method, rdm_sf):
 
     nstate = len(method.spin_mult)
+    en_soc = method.e_tot.copy()
+    h_evec_soc = method.h_evec_soc
 
     S = []
     for i in range(nstate):
         S.append(float((method.spin_mult[i] - 1) / 2))
+
+    # Calculate magnetic dipole moment without spin-orbit coupling
+    Mu_sf = magnetic.mag_dip(method.interface, rdm_sf, S, origin_type = method.gtensor_origin_type)
+    Mu = np.einsum('ai,kib,bj->kaj',np.conj(h_evec_soc).T, Mu_sf, h_evec_soc)
 
     #g-tensor
     if method.gtensor:
@@ -193,7 +199,7 @@ def compute_magnetic_properties(method, rdm_sf):
         g_factor = []
         g_evector = []
         for I in target_state:
-            g_fac, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.gtensor_origin_type)
+            g_fac, g_evec = magnetic.gtensor(method.interface, S, Mu, target_index = I )
             g_factor.append(g_fac)
             g_evector.append(g_evec)
 
@@ -203,12 +209,6 @@ def compute_magnetic_properties(method, rdm_sf):
     #magnetic susceptibility
     if method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor:
         method.log.info("\nCalculating magnetic susceptibility or magnetization...")
-
-        en_soc = method.e_tot.copy()
-        h_evec_soc = method.h_evec_soc
-
-        Mu_sf = magnetic.mag_dip(method.interface, rdm_sf, S, origin_type = 'charge')
-        Mu = np.einsum('ai,kib,bj->kaj',np.conj(h_evec_soc).T, Mu_sf, h_evec_soc)
 
         # Parameter
 
