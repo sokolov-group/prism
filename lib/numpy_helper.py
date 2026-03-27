@@ -224,7 +224,7 @@ def einsum(scripts, *tensors, backend, **kwargs):
 
     return operands[0]
 
-@lru_cache(maxsize=256)
+@lru_cache(maxsize=None)
 def _analyze_indices(idx_str):
     '''
     Analyze an einsum index string of the form 'ab,bc->ac'.
