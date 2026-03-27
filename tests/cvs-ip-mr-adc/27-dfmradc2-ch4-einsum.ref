@@ -1,0 +1,381 @@
+converged SCF energy = -40.515926894204
+SCF energy: -40.515927
+
+CASSCF energy = -40.2495982004973
+CASCI E = -40.2495982004973  E(CI) = -9.85045629332514  S^2 = 0.0000000
+CASSCF energy: -40.249598
+
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)
+Nuclear repulsion energy:                         13.472034587382
+Number of electrons:                               10
+Number of basis functions:                         34
+Reference wavefunction type:                       casscf
+Number of core orbitals:                           2
+Number of active orbitals:                         7
+Number of external orbitals:                       25
+Number of active electrons:                        [(3, 3)]
+Reference state active-space energy:              -9.850456293325
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  9
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              1
+Reference density fitting?                         False
+Correlation density fitting?                       True
+Temporary directory path:                          /scratch/local/odhiambo.5
+
+Internal contraction:                              Full
+Overlap truncation parameter (singles):            1.00e-05
+Overlap truncation parameter (doubles):            1.00e-10
+Projector for the semi-internal amplitudes:        gno
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+
+Computing reference wavefunction RDMs...
+
+Computing NEVPT2 amplitudes...
+Correlation energy [0']:                          -0.017136423683
+Correlation energy [+1']:                         -0.019120232951
+Correlation energy [-1']:                         -0.015685961556
+Correlation energy [0]:                           -0.004079168342
+Correlation energy [+1]:                          -0.001344812515
+Correlation energy [-1]:                          -0.014248553599
+Correlation energy [+2]:                          -0.002117451757
+Correlation energy [-2]:                          -0.041556975025
+
+Reference energy:                                -40.249598200497
+NEVPT2 correlation energy:                        -0.115289579429
+Total NEVPT2 energy:                             -40.364887779926
+
+Transforming integrals for the CVS calculation...
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       800
+Total dimension of the excitation manifold:                801
+Dimension of the orthogonalized excitation manifold:       796
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 132  max_memory 4000  incore True
+davidson 0 9  |r|= 0.914  e= [11.19655272 11.87591854 11.87893037 11.93311116 11.93311116 11.93311116 11.93311116 11.93311116 11.93311116]  max|de|= 11.9  lindep=    1
+Old state -> New state
+    5     ->     3 
+    3     ->     4 
+    4     ->     5 
+davidson 1 18  |r|= 0.0959  e= [10.80499949 11.87119572 11.87236684 11.91434567 11.91434567 11.91434567 11.91434567 11.91434567 11.91434567]  max|de|= -0.392  lindep= 0.972
+Old state -> New state
+    6     ->     3 
+    8     ->     5 
+    5     ->     6 
+    5     ->     7 
+    7     ->     8 
+Drop eigenvector 1, norm=7.03e-09
+davidson 2 27  |r|= 0.0207  e= [10.80308239 11.87118631 11.87231079 11.90772095 11.90772095 11.90772095 11.90772095 11.90772095 11.90772095]  max|de|= -0.00662  lindep= 0.83
+Old state -> New state
+    4     ->     3 
+    3     ->     5 
+    7     ->     6 
+    8     ->     7 
+    6     ->     8 
+root 1 converged  |r|= 7.03e-09  e= 11.871186313003104  max|de|= -7.11e-15
+davidson 3 35  |r|= 0.00206  e= [10.80308142 11.87118631 11.87230732 11.9074688  11.9074688  11.9074688  11.9074688  11.9074688  11.9074688 ]  max|de|= -0.000252  lindep= 0.865
+Old state -> New state
+    6     ->     4 
+    4     ->     5 
+    8     ->     6 
+    5     ->     8 
+root 0 converged  |r|= 8.32e-07  e= 10.803081422948996  max|de|= -4.84e-10
+davidson 4 43  |r|= 0.000219  e= [10.80308142 11.87118631 11.87230719 11.90746532 11.90746532 11.90746532 11.90746532 11.90746532 11.90746532]  max|de|= -3.48e-06  lindep= 0.921
+Old state -> New state
+    5     ->     4 
+    4     ->     5 
+    8     ->     7 
+    7     ->     8 
+davidson 5 50  |r|= 2.67e-05  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -2.98e-08  lindep= 0.958
+Old state -> New state
+    7     ->     4 
+    4     ->     5 
+    5     ->     6 
+    6     ->     7 
+root 3 converged  |r|= 1.13e-06  e= 11.907465294470727  max|de|= -3.01e-10
+root 4 converged  |r|= 1.13e-06  e= 11.907465294470738  max|de|= -3.01e-10
+root 5 converged  |r|= 1.13e-06  e= 11.907465294470738  max|de|= -3.01e-10
+root 6 converged  |r|= 1.13e-06  e= 11.907465294470752  max|de|= -3.01e-10
+root 7 converged  |r|= 1.13e-06  e= 11.907465294470759  max|de|= -3.01e-10
+root 8 converged  |r|= 1.13e-06  e= 11.907465294470763  max|de|= -3.01e-10
+davidson 6 57  |r|= 1.22e-05  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -4.15e-10  lindep= 0.884
+Old state -> New state
+    5     ->     4 
+    4     ->     5 
+    7     ->     6 
+    6     ->     7 
+root 2 converged  |r|= 2.09e-06  e= 11.872307178532019  max|de|= -2.17e-11
+converged 7 58  |r|= 2.09e-06  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -2.17e-11
+
+Summary of results for the CVS-IP-MR-ADC(2) calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        10.80308142      293.9668     4.2176    2371002.3129      1.625587
+    2        11.87118631      323.0314     3.8381    2605424.2399      0.000000
+    3        11.87230718      323.0619     3.8378    2605670.2414      0.001240
+    4        11.90746529      324.0186     3.8265    2613386.5560      0.000002
+    5        11.90746529      324.0186     3.8265    2613386.5560      0.000006
+    6        11.90746529      324.0186     3.8265    2613386.5560      0.000006
+    7        11.90746529      324.0186     3.8265    2613386.5560      0.000004
+    8        11.90746529      324.0186     3.8265    2613386.5560      0.000002
+    9        11.90746529      324.0186     3.8265    2613386.5560      0.000004
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2) calculation     42.20 sec, wall time      3.52 sec
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)
+Nuclear repulsion energy:                         13.472034587382
+Number of electrons:                               10
+Number of basis functions:                         34
+Reference wavefunction type:                       casscf
+Number of core orbitals:                           2
+Number of active orbitals:                         7
+Number of external orbitals:                       25
+Number of active electrons:                        [(3, 3)]
+Reference state active-space energy:              -9.850456293325
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  9
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              1
+Reference density fitting?                         False
+Correlation density fitting?                       True
+Temporary directory path:                          /scratch/local/odhiambo.5
+
+Internal contraction:                              Full
+Overlap truncation parameter (singles):            1.00e-05
+Overlap truncation parameter (doubles):            1.00e-10
+Projector for the semi-internal amplitudes:        gno
+
+Einsum Backend:                                    pytblis
+
+Transforming integrals to MO basis...
+
+Computing reference wavefunction RDMs...
+
+Computing NEVPT2 amplitudes...
+Correlation energy [0']:                          -0.017136423683
+Correlation energy [+1']:                         -0.019120232951
+Correlation energy [-1']:                         -0.015685961556
+Correlation energy [0]:                           -0.004079168342
+Correlation energy [+1]:                          -0.001344812515
+Correlation energy [-1]:                          -0.014248553599
+Correlation energy [+2]:                          -0.002117451757
+Correlation energy [-2]:                          -0.041556975025
+
+Reference energy:                                -40.249598200497
+NEVPT2 correlation energy:                        -0.115289579429
+Total NEVPT2 energy:                             -40.364887779926
+
+Transforming integrals for the CVS calculation...
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       800
+Total dimension of the excitation manifold:                801
+Dimension of the orthogonalized excitation manifold:       796
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 132  max_memory 4000  incore True
+davidson 0 9  |r|= 0.914  e= [11.19655272 11.87591854 11.87893037 11.93311116 11.93311116 11.93311116 11.93311116 11.93311116 11.93311116]  max|de|= 11.9  lindep=    1
+Old state -> New state
+    6     ->     4 
+    4     ->     5 
+    5     ->     6 
+    8     ->     7 
+    7     ->     8 
+davidson 1 18  |r|= 0.0959  e= [10.80499949 11.87119572 11.87236684 11.91434567 11.91434567 11.91434567 11.91434567 11.91434567 11.91434567]  max|de|= -0.392  lindep= 0.972
+Old state -> New state
+    6     ->     5 
+    5     ->     7 
+    7     ->     8 
+Drop eigenvector 1, norm=7.03e-09
+davidson 2 27  |r|= 0.0207  e= [10.80308239 11.87118631 11.87231079 11.90772095 11.90772095 11.90772095 11.90772095 11.90772095 11.90772095]  max|de|= 11.9  lindep= 0.83
+Old state -> New state
+    8     ->     5 
+    7     ->     6 
+    6     ->     7 
+    5     ->     8 
+root 1 converged  |r|= 7.03e-09  e= 11.871186313003097  max|de|= -1.6e-14
+davidson 3 35  |r|= 0.00206  e= [10.80308142 11.87118631 11.87230732 11.9074688  11.9074688  11.9074688  11.9074688  11.9074688  11.9074688 ]  max|de|= -0.000252  lindep= 0.865
+Old state -> New state
+    6     ->     3 
+    3     ->     4 
+    4     ->     5 
+    7     ->     6 
+    8     ->     7 
+    4     ->     8 
+root 0 converged  |r|= 8.32e-07  e= 10.803081422948999  max|de|= -4.84e-10
+davidson 4 43  |r|= 0.000219  e= [10.80308142 11.87118631 11.87230719 11.90746532 11.90746532 11.90746532 11.90746532 11.90746532 11.90746532]  max|de|= -3.48e-06  lindep= 0.921
+Old state -> New state
+    6     ->     3 
+    3     ->     5 
+    5     ->     6 
+davidson 5 50  |r|= 2.67e-05  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -2.98e-08  lindep= 0.958
+Old state -> New state
+    4     ->     3 
+    5     ->     4 
+    8     ->     5 
+    7     ->     6 
+    3     ->     7 
+    7     ->     8 
+root 3 converged  |r|= 1.13e-06  e= 11.90746529447073  max|de|= -3.01e-10
+root 4 converged  |r|= 1.13e-06  e= 11.907465294470732  max|de|= -3.01e-10
+root 5 converged  |r|= 1.13e-06  e= 11.907465294470743  max|de|= -3.01e-10
+root 6 converged  |r|= 1.13e-06  e= 11.90746529447075  max|de|= -3.01e-10
+root 7 converged  |r|= 1.13e-06  e= 11.907465294470754  max|de|= -3.01e-10
+root 8 converged  |r|= 1.13e-06  e= 11.907465294470764  max|de|= -3.01e-10
+davidson 6 57  |r|= 1.22e-05  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -4.15e-10  lindep= 0.884
+Old state -> New state
+    4     ->     3 
+    3     ->     4 
+    7     ->     6 
+    8     ->     7 
+    6     ->     8 
+root 2 converged  |r|= 2.09e-06  e= 11.872307178532024  max|de|= -2.17e-11
+converged 7 58  |r|= 2.09e-06  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -2.17e-11
+
+Summary of results for the CVS-IP-MR-ADC(2) calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        10.80308142      293.9668     4.2176    2371002.3129      1.625587
+    2        11.87118631      323.0314     3.8381    2605424.2399      0.000000
+    3        11.87230718      323.0619     3.8378    2605670.2414      0.001240
+    4        11.90746529      324.0186     3.8265    2613386.5560      0.000004
+    5        11.90746529      324.0186     3.8265    2613386.5560      0.000004
+    6        11.90746529      324.0186     3.8265    2613386.5560      0.000005
+    7        11.90746529      324.0186     3.8265    2613386.5560      0.000008
+    8        11.90746529      324.0186     3.8265    2613386.5560      0.000002
+    9        11.90746529      324.0186     3.8265    2613386.5560      0.000002
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2) calculation     43.35 sec, wall time      3.62 sec
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)
+Nuclear repulsion energy:                         13.472034587382
+Number of electrons:                               10
+Number of basis functions:                         34
+Reference wavefunction type:                       casscf
+Number of core orbitals:                           2
+Number of active orbitals:                         7
+Number of external orbitals:                       25
+Number of active electrons:                        [(3, 3)]
+Reference state active-space energy:              -9.850456293325
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  9
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              1
+Reference density fitting?                         False
+Correlation density fitting?                       True
+Temporary directory path:                          /scratch/local/odhiambo.5
+
+Internal contraction:                              Full
+Overlap truncation parameter (singles):            1.00e-05
+Overlap truncation parameter (doubles):            1.00e-10
+Projector for the semi-internal amplitudes:        gno
+
+Einsum Backend:                                    numpy
+
+Transforming integrals to MO basis...
+
+Computing reference wavefunction RDMs...
+
+Computing NEVPT2 amplitudes...
+Correlation energy [0']:                          -0.017136423683
+Correlation energy [+1']:                         -0.019120232951
+Correlation energy [-1']:                         -0.015685961556
+Correlation energy [0]:                           -0.004079168342
+Correlation energy [+1]:                          -0.001344812515
+Correlation energy [-1]:                          -0.014248553599
+Correlation energy [+2]:                          -0.002117451757
+Correlation energy [-2]:                          -0.041556975025
+
+Reference energy:                                -40.249598200497
+NEVPT2 correlation energy:                        -0.115289579429
+Total NEVPT2 energy:                             -40.364887779926
+
+Transforming integrals for the CVS calculation...
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       800
+Total dimension of the excitation manifold:                801
+Dimension of the orthogonalized excitation manifold:       796
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 132  max_memory 4000  incore True
+davidson 0 9  |r|= 0.914  e= [11.19655272 11.87591854 11.87893037 11.93311116 11.93311116 11.93311116 11.93311116 11.93311116 11.93311116]  max|de|= 11.9  lindep=    1
+Old state -> New state
+    5     ->     4 
+    4     ->     5 
+davidson 1 18  |r|= 0.0959  e= [10.80499949 11.87119572 11.87236684 11.91434567 11.91434567 11.91434567 11.91434567 11.91434567 11.91434567]  max|de|= -0.392  lindep= 0.972
+Old state -> New state
+    6     ->     3 
+    3     ->     4 
+    8     ->     6 
+    4     ->     7 
+    7     ->     8 
+Drop eigenvector 1, norm=7.03e-09
+davidson 2 27  |r|= 0.0207  e= [10.80308239 11.87118631 11.87231079 11.90772095 11.90772095 11.90772095 11.90772095 11.90772095 11.90772095]  max|de|= -0.00662  lindep= 0.83
+Old state -> New state
+    3     ->     4 
+    7     ->     6 
+    6     ->     7 
+root 1 converged  |r|= 7.03e-09  e= 11.871186313003104  max|de|= 1.78e-15
+davidson 3 35  |r|= 0.00206  e= [10.80308142 11.87118631 11.87230732 11.9074688  11.9074688  11.9074688  11.9074688  11.9074688  11.9074688 ]  max|de|= -0.000252  lindep= 0.865
+Old state -> New state
+    4     ->     3 
+    3     ->     4 
+    7     ->     5 
+root 0 converged  |r|= 8.32e-07  e= 10.803081422948988  max|de|= -4.84e-10
+davidson 4 43  |r|= 0.000219  e= [10.80308142 11.87118631 11.87230719 11.90746532 11.90746532 11.90746532 11.90746532 11.90746532 11.90746532]  max|de|= -3.48e-06  lindep= 0.921
+Old state -> New state
+    4     ->     3 
+    3     ->     4 
+    6     ->     5 
+    5     ->     7 
+davidson 5 50  |r|= 2.67e-05  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -2.98e-08  lindep= 0.958
+Old state -> New state
+    4     ->     3 
+    3     ->     4 
+    7     ->     5 
+    5     ->     7 
+root 3 converged  |r|= 1.13e-06  e= 11.907465294470722  max|de|= -3.01e-10
+root 4 converged  |r|= 1.13e-06  e= 11.907465294470725  max|de|= -3.01e-10
+root 5 converged  |r|= 1.13e-06  e= 11.907465294470734  max|de|= -3.01e-10
+root 6 converged  |r|= 1.13e-06  e= 11.907465294470736  max|de|= -3.01e-10
+root 7 converged  |r|= 1.13e-06  e= 11.907465294470738  max|de|= -3.01e-10
+root 8 converged  |r|= 1.13e-06  e= 11.907465294470752  max|de|= -3.01e-10
+davidson 6 57  |r|= 1.22e-05  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -4.15e-10  lindep= 0.884
+Old state -> New state
+    4     ->     3 
+    3     ->     4 
+    7     ->     6 
+    6     ->     7 
+root 2 converged  |r|= 2.09e-06  e= 11.872307178532019  max|de|= -2.17e-11
+converged 7 58  |r|= 2.09e-06  e= [10.80308142 11.87118631 11.87230718 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529 11.90746529]  max|de|= -2.17e-11
+
+Summary of results for the CVS-IP-MR-ADC(2) calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        10.80308142      293.9668     4.2176    2371002.3129      1.625587
+    2        11.87118631      323.0314     3.8381    2605424.2399      0.000000
+    3        11.87230718      323.0619     3.8378    2605670.2414      0.001240
+    4        11.90746529      324.0186     3.8265    2613386.5560      0.000003
+    5        11.90746529      324.0186     3.8265    2613386.5560      0.000007
+    6        11.90746529      324.0186     3.8265    2613386.5560      0.000000
+    7        11.90746529      324.0186     3.8265    2613386.5560      0.000004
+    8        11.90746529      324.0186     3.8265    2613386.5560      0.000005
+    9        11.90746529      324.0186     3.8265    2613386.5560      0.000005
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2) calculation     43.35 sec, wall time      9.07 sec
