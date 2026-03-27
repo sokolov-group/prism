@@ -57,7 +57,7 @@ mc.conv_tol_grad = 1e-6
 emc = mc.mc1step()[0]
 
 # NEVPT2 calculation
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
