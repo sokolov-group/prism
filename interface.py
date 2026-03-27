@@ -28,7 +28,7 @@ import prism.lib.numpy_helper as np_helper
 
 class PYSCF:
 
-    def __init__(self, mf, mc = None, einsum_backend = None, select_reference = None):
+    def __init__(self, mf, mc = None, backend = None, select_reference = None):
 
         self.stdout = mf.stdout
         if mc is None:
@@ -236,12 +236,12 @@ class PYSCF:
         self.molden = molden
 
         # Einsum Backend
-        if einsum_backend not in ("opt_einsum", "pytblis", "numpy", None):
+        if backend not in ("opt_einsum", "pytblis", "numpy", None):
             msg = (f"Requested einsum backend '{einsum_backend}' is unknown. "
                     "Valid backend options are: 'opt_einsum', 'pytblis', 'numpy', or None.")
             raise ValueError(msg)
 
-        self._einsum_backend = np_helper.einsum_backend(einsum_backend, self.log)
+        self._einsum_backend = np_helper.einsum_backend(backend, self.log)
         self.einsum_type = "greedy"
         self.dot = np.dot
 
