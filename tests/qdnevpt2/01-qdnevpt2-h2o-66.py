@@ -65,7 +65,7 @@ class KnownValues(unittest.TestCase):
     def test_prism(self):
 
         # QD-NEVPT2 calculation
-        interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+        interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
         nevpt = prism.nevpt.NEVPT(interface)
         nevpt.compute_singles_amplitudes = False
         nevpt.semi_internal_projector = "gno"
@@ -98,7 +98,7 @@ class KnownValues(unittest.TestCase):
     def test_prism2(self):
 
         # QD-NEVPT2 calculation
-        interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+        interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
         nevpt = prism.nevpt.QDNEVPT(interface)
         nevpt.compute_singles_amplitudes = False
         nevpt.semi_internal_projector = "gno"

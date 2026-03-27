@@ -46,13 +46,13 @@ mc.analyze()
 print("CASSCF energy: %f\n" % emc)
 
 # QD-NEVPT2 with all electrons correlated
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.QDNEVPT(interface)
 e_tot, e_corr, osc_str = nevpt.kernel()
 
 ## For spectrum
 from prism.tools.spectrum import plot
 e_diff = (e_tot[1:] - e_tot[0]) * interface.hartree_to_ev
-plot(e_diff, osc_str, broadening = 0.1, omega_min = 0, omega_max = 15, plot = True, x_label = "Energy, eV", y_label = "Intensity", title = "UV/vis spectrum", filename = "qdnevpt")
+plot(e_diff, osc_str, broadening = 0.1, omega_min = 7, omega_max = 17, plot = True, x_label = "Energy, eV", y_label = "Intensity", title = "UV/vis spectrum", filename = "qdnevpt")
 
 

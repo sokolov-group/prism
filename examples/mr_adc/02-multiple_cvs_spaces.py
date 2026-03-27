@@ -30,7 +30,7 @@ emc = mc.mc1step()[0]
 # CVS-IP-MR-ADC calculations
 ## First calculation: CVS space for O 1s^{-1} states
 print("## First calculation: CVS space for O 1s^{-1} states")
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 1
@@ -41,7 +41,7 @@ e, p, x = mr_adc.kernel()
 
 ## Second calculation: CVS space for C 1s^{-1} states
 print("## Second calculation: CVS space for C 1s^{-1} states")
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 2

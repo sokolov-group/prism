@@ -34,7 +34,7 @@ mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 emc = mc.mc1step()[0]
 
 # Increasing the truncation parameter for linear dependencies
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-6
@@ -42,7 +42,7 @@ nevpt.s_thresh_doubles = 1e-6
 e_tot, e_corr, osc = nevpt.kernel()
 
 # Including the singles amplitudes in the NEVPT2 energy
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = True
 nevpt.s_thresh_singles = 1e-10
@@ -51,7 +51,7 @@ e_tot, e_corr, osc = nevpt.kernel()
 
 # Selecting reference states
 ref_list = [1,5,6]
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True, select_reference = ref_list)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum', select_reference = ref_list)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-10
