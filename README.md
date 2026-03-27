@@ -47,7 +47,7 @@ mf = scf.RHF(mol).run()
 mc = mcscf.CASSCF(mf, 6, 6).run()
 ```
 
-Once the reference calculation is successfully completed, the objects of Hartree-Fock and CASSCF classes (```mf``` and ```mc```) are passed to Prism via the interface. The `backend` parameter controls which tensor contraction library is used, and can be set to `numpy`, `opt_einsum`, or `pytblis`. If not specified (or set to `None`), `numpy` is used by default.
+Once the reference calculation is successfully completed, the Hartree-Fock and CASSCF objects (```mf``` and ```mc```) are passed to Prism via the interface. The `backend` parameter controls which tensor contraction library is used, and can be set to `numpy`, `opt_einsum`, or `pytblis`. If not specified (or set to `None`), Prism automatically select the best backend available.
 
 For example, a NEVPT2 energy calculation for the reference CASSCF state can be performed as follows:
 
