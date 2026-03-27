@@ -52,7 +52,7 @@ emc = mc.mc1step()[0]
 print("CASSCF energy: %f\n" % emc)
 
 # Run MR-ADC computation
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.nroots = 12
 mr_adc.ncvs = 2
