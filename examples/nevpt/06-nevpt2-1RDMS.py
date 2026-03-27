@@ -45,7 +45,7 @@ mc.analyze()
 print("CASSCF energy: %f\n" % emc)
 
 # QD-NEVPT2 with all electrons correlated
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-6

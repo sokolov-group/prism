@@ -41,7 +41,7 @@ mc.fcisolver.nroots = n_states
 emc = mc.casci()[0]
 
 # NEVPT2 calculation
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 
