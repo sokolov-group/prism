@@ -15,7 +15,8 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
-#          Donna Odhiambo <donna.odhiambo@proton.me>
+#                  Ilia M. Mazin <ilia.mazin@gmail.com>
+#              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
 import numpy as np
@@ -40,7 +41,7 @@ def compute_reference_energy(mr_adc):
     compute_t2_amplitudes(mr_adc)
 
     # Compute CVS amplitudes and remove non-CVS core integrals, amplitudes and unnecessary RDMs
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
         compute_cvs_amplitudes(mr_adc)
 
     e_tot = mr_adc.e_ref[0] + e_corr
@@ -179,7 +180,7 @@ def compute_cvs_amplitudes(mr_adc):
         mr_adc.tmpfile.xt1 = None
     tmpfile = mr_adc.tmpfile.xt1
 
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
 
         # Variables from kernel
         ncvs = mr_adc.ncvs
@@ -188,9 +189,10 @@ def compute_cvs_amplitudes(mr_adc):
         ncas = mr_adc.ncas
         nextern = mr_adc.nextern
 
-        del(mr_adc.rdm.ccccaaaa)
+        if mr_adc.method_type == "cvs-ip":
+            del(mr_adc.rdm.ccccaaaa)
 
-        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
             mr_adc.t1.xe = np.ascontiguousarray(mr_adc.t1.ce[:ncvs, :])
             mr_adc.t1.ve = np.ascontiguousarray(mr_adc.t1.ce[ncvs:, :])
             del(mr_adc.t1.ce)
@@ -223,10 +225,15 @@ def compute_cvs_amplitudes(mr_adc):
             mr_adc.t1.vvaa = np.ascontiguousarray(mr_adc.t1.ccaa[ncvs:, ncvs:, :, :])
             del(mr_adc.t1.ccaa)
 
-            mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs, :])
-            mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
-            del(mr_adc.t2.ce)
+            if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"): 
+                mr_adc.t2.xe = np.ascontiguousarray(mr_adc.t2.ce[:ncvs, :])
+                mr_adc.t2.ve = np.ascontiguousarray(mr_adc.t2.ce[ncvs:, :])
+                del(mr_adc.t2.ce)
 
+                if mr_adc.method_type == "cvs-ee":
+                    mr_adc.t2.xa = np.ascontiguousarray(mr_adc.t2.ca[:ncvs, :])
+                    mr_adc.t2.va = np.ascontiguousarray(mr_adc.t2.ca[ncvs:, :])
+                    del(mr_adc.t2.ca)
 
             mr_adc.t1.xxee = tools.create_dataset('xxee', tmpfile, (ncvs, ncvs, nextern, nextern))
             mr_adc.t1.xvee = tools.create_dataset('xvee', tmpfile, (ncvs, nval, nextern, nextern))
