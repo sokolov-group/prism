@@ -74,7 +74,7 @@ def compute_t1_amplitudes(mr_adc):
         mr_adc.tmpfile.ct1 = None
 
     # First-order amplitudes
-    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
         if ncore > 0 and nextern > 0 and ncas > 0:
             e_0p, mr_adc.t1.ce, mr_adc.t1.caea, mr_adc.t1.caae = compute_t1_0p(mr_adc)
         else:
@@ -103,7 +103,7 @@ def compute_t1_amplitudes(mr_adc):
         mr_adc.t1.ae = np.zeros((ncas, nextern))
         mr_adc.t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
 
-    if ((mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x")) or
+    if ((mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x")) or
         (mr_adc.method == "mr-adc(1)" and mr_adc.method_type in ("ee", "cvs-ee"))):
 
         nelecas_total = 0
@@ -144,7 +144,14 @@ def compute_t1_amplitudes(mr_adc):
         mr_adc.t1.ccaa = np.zeros((ncore, ncore, ncas, ncas))
         mr_adc.t1.aaee = np.zeros((ncas, ncas, nextern, nextern))
 
-    e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
+    corr_cont = [("[0']", e_0p), ("[+1']", e_p1p), ("[-1']", e_m1p),
+                ("[0]",  e_0),  ("[+1]",  e_p1),  ("[-1]",  e_m1),
+                ("[+2]", e_p2), ("[-2]",  e_m2)]
+
+    if positive := [k for k, v in corr_cont if v > 0]:
+        mr_adc.log.warn(f'Positive correlation energies found for {", ".join(positive)}.')
+
+    e_corr = sum(v for _, v in corr_cont)
 
     return e_corr
 
