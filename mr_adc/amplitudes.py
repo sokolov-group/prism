@@ -160,17 +160,40 @@ def compute_t2_amplitudes(mr_adc):
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
+    nelecas = mr_adc.ref_nelecas
+
+    nelecas_total = 0
+    if isinstance(nelecas, list):
+        nelecas_total = sum(nelecas[0])
+    else:
+        nelecas_total = sum(nelecas)
 
     approx_trans_moments = mr_adc.approx_trans_moments
 
     # Approximate second-order amplitudes
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
 
-        if (ncore > 0) and (nextern > 0) and not (approx_trans_moments):
+        if ncore > 0 and nextern > 0 and not approx_trans_moments:
             mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)
-
         else:
             mr_adc.t2.ce = np.zeros((ncore, nextern))
+
+        if mr_adc.method_type == "cvs-ee":
+
+            if ncas > 0 and nextern > 0 and nelecas_total > 0:
+                mr_adc.t2.ae = compute_t2_m1p_singles(mr_adc)
+            else:
+                mr_adc.t2.ae = np.zeros((ncas, nextern))
+
+            if ncas > 0 and nelecas_total > 0:
+                mr_adc.t2.aa = compute_t2_0pp_singles(mr_adc)
+            else:
+                mr_adc.t2.aa = np.zeros((ncas, ncas))
+
+            if ncore > 0 and ncas > 0:
+                mr_adc.t2.ca = compute_t2_p1p_singles(mr_adc)
+            else:
+                mr_adc.t2.ca = np.zeros((ncore, ncas))
 
     else:
         mr_adc.t2.ce = np.zeros((ncore, nextern))
