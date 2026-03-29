@@ -26,8 +26,8 @@ from prism.mr_adc import intermediates
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
-import cvs_ee.transition_moments as q2_trans_mom
-import cvs_ee.sigma_vector as h1_h1_sigma
+import prism.mr_adc.cvs_ee_functions.transition_moments as q2_trans_mom
+import prism.mr_adc.cvs_ee_functions.sigma_vector as h1_h1_sigma
 
 def compute_excitation_manifolds(mr_adc):
 
