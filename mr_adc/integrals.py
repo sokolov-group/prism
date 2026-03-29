@@ -724,26 +724,23 @@ def unpack_v2e_oeee(mr_adc, v2e_oeee):
     n_ee = nextern * (nextern + 1) // 2
     ind_ee = np.tril_indices(nextern)
 
-    v2e_oeee_ = None
+    if v2e_oeee.ndim != 3:
+        raise ValueError("ERI does not have the correct dimension")
 
-    if len(v2e_oeee.shape) == 3:
-        if (v2e_oeee.shape[0] == n_ee):
-            v2e_oeee_ = np.zeros((nextern, nextern, v2e_oeee.shape[1], v2e_oeee.shape[2]))
-            v2e_oeee_[ind_ee[0], ind_ee[1]] = v2e_oeee
-            v2e_oeee_[ind_ee[1], ind_ee[0]] = v2e_oeee
+    if v2e_oeee.shape[0] == n_ee:
+        v2e_oeee_ = np.zeros((nextern, nextern, v2e_oeee.shape[1], v2e_oeee.shape[2]))
+        v2e_oeee_[ind_ee[0], ind_ee[1]] = v2e_oeee
+        v2e_oeee_[ind_ee[1], ind_ee[0]] = v2e_oeee
 
-        elif (v2e_oeee.shape[2] == n_ee):
-            v2e_oeee_ = np.zeros((v2e_oeee.shape[0], v2e_oeee.shape[1], nextern, nextern))
-            v2e_oeee_[:, :, ind_ee[0], ind_ee[1]] = v2e_oeee
-            v2e_oeee_[:, :, ind_ee[1], ind_ee[0]] = v2e_oeee
-        else:
-            raise TypeError("ERI dimensions don't match")
+    elif v2e_oeee.shape[2] == n_ee:
+        v2e_oeee_ = np.zeros((v2e_oeee.shape[0], v2e_oeee.shape[1], nextern, nextern))
+        v2e_oeee_[:, :, ind_ee[0], ind_ee[1]] = v2e_oeee
+        v2e_oeee_[:, :, ind_ee[1], ind_ee[0]] = v2e_oeee
 
     else:
-        raise RuntimeError("ERI does not have a correct dimension")
+        raise ValueError("ERI does not have the correct dimension")
 
     return v2e_oeee_
-
 
 def transform_cvs_integrals(mr_adc):
 
