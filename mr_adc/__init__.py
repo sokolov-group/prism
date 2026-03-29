@@ -21,7 +21,7 @@
 from prism.mr_adc import compute
 from prism.mr_adc import amplitudes
 from prism.mr_adc import cvs_ip
-
+from prism.mr_adc import cvs_ee
 
 class MRADC:
     def __init__(self, interface):
