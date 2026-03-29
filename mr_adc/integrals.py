@@ -638,13 +638,12 @@ def transform_integrals_2e_df(mr_adc):
 
 def get_oeee_df(mr_adc, Loe, Lee, s_chunk_occ, f_chunk_occ):
 
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
+    cput0 = (logger.process_clock(), logger.perf_counter())
 
     # Variables from kernel
-    nextern = mr_adc.nextern
     naux = mr_adc.naux
+    #naux = Loe.shape[0]
+    nextern = mr_adc.nextern
 
     chunk_size_occ = f_chunk_occ - s_chunk_occ
 
@@ -658,31 +657,26 @@ def get_oeee_df(mr_adc, Loe, Lee, s_chunk_occ, f_chunk_occ):
         mr_adc.log.debug("aux [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks_aux), s_chunk, f_chunk)
         cput1 = (logger.process_clock(), logger.perf_counter())
 
-        Loe_chunk = np.ascontiguousarray(Loe[s_chunk:f_chunk,s_chunk_occ:f_chunk_occ])
-        Lee_chunk = Lee[s_chunk:f_chunk]
+        chunk_size_aux = f_chunk - s_chunk
 
-        v_oeee += einsum('iab,icd->abcd', Loe_chunk, Lee_chunk, optimize = einsum_type)
+        Loe_chunk = np.ascontiguousarray(Loe[s_chunk:f_chunk,s_chunk_occ:f_chunk_occ].transpose(1,2,0).reshape(-1, chunk_size_aux))
+        Lee_chunk = np.ascontiguousarray(Lee[s_chunk:f_chunk].reshape(chunk_size_aux, -1))
+
+        v_oeee += np.dot(Loe_chunk, Lee_chunk).reshape(chunk_size_occ, nextern, nextern, nextern)
 
         mr_adc.log.timer_debug("contracting v_oeee DF", *cput1)
     del(Loe_chunk, Lee_chunk)
 
+    mr_adc.log.timer_debug("computing v_oeee DF", *cput0)
     return v_oeee
 
 def get_ooee_df(mr_adc, Lpq, Lrs, s_chunk_p, f_chunk_p):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
 
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Variables from kernel
-    naux = mr_adc.naux
-
     chunk_p = f_chunk_p - s_chunk_p
-    q = Lpq.shape[2]
-    r = Lrs.shape[1]
-    s = Lrs.shape[2]
+    naux, _, q = Lpq.shape
+    _, r, s = Lrs.shape
 
     chunks_aux = tools.calculate_double_chunks(mr_adc, naux, [chunk_p, q], [r, s],
                                                        extra_tensors=[[chunk_p, q, r, s],
@@ -694,10 +688,12 @@ def get_ooee_df(mr_adc, Lpq, Lrs, s_chunk_p, f_chunk_p):
         mr_adc.log.debug("aux [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks_aux), s_chunk, f_chunk)
         cput1 = (logger.process_clock(), logger.perf_counter())
 
-        Lpq_chunk = np.ascontiguousarray(Lpq[s_chunk:f_chunk,s_chunk_p:f_chunk_p])
-        Lrs_chunk = Lrs[s_chunk:f_chunk]
+        chunk_size_aux = f_chunk - s_chunk
 
-        v_ooee += einsum('iab,icd->abcd', Lpq_chunk, Lrs_chunk, optimize = einsum_type)
+        Lpq_chunk = np.ascontiguousarray(Lpq[s_chunk:f_chunk,s_chunk_p:f_chunk_p].transpose(1,2,0).reshape(-1, chunk_size_aux))
+        Lrs_chunk = np.ascontiguousarray(Lrs[s_chunk:f_chunk].reshape(chunk_size_aux, -1))
+
+        v_ooee += np.dot(Lpq_chunk, Lrs_chunk).reshape(chunk_p, q, r, s)
 
         mr_adc.log.timer_debug("contracting v_ooee DF", *cput1)
     del(Lpq_chunk, Lrs_chunk)
@@ -709,11 +705,13 @@ def get_v2e_df(mr_adc, Lpq, Lrs, pqrs_string = None):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
 
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
+    naux, p, q = Lpq.shape
+    _, r, s = Lrs.shape
 
-    v_pqrs = einsum('iab,icd->abcd', Lpq, Lrs, optimize = einsum_type)
+    Lpq_temp = np.ascontiguousarray(Lpq.transpose(1,2,0).reshape(-1, naux))
+    Lrs_temp = np.ascontiguousarray(Lrs.reshape(naux, -1))
+
+    v_pqrs = np.dot(Lpq_temp, Lrs_temp).reshape(p, q, r, s)
 
     mr_adc.log.timer_debug("computing v2e.{:} DF".format(pqrs_string), *cput0)
     return v_pqrs
