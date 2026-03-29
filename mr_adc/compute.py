@@ -33,7 +33,7 @@ def kernel(mr_adc):
     mr_adc.method_type = mr_adc.method_type.lower()
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    mr_adc.log.info("\nComputing MR-ADC excitation energies...\n")
+    log.info("\nComputing MR-ADC excitation energies...\n")
 
     # Initial checks
     initialize(mr_adc)
@@ -51,7 +51,7 @@ def kernel(mr_adc):
     e_tot, e_corr = mr_adc.compute_reference_energy()
 
     # Compute CVS integrals
-    if mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
         integrals.transform_cvs_integrals(mr_adc)
 
     e_tot, de = mr_adc.compute_energy()
@@ -64,53 +64,46 @@ def kernel(mr_adc):
 
     print_results(mr_adc)
 
-    mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
+    log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
     return de_ev, spec_intensity, X
 
 
 def initialize(mr_adc):
 
+    log = mr_adc.log
+
     if mr_adc.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
         msg = "Unknown method %s" % mr_adc.method
         log.error(msg)
         raise Exception(msg)
 
-    if mr_adc.method_type not in ("cvs-ip"):
+    if mr_adc.method_type not in ("cvs-ip", "cvs-ee"):
         msg = "Unknown method type %s" % mr_adc.method_type
         log.error(msg)
         raise Exception(msg)
 
-    if mr_adc.interface.with_df and mr_adc.method_type not in ('cvs-ip'):
+    if mr_adc.interface.with_df and mr_adc.method_type not in ("cvs-ip", "cvs-ee"):
         msg = "Density-fitting currently only compatible with CVS-IP method type."
-        log.error(msg)
-        raise Exception(msg)
-
-    if mr_adc.method_type == "cvs-ip" and mr_adc.ncvs is None:
-        msg = "Method type %s requires setting the ncvs parameter" % mr_adc.method_type
         log.error(msg)
         raise Exception(msg)
 
     if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
 
-        if isinstance (mr_adc.ncvs, int):
-            if mr_adc.ncvs < 1 or mr_adc.ncvs > mr_adc.ncore:
-                msg = '''Method type %s requires setting the ncvs parameter as a
-                         positive integer that is smaller than ncore''' % mr_adc.method_type
-                log.error(msg)
-                raise Exception(msg)
-
-            mr_adc.nval = mr_adc.ncore - mr_adc.ncvs
-
-        else:
-            msg = "Method type %s requires setting the ncvs parameter as a positive integer" % mr_adc.method_type
+        if mr_adc.ncvs is None or not isinstance(mr_adc.ncvs, int):
+            msg = "Method type %s requires ncvs to be a positive integer" % mr_adc.method_type
             log.error(msg)
             raise Exception(msg)
 
-        mr_adc.ncasci = 0
+        if mr_adc.ncvs < 1 or mr_adc.ncvs > mr_adc.ncore:
+            msg = "Method type %s requires ncvs to be a positive integer less than ncore" % mr_adc.method_type
+            log.error(msg)
+            raise Exception(msg)
+
+        mr_adc.nval = mr_adc.ncore - mr_adc.ncvs
 
     # TODO: Temporary check of what methods are implemented in this version
-    if mr_adc.method_type not in ("cvs-ip"):
+    if mr_adc.method_type not in ("cvs-ip", "cvs-ee"):
         msg = "This spin-adapted version does not currently support method type %s" % mr_adc.method_type
         log.error(msg)
         raise Exception(msg)
@@ -132,9 +125,9 @@ def print_header(mr_adc):
     mr_adc.log.info("Number of core orbitals:                           %d" % mr_adc.ncore)
     mr_adc.log.info("Number of active orbitals:                         %d" % mr_adc.ncas)
     mr_adc.log.info("Number of external orbitals:                       %d" % mr_adc.nextern)
-    mr_adc.log.info("Number of active electrons:                        %s" % str(mr_adc.ref_nelecas))
+    mr_adc.log.info("Number of active electrons:                        %s" % mr_adc.ref_nelecas)
     mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_ref_cas[0])
-    mr_adc.log.info("Reference state spin multiplicity:                 %s" % str(mr_adc.ref_wfn_spin_mult))
+    mr_adc.log.info("Reference state spin multiplicity:                 %s" % mr_adc.ref_wfn_spin_mult)
     mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
     if mr_adc.ncvs is not None:
         mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
@@ -156,7 +149,7 @@ def print_header(mr_adc):
         mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
 
     if mr_adc.e_cas_ci is not None:
-        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas)))
+        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas))
 
 def compute_energy(mr_adc):
 
@@ -195,7 +188,8 @@ def setup_davidson(mr_adc):
     mr_adc.compute_M_00()
 
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-        mr_adc.compute_M_01()
+        if hasattr(mr_adc, "compute_M_01"):
+            mr_adc.compute_M_01()
 
     # Compute diagonal of the M matrix
     precond = mr_adc.compute_preconditioner()
