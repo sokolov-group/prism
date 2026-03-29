@@ -182,6 +182,7 @@ class CVSIPMRADC(MRADC):
 
     def _init_method(self):
         self.method_type = "cvs-ip"
+        self.ncasci = 0
 
     def compute_excitation_manifolds(self):
         return cvs_ip.compute_excitation_manifolds(self)
@@ -212,6 +213,7 @@ class CVSEEMRADC(MRADC):
 
     def _init_method(self):
         self.method_type = "cvs-ee"
+        self.ncasci = 0
 
     def compute_excitation_manifolds(self):
         return cvs_ee.compute_excitation_manifolds(self)
