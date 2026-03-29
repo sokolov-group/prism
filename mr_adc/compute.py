@@ -168,6 +168,7 @@ def compute_energy(mr_adc):
                                            nroots = mr_adc.nroots,
                                            verbose = davidson_verbose,
                                            max_space = mr_adc.max_space,
+                                           max_memory = mr_adc.max_memory,
                                            max_cycle = mr_adc.max_cycle,
                                            tol = mr_adc.tol_e,
                                            tol_residual = mr_adc.tol_r)
@@ -205,24 +206,21 @@ def setup_davidson(mr_adc):
 
 def compute_guess_vectors(mr_adc, precond, ascending = True):
 
-    sort_ind = None
-    if ascending:
-        sort_ind = np.argsort(precond)
-    else:
-        sort_ind = np.argsort(precond)[::-1]
+    nroots = mr_adc.nroots
+    dim = mr_adc.h_orth.dim
 
-    x0s = np.zeros((precond.shape[0], mr_adc.nroots))
-    min_shape = min(precond.shape[0], mr_adc.nroots)
+    sort_ind = np.argsort(precond)
+    if not ascending:
+        sort_ind = sort_ind[::-1]
+
+    x0s = np.zeros((dim, nroots))
+    min_shape = min(dim, nroots)
     x0s[:min_shape,:min_shape] = np.identity(min_shape)
 
-    x0 = np.zeros((precond.shape[0], mr_adc.nroots))
+    x0 = np.zeros((dim, nroots))
     x0[sort_ind] = x0s.copy()
 
-    x0s = []
-    for p in range(x0.shape[1]):
-        x0s.append(x0[:,p])
-
-    return x0s
+    return [x0[:, p] for p in range(nroots)]
 
 
 def compute_properties(mr_adc):
