@@ -45,16 +45,17 @@ def transform_integrals_1e(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nTransforming 1e integrals to MO basis...")
 
-    mo = mr_adc.mo
+    # Import Prism interface
+    interface = mr_adc.interface
 
-    mr_adc.h1e = reduce(np.dot, (mo.T, mr_adc.interface.h1e_ao, mo))
+    mr_adc.h1e = reduce(np.dot, (mr_adc.mo.T, interface.h1e_ao, mr_adc.mo))
 
     if mr_adc.method_type in ('ee','cvs-ee'):
         mr_adc.dip_mom = np.zeros((3, mr_adc.nmo, mr_adc.nmo))
 
         # Dipole moments
         for i in range(3):
-            mr_adc.dip_mom[i] = reduce(np.dot, (mo.T, mr_adc.interface.dip_mom_ao[i], mo))
+            mr_adc.dip_mom[i] = reduce(np.dot, (mr_adc.mo.T, interface.dip_mom_ao[i], mr_adc.mo))
 
     mr_adc.log.timer("transforming 1e integrals", *cput0)
 
@@ -259,9 +260,8 @@ def transform_Heff_integrals_2e_df(mr_adc):
     mr_adc.v2e.aaaa = tools.create_dataset('aaaa', tmpfile, (ncas, ncas, ncas, ncas))
     mr_adc.v2e.ccca = tools.create_dataset('ccca', ctmpfile, (ncore, ncore, ncore, ncas))
 
-    if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
-        if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-
+    if mr_adc.method_type in ("ip", "ea", "cvs-ip", "cvs-ee"):
+        if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
             mr_adc.v2e.ccaa = tools.create_dataset('ccaa', ctmpfile, (ncore, ncore, ncas, ncas))
             mr_adc.v2e.caac = tools.create_dataset('caac', ctmpfile, (ncore, ncas, ncas, ncore))
 
@@ -303,8 +303,8 @@ def transform_Heff_integrals_2e_df(mr_adc):
         mr_adc.v2e.ccca[:] = get_v2e_df(mr_adc, Lcc, Lca, 'ccca')
         tools.flush(ctmpfile)
 
-        if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
-            if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method_type in ("ip", "ea", "cvs-ip", "cvs-ee"):
+            if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
                 mr_adc.v2e.ccaa[:] = get_v2e_df(mr_adc, Lcc, Laa, 'ccaa')
                 tools.flush(ctmpfile)
 
@@ -324,8 +324,8 @@ def transform_Heff_integrals_2e_df(mr_adc):
         mr_adc.v2e.ccca[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
         tools.flush(ctmpfile)
 
-        if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
-            if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        if mr_adc.method_type in ("ip", "ea", "cvs-ip", "cvs-ee"):
+            if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
                 mr_adc.v2e.ccaa[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
                 tools.flush(ctmpfile)
 
@@ -364,7 +364,7 @@ def transform_integrals_2e_df(mr_adc):
     mr_adc.v2e.aeee = None
 
     # Create temp file and datasets
-    mr_adc.tmpfile.feri1 = tools.create_temp_file(mr_adc) # Non-core indices' integrals
+    mr_adc.tmpfile.feri1 = tools.create_temp_file(mr_adc)  # Non-core indices' integrals
     mr_adc.tmpfile.cferi1 = tools.create_temp_file(mr_adc) # Core indices' integras
 
     tmpfile = mr_adc.tmpfile.feri1
@@ -406,10 +406,8 @@ def transform_integrals_2e_df(mr_adc):
     del(Lpq)
 
     # 2e- integrals
-    if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
+    if mr_adc.method_type in ("ip", "ea", "cvs-ip"):
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc.v2e.ccae = tools.create_dataset('ccae', ctmpfile, (ncore, ncore, ncas, nextern))
-            mr_adc.v2e.caec = tools.create_dataset('caec', ctmpfile, (ncore, ncas, nextern, ncore))
             mr_adc.v2e.cace = tools.create_dataset('cace', ctmpfile, (ncore, ncas, ncore, nextern))
 
             mr_adc.v2e.caca = tools.create_dataset('caca', ctmpfile, (ncore, ncas, ncore, ncas))
@@ -423,12 +421,6 @@ def transform_integrals_2e_df(mr_adc):
             mr_adc.v2e.cece = tools.create_dataset('cece', ctmpfile, (ncore, nextern, ncore, nextern))
             mr_adc.v2e.ceae = tools.create_dataset('ceae', ctmpfile, (ncore, nextern, ncas, nextern))
 
-
-            mr_adc.v2e.ccae[:] = get_v2e_df(mr_adc, Lcc, mr_adc.v2e.Lae, 'ccae')
-            tools.flush(ctmpfile)
-
-            mr_adc.v2e.caec[:] = get_v2e_df(mr_adc, Lca, Lec, 'caec')
-            tools.flush(ctmpfile)
 
             mr_adc.v2e.cace[:] = get_v2e_df(mr_adc, Lca, mr_adc.v2e.Lce, 'cace')
             tools.flush(ctmpfile)
@@ -460,6 +452,7 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.ceae[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lae, s_chunk, f_chunk)
                 tools.flush(ctmpfile)
 
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
             mr_adc.v2e.caea = tools.create_dataset('caea', ctmpfile, (ncore, ncas, nextern, ncas))
 
             mr_adc.v2e.ccee = tools.create_dataset('ccee', ctmpfile, (ncore, ncore, nextern, nextern))
@@ -513,6 +506,104 @@ def transform_integrals_2e_df(mr_adc):
                 mr_adc.v2e.aeea[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, Lea, s_chunk, f_chunk)
                 tools.flush(tmpfile)
 
+    if mr_adc.method_type in ("ee", "cvs-ee"):
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
+            mr_adc.v2e.caca = tools.create_dataset('caca', ctmpfile, (ncore, ncas, ncore, ncas))
+            mr_adc.v2e.cace = tools.create_dataset('cace', ctmpfile, (ncore, ncas, ncore, nextern))
+
+            mr_adc.v2e.ccee = tools.create_dataset('ccee', ctmpfile, (ncore, ncore, nextern, nextern))
+            mr_adc.v2e.ceec = tools.create_dataset('ceec', ctmpfile, (ncore, nextern, nextern, ncore))
+
+            mr_adc.v2e.cece = tools.create_dataset('cece', ctmpfile, (ncore, nextern, ncore, nextern))
+            mr_adc.v2e.ceae = tools.create_dataset('ceae', ctmpfile, (ncore, nextern, ncas, nextern))
+
+            mr_adc.v2e.caaa = tools.create_dataset('caaa', ctmpfile, (ncore, ncas, ncas, ncas))
+            mr_adc.v2e.caae = tools.create_dataset('caae', ctmpfile, (ncore, ncas, ncas, nextern))
+            mr_adc.v2e.ceaa = tools.create_dataset('ceaa', ctmpfile, (ncore, nextern, ncas, ncas))
+
+            mr_adc.v2e.aaae = tools.create_dataset('aaae', tmpfile, (ncas, ncas, ncas, nextern))
+            mr_adc.v2e.aeae = tools.create_dataset('aeae', tmpfile, (ncas, nextern, ncas, nextern))
+
+            mr_adc.v2e.caca[:] = get_v2e_df(mr_adc, Lca, Lca, 'caca')
+            tools.flush(ctmpfile)
+
+            mr_adc.v2e.cace[:] = get_v2e_df(mr_adc, Lca, mr_adc.v2e.Lce, 'cace')
+            tools.flush(ctmpfile)
+
+            chunks = tools.calculate_chunks(mr_adc, ncore, [ncore, nextern, nextern], ntensors = 2)
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.ccee[s_chunk:f_chunk] = get_ooee_df(mr_adc, Lcc, mr_adc.v2e.Lee, s_chunk, f_chunk)
+                tools.flush(ctmpfile)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.ceec [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.ceec[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, Lec, s_chunk, f_chunk)
+                tools.flush(ctmpfile)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.cece [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.cece[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lce, s_chunk, f_chunk)
+                tools.flush(ctmpfile)
+
+            chunks = tools.calculate_chunks(mr_adc, ncore, [ncas, nextern, nextern], ntensors = 2)
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.ceae[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, mr_adc.v2e.Lae, s_chunk, f_chunk)
+                tools.flush(ctmpfile)
+
+            mr_adc.v2e.caaa[:] = get_v2e_df(mr_adc, Lca, Laa, 'caaa')
+            tools.flush(ctmpfile)
+
+            mr_adc.v2e.caae[:] = get_v2e_df(mr_adc, Lca, mr_adc.v2e.Lae, 'caae')
+            tools.flush(ctmpfile)
+
+            mr_adc.v2e.ceaa[:] = get_v2e_df(mr_adc, mr_adc.v2e.Lce, Laa, 'ceaa')
+            tools.flush(ctmpfile)
+
+            mr_adc.v2e.aaae[:] = get_v2e_df(mr_adc, Laa, mr_adc.v2e.Lae, 'aaae')
+            tools.flush(tmpfile)
+
+            chunks = tools.calculate_chunks(mr_adc, ncas, [ncas, nextern, nextern], ntensors = 2)
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.aeae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.aeae[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lae, s_chunk, f_chunk)
+                tools.flush(tmpfile)
+
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
+            mr_adc.v2e.caea = tools.create_dataset('caea', ctmpfile, (ncore, ncas, nextern, ncas))
+
+            mr_adc.v2e.caee = tools.create_dataset('caee', ctmpfile, (ncore, ncas, nextern, nextern))
+            mr_adc.v2e.ceea = tools.create_dataset('ceea', ctmpfile, (ncore, nextern, nextern, ncas))
+
+            mr_adc.v2e.aaee = tools.create_dataset('aaee', tmpfile, (ncas, ncas, nextern, nextern))
+            mr_adc.v2e.aeea = tools.create_dataset('aeea', tmpfile, (ncas, nextern, nextern, ncas))
+
+            mr_adc.v2e.caea[:] = get_v2e_df(mr_adc, Lca, Lea, 'caea')
+            tools.flush(ctmpfile)
+
+            chunks = tools.calculate_chunks(mr_adc, ncore, [ncas, nextern, nextern], ntensors = 2)
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.caee[s_chunk:f_chunk] = get_ooee_df(mr_adc, Lca, mr_adc.v2e.Lee, s_chunk, f_chunk)
+                tools.flush(ctmpfile)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.ceea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.ceea[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lce, Lea, s_chunk, f_chunk)
+                tools.flush(ctmpfile)
+
+            chunks = tools.calculate_chunks(mr_adc, ncas, [ncas, nextern, nextern], ntensors = 2)
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.aaee[s_chunk:f_chunk] = get_ooee_df(mr_adc, Laa, mr_adc.v2e.Lee, s_chunk, f_chunk)
+                tools.flush(tmpfile)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                mr_adc.log.debug("v2e.aeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+                mr_adc.v2e.aeea[s_chunk:f_chunk] = get_ooee_df(mr_adc, mr_adc.v2e.Lae, Lea, s_chunk, f_chunk)
+                tools.flush(tmpfile)
+
     # Effective one-electron integrals
     mr_adc.v2e.ccce = tools.create_dataset('ccce', ctmpfile, (ncore, ncore, ncore, nextern))
     mr_adc.v2e.ccce[:] = get_v2e_df(mr_adc, Lcc, mr_adc.v2e.Lce, 'ccce')
@@ -524,6 +615,14 @@ def transform_integrals_2e_df(mr_adc):
 
     mr_adc.v2e.ccec = tools.create_dataset('ccec', ctmpfile, (ncore, ncore, nextern, ncore))
     mr_adc.v2e.ccec[:] = get_v2e_df(mr_adc, Lcc, Lec, 'ccec')
+    tools.flush(ctmpfile)
+
+    mr_adc.v2e.ccae = tools.create_dataset('ccae', ctmpfile, (ncore, ncore, ncas, nextern))
+    mr_adc.v2e.ccae[:] = get_v2e_df(mr_adc, Lcc, mr_adc.v2e.Lae, 'ccae')
+    tools.flush(ctmpfile)
+
+    mr_adc.v2e.caec = tools.create_dataset('caec', ctmpfile, (ncore, ncas, nextern, ncore))
+    mr_adc.v2e.caec[:] = get_v2e_df(mr_adc, Lca, Lec, 'caec')
     tools.flush(ctmpfile)
 
     mr_adc.h1eff.ca = compute_effective_1e(mr_adc, mr_adc.h1e[:ncore, ncore:nocc], mr_adc.v2e.ccca, mr_adc.v2e.ccac)
