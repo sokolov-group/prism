@@ -237,7 +237,7 @@ class PYSCF:
 
         # Einsum Backend
         if backend not in ("opt_einsum", "pytblis", "numpy", None):
-            msg = (f"Requested einsum backend '{einsum_backend}' is unknown. "
+            msg = (f"Requested einsum backend '{backend}' is unknown. "
                     "Valid backend options are: 'opt_einsum', 'pytblis', 'numpy', or None.")
             raise ValueError(msg)
 
