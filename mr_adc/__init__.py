@@ -129,6 +129,7 @@ class MRADC:
     def _make_method_instance(self):
         cls_map = {
             "cvs-ip": CVSIPMRADC,
+            "cvs-ee": CVSEEMRADC,
         }
 
         try:
@@ -211,3 +212,29 @@ class CVSIPMRADC(MRADC):
     def analyze_eigenvector(self):
         return cvs_ip.analyze_eigenvector(self)
 
+class CVSEEMRADC(MRADC):
+
+    def __init__(self, interface):
+        super().__init__(interface)
+        self._init_method()
+
+    def _init_method(self):
+        self.method_type = "cvs-ee"
+
+    def compute_excitation_manifolds(self):
+        return cvs_ee.compute_excitation_manifolds(self)
+
+    def compute_M_00(self):
+        return cvs_ee.compute_M_00(self)
+
+    def compute_preconditioner(self):
+        return cvs_ee.compute_preconditioner(self)
+
+    def define_effective_hamiltonian(self):
+        return cvs_ee.define_effective_hamiltonian(self)
+
+    def compute_trans_moments(self):
+        return cvs_ee.compute_trans_moments(self)
+
+    def analyze_spec_factor(self):
+        return cvs_ee.analyze_spec_factor(self)
