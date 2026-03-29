@@ -744,9 +744,7 @@ def unpack_v2e_oeee(mr_adc, v2e_oeee):
 
 def transform_cvs_integrals(mr_adc):
 
-    log = mr_adc.log
-
-    log.info("\nTransforming integrals for the CVS calculation...")
+    mr_adc.log.info("\nTransforming integrals for the CVS calculation...")
 
     if mr_adc.interface.with_df:
         compute_cvs_integrals_2e_df(mr_adc)
@@ -909,6 +907,149 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             tools.flush(tmpfile)
             del(mr_adc.v2e.ceea)
 
+    # CVS-EE
+    elif mr_adc.method_type == "cvs-ee":
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
+            mr_adc.v2e.xxaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:ncvs, :ncvs, :, :])
+            mr_adc.v2e.xvaa = np.ascontiguousarray(mr_adc.v2e.ccaa[:ncvs, ncvs:, :, :])
+            mr_adc.v2e.vxaa = np.ascontiguousarray(mr_adc.v2e.ccaa[ncvs:, :ncvs, :, :])
+            mr_adc.v2e.vvaa = np.ascontiguousarray(mr_adc.v2e.ccaa[ncvs:, ncvs:, :, :])
+            del(mr_adc.v2e.ccaa)
+
+            mr_adc.v2e.xaxa = np.ascontiguousarray(mr_adc.v2e.caca[:ncvs, :, :ncvs, :])
+            mr_adc.v2e.xava = np.ascontiguousarray(mr_adc.v2e.caca[:ncvs, :, ncvs:, :])
+            mr_adc.v2e.vaxa = np.ascontiguousarray(mr_adc.v2e.caca[ncvs:, :, :ncvs, :])
+            mr_adc.v2e.vava = np.ascontiguousarray(mr_adc.v2e.caca[ncvs:, :, ncvs:, :])
+            del(mr_adc.v2e.caca)
+
+            mr_adc.v2e.xaax = np.ascontiguousarray(mr_adc.v2e.caac[:ncvs, :, :, :ncvs])
+            mr_adc.v2e.xaav = np.ascontiguousarray(mr_adc.v2e.caac[:ncvs, :, :, ncvs:])
+            mr_adc.v2e.vaax = np.ascontiguousarray(mr_adc.v2e.caac[ncvs:, :, :, :ncvs])
+            mr_adc.v2e.vaav = np.ascontiguousarray(mr_adc.v2e.caac[ncvs:, :, :, ncvs:])
+            del(mr_adc.v2e.caac)
+
+            mr_adc.v2e.xaex = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs, :, :, :ncvs])
+            mr_adc.v2e.xaev = np.ascontiguousarray(mr_adc.v2e.caec[:ncvs, :, :, ncvs:])
+            mr_adc.v2e.vaex = np.ascontiguousarray(mr_adc.v2e.caec[ncvs:, :, :, :ncvs])
+            mr_adc.v2e.vaev = np.ascontiguousarray(mr_adc.v2e.caec[ncvs:, :, :, ncvs:])
+            del(mr_adc.v2e.caec)
+
+            mr_adc.v2e.xaxe = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs, :, :ncvs, :])
+            mr_adc.v2e.xave = np.ascontiguousarray(mr_adc.v2e.cace[:ncvs, :, ncvs:, :])
+            mr_adc.v2e.vaxe = np.ascontiguousarray(mr_adc.v2e.cace[ncvs:, :, :ncvs, :])
+            mr_adc.v2e.vave = np.ascontiguousarray(mr_adc.v2e.cace[ncvs:, :, ncvs:, :])
+            del(mr_adc.v2e.cace)
+
+            mr_adc.v2e.xxae = np.ascontiguousarray(mr_adc.v2e.ccae[:ncvs, :ncvs, :, :])
+            mr_adc.v2e.xvae = np.ascontiguousarray(mr_adc.v2e.ccae[:ncvs, ncvs:, :, :])
+            mr_adc.v2e.vxae = np.ascontiguousarray(mr_adc.v2e.ccae[ncvs:, :ncvs, :, :])
+            mr_adc.v2e.vvae = np.ascontiguousarray(mr_adc.v2e.ccae[ncvs:, ncvs:, :, :])
+            del(mr_adc.v2e.ccae)
+
+            mr_adc.v2e.xxee = tools.create_dataset('xxee', tmpfile, (ncvs, ncvs, nextern, nextern))
+            mr_adc.v2e.xvee = tools.create_dataset('xvee', tmpfile, (ncvs, nval, nextern, nextern))
+            mr_adc.v2e.vxee = tools.create_dataset('vxee', tmpfile, (nval, ncvs, nextern, nextern))
+            mr_adc.v2e.vvee = tools.create_dataset('vvee', tmpfile, (nval, nval, nextern, nextern))
+
+            mr_adc.v2e.xxee[:] = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, :ncvs, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xvee[:] = np.ascontiguousarray(mr_adc.v2e.ccee[:ncvs, ncvs:, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vxee[:] = np.ascontiguousarray(mr_adc.v2e.ccee[ncvs:, :ncvs, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vvee[:] = np.ascontiguousarray(mr_adc.v2e.ccee[ncvs:, ncvs:, :, :])
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.ccee)
+
+            mr_adc.v2e.xeex = tools.create_dataset('xeex', tmpfile, (ncvs, nextern, nextern, ncvs))
+            mr_adc.v2e.xeev = tools.create_dataset('xeev', tmpfile, (ncvs, nextern, nextern, nval))
+            mr_adc.v2e.veex = tools.create_dataset('veex', tmpfile, (nval, nextern, nextern, ncvs))
+            mr_adc.v2e.veev = tools.create_dataset('veev', tmpfile, (nval, nextern, nextern, nval))
+
+            mr_adc.v2e.xeex[:] = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs, :, :, :ncvs])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xeev[:] = np.ascontiguousarray(mr_adc.v2e.ceec[:ncvs, :, :, ncvs:])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veex[:] = np.ascontiguousarray(mr_adc.v2e.ceec[ncvs:, :, :, :ncvs])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veev[:] = np.ascontiguousarray(mr_adc.v2e.ceec[ncvs:, :, :, ncvs:])
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.ceec)
+
+            mr_adc.v2e.xexe = tools.create_dataset('xexe', tmpfile, (ncvs, nextern, ncvs, nextern))
+            mr_adc.v2e.xeve = tools.create_dataset('xeve', tmpfile, (ncvs, nextern, nval, nextern))
+            mr_adc.v2e.vexe = tools.create_dataset('vexe', tmpfile, (nval, nextern, ncvs, nextern))
+            mr_adc.v2e.veve = tools.create_dataset('veve', tmpfile, (nval, nextern, nval, nextern))
+
+            mr_adc.v2e.xexe[:] = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, :ncvs, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xeve[:] = np.ascontiguousarray(mr_adc.v2e.cece[:ncvs, :, ncvs:, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vexe[:] = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, :ncvs, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veve[:] = np.ascontiguousarray(mr_adc.v2e.cece[ncvs:, :, ncvs:, :])
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.cece)
+
+            mr_adc.v2e.xaaa = np.ascontiguousarray(mr_adc.v2e.caaa[:ncvs, :, :, :])
+            mr_adc.v2e.vaaa = np.ascontiguousarray(mr_adc.v2e.caaa[ncvs:, :, :, :])
+            del(mr_adc.v2e.caaa)
+
+            mr_adc.v2e.xaae = np.ascontiguousarray(mr_adc.v2e.caae[:ncvs, :, :, :])
+            mr_adc.v2e.vaae = np.ascontiguousarray(mr_adc.v2e.caae[ncvs:, :, :, :])
+            del(mr_adc.v2e.caae)
+
+            mr_adc.v2e.xeaa = np.ascontiguousarray(mr_adc.v2e.ceaa[:ncvs, :, :, :])
+            mr_adc.v2e.veaa = np.ascontiguousarray(mr_adc.v2e.ceaa[ncvs:, :, :, :])
+            del(mr_adc.v2e.ceaa)
+
+            mr_adc.v2e.xeae = np.ascontiguousarray(mr_adc.v2e.ceae[:ncvs, :, :, :])
+            mr_adc.v2e.veae = np.ascontiguousarray(mr_adc.v2e.ceae[ncvs:, :, :, :])
+            del(mr_adc.v2e.ceae)
+
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
+            mr_adc.v2e.xaea = np.ascontiguousarray(mr_adc.v2e.caea[:ncvs, :, :, :])
+            mr_adc.v2e.vaea = np.ascontiguousarray(mr_adc.v2e.caea[ncvs:, :, :, :])
+            del(mr_adc.v2e.caea)
+
+            mr_adc.v2e.xeea = tools.create_dataset('xeea', tmpfile, (ncvs, nextern, nextern, ncas))
+            mr_adc.v2e.veea = tools.create_dataset('veea', tmpfile, (nval, nextern, nextern, ncas))
+
+            mr_adc.v2e.xeea[:] = np.ascontiguousarray(mr_adc.v2e.ceea[:ncvs, :, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veea[:] = np.ascontiguousarray(mr_adc.v2e.ceea[ncvs:, :, :, :])
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.ceea)
+
+            mr_adc.v2e.xaee = tools.create_dataset('xaee', tmpfile, (ncvs, ncas, nextern, nextern))
+            mr_adc.v2e.vaee = tools.create_dataset('vaee', tmpfile, (nval, ncas, nextern, nextern))
+
+            mr_adc.v2e.xaee[:] = np.ascontiguousarray(mr_adc.v2e.caee[:ncvs, :, :, :])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaee[:] = np.ascontiguousarray(mr_adc.v2e.caee[ncvs:, :, :, :])
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.caee)
+
+        if mr_adc.method == "mr-adc(2)-x":
+            mr_adc.v2e.xxxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs])
+            mr_adc.v2e.xxvv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:])
+            mr_adc.v2e.xvvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs])
+            mr_adc.v2e.xxvx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs])
+            mr_adc.v2e.xxxv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:])
+            mr_adc.v2e.xvxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs])
+            del(mr_adc.v2e.cccc)
+
     # Effective one-electron integrals
     mr_adc.v2e.xxxa = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, :ncvs, :])
     mr_adc.v2e.xxva = np.ascontiguousarray(mr_adc.v2e.ccca[:ncvs, :ncvs, ncvs:, :])
@@ -947,7 +1088,8 @@ def compute_cvs_integrals_2e_df(mr_adc):
     nextern = mr_adc.nextern
 
     # Remove in-core v2e integrals
-    del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+    if mr_adc.method_type == "cvs-ip":
+        del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
 
     mr_adc.tmpfile.xferi1 = tools.create_temp_file(mr_adc)
     tmpfile = mr_adc.tmpfile.xferi1
@@ -1322,6 +1464,377 @@ def compute_cvs_integrals_2e_df(mr_adc):
                 mr_adc.log.timer_debug("storing CVS v2e.veea", *cput1)
             del(mr_adc.v2e.ceea)
 
+    elif mr_adc.method_type == "cvs-ee":
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
+            mr_adc.v2e.xxaa = tools.create_dataset('xxaa', tmpfile, (ncvs, ncvs, ncas, ncas))
+            mr_adc.v2e.xvaa = tools.create_dataset('xvaa', tmpfile, (ncvs, nval, ncas, ncas))
+            mr_adc.v2e.vxaa = tools.create_dataset('vxaa', tmpfile, (nval, ncvs, ncas, ncas))
+            mr_adc.v2e.vvaa = tools.create_dataset('vvaa', tmpfile, (nval, nval, ncas, ncas))
+
+            mr_adc.v2e.xxae = tools.create_dataset('xxae', tmpfile, (ncvs, ncvs, ncas, nextern))
+            mr_adc.v2e.xvae = tools.create_dataset('xvae', tmpfile, (ncvs, nval, ncas, nextern))
+            mr_adc.v2e.vxae = tools.create_dataset('vxae', tmpfile, (nval, ncvs, ncas, nextern))
+            mr_adc.v2e.vvae = tools.create_dataset('vvae', tmpfile, (nval, nval, ncas, nextern))
+
+            mr_adc.v2e.xxee = tools.create_dataset('xxee', tmpfile, (ncvs, ncvs, nextern, nextern))
+            mr_adc.v2e.xvee = tools.create_dataset('xvee', tmpfile, (ncvs, nval, nextern, nextern))
+            mr_adc.v2e.vxee = tools.create_dataset('vxee', tmpfile, (nval, ncvs, nextern, nextern))
+            mr_adc.v2e.vvee = tools.create_dataset('vvee', tmpfile, (nval, nval, nextern, nextern))
+
+            mr_adc.v2e.xaax = tools.create_dataset('xaax', tmpfile, (ncvs, ncas, ncas, ncvs))
+            mr_adc.v2e.xaav = tools.create_dataset('xaav', tmpfile, (ncvs, ncas, ncas, nval))
+            mr_adc.v2e.vaax = tools.create_dataset('vaax', tmpfile, (nval, ncas, ncas, ncvs))
+            mr_adc.v2e.vaav = tools.create_dataset('vaav', tmpfile, (nval, ncas, ncas, nval))
+
+            mr_adc.v2e.xaex = tools.create_dataset('xaex', tmpfile, (ncvs, ncas, nextern, ncvs))
+            mr_adc.v2e.xaev = tools.create_dataset('xaev', tmpfile, (ncvs, ncas, nextern, nval))
+            mr_adc.v2e.vaex = tools.create_dataset('vaex', tmpfile, (nval, ncas, nextern, ncvs))
+            mr_adc.v2e.vaev = tools.create_dataset('vaev', tmpfile, (nval, ncas, nextern, nval))
+
+            mr_adc.v2e.xaxa = tools.create_dataset('xaxa', tmpfile, (ncvs, ncas, ncvs, ncas))
+            mr_adc.v2e.vaxa = tools.create_dataset('vaxa', tmpfile, (nval, ncas, ncvs, ncas))
+            mr_adc.v2e.xava = tools.create_dataset('xava', tmpfile, (ncvs, ncas, nval, ncas))
+            mr_adc.v2e.vava = tools.create_dataset('vava', tmpfile, (nval, ncas, nval, ncas))
+
+            mr_adc.v2e.xexe = tools.create_dataset('xexe', tmpfile, (ncvs, nextern, ncvs, nextern))
+            mr_adc.v2e.xeve = tools.create_dataset('xeve', tmpfile, (ncvs, nextern, nval, nextern))
+            mr_adc.v2e.vexe = tools.create_dataset('vexe', tmpfile, (nval, nextern, ncvs, nextern))
+            mr_adc.v2e.veve = tools.create_dataset('veve', tmpfile, (nval, nextern, nval, nextern))
+
+            mr_adc.v2e.xaxe = tools.create_dataset('xaxe', tmpfile, (ncvs, ncas, ncvs, nextern))
+            mr_adc.v2e.xave = tools.create_dataset('xave', tmpfile, (ncvs, ncas, nval, nextern))
+            mr_adc.v2e.vaxe = tools.create_dataset('vaxe', tmpfile, (nval, ncas, ncvs, nextern))
+            mr_adc.v2e.vave = tools.create_dataset('vave', tmpfile, (nval, ncas, nval, nextern))
+
+            mr_adc.v2e.xaaa = tools.create_dataset('xaaa', tmpfile, (ncvs, ncas, ncas, ncas))
+            mr_adc.v2e.vaaa = tools.create_dataset('vaaa', tmpfile, (nval, ncas, ncas, ncas))
+
+            mr_adc.v2e.xeae = tools.create_dataset('xeae', tmpfile, (ncvs, nextern, ncas, nextern))
+            mr_adc.v2e.veae = tools.create_dataset('veae', tmpfile, (nval, nextern, ncas, nextern))
+
+            mr_adc.v2e.xaae = tools.create_dataset('xaae', tmpfile, (ncvs, ncas, ncas, nextern))
+            mr_adc.v2e.vaae = tools.create_dataset('vaae', tmpfile, (nval, ncas, ncas, nextern))
+
+            mr_adc.v2e.xeaa = tools.create_dataset('xeaa', tmpfile, (ncvs, nextern, ncas, ncas))
+            mr_adc.v2e.veaa = tools.create_dataset('veaa', tmpfile, (nval, nextern, ncas, ncas))
+
+            mr_adc.v2e.xeex = tools.create_dataset('xeex', tmpfile, (ncvs, nextern, nextern, ncvs))
+            mr_adc.v2e.xeev = tools.create_dataset('xeev', tmpfile, (ncvs, nextern, nextern, nval))
+            mr_adc.v2e.veex = tools.create_dataset('veex', tmpfile, (nval, nextern, nextern, ncvs))
+            mr_adc.v2e.veev = tools.create_dataset('veev', tmpfile, (nval, nextern, nextern, nval))
+
+            mr_adc.v2e.xxaa[:] = mr_adc.v2e.ccaa[:ncvs, :ncvs, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xvaa[:] = mr_adc.v2e.ccaa[:ncvs, ncvs:, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vxaa[:] = mr_adc.v2e.ccaa[ncvs:, :ncvs, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vvaa[:] = mr_adc.v2e.ccaa[ncvs:, ncvs:, :, :]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.ccaa)
+
+
+            mr_adc.v2e.xxae[:] = mr_adc.v2e.ccae[:ncvs, :ncvs, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xvae[:] = mr_adc.v2e.ccae[:ncvs, ncvs:, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vxae[:] = mr_adc.v2e.ccae[ncvs:, :ncvs, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vvae[:] = mr_adc.v2e.ccae[ncvs:, ncvs:, :, :]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.ccae)
+
+            mr_adc.v2e.xaax[:] = mr_adc.v2e.caac[:ncvs, :, :, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xaav[:] = mr_adc.v2e.caac[:ncvs, :, :, ncvs:]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaax[:] = mr_adc.v2e.caac[ncvs:, :, :, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaav[:] = mr_adc.v2e.caac[ncvs:, :, :, ncvs:]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.caac)
+
+
+            mr_adc.v2e.xaex[:] = mr_adc.v2e.caec[:ncvs, :, :, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xaev[:] = mr_adc.v2e.caec[:ncvs, :, :, ncvs:]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaex[:] = mr_adc.v2e.caec[ncvs:, :, :, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaev[:] = mr_adc.v2e.caec[ncvs:, :, :, ncvs:]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.caec)
+
+
+            mr_adc.v2e.xaxa[:] = mr_adc.v2e.caca[:ncvs, :, :ncvs, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaxa[:] = mr_adc.v2e.caca[ncvs:, :, :ncvs, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xava[:] = mr_adc.v2e.caca[:ncvs, :, ncvs:, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vava[:] = mr_adc.v2e.caca[ncvs:, :, ncvs:, :]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.caca)
+
+            mr_adc.v2e.xaxe[:] = mr_adc.v2e.cace[:ncvs, :, :ncvs, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xave[:] = mr_adc.v2e.cace[:ncvs, :, ncvs:, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaxe[:] = mr_adc.v2e.cace[ncvs:, :, :ncvs, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vave[:] = mr_adc.v2e.cace[ncvs:, :, ncvs:, :]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.cace)
+
+            mr_adc.v2e.xaaa[:] = mr_adc.v2e.caaa[:ncvs, :, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaaa[:] = mr_adc.v2e.caaa[ncvs:, :, :, :]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.caaa)
+
+
+            mr_adc.v2e.xaae[:] = mr_adc.v2e.caae[:ncvs, :, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaae[:] = mr_adc.v2e.caae[ncvs:, :, :, :]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.caae)
+
+
+            mr_adc.v2e.xeaa[:] = mr_adc.v2e.ceaa[:ncvs, :, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veaa[:] = mr_adc.v2e.ceaa[ncvs:, :, :, :]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.ceaa)
+
+            chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern])
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xexe [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xexe[:,s_chunk:f_chunk] = mr_adc.v2e.cece[:ncvs, s_chunk:f_chunk, :ncvs, :]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xexe", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xeve [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xeve[:,s_chunk:f_chunk] = mr_adc.v2e.cece[:ncvs, s_chunk:f_chunk, ncvs:, :]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xeve", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.vexe [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.vexe[:,s_chunk:f_chunk] = mr_adc.v2e.cece[ncvs:, s_chunk:f_chunk, :ncvs, :]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.vexe", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veve [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.veve[:,s_chunk:f_chunk] = mr_adc.v2e.cece[ncvs:, s_chunk:f_chunk, ncvs:, :]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.veve", *cput1)
+            del(mr_adc.v2e.cece)
+
+
+            chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern])
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xeae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xeae[:,s_chunk:f_chunk] = mr_adc.v2e.ceae[:ncvs, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xeae", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.veae[:,s_chunk:f_chunk] = mr_adc.v2e.ceae[ncvs:, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.veae", *cput1) 
+            del(mr_adc.v2e.ceae)
+
+
+            chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern])
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xxee[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[:ncvs, :ncvs, :, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xxee", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xvee[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[:ncvs, ncvs:, :, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xvee", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.vxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.vxee[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, :ncvs, :, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.vxee", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.vvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.vvee[:,:,:,s_chunk:f_chunk] = mr_adc.v2e.ccee[ncvs:, ncvs:, :, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.vvee", *cput1)
+            del(mr_adc.v2e.ccee)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xeex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xeex[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, :, s_chunk:f_chunk, :ncvs]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xeex", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xeev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xeev[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[:ncvs, :, s_chunk:f_chunk, ncvs:]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xeev", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.veex[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, :, s_chunk:f_chunk, :ncvs]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.veex", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.veev[:,:,s_chunk:f_chunk] = mr_adc.v2e.ceec[ncvs:, :, s_chunk:f_chunk, ncvs:]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.veev", *cput1)
+            del(mr_adc.v2e.ceec)
+
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x", "mr-adc(2)-sx"):
+
+            mr_adc.v2e.xaea = tools.create_dataset('xaea', tmpfile, (ncvs, ncas, nextern, ncas))
+            mr_adc.v2e.vaea = tools.create_dataset('vaea', tmpfile, (nval, ncas, nextern, ncas))
+
+            mr_adc.v2e.xaee = tools.create_dataset('xaee', tmpfile, (ncvs, ncas, nextern, nextern))
+            mr_adc.v2e.vaee = tools.create_dataset('vaee', tmpfile, (nval, ncas, nextern, nextern))
+
+            mr_adc.v2e.xeea = tools.create_dataset('xeea', tmpfile, (ncvs, nextern, nextern, ncas))
+            mr_adc.v2e.veea = tools.create_dataset('veea', tmpfile, (nval, nextern, nextern, ncas))
+
+            mr_adc.v2e.xeee = tools.create_dataset('xeee', tmpfile, (ncvs, nextern, nextern, nextern))
+            mr_adc.v2e.veee = tools.create_dataset('veee', tmpfile, (nval, nextern, nextern, nextern))
+
+            mr_adc.v2e.aeee = tools.create_dataset('aeee', tmpfile, (ncas, nextern, nextern, nextern))
+            mr_adc.v2e.aeee[:] = mr_adc.v2e.aeee[:]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xaea[:] = mr_adc.v2e.caea[:ncvs, :, :, :]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.vaea[:] = mr_adc.v2e.caea[ncvs:, :, :, :]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.caea)
+
+            chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern])
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xaee[:,:,s_chunk:f_chunk] = mr_adc.v2e.caee[:ncvs, :, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xaee", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.vaee[:,:,s_chunk:f_chunk] = mr_adc.v2e.caee[ncvs:, :, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.vaee", *cput1)
+            del(mr_adc.v2e.caee)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.xeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.xeea[:,s_chunk:f_chunk] = mr_adc.v2e.ceea[:ncvs, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.xeea", *cput1)
+
+            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+                cput1 = (logger.process_clock(), logger.perf_counter())
+                mr_adc.log.debug("v2e.veea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+                mr_adc.v2e.veea[:,s_chunk:f_chunk] = mr_adc.v2e.ceea[ncvs:, s_chunk:f_chunk]
+                tools.flush(tmpfile)
+                mr_adc.log.timer_debug("storing CVS v2e.veea", *cput1)
+            del(mr_adc.v2e.ceea)
+
+        if mr_adc.method == "mr-adc(2)-x":
+            mr_adc.v2e.xxxx = tools.create_dataset('xxxx', tmpfile, (ncvs, ncvs, ncvs, ncvs))
+            mr_adc.v2e.xxvv = tools.create_dataset('xxvv', tmpfile, (ncvs, ncvs, nval, nval))
+            mr_adc.v2e.xvvx = tools.create_dataset('xvvx', tmpfile, (ncvs, nval, nval, ncvs))
+            mr_adc.v2e.xxvx = tools.create_dataset('xxvx', tmpfile, (ncvs, ncvs, nval, ncvs))
+            mr_adc.v2e.xxxv = tools.create_dataset('xxxv', tmpfile, (ncvs, ncvs, ncvs, nval))
+            mr_adc.v2e.xvxx = tools.create_dataset('xvxx', tmpfile, (ncvs, nval, ncvs, ncvs))
+
+            mr_adc.v2e.xxxx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xxvv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xvvx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, ncvs:, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xxvx[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, :ncvs]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xxxv[:] = mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, ncvs:]
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.xvxx[:] = mr_adc.v2e.cccc[:ncvs, ncvs:, :ncvs, :ncvs]
+            tools.flush(tmpfile)
+            del(mr_adc.v2e.cccc)
+
     # Close non-CVS integrals' files
     mr_adc.tmpfile.cferi1.close()
 
@@ -1330,3 +1843,4 @@ def compute_cvs_integrals_2e_df(mr_adc):
     mr_adc.mo_energy.v = mr_adc.mo_energy.c[ncvs:]
 
     mr_adc.log.timer("computing CVS integrals", *cput0)
+
