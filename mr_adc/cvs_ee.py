@@ -1,4 +1,4 @@
-# Copyright 2023 Prism Developers. All Rights Reserved.
+# Copyright 2026 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@
 #
 
 import numpy as np
-import prism.mr_adc_overlap as mr_adc_overlap
-import prism.mr_adc_intermediates as mr_adc_intermediates
+from prism.mr_adc import overlap
+from prism.mr_adc import intermediates
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
-import prism.cvs_ee.transition_moments as q2_trans_mom
-import prism.cvs_ee.sigma_vector as h1_h1_sigma
+import cvs_ee.transition_moments as q2_trans_mom
+import cvs_ee.sigma_vector as h1_h1_sigma
 
 def compute_excitation_manifolds(mr_adc):
 
@@ -51,7 +51,7 @@ def compute_excitation_manifolds(mr_adc):
     mr_adc.log.extra("\nDimension of h0 excitation manifold:                       %d" % mr_adc.h0.dim)
 
     # Orthogonalized zeroth-order manifold
-    mr_adc.S12.ca = mr_adc_overlap.compute_S12_p1(mr_adc)
+    mr_adc.S12.ca = overlap.compute_S12_p1(mr_adc)
 
     mr_adc.h_orth.n_ca_caaa = mr_adc.ncvs * mr_adc.S12.ca.shape[1]
     mr_adc.h_orth.n_ce_caea = mr_adc.h0.n_ce
@@ -179,14 +179,14 @@ def compute_excitation_manifolds(mr_adc):
 
         # Orthogonalized zeroth- and first-order manifold
         if not hasattr(mr_adc.S12, "ccaa"):
-            mr_adc.S12.ccaa = mr_adc_overlap.compute_S12_p2(mr_adc)
+            mr_adc.S12.ccaa = overlap.compute_S12_p2(mr_adc)
         if not hasattr(mr_adc.S12, "ccea"):
-            mr_adc.S12.ccea = mr_adc_overlap.compute_S12_p1(mr_adc)
+            mr_adc.S12.ccea = overlap.compute_S12_p1(mr_adc)
         if not hasattr(mr_adc.S12, "caee"):
-            mr_adc.S12.caee = mr_adc_overlap.compute_S12_m1(mr_adc)
+            mr_adc.S12.caee = overlap.compute_S12_m1(mr_adc)
 
-        mr_adc.S12.ca_caaa = mr_adc_overlap.compute_S12_p1p_projector(mr_adc)
-        mr_adc.S12.ce_caea = mr_adc_overlap.compute_S12_0p_projector(mr_adc)
+        mr_adc.S12.ca_caaa = overlap.compute_S12_p1p_projector(mr_adc)
+        mr_adc.S12.ce_caea = overlap.compute_S12_0p_projector(mr_adc)
 
         # double-core excitations
         mr_adc.h_orth.n_ccaa = mr_adc.ncvs * mr_adc.ncvs * mr_adc.S12.ccaa.shape[1]
@@ -321,7 +321,7 @@ def compute_M_00(mr_adc):
 
     # CA - CA
     # Define Koopmans intermediate
-    K_ac = mr_adc_intermediates.compute_K_ac(mr_adc)
+    K_ac = intermediates.compute_K_ac(mr_adc)
 
     temp  = einsum('IJ,XY->IXJY',  np.identity(ncvs), K_ac)
     temp -= einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
@@ -24573,7 +24573,7 @@ def compute_preconditioner(mr_adc):
         aa_tril_ind = mr_adc.h1.aa_tril_ind 
 
         ## Intermediates
-        #ints = mr_adc_intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
+        #ints = intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
         #INT01, INT02, INT03, INT04, INT05, INT06, INT07, INT08, INT09, INT10 = ints
         #del ints
 
@@ -25406,7 +25406,7 @@ def define_effective_hamiltonian(mr_adc):
         ## Create intermediates
         ints = None
         if mr_adc.h_orth.dim_ca_caaa:
-            ints = mr_adc_intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
+            ints = intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
 
         def apply_M(X):
             ## Xt = S_12 X
