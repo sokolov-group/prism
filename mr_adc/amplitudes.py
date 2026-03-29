@@ -2549,25 +2549,24 @@ def compute_t2_m1p_singles(mr_adc):
             t1_aaee = mr_adc.t1.aaee[s_t_chunk:f_t_chunk]
 
             ## Reduced density matrices
-            rdm_ccaa = mr_adc.rdm.ccaa[:, s_v_chunk:f_v_chunk, s_t_chunk:f_t_chunk, :]
+            rdm_ccaa = mr_adc.rdm.ccaa[:, s_v_chunk:f_v_chunk, s_t_chunk:f_t_chunk]
 
             V1 -= 1/2 * einsum('xyab,zbAa,Xzxy->XA', t1_aaee, v_aeee, rdm_ccaa, optimize = einsum_type)
 
         mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
     del(v_aeee, t1_aaee, rdm_ccaa)
 
-    S_12_V = np.einsum("Pa,Pm->ma", V1, S_m1_12_inv_act)
-    S_12_V = np.einsum("mp,ma->pa", evecs, S_12_V)
+    S_12_V = einsum("mp,Pa,Pm->pa", evecs, V1, S_m1_12_inv_act, optimize = einsum_type)
 
     # Compute denominators
     d_pa = (evals[:,None] + e_extern)
     d_pa = d_pa**(-1)
 
     S_12_V *= d_pa
-    S_12_V = np.einsum("mp,pa->ma", evecs, S_12_V)
+    S_12_V = einsum("mp,pa->ma", evecs, S_12_V, optimize = einsum_type)
 
     # Compute T2[-1'] t2_ae amplitudes
-    t2_ae = np.einsum("Pm,ma->Pa", S_m1_12_inv_act, S_12_V)
+    t2_ae = einsum("Pm,ma->Pa", S_m1_12_inv_act, S_12_V, optimize = einsum_type)
 
     mr_adc.log.extra("Norm of T[-1']^(2):                          %20.12f" % np.linalg.norm(t2_ae))
     mr_adc.log.timer("computing T[-1']^(2) amplitudes", *cput0)
