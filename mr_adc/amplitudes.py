@@ -4188,7 +4188,7 @@ def compute_t2_0pp_singles(mr_adc):
 
             V1_m2 += temp
             mr_adc.log.timer_debug("contracting v2e.aeae", *cput1)
-            del(t1_aaee, v_aeae)
+        del(t1_aaee, v_aeae)
 
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
@@ -4306,7 +4306,7 @@ def compute_t2_0pp_singles(mr_adc):
 
             V1_m2 += temp
             mr_adc.log.timer_debug("contracting t1.aaee", *cput1)
-            del(e_extern, t1_aaee)
+        del(e_extern, t1_aaee)
 
         V1 += V1_m2
 
@@ -4345,7 +4345,7 @@ def compute_t2_0pp_singles(mr_adc):
 
             V1_m1 += temp
             mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
-            del(t1_caee, v_ceae)
+        del(t1_caee, v_ceae)
 
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
 
@@ -4362,7 +4362,7 @@ def compute_t2_0pp_singles(mr_adc):
 
             V1_m1 += temp
             mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
-            del(t1_caee, v_ceae)
+        del(t1_caee, v_ceae)
 
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
@@ -4412,7 +4412,7 @@ def compute_t2_0pp_singles(mr_adc):
 
             V1_m1 += temp
             mr_adc.log.timer_debug("contracting t1.caee", *cput1)
-            del(t1_caee_ab, t1_caee_ba)
+        del(t1_caee_ab, t1_caee_ba)
 
         V1 += V1_m1
 
@@ -4441,7 +4441,7 @@ def compute_t2_0pp_singles(mr_adc):
 
             V1_0 += temp
             mr_adc.log.timer_debug("contracting v2e.cece", *cput1)
-            del(t1_ccee, v_cece)
+        del(t1_ccee, v_cece)
 
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput1 = (logger.process_clock(), logger.perf_counter())
@@ -4460,7 +4460,7 @@ def compute_t2_0pp_singles(mr_adc):
 
             V1_0 += temp
             mr_adc.log.timer_debug("contracting t1.ccee", *cput1)
-            del(e_extern, t1_ccee)
+        del(e_extern, t1_ccee)
 
         V1 += V1_0
 
@@ -4549,7 +4549,6 @@ def compute_t2_0pp_singles(mr_adc):
     def compute_V1__t1_p2(mr_adc, V1):
         ## Molecular Orbitals Energies
         e_core = mr_adc.mo_energy.c
-        e_extern = mr_adc.mo_energy.e
 
         ## One-electron integrals
         h_aa = mr_adc.h1eff.aa
