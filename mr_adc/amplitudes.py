@@ -1960,10 +1960,10 @@ def compute_t2_m1p_singles(mr_adc):
     rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
     # Compute K_ca matrix
-    K_ca = mr_adc_intermediates.compute_K_ca(mr_adc)
+    K_ca = intermediates.compute_K_ca(mr_adc)
     
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_m1_12_inv_act = mr_adc_overlap.compute_S12_m1(mr_adc)
+    S_m1_12_inv_act = overlap.compute_S12_m1(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1_12_inv_act.T, K_ca, S_m1_12_inv_act))
@@ -2556,17 +2556,17 @@ def compute_t2_m1p_singles(mr_adc):
         mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
     del(v_aeee, t1_aaee, rdm_ccaa)
 
-    S_12_V = einsum("mp,Pa,Pm->pa", evecs, V1, S_m1_12_inv_act, optimize = einsum_type)
-
     # Compute denominators
     d_pa = (evals[:,None] + e_extern)
     d_pa = d_pa**(-1)
 
-    S_12_V *= d_pa
-    S_12_V = einsum("mp,pa->ma", evecs, S_12_V, optimize = einsum_type)
+    # Compute T[-1']^(2) amplitudes
+    S_12_V_m1 = einsum('mp,Pa,Pm->pa', evecs, V1, S_m1_12_inv_act, optimize = einsum_type)
+    S_12_V_m1 *= d_pa
+    S_12_V_m1 = einsum('mp,pa->ma', evecs, S_12_V_m1, optimize = einsum_type)
 
-    # Compute T2[-1'] t2_ae amplitudes
-    t2_ae = einsum("Pm,ma->Pa", S_m1_12_inv_act, S_12_V, optimize = einsum_type)
+    # Compute T[-1']^(2) t2_ae tensor
+    t2_ae = einsum('Pm,ma->Pa', S_m1_12_inv_act, S_12_V_m1, optimize = einsum_type)
 
     mr_adc.log.extra("Norm of T[-1']^(2):                          %20.12f" % np.linalg.norm(t2_ae))
     mr_adc.log.timer("computing T[-1']^(2) amplitudes", *cput0)
@@ -2631,10 +2631,10 @@ def compute_t2_p1p_singles(mr_adc):
     rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
     # Compute K_ac matrix
-    K_p1p = mr_adc_intermediates.compute_K_ac(mr_adc)
+    K_p1p = intermediates.compute_K_ac(mr_adc)
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
-    S_p1p_12_inv_act = mr_adc_overlap.compute_S12_p1(mr_adc)
+    S_p1p_12_inv_act = overlap.compute_S12_p1(mr_adc)
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1p_12_inv_act.T, K_p1p, S_p1p_12_inv_act))
@@ -3861,7 +3861,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting v2e.cece t1.caee", *cput1)
-        del(v_cece, t1_caee)
+    del(v_cece, t1_caee)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
 
@@ -3876,8 +3876,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting v2e.cece t1.caee", *cput1)
-        del(v_cece, t1_caee)
-
+    del(v_cece, t1_caee)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
@@ -3894,7 +3893,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting v2e.ceae t1.ccee", *cput1)
-        del(v_ceae, t1_ccee)
+    del(v_ceae, t1_ccee)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
 
@@ -3909,7 +3908,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting v2e.ceae t1.ccee", *cput1)
-        del(v_ceae, t1_ccee)
+    del(v_ceae, t1_ccee)
 
     chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncore, ncore, nextern],
                                                                      [ncas, ncas, nextern], ntensors = 2)
@@ -3928,7 +3927,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting v2e.ceae t1.aaee", *cput1)
-        del(v_ceae, t1_aaee)
+    del(v_ceae, t1_aaee)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
 
@@ -3942,7 +3941,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting v2e.ceae t1.aaee", *cput1)
-        del(v_ceae, t1_aaee)
+    del(v_ceae, t1_aaee)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
@@ -3959,7 +3958,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting v2e.aeae t1.caee", *cput1)
-        del(v_aeae, t1_caee)
+    del(v_aeae, t1_caee)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
 
@@ -3973,7 +3972,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting v2e.aeae t1.caee", *cput1)
-        del(v_aeae, t1_caee)
+    del(v_aeae, t1_caee)
 
     chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncore, ncore, nextern],
                                                                      [ncore, ncas, nextern], ntensors = 3)
@@ -4012,7 +4011,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting t1.ccee t1.caee", *cput1)
-        del(e_extern, t1_ccee, t1_caee)
+    del(e_extern, t1_ccee, t1_caee)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
 
@@ -4039,7 +4038,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting t1.ccee t1.caee", *cput1)
-        del(e_extern, t1_ccee, t1_caee)
+    del(e_extern, t1_ccee, t1_caee)
         
     chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncas, ncas, nextern],
                                                                      [ncore, ncas, nextern], ntensors = 3)
@@ -4089,7 +4088,7 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting t1.aaee t1.caee", *cput1)
-        del(e_extern, t1_aaee, t1_caee)
+    del(e_extern, t1_aaee, t1_caee)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
 
@@ -4112,22 +4111,19 @@ def compute_t2_p1p_singles(mr_adc):
 
         V1 += temp
         mr_adc.log.timer_debug("contracting t1.aaee t1.caee", *cput1)
-        del(e_extern, t1_aaee, t1_caee)
+    del(e_extern, t1_aaee, t1_caee)
 
     # Compute denominators
     d_ip = (-e_core[:,None] + evals)
     d_ip = d_ip**(-1)
 
     # Compute T[+1']^(2) amplitudes
-    S_12_V_p1p = einsum("iP,Pm->im", V1, S_p1p_12_inv_act, optimize = einsum_type)
-    S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
+    S_12_V_p1p = einsum('mp,iP,Pm->ip', evecs, V1, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p *= d_ip
-    S_12_V_p1p = einsum("mp,ip->im", evecs, S_12_V_p1p, optimize = einsum_type)
-    del(V1, d_ip, evals, evecs)
+    S_12_V_p1p = einsum('mp,ip->im', evecs, S_12_V_p1p, optimize = einsum_type)
 
-    ## Compute T[+1']^(2) t2_ca tensor
-    t2_ca = einsum("Pm,im->iP", S_p1p_12_inv_act, S_12_V_p1p, optimize = einsum_type)
-    del(S_p1p_12_inv_act, S_12_V_p1p)
+    # Compute T[+1']^(2) t2_ca tensor
+    t2_ca = einsum('Pm,im->iP', S_p1p_12_inv_act, S_12_V_p1p, optimize = einsum_type)
  
     mr_adc.log.extra("Norm of T[+1']^(2):                          %20.12f" % np.linalg.norm(t2_ca))
     mr_adc.log.timer("computing T[+1']^(2) amplitudes", *cput0)
