@@ -96,6 +96,7 @@ class PYSCF:
 
         # Davidson
         self.davidson = lib.linalg_helper.davidson1
+        self.davidson_nosym = lib.linalg_helper.davidson_nosym1
 
         # Current Memory
         self.current_memory = lib.current_memory
