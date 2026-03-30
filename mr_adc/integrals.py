@@ -1041,6 +1041,10 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             tools.flush(tmpfile)
             del(mr_adc.v2e.caee)
 
+            mr_adc.v2e.xeee = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs])
+            mr_adc.v2e.veee = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:])
+            del(mr_adc.v2e.ceee)
+
         if mr_adc.method == "mr-adc(2)-x":
             mr_adc.v2e.xxxx = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, :ncvs, :ncvs])
             mr_adc.v2e.xxvv = np.ascontiguousarray(mr_adc.v2e.cccc[:ncvs, :ncvs, ncvs:, ncvs:])
@@ -1090,6 +1094,11 @@ def compute_cvs_integrals_2e_df(mr_adc):
     # Remove in-core v2e integrals
     if mr_adc.method_type == "cvs-ip":
         del(mr_adc.v2e.Lce, mr_adc.v2e.Lae, mr_adc.v2e.Lee)
+
+    if mr_adc.method_type == "cvs-ee":
+        mr_adc.v2e.Lxe = mr_adc.v2e.Lce[:, :ncvs]
+        mr_adc.v2e.Lve = mr_adc.v2e.Lce[:, ncvs:]
+        del mr_adc.v2e.Lce
 
     mr_adc.tmpfile.xferi1 = tools.create_temp_file(mr_adc)
     tmpfile = mr_adc.tmpfile.xferi1
@@ -1758,13 +1767,6 @@ def compute_cvs_integrals_2e_df(mr_adc):
 
             mr_adc.v2e.xeea = tools.create_dataset('xeea', tmpfile, (ncvs, nextern, nextern, ncas))
             mr_adc.v2e.veea = tools.create_dataset('veea', tmpfile, (nval, nextern, nextern, ncas))
-
-            mr_adc.v2e.xeee = tools.create_dataset('xeee', tmpfile, (ncvs, nextern, nextern, nextern))
-            mr_adc.v2e.veee = tools.create_dataset('veee', tmpfile, (nval, nextern, nextern, nextern))
-
-            mr_adc.v2e.aeee = tools.create_dataset('aeee', tmpfile, (ncas, nextern, nextern, nextern))
-            mr_adc.v2e.aeee[:] = mr_adc.v2e.aeee[:]
-            tools.flush(tmpfile)
 
             mr_adc.v2e.xaea[:] = mr_adc.v2e.caea[:ncvs, :, :, :]
             tools.flush(tmpfile)
