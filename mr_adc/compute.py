@@ -71,24 +71,30 @@ def kernel(mr_adc):
 
 def initialize(mr_adc):
 
+    # Supported methods and method types
+    SUPPORTED_METHODS = {"mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"}
+    SUPPORTED_METHOD_TYPES = {"ee", "ip", "ea", "cvs-ip", "cvs-ee"}
+    CVS_TYPES = {"cvs-ip", "cvs-ee"}
+    DF_COMPATIBLE_TYPES = CVS_TYPES
+
     log = mr_adc.log
 
-    if mr_adc.method not in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+    if mr_adc.method not in SUPPORTED_METHODS:
         msg = "Unknown method %s" % mr_adc.method
         log.error(msg)
         raise Exception(msg)
 
-    if mr_adc.method_type not in ("cvs-ip", "cvs-ee"):
+    if mr_adc.method_type not in SUPPORTED_METHOD_TYPES:
         msg = "Unknown method type %s" % mr_adc.method_type
         log.error(msg)
         raise Exception(msg)
 
-    if mr_adc.interface.with_df and mr_adc.method_type not in ("cvs-ip", "cvs-ee"):
-        msg = "Density-fitting currently only compatible with CVS-IP method type."
+    if mr_adc.interface.with_df and mr_adc.method_type not in DF_COMPATIBLE_TYPES:
+        msg = "Density-fitting currently only compatible with CVS method types"
         log.error(msg)
         raise Exception(msg)
 
-    if mr_adc.method_type in ("cvs-ip", "cvs-ee"):
+    if mr_adc.method_type in CVS_TYPES:
 
         if mr_adc.ncvs is None or not isinstance(mr_adc.ncvs, int):
             msg = "Method type %s requires ncvs to be a positive integer" % mr_adc.method_type
@@ -101,12 +107,6 @@ def initialize(mr_adc):
             raise Exception(msg)
 
         mr_adc.nval = mr_adc.ncore - mr_adc.ncvs
-
-    # TODO: Temporary check of what methods are implemented in this version
-    if mr_adc.method_type not in ("cvs-ip", "cvs-ee"):
-        msg = "This spin-adapted version does not currently support method type %s" % mr_adc.method_type
-        log.error(msg)
-        raise Exception(msg)
 
 
 def print_header(mr_adc):

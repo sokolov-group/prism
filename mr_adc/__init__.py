@@ -132,7 +132,8 @@ class MRADC:
         try:
             cls = cls_map[self.method_type]
         except KeyError:
-            raise ValueError(f"Unknown method_type: {self.method_type}")
+            msg = "Prism does not currently support method type: %s" % self.method_type
+            raise ValueError(msg)
 
         # Create child object without calling its __init__
         method = cls.__new__(cls)
