@@ -56,7 +56,6 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
-       
 
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
@@ -98,7 +97,7 @@ class MRADC:
         # Analysis settings
         self.compute_ntos = False           # Option for NTO computation
         self.compute_dyson = False          # Option for Dyson orbital computation
-        self.spec_factor_print_tol = 0.01   # Print tolerance for the spectroscopic factor analysis
+        self.analyze_print_tol = 0.01       # Print tolerance for analyses
 
         # Initialize MR-ADC attributes
         self.e_ref_nevpt2 = None        # NEVPT2 reference energy
@@ -106,11 +105,6 @@ class MRADC:
         self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
         self.h_evec = None              # Eigenvectors of effective Hamiltonian
         self.properties = {}            # Dictionary to store computed properties
-
-        self.compute_ntos = False       # Option for NTO computation
-        self.compute_dyson = False      # Option for Dyson orbital computation
-
-        self.analyze_print_tol = 0.01   # Print tolerance for analyses
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
