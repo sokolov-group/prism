@@ -227,11 +227,19 @@ def compute_properties(mr_adc):
 
     # Spectrocopic amplitudes
     X = mr_adc.compute_trans_moments()
+    mr_adc.properties["spec_amplitudes"] = X
 
     # Spectrocopic factors
-    spec_factors = 2.0 * np.sum(X**2, axis=0)
+    # spec_factors = 2.0 * np.sum(X**2, axis=0)
 
-    mr_adc.properties["spec_amplitudes"] = X
+    if mr_adc.method_type == 'cvs-ee':
+        dX = np.einsum("Rpq,Kpq->RK", mr_adc.dip_mom, X)
+        spec_factors = np.sum(dX**2, axis=0)
+        if mr_adc.method != "mr-adc(0)":
+            spec_factors *= 2
+    else:
+        spec_factors = 2.0 * np.sum(X**2, axis=0)
+
     mr_adc.properties["spec_probabilities"] = spec_factors
 
     return spec_factors, X
