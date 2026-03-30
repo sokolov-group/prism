@@ -238,3 +238,6 @@ class CVSEEMRADC(MRADC):
     def analyze_spec_factor(self):
         return cvs_ee.analyze_spec_factor(self)
 
+    def analyze_eigenvector(self):
+        return cvs_ee.analyze_eigenvector(self)
+
