@@ -21080,28 +21080,39 @@ def compute_trans_moments(mr_adc):
 
 def analyze_spec_factor(mr_adc):
 
-    mr_adc.log.info("\nSpectroscopic Factors Analysis:")
-
+    cput0 = (logger.process_clock(), logger.perf_counter())
     print_thresh = mr_adc.spec_factor_print_tol
-    mr_adc.log.info("Print spectroscopic factors > %e" %  print_thresh)
 
+    mr_adc.log.info("")
+    mr_adc.log.info("="*60)
+    mr_adc.log.info("Spectroscopic Factors Analysis")
+    mr_adc.log.extra(f"> transition moments elements threshold: {print_thresh:.2e}")
+    mr_adc.log.info("="*60)
+
+    # Variables from kernel
+    nmo     = mr_adc.nmo
+    nroots  = mr_adc.nroots
+
+    # Properties
     X = mr_adc.properties["spec_amplitudes"]
     spec_intensity = mr_adc.properties["spec_probabilities"]
 
-    X_2 = 2.0 * (X.T)**2
+    # Get group symmetries if available
+    if not mr_adc.symmetry:
+        group_repr_symm = np.repeat(['A'], nmo)
+    else:
+        group_repr_symm = mr_adc.group_repr_symm
+        group_repr_symm = np.array(group_repr_symm)
 
-    for i in range(X_2.shape[0]):
+    X_2 = 2.0 * (X.T)**2    # shape (nroots, nmo)
 
-        sort = np.argsort(-X_2[i,:])
-        X_2_row = X_2[i,:]
+    for state in range(nroots):
+
+        sort = np.argsort(-X_2[state,:])
+        X_2_row = X_2[state,:]
         X_2_row = X_2_row[sort]
 
-        if not mr_adc.symmetry:
-            group_repr_symm = np.repeat(['A'], X_2_row.shape[0])
-        else:
-            group_repr_symm = mr_adc.group_repr_symm
-            group_repr_symm = np.array(group_repr_symm)
-
+        if mr_adc.symmetry:
             group_repr_symm = group_repr_symm[sort]
 
         spec_Contribution = X_2_row[X_2_row > print_thresh]
@@ -21110,13 +21121,13 @@ def analyze_spec_factor(mr_adc):
         if np.sum(spec_Contribution) <= print_thresh:
             continue
 
-        partial_Contribution = spec_Contribution / spec_intensity[i]
+        partial_Contribution = spec_Contribution / spec_intensity[state]
 
         spec_Contribution = spec_Contribution[partial_Contribution > 1e-6]
         index_orb = index_orb[partial_Contribution > 1e-6]
         partial_Contribution = partial_Contribution[partial_Contribution > 1e-6]
 
-        mr_adc.log.info("\n%s | root %d \n" % (mr_adc.method, i))
+        mr_adc.log.info("\n%s | root %d \n" % (mr_adc.method, state))
         mr_adc.log.info("  MO          Spec. Contribution       Partial Contribution")
         mr_adc.log.info("-------------------------------------------------------------")
 
@@ -21124,4 +21135,6 @@ def analyze_spec_factor(mr_adc):
             mr_adc.log.info(" %3.d (%s)             %10.8f                 %10.8f" % (index_orb[c], group_repr_symm[c],
                                                                             spec_Contribution[c],
                                                                             partial_Contribution[c]))
+    mr_adc.log.info("")
+    mr_adc.log.timer("computing spectroscopic factors analysis", *cput0)
 
