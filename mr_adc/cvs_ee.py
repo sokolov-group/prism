@@ -32997,7 +32997,7 @@ def renormalize_eigenvectors(mr_adc):
 
     return renormU
 
-def analyze_eigenvectors(mr_adc):
+def analyze_eigenvector(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
 
     print_thresh = 1e-2
