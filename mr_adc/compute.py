@@ -164,7 +164,7 @@ def compute_energy(mr_adc):
     # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
     cput1 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("")
-    conv, de, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
+    conv, de, U = mr_adc.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
                                            nroots = mr_adc.nroots,
                                            verbose = davidson_verbose,
                                            max_space = mr_adc.max_space,
