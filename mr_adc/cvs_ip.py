@@ -21081,7 +21081,7 @@ def compute_trans_moments(mr_adc):
 def analyze_spec_factor(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    print_thresh = mr_adc.spec_factor_print_tol
+    print_thresh = mr_adc.analyze_print_tol
 
     mr_adc.log.info("")
     mr_adc.log.info("="*60)
