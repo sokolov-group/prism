@@ -203,6 +203,7 @@ class PYSCF:
             self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
 
             self.davidson = lib.linalg_helper.davidson1
+            self.davidson_nosym = lib.linalg_helper.davidson_nosym1
 
             from pyscf.fci.direct_spin1 import trans_rdm1s
             self.trans_rdm1s = trans_rdm1s
