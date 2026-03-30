@@ -68,29 +68,39 @@ class MRADC:
         self.ref_wfn_spin_mult = interface.ref_wfn_spin_mult
         self.ref_wfn_deg = interface.ref_wfn_deg
 
-        # MR-ADC specific variables
+        # MR-ADC specific
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
-        self.method_type = "cvs-ip"     # Possible method types: cvs-ip
+        self.method_type = "cvs-ip"     # Possible method types: cvs-ip, cvs-ee
         self.ncasci = 6                 # Number of CASCI roots requested
         self.nroots = 6                 # Number of MR-ADC roots requested
-        self.max_space = 100            # Maximum size of the Davidson trial space
-        self.max_cycle = 50             # Maximum number of iterations in the Davidson procedure
-        self.tol_e = 1e-8               # Tolerance for the energy in the Davidson procedure
-        self.tol_r = 1e-5               # Tolerance for the residual in the Davidson procedure
-        self.s_thresh_singles = 1e-5
-        self.s_thresh_doubles = 1e-10
-        self.semi_internal_projector = "gno" # Possible values: gno, gs
+        self.ncvs = None                # Number of core orbitals requested (CVS method specific)
 
+        # Davidson solver settings
+        self.max_space = 100            # Maximum size of trial space
+        self.max_cycle = 50             # Maximum number of iterations
+        self.tol_e = 1e-8               # Tolerance for the energy
+        self.tol_r = 1e-5               # Tolerance for the residual
+
+        # Overlap settings
+        self.s_thresh_singles = 1e-5          # Singles truncation threshold
+        self.s_thresh_doubles = 1e-10         # Doubles truncation threshold
+        self.semi_internal_projector = "gno"  # Possible projection techniques: gno, gs
+
+        # Cost management settings
+        self.approx_trans_moments = False
+        self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
+
+        # Analysis settings
+        self.compute_ntos = False           # Option for NTO computation
+        self.compute_dyson = False          # Option for Dyson orbital computation
+        self.spec_factor_print_tol = 0.01   # Print tolerance for the spectroscopic factor analysis
+
+        # Initialize MR-ADC attributes
         self.e_ref_nevpt2 = None        # NEVPT2 reference energy
         self.e_diff = None              # MR-ADC excitation energies
         self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
         self.h_evec = None              # Eigenvectors of effective Hamiltonian
         self.properties = {}            # Dictionary to store computed properties
-
-        self.compute_ntos = False       # Option for NTO computation
-        self.compute_dyson = False      # Option for Dyson orbital computation
-
-        self.spec_factor_print_tol = 0.01 # Print tolerance for the spectroscopic factor analysis
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
@@ -99,14 +109,6 @@ class MRADC:
         self.h1 = lambda:None           # Information about h1 excitation manifold
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
-
-        self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
-
-        # Approximations
-        self.approx_trans_moments = False
-
-        # Parameters for the CVS implementation
-        self.ncvs = None
 
         # Integrals and amplitudes
         self.mo_energy = lambda:None
