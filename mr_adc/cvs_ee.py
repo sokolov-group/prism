@@ -31370,7 +31370,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
     return np.ascontiguousarray(sigma)
 
 #TODO: efficient treatment of TY slices (VERY necessary for q(2)-h(0)) - try slices of TY (CVS-IP style)
-def compute_trans_moments(mr_adc, U):
+def compute_trans_moments(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing transition moments matrix...")
@@ -32610,18 +32610,6 @@ def compute_trans_moments(mr_adc, U):
 
         mr_adc.log.timer_debug("computing T q1-h1 CAEE", *cput1)
 
-    def compute_dX(mr_adc, TY):
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        ## Dipole moment
-        dip_mom = mr_adc.dip_mom
-
-        dX = einsum("Rpq,Kpq->RK", dip_mom, TY, optimize = einsum_type)
-
-        return dX
-
     # Variables from kernel
     ncvs    = mr_adc.ncvs
     nval    = mr_adc.nval
@@ -32641,6 +32629,9 @@ def compute_trans_moments(mr_adc, U):
     s_e = f_a
     f_e = s_e + nextern
 
+    # Eigenvectors
+    U = mr_adc.h_evec
+
     # MR-ADC(0) terms
     dim = mr_adc.h0.dim
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
@@ -32654,7 +32645,7 @@ def compute_trans_moments(mr_adc, U):
 
     # Renormalize eigenvectors
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
-        U = renormalize_eigenvectors(mr_adc, U)
+        U = renormalize_eigenvectors(mr_adc)
 
     # Transform eigenvectors to the non-orthogonal basis
     Y = np.zeros((nroots, dim))
@@ -32845,13 +32836,13 @@ def compute_trans_moments(mr_adc, U):
 
             del Y_KLCW__abab, Y_KLCW__baab
 
-    dX = compute_dX(mr_adc, TY)
+    # dX = compute_dX(mr_adc, TY)
 
     mr_adc.log.timer("computing transition moments matrix", *cput0)
 
-    return TY, dX
+    return TY
 
-def analyze_spec_factor(mr_adc, TY, spec_intensity):
+def analyze_spec_factor(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     print_thresh = 1e-4
@@ -32869,6 +32860,10 @@ def analyze_spec_factor(mr_adc, TY, spec_intensity):
     nmo     = mr_adc.nmo
 
     nroots  = mr_adc.nroots
+
+    # Properties
+    TY = mr_adc.properties["spec_amplitudes"]
+    spec_intensity = mr_adc.properties["spec_probabilities"]
 
     # Get group symmetries if available
     if not mr_adc.symmetry:
@@ -32933,7 +32928,7 @@ def analyze_spec_factor(mr_adc, TY, spec_intensity):
 
     mr_adc.log.timer("computing spectroscopic factors analysis", *cput0)
 
-def renormalize_eigenvectors(mr_adc, U):
+def renormalize_eigenvectors(mr_adc):
 
     # Variables from kernel
     ncvs = mr_adc.ncvs
@@ -32945,6 +32940,9 @@ def renormalize_eigenvectors(mr_adc, U):
 
     # Dot product
     dot = mr_adc.interface.dot
+
+    # Eigenvectors
+    U = mr_adc.h_evec
 
     ## Orthogonal Excitation Manifolds
     ca_caaa = mr_adc.h_orth.ca_caaa
@@ -32999,7 +32997,7 @@ def renormalize_eigenvectors(mr_adc, U):
 
     return renormU
 
-def analyze_eigenvectors(mr_adc, de_ev, U):
+def analyze_eigenvectors(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
 
     print_thresh = 1e-2
@@ -33017,6 +33015,10 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
     nextern = mr_adc.nextern
 
     nroots  = mr_adc.nroots
+
+    # Eigenvectors and energies
+    U = mr_adc.h_evec
+    de_ev = mr_adc.e_diff * mr_adc.interface.hartree_to_ev
 
     # Non-Orthogonal Excitation Manifold
     h0_ce = mr_adc.h0.ce
@@ -33045,7 +33047,7 @@ def analyze_eigenvectors(mr_adc, de_ev, U):
             h1_cvee = mr_adc.h1.cvee
 
         # Renormalize eigenvectors for second-order methods
-        U = renormalize_eigenvectors(mr_adc, U)
+        U = renormalize_eigenvectors(mr_adc)
 
     result = []
     for state in range(nroots):
