@@ -45,7 +45,7 @@ def compute_energy(method):
     # Update class objects
     method.e_tot = e_tot
     method.e_corr = e_corr
-    method.h_evec = h_evec
+    method.h_evec = h_evec.copy()
 
     # Determine spin multiplicity for the QDNEVPT states
     method.spin_mult = determine_spin_mult(method)
@@ -494,3 +494,8 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         
     return rdm_final
 
+
+def analyze_eigenvectors(method):
+
+    h_evec = method.h_evec
+    print(type(h_evec))

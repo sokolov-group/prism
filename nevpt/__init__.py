@@ -189,15 +189,7 @@ class NEVPT:
 
     def analyze(self):
 
-        self.method_type = self.method_type.lower()
-
-        if self.method_type == "ss":
-            method = self
-        else:
-            method = self._make_method_instance()
-        self.__dict__.update(method.__dict__)
-
-        return compute.analyze(method)
+        return compute.analyze(self)
 
     @property
     def verbose(self):
@@ -255,5 +247,4 @@ class QDNEVPT(NEVPT):
     def compute_properties(self):
 
         return qd_nevpt.compute_properties(self)
-
 
