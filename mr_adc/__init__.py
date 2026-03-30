@@ -195,6 +195,7 @@ class CVSIPMRADC(MRADC):
 
     def _init_method(self):
         self.method_type = "cvs-ip"
+        self.davidson = self.interface.davidson
         self.ncasci = 0
 
     def compute_excitation_manifolds(self):
@@ -229,6 +230,7 @@ class CVSEEMRADC(MRADC):
 
     def _init_method(self):
         self.method_type = "cvs-ee"
+        self.davidson = self.interface.davidson_nosym
         self.ncasci = 0
 
     def compute_excitation_manifolds(self):
