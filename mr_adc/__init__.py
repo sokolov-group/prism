@@ -97,7 +97,7 @@ class MRADC:
         # Analysis settings
         self.compute_ntos = False           # Option for NTO computation
         self.compute_dyson = False          # Option for Dyson orbital computation
-        self.analyze_print_tol = 0.01       # Print tolerance for analyses
+        self.analyze_print_tol = 1e-2       # Print tolerance for the spectroscopic factor and eigenvector analyses
 
         # Initialize MR-ADC attributes
         self.e_ref_nevpt2 = None        # NEVPT2 reference energy

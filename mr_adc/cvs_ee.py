@@ -32845,7 +32845,7 @@ def compute_trans_moments(mr_adc):
 def analyze_spec_factor(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    print_thresh = 1e-4
+    print_thresh = mr_adc.analyze_print_tol
 
     mr_adc.log.info("")
     mr_adc.log.info("="*60)
@@ -33000,7 +33000,7 @@ def renormalize_eigenvectors(mr_adc):
 def analyze_eigenvector(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
 
-    print_thresh = 1e-2
+    print_thresh = mr_adc.analyze_print_tol
 
     mr_adc.log.info("")
     mr_adc.log.info("="*60)
