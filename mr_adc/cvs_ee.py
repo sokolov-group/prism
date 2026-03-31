@@ -2542,7 +2542,9 @@ def compute_M_00(mr_adc):
             temp_chunk -= einsum('IJ,ixya,iaBA,yx->IAJB', np.identity(ncvs), t1_vaae_i, v_veee, rdm_ca, optimize = einsum_type)
             temp += temp_chunk
             mr_adc.log.timer_debug("computing v2e.veee", *cput2)
-        del (v_veee, t1_ve_i, t1_vaea_i, t1_vaae_i)
+
+        if nval > 0:
+            del (v_veee, t1_ve_i, t1_vaea_i, t1_vaae_i)
 
         # v_aeee
         chunks = tools.calculate_chunks(mr_adc, ncas, [nextern, nextern, nextern])
@@ -2569,7 +2571,9 @@ def compute_M_00(mr_adc):
             temp_chunk += einsum('IJ,xyza,waBA,zwxy->IAJB', np.identity(ncvs), t1_aaae, v_aeee, rdm_ccaa_w, optimize = einsum_type)
             temp += temp_chunk
             mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
-        del (v_aeee, rdm_ca_y, rdm_ccaa_w)
+
+        if ncas > 0:
+            del (v_aeee, rdm_ca_y, rdm_ccaa_w)
 
         ## v_xexe
         chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
@@ -24092,7 +24096,9 @@ def compute_M_00(mr_adc):
 
             temp += temp_chunk
             mr_adc.log.timer_debug("computing v2e.veee", *cput2)
-        del(v_veee, t1_vaee)
+
+        if nval > 0:
+            del(v_veee, t1_vaee)
 
         chunks = tools.calculate_double_chunks(mr_adc, ncas, [nextern, nextern, nextern],
                                                                 [ncas, nextern, nextern], ntensors = 2)
@@ -24118,7 +24124,9 @@ def compute_M_00(mr_adc):
 
                 temp += temp_chunk
             mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
-        del(v_aeee, t1_aaee, rdm_ca_xy)
+
+        if ncas > 0:
+            del(v_aeee, t1_aaee, rdm_ca_xy)
 
         temp = np.ascontiguousarray(temp)
         temp.shape = (n_ce, n_ca)
