@@ -106,6 +106,8 @@ class NEVPT:
 
         # For SOC
         self.soc = None                            # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+        self.soc_order = 1
+        self.h_soc_sph = None # +1,-1,0
 
         # For g-tensor
         self.gtensor = False                       # Enable calculating g-tensors (requires soc)
