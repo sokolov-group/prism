@@ -73,9 +73,15 @@ def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4, compacted=False)
         return np.ascontiguousarray(v2e)
 
     if compacted:
-        v2e = v2e.reshape(nmo_1, nmo_2, -1)
+        if nmo_1 == 0 or nmo_2 == 0:
+            v2e = np.zeros((nmo_1, nmo_2, nmo_3 * nmo_4))
+        else:
+            v2e = v2e.reshape(nmo_1, nmo_2, -1)
     else:
-        v2e = v2e.reshape(nmo_1, nmo_2, nmo_3, nmo_4)
+        if nmo_1 == 0 or nmo_2 == 0 or nmo_3 == 0 or nmo_4 == 0:
+            v2e = np.zeros((nmo_1, nmo_2, nmo_3, nmo_4))
+        else:
+            v2e = v2e.reshape(nmo_1, nmo_2, nmo_3, nmo_4)
 
     return np.ascontiguousarray(v2e)
 
