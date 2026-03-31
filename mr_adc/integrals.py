@@ -1040,8 +1040,15 @@ def compute_cvs_integrals_2e_incore(mr_adc):
             tools.flush(tmpfile)
             del(mr_adc.v2e.caee)
 
-            mr_adc.v2e.xeee = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs])
-            mr_adc.v2e.veee = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:])
+            n_ee = nextern * (nextern + 1) // 2
+            mr_adc.v2e.xeee = tools.create_dataset('xeee', tmpfile, (ncvs, nextern, n_ee))
+            mr_adc.v2e.veee = tools.create_dataset('veee', tmpfile, (nval, nextern, n_ee))
+
+            mr_adc.v2e.xeee[:] = np.ascontiguousarray(mr_adc.v2e.ceee[:ncvs])
+            tools.flush(tmpfile)
+
+            mr_adc.v2e.veee[:] = np.ascontiguousarray(mr_adc.v2e.ceee[ncvs:])
+            tools.flush(tmpfile)
             del(mr_adc.v2e.ceee)
 
         if mr_adc.method == "mr-adc(2)-x":
