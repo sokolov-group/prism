@@ -4181,10 +4181,12 @@ def compute_t2_0pp_singles(mr_adc):
             ## Amplitudes
             t1_aaee = mr_adc.t1.aaee[:, :, s_chunk:f_chunk, :]
 
-            temp =- 1/2 * einsum('Yxab,yazb,Xxyz->XY', t1_aaee, v_aeae, rdm_ccaa, optimize = einsum_type)
-            temp -= 1/2 * einsum('xyab,Yazb,Xzxy->XY', t1_aaee, v_aeae, rdm_ccaa, optimize = einsum_type)
-            temp -= 1/4 * einsum('xyab,zawb,XxyYzw->XY', t1_aaee, v_aeae, rdm_cccaaa, optimize = einsum_type)
-            temp -= 1/4 * einsum('xyab,zawb,XzwYxy->XY', t1_aaee, v_aeae, rdm_cccaaa, optimize = einsum_type)
+            INT01 = einsum('Yxab,yazb->Yxyz', t1_aaee, v_aeae, optimize = einsum_type)
+
+            temp =- 1/2 * einsum('Xxyz,Yxyz->XY', rdm_ccaa, INT01, optimize = einsum_type)
+            temp -= 1/2 * einsum('Xzxy,xyYz->XY', rdm_ccaa, INT01, optimize = einsum_type)
+            temp -= 1/4 * einsum('XxyYzw,xyzw->XY', rdm_cccaaa, INT01, optimize = einsum_type)
+            temp -= 1/4 * einsum('XzwYxy,xyzw->XY', rdm_cccaaa, INT01, optimize = einsum_type)
 
             V1_m2 += temp
             mr_adc.log.timer_debug("contracting v2e.aeae", *cput1)
