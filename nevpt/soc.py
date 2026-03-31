@@ -54,20 +54,6 @@ def state_interaction_soc(method):
         if (np.abs(ms[I]-ms[0])>1e-8):
             raise Exception("Each state's ms should be same for state_interaction_SOC function")
 
-    #If Ms=0 , CG coefficent vanish...
-    wfn_ref_nelecas = method.ref_nelecas.copy()
-    if ms[0] == 0:
-        raise Exception("Ms=0 situation for state_interaction_SOC function not implement in state_interaction_SOC function.")
-        method.log.info("Apply S_plus due to Ms=0...")
-        for I in range(nstate):
-            if S[I] > 0 :
-                wfn[I], Sp_ne = method.interface.apply_S_plus(wfn[I],method.ncas,method.ref_nelecas[I])
-                # Upadate ref_nelecas
-                wfn_ref_nelecas[I] = Sp_ne
-                # Normalize the wfn
-                wfn[I] = wfn[I]/(np.sqrt( S[I]**2 + S[I] ))
-                # Upadate ms
-                ms[I] = 1
 
 
     # Make sure that S is consistent with spin_mult
@@ -76,9 +62,44 @@ def state_interaction_soc(method):
             raise Exception("Spin value and multiplicity are not consistent")
 
     # Calculate RDM_aabb
+    wfn_ref_nelecas = method.ref_nelecas.copy()
     rdm_aabb = method.make_rdm1s(wfn, wfn_ref_nelecas)
 
-    en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
+
+    #If Ms=0 , CG coefficent vanish...
+    if ms[0] != 0:
+        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
+    
+    else:    
+        #raise Exception("Ms=0 situation for state_interaction_SOC function not implement in state_interaction_SOC function.")
+        method.log.info("Apply S_plus due to Ms=0...")
+
+        wfn_plus = wfn.copy()
+        wfn_ref_nelecas_plus = wfn_ref_nelecas.copy()
+        ms_plus = ms.copy()
+
+        for I in range(nstate):
+            if S[I] > 0 :
+                wfn_plus[I], Sp_ne = method.interface.apply_S_plus(wfn[I],method.ncas,method.ref_nelecas[I])
+                # Upadate ref_nelecas
+                wfn_ref_nelecas_plus[I] = Sp_ne
+                # Normalize the wfn
+                wfn_plus[I] = wfn_plus[I]/(np.sqrt( S[I]**2 + S[I] ))
+                # Upadate ms
+                ms_plus[I] = 1
+            elif S[I] == 0:     
+                wfn_plus[I] = np.zeros_like(wfn_plus[I])
+
+
+        # Calculate RDM_aabb_plus
+        rdm_aabb_plus = method.make_rdm1s(wfn_plus, wfn_ref_nelecas_plus)
+
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms1(method.interface, method.e_tot, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, method.soc, method.verbose)
+
+
+
+    
+
 
     method.e_tot = en_soc
     method.h_evec_soc = evec_soc
@@ -214,13 +235,13 @@ def compute_magnetic_properties(method, rdm_sf):
 
   
         h_s =method.step_h_s
-        print("h_s=",h_s,"T")
+        method.log.info("h_s=",h_s,"T")
 
 
         #Powder data information
-        print("Import LebedevGrid in pyscf...")
+        method.log.info("Import LebedevGrid in pyscf...")
         Powder_data_xyzw = pyscf.dft.LebedevGrid.MakeAngularGrid_266()
-        print("Number of LebedevGrid point:",len(Powder_data_xyzw))
+        method.log.info("Number of LebedevGrid point:",len(Powder_data_xyzw))
 
 
         ###Powder magnetization

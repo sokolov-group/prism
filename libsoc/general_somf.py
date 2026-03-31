@@ -131,6 +131,114 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
 
     return en_soc, evec_soc
 
+def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, soc = "breit-pauli", verbose = 4):
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
+    nmo = interface.nmo
+    mo = interface.mo
+    nstate = len(en)
+
+    #Make sure SOC flag:
+    soc = soc.lower()
+    if (soc=="breit-pauli" or soc=="bp"):
+        soc_name = "BP"
+    
+    elif(soc=="x2c-1" or soc=="dkh1"):
+        interface.log.info("\nNote that SOC Hamiltionian is sf-X2C-1e+so-DKH1 instead of usual DKH. \n")  
+        soc_name = "sf-X2C-1e+so-DKH1"
+    
+    elif(soc=="x2c-2" or soc=="dkh2"):
+        raise Exception("The sf-X2C-1e+so-DKH2 implementation in Prism is still incomplete.")
+    
+    else:
+        raise Exception("Incorrect SOC flag in input file!!")
+        
+    interface.log.info("Calculating Wigner 1-RDM...")
+    rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
+    for I in range(nstate):
+        for J in range(nstate):
+            if S[I] == S[J]:
+                cg = CG(S[J], ms_plus[J], 1, 0, S[I], ms_plus[I]).doit()
+                cg = float(cg)
+                if np.abs(cg) > 1e-5:               
+                    T_z = 1/np.sqrt(2) * (rdm_aabb_plus[0,I,J] - rdm_aabb_plus[1,I,J]) / cg
+                    rdm_wigner[I,J] = T_z 
+            
+            else:
+                cg = CG(S[J], ms[J], 1, 0, S[I], ms[I]).doit()
+                cg = float(cg)
+                if np.abs(cg) > 1e-5:               
+                    T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
+                    rdm_wigner[I,J] = T_z       
+            
+    # Get SOC integrals:
+    rdm1mo = np.zeros((nmo,nmo))
+    for I in range(nstate):
+        rdm1mo += (rdm_aabb[0,I,I] + rdm_aabb[1,I,I]) / nstate
+    rdm1ao =  np.einsum('ai,ib,bj->aj',mo,rdm1mo,mo.T) 
+
+    h_soc = get_soc_integrals(interface, soc, rdm1ao)
+    
+    h1_plus = (h_soc[0] + (1j*h_soc[1])) 
+    h1_minus = (h_soc[0] - (1j*h_soc[1])) 
+    h1_zero = h_soc[2]
+
+    H_minus = np.einsum('pq,ijpq->ij',h1_minus,rdm_wigner) * (-1/2)
+    H_zero = np.einsum('pq,ijpq->ij',h1_zero,rdm_wigner) / np.sqrt(2)
+    H_plus = np.einsum('pq,ijpq->ij',h1_plus,rdm_wigner) / 2
+
+    # Calculate quantum number 
+    S_total = []
+    ms_total = []
+    multiplicity = []
+    I_total = []
+    E_spinstate = []
+    for i in range(nstate):
+        n = int(S[i]*2 + 1)
+        multiplicity.append(n)
+        for j in range(n):
+            S_total.append(S[i])
+            m = S[i]-j
+            ms_total.append(m)
+            I_total.append(i)
+            E_spinstate.append(en[i])
+            
+    nstate_total = len(S_total)
+
+    # Forming SOC Hamiltonian using WE-Theorem:
+    HSOC = np.zeros((nstate_total,nstate_total),dtype='complex')
+    for I in range(nstate_total):
+        for J in  range(nstate_total):
+            m_dif = ms_total[I] - ms_total[J]
+            m_dif = int(np.round(m_dif))
+
+            if m_dif == 0:
+                cg = CG(S_total[J],ms_total[J], 1, 0, S_total[I],ms_total[I]).doit()
+                cg = float(cg)
+                HSOC[I,J] = cg * H_zero[I_total[I],I_total[J]]
+
+            if m_dif == 1:
+                cg = CG(S_total[J],ms_total[J], 1, 1, S_total[I],ms_total[I]).doit()
+                cg = float(cg)
+                HSOC[I,J] = cg * H_minus[I_total[I],I_total[J]]
+            
+            if m_dif == -1:
+                cg = CG(S_total[J],ms_total[J], 1, -1, S_total[I],ms_total[I]).doit()
+                cg = float(cg)
+                HSOC[I,J] = cg * H_plus[I_total[I],I_total[J]]
+
+    H_sf = np.diag(E_spinstate).astype('complex')
+    en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
+
+    #print("HSOC=")
+    #print(HSOC)
+
+
+    sys.stdout.flush()
+    interface.log.timer0("total %s calculation" % soc_name, *cput0)
+
+    return en_soc, evec_soc
+
 
 def get_soc_integrals(interface, soc, rdm1ao):
     mo = interface.mo
