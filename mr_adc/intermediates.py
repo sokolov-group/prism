@@ -21,6 +21,9 @@
 
 import numpy as np
 
+import prism.lib.logger as logger
+import prism.lib.tools as tools
+
 def compute_K_ac(mr_adc):
 
     # Einsum definition from kernel
