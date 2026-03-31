@@ -24111,14 +24111,14 @@ def compute_M_00(mr_adc):
                 t1_aaee = mr_adc.t1.aaee[:, s_t_chunk:f_t_chunk]
 
                 ## Reduced density matrices
-                rdm_ca = mr_adc.rdm.ca[s_t_chunk:f_t_chunk,s_v_chunk:f_v_chunk]
+                rdm_ca_xy = mr_adc.rdm.ca[s_t_chunk:f_t_chunk,s_v_chunk:f_v_chunk]
 
-                temp_chunk =- 1/2 * einsum('IJ,Xxab,yaAb,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca, optimize = einsum_type)
-                temp_chunk += einsum('IJ,Xxab,ybAa,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca, optimize = einsum_type)
+                temp_chunk =- 1/2 * einsum('IJ,Xxab,yaAb,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca_xy, optimize = einsum_type)
+                temp_chunk += einsum('IJ,Xxab,ybAa,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca_xy, optimize = einsum_type)
 
                 temp += temp_chunk
             mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
-        del(v_aeee, t1_aaee, rdm_ca)
+        del(v_aeee, t1_aaee, rdm_ca_xy)
 
         temp = np.ascontiguousarray(temp)
         temp.shape = (n_ce, n_ca)
