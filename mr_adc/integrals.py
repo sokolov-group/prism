@@ -642,7 +642,6 @@ def get_oeee_df(mr_adc, Loe, Lee, s_chunk_occ, f_chunk_occ):
 
     # Variables from kernel
     naux = mr_adc.naux
-    #naux = Loe.shape[0]
     nextern = mr_adc.nextern
 
     chunk_size_occ = f_chunk_occ - s_chunk_occ

@@ -2453,7 +2453,7 @@ def compute_M_00(mr_adc):
         temp += 1/4 * einsum('IJ,xyzw,zxuB,vsuA,ywsv->IAJB', np.identity(ncvs), v_aaaa, t1_aaae, t1_aaae, rdm_ccaa, optimize = einsum_type)
 
         # v_xeee
-        chunks = tools.calculate_chunks(mr_adc, ncvs, [nextern, nextern, nextern], ntensors = 3)
+        chunks = tools.calculate_chunks(mr_adc, ncvs, [nextern, nextern, nextern])
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput2 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.xeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -23867,40 +23867,6 @@ def compute_M_00(mr_adc):
             mr_adc.log.timer_debug("computing v2e.vaee", *cput2)
             del(v_veae, temp_A) 
 
-        ## v_veee
-        chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nextern, nextern], ntensors = 2)
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput2 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.veee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-            ## Two-electron integrals
-            v_veee = mr_adc.v2e.veee[:, s_chunk:f_chunk]
-
-            ## Amplitudes
-            t1_vaee = mr_adc.t1.vaee[:, :, s_chunk:f_chunk]
-
-            temp_chunk = 2 * einsum('IJ,iXab,iaAb->IAJX', np.identity(ncvs), t1_vaee, v_veee, optimize = einsum_type)
-
-            temp += temp_chunk
-            mr_adc.log.timer_debug("computing v2e.veee", *cput2)
-            del (v_veee, t1_vaee) 
-
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput2 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.veee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-            ## Two-electron integrals
-            v_veee = mr_adc.v2e.veee[:, :, :, s_chunk:f_chunk]
-
-            ## Amplitudes
-            t1_vaee = mr_adc.t1.vaee[:, :, s_chunk:f_chunk]
-
-            temp_chunk =- einsum('IJ,iXab,ibAa->IAJX', np.identity(ncvs), t1_vaee, v_veee, optimize = einsum_type)
- 
-            temp += temp_chunk
-            mr_adc.log.timer_debug("computing v2e.veee", *cput2)
-            del (v_veee, t1_vaee) 
-
         ## v_aaee
         chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 3)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
@@ -24063,77 +24029,96 @@ def compute_M_00(mr_adc):
             mr_adc.log.timer_debug("computing t1.aaee", *cput2)
             del(e_extern_A, t1_aaee, temp_A)
 
-        ## v_aeee
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 2)
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput2 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-            ## Two-electron integrals
-            v_aeee = mr_adc.v2e.aeee[:, s_chunk:f_chunk]
-
-            ## Amplitudes
-            t1_aaee = mr_adc.t1.aaee[:, :, s_chunk:f_chunk]
-
-            temp_chunk =- 1/2 * einsum('IJ,Xxab,yaAb,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca, optimize = einsum_type)
-
-            temp += temp_chunk
-            mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
-            del (v_aeee, t1_aaee)
-
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput2 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-            ## Two-electron integrals
-            v_aeee = mr_adc.v2e.aeee[:, s_chunk:f_chunk]
-
-            ## Amplitudes
-            t1_aaee = mr_adc.t1.aaee[:, :, :, s_chunk:f_chunk]
-
-            temp_chunk = einsum('IJ,Xxab,ybAa,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca, optimize = einsum_type)
-
-            temp += temp_chunk 
-            mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
-            del (v_aeee, t1_aaee)
- 
-        ## v_xeee
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, nextern, nextern], ntensors = 2)
+        chunks = tools.calculate_double_chunks(mr_adc, ncvs, [nextern, nextern, nextern],
+                                                                [ncas, nextern, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput2 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.xeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-            ## Two-electron integrals
-            v_xeee = mr_adc.v2e.xeee[:, s_chunk:f_chunk]
+            if mr_adc.interface.with_df:
+                v_xeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lxe, mr_adc.v2e.Lee, s_chunk, f_chunk)
+            else:
+                v_xeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.xeee[s_chunk:f_chunk])
 
             ## Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:, :, s_chunk:f_chunk]
+            t1_xaee = mr_adc.t1.xaee[s_chunk:f_chunk]
 
-            temp_chunk =- einsum('IXab,JaAb->IAJX', t1_xaee, v_xeee, optimize = einsum_type)
-            temp_chunk += 2 * einsum('IJ,iXab,iaAb->IAJX', np.identity(ncvs), t1_xaee, v_xeee, optimize = einsum_type)
-            temp_chunk += 1/2 * einsum('Ixab,JaAb,Xx->IAJX', t1_xaee, v_xeee, rdm_ca, optimize = einsum_type)
-            
-            temp += temp_chunk
-            mr_adc.log.timer_debug("computing v2e.xeee", *cput2)
-            del(v_xeee)
-
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput2 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.xeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-            ## Two-electron integrals
-            v_xeee = mr_adc.v2e.xeee[:, :, :, s_chunk:f_chunk]
-
-            ## Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:, :, s_chunk:f_chunk]
-
-            temp_chunk  = 2 * einsum('IXab,JbAa->IAJX', t1_xaee, v_xeee, optimize = einsum_type)
+            temp_chunk  = 2 * einsum('IJ,iXab,iaAb->IAJX', np.identity(ncvs), t1_xaee, v_xeee, optimize = einsum_type)
             temp_chunk -= einsum('IJ,iXab,ibAa->IAJX', np.identity(ncvs), t1_xaee, v_xeee, optimize = einsum_type)
-            temp_chunk -= einsum('Ixab,JbAa,Xx->IAJX', t1_xaee, v_xeee, rdm_ca, optimize = einsum_type)
 
             temp += temp_chunk
             mr_adc.log.timer_debug("computing v2e.xeee", *cput2)
-            del(v_xeee)
+        del(v_xeee, t1_xaee)
+
+        for i_v_chunk, (s_v_chunk, f_v_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xeee [%i/%i], chunk [%i:%i]", i_v_chunk + 1, len(chunks), s_v_chunk, f_v_chunk)
+
+            if mr_adc.interface.with_df:
+                v_xeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lxe, mr_adc.v2e.Lee, s_v_chunk, f_v_chunk)
+            else:
+                v_xeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.xeee[s_v_chunk:f_v_chunk])
+
+            for s_t_chunk, f_t_chunk in chunks:
+
+                ## Amplitudes
+                t1_xaee = mr_adc.t1.xaee[s_t_chunk:f_t_chunk]
+
+                temp_IJ =- einsum('IXab,JaAb->IAJX', t1_xaee, v_xeee, optimize = einsum_type)
+                temp_IJ += 2 * einsum('IXab,JbAa->IAJX', t1_xaee, v_xeee, optimize = einsum_type)
+                temp_IJ += 1/2 * einsum('Ixab,JaAb,Xx->IAJX', t1_xaee, v_xeee, rdm_ca, optimize = einsum_type)
+                temp_IJ -= einsum('Ixab,JbAa,Xx->IAJX', t1_xaee, v_xeee, rdm_ca, optimize = einsum_type)
+
+                temp[s_t_chunk:f_t_chunk, :, s_v_chunk:f_v_chunk] += temp_IJ
+            mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
+        del(v_xeee, t1_xaee, rdm_ca)
+
+        chunks = tools.calculate_double_chunks(mr_adc, nval, [nextern, nextern, nextern],
+                                                                [ncas, nextern, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.veee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            if mr_adc.interface.with_df:
+                v_veee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lve, mr_adc.v2e.Lee, s_chunk, f_chunk)
+            else:
+                v_veee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.veee[s_chunk:f_chunk])
+
+            ## Amplitudes
+            t1_vaee = mr_adc.t1.vaee[s_chunk:f_chunk]
+
+            temp_chunk  = 2 * einsum('IJ,iXab,iaAb->IAJX', np.identity(ncvs), t1_vaee, v_veee, optimize = einsum_type)
+            temp_chunk -= einsum('IJ,iXab,ibAa->IAJX', np.identity(ncvs), t1_vaee, v_veee, optimize = einsum_type)
+
+            temp += temp_chunk
+            mr_adc.log.timer_debug("computing v2e.veee", *cput2)
+        del(v_veee, t1_vaee)
+
+        chunks = tools.calculate_double_chunks(mr_adc, ncas, [nextern, nextern, nextern],
+                                                                [ncas, nextern, nextern], ntensors = 2)
+        for i_v_chunk, (s_v_chunk, f_v_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_v_chunk + 1, len(chunks), s_v_chunk, f_v_chunk)
+
+            if mr_adc.interface.with_df:
+                v_aeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, f_v_chunk)
+            else:
+                v_aeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_v_chunk:f_v_chunk])
+
+            for s_t_chunk, f_t_chunk in chunks:
+
+                ## Amplitudes
+                t1_aaee = mr_adc.t1.aaee[:, s_t_chunk:f_t_chunk]
+
+                ## Reduced density matrices
+                rdm_ca = mr_adc.rdm.ca[s_t_chunk:f_t_chunk,s_v_chunk:f_v_chunk]
+
+                temp_chunk =- 1/2 * einsum('IJ,Xxab,yaAb,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca, optimize = einsum_type)
+                temp_chunk += einsum('IJ,Xxab,ybAa,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca, optimize = einsum_type)
+
+                temp += temp_chunk
+            mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
+        del(v_aeee, t1_aaee, rdm_ca)
 
         temp = np.ascontiguousarray(temp)
         temp.shape = (n_ce, n_ca)
@@ -24148,9 +24133,8 @@ def compute_M_00(mr_adc):
     mr_adc.M_00 = np.ascontiguousarray(M_00)
 
     mr_adc.log.extra(f"\nM(h0-h0) block | Asymmetry: {np.linalg.norm(M_00 - M_00.T):>.5e} | Norm: {np.linalg.norm(M_00):>10.6f}")
-
     mr_adc.log.timer("computing M(h0-h0) block", *cput0)
-   
+ 
     if np.linalg.norm(M_00-M_00.T) > 1e-4:
         mr_adc.log.warn("significant asymmetry in M(h0-h0) block!")
 
