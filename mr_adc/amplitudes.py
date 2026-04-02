@@ -173,7 +173,7 @@ def compute_t2_amplitudes(mr_adc):
     # Approximate second-order amplitudes
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
 
-        if ncore > 0 and nextern > 0 and not approx_trans_moments:
+        if ncore > 0 and ncas > 0 and nextern > 0 and not approx_trans_moments:
             mr_adc.t2.ce = compute_t2_0p_singles(mr_adc)
         else:
             mr_adc.t2.ce = np.zeros((ncore, nextern))
@@ -195,8 +195,6 @@ def compute_t2_amplitudes(mr_adc):
             else:
                 mr_adc.t2.ca = np.zeros((ncore, ncas))
 
-    else:
-        mr_adc.t2.ce = np.zeros((ncore, nextern))
 
 def compute_cvs_amplitudes(mr_adc):
     'Create CVS amplitudes tensors and remove core integrals, core amplitudes and RDMs not used in CVS calculations'
@@ -1891,9 +1889,6 @@ def compute_t2_0p_singles(mr_adc):
             V1 -= einsum('Ixab,ybAa,xy->IA', t1_caee, v_aeee, rdm_ca, optimize = einsum_type)
 
         mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
-
-    if ncas > 0:
-        del(v_aeee, t1_caee, rdm_ca)
 
     if mr_adc.method_type == "cvs-ip":
         del(mr_adc.v2e.ceee, mr_adc.v2e.aeee)
