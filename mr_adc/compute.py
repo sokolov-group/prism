@@ -233,10 +233,8 @@ def compute_properties(mr_adc):
     # spec_factors = 2.0 * np.sum(X**2, axis=0)
 
     if mr_adc.method_type == 'cvs-ee':
-        dX = np.einsum("Rpq,Kpq->RK", mr_adc.dip_mom, X)
-        spec_factors = np.sum(dX**2, axis=0)
-        if mr_adc.method != "mr-adc(0)":
-            spec_factors *= 2
+        DX = np.einsum("Rpq,Kpq->RK", mr_adc.dip_mom, X)
+        spec_factors = 2.0 * np.sum(DX**2, axis=0)
     else:
         spec_factors = 2.0 * np.sum(X**2, axis=0)
 
