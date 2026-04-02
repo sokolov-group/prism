@@ -642,6 +642,46 @@ def transform_integrals_2e_df(mr_adc):
 
     mr_adc.log.timer("transforming 2e integrals", *cput0)
 
+def get_eeee_df(mr_adc, Lee, s_chunk_ext, f_chunk_ext, pack=True):
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+
+    # Variables from kernel
+    naux = mr_adc.naux
+    nextern = mr_adc.nextern
+
+    chunk_size_ext = f_chunk_ext - s_chunk_ext
+
+    chunks_aux = tools.calculate_double_chunks(mr_adc, naux, [chunk_size_ext, nextern], [nextern, nextern],
+                                                       extra_tensors=[[chunk_size_ext, nextern, nextern, nextern],
+                                                                      [chunk_size_ext, nextern, nextern, nextern]])
+
+    v_eeee = np.zeros((chunk_size_ext, nextern, nextern, nextern))
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks_aux):
+        mr_adc.log.debug("aux [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks_aux), s_chunk, f_chunk)
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        chunk_size_aux = f_chunk - s_chunk
+
+        Lee_chunk_1 = np.ascontiguousarray(Lee[s_chunk:f_chunk].reshape(chunk_size_aux, -1))
+        Lee_chunk_2 = np.ascontiguousarray(Lee[:].T[s_chunk_ext:f_chunk_ext, :, s_chunk:f_chunk].reshape(-1, chunk_size_aux))
+
+        v_eeee += np.dot(Lee_chunk_2, Lee_chunk_1).reshape(chunk_size_ext, nextern, nextern, nextern)
+
+        mr_adc.log.timer_debug("contracting v_eeee DF", *cput1)
+
+        del Lee_chunk_1, Lee_chunk_2
+
+    # Physicist notation
+    if pack:
+        v_eeee = np.ascontiguousarray(v_eeee.transpose(0,2,1,3).reshape(-1, nextern*nextern))
+    else:
+        v_eeee = np.ascontiguousarray(v_eeee.transpose(0,2,1,3))
+
+    mr_adc.log.timer_debug("computing v_eeee DF", *cput0)
+    return v_eeee
+
 def get_oeee_df(mr_adc, Loe, Lee, s_chunk_occ, f_chunk_occ):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -746,6 +786,31 @@ def unpack_v2e_oeee(mr_adc, v2e_oeee):
         raise ValueError("ERI does not have the correct dimension")
 
     return v2e_oeee_
+
+def unpack_v2e_eeee(mr_adc, v2e_eeee, s_chunk, f_chunk, pack=True):
+
+    # Variables from kernel
+    nextern = mr_adc.nextern
+
+    n_ee = nextern * (nextern + 1) // 2
+    if v2e_eeee.ndim != 2 or v2e_eeee.shape[1] != n_ee:
+        raise ValueError("ERI does not have the correct dimension")
+
+    def index_array(a, b):
+        hi, lo = np.maximum(a, b), np.minimum(a, b)
+        return hi * (hi + 1) // 2 + lo
+
+    orb = np.arange(nextern)
+    rs_idx = index_array(orb[:, None], orb)
+    pq_idx = index_array(np.arange(s_chunk, f_chunk)[:, None], orb)
+
+    v2e_eeee_ = v2e_eeee[pq_idx[:, :, None, None], rs_idx[None, None, :, :]]
+
+    # Physicist notation
+    if pack:
+        return np.ascontiguousarray(v2e_eeee_.transpose(0,2,1,3).reshape(-1, nextern*nextern))
+    else:
+        return np.ascontiguousarray(v2e_eeee_.transpose(0,2,1,3))
 
 def transform_cvs_integrals(mr_adc):
 
