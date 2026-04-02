@@ -662,25 +662,25 @@ def get_eeee_df(mr_adc, Lee, s_chunk_ext, f_chunk_ext, pack=True):
         mr_adc.log.debug("aux [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks_aux), s_chunk, f_chunk)
         cput1 = (logger.process_clock(), logger.perf_counter())
 
-        chunk_size_aux = f_chunk - s_chunk
+        Lee_chunk = Lee[s_chunk:f_chunk]
 
-        Lee_chunk_1 = np.ascontiguousarray(Lee[s_chunk:f_chunk].reshape(chunk_size_aux, -1))
-        Lee_chunk_2 = np.ascontiguousarray(Lee[:].T[s_chunk_ext:f_chunk_ext, :, s_chunk:f_chunk].reshape(-1, chunk_size_aux))
+        Lee_chunk_1 = np.ascontiguousarray(Lee_chunk.reshape(-1, nextern*nextern))
+        Lee_chunk_2 = np.ascontiguousarray(
+            Lee_chunk[:, s_chunk_ext:f_chunk_ext, :].transpose(1,2,0).reshape(-1, f_chunk-s_chunk)
+        )
+        del Lee_chunk
 
-        v_eeee += np.dot(Lee_chunk_2, Lee_chunk_1).reshape(chunk_size_ext, nextern, nextern, nextern)
-
+        v_eeee += np.dot(Lee_chunk_2, Lee_chunk_1).reshape(-1, nextern, nextern, nextern)
         mr_adc.log.timer_debug("contracting v_eeee DF", *cput1)
 
-        del Lee_chunk_1, Lee_chunk_2
+    mr_adc.log.timer_debug("computing v_eeee DF", *cput0)
 
     # Physicist notation
     if pack:
-        v_eeee = np.ascontiguousarray(v_eeee.transpose(0,2,1,3).reshape(-1, nextern*nextern))
+        return np.ascontiguousarray(v_eeee.transpose(0,2,1,3).reshape(-1, nextern*nextern))
     else:
-        v_eeee = np.ascontiguousarray(v_eeee.transpose(0,2,1,3))
+        return np.ascontiguousarray(v_eeee.transpose(0,2,1,3))
 
-    mr_adc.log.timer_debug("computing v_eeee DF", *cput0)
-    return v_eeee
 
 def get_oeee_df(mr_adc, Loe, Lee, s_chunk_occ, f_chunk_occ):
 
