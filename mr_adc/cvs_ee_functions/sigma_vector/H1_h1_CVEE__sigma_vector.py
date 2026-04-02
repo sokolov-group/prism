@@ -1,6 +1,6 @@
 ## h1 <- h1 coupling contributions
 from . import logger, tools, ascontiguousarray, zeros
-from prism.mr_adc_integrals import get_eeee_df, unpack_v2e_eeee
+from prism.mr_adc import integrals
 
 # CCAA <- CVEE: NO CONTRIBUTION
 
@@ -770,26 +770,26 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X, sigma):
     X = ascontiguousarray(X.reshape(ncvs*nval, -1).T) 
     temp = zeros((nextern, nextern, ncvs*nval))
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern], ntensors=2)
+    chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern])
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.eeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-    
+
         ## Two-electron integral
         if mr_adc.interface.with_df:
-            v_eeee = get_eeee_df(mr_adc, mr_adc.v2e.Lee, s_chunk, f_chunk)
+            v_eeee = integrals.get_eeee_df(mr_adc, mr_adc.v2e.Lee, s_chunk, f_chunk)
         else:
-            v_eeee = unpack_v2e_eeee(mr_adc, mr_adc.v2e.eeee, s_chunk, f_chunk)
-        
+            v_eeee = integrals.unpack_v2e_eeee(mr_adc, mr_adc.v2e.eeee, s_chunk, f_chunk)
+
         # Contractions using dot products
         temp[s_chunk:f_chunk] += dot(v_eeee, X).reshape(-1, nextern, ncvs*nval)
 
         mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
         del(v_eeee)
 
-    sigma_KLCD += temp.transpose(2,0,1).reshape((ncvs, nval, nextern, nextern))
+    sigma_KLCD += temp.reshape(nextern, nextern, ncvs, nval).transpose(2,3,0,1)
     del(X, temp)
- 
+
     sigma[cvee] += ascontiguousarray(sigma_KLCD).reshape(-1)
 
     mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVEE-CVEE", *cput1)
