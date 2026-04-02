@@ -1,6 +1,6 @@
 ## h1 <- h1 coupling contributions
 from . import logger, tools, ascontiguousarray, zeros
-from prism.mr_adc_integrals import get_eeee_df, unpack_v2e_eeee
+from prism.mr_adc import integrals
 
 # CCAA <- CAEE: NO CONTRIBUTION
 
@@ -253,29 +253,30 @@ def compute_sigma_vector__H1__h1_h1__CAEE_CAEE(mr_adc, X, sigma):
         mr_adc.log.timer_debug("v2e.aaee v2e.aeea contractions", *cput1)
         del(v_aaee, v_aeea)
 
-    # Form X intermediates and pack for ladder contractions
-    X = 1/2 * ascontiguousarray(einsum('Kxab,Wx->KWab', X, rdm_ca, optimize = einsum_type).reshape(-1, nextern*nextern).T)
+    # Pack X intermediate for ladder contractions
+    X = 1/2 * einsum('Kxab,Wx->KWab', X, rdm_ca, optimize=einsum_type).reshape(-1, nextern*nextern).T
     temp = zeros((nextern, nextern, ncvs*ncas))
 
     chunks = tools.calculate_chunks(mr_adc, nextern, [nextern, nextern, nextern])
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.eeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-    
+
         ## Two-electron integral
         if mr_adc.interface.with_df:
-            v_eeee = get_eeee_df(mr_adc, mr_adc.v2e.Lee, s_chunk, f_chunk)
+            v_eeee = integrals.get_eeee_df(mr_adc, mr_adc.v2e.Lee, s_chunk, f_chunk)
         else:
-            v_eeee = unpack_v2e_eeee(mr_adc, mr_adc.v2e.eeee, s_chunk, f_chunk)
-        
+            v_eeee = integrals.unpack_v2e_eeee(mr_adc, mr_adc.v2e.eeee, s_chunk, f_chunk)
+
         # Contractions using dot products
         temp[s_chunk:f_chunk] += dot(v_eeee, X).reshape(-1, nextern, ncvs*ncas)
 
-        del(v_eeee)
         mr_adc.log.timer_debug("contracting v2e.eeee", *cput2)
+        del(v_eeee)
 
-    sigma_KWCD += temp.transpose(2,0,1).reshape((ncvs, ncas, nextern, nextern))
- 
+    sigma_KWCD += temp.reshape(nextern, nextern, ncvs, ncas).transpose(2,3,0,1)
+    del (temp, X)
+
     sigma[caee] += ascontiguousarray(sigma_KWCD).reshape(-1)
 
     mr_adc.log.timer_debug("computing sigma H1 h1-h1 CAEE-CAEE", *cput1)
