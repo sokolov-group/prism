@@ -27,9 +27,7 @@ import prism.lib.tools as tools
 
 def transform_integrals(mr_adc):
 
-    log = mr_adc.log
-
-    log.info("\nTransforming integrals to MO basis...")
+    mr_adc.log.info("\nTransforming integrals to MO basis...")
 
     transform_integrals_1e(mr_adc)
     if mr_adc.interface.with_df:
@@ -73,16 +71,11 @@ def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4, compacted=False)
         return np.ascontiguousarray(v2e)
 
     if compacted:
-        if nmo_1 == 0 or nmo_2 == 0:
-            v2e = np.zeros((nmo_1, nmo_2, nmo_3 * nmo_4))
-        else:
-            v2e = v2e.reshape(nmo_1, nmo_2, -1)
+        shape = (nmo_1, nmo_2, v2e.shape[1])
     else:
-        if nmo_1 == 0 or nmo_2 == 0 or nmo_3 == 0 or nmo_4 == 0:
-            v2e = np.zeros((nmo_1, nmo_2, nmo_3, nmo_4))
-        else:
-            v2e = v2e.reshape(nmo_1, nmo_2, nmo_3, nmo_4)
+        shape = (nmo_1, nmo_2, nmo_3, nmo_4)
 
+    v2e = np.zeros(shape) if 0 in shape else v2e.reshape(shape)
     return np.ascontiguousarray(v2e)
 
 def compute_effective_1e(mr_adc, h1e_pq, v2e_ccpq, v2e_cpqc):
