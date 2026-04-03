@@ -21,6 +21,7 @@ import os
 import psutil
 import tempfile
 import h5py
+import weakref
 import numpy as np
 
 # Memory management tools
@@ -98,11 +99,15 @@ def current_memory():
 
 # Disk managements tools
 def create_temp_file(method, mode='r+', *args, **kwargs):
-
-    temp_file = tempfile.NamedTemporaryFile(dir=method.temp_dir, delete=True)
+    temp_file = tempfile.NamedTemporaryFile(dir=method.temp_dir, delete=False)
     filename = temp_file.name
+    # close OS-level file handle
+    temp_file.close()
 
-    return h5py.File(filename, mode, *args, **kwargs)
+    hf_temp = h5py.File(filename, mode, *args, **kwargs)
+    # ensure file is deleted when closed/gc'd
+    weakref.finalize(hf_temp, os.unlink, filename)
+    return hf_temp
 
 def create_dataset(dataset_name, temp_file, shape):
 
