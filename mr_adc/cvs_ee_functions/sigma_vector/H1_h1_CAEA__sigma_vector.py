@@ -895,7 +895,7 @@ def compute_sigma_vector__H1__h1_h1__CCEE_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
             v_xeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.xeee[s_chunk:f_chunk])
 
         sigma_KLCD[:, s_chunk:f_chunk] += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
-        sigma_KLCD[:, s_chunk:f_chunk] += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type):
+        sigma_KLCD[:, s_chunk:f_chunk] += 1/2 * einsum('Kxay,LDaC,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
         sigma_KLCD[s_chunk:f_chunk, :] += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_aaaa, v_xeee, rdm_ca, optimize = einsum_type)
         sigma_KLCD[s_chunk:f_chunk, :] += 1/2 * einsum('Lxay,KCaD,xy->KLCD', X_abab, v_xeee, rdm_ca, optimize = einsum_type)
 
