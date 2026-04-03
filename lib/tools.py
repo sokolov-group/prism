@@ -106,7 +106,14 @@ def create_temp_file(method, mode='r+', *args, **kwargs):
 
     hf_temp = h5py.File(filename, mode, *args, **kwargs)
     # ensure file is deleted when closed/gc'd
-    weakref.finalize(hf_temp, os.unlink, filename)
+    def _cleanup(path):
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
+    weakref.finalize(hf_temp, _cleanup, filename)
+
     return hf_temp
 
 def create_dataset(dataset_name, temp_file, shape):
