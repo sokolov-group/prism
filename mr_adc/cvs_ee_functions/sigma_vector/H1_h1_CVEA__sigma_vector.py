@@ -2995,28 +2995,29 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CVEA(mr_adc, X_abab, X_baab, sigma):
     sigma_KLCD -= 1/2 * einsum('KLDx,yzwC,xyuz,wu->KLCD', X_baab, t1_aaae, v_aaaa, rdm_ca, optimize = einsum_type)
     sigma_KLCD += einsum('KLDx,yzwC,xzuv,wvyu->KLCD', X_baab, t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KLCD += einsum('KLDx,yzwC,xzuy,wu->KLCD', X_baab, t1_aaae, v_aaaa, rdm_ca, optimize = einsum_type)
+
+    # v_aeee
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+    chunks = tools.calculate_chunks(mr_adc, ncas, [nextern, nextern, nextern])
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput2 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        if mr_adc.interface.with_df:
+            v_aeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_chunk, f_chunk)
+        else:
+            v_aeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_chunk:f_chunk])
+
+        sigma_KLCD += einsum('KLax,xDaC->KLCD', X_abab[:, :, :, s_chunk:f_chunk], v_aeee, optimize = einsum_type)
+        sigma_KLCD -= einsum('KLax,xCaD->KLCD', X_baab[:, :, :, s_chunk:f_chunk], v_aeee, optimize = einsum_type)
+        sigma_KLCD -= 1/2 * einsum('KLax,yDaC,xy->KLCD', X_abab, v_aeee, rdm_ca[:, s_chunk:f_chunk], optimize = einsum_type)
+        sigma_KLCD += 1/2 * einsum('KLax,yCaD,xy->KLCD', X_baab, v_aeee, rdm_ca[:, s_chunk:f_chunk], optimize = einsum_type)
+
+        mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
+    del(v_aeee)
+
     sigma[cvee] += ascontiguousarray(sigma_KLCD).reshape(-1)
 
     mr_adc.log.timer_debug("computing sigma H1 h1-h1 CVEE-CVEA", *cput1)
-
-def compute_sigma_vector__H1__h1_h1__CVEE_CVEA__V_AEEE(mr_adc, X_abab, X_baab, sigma, v_aeee):        
-    cput1 = (logger.process_clock(), logger.perf_counter())
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    #Excitation Manifold
-    cvee = mr_adc.h1.cvee
-
-    # Reduced Density Matrices
-    rdm_ca = mr_adc.rdm.ca
-
-    sigma_KLCD  = einsum('KLax,xDaC->KLCD', X_abab, v_aeee, optimize = einsum_type)
-    sigma_KLCD -= einsum('KLax,xCaD->KLCD', X_baab, v_aeee, optimize = einsum_type)
-    sigma_KLCD -= 1/2 * einsum('KLax,yDaC,xy->KLCD', X_abab, v_aeee, rdm_ca, optimize = einsum_type)
-    sigma_KLCD += 1/2 * einsum('KLax,yCaD,xy->KLCD', X_baab, v_aeee, rdm_ca, optimize = einsum_type)
-    sigma[cvee] += ascontiguousarray(sigma_KLCD).reshape(-1)
-
-    mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
-    
+ 
