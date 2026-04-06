@@ -452,6 +452,7 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CVEE(mr_adc, X, sigma):
     sigma_KWCU_baab -= 1/6 * einsum('KiaC,ixya,Wzxw,Uyzw->KWCU', X, t1_vaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
 
     # v_xeee
+    ncvs = mr_adc.ncvs
     nval = mr_adc.nval
     nextern = mr_adc.nextern
     chunks = tools.calculate_double_chunks(mr_adc, nval, [nextern, nextern, nextern],
@@ -461,9 +462,9 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CVEE(mr_adc, X, sigma):
         mr_adc.log.debug("v2e.veee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         if mr_adc.interface.with_df:
-            v_xeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lve, mr_adc.v2e.Lee, s_chunk, f_chunk)
+            v_veee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lve, mr_adc.v2e.Lee, s_chunk, f_chunk)
         else:
-            v_xeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.veee[s_chunk:f_chunk])
+            v_veee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.veee[s_chunk:f_chunk])
 
         temp =- 1/2 * einsum('Kiab,iaCb,UW->KWCU', X[:, s_chunk:f_chunk], v_veee, rdm_ca, optimize = einsum_type)
         temp += einsum('Kiab,ibCa,UW->KWCU', X[s_chunk:f_chunk], v_veee, rdm_ca, optimize = einsum_type)

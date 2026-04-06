@@ -1,5 +1,6 @@
 ## h1 <- h1 coupling contributions
 from . import logger, tools, ascontiguousarray
+from prism.mr_adc import integrals
 
 # CCAA <- CCEA
 def compute_sigma_vector__H1__h1_h1__CCAA_CCEA(mr_adc, X, sigma):
