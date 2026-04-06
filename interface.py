@@ -151,7 +151,8 @@ class PYSCF:
             # Use x2c_setup to obtain self.xmol and self.contr_coeff 
             self.xmol = None
             self.contr_coeff = None
-
+            
+            # Solvent potential
             if hasattr(mf, "with_solvent"):
                 self.v_pe = mf.with_solvent.v
                 

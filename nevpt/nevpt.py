@@ -297,6 +297,46 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
         L_t1_ccaa = t1[I].ccaa
         L_t1_caee = t1[I].caee 
         L_t1_aaee = t1[I].aaee
+        
+        #print(L_t1_ccae)
+        print(np.shape(L_t1_ccae))
+        print(method.nmo)
+
+        arr = L_t1_ccae
+
+        # -------- MAX (already yours) --------
+        flat_idx = np.argmax(np.abs(arr))   # largest magnitude
+        max_val = arr.flat[flat_idx]
+
+        multi_idx = np.unravel_index(flat_idx, arr.shape)
+
+        # convert to 1-based indexing
+        multi_idx_1based = tuple(i + 1 for i in multi_idx)
+
+        print("Max value:", max_val)
+        print("Index (1-based):", multi_idx_1based)
+
+
+        # -------- RANGE CHECK (new addition) --------
+        lower = 1e-3
+        upper = 1.0
+
+        abs_arr = np.abs(arr)
+
+        # Find indices where amplitudes are outside expected range
+        bad_idx = np.where((abs_arr < lower) | (abs_arr > upper))
+
+        bad_values = arr[bad_idx]
+
+        print(f"\nNumber of amplitudes outside [{lower}, {upper}]:", len(bad_values))
+
+        # Print a few examples (say up to 10)
+        for i, idx in enumerate(zip(*bad_idx)):
+            if i >= 10:
+                break
+            idx_1based = tuple(j + 1 for j in idx)
+            print("Index:", idx_1based, "Value:", arr[idx])
+        
             
         for ind_J, J in enumerate(R_list): 
             

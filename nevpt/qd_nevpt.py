@@ -21,6 +21,7 @@ import numpy as np
 
 from prism.nevpt import nevpt
 from prism.tools import trans_prop
+from prism.tools import solvent
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -39,6 +40,7 @@ def compute_energy(method):
     # Update correlation energies
     e_corr = method.e_corr
     n_states = len(method.ref_wfn_deg)
+        
     for state in range(n_states):
         e_corr[state] = e_tot[state] - method.e_ref[state]
 
@@ -274,6 +276,10 @@ def compute_properties(method):
                 break
 
         rdm_mo = method.make_rdm1() # for all osc calculation
+        
+        # Add PE contributions if needed
+        #if method.pe is not None:
+        #    ptss, ptlr = solvent.get_pe_corrections(method, rdms = rdm_mo)
 
         # Calculate oscillator strengths for transitions from the first state
         osc_str_full=[]
@@ -281,6 +287,11 @@ def compute_properties(method):
         for gs_index in range(deg_gs):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
+
+            #if method.pe is not None:
+            #    e_diff = [e_diff[i] + ptss[i] for i in range(len(ptss))]
+            #    e_diff = [e_diff[i] + ptlr[i] for i in range(len(ptlr))]
+
             osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
             osc_str_full.append(osc)
             osc_str[gs_index:] += osc 
@@ -292,6 +303,12 @@ def compute_properties(method):
             for gs_index in range(deg_gs, len(method.e_tot)):  
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
+                
+                #if method.pe is not None:
+                #    ptss, ptlr = solvent.get_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                #    e_diff = [e_diff[i] + ptss[i] for i in range(len(ptss))]
+                #    e_diff = [e_diff[i] + ptlr[i] for i in range(len(ptlr))]
+ 
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
 
             method.properties["osc_strengths_full"] = osc_str_full
