@@ -1111,7 +1111,7 @@ def compute_t1_m1p(mr_adc):
 def compute_t2_0p_singles(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
-    mr_adc.log.extra("Computing T[0']^(2) amplitudes...")
+    mr_adc.log.extra("\nComputing T[0']^(2) amplitudes...")
 
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
