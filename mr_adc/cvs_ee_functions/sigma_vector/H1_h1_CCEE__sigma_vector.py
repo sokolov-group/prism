@@ -15,7 +15,7 @@ def compute_sigma_vector__H1__h1_h1__CCAA_CCEE(mr_adc, X, sigma):
 
     ## Molecular Orbitals Energies
     e_extern = mr_adc.mo_energy.e
-    
+
     ## One-electron integrals
     h_aa = mr_adc.h1eff.aa
 
@@ -545,7 +545,6 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CCEE(mr_adc, X, sigma):
     sigma_KWCU_aaaa -= 1/6 * einsum('KiaC,ixya,Wzwy,Uwzx->KWCU', X, t1_xaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KWCU_aaaa -= 1/6 * einsum('KiaC,ixya,Wzxw,Uywz->KWCU', X, t1_xaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KWCU_aaaa += 1/6 * einsum('KiaC,ixya,Wzxw,Uyzw->KWCU', X, t1_xaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
-    sigma[caea__aaaa] += ascontiguousarray(sigma_KWCU_aaaa).reshape(-1)
 
     sigma_KWCU_abab  = 1/2 * einsum('KiCa,iWxa,Ux->KWCU', X, v_xaae, rdm_ca, optimize = einsum_type)
     sigma_KWCU_abab += einsum('KiCa,iaUx,Wx->KWCU', X, v_xeaa, rdm_ca, optimize = einsum_type)
@@ -654,11 +653,12 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CCEE(mr_adc, X, sigma):
         temp =- 1/2 * einsum('Kiab,iaCb,UW->KWCU', X[:, s_chunk:f_chunk], v_xeee, rdm_ca, optimize = einsum_type)
         temp += einsum('Kiab,ibCa,UW->KWCU', X[:, s_chunk:f_chunk], v_xeee, rdm_ca, optimize = einsum_type)
 
-        sigma_KWCU_abab += temp
+        sigma_KWCU_aaaa += temp
         sigma_KWCU_abab += temp
         mr_adc.log.timer_debug("computing v2e.xeee", *cput2)
     del(v_xeee, temp)
 
+    sigma[caea__aaaa] += ascontiguousarray(sigma_KWCU_aaaa).reshape(-1)
     sigma[caea__abab] += ascontiguousarray(sigma_KWCU_abab).reshape(-1)
     sigma[caea__baab] += ascontiguousarray(sigma_KWCU_baab).reshape(-1)
 
