@@ -281,6 +281,17 @@ def compute_M_00(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing M(h0-h0) block...")
 
+    # M(h0-h0) Block
+    M_00 = np.zeros((mr_adc.h0.dim, mr_adc.h0.dim))
+
+    ## Zeroth-order terms
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
+    compute_M_00__H0_h0_h0__CE_CE(mr_adc, M_00)
+    compute_M_00__H0_h0_h0__CA_CA(mr_adc, M_00)
+
+    mr_adc.log.timer_debug("computing M(h0-h0) H0", *cput1)
+
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
@@ -305,36 +316,6 @@ def compute_M_00(mr_adc):
 
     ## Reduced Density Matrices
     rdm_ca = mr_adc.rdm.ca
-
-    # M(h0-h0) Block
-    M_00 = np.zeros((mr_adc.h0.dim, mr_adc.h0.dim))
-
-    ## Zeroth-order terms
-    cput1 = (logger.process_clock(), logger.perf_counter())
-
-    # CE - CE
-    d_ai = e_extern[:, None] - e_cvs
-    np.fill_diagonal(M_00[ce, ce], d_ai.T.ravel())
-
-    temp = M_00[ce, ce]
-    mr_adc.log.extra(f"CE-CE H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
-    del d_ai, temp
-
-    # CA - CA
-    # Define Koopmans intermediate
-    K_ac = intermediates.compute_K_ac(mr_adc)
-
-    temp  = einsum('IJ,XY->IXJY',  np.identity(ncvs), K_ac)
-    temp -= einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
-    temp += 1/2 * einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
-
-    temp.shape = (n_ca, n_ca)
-    M_00[ca, ca] += temp
-
-    mr_adc.log.extra(f"CA-CA H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}\n")
-    del temp, K_ac
-
-    mr_adc.log.timer_debug("computing M(h0-h0) H1", *cput1)
 
     ## First-order terms
     if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"): 
@@ -24147,6 +24128,61 @@ def compute_M_00(mr_adc):
         mr_adc.log.warn("significant asymmetry in M(h0-h0) block!")
 
 
+def compute_M_00__H0_h0_h0__CE_CE(mr_adc, M_00):
+
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
+    # Dimensions
+    ce = mr_adc.h0.ce
+
+    ## Molecular Orbitals Energies
+    e_cvs = mr_adc.mo_energy.x
+    e_extern = mr_adc.mo_energy.e
+
+    # CE - CE
+    d_ai = e_extern[:, None] - e_cvs
+    np.fill_diagonal(M_00[ce, ce], d_ai.T.ravel())
+
+    temp = M_00[ce, ce].copy()
+    mr_adc.log.extra(f"CE-CE H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
+
+    mr_adc.log.timer_debug("computing M(CE-CE) H0", *cput1)
+
+def compute_M_00__H0_h0_h0__CA_CA(mr_adc, M_00):
+
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Dimensions
+    ca = mr_adc.h0.ca
+
+    n_ca = mr_adc.h0.n_ca
+
+    # Variables from kernel
+    ncvs = mr_adc.ncvs
+    ncas = mr_adc.ncas
+
+    ## Molecular Orbitals Energies
+    e_cvs = mr_adc.mo_energy.x
+
+    ## Reduced Density Matrices
+    rdm_ca = mr_adc.rdm.ca
+
+    # Define Koopmans intermediate
+    K_ac = intermediates.compute_K_ac(mr_adc)
+
+    temp  = einsum('IJ,XY->IXJY',  np.identity(ncvs), K_ac)
+    temp -= einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+    temp += 1/2 * einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+
+    M_00[ca, ca] += temp.reshape(n_ca, n_ca)
+
+    mr_adc.log.extra(f"CA-CA H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
+    mr_adc.log.timer_debug("computing M(CA-CA) H0", *cput1)
+
 def compute_preconditioner(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -24154,7 +24190,7 @@ def compute_preconditioner(mr_adc):
 
     # Matrix Blocks
     M_00 = mr_adc.M_00
-    
+
     # Variables from kernel
     ncvs    = mr_adc.ncvs
     nval    = mr_adc.nval
