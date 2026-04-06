@@ -30826,34 +30826,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEA_CCEA(mr_adc, X, sigma)
                 h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CVEE_CCEA(mr_adc, X, sigma)
 
-            sigma_KLCW = np.zeros_like(X)
-
-            # v_aeee
-            chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, nextern, nextern], ntensors = 3)
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-                ## Two-electron integral
-                v_aeee = mr_adc.v2e.aeee[:, :, s_chunk:f_chunk, :]
-
-                ## CCEA block
-                X = np.ascontiguousarray(Xt[ccea].reshape(ncvs, ncvs, nextern, ncas))
-
-                h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEE_CCEA__V_AEEE(mr_adc, X[:, :, s_chunk:f_chunk, :], sigma, v_aeee)
-
-                ## CCEE block
-                X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
-
-                temp = h1_h1_sigma.compute_sigma_vector__H1__h1_h1__CCEA_CCEE__V_AEEE(mr_adc, X, sigma, v_aeee)
-
-                sigma_KLCW[:, :, s_chunk:f_chunk, :] += temp
-
-                mr_adc.log.timer_debug("v2e.aeee contractions", *cput1)
-            
-            sigma[ccea] += np.ascontiguousarray(sigma_KLCW).reshape(-1)
-            del(sigma_KLCW, v_aeee, X)
-
     # CCEE
     if nextern > 0:
         X = np.ascontiguousarray(Xt[ccee].reshape(ncvs, ncvs, nextern, nextern))
