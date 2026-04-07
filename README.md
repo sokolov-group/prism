@@ -14,7 +14,7 @@ Prism is being developed as a platform for calculating excited-state energies an
 - Optional: matplotlib >= 3.9 for plotting spectra;
 - Optional: sympy >= 1.12 for spin–orbit coupling;
 - Optional: [socutils](https://github.com/xubwa/socutils) for spin–orbit coupling;
-- Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) for faster tensor contractions.
+- Optional: [opt_einsum](https://optimized-einsum.readthedocs.io/en/stable/) or [pytblis](https://pytblis.readthedocs.io/) for faster tensor contractions.
 
 ## Installation
 1) Install [PySCF](https://github.com/pyscf/pyscf/) and make sure it is included in the ``$PYTHONPATH`` environment variable
@@ -47,20 +47,21 @@ mf = scf.RHF(mol).run()
 mc = mcscf.CASSCF(mf, 6, 6).run()
 ```
 
-Once the reference calculation is successfully completed, the objects of Hartree-Fock and CASSCF classes (```mf``` and ```mc```) are passed to Prism. 
-For example, the NEVPT2 energy calculation for the reference CASSCF state can be performed as follows:
+Once the reference calculation is successfully completed, the Hartree-Fock and CASSCF objects (```mf``` and ```mc```) are passed to Prism via the interface. The `backend` parameter controls which tensor contraction library is used, and can be set to `numpy`, `opt_einsum`, or `pytblis`. If not specified (or set to `None`), Prism automatically select the best backend available.
+
+For example, a NEVPT2 energy calculation for the reference CASSCF state can be performed as follows:
 
 ```python
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'pytblis')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.method = "nevpt2"
 e_tot, e_corr, osc = nevpt.kernel()
 ```
 
-Alternatively, the CVS-IP-MR-ADC calculation of core ionized states can be performed as:
+Alternatively, a CVS-IP-MR-ADC calculation of core ionized states can be performed as:
 
 ```python
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method = "mr-adc(2)"
 mr_adc.method_type = "cvs-ip"

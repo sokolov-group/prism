@@ -31,7 +31,7 @@ weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 emc = mc.mc1step()[0]
 
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum').density_fit('aug-cc-pvdz-ri')
 nevpt = prism.nevpt.NEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()
 
@@ -41,6 +41,6 @@ weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights).density_fit('aug-cc-pvdz-ri')
 emc = mc.mc1step()[0]
 
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum').density_fit('aug-cc-pvdz-ri')
 nevpt = prism.nevpt.NEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()

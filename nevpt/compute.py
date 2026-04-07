@@ -148,11 +148,12 @@ def print_header(nevpt):
 
     nevpt.log.info("\nInternal contraction:                              %s" % "Full (= Partial)")
     nevpt.log.info("Compute singles amplitudes?                        %s" % str(nevpt.compute_singles_amplitudes))
-    nevpt.log.info("Overlap truncation parameter (singles):            %e" % nevpt.s_thresh_singles)
-    nevpt.log.info("Overlap truncation parameter (doubles):            %e" % nevpt.s_thresh_doubles)
+    nevpt.log.info("Overlap truncation parameter (singles):            %.2e" % nevpt.s_thresh_singles)
+    nevpt.log.info("Overlap truncation parameter (doubles):            %.2e" % nevpt.s_thresh_doubles)
     if nevpt.compute_singles_amplitudes:
         nevpt.log.info("Projector for the semi-internal amplitudes:        %s" % nevpt.semi_internal_projector)
 
+    nevpt.log.info("\nEinsum Backend:                                    %s" % nevpt.interface.einsum_backend)
 
 def print_results(nevpt):
 

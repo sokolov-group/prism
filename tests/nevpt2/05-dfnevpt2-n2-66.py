@@ -52,7 +52,7 @@ emc = mc.mc1step()[0]
 print("CASSCF energy: %f\n" % emc)
 
 # NEVPT2 calculation
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True).density_fit('aug-cc-pvdz-ri')
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum').density_fit('aug-cc-pvdz-ri')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = True
 nevpt.semi_internal_projector = "gs"

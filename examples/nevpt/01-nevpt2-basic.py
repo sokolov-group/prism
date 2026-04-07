@@ -44,12 +44,12 @@ mc.analyze()
 print("CASSCF energy: %f\n" % emc)
 
 # NEVPT2 with all electrons correlated
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()
 
 # NEVPT2 with frozen core
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.nfrozen = 1
 e_tot, e_corr, osc = nevpt.kernel()
