@@ -281,21 +281,10 @@ def compute_M_00(mr_adc):
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing M(h0-h0) block...")
 
-    # M(h0-h0) Block
-    M_00 = np.zeros((mr_adc.h0.dim, mr_adc.h0.dim))
-
-    ## Zeroth-order terms
-    cput1 = (logger.process_clock(), logger.perf_counter())
-
-    compute_M_00__H0_h0_h0__CE_CE(mr_adc, M_00)
-    compute_M_00__H0_h0_h0__CA_CA(mr_adc, M_00)
-
-    mr_adc.log.timer_debug("computing M(h0-h0) H0", *cput1)
-
     # Einsum definition from kernel
     einsum = mr_adc.interface.einsum
     einsum_type = mr_adc.interface.einsum_type
-
+ 
     # Dimensions
     ce = mr_adc.h0.ce
     ca = mr_adc.h0.ca
@@ -303,42 +292,53 @@ def compute_M_00(mr_adc):
     n_ce = mr_adc.h0.n_ce
     n_ca = mr_adc.h0.n_ca
 
-    # Variables from kernel
-    ncvs    = mr_adc.ncvs
-    nval    = mr_adc.nval
-    ncas    = mr_adc.ncas
-    nextern = mr_adc.nextern
-
-    ## Molecular Orbitals Energies
-    e_cvs    = mr_adc.mo_energy.x
-    e_val    = mr_adc.mo_energy.v
-    e_extern = mr_adc.mo_energy.e
-
-    ## Reduced Density Matrices
-    rdm_ca = mr_adc.rdm.ca
-
-    ## First-order terms
-    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"): 
+    def compute_M_00__H0_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
-        ## One-electron integrals
-        h_aa = mr_adc.h1eff.aa
-        h_ae = mr_adc.h1eff.ae
-            
-        ## Two-electron integrals
-        v_xxaa = mr_adc.v2e.xxaa
-        v_xxae = mr_adc.v2e.xxae
-        v_xaax = mr_adc.v2e.xaax
-        v_xaex = mr_adc.v2e.xaex
-        v_aaaa = mr_adc.v2e.aaaa
-        v_aaae = mr_adc.v2e.aaae
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
+        e_extern = mr_adc.mo_energy.e
 
-        ## Amplitudes
-        t1_ae = mr_adc.t1.ae
-        t1_aaae = mr_adc.t1.aaae
+        # CE - CE
+        d_ai = e_extern[:, None] - e_cvs
+        temp = np.diag(d_ai.T.ravel())
+
+        temp.shape = (n_ce, n_ce)
+        mr_adc.log.extra(f"CE-CE H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
+        mr_adc.log.timer_debug("computing M00 H0 h1-h1 CE-CE", *cput1)
+        return temp
+
+    def compute_M_00__H0_h0_h0__CA_CA(mr_adc):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        ncas = mr_adc.ncas
+
+        ## Molecular Orbitals Energies
+        e_cvs = mr_adc.mo_energy.x
 
         ## Reduced Density Matrices
-        rdm_ccaa = mr_adc.rdm.ccaa
+        rdm_ca = mr_adc.rdm.ca
+
+        # Define Koopmans intermediate
+        K_ac = intermediates.compute_K_ac(mr_adc)
+
+        temp  = einsum('IJ,XY->IXJY', np.identity(ncvs), K_ac)
+        temp -= einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
+        temp += 1/2 * einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
+
+        temp.shape = (n_ca, n_ca)
+        mr_adc.log.extra(f"CA-CA H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
+        mr_adc.log.timer_debug("computing M00 H0 h1-h1 CA-CA", *cput1)
+        return temp
+
+    def compute_M_00__H1_h0_h0__CE_CE(mr_adc):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+        nextern = mr_adc.nextern
 
         # CE - CE
         temp = np.zeros((ncvs, nextern, ncvs, nextern))
@@ -355,13 +355,23 @@ def compute_M_00(mr_adc):
             temp[:, s_chunk:f_chunk] += 2 * v_xeex.transpose(0, 1, 3, 2) - v_xxee.transpose(1, 2, 0, 3)
 
             mr_adc.log.timer_debug("computing v2e.xeex v2e.xxee", *cput2)
-            del v_xeex, v_xxee
+        del v_xeex, v_xxee
 
-        temp.shape = (n_ce, n_ce)
-        M_00[ce, ce] += temp
+        temp.shape = (n_ce, n_ce) 
+        mr_adc.log.extra(f"\nCE-CE H1 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
+        mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CE", *cput1)
+        return temp
 
-        mr_adc.log.extra(f"CE-CE H1 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
-        del temp
+    def compute_M_00__H1_h0_h0__CA_CA(mr_adc):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        ## Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        ## Two-electron integrals
+        v_xxaa = mr_adc.v2e.xxaa
+        v_xaax = mr_adc.v2e.xaax
 
         # CA - CA
         temp =- einsum('IJYX->IXJY', v_xxaa, optimize = einsum_type).copy()
@@ -375,11 +385,37 @@ def compute_M_00(mr_adc):
         temp -= 1/2 * einsum('IJxy,xy,XY->IXJY', v_xxaa, rdm_ca, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('IxyJ,yx,XY->IXJY', v_xaax, rdm_ca, rdm_ca, optimize = einsum_type)
 
-        temp.shape = (n_ca, n_ca)
-        M_00[ca, ca] += temp
-
+        temp.shape = (n_ca, n_ca) 
         mr_adc.log.extra(f"CA-CA H1 | Asymmetry: {np.linalg.norm(temp - temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
-        del temp
+        mr_adc.log.timer_debug("computing M00 H1 h1-h1 CA-CA", *cput1)
+        return temp
+ 
+    def compute_M_00__H1_h0_h0__CE_CA(mr_adc):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Variables from kernel
+        ncvs = mr_adc.ncvs
+
+        ## Molecular Orbitals Energies
+        e_extern = mr_adc.mo_energy.e
+
+        ## Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
+
+        ## One-electron integrals
+        h_aa = mr_adc.h1eff.aa
+        h_ae = mr_adc.h1eff.ae
+
+        ## Two-electron integrals
+        v_xxae = mr_adc.v2e.xxae
+        v_xaex = mr_adc.v2e.xaex
+        v_aaaa = mr_adc.v2e.aaaa
+        v_aaae = mr_adc.v2e.aaae
+
+        ## Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
 
         # CE - CA
         temp =- einsum('IJXA->IAJX', v_xxae, optimize = einsum_type).copy()
@@ -414,13 +450,40 @@ def compute_M_00(mr_adc):
         temp -= einsum('IJ,xyzA,Xywx,zw->IAJX', np.identity(ncvs), t1_aaae, v_aaaa, rdm_ca, optimize = einsum_type)
 
         temp.shape = (n_ce, n_ca)
-        M_00[ce, ca] += temp
-
-        # Add temp matrix to bottom triangle
-        M_00[ca, ce] += temp.T
-
         mr_adc.log.extra(f"CE-CA H1 |                        | Norm: {np.linalg.norm(temp):>10.6f}")
-        del temp
+        mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CA", *cput1)
+        return temp
+
+    # M(h0-h0) Block
+    M_00 = np.zeros((mr_adc.h0.dim, mr_adc.h0.dim))
+
+    ## Zeroth-order terms
+    cput1 = (logger.process_clock(), logger.perf_counter())
+
+    M_CE_CE = compute_M_00__H0_h0_h0__CE_CE(mr_adc)
+    if n_ca > 0:
+        M_CA_CA = compute_M_00__H0_h0_h0__CA_CA(mr_adc)
+
+    M_00[ce, ce] += M_CE_CE
+    if n_ca > 0:
+        M_00[ca, ca] += M_CA_CA
+
+    mr_adc.log.timer_debug("computing M(h0-h0) H0", *cput1)
+
+    ## First-order terms
+    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"): 
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        M_CE_CE = compute_M_00__H1_h0_h0__CE_CE(mr_adc)
+        if n_ca > 0:
+            M_CA_CA = compute_M_00__H1_h0_h0__CA_CA(mr_adc)
+            M_CE_CA = compute_M_00__H1_h0_h0__CE_CA(mr_adc)
+
+        M_00[ce, ce] += M_CE_CE
+        if n_ca > 0:
+            M_00[ca, ca] += M_CA_CA
+            M_00[ce, ca] += M_CE_CA
+            M_00[ca, ce] += M_CE_CA.T
 
         mr_adc.log.timer_debug("computing M(h0-h0) H1", *cput1)
 
@@ -428,11 +491,28 @@ def compute_M_00(mr_adc):
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
+        # Variables from kernel
+        ncvs    = mr_adc.ncvs
+        nval    = mr_adc.nval
+        ncas    = mr_adc.ncas
+        nextern = mr_adc.nextern
+
+        ## Molecular Orbitals Energies
+        e_cvs    = mr_adc.mo_energy.x
+        e_val    = mr_adc.mo_energy.v
+        e_extern = mr_adc.mo_energy.e
+
+        ## Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+
         ## One-electron integrals
         h_xa = mr_adc.h1eff.xa
         h_va = mr_adc.h1eff.va
         h_xe = mr_adc.h1eff.xe
         h_ve = mr_adc.h1eff.ve
+
+        h_aa = mr_adc.h1eff.aa
+        h_ae = mr_adc.h1eff.ae
 
         ## Two-electron integrals
         v_xxxa = mr_adc.v2e.xxxa
@@ -465,12 +545,22 @@ def compute_M_00(mr_adc):
         v_xaaa = mr_adc.v2e.xaaa
         v_vaaa = mr_adc.v2e.vaaa
 
+        v_xaex = mr_adc.v2e.xaex
+        v_xxae = mr_adc.v2e.xxae
+        v_aaae = mr_adc.v2e.aaae
+        v_aaaa = mr_adc.v2e.aaaa
+        v_xxxa = mr_adc.v2e.xxxa
+        v_xxaa = mr_adc.v2e.xxaa
+        v_xaax = mr_adc.v2e.xaax
+
         ## Amplitudes
         t1_xa = mr_adc.t1.xa
         t1_va = mr_adc.t1.va
 
         t1_xe = mr_adc.t1.xe
         t1_ve = mr_adc.t1.ve
+
+        t1_ae = mr_adc.t1.ae
 
         t2_ae = mr_adc.t2.ae
         t2_aa = mr_adc.t2.aa
@@ -494,7 +584,11 @@ def compute_M_00(mr_adc):
         t1_xaea = mr_adc.t1.xaea
         t1_vaea = mr_adc.t1.vaea
 
+        t1_aaae = mr_adc.t1.aaae
+
         # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca
+        rdm_ccaa = mr_adc.rdm.ccaa
         rdm_cccaaa = mr_adc.rdm.cccaaa
         rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
@@ -3341,7 +3435,7 @@ def compute_M_00(mr_adc):
         temp = np.ascontiguousarray(temp)
         temp.shape = (n_ce, n_ce)
         M_00[ce, ce] += temp
-        mr_adc.log.extra(f"CE-CE H2 | Asymmetry: {np.linalg.norm(temp - temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
+        mr_adc.log.extra(f"\nCE-CE H2 | Asymmetry: {np.linalg.norm(temp - temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
         del temp
 
         # CA - CA
@@ -24127,61 +24221,6 @@ def compute_M_00(mr_adc):
     if np.linalg.norm(M_00-M_00.T) > 1e-4:
         mr_adc.log.warn("significant asymmetry in M(h0-h0) block!")
 
-
-def compute_M_00__H0_h0_h0__CE_CE(mr_adc, M_00):
-
-    cput1 = (logger.process_clock(), logger.perf_counter())
-
-    # Dimensions
-    ce = mr_adc.h0.ce
-
-    ## Molecular Orbitals Energies
-    e_cvs = mr_adc.mo_energy.x
-    e_extern = mr_adc.mo_energy.e
-
-    # CE - CE
-    d_ai = e_extern[:, None] - e_cvs
-    np.fill_diagonal(M_00[ce, ce], d_ai.T.ravel())
-
-    temp = M_00[ce, ce].copy()
-    mr_adc.log.extra(f"CE-CE H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
-
-    mr_adc.log.timer_debug("computing M(CE-CE) H0", *cput1)
-
-def compute_M_00__H0_h0_h0__CA_CA(mr_adc, M_00):
-
-    cput1 = (logger.process_clock(), logger.perf_counter())
-
-    # Einsum definition from kernel
-    einsum = mr_adc.interface.einsum
-    einsum_type = mr_adc.interface.einsum_type
-
-    # Dimensions
-    ca = mr_adc.h0.ca
-
-    n_ca = mr_adc.h0.n_ca
-
-    # Variables from kernel
-    ncvs = mr_adc.ncvs
-    ncas = mr_adc.ncas
-
-    ## Molecular Orbitals Energies
-    e_cvs = mr_adc.mo_energy.x
-
-    ## Reduced Density Matrices
-    rdm_ca = mr_adc.rdm.ca
-
-    # Define Koopmans intermediate
-    K_ac = intermediates.compute_K_ac(mr_adc)
-
-    temp  = einsum('IJ,XY->IXJY',  np.identity(ncvs), K_ac)
-    temp -= einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), np.identity(ncas), optimize = einsum_type)
-    temp += 1/2 * einsum('J,IJ,XY->IXJY', e_cvs, np.identity(ncvs), rdm_ca, optimize = einsum_type)
-
-    M_00[ca, ca] += temp.reshape(n_ca, n_ca)
-
-    mr_adc.log.extra(f"CA-CA H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
-    mr_adc.log.timer_debug("computing M(CA-CA) H0", *cput1)
 
 def compute_preconditioner(mr_adc):
 
