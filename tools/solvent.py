@@ -32,7 +32,9 @@ def get_pe_corrections(method, state = 0, rdms = None):
     ### TODO: add type flag for 'all', 'gs-only' or something ###
      
     # Compute all 1rdm
-    
+    if rdms is None:
+        rdms = method.make_rdm1(type = 'all')
+         
     # Empty lists for energy corrections
     ptss = []
     ptlr = []

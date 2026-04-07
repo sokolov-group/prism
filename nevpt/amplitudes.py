@@ -128,7 +128,6 @@ def compute_t1_p1(nevpt, rdms):
     ## V tensor: - < Psi_0 | a^{\dag}_I a^{\dag}_J a_X a_A V | Psi_0>
     V1_p1 =- einsum('JXIA->IJAX', v_cace, optimize = einsum_type).copy()
     V1_p1 += 1/2 * einsum('JxIA,Xx->IJAX', v_cace, rdm_ca, optimize = einsum_type)
-    print('max of t1_ccea p1 num: ', np.max(np.abs(V1_p1)))
     
     ## Compute denominators
     d_ap = (e_extern[:,None] + evals).reshape(-1)
@@ -137,8 +136,6 @@ def compute_t1_p1(nevpt, rdms):
     d_apij = (d_ap[:,None] - d_ij).reshape(nextern, evals.shape[0], ncore, ncore)
     d_apij = d_apij**(-1)
     
-    print('t1_ccea p1 denom: ', np.max(np.abs(d_apij)))
-
     # Compute T[+1] amplitudes
     S_12_V_p1 = einsum("IJAX,Xm->IJAm", V1_p1, S_p1_12_inv_act, optimize = einsum_type)
     S_12_V_p1 = einsum("mp,IJAm->IJAp", evecs, S_12_V_p1, optimize = einsum_type)

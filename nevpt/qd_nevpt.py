@@ -278,8 +278,8 @@ def compute_properties(method):
         rdm_mo = method.make_rdm1() # for all osc calculation
         
         # Add PE contributions if needed
-        #if method.pe is not None:
-        #    ptss, ptlr = solvent.get_pe_corrections(method, rdms = rdm_mo)
+        if method.pe is not None:
+            ptss, ptlr = solvent.get_pe_corrections(method, rdms = rdm_mo)
 
         # Calculate oscillator strengths for transitions from the first state
         osc_str_full=[]
@@ -288,9 +288,8 @@ def compute_properties(method):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
 
-            #if method.pe is not None:
-            #    e_diff = [e_diff[i] + ptss[i] for i in range(len(ptss))]
-            #    e_diff = [e_diff[i] + ptlr[i] for i in range(len(ptlr))]
+            if method.pe is not None:
+                e_diff = [e_diff[i] + ptss[i] + ptlr[i] for i in range(len(ptss))]
 
             osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
             osc_str_full.append(osc)
@@ -304,10 +303,9 @@ def compute_properties(method):
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
                 
-                #if method.pe is not None:
-                #    ptss, ptlr = solvent.get_pe_corrections(method, state = gs_index, rdms = rdm_mo)
-                #    e_diff = [e_diff[i] + ptss[i] for i in range(len(ptss))]
-                #    e_diff = [e_diff[i] + ptlr[i] for i in range(len(ptlr))]
+                if method.pe is not None:
+                    ptss, ptlr = solvent.get_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                    e_diff = [e_diff[i] + ptss[i] + ptlr[i] for i in range(len(ptss))]
  
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
 
