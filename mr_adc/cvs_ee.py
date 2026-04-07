@@ -292,6 +292,12 @@ def compute_M_00(mr_adc):
     n_ce = mr_adc.h0.n_ce
     n_ca = mr_adc.h0.n_ca
 
+    # Variables from kernel
+    ncvs = mr_adc.ncvs
+    nval = mr_adc.nval
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+
     def compute_M_00__H0_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -310,10 +316,6 @@ def compute_M_00(mr_adc):
 
     def compute_M_00__H0_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        ncas = mr_adc.ncas
 
         ## Molecular Orbitals Energies
         e_cvs = mr_adc.mo_energy.x
@@ -335,10 +337,6 @@ def compute_M_00(mr_adc):
 
     def compute_M_00__H1_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        nextern = mr_adc.nextern
 
         # CE - CE
         temp = np.zeros((ncvs, nextern, ncvs, nextern))
@@ -392,9 +390,6 @@ def compute_M_00(mr_adc):
  
     def compute_M_00__H1_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
 
         ## Molecular Orbitals Energies
         e_extern = mr_adc.mo_energy.e
@@ -456,12 +451,6 @@ def compute_M_00(mr_adc):
 
     def compute_M_00__H2_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        nval = mr_adc.nval
-        ncas = mr_adc.ncas
-        nextern = mr_adc.nextern
 
         ## Molecular Orbitals Energies
         e_cvs = mr_adc.mo_energy.x
@@ -2579,7 +2568,6 @@ def compute_M_00(mr_adc):
             temp += temp_chunk
             mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
 
-        if ncas > 0:
             del (v_aeee, rdm_ca_y, rdm_ccaa_w)
 
         ## v_xexe
@@ -3372,12 +3360,6 @@ def compute_M_00(mr_adc):
 
     def compute_M_00__H2_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        nval = mr_adc.nval
-        ncas = mr_adc.ncas
-        nextern = mr_adc.nextern
 
         ## Molecular Orbitals Energies
         e_cvs = mr_adc.mo_energy.x
@@ -20560,12 +20542,6 @@ def compute_M_00(mr_adc):
     def compute_M_00__H2_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        nval = mr_adc.nval
-        ncas = mr_adc.ncas
-        nextern = mr_adc.nextern
-
         ## Molecular Orbitals Energies
         e_cvs = mr_adc.mo_energy.x
         e_val = mr_adc.mo_energy.v
@@ -24295,7 +24271,6 @@ def compute_M_00(mr_adc):
                 temp += temp_chunk
             mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
 
-        if ncas > 0:
             del(v_aeee, t1_aaee, rdm_ca_xy)
 
         temp = np.ascontiguousarray(temp)
