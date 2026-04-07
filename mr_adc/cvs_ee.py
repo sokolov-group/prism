@@ -76,8 +76,6 @@ def compute_excitation_manifolds(mr_adc):
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-sx", "mr-adc(2)-x"):
         # Compound Indices
         mr_adc.h1.n_aa = mr_adc.ncas * (mr_adc.ncas - 1) // 2
-
-        ## Indices
         mr_adc.h1.aa_tril_ind = np.tril_indices(mr_adc.ncas, k = -1)
 
         ## First-order manifold
@@ -110,7 +108,10 @@ def compute_excitation_manifolds(mr_adc):
             mr_adc.h1.dim_cvee = mr_adc.h1.n_cvee
 
         # Total dimension
-        mr_adc.h1.dim = mr_adc.h1.dim_ccaa + mr_adc.h1.dim_ccea + mr_adc.h1.dim_ccee + mr_adc.h1.dim_caee + mr_adc.h1.dim_caaa + mr_adc.h1.dim_caea
+        mr_adc.h1.dim = (
+            mr_adc.h1.dim_ccaa + mr_adc.h1.dim_ccea + mr_adc.h1.dim_ccee + 
+            mr_adc.h1.dim_caee + mr_adc.h1.dim_caaa + mr_adc.h1.dim_caea
+        )
 
         if mr_adc.nval > 0:
             mr_adc.h1.dim += mr_adc.h1.dim_cvaa + mr_adc.h1.dim_cvea + mr_adc.h1.dim_cvee
@@ -179,13 +180,9 @@ def compute_excitation_manifolds(mr_adc):
         mr_adc.log.extra("Dimension of h1 excitation manifold:                       %d" % mr_adc.h1.dim)
 
         # Orthogonalized zeroth- and first-order manifold
-        if not hasattr(mr_adc.S12, "ccaa"):
-            mr_adc.S12.ccaa = overlap.compute_S12_p2(mr_adc)
-        if not hasattr(mr_adc.S12, "ccea"):
-            mr_adc.S12.ccea = overlap.compute_S12_p1(mr_adc)
-        if not hasattr(mr_adc.S12, "caee"):
-            mr_adc.S12.caee = overlap.compute_S12_m1(mr_adc)
-
+        mr_adc.S12.ccaa = overlap.compute_S12_p2(mr_adc)
+        mr_adc.S12.ccea = overlap.compute_S12_p1(mr_adc)
+        mr_adc.S12.caee = overlap.compute_S12_m1(mr_adc)
         mr_adc.S12.ca_caaa = overlap.compute_S12_p1p_projector(mr_adc)
         mr_adc.S12.ce_caea = overlap.compute_S12_0p_projector(mr_adc)
 
@@ -214,7 +211,10 @@ def compute_excitation_manifolds(mr_adc):
         mr_adc.h_orth.dim_ccee = mr_adc.h1.dim_ccee
         mr_adc.h_orth.dim_caee = mr_adc.h_orth.n_caee
 
-        mr_adc.h_orth.dim =  mr_adc.h_orth.dim_ca_caaa + mr_adc.h_orth.dim_ce_caea + mr_adc.h_orth.dim_ccaa + mr_adc.h_orth.dim_ccea + mr_adc.h_orth.dim_ccee + mr_adc.h_orth.dim_caee
+        mr_adc.h_orth.dim = (
+            mr_adc.h_orth.dim_ca_caaa + mr_adc.h_orth.dim_ce_caea + mr_adc.h_orth.dim_caee + 
+            mr_adc.h_orth.dim_ccaa + mr_adc.h_orth.dim_ccea + mr_adc.h_orth.dim_ccee
+        )
 
         if mr_adc.nval > 0:
             mr_adc.h_orth.dim_cvaa = mr_adc.h_orth.n_cvaa
@@ -270,8 +270,7 @@ def compute_excitation_manifolds(mr_adc):
     mr_adc.log.extra("Total dimension of the excitation manifold:                %d" % (mr_adc.h0.dim + mr_adc.h1.dim))
     mr_adc.log.extra("Dimension of the orthogonalized excitation manifold:       %d" % (mr_adc.h_orth.dim))
 
-    if (mr_adc.h_orth.dim < mr_adc.nroots):
-        mr_adc.nroots = mr_adc.h_orth.dim
+    mr_adc.nroots = min(mr_adc.nroots, mr_adc.h_orth.dim)
 
     return mr_adc
 
@@ -305,7 +304,6 @@ def compute_M_00(mr_adc):
         e_cvs = mr_adc.mo_energy.x
         e_extern = mr_adc.mo_energy.e
 
-        # CE - CE
         d_ai = e_extern[:, None] - e_cvs
         temp = np.diag(d_ai.T.ravel())
 
@@ -338,7 +336,6 @@ def compute_M_00(mr_adc):
     def compute_M_00__H1_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
-        # CE - CE
         temp = np.zeros((ncvs, nextern, ncvs, nextern))
 
         chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 3)
@@ -371,7 +368,6 @@ def compute_M_00(mr_adc):
         v_xxaa = mr_adc.v2e.xxaa
         v_xaax = mr_adc.v2e.xaax
 
-        # CA - CA
         temp =- einsum('IJYX->IXJY', v_xxaa, optimize = einsum_type).copy()
         temp += 2 * einsum('IXYJ->IXJY', v_xaax, optimize = einsum_type).copy()
         temp += 1/2 * einsum('IJYx,Xx->IXJY', v_xxaa, rdm_ca, optimize = einsum_type)
@@ -412,7 +408,6 @@ def compute_M_00(mr_adc):
         t1_ae = mr_adc.t1.ae
         t1_aaae = mr_adc.t1.aaae
 
-        # CE - CA
         temp =- einsum('IJXA->IAJX', v_xxae, optimize = einsum_type).copy()
         temp += 2 * einsum('JXAI->IAJX', v_xaex, optimize = einsum_type).copy()
         temp += einsum('XA,IJ->IAJX', h_ae, np.identity(ncvs), optimize = einsum_type)
@@ -513,7 +508,6 @@ def compute_M_00(mr_adc):
         rdm_ccaa = mr_adc.rdm.ccaa
         rdm_cccaaa = mr_adc.rdm.cccaaa
 
-        # CE - CE
         temp  = einsum('IixA,JxiB->IAJB', t1_xxae, v_xaxe, optimize = einsum_type)
         temp -= 2 * einsum('IixA,ixJB->IAJB', t1_xxae, v_xaxe, optimize = einsum_type)
         temp += einsum('IixA,JxiB->IAJB', t1_xvae, v_xave, optimize = einsum_type)
@@ -3433,7 +3427,6 @@ def compute_M_00(mr_adc):
         rdm_cccaaa = mr_adc.rdm.cccaaa
         rdm_ccccaaaa = mr_adc.rdm.ccccaaaa
 
-        # CA - CA
         temp = np.zeros((ncvs, ncas, ncvs, ncas))
 
         temp_t2_0pp  = einsum('Xx,IJ,Yx->IXJY', h_aa, np.identity(ncvs), t2_aa, optimize = einsum_type)
@@ -20615,7 +20608,6 @@ def compute_M_00(mr_adc):
         rdm_ccaa = mr_adc.rdm.ccaa
         rdm_cccaaa = mr_adc.rdm.cccaaa
 
-        # CE - CA
         temp  = einsum('IJ,A,XA->IAJX', np.identity(ncvs), e_extern, t2_ae, optimize = einsum_type)
         temp -= einsum('IJ,Xx,xA->IAJX', np.identity(ncvs), h_aa, t2_ae, optimize = einsum_type)
         temp -= einsum('IJ,xA,Xxyz,yz->IAJX', np.identity(ncvs), t2_ae, v_aaaa, rdm_ca, optimize = einsum_type)
@@ -24367,10 +24359,6 @@ def compute_preconditioner(mr_adc):
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
 
-        # Variables from kernel
-        ncvs = mr_adc.ncvs
-        ncas = mr_adc.ncas
-
         ## Overlap Matrices
         S12_ca = mr_adc.S12.ca
 
@@ -25527,9 +25515,10 @@ def define_effective_hamiltonian(mr_adc):
 
     # Matrix Blocks
     M_00 = mr_adc.M_00
- 
+
+    # Effective Hamiltonian for MR-ADC(0) and MR-ADC(1)
     if mr_adc.method in ("mr-adc(0)", "mr-adc(1)"):
-        # Effective Hamiltonian for MR-ADC(0) and MR-ADC(1)
+
         def apply_M(X):
             
             # Xt = S_12 X
@@ -25543,22 +25532,23 @@ def define_effective_hamiltonian(mr_adc):
 
             return X_new
 
+    # Effective Hamiltonian for MR-ADC(2), MR-ADC(2)-SX, and MR-ADC(2)-X
     else:
-        # Effective Hamiltonian for MR-ADC(2), MR-ADC(2)-SX, and MR-ADC(2)-X
 
-        ## Create intermediates
+        # Create intermediates
         ints = None
         if mr_adc.h_orth.dim_ca_caaa:
             ints = intermediates.compute_4RDM_V_INT_SIGMA(mr_adc)
 
         def apply_M(X):
-            ## Xt = S_12 X
+
+            # Xt = S_12 X
             Xt = apply_S_12(mr_adc, X)
 
-            ## Apply M: Sigma = M Xt
+            # Apply M: Sigma = M Xt
             sigma = compute_sigma_vector(mr_adc, Xt, ints)
 
-            ## X_new = S_12.T Sigma
+            # X_new = S_12.T Sigma
             X_new = apply_S_12(mr_adc, sigma, transpose = True)
 
             return X_new
@@ -25676,7 +25666,6 @@ def apply_S_12(mr_adc, X, transpose = False):
         # Active indices manifolds
         dim_X = ncas
         dim_XY = ncas * ncas
-        dim_XY_tril = ncas * (ncas - 1) // 2
         dim_XYZ = ncas * ncas * ncas
         dim_XYZ_tril = ncas * ncas * (ncas - 1) // 2
 
@@ -25694,7 +25683,7 @@ def apply_S_12(mr_adc, X, transpose = False):
         s_aaa = f_a
         f_aaa = s_aaa + dim_XYZ_tril ##aaa -> aaaa
         s_bba = f_aaa
-        f_bba = s_bba + dim_XYZ ##bba -> abab
+        f_bba = s_bba + dim_XYZ      ##bba -> abab
 
         # Transformation to orthonormal basis
         if transpose:
