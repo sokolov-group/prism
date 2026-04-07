@@ -3454,7 +3454,7 @@ def compute_M_00(mr_adc):
         temp_t2_0pp += 1/2 * einsum('IJ,xy,Yzxw,Xyzw->IXJY', np.identity(ncvs), t2_aa, v_aaaa, rdm_ccaa, optimize = einsum_type)
 
         temp += temp_t2_0pp
-        mr_adc.log.extra("\nCA,CA H2\n>Norm of [0''] contribution: %20.12f" % np.linalg.norm(temp_t2_0pp))
+        # mr_adc.log.extra("\nCA,CA H2\n>Norm of [0''] contribution: %20.12f" % np.linalg.norm(temp_t2_0pp))
         del (temp_t2_0pp)
 
         temp_t1_0 = np.zeros_like(temp)
@@ -3582,7 +3582,7 @@ def compute_M_00(mr_adc):
         del(e_extern_a, t1_xvee_ab, t1_xvee_ba)
 
         temp += temp_t1_0
-        mr_adc.log.extra('>Norm of [0]   contribution: %20.12f' % np.linalg.norm(temp_t1_0))
+        # mr_adc.log.extra('>Norm of [0]   contribution: %20.12f' % np.linalg.norm(temp_t1_0))
         del (temp_t1_0)
 
         temp_t1_0p  = 2 * einsum('Ia,JXYa->IXJY', h_xe, t1_xaae, optimize = einsum_type)
@@ -7291,7 +7291,7 @@ def compute_M_00(mr_adc):
         temp_t1_0p -= 1/4 * einsum('XY,xyzw,Jxua,Ivsa,zuvwsy->IXJY', np.identity(ncas), v_aaaa, t1_xaae, t1_xaae, rdm_cccaaa, optimize = einsum_type)
         temp_t1_0p += 1/2 * einsum('XY,xyzw,Jxua,Ivua,zvwy->IXJY', np.identity(ncas), v_aaaa, t1_xaae, t1_xaae, rdm_ccaa, optimize = einsum_type)
         temp += temp_t1_0p
-        mr_adc.log.extra(">Norm of [0']  contribution: %20.12f" % np.linalg.norm(temp_t1_0p))
+        # mr_adc.log.extra(">Norm of [0']  contribution: %20.12f" % np.linalg.norm(temp_t1_0p))
         del (temp_t1_0p)
 
         temp_t1_m1 = np.zeros_like(temp)
@@ -7595,7 +7595,7 @@ def compute_M_00(mr_adc):
             del (e_extern_a, t1_vaee_ab, t1_vaee_ba)
 
         temp += temp_t1_m1
-        mr_adc.log.extra(">Norm of [-1]  contribution: %20.12f" % np.linalg.norm(temp_t1_m1))
+        # mr_adc.log.extra(">Norm of [-1]  contribution: %20.12f" % np.linalg.norm(temp_t1_m1))
         del (temp_t1_m1)
 
         temp_t1_m1p =- einsum('Xa,IJYa->IXJY', t1_ae, v_xxae, optimize = einsum_type)
@@ -9101,7 +9101,7 @@ def compute_M_00(mr_adc):
         temp_t1_m1p += 1/4 * einsum('IJ,xyzw,zxua,vsYa,Xywvsu->IXJY', np.identity(ncvs), v_aaaa, t1_aaae, t1_aaae, rdm_cccaaa, optimize = einsum_type)
 
         temp += temp_t1_m1p
-        mr_adc.log.extra(">Norm of [-1'] contribution: %20.12f" % np.linalg.norm(temp_t1_m1p))
+        # mr_adc.log.extra(">Norm of [-1'] contribution: %20.12f" % np.linalg.norm(temp_t1_m1p))
         del (temp_t1_m1p) 
 
         temp_t1_m2 = np.zeros_like(temp)
@@ -9203,7 +9203,7 @@ def compute_M_00(mr_adc):
         del(e_extern_a, t1_aaee_ab, t1_aaee_ba)
 
         temp += temp_t1_m2
-        mr_adc.log.extra(">Norm of [-2]  contribution: %20.12f" % np.linalg.norm(temp_t1_m2))
+        # mr_adc.log.extra(">Norm of [-2]  contribution: %20.12f" % np.linalg.norm(temp_t1_m2))
         del (temp_t1_m2)
 
         temp_t1_p1  = 4 * einsum('IiXa,JYia->IXJY', t1_xxae, v_xaxe, optimize = einsum_type)
@@ -10228,7 +10228,7 @@ def compute_M_00(mr_adc):
         temp_t1_p1 += 1/2 * einsum('XY,xyzw,iJxa,iIua,zuwy->IXJY', np.identity(ncas), v_aaaa, t1_vxae, t1_vxae, rdm_ccaa, optimize = einsum_type)
 
         temp += temp_t1_p1
-        mr_adc.log.extra(">Norm of [+1]  contribution: %20.12f" % np.linalg.norm(temp_t1_p1))
+        # mr_adc.log.extra(">Norm of [+1]  contribution: %20.12f" % np.linalg.norm(temp_t1_p1))
         del (temp_t1_p1) 
 
         temp_t1_p1p  = 2 * einsum('Ix,JXYx->IXJY', h_xa, t1_xaaa, optimize = einsum_type)
@@ -18097,7 +18097,7 @@ def compute_M_00(mr_adc):
         temp_t1_p1p += 1/2 * einsum('XY,xyzw,Jxuv,Iu,zvwy->IXJY', np.identity(ncas), v_aaaa, t1_xaaa, t1_xa, rdm_ccaa, optimize = einsum_type)
         temp_t1_p1p -= 1/4 * einsum('XY,xyzw,Jxuv,Iv,zuwy->IXJY', np.identity(ncas), v_aaaa, t1_xaaa, t1_xa, rdm_ccaa, optimize = einsum_type)
         temp += temp_t1_p1p
-        mr_adc.log.extra(">Norm of [+1'] contribution: %20.12f" % np.linalg.norm(temp_t1_p1p))
+        # mr_adc.log.extra(">Norm of [+1'] contribution: %20.12f" % np.linalg.norm(temp_t1_p1p))
         del (temp_t1_p1p) 
 
         temp_t1_p2  = 4 * einsum('IiXx,JYix->IXJY', t1_xxaa, v_xaxa, optimize = einsum_type)
@@ -20530,12 +20530,12 @@ def compute_M_00(mr_adc):
         temp_t1_p2 -= 1/4 * einsum('XY,xyzw,Jixz,Iiuv,ywuv->IXJY', np.identity(ncas), v_aaaa, t1_xvaa, t1_xvaa, rdm_ccaa, optimize = einsum_type)
 
         temp += temp_t1_p2
-        mr_adc.log.extra(">Norm of [+2]  contribution: %20.12f" % np.linalg.norm(temp_t1_p2))
+        # mr_adc.log.extra(">Norm of [+2]  contribution: %20.12f" % np.linalg.norm(temp_t1_p2))
         del (temp_t1_p2) 
 
         temp = np.ascontiguousarray(temp)
         temp.shape = (n_ca, n_ca)
-        mr_adc.log.extra(f"\nCA-CA H2 | Asymmetry: {np.linalg.norm(temp - temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
+        mr_adc.log.extra(f"CA-CA H2 | Asymmetry: {np.linalg.norm(temp - temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
         mr_adc.log.timer_debug("computing M00 H2 h1-h1 CA-CA", *cput1)
         return temp
 
@@ -24332,7 +24332,7 @@ def compute_M_00(mr_adc):
 
     mr_adc.M_00 = np.ascontiguousarray(M_00)
 
-    mr_adc.log.extra(f"\nM(h0-h0) block | Asymmetry: {np.linalg.norm(M_00 - M_00.T):>.5e} | Norm: {np.linalg.norm(M_00):>10.6f}")
+    mr_adc.log.extra(f"M(h0-h0) block | Asymmetry: {np.linalg.norm(M_00 - M_00.T):>.5e} | Norm: {np.linalg.norm(M_00):>10.6f}")
     mr_adc.log.timer("computing M(h0-h0) block", *cput0)
  
     if np.linalg.norm(M_00-M_00.T) > 1e-4:
