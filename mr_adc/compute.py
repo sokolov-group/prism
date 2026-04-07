@@ -179,6 +179,14 @@ def compute_energy(mr_adc):
 
     mr_adc.log.timer("solving eigenvalue problem", *cput1)
 
+    if all(conv):
+        mr_adc.log.extra('Full convergence reached.')
+    elif any(conv):
+        not_converged = np.where(~conv)[0]
+        mr_adc.log.warn(f'State(s) {not_converged+1} did not converge!')
+    else:
+        mr_adc.log.warn('No convergence reached for Davidson iterations!')
+
     return mr_adc.e_tot, mr_adc.e_diff
 
 
