@@ -408,9 +408,9 @@ def compute_S12_0pp(mr_adc):
 
     S_0pp_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
 
-    mr_adc.log.extra("Dimension of the [0''] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
+    mr_adc.log.debug("Dimension of the [0''] orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
     if len(S_ind_nonzero) > 0:
-        mr_adc.log.extra("Smallest eigenvalue of the [0''] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
+        mr_adc.log.debug("Smallest eigenvalue of the [0''] overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
 
     return S_0pp_12_inv
 
