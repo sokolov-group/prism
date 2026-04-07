@@ -243,6 +243,7 @@ def compute_properties(mr_adc):
     if mr_adc.method_type == 'cvs-ee':
         DX = np.einsum("Rpq,Kpq->RK", mr_adc.dip_mom, X)
         spec_factors = 2.0 * np.sum(DX**2, axis=0)
+        mr_adc.properties["osc_str"] = (2.0/3.0) * mr_adc.e_diff * spec_factors
     else:
         spec_factors = 2.0 * np.sum(X**2, axis=0)
 
@@ -274,17 +275,31 @@ def print_results(mr_adc):
 
     mr_adc.log.info("\nSummary of results for the %s-%s calculation with the %s reference:" % (mr_adc.method_type.upper(), mr_adc.method.upper(), mr_adc.interface.reference.upper()))
 
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-    mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
-
     de_ev = de * h2ev
     de_cm = de * h2cm
 
     spec_intensity = mr_adc.properties["spec_probabilities"]
 
-    for p in range(len(de)):
-        de_nm = 10000000 / de_cm[p]
-        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+    if "osc_str" in mr_adc.properties:
+        osc_str = mr_adc.properties["osc_str"]
 
-    mr_adc.log.info("------------------------------------------------------------------------------------------------")
+        mr_adc.log.info("-"*100)
+        mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity       Osc Str(f)")
+        mr_adc.log.info("-"*100)
+
+        for p in range(mr_adc.nroots):
+            de_nm = 10000000 / de_cm[p]
+            mr_adc.log.info(f"{p+1:5d}     {de[p]:14.8f}  {de_ev[p]:12.4f} {de_nm:10.4f}  {de_cm[p]:14.4f}    {spec_intensity[p]:10.6f}      {osc_str[p]:10.6f} ")
+
+        mr_adc.log.info("-"*100)
+
+    else:
+        mr_adc.log.info("------------------------------------------------------------------------------------------------")
+        mr_adc.log.info("  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity")
+        mr_adc.log.info("------------------------------------------------------------------------------------------------")
+
+        for p in range(len(de)):
+            de_nm = 10000000 / de_cm[p]
+            mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+
+        mr_adc.log.info("------------------------------------------------------------------------------------------------")
