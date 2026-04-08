@@ -2696,8 +2696,9 @@ def apply_S_12(mr_adc, X, transpose = False):
         Xt[ho_s_cae__bab:ho_f_cae__bab] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
 
         ## CCA
-        temp = X[s_cca:f_cca].reshape(-1, S12_cca.shape[0]).copy()
-        Xt[ho_s_cca:ho_f_cca] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+        if mr_adc.h1.dim_cca > 0:
+            temp = X[s_cca:f_cca].reshape(-1, S12_cca.shape[0]).copy()
+            Xt[ho_s_cca:ho_f_cca] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
         if nval > 0:
 
@@ -2750,8 +2751,9 @@ def apply_S_12(mr_adc, X, transpose = False):
         Xt[s_cae__bab:f_cae__bab] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
 
         ## CCA
-        temp = X[ho_s_cca:ho_f_cca].reshape(-1, S12_cca.shape[1]).copy()
-        Xt[s_cca:f_cca] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+        if mr_adc.h1.dim_cca > 0:
+            temp = X[ho_s_cca:ho_f_cca].reshape(-1, S12_cca.shape[1]).copy()
+            Xt[s_cca:f_cca] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
         if nval > 0:
 
@@ -20943,13 +20945,13 @@ def compute_trans_moments(mr_adc):
 
     # MR-ADC(1) terms
     ## < [ q^(1), h^(0)^\dag ] >
-    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+    if ncas > 0 and mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
 
         ### ACTIVE(1) - C
         compute_T__q1_h0__A_C(mr_adc, T)
 
     # MR-ADC(2) terms
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+    if ncas > 0 and mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
         ## < [ q^(1), h^(1)^\dag ] >
         ### ACTIVE(1) - CAA
@@ -20977,7 +20979,7 @@ def compute_trans_moments(mr_adc):
 
     # MR-ADC(2)-X terms
     ## {q^(2)| h^(1)^dag}
-    if mr_adc.method == "mr-adc(2)-x":
+    if ncas > 0 and mr_adc.method == "mr-adc(2)-x":
 
         ### ACTIVE(2) - CAA
         compute_T__q2_h1__A_CAA(mr_adc, T)
