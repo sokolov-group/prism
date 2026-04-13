@@ -45,3 +45,33 @@ def compute_reference_rdms(nevpt, ref_wfn_list = None, ref_nelecas_list = None):
     nevpt.log.timer("transforming RDMs", *cput0)
 
     return rdm
+
+
+def compute_reference_rdms_1s(nevpt, ref_wfn_list = None, ref_nelecas_list = None):
+
+    rdm = lambda:None
+
+    if (ref_wfn_list is None or ref_nelecas_list is None):
+        ref_wfn_list = nevpt.ref_wfn
+        ref_nelecas_list = nevpt.ref_nelecas
+
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    nevpt.log.extra("Computing reference wavefunction RDMs...")
+
+    # Compute reference-state RDMs
+    if nevpt.ncas > 0:
+        ref_nelecas_list = ref_nelecas_list[0]
+        print("ref_nelecas_list=",ref_nelecas_list)
+        rdm.ca, rdm.ccaa,  = nevpt.interface.trans_rdm12s(ref_wfn_list, ref_wfn_list, nevpt.ncas, ref_nelecas_list)
+                                                                                                                
+    else:
+        raise Exception("Not consider about ncas=0 in 2nd soc")
+        #rdm.ca = np.zeros((nevpt.ncas, nevpt.ncas))
+        #rdm.ccaa =  np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
+        #rdm.cccaaa =  np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
+        #mr_adc.rdm.ccccaaaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
+
+    nevpt.log.timer("transforming RDMs", *cput0)
+    rdm_spin = rdm
+
+    return rdm_spin

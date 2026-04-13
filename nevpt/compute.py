@@ -45,7 +45,7 @@ def kernel(nevpt):
         h1_minus = (h_soc[0] - (1j*h_soc[1])) 
         h1_zero = h_soc[2]
 
-        h_soc_sph = np.zeros((3, len(h1_zero), len(h1_zero)))
+        h_soc_sph = np.zeros((3, len(h1_zero), len(h1_zero)), dtype='complex')
         h_soc_sph[0] = h1_plus
         h_soc_sph[1] = h1_minus
         h_soc_sph[2] = h1_zero
