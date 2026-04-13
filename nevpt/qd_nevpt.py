@@ -498,4 +498,6 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
 def analyze_eigenvectors(method):
 
     h_evec = method.h_evec
-    print(type(h_evec))
+    ref_wfn = method.ref_wfn
+    ref_wfn = np.array(ref_wfn)
+    print (ref_wfn.shape)
