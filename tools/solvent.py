@@ -68,3 +68,27 @@ def get_pe_corrections(method, state = 0, rdms = None):
                 ptlr.append(e_ptlr * method.interface.hartree_to_ev * 2)
     
     return ptss, ptlr
+
+def print_pe_results(method, ptss, ptlr, osc_str):
+    n_states = len(method.ref_wfn_deg)
+    
+    method.log.info("\n\nSummary of Polarizable Embedding Results")
+    method.log.info("--------------------------------------------------------------------------")
+    method.log.info(f"{'State':<8}{'ptss (eV)':<15}{'ptlr (eV)':<15}{'ΔE + corr (eV)':<20}{'f (PE)':<12}")
+    method.log.info("--------------------------------------------------------------------------")
+
+    for p in range(1, n_states):
+        de = method.e_tot[p] - method.e_tot[0]
+        de_ev = de * method.interface.hartree_to_ev
+        
+        # Add corrections
+        de_corr = de_ev + ptss[p-1] + ptlr[p-1]
+
+        method.log.info(
+            f"{p:<8}"
+            f"{ptss[p-1]:<15.6f}"
+            f"{ptlr[p-1]:<15.6f}"
+            f"{de_corr:<20.6f}"
+            f"{osc_str[p-1]:<12.6f}"
+        )
+    method.log.info("--------------------------------------------------------------------------")

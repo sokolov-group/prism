@@ -22,6 +22,7 @@
 import numpy as np
 from prism.nevpt import integrals
 from prism.tools import trans_prop
+from prism.tools import solvent
 import prism.lib.logger as logger
 
 def kernel(nevpt):
@@ -209,4 +210,9 @@ def print_results(nevpt):
             nevpt.interface.log.info("%14.6f, %14.6f, %14.6f" % (G_sq_en[0], G_sq_en[1], G_sq_en[2]))
             nevpt.interface.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
             nevpt.interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
+            
+    if "ptss_corrections" and "ptlr_corrections" in nevpt.properties:
+        solvent.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"], nevpt.properties["osc_strengths_pe"])
 
+    if "osc_strengths_full_pe" in nevpt.properties:
+        trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full_pe"])

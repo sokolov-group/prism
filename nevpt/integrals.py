@@ -44,6 +44,7 @@ def transform_integrals_1e(nevpt):
     mo = nevpt.mo
 
     if nevpt.pe is not None:
+        nevpt.log.info("Polarizable embedding detected...")
         v_pe = nevpt.interface.mf.with_solvent.v
         nevpt.interface.h1e_ao += v_pe
         

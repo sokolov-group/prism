@@ -85,6 +85,8 @@ def print_osc_strength(interface, osc_str):
     # Print header and transitions
     separator = "-" * total_line_width
     interface.log.info("\n\nOscillator Strengths: state i -> state f")
+    if hasattr(interface, "v_pe"):
+        interface.log.info("including PE ptSS and ptLR corrections...")
     interface.log.info(separator)
 
     # Final print
