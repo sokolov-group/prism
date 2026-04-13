@@ -32619,8 +32619,6 @@ def compute_trans_moments(mr_adc):
 
         # Compound Indices
         n_aa = mr_adc.h1.n_aa
-
-        ## Indices
         aa_tril_ind = mr_adc.h1.aa_tril_ind
 
         ## {q^(0)| h^(1)^dag}
