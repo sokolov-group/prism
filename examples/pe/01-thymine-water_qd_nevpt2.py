@@ -17,7 +17,7 @@ from pyscf.solvent.pol_embed import PolEmbed
 
 mol = pyscf.gto.Mole()
 mol.atom = './01-thy.xyz'
-mol.basis = 'cc-pVDZ'
+mol.basis = 'sto-3g'
 mol.symmetry = False
 mol.build()
 

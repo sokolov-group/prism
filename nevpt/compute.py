@@ -184,11 +184,18 @@ def print_results(nevpt):
         if not nevpt.soc:
             deg = nevpt.spin_mult[p]
         de = nevpt.e_tot[p] - e_gs
+        
         de_ev = de * h2ev
         de_cm = de * h2cm
         if p == 0 or abs(de) < 1e-5:
             nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
         else:
+            if nevpt.pe is not None:
+                ptss = nevpt.properties["ptss_corrections"]
+                ptlr = nevpt.properties["ptlr_corrections"]
+                de += ptss[p-1]
+                de += ptlr[p-1]
+        
             de_nm = 10000000 / de_cm
             nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
 
@@ -211,8 +218,5 @@ def print_results(nevpt):
             nevpt.interface.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
             nevpt.interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
             
-    if "ptss_corrections" and "ptlr_corrections" in nevpt.properties:
-        solvent.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"], nevpt.properties["osc_strengths_pe"])
-
-    if "osc_strengths_full_pe" in nevpt.properties:
-        trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full_pe"])
+    if "ptss_corrections" and "ptlr_corrections" in nevpt.properties and nevpt.verbose >= 5:
+        solvent.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"])
