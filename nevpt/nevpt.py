@@ -202,23 +202,53 @@ def compute_properties(method):
         # Calculate oscillator strengths for transitions from the first state
         osc_str_full=[]
         osc_str = np.zeros(len(method.e_tot)-1)
+        
+        # Add PE contributions if needed
+        if method.pe is not None:
+            ptss, ptlr = solvent.get_pe_corrections(method, rdms = rdm_mo)
+
+            method.properties["ptss_corrections"] = ptss
+            method.properties["ptlr_corrections"] = ptlr
+            
+            osc_str_full_pe=[]
+            osc_str_pe = np.zeros(len(method.e_tot)-1)
+        
         for gs_index in range(deg_gs):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
+
             osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
             osc_str_full.append(osc)
             osc_str[gs_index:] += osc 
+            
+            if method.pe is not None:
+                e_diff_pe = [e_diff[i] + ptss[i] + ptlr[i] for i in range(len(ptss))]
+                osc_pe = trans_prop.osc_strength(method.interface, e_diff_pe, rdm_mo[ gs_index, gs_index+1:])
+                osc_str_full_pe.append(osc_pe)
+                osc_str_pe[gs_index:] += osc_pe
 
         method.properties["osc_strengths"] = osc_str
+        
+        if method.pe is not None:
+            method.properties["osc_strengths_pe"] = osc_str_pe
 
         # Compute oscillator strengths starting from each state
         if method.verbose >= 5:
             for gs_index in range(deg_gs, len(method.e_tot)):  
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
+ 
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
+                
+                if method.pe is not None:
+                    ptss, ptlr = solvent.get_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                    e_diff_pe = [e_diff[i] + ptss[i] + ptlr[i] for i in range(len(ptss))]
+                    osc_str_full_pe.append(trans_prop.osc_strength(method.interface, e_diff_pe, rdm_mo[  gs_index, gs_index+1:]))
 
             method.properties["osc_strengths_full"] = osc_str_full
+            
+            if method.pe is not None:
+                method.properties["osc_strengths_full_pe"] = osc_str_full_pe
 
     # Compute magnetic properties
     if method.gtensor and method.soc:
