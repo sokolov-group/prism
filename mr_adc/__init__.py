@@ -55,6 +55,7 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
+       
 
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
