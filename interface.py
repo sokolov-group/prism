@@ -72,6 +72,28 @@ class PYSCF:
             self.mo_energy = mf.mo_energy.copy()
             self.symmetry = mf.mol.symmetry
             self.e_ref = [mf.e_tot]
+            #self.nextern = 0
+            self.ncore = mf.mol.nelectron // 2
+            self.nextern = self.nmo - self.ncore
+        
+            self.ncas = 0
+            
+            #self.ref_nelecas = None
+            self.ref_nelecas = [[self.ncore, ]]
+            
+            self.e_ref_cas = [0]
+            self.ref_wfn = self.reference
+            self.ref_wfn_spin_mult = self.reference
+            self.ref_wfn_deg = self.reference
+            self.mo_scf = self.mo
+            self.ovlp = None
+
+            from pyscf import ao2mo
+            self.transform_2e_chem_incore = ao2mo.general
+            self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2 
+
+            
+            self.davidson = lib.linalg_helper.davidson1 
 
             self.reference_df = getattr(mf, "with_df", None)
 
