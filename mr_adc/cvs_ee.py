@@ -30,6 +30,10 @@ import prism.lib.tools as tools
 import prism.mr_adc.cvs_ee_functions.transition_moments as q2_trans_mom
 import prism.mr_adc.cvs_ee_functions.sigma_vector as h1_h1_sigma
 
+from prism.lib.logger import profile
+from prism.lib.logger import detect_serial
+from prism.lib.logger import detect_memory_pressure
+
 def compute_excitation_manifolds(mr_adc):
 
     # MR-ADC(0) and MR-ADC(1)
@@ -297,21 +301,28 @@ def compute_M_00(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
+    # @profile
+    # @detect_serial
+    @detect_memory_pressure
     def compute_M_00__H0_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
+
+        from scipy.sparse import diags_array
 
         ## Molecular Orbitals Energies
         e_cvs = mr_adc.mo_energy.x
         e_extern = mr_adc.mo_energy.e
 
         d_ai = e_extern[:, None] - e_cvs
-        temp = np.diag(d_ai.T.ravel())
+        temp = diags_array(d_ai.T.ravel(), shape = (n_ce, n_ce))
 
-        temp.shape = (n_ce, n_ce)
-        mr_adc.log.extra(f"CE-CE H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
+        #mr_adc.log.extra(f"CE-CE H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
         mr_adc.log.timer_debug("computing M00 H0 h1-h1 CE-CE", *cput1)
         return temp
 
+    #@profile
+    #@detect_serial
+    @detect_memory_pressure
     def compute_M_00__H0_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -333,6 +344,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H0 h1-h1 CA-CA", *cput1)
         return temp
 
+#    @profile
+    @detect_memory_pressure
+    #@detect_serial
     def compute_M_00__H1_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -357,6 +371,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CE", *cput1)
         return temp
 
+#    @profile
+    @detect_memory_pressure
+    #@detect_serial
     def compute_M_00__H1_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -384,6 +401,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CA-CA", *cput1)
         return temp
  
+#    @profile
+    @detect_memory_pressure
+    #@detect_serial
     def compute_M_00__H1_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -444,6 +464,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CA", *cput1)
         return temp
 
+#    @profile
+    @detect_memory_pressure
+    #@detect_serial
     def compute_M_00__H2_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -3352,6 +3375,8 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H2 h1-h1 CE-CE", *cput1)
         return temp
 
+#    @profile
+    @detect_serial
     def compute_M_00__H2_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -20532,6 +20557,8 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H2 h1-h1 CA-CA", *cput1)
         return temp
 
+#    @profile
+    @detect_serial
     def compute_M_00__H2_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -25826,6 +25853,7 @@ def apply_S_12(mr_adc, X, transpose = False):
     return Xt
 
 
+#@profile
 def compute_sigma_vector(mr_adc, Xt, ints):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
