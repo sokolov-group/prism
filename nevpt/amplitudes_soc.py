@@ -42,6 +42,10 @@ def compute_t1_0p_soc(nevpt, rdms, rdms_1s):
     ncore = nevpt.ncore - nevpt.nfrozen
     ncas = nevpt.ncas
     nextern = nevpt.nextern
+    ncore_so = ncore * 2
+    ncas_so = ncas * 2
+    nextern_so = nextern * 2
+    nocc_so = nevpt.nocc * 2
 
     ## Molecular Orbitals Energies
     e_core = nevpt.mo_energy.c
@@ -71,45 +75,70 @@ def compute_t1_0p_soc(nevpt, rdms, rdms_1s):
 
     # Compute R.H.S. of the equation
     ## V1 block: - < Psi_0 | a^{\dag}_I a_A V | Psi_0>
-    V1_a_a =- einsum('IA->IA', h_ce, optimize = einsum_type).copy()
-    V1_a_a -= einsum('IAxy,yx->IA', v_ceaa, rdm_ca, optimize = einsum_type)
-    V1_a_a += 1/2 * einsum('IxyA,xy->IA', v_caae, rdm_ca, optimize = einsum_type)
+    #V1_a_a =- einsum('IA->IA', h_ce, optimize = einsum_type).copy()
+    #V1_a_a -= einsum('IAxy,yx->IA', v_ceaa, rdm_ca, optimize = einsum_type)
+    #V1_a_a += 1/2 * einsum('IxyA,xy->IA', v_caae, rdm_ca, optimize = einsum_type)
 
     ## V2 block: - < Psi_0 | a^{\dag}_I a^{\dag}_X a_Y a_A V | Psi_0>
-    V2_aa_aa =- 1/2 * einsum('IA,XY->IAXY', h_ce, rdm_ca, optimize = einsum_type)
-    V2_aa_aa -= 1/2 * einsum('IAxY,Xx->IAXY', v_ceaa, rdm_ca, optimize = einsum_type)
-    V2_aa_aa -= 1/2 * einsum('IAxy,XyYx->IAXY', v_ceaa, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa += 1/2 * einsum('IYxA,Xx->IAXY', v_caae, rdm_ca, optimize = einsum_type)
-    V2_aa_aa += 1/6 * einsum('IxyA,XxYy->IAXY', v_caae, rdm_ccaa, optimize = einsum_type)
-    V2_aa_aa -= 1/6 * einsum('IxyA,XxyY->IAXY', v_caae, rdm_ccaa, optimize = einsum_type)
+    #V2_aa_aa =- 1/2 * einsum('IA,XY->IAXY', h_ce, rdm_ca, optimize = einsum_type)
+    #V2_aa_aa -= 1/2 * einsum('IAxY,Xx->IAXY', v_ceaa, rdm_ca, optimize = einsum_type)
+    #V2_aa_aa -= 1/2 * einsum('IAxy,XyYx->IAXY', v_ceaa, rdm_ccaa, optimize = einsum_type)
+    #V2_aa_aa += 1/2 * einsum('IYxA,Xx->IAXY', v_caae, rdm_ca, optimize = einsum_type)
+    #V2_aa_aa += 1/6 * einsum('IxyA,XxYy->IAXY', v_caae, rdm_ccaa, optimize = einsum_type)
+    #V2_aa_aa -= 1/6 * einsum('IxyA,XxyY->IAXY', v_caae, rdm_ccaa, optimize = einsum_type)
 
-    V2_aa_bb =- 1/2 * einsum('IA,XY->IAXY', h_ce, rdm_ca, optimize = einsum_type)
-    V2_aa_bb -= 1/2 * einsum('IAxY,Xx->IAXY', v_ceaa, rdm_ca, optimize = einsum_type)
-    V2_aa_bb -= 1/2 * einsum('IAxy,XyYx->IAXY', v_ceaa, rdm_ccaa, optimize = einsum_type)
-    V2_aa_bb += 1/3 * einsum('IxyA,XxYy->IAXY', v_caae, rdm_ccaa, optimize = einsum_type)
-    V2_aa_bb += 1/6 * einsum('IxyA,XxyY->IAXY', v_caae, rdm_ccaa, optimize = einsum_type)
+    #V2_aa_bb =- 1/2 * einsum('IA,XY->IAXY', h_ce, rdm_ca, optimize = einsum_type)
+    #V2_aa_bb -= 1/2 * einsum('IAxY,Xx->IAXY', v_ceaa, rdm_ca, optimize = einsum_type)
+    #V2_aa_bb -= 1/2 * einsum('IAxy,XyYx->IAXY', v_ceaa, rdm_ccaa, optimize = einsum_type)
+    #V2_aa_bb += 1/3 * einsum('IxyA,XxYy->IAXY', v_caae, rdm_ccaa, optimize = einsum_type)
+    #V2_aa_bb += 1/6 * einsum('IxyA,XxyY->IAXY', v_caae, rdm_ccaa, optimize = einsum_type)
 
-    V2_aa_aa = V2_aa_aa.reshape(ncore, nextern, -1)
-    V2_aa_bb = V2_aa_bb.reshape(ncore, nextern, -1)
+    #V2_aa_aa = V2_aa_aa.reshape(ncore, nextern, -1)
+    #V2_aa_bb = V2_aa_bb.reshape(ncore, nextern, -1)
 
     ## Build V tensor
     dim_XY = ncas * ncas
     dim_act = 2 * dim_XY + 1
 
-    V_aa_aa_i = 1
-    V_aa_aa_f = V_aa_aa_i + dim_XY
-    V_aa_bb_i = V_aa_aa_f
-    V_aa_bb_f = V_aa_bb_i + dim_XY
+    #V_aa_aa_i = 1
+    #V_aa_aa_f = V_aa_aa_i + dim_XY
+    #V_aa_bb_i = V_aa_aa_f
+    #V_aa_bb_f = V_aa_bb_i + dim_XY
 
     V_0p = np.zeros((ncore, nextern, dim_act))
 
-    V_0p[:,:,0] = V1_a_a.copy()
-    del(V1_a_a)
+    #V_0p[:,:,0] = V1_a_a.copy()
+    #del(V1_a_a)
 
-    V_0p[:,:,V_aa_aa_i:V_aa_aa_f] = V2_aa_aa.copy()
-    V_0p[:,:,V_aa_bb_i:V_aa_bb_f] = V2_aa_bb.copy()
-    del(V2_aa_aa, V2_aa_bb)
+    #V_0p[:,:,V_aa_aa_i:V_aa_aa_f] = V2_aa_aa.copy()
+    #V_0p[:,:,V_aa_bb_i:V_aa_bb_f] = V2_aa_bb.copy()
+    #del(V2_aa_aa, V2_aa_bb)
 
+    ########soc:
+    rdm_ca_so = rdms_1s.ca
+    h_somf_ec_so = nevpt.h_soc_so[nocc_so:,:ncore_so]
+    
+    #rdm_ca_sf = rdm_ca_so[::2, ::2] + rdm_ca_so[1::2, 1::2]
+    #h_somf_ec_sf = h_somf_ec_so[::2, ::2] + h_somf_ec_so[1::2, 1::2]
+
+    V0p = -np.einsum('AI, XY->IAXY', h_somf_ec_so, rdm_ca_so, dtype='complex')
+    print(V0p.shape)
+    V0p_new =  np.zeros((ncore_so, nextern_so, ncas, ncas*2), dtype='complex')
+    print(V0p_new.shape)
+    V0p_new[:,:,:,0:ncas] = V0p[:,:,0:ncas,0:ncas]
+    V0p_new[:,:,:, ncas:ncas*2] = V0p[:,:,ncas:ncas*2, ncas:ncas*2]
+    V0p_new = V0p_new.reshape(ncore_so, nextern_so, -1)
+
+    #V0p = V0p[::2, ::2] + V0p[1::2, 1::2]
+    #V0p[:,:]
+
+    #V0p = V0p.reshape(ncore_so, nextern_so, -1)
+    print(S_0p_12_inv_act.shape)
+    print(V_0p.shape)
+    print(V0p_new.shape)
+
+    print("finish")
+    exit()
     ## Compute denominators
     d_ai = (e_extern[:,None] - e_core).reshape(-1)
     d_aip = (d_ai[:,None] + evals).reshape(nextern, ncore, -1)

@@ -49,8 +49,15 @@ def kernel(nevpt):
         h_soc_sph[0] = h1_plus
         h_soc_sph[1] = h1_minus
         h_soc_sph[2] = h1_zero
-
         nevpt.h_soc_sph = h_soc_sph
+
+        h_soc_so = np.zeros((2*nevpt.nmo, 2*nevpt.nmo), dtype = 'complex')
+        h_soc_so[::2,::2]   = 0.5 * h_soc[2]
+        h_soc_so[1::2,1::2] = - 0.5 * h_soc[2]
+        h_soc_so[::2,1::2]  = 0.5 * (h_soc[0]-1j*h_soc[1])
+        h_soc_so[1::2,::2]  = np.conj(h_soc_so[::2,1::2]).T
+        nevpt.h_soc_so = h_soc_so
+
 
     # Compute state-specific or quasidegenerate NEVPT energy
     nevpt.compute_energy()
