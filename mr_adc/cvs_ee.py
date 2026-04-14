@@ -353,9 +353,10 @@ def compute_M_00(mr_adc):
         v_xeex = mr_adc.v2e.xeex
         v_xxee = mr_adc.v2e.xxee
 
-        temp  = 2 * einsum('IABJ->IAJB', v_xeex, optimize = einsum_type).copy()
-        temp -= einsum('JIAB->IAJB', v_xxee, optimize = einsum_type).copy()
+        temp  = 2 * einsum('IABJ->IAJB', v_xeex, optimize = einsum_type)
+        temp -= einsum('JIAB->IAJB', v_xxee, optimize = einsum_type)
 
+        temp = np.ascontiguousarray(temp)
         temp.shape = (n_ce, n_ce) 
         mr_adc.log.extra(f"\nCE-CE H1 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CE", *cput1)
@@ -3366,7 +3367,8 @@ def compute_M_00(mr_adc):
         return temp
 
 #    @profile
-    @detect_serial
+    @detect_memory_pressure
+    #@detect_serial
     def compute_M_00__H2_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -20548,7 +20550,8 @@ def compute_M_00(mr_adc):
         return temp
 
 #    @profile
-    @detect_serial
+    @detect_memory_pressure
+    #@detect_serial
     def compute_M_00__H2_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
