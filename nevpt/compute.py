@@ -128,6 +128,7 @@ def print_header(nevpt):
     nevpt.log.info("Number of core orbitals:                           %d" % nevpt.ncore)
     nevpt.log.info("Number of active orbitals:                         %d" % nevpt.ncas)
     nevpt.log.info("Number of external orbitals:                       %d" % nevpt.nextern)
+    nevpt.log.info("Number of active electrons:                        %s" % str(nevpt.ref_nelecas))
     nevpt.log.info("Spin–orbit coupling:                               %s" % str(nevpt.soc))
     nevpt.log.info("G-tensor:                                          %s" % str(nevpt.gtensor))
     if nevpt.gtensor:

@@ -31,7 +31,7 @@ class NEVPT:
         self.log = interface.log
         log = self.log
 
-        log.info("Initializing state-specific fully internally contracted NEVPT...")
+        log.info("Initializing fully internally contracted NEVPT...")
 
         if (interface.reference not in ("casscf", "casci", "sa-casscf", "ms-casci")):
             log.info("The NEVPT code does not support %s reference" % interface.reference)
