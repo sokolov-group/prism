@@ -316,7 +316,6 @@ def compute_M_00(mr_adc):
         d_ai = e_extern[:, None] - e_cvs
         temp = diags_array(d_ai.T.ravel(), shape = (n_ce, n_ce))
 
-        #mr_adc.log.extra(f"CE-CE H0 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
         mr_adc.log.timer_debug("computing M00 H0 h1-h1 CE-CE", *cput1)
         return temp
 
@@ -350,21 +349,12 @@ def compute_M_00(mr_adc):
     def compute_M_00__H1_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
-        temp = np.zeros((ncvs, nextern, ncvs, nextern))
+        ## Two-electron integrals
+        v_xeex = mr_adc.v2e.xeex
+        v_xxee = mr_adc.v2e.xxee
 
-        chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 3)
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput2 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.xeex v2e.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-            ## Two-electron integrals
-            v_xeex = mr_adc.v2e.xeex[:, s_chunk:f_chunk, :, :]
-            v_xxee = mr_adc.v2e.xxee[:, :, s_chunk:f_chunk, :]
-
-            temp[:, s_chunk:f_chunk] += 2 * v_xeex.transpose(0, 1, 3, 2) - v_xxee.transpose(1, 2, 0, 3)
-
-            mr_adc.log.timer_debug("computing v2e.xeex v2e.xxee", *cput2)
-        del v_xeex, v_xxee
+        temp  = 2 * einsum('IABJ->IAJB', v_xeex, optimize = einsum_type).copy()
+        temp -= einsum('JIAB->IAJB', v_xxee, optimize = einsum_type).copy()
 
         temp.shape = (n_ce, n_ce) 
         mr_adc.log.extra(f"\nCE-CE H1 | Asymmetry: {np.linalg.norm(temp-temp.T):>.5e} | Norm: {np.linalg.norm(temp):>10.6f}")
