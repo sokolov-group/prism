@@ -25,6 +25,8 @@ from prism.libsoc import magnetic
 
 def state_interaction_soc(method):
 
+    method.interface.mol.max_memory = method.interface.max_memory_soc
+
     method.log.info("\nInitializing state-interaction spin–orbit coupling program...")
     method.interface.x2c_setup()
 
