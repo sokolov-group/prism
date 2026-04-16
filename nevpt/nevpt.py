@@ -199,42 +199,25 @@ def compute_energy_state_soc(method, rdms, rdms_1s, e_0 = None):
     # First-order amplitudes
     # With singles
     if method.compute_singles_amplitudes:
-        if ncore > 0 and nextern > 0 and ncas > 0:
-            e_0p, t1.ce, t1.caea, t1.caae = amplitudes_soc.compute_t1_0p_soc(method, rdms, rdms_1s)
-        else:
-            t1.ce = np.zeros((ncore, nextern))
-            t1.caea = np.zeros((ncore, ncas, nextern, ncas))
-            t1.caae = np.zeros((ncore, ncas, ncas, nextern))
+        raise Exception("Not consider about With singles in 2nd soc")
 
-        if ncore > 0 and ncas > 0:
-            e_p1p, t1.ca, t1.caaa = amplitudes_soc_soc.compute_t1_p1p_soc(method, rdms, rdms_1s)
-        else:
-            t1.ca = np.zeros((ncore, ncas))
-            t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
-
-        if nextern > 0 and ncas > 0:
-            e_m1p, t1.ae, t1.aaae = amplitudes_soc_soc.compute_t1_m1p_soc(method, rdms, rdms_1s)
-        else:
-            t1.ae = np.zeros((ncas, nextern))
-            t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
     # Without singles
     else:
-        raise Exception("Not consider about Without singles in 2nd soc")
-        #if ncore > 0 and nextern > 0 and ncas > 0:
-        #    e_0p, t1.caea, t1.caae = amplitudes.compute_t1_0p_no_singles(method, rdms)
-        #else:
-        #    t1.caea = np.zeros((ncore, ncas, nextern, ncas))
-        #    t1.caae = np.zeros((ncore, ncas, ncas, nextern))
-        #
-        #if ncore > 0 and ncas > 0:
-        #    e_p1p, t1.caaa = amplitudes.compute_t1_p1p_no_singles(method, rdms)
-        #else:
-        #    t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
-        #
-        #if nextern > 0 and ncas > 0:
-        #    e_m1p, t1.aaae = amplitudes.compute_t1_m1p_no_singles(method, rdms)
-        #else:
-        #    t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
+        if ncore > 0 and nextern > 0 and ncas > 0:
+            e_0p,  t1.caea, t1.caae = amplitudes_soc.compute_t1_0p_no_singles_soc(method, rdms, rdms_1s)
+        else:
+            t1.caea = np.zeros((ncore, ncas, nextern, ncas))
+            t1.caae = np.zeros((ncore, ncas, ncas, nextern))
+        
+        if ncore > 0 and ncas > 0:
+            e_p1p,  t1.caaa = amplitudes_soc.compute_t1_p1p_no_singles_soc(method, rdms, rdms_1s)
+        else:
+            t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
+        
+        if nextern > 0 and ncas > 0:
+            e_m1p,  t1.aaae = amplitudes_soc.compute_t1_m1p_no_singles_soc(method, rdms, rdms_1s)
+        else:
+            t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
 
 
 
