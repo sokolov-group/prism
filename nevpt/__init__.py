@@ -25,7 +25,6 @@ from prism.nevpt import qd_nevpt
 
 class NEVPT:
     def __init__(self, interface):
-
         # General info
         self.interface = interface
         self.log = interface.log
@@ -223,7 +222,7 @@ class QDNEVPT(NEVPT):
 
     def _init_method(self):
         self.method_type = "qd"
-        self.h_evec = None # Eigenvectors of effective Hamiltonian
+        #self.h_evec = None # Eigenvectors of effective Hamiltonian
 
     def compute_energy(self):
 

@@ -187,16 +187,17 @@ def print_results(nevpt):
         de = nevpt.e_tot[p] - e_gs
         
         de_ev = de * h2ev
+
+        if nevpt.pe is not None and p > 0:
+            ptss = nevpt.properties["ptss_corrections"]
+            ptlr = nevpt.properties["ptlr_corrections"]
+            de_ev += ptss[p-1]
+            de_ev += ptlr[p-1]
+        
         de_cm = de * h2cm
         if p == 0 or abs(de) < 1e-5:
             nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
-        else:
-            if nevpt.pe is not None:
-                ptss = nevpt.properties["ptss_corrections"]
-                ptlr = nevpt.properties["ptlr_corrections"]
-                de += ptss[p-1]
-                de += ptlr[p-1]
-        
+        else: 
             de_nm = 10000000 / de_cm
             nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
 
