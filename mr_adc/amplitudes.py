@@ -1501,89 +1501,163 @@ def compute_t2_0p_singles(mr_adc):
     V1 -= 1/2 * einsum('xyzw,zxuA,Iw,yu->IA', v_aaaa, t1_aaae, t1_ca, rdm_ca, optimize = einsum_type)
     V1 += einsum('xyzw,zxuA,Iy,wu->IA', v_aaaa, t1_aaae, t1_ca, rdm_ca, optimize = einsum_type)
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern], ntensors = 2)
+    chunks = tools.calculate_chunks(mr_adc, ncore, [ncore, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("t1.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Molecular Orbitals Energies
-        e_extern_A = mr_adc.mo_energy.e[s_chunk:f_chunk]
+        e_core_I = mr_adc.mo_energy.c[s_chunk:f_chunk]
 
         ## Amplitudes
-        t1_ccee = mr_adc.t1.ccee[:, :, s_chunk:f_chunk]
+        t1_ccee = mr_adc.t1.ccee[s_chunk:f_chunk]
 
-        temp =- einsum('A,IiAa,ia->IA', e_extern_A, t1_ccee, t1_ce, optimize = einsum_type)
-        temp += 1/2 * einsum('A,iIAa,ia->IA', e_extern_A, t1_ccee, t1_ce, optimize = einsum_type)
-        temp -= einsum('A,IiAa,ixay,yx->IA', e_extern_A, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('A,IiAa,ixya,yx->IA', e_extern_A, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('A,iIAa,ixay,yx->IA', e_extern_A, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('A,iIAa,ixya,yx->IA', e_extern_A, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
+        temp =- einsum('A,IiAa,ia->IA', e_extern, t1_ccee, t1_ce, optimize = einsum_type)
+        temp -= einsum('A,IiAa,ixay,yx->IA', e_extern, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('A,IiAa,ixya,yx->IA', e_extern, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
         temp -= 2 * einsum('ia,IiAa->IA', h_ce, t1_ccee, optimize = einsum_type)
-        temp += einsum('ia,iIAa->IA', h_ce, t1_ccee, optimize = einsum_type)
-        temp += 2 * einsum('ijAa,iIja->IA', t1_ccee, v_ccce, optimize = einsum_type)
-        temp -= einsum('ijAa,jIia->IA', t1_ccee, v_ccce, optimize = einsum_type)
-        temp += einsum('I,IiAa,ia->IA', e_core, t1_ccee, t1_ce, optimize = einsum_type)
-        temp -= 1/2 * einsum('I,iIAa,ia->IA', e_core, t1_ccee, t1_ce, optimize = einsum_type)
+        temp += einsum('I,IiAa,ia->IA', e_core_I, t1_ccee, t1_ce, optimize = einsum_type)
         temp -= 2 * einsum('a,IiAa,ia->IA', e_extern, t1_ccee, t1_ce, optimize = einsum_type)
-        temp += einsum('a,iIAa,ia->IA', e_extern, t1_ccee, t1_ce, optimize = einsum_type)
         temp += 2 * einsum('i,IiAa,ia->IA', e_core, t1_ccee, t1_ce, optimize = einsum_type)
-        temp -= einsum('i,iIAa,ia->IA', e_core, t1_ccee, t1_ce, optimize = einsum_type)
         temp -= 2 * einsum('IiAa,iaxy,yx->IA', t1_ccee, v_ceaa, rdm_ca, optimize = einsum_type)
         temp += einsum('IiAa,ixya,xy->IA', t1_ccee, v_caae, rdm_ca, optimize = einsum_type)
+        temp += einsum('I,IiAa,ixay,yx->IA', e_core_I, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('I,IiAa,ixya,yx->IA', e_core_I, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
+        temp -= 2 * einsum('a,ixay,IiAa,yx->IA', e_extern, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp += einsum('a,ixya,IiAa,yx->IA', e_extern, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp += 2 * einsum('i,ixay,IiAa,xy->IA', e_core, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp -= einsum('i,ixya,IiAa,xy->IA', e_core, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp += einsum('xy,ixaz,IiAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('xy,ixza,IiAa,yz->IA', h_aa, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp -= einsum('xy,izax,IiAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('xy,izxa,IiAa,yz->IA', h_aa, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp -= einsum('xyzw,iuax,IiAa,zuwy->IA', v_aaaa, t1_caea, t1_ccee, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('xyzw,iuxa,IiAa,zuwy->IA', v_aaaa, t1_caae, t1_ccee, rdm_ccaa, optimize = einsum_type)
+        temp += einsum('xyzw,ixau,IiAa,zuwy->IA', v_aaaa, t1_caea, t1_ccee, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/2 * einsum('xyzw,ixua,IiAa,zuwy->IA', v_aaaa, t1_caae, t1_ccee, rdm_ccaa, optimize = einsum_type)
+
+        ## Amplitudes
+        t1_ccee = mr_adc.t1.ccee[:, s_chunk:f_chunk]
+
+        temp += 1/2 * einsum('A,iIAa,ia->IA', e_extern, t1_ccee, t1_ce, optimize = einsum_type)
+        temp += 1/2 * einsum('A,iIAa,ixay,yx->IA', e_extern, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
+        temp -= 1/4 * einsum('A,iIAa,ixya,yx->IA', e_extern, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
+        temp += einsum('ia,iIAa->IA', h_ce, t1_ccee, optimize = einsum_type)
+        temp -= 1/2 * einsum('I,iIAa,ia->IA', e_core_I, t1_ccee, t1_ce, optimize = einsum_type)
+        temp += einsum('a,iIAa,ia->IA', e_extern, t1_ccee, t1_ce, optimize = einsum_type)
+        temp -= einsum('i,iIAa,ia->IA', e_core, t1_ccee, t1_ce, optimize = einsum_type)
         temp += einsum('iIAa,iaxy,yx->IA', t1_ccee, v_ceaa, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('iIAa,ixya,xy->IA', t1_ccee, v_caae, rdm_ca, optimize = einsum_type)
-        temp += einsum('I,IiAa,ixay,yx->IA', e_core, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('I,IiAa,ixya,yx->IA', e_core, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('I,iIAa,ixay,yx->IA', e_core, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('I,iIAa,ixya,yx->IA', e_core, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
-        temp -= 2 * einsum('a,ixay,IiAa,yx->IA', e_extern, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('I,iIAa,ixay,yx->IA', e_core_I, t1_ccee, t1_caea, rdm_ca, optimize = einsum_type)
+        temp += 1/4 * einsum('I,iIAa,ixya,yx->IA', e_core_I, t1_ccee, t1_caae, rdm_ca, optimize = einsum_type)
         temp += einsum('a,ixay,iIAa,yx->IA', e_extern, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
-        temp += einsum('a,ixya,IiAa,yx->IA', e_extern, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('a,ixya,iIAa,yx->IA', e_extern, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
-        temp += 2 * einsum('i,ixay,IiAa,xy->IA', e_core, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
         temp -= einsum('i,ixay,iIAa,xy->IA', e_core, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
-        temp -= einsum('i,ixya,IiAa,xy->IA', e_core, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('i,ixya,iIAa,xy->IA', e_core, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
-        temp += einsum('xy,ixaz,IiAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
         temp -= 1/2 * einsum('xy,ixaz,iIAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('xy,ixza,IiAa,yz->IA', h_aa, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
         temp += 1/4 * einsum('xy,ixza,iIAa,yz->IA', h_aa, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
-        temp -= einsum('xy,izax,IiAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('xy,izax,iIAa,yz->IA', h_aa, t1_caea, t1_ccee, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('xy,izxa,IiAa,yz->IA', h_aa, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
         temp -= 1/4 * einsum('xy,izxa,iIAa,yz->IA', h_aa, t1_caae, t1_ccee, rdm_ca, optimize = einsum_type)
-        temp -= einsum('xyzw,iuax,IiAa,zuwy->IA', v_aaaa, t1_caea, t1_ccee, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('xyzw,iuax,iIAa,zuwy->IA', v_aaaa, t1_caea, t1_ccee, rdm_ccaa, optimize = einsum_type)
-        temp += 1/2 * einsum('xyzw,iuxa,IiAa,zuwy->IA', v_aaaa, t1_caae, t1_ccee, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('xyzw,iuxa,iIAa,zuwy->IA', v_aaaa, t1_caae, t1_ccee, rdm_ccaa, optimize = einsum_type)
-        temp += einsum('xyzw,ixau,IiAa,zuwy->IA', v_aaaa, t1_caea, t1_ccee, rdm_ccaa, optimize = einsum_type)
         temp -= 1/2 * einsum('xyzw,ixau,iIAa,zuwy->IA', v_aaaa, t1_caea, t1_ccee, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/2 * einsum('xyzw,ixua,IiAa,zuwy->IA', v_aaaa, t1_caae, t1_ccee, rdm_ccaa, optimize = einsum_type)
         temp += 1/4 * einsum('xyzw,ixua,iIAa,zuwy->IA', v_aaaa, t1_caae, t1_ccee, rdm_ccaa, optimize = einsum_type)
 
-        V1[:, s_chunk:f_chunk] += temp
+        V1[s_chunk:f_chunk] += temp
         mr_adc.log.timer_debug("contracting t1.ccee", *cput1)
     del(t1_ccee)
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Amplitudes
+        t1_ccee = mr_adc.t1.ccee[s_chunk:f_chunk]
+
+        temp  = 2 * einsum('ijAa,iIja->IA', t1_ccee, v_ccce[s_chunk:f_chunk], optimize = einsum_type)
+        temp -= einsum('ijAa,jIia->IA', t1_ccee, v_ccce[:, :, s_chunk:f_chunk], optimize = einsum_type)
+
+        V1 += temp
+        mr_adc.log.timer_debug("contracting t1.ccee", *cput1)
+    del(t1_ccee)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_ccee = mr_adc.v2e.ccee[s_chunk:f_chunk]
+
+        temp  = einsum('ia,iIAa->IA', t1_ce[s_chunk:f_chunk], v_ccee, optimize = einsum_type)
+        temp += einsum('ixay,iIAa,xy->IA', t1_caea[s_chunk:f_chunk], v_ccee, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('ixya,iIAa,xy->IA', t1_caae[s_chunk:f_chunk], v_ccee, rdm_ca, optimize = einsum_type)
+
+        V1 += temp
+        mr_adc.log.timer_debug("contracting v2e.ccee", *cput1)
+    del(v_ccee)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceec [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_ceec = mr_adc.v2e.ceec[s_chunk:f_chunk]
+
+        temp  = einsum('ixya,IAai,xy->IA', t1_caae, v_ceec, rdm_ca, optimize = einsum_type)
+        temp -= 2 * einsum('ia,IAai->IA', t1_ce, v_ceec, optimize = einsum_type)
+        temp -= 2 * einsum('ixay,IAai,xy->IA', t1_caea, v_ceec, rdm_ca, optimize = einsum_type)
+
+        V1[s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceec", *cput1)
+    del(v_ceec)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.cece [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_cece = mr_adc.v2e.cece[s_chunk:f_chunk]
+
+        temp =- 2 * einsum('ia,IAia->IA', t1_ce, v_cece, optimize = einsum_type)
+        temp -= 2 * einsum('ixay,IAia,yx->IA', t1_caea, v_cece, rdm_ca, optimize = einsum_type)
+        temp += einsum('ixya,IAia,yx->IA', t1_caae, v_cece, rdm_ca, optimize = einsum_type)
+
+        V1[s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.cece", *cput1)
+    del(v_cece)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.cece [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_cece = mr_adc.v2e.cece[s_chunk:f_chunk]
+
+        temp  = einsum('ia,iAIa->IA', t1_ce[s_chunk:f_chunk], v_cece, optimize = einsum_type)
+        temp += einsum('ixay,iAIa,yx->IA', t1_caea[s_chunk:f_chunk], v_cece, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('ixya,iAIa,yx->IA', t1_caae[s_chunk:f_chunk], v_cece, rdm_ca, optimize = einsum_type)
+
+        V1 += temp
+        mr_adc.log.timer_debug("contracting v2e.cece", *cput1)
+    del(v_cece)
+
+    chunks = tools.calculate_chunks(mr_adc, ncore, [ncas, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Molecular Orbitals Energies
-        e_extern_A = mr_adc.mo_energy.e[s_chunk:f_chunk]
+        e_core_I = mr_adc.mo_energy.c[s_chunk:f_chunk]
 
         ## Amplitudes
-        t1_caee = mr_adc.t1.caee[:, :, :, s_chunk:f_chunk]
+        t1_caee = mr_adc.t1.caee[s_chunk:f_chunk]
 
-        temp  = 1/4 * einsum('A,IxaA,ya,xy->IA', e_extern_A, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('A,IxaA,yzwa,xwzy->IA', e_extern_A, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+        temp  = 1/4 * einsum('A,IxaA,ya,xy->IA', e_extern, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
+        temp += 1/4 * einsum('A,IxaA,yzwa,xwzy->IA', e_extern, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('xa,IyaA,xy->IA', h_ae, t1_caee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('IxaA,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
-        temp += einsum('ixaA,Iyai,xy->IA', t1_caee, v_caec, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('ixaA,iIya,xy->IA', t1_caee, v_ccae, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('I,IxaA,ya,xy->IA', e_core, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
-        temp -= 1/4 * einsum('I,IxaA,yzwa,xwzy->IA', e_core, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/4 * einsum('I,IxaA,ya,xy->IA', e_core_I, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
+        temp -= 1/4 * einsum('I,IxaA,yzwa,xwzy->IA', e_core_I, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('a,xa,IyaA,xy->IA', e_extern, t1_ae, t1_caee, rdm_ca, optimize = einsum_type)
         temp += 1/2 * einsum('a,xyza,IwaA,zwxy->IA', e_extern, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('xy,IxaA,za,yz->IA', h_aa, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
@@ -1600,29 +1674,12 @@ def compute_t2_0p_singles(mr_adc):
         temp -= 1/4 * einsum('xyzw,xa,IuaA,zuwy->IA', v_aaaa, t1_ae, t1_caee, rdm_ccaa, optimize = einsum_type)
         temp -= 1/4 * einsum('xyzw,xuva,IsaA,zvswyu->IA', v_aaaa, t1_aaae, t1_caee, rdm_cccaaa, optimize = einsum_type)
         temp -= 1/4 * einsum('xyzw,zxua,IvaA,ywvu->IA', v_aaaa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting t1.caee", *cput1)
-    del(t1_caee)
-
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Molecular Orbitals Energies
-        e_extern_A = mr_adc.mo_energy.e[s_chunk:f_chunk]
-
-        ## Amplitudes
-        t1_caee = mr_adc.t1.caee[:, :, s_chunk:f_chunk]
- 
-        temp =- 1/2 * einsum('A,IxAa,ya,xy->IA', e_extern_A, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('A,IxAa,yzwa,xwzy->IA', e_extern_A, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/2 * einsum('A,IxAa,ya,xy->IA', e_extern, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('A,IxAa,yzwa,xwzy->IA', e_extern, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
         temp -= einsum('xa,IyAa,xy->IA', h_ae, t1_caee, rdm_ca, optimize = einsum_type)
         temp -= einsum('IxAa,yzwa,xzwy->IA', t1_caee, v_aaae, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/2 * einsum('ixAa,Iyai,xy->IA', t1_caee, v_caec, rdm_ca, optimize = einsum_type)
-        temp += einsum('ixAa,iIya,xy->IA', t1_caee, v_ccae, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('I,IxAa,ya,xy->IA', e_core, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('I,IxAa,yzwa,xwzy->IA', e_core, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('I,IxAa,ya,xy->IA', e_core_I, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('I,IxAa,yzwa,xwzy->IA', e_core_I, t1_caee, t1_aaae, rdm_ccaa, optimize = einsum_type)
         temp -= einsum('a,xa,IyAa,xy->IA', e_extern, t1_ae, t1_caee, rdm_ca, optimize = einsum_type)
         temp -= einsum('a,xyza,IwAa,zwxy->IA', e_extern, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('xy,IxAa,za,yz->IA', h_aa, t1_caee, t1_ae, rdm_ca, optimize = einsum_type)
@@ -1640,200 +1697,152 @@ def compute_t2_0p_singles(mr_adc):
         temp += 1/2 * einsum('xyzw,xuva,IsAa,zvswyu->IA', v_aaaa, t1_aaae, t1_caee, rdm_cccaaa, optimize = einsum_type)
         temp += 1/2 * einsum('xyzw,zxua,IvAa,ywvu->IA', v_aaaa, t1_aaae, t1_caee, rdm_ccaa, optimize = einsum_type)
 
-        V1[:, s_chunk:f_chunk] += temp
+        V1[s_chunk:f_chunk] += temp
         mr_adc.log.timer_debug("contracting t1.caee", *cput1)
     del(t1_caee)
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("t1.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Amplitudes
+        t1_caee = mr_adc.t1.caee[s_chunk:f_chunk]
+ 
+        temp  = einsum('ixaA,Iyai,xy->IA', t1_caee, v_caec[:, :, :, s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('ixAa,Iyai,xy->IA', t1_caee, v_caec[:, :, :, s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('ixaA,iIya,xy->IA', t1_caee, v_ccae[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+        temp += einsum('ixAa,iIya,xy->IA', t1_caee, v_ccae[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+
+        V1 += temp
+        mr_adc.log.timer_debug("contracting t1.caee", *cput1)
+    del(t1_caee)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_caee = mr_adc.v2e.caee[s_chunk:f_chunk]
+
+        temp  = einsum('Iixa,ixAa->IA', t1_ccae[:, s_chunk:f_chunk], v_caee, optimize = einsum_type)
+        temp -= 2 * einsum('iIxa,ixAa->IA', t1_ccae[s_chunk:f_chunk], v_caee, optimize = einsum_type)
+        temp -= 1/2 * einsum('Iixa,iyAa,xy->IA', t1_ccae[:, s_chunk:f_chunk], v_caee, rdm_ca, optimize = einsum_type)
+        temp += einsum('iIxa,iyAa,xy->IA', t1_ccae[s_chunk:f_chunk], v_caee, rdm_ca, optimize = einsum_type)
+
+        V1 += temp
+        mr_adc.log.timer_debug("contracting v2e.caee", *cput1)
+    del(v_caee)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_caee = mr_adc.v2e.caee[s_chunk:f_chunk]
+
+        temp  = 1/2 * einsum('xa,IyaA,xy->IA', t1_ae, v_caee, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('xyza,IwaA,zwxy->IA', t1_aaae, v_caee, rdm_ccaa, optimize = einsum_type)
+
+        V1[s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.caee", *cput1)
+    del(v_caee)
+
+    chunks = tools.calculate_chunks(mr_adc, ncore, [ncas, nextern, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_ceae = mr_adc.v2e.ceae[s_chunk:f_chunk]
+
+        temp =- einsum('xa,IAya,xy->IA', t1_ae, v_ceae, rdm_ca, optimize = einsum_type)
+        temp -= einsum('xyza,IAwa,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('xa,IayA,xy->IA', t1_ae, v_ceae, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('xyza,IawA,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
+
+        V1[s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
+    del(v_ceae)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_ceea = mr_adc.v2e.ceea[s_chunk:f_chunk]
+
+        temp =- 2 * einsum('Iixa,iaAx->IA', t1_ccae[:, s_chunk:f_chunk], v_ceea, optimize = einsum_type)
+        temp += einsum('iIxa,iaAx->IA', t1_ccae[s_chunk:f_chunk], v_ceea, optimize = einsum_type)
+        temp += einsum('Iixa,iaAy,xy->IA', t1_ccae[:, s_chunk:f_chunk], v_ceea, rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('iIxa,iaAy,xy->IA', t1_ccae[s_chunk:f_chunk], v_ceea, rdm_ca, optimize = einsum_type)
+
+        V1 += temp
+        mr_adc.log.timer_debug("contracting v2e.ceea", *cput1)
+    del(v_ceea)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.ceea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integrals
+        v_ceea = mr_adc.v2e.ceea[s_chunk:f_chunk]
+
+        temp =- einsum('xa,IAay,xy->IA', t1_ae, v_ceea, rdm_ca, optimize = einsum_type)
+        temp -= einsum('xyza,IAaw,zwxy->IA', t1_aaae, v_ceea, rdm_ccaa, optimize = einsum_type)
+
+        V1[s_chunk:f_chunk] += temp
+        mr_adc.log.timer_debug("contracting v2e.ceea", *cput1)
+    del(v_ceea)
+
+    chunks = tools.calculate_chunks(mr_adc, ncas, [ncas, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Amplitudes
-        t1_aaee = mr_adc.t1.aaee[:, :, s_chunk:f_chunk]
+        t1_aaee = mr_adc.t1.aaee[s_chunk:f_chunk]
 
-        temp  = 1/2 * einsum('xyAa,Izaw,xyzw->IA', t1_aaee, v_caea, rdm_ccaa, optimize = einsum_type)
+        temp  = 1/2 * einsum('xyAa,Izaw,xyzw->IA', t1_aaee, v_caea, rdm_ccaa[s_chunk:f_chunk], optimize = einsum_type)
 
-        V1[:, s_chunk:f_chunk] += temp
+        V1 += temp
         mr_adc.log.timer_debug("contracting t1.aaee", *cput1)
     del(t1_aaee)
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncore, ncore, nextern], ntensors = 2)
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.ccee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_ccee = mr_adc.v2e.ccee[:, :, s_chunk:f_chunk]
-
-        temp  = einsum('ia,iIAa->IA', t1_ce, v_ccee, optimize = einsum_type)
-        temp += einsum('ixay,iIAa,xy->IA', t1_caea, v_ccee, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('ixya,iIAa,xy->IA', t1_caae, v_ccee, rdm_ca, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.ccee", *cput1)
-    del(v_ccee)
-
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.ceec [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_ceec = mr_adc.v2e.ceec[:, s_chunk:f_chunk]
-
-        temp  = einsum('ixya,IAai,xy->IA', t1_caae, v_ceec, rdm_ca, optimize = einsum_type)
-        temp -= 2 * einsum('ia,IAai->IA', t1_ce, v_ceec, optimize = einsum_type)
-        temp -= 2 * einsum('ixay,IAai,xy->IA', t1_caea, v_ceec, rdm_ca, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.ceec", *cput1)
-    del(v_ceec)
-
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.cece [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_cece = mr_adc.v2e.cece[:, s_chunk:f_chunk]
-
-        temp =- 2 * einsum('ia,IAia->IA', t1_ce, v_cece, optimize = einsum_type)
-        temp += einsum('ia,iAIa->IA', t1_ce, v_cece, optimize = einsum_type)
-        temp -= 2 * einsum('ixay,IAia,yx->IA', t1_caea, v_cece, rdm_ca, optimize = einsum_type)
-        temp += einsum('ixay,iAIa,yx->IA', t1_caea, v_cece, rdm_ca, optimize = einsum_type)
-        temp += einsum('ixya,IAia,yx->IA', t1_caae, v_cece, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('ixya,iAIa,yx->IA', t1_caae, v_cece, rdm_ca, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.cece", *cput1)
-    del(v_cece)
-
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
-        v_aaee = mr_adc.v2e.aaee[:, :, s_chunk:f_chunk]
+        v_aaee = mr_adc.v2e.aaee[s_chunk:f_chunk]
 
-        temp =- einsum('Ixay,zwAa,xwyz->IA', t1_caea, v_aaee, rdm_ccaa, optimize = einsum_type)
-        temp -= einsum('Ixay,zyAa,xz->IA', t1_caea, v_aaee, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('Ixya,zwAa,xwyz->IA', t1_caae, v_aaee, rdm_ccaa, optimize = einsum_type)
-        temp += 1/2 * einsum('Ixya,zyAa,xz->IA', t1_caae, v_aaee, rdm_ca, optimize = einsum_type)
-        temp += einsum('Ixay,zwAa,zw,xy->IA', t1_caea, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('Ixya,zwAa,zw,xy->IA', t1_caae, v_aaee, rdm_ca, rdm_ca, optimize = einsum_type)
+        temp =- einsum('Ixay,zwAa,xwyz->IA', t1_caea, v_aaee, rdm_ccaa[:, :, :, s_chunk:f_chunk], optimize = einsum_type)
+        temp -= einsum('Ixay,zyAa,xz->IA', t1_caea, v_aaee, rdm_ca[:, s_chunk:f_chunk], optimize = einsum_type)
+        temp += 1/2 * einsum('Ixya,zwAa,xwyz->IA', t1_caae, v_aaee, rdm_ccaa[:, :, :, s_chunk:f_chunk], optimize = einsum_type)
+        temp += 1/2 * einsum('Ixya,zyAa,xz->IA', t1_caae, v_aaee, rdm_ca[:, s_chunk:f_chunk], optimize = einsum_type)
+        temp += einsum('Ixay,zwAa,zw,xy->IA', t1_caea, v_aaee, rdm_ca[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+        temp -= 1/2 * einsum('Ixya,zwAa,zw,xy->IA', t1_caae, v_aaee, rdm_ca[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
 
-        V1[:, s_chunk:f_chunk] += temp
+        V1 += temp
         mr_adc.log.timer_debug("contracting v2e.aaee", *cput1)
     del(v_aaee)
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.aeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integrals
-        v_aeea = mr_adc.v2e.aeea[:, s_chunk:f_chunk]
+        v_aeea = mr_adc.v2e.aeea[s_chunk:f_chunk]
 
-        temp  = 1/2 * einsum('Ixay,yAaz,xz->IA', t1_caea, v_aeea, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('Ixay,zAaw,xzyw->IA', t1_caea, v_aeea, rdm_ccaa, optimize = einsum_type)
-        temp -= einsum('Ixya,yAaz,xz->IA', t1_caae, v_aeea, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('Ixya,zAaw,xzwy->IA', t1_caae, v_aeea, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/2 * einsum('Ixay,zAaw,wz,xy->IA', t1_caea, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
-        temp += 1/4 * einsum('Ixya,zAaw,wz,xy->IA', t1_caae, v_aeea, rdm_ca, rdm_ca, optimize = einsum_type)
+        temp  = 1/2 * einsum('Ixay,yAaz,xz->IA', t1_caea[:, :, :, s_chunk:f_chunk], v_aeea, rdm_ca, optimize = einsum_type)
+        temp -= einsum('Ixya,yAaz,xz->IA', t1_caae[:, :, s_chunk:f_chunk], v_aeea, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('Ixay,zAaw,xzyw->IA', t1_caea, v_aeea, rdm_ccaa[:, s_chunk:f_chunk], optimize = einsum_type)
+        temp += 1/2 * einsum('Ixya,zAaw,xzwy->IA', t1_caae, v_aeea, rdm_ccaa[:, s_chunk:f_chunk], optimize = einsum_type)
+        temp -= 1/2 * einsum('Ixay,zAaw,wz,xy->IA', t1_caea, v_aeea, rdm_ca[:, s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
+        temp += 1/4 * einsum('Ixya,zAaw,wz,xy->IA', t1_caae, v_aeea, rdm_ca[:, s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
 
-        V1[:, s_chunk:f_chunk] += temp
+        V1 += temp
         mr_adc.log.timer_debug("contracting v2e.aeea", *cput1)
     del(v_aeea)
-
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_caee = mr_adc.v2e.caee[:, :, s_chunk:f_chunk]
-
-        temp  = einsum('Iixa,ixAa->IA', t1_ccae, v_caee, optimize = einsum_type)
-        temp -= 2 * einsum('iIxa,ixAa->IA', t1_ccae, v_caee, optimize = einsum_type)
-        temp -= 1/2 * einsum('Iixa,iyAa,xy->IA', t1_ccae, v_caee, rdm_ca, optimize = einsum_type)
-        temp += einsum('iIxa,iyAa,xy->IA', t1_ccae, v_caee, rdm_ca, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.caee", *cput1)
-    del(v_caee)
-
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.caee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_caee = mr_adc.v2e.caee[:, :, :, s_chunk:f_chunk]
-
-        temp  = 1/2 * einsum('xa,IyaA,xy->IA', t1_ae, v_caee, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('xyza,IwaA,zwxy->IA', t1_aaae, v_caee, rdm_ccaa, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.caee", *cput1)
-    del(v_caee)
-
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 2)
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_ceae = mr_adc.v2e.ceae[:, s_chunk:f_chunk]
-
-        temp =- einsum('xa,IAya,xy->IA', t1_ae, v_ceae, rdm_ca, optimize = einsum_type)
-        temp -= einsum('xyza,IAwa,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
-    del(v_ceae)
-
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.ceae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_ceae = mr_adc.v2e.ceae[:, :, :, s_chunk:f_chunk]
-
-        temp  = 1/2 * einsum('xa,IayA,xy->IA', t1_ae, v_ceae, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('xyza,IawA,zwxy->IA', t1_aaae, v_ceae, rdm_ccaa, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.ceae", *cput1)
-    del(v_ceae)
-
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.ceea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_ceea = mr_adc.v2e.ceea[:, :, s_chunk:f_chunk]
-
-        temp =- 2 * einsum('Iixa,iaAx->IA', t1_ccae, v_ceea, optimize = einsum_type)
-        temp += einsum('iIxa,iaAx->IA', t1_ccae, v_ceea, optimize = einsum_type)
-        temp += einsum('Iixa,iaAy,xy->IA', t1_ccae, v_ceea, rdm_ca, optimize = einsum_type)
-        temp -= 1/2 * einsum('iIxa,iaAy,xy->IA', t1_ccae, v_ceea, rdm_ca, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.ceea", *cput1)
-    del(v_ceea)
-
-    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.ceea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-        ## Two-electron integrals
-        v_ceea = mr_adc.v2e.ceea[:, s_chunk:f_chunk]
-
-        temp =- einsum('xa,IAay,xy->IA', t1_ae, v_ceea, rdm_ca, optimize = einsum_type)
-        temp -= einsum('xyza,IAaw,zwxy->IA', t1_aaae, v_ceea, rdm_ccaa, optimize = einsum_type)
-
-        V1[:, s_chunk:f_chunk] += temp
-        mr_adc.log.timer_debug("contracting v2e.ceea", *cput1)
-    del(v_ceea)
 
     chunks = tools.calculate_double_chunks(mr_adc, ncore, [nextern, nextern, nextern],
                                                                      [ncore, nextern, nextern], ntensors = 2)
