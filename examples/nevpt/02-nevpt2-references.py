@@ -31,7 +31,7 @@ mf.kernel()
 mc = pyscf.mcscf.CASSCF(mf, 6, 6)
 emc = mc.mc1step()[0]
 
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()
 
@@ -43,7 +43,7 @@ weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 emc = mc.mc1step()[0]
 
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()
 
@@ -55,6 +55,6 @@ mc = pyscf.mcscf.CASCI(mf, 6, 6)
 mc.fcisolver.nroots = n_states
 emc = mc.casci()[0]
 
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()

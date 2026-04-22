@@ -15,53 +15,52 @@
 #
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
 import os
 import psutil
 import tempfile
 import h5py
+import weakref
 import numpy as np
 
 # Memory management tools
-def calculate_chunks(method, nmo_chunked, nmo_non_chunked, ntensors = 1, extra_tensors = [[]]):
+def calculate_chunks(method, nmo_chunked, nmo_non_chunked, ntensors = 1, extra_tensors = None):
 
-    extra_mem = 0
+    if extra_tensors is None:
+        extra_tensors = [[]]
+
     extra_tensors = np.asarray(extra_tensors)
-    for nmo_extra_tensor in extra_tensors:
-        extra_mem += np.prod(nmo_extra_tensor[nmo_extra_tensor > 0]) * 8/1e6
-
+    extra_mem = sum(np.prod(t[t > 0]) * 8/1e6 for t in extra_tensors)
     avail_mem = (method.max_memory - extra_mem - current_memory()) * 0.9 / ntensors
 
     nmo_non_chunked = np.asarray(nmo_non_chunked)
     tensor_mem = np.prod(nmo_non_chunked[nmo_non_chunked > 0]) * 8/1e6
 
     chunk_size = int(avail_mem / tensor_mem)
+    chunk_size = max(1, min(chunk_size, nmo_chunked))
 
-    if chunk_size > nmo_chunked:
-        chunk_size = nmo_chunked
-    if chunk_size <= 0:
-        chunk_size = 1
+    method.log.debug(
+        "avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]",
+        avail_mem,
+        method.max_memory,
+        chunk_size * tensor_mem,
+        nmo_chunked * tensor_mem,
+        current_memory(),
+    )
 
-    method.log.debug("avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]", avail_mem, method.max_memory,
-                                                                                                  chunk_size * tensor_mem,
-                                                                                                  nmo_chunked * tensor_mem,
-                                                                                                  current_memory())
-
-    chunks_list = []
-    for s_chunk in range(0, nmo_chunked, chunk_size):
-        f_chunk = min(nmo_chunked, s_chunk + chunk_size)
-        chunks_list.append([s_chunk, f_chunk])
+    chunks_list = [[i, min(nmo_chunked, i+chunk_size)] for i in range(0, nmo_chunked, chunk_size)]
 
     return chunks_list
 
-def calculate_double_chunks(method, nmo_chunked, nmo_non_chunked_1, nmo_non_chunked_2, ntensors = 1, extra_tensors = [[]]):
+def calculate_double_chunks(method, nmo_chunked, nmo_non_chunked_1, nmo_non_chunked_2, ntensors = 1, extra_tensors = None):
 
-    extra_mem = 0
+    if extra_tensors is None:
+        extra_tensors = [[]]
+
     extra_tensors = np.asarray(extra_tensors)
-    for nmo_extra_tensor in extra_tensors:
-        extra_mem += np.prod(nmo_extra_tensor[nmo_extra_tensor > 0]) * 8/1e6
-
+    extra_mem = sum(np.prod(t[t > 0]) * 8/1e6 for t in extra_tensors)
     avail_mem = (method.max_memory - extra_mem - current_memory()) * 0.9 / ntensors
 
     nmo_non_chunked_1 = np.asarray(nmo_non_chunked_1)
@@ -69,23 +68,21 @@ def calculate_double_chunks(method, nmo_chunked, nmo_non_chunked_1, nmo_non_chun
 
     tensor_mem_1 = np.prod(nmo_non_chunked_1[nmo_non_chunked_1 > 0]) * 8/1e6
     tensor_mem_2 = np.prod(nmo_non_chunked_2[nmo_non_chunked_2 > 0]) * 8/1e6
+    total_tensor_mem = tensor_mem_1 + tensor_mem_2
 
-    chunk_size = int(avail_mem / (tensor_mem_1 + tensor_mem_2))
+    chunk_size = int(avail_mem / total_tensor_mem)
+    chunk_size = max(1, min(chunk_size, nmo_chunked))
 
-    if chunk_size > nmo_chunked:
-        chunk_size = nmo_chunked
-    if chunk_size <= 0:
-        chunk_size = 1
+    method.log.debug(
+        "avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]",
+        avail_mem,
+        method.max_memory,
+        chunk_size * total_tensor_mem,
+        nmo_chunked * total_tensor_mem,
+        current_memory(),
+    )
 
-    method.log.debug("avail mem %.2f / %.2f MB, chunk size %.2f MB (%.2f MB) [current mem %.2f]", avail_mem, method.max_memory,
-                                                                                                  chunk_size * (tensor_mem_1 + tensor_mem_2),
-                                                                                                  nmo_chunked * (tensor_mem_1 + tensor_mem_2),
-                                                                                                  current_memory())
-
-    chunks_list = []
-    for s_chunk in range(0, nmo_chunked, chunk_size):
-        f_chunk = min(nmo_chunked, s_chunk + chunk_size)
-        chunks_list.append([s_chunk, f_chunk])
+    chunks_list = [[i, min(nmo_chunked, i+chunk_size)] for i in range(0, nmo_chunked, chunk_size)]
 
     return chunks_list
 
@@ -96,13 +93,24 @@ def current_memory():
 
     return process.memory_info().rss / 1024**2
 
-# Disk managements tools
+# Disk management tools
 def create_temp_file(method, mode='r+', *args, **kwargs):
 
-    temp_file = tempfile.NamedTemporaryFile(dir=method.temp_dir, delete=True)
+    temp_file = tempfile.NamedTemporaryFile(dir=method.temp_dir, delete=False)
     filename = temp_file.name
+    # close OS-level file handle
+    temp_file.close()
 
-    return h5py.File(filename, mode, *args, **kwargs)
+    hf_temp = h5py.File(filename, mode, *args, **kwargs)
+    # ensure file is deleted when closed/gc'd
+    def _cleanup(path):
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
+    weakref.finalize(hf_temp, _cleanup, filename)
+    return hf_temp
 
 def create_dataset(dataset_name, temp_file, shape):
 

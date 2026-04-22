@@ -33,7 +33,7 @@ mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 emc = mc.mc1step()[0]
 
 # FIC-NEVPT2 calculation using Prism
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.s_thresh_singles = 1e-10

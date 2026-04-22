@@ -28,7 +28,7 @@ mc = pyscf.mcscf.CASSCF(mf, 6, 6)
 emc = mc.mc1step()[0]
 
 # CVS-IP-MR-ADC calculation
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ip"
 mr_adc.method = "mr-adc(2)-x"

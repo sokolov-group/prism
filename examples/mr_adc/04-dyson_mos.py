@@ -33,7 +33,7 @@ mo = pyscf.mcscf.sort_mo(mc, mf.mo_coeff, cas_list)
 emc = mc.mc1step(mo)[0]
 
 # CVS-IP-MR-ADC calculation
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.method_type = "cvs-ip"
 mr_adc.ncvs = 3
