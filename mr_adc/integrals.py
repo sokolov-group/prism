@@ -25,6 +25,9 @@ from functools import reduce
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
+from prism.lib.logger import detect_serial
+from prism.lib.logger import detect_memory_pressure
+
 def transform_integrals(mr_adc):
 
     mr_adc.log.info("\nTransforming integrals to MO basis...")
@@ -37,7 +40,8 @@ def transform_integrals(mr_adc):
         # TODO: this actually handles out-of-core integrals too, rename the function
         transform_integrals_2e_incore(mr_adc)
 
-
+#@detect_serial
+@detect_memory_pressure
 def transform_integrals_1e(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -91,6 +95,8 @@ def compute_effective_1e(mr_adc, h1e_pq, v2e_ccpq, v2e_cpqc):
 
     return h1eff
 
+#@detect_serial
+@detect_memory_pressure
 def transform_integrals_2e_incore(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -232,6 +238,8 @@ def transform_integrals_2e_incore(mr_adc):
 
     mr_adc.log.timer("transforming 1e integrals", *cput0)
 
+#@detect_serial
+@detect_memory_pressure
 def transform_Heff_integrals_2e_df(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -337,6 +345,8 @@ def transform_Heff_integrals_2e_df(mr_adc):
 
     mr_adc.log.timer("transforming 2e integrals", *cput0)
 
+#@detect_serial
+@detect_memory_pressure
 def transform_integrals_2e_df(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -655,13 +665,12 @@ def get_eeee_df(mr_adc, Lee, s_chunk_ext, f_chunk_ext, pack=True):
         mr_adc.log.debug("aux [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks_aux), s_chunk, f_chunk)
         cput1 = (logger.process_clock(), logger.perf_counter())
 
-        Lee_chunk = Lee[s_chunk:f_chunk]
+        chunk_size_aux = f_chunk - s_chunk
 
-        Lee_chunk_1 = np.ascontiguousarray(Lee_chunk.reshape(-1, nextern*nextern))
+        Lee_chunk_1 = np.ascontiguousarray(Lee[s_chunk:f_chunk].reshape(chunk_size_aux, -1))
         Lee_chunk_2 = np.ascontiguousarray(
-            Lee_chunk[:, s_chunk_ext:f_chunk_ext, :].transpose(1,2,0).reshape(-1, f_chunk-s_chunk)
+            Lee[s_chunk:f_chunk, s_chunk_ext:f_chunk_ext].transpose(1,2,0).reshape(-1, chunk_size_aux)
         )
-        del Lee_chunk
 
         v_eeee += np.dot(Lee_chunk_2, Lee_chunk_1).reshape(-1, nextern, nextern, nextern)
         mr_adc.log.timer_debug("contracting v_eeee DF", *cput1)
