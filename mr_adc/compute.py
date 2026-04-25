@@ -196,6 +196,8 @@ def setup_davidson(mr_adc):
 
     mr_adc.compute_M_00()
 
+    exit()
+
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
         if hasattr(mr_adc, "compute_M_01"):
             mr_adc.compute_M_01()
