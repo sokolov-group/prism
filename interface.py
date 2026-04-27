@@ -48,11 +48,6 @@ class PYSCF:
         # General info
         self.mol = mf.mol
         self.nelec = mf.mol.nelectron
-        # BUG FIX: Use mf.energy_nuc() instead of mf.mol.energy_nuc().
-        # In a QM/MM calculation, pyscf.qmmm.itrf.add_mm_charges overrides
-        # mf.energy_nuc() to include the QM-nuclear / MM-point-charge interaction.
-        # Calling mf.mol.energy_nuc() bypasses this override and silently drops
-        # the entire MM electrostatic contribution to the nuclear energy.
         self.enuc = mf.energy_nuc()
         self.e_scf = mf.e_tot
         self.mf = mf
