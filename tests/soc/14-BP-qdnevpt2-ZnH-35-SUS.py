@@ -43,7 +43,7 @@ emc = mc.mc1step()[0]
 mc.analyze()
 
 # QD-NEVPT2 with all electrons correlated
-interface = prism.interface.PYSCF(mf, mc, opt_einsum = True)
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.soc = "breit-pauli"
 nevpt.s_thresh_singles = 1e-10

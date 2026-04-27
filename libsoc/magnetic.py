@@ -133,7 +133,7 @@ def gtensor(interface, S, Mu, target_index = 1):
 
     interface.log.info("\nTarget State index = %s", target_index)
 
-    if target_index < 1 or target_index > rdm_sf.shape[0]:
+    if target_index < 1 or target_index > len(S):
         raise ValueError("Target index must be between 1 and the number of states")
 
     target_index -= 1
