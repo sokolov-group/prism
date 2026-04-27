@@ -35,7 +35,7 @@ ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
 # SA-CASSCF calculation
-n_states = 6
+n_states = 10
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
 mc.conv_tol = 1e-11
@@ -49,17 +49,6 @@ print("CASSCF energy: %f\n" % emc)
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.method_type = "qd"
-e_tot, e_corr, osc = nevpt.kernel()
-
-# Alternative set up
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-nevpt = prism.nevpt.QDNEVPT(interface)
-e_tot, e_corr, osc = nevpt.kernel()
-
-# QD-NEVPT2 with frozen core
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-nevpt = prism.nevpt.QDNEVPT(interface)
-nevpt.nfrozen = 1
 e_tot, e_corr, osc = nevpt.kernel()
 
 nevpt.analyze()

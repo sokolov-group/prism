@@ -499,3 +499,6 @@ def analyze_eigenvectors(method):
 
     h_evec = method.h_evec
     print(type(h_evec))
+    
+
+analyze_eigenvectors = analyze_eigenvectors(qd)

@@ -63,7 +63,7 @@ class NEVPT:
         self.nocc = self.ncas + self.ncore
         self.ref_nelecas = interface.ref_nelecas
         self.e_ref = interface.e_ref              # Total reference energy
-        self.e_ref_cas = interface.e_ref_cas      # Reference active-space energy
+        selfe_ref_cas = interface.e_ref_cas      # Reference active-space energy
         self.ref_wfn = interface.ref_wfn          # Reference wavefunction
         self.ref_wfn_spin_mult = interface.ref_wfn_spin_mult
         self.ref_wfn_deg = interface.ref_wfn_deg
