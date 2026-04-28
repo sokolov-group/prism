@@ -33,9 +33,12 @@ class MRADC:
 
         log.info("\nInitializing MR-ADC...")
 
-        if (interface.reference not in ("casscf","scf")):
-            log.info("MR-ADC requires CASSCF reference")
-            raise Exception("MR-ADC requires CASSCF reference")
+        if interface.reference == "scf":
+            log.info("SCF reference given, defaulting to SR-ADC calculation")
+
+        elif (interface.reference not in ("casscf", "casci")):
+            log.info("The MR-ADC code does not support %s reference" % interface.reference)
+            raise Exception("The MR-ADC code does not support %s reference" % interface.reference)
 
         self.stdout = interface.stdout
         self.verbose = interface.verbose
@@ -52,7 +55,6 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
-       
 
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
@@ -62,7 +64,6 @@ class MRADC:
         self.ncas = interface.ncas
         self.nextern = interface.nextern
         self.nocc = self.ncore + self.ncas
-        #self.nocc = self.ncore 
         self.ref_nelecas = interface.ref_nelecas
         self.e_ref = interface.e_ref           # Total reference energy
         self.e_ref_cas = interface.e_ref_cas   # Reference active-space energy
