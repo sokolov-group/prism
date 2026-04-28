@@ -1,0 +1,207 @@
+SCF energy: -108.960608507245
+
+CASSCF E = -109.096203344053  E(CI) = -13.6480313746735
+
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ee-mr-adc(2)
+Nuclear repulsion energy:                         23.615376443607
+Number of electrons:                               14
+Number of basis functions:                         46
+Reference wavefunction type:                       casscf
+Number of core orbitals:                           4
+Number of active orbitals:                         6
+Number of external orbitals:                       36
+Number of active electrons:                        [(3, 3)]
+Reference state active-space energy:             -13.648031374673
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  12
+Number of CVS orbitals:                            2
+Number of valence (non-CVS) orbitals:              2
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /tmp
+
+Internal contraction:                              Full
+Overlap truncation parameter (singles):            1.00e-06
+Overlap truncation parameter (doubles):            1.00e-10
+Projector for the semi-internal amplitudes:        gno
+
+Einsum Backend:                                    pytblis
+
+Transforming integrals to MO basis...
+
+Transforming 1e integrals to MO basis...
+> CPU time for transforming 1e integrals      0.00 sec, wall time      0.00 sec
+
+Transforming 2e integrals to MO basis (in-core)...
+> CPU time for transforming 1e integrals      0.37 sec, wall time      0.03 sec
+
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.56 sec, wall time      0.09 sec
+
+Computing NEVPT2 amplitudes...
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    70
+Smallest eigenvalue of the [0'] overlap metric:    5.433935e-05
+Norm of T[0']^(1):                                 0.122824280638
+Correlation energy [0']:                          -0.057710306921
+> CPU time for computing T[0']^(1) amplitudes      0.14 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   266
+Smallest eigenvalue of the [+1'] overlap metric:   1.055454e-06
+Norm of T[+1']^(1):                                0.056146445011
+Correlation energy [+1']:                         -0.001966674732
+> CPU time for computing T[+1']^(1) amplitudes      1.24 sec, wall time      0.19 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   267
+Smallest eigenvalue of the [-1'] overlap metric:   1.063234e-06
+Norm of T[-1']^(1):                                0.261973326501
+Correlation energy [-1']:                         -0.007007304316
+> CPU time for computing T[-1']^(1) amplitudes      0.73 sec, wall time      0.10 sec
+
+Computing T[0]^(1) amplitudes...
+Norm of T[0]^(1):                                  0.063301307646
+Correlation energy [0]:                           -0.018703655113
+> CPU time for computing T[0]^(1) amplitudes      0.02 sec, wall time      0.00 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.032365177163
+Correlation energy [+1]:                          -0.006871417783
+> CPU time for computing T[+1]^(1) amplitudes      0.02 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.064019116723
+Correlation energy [-1]:                          -0.025991944254
+> CPU time for computing T[-1]^(1) amplitudes      0.04 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Norm of T[+2]^(1):                                 0.060447953841
+Correlation energy [+2]:                          -0.005328267159
+> CPU time for computing T[+2]^(1) amplitudes      0.09 sec, wall time      0.01 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    36
+Smallest eigenvalue of the [-2] overlap metric:    7.634649e-05
+Norm of T[-2]^(1):                                 0.121669016774
+Correlation energy [-2]:                          -0.043298357324
+> CPU time for computing T[-2]^(1) amplitudes      0.06 sec, wall time      0.00 sec
+
+Computing T[0']^(2) amplitudes...
+Norm of T[0']^(2):                                0.006655605872
+> CPU time for computing T[0']^(2) amplitudes      1.82 sec, wall time      0.28 sec
+
+Computing T[-1']^(2) amplitudes...
+Norm of T[-1']^(2):                                0.050064197984
+> CPU time for computing T[-1']^(2) amplitudes      2.29 sec, wall time      0.32 sec
+
+Computing T[0'']^(2) amplitudes...
+Norm of T[0'']^(2):                                0.000000000000
+> CPU time for computing T[0'']^(2) amplitudes     13.59 sec, wall time      1.97 sec
+
+Computing T[+1']^(2) amplitudes...
+Norm of T[+1']^(2):                                0.021690570099
+> CPU time for computing T[+1']^(2) amplitudes      5.75 sec, wall time      0.81 sec
+
+Computing CVS amplitudes...
+> CPU time for computing CVS amplitudes      0.06 sec, wall time      0.00 sec
+
+Reference energy:                               -109.096203344053
+NEVPT2 correlation energy:                        -0.166877927602
+Total NEVPT2 energy:                            -109.263081271655
+> CPU time for computing amplitudes     25.86 sec, wall time      3.70 sec
+
+Transforming integrals for the CVS calculation...
+
+Computing CVS integrals to MO basis (in-core)...
+> CPU time for computing CVS integrals      0.14 sec, wall time      0.01 sec
+
+Dimension of h0 excitation manifold:                       84
+Dimension of h1 excitation manifold:                       37188
+Total dimension of the excitation manifold:                37272
+Dimension of the orthogonalized excitation manifold:       36898
+
+Computing M(h0-h0) block...
+CE-CE H0 | Asymmetry: 0.00000e+00 | Norm: 144.431914
+CA-CA H0 | Asymmetry: 5.61439e-15 | Norm:  39.151760
+
+CE-CE H1 | Asymmetry: 1.02371e-12 | Norm:   3.960481
+CA-CA H1 | Asymmetry: 2.19135e-15 | Norm:   1.948243
+CE-CA H1 |                        | Norm:   0.885423
+
+CE-CE H2 | Asymmetry: 7.82565e-17 | Norm:   0.117999
+CA-CA H2 | Asymmetry: 3.78730e-16 | Norm:   0.095637
+CE-CA H2 |                        | Norm:   0.079112
+M(h0-h0) block | Asymmetry: 1.02372e-12 | Norm: 145.758205
+> CPU time for computing M(h0-h0) block    161.89 sec, wall time     26.82 sec
+
+Computing preconditioner...
+> CPU time for computing preconditioner      3.26 sec, wall time      0.48 sec
+
+Computing sigma intermediates...
+> CPU time for computing intermediates      0.11 sec, wall time      0.01 sec
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 166  max_memory 12000  incore True
+davidson 0 12  |r|= 1.02  e= [15.21024615 15.21024615 15.21136875 15.21136875 15.55532327 15.55627214 15.59856487 15.59856487 15.60105773 15.60105773 15.61983694 15.62067067]  max|de|= 15.6  lindep=    1
+davidson 1 24  |r|= 0.434  e= [14.92949021 14.92949021 14.93084153 14.93084153 15.15429697 15.15571893 15.17363681 15.17363681 15.17685266 15.17685266 15.17853593 15.17978859]  max|de|= -0.441  lindep= 0.996
+davidson 2 36  |r|= 0.142  e= [14.86539369 14.86539369 14.86653373 14.86653373 15.1347535  15.1363413  15.15165519 15.15165519 15.15494263 15.15494263 15.15564969 15.15705925]  max|de|= -0.0643  lindep= 0.938
+davidson 3 48  |r|= 0.0529  e= [14.8578631  14.8578631  14.85892769 14.85892769 15.13419646 15.13598173 15.15210742 15.15210742 15.15541298 15.15541298 15.15684295 15.15845746]  max|de|= -0.00761  lindep= 0.935
+davidson 4 60  |r|= 0.056  e= [14.85725024 14.85725024 14.85831912 14.85831912 15.13600851 15.13764541 15.15311474 15.15311474 15.15642056 15.15642056 15.15923369 15.16071547]  max|de|= 0.00239  lindep= 0.897
+Old state -> New state
+   10     ->     8 
+   11     ->     9 
+    8     ->    10 
+    9     ->    11 
+davidson 5 72  |r|= 0.0363  e= [14.857079   14.857079   14.85814821 14.85814821 15.13051373 15.13279279 15.15248563 15.15248563 15.1528984  15.15496718 15.1557748  15.1557748 ]  max|de|= -0.00634  lindep= 0.936
+davidson 6 84  |r|= 0.0113  e= [14.85702639 14.85702639 14.85809718 14.85809718 15.12938391 15.13173938 15.15198036 15.15198036 15.15248178 15.15463294 15.15521608 15.15521608]  max|de|= -0.00113  lindep= 0.895
+davidson 7 96  |r|= 0.00675  e= [14.85703054 14.85703054 14.85810284 14.85810284 15.12910218 15.13148224 15.15217917 15.15217917 15.1524187  15.15458551 15.15543501 15.15543501]  max|de|= -0.000282  lindep= 0.944
+davidson 8 108  |r|= 0.0026  e= [14.85702778 14.85702778 14.85809952 14.85809952 15.1291991  15.13156199 15.15224424 15.15224424 15.15256859 15.15473026 15.15550337 15.15550337]  max|de|= 0.00015  lindep= 0.942
+davidson 9 120  |r|= 0.000968  e= [14.85702799 14.85702799 14.85809973 14.85809973 15.12921284 15.13157521 15.1522083  15.1522083  15.15254165 15.15470033 15.15546231 15.15546231]  max|de|= -4.11e-05  lindep= 0.928
+davidson 10 132  |r|= 0.00025  e= [14.85702782 14.85702782 14.85809958 14.85809958 15.12920469 15.13156835 15.1522131  15.1522131  15.15253393 15.15469242 15.15546808 15.15546808]  max|de|= -8.15e-06  lindep= 0.949
+root 0 converged  |r|= 2.75e-06  e= 14.85702782341724  max|de|= 5.62e-09
+root 1 converged  |r|= 2.75e-06  e= 14.857027823420447  max|de|= 5.62e-09
+root 2 converged  |r|= 2.87e-06  e= 14.858099585018296  max|de|= 5.83e-09
+root 3 converged  |r|= 2.87e-06  e= 14.85809958502156  max|de|= 5.83e-09
+davidson 11 144  |r|= 8.79e-05  e= [14.85702782 14.85702782 14.85809959 14.85809959 15.12920471 15.13156858 15.15221504 15.15221504 15.15253557 15.15469389 15.15547019 15.15547019]  max|de|= 2.11e-06  lindep= 0.954
+davidson 12 152  |r|= 2.06e-05  e= [14.85702781 14.85702781 14.85809957 14.85809957 15.1292057  15.13156938 15.15221484 15.15221484 15.15253704 15.15469544 15.15546997 15.15546997]  max|de|= 1.56e-06  lindep= 0.946
+root 2 converged  |r|= 1.3e-07  e= 14.858099576758912  max|de|= 3.08e-09
+root 3 converged  |r|= 1.3e-07  e= 14.858099576762214  max|de|= 3.08e-09
+davidson 13 162  |r|= 4.91e-06  e= [14.85702781 14.85702781 14.85809958 14.85809958 15.12920579 15.13156945 15.15221482 15.15221482 15.15253681 15.15469521 15.15546995 15.15546995]  max|de|= -2.31e-07  lindep= 0.964
+root 4 converged  |r|= 4.32e-06  e= 15.129205786715886  max|de|= 4.44e-14
+root 5 converged  |r|= 4.12e-06  e= 15.131569445755355  max|de|= -2.13e-14
+root 6 converged  |r|= 3.2e-06  e= 15.152214824359723  max|de|= -1.24e-14
+root 7 converged  |r|= 3.2e-06  e= 15.152214824360232  max|de|= -2.66e-14
+root 8 converged  |r|= 4.91e-06  e= 15.152536812099138  max|de|= 2.66e-14
+root 9 converged  |r|= 4.81e-06  e= 15.154695212443881  max|de|= -1.78e-14
+root 10 converged  |r|= 3.5e-06  e= 15.155469945632554  max|de|= -6.93e-14
+root 11 converged  |r|= 3.5e-06  e= 15.155469945633023  max|de|= -6.39e-14
+converged 14 12  |r|= 4.91e-06  e= [14.85702781 14.85702781 14.85809958 14.85809958 15.12920579 15.13156945 15.15221482 15.15221482 15.15253681 15.15469521 15.15546995 15.15546995]  max|de|= 7.64e-14
+> CPU time for solving eigenvalue problem   1774.41 sec, wall time    253.61 sec
+Full convergence reached.
+
+Computing transition moments matrix...
+> CPU time for computing transition moments matrix     52.96 sec, wall time     32.57 sec
+
+Summary of results for the CVS-EE-MR-ADC(2) calculation with the CASSCF reference:
+----------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity       Osc Str(f)
+----------------------------------------------------------------------------------------------------
+    1        14.85702781      404.2803     3.0668    3260740.7026      0.010537        0.104367 
+    2        14.85702781      404.2803     3.0668    3260740.7026      0.010537        0.104367 
+    3        14.85809958      404.3095     3.0666    3260975.9274      0.000000        0.000000 
+    4        14.85809958      404.3095     3.0666    3260975.9274      0.000000        0.000000 
+    5        15.12920579      411.6867     3.0116    3320476.8629      0.000781        0.007880 
+    6        15.13156945      411.7510     3.0111    3320995.6261      0.000000        0.000000 
+    7        15.15221482      412.3128     3.0070    3325526.7629      0.000000        0.000000 
+    8        15.15221482      412.3128     3.0070    3325526.7629      0.000000        0.000000 
+    9        15.15253681      412.3215     3.0070    3325597.4311      0.000000        0.000000 
+   10        15.15469521      412.3803     3.0066    3326071.1452      0.000001        0.000014 
+   11        15.15546995      412.4013     3.0064    3326241.1795      0.001190        0.012022 
+   12        15.15546995      412.4013     3.0064    3326241.1795      0.001190        0.012022 
+----------------------------------------------------------------------------------------------------
+> CPU time for total CVS-EE-MR-ADC(2) calculation   2020.14 sec, wall time    317.41 sec
