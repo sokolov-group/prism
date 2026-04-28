@@ -20940,75 +20940,74 @@ def compute_trans_moments(mr_adc):
         X[ncvs:ncore, :] = np.dot(T, U.T)
 
     # ACTIVE terms
-    T = np.zeros((ncas, dim))
+    if ncas > 0:
+        T = np.zeros((ncas, dim))
 
-    # MR-ADC(1) terms
-    ## < [ q^(1), h^(0)^\dag ] >
-    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        # MR-ADC(1) terms
+        ## < [ q^(1), h^(0)^\dag ] >
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
 
-        ### ACTIVE(1) - C
-        compute_T__q1_h0__A_C(mr_adc, T)
+            ### ACTIVE(1) - C
+            compute_T__q1_h0__A_C(mr_adc, T)
 
-    # MR-ADC(2) terms
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        # MR-ADC(2) terms
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
-        ## < [ q^(1), h^(1)^\dag ] >
-        if ncas > 0:
-        ### ACTIVE(1) - CAA
+            ## < [ q^(1), h^(1)^\dag ] >
+            ### ACTIVE(1) - CAA
             compute_T__q1_h1__A_CAA(mr_adc, T)
 
-        ### ACTIVE(1) - CCE
+            ### ACTIVE(1) - CCE
             compute_T__q1_h1__A_CCE(mr_adc, T)
-        if ncas > 0:
-        ### ACTIVE(1) - CAE
+
+            ### ACTIVE(1) - CAE
             compute_T__q1_h1__A_CAE(mr_adc, T)
-        
-        ### ACTIVE(1) - CCA
+            
+            ### ACTIVE(1) - CCA
             compute_T__q1_h1__A_CCA(mr_adc, T)
 
-        if nval > 0:
-            if ncas > 0:
-            ### ACTIVE(1) - CVE
+            if nval > 0:
+                ### ACTIVE(1) - CVE
                 compute_T__q1_h1__A_CVE(mr_adc, T)
-            
-            ### ACTIVE(1) - CVA
+                
+                ### ACTIVE(1) - CVA
                 compute_T__q1_h1__A_CVA(mr_adc, T)
 
-        ## < [ q^(1), h^(1)^\dag ] >
-        ### ACTIVE(2) - C
-        compute_T__q2_h0__A_C(mr_adc, T)
+            ## < [ q^(1), h^(1)^\dag ] >
+            ### ACTIVE(2) - C
+            compute_T__q2_h0__A_C(mr_adc, T)
 
-    # MR-ADC(2)-X terms
-    ## {q^(2)| h^(1)^dag}
-    if mr_adc.method == "mr-adc(2)-x":
-        if ncas > 0:
-        ### ACTIVE(2) - CAA
+        # MR-ADC(2)-X terms
+        ## {q^(2)| h^(1)^dag}
+        if mr_adc.method == "mr-adc(2)-x":
+
+            ### ACTIVE(2) - CAA
             compute_T__q2_h1__A_CAA(mr_adc, T)
 
-        ### ACTIVE(2) - CCE
-        compute_T__q2_h1__A_CCE(mr_adc, T)
-        if ncas > 0:
-        ### ACTIVE(2) - CAE
+            ### ACTIVE(2) - CCE
+            compute_T__q2_h1__A_CCE(mr_adc, T)
+
+            ### ACTIVE(2) - CAE
             compute_T__q2_h1__A_CAE(mr_adc, T)
 
-        ### ACTIVE(2) - CCA
+            ### ACTIVE(2) - CCA
             compute_T__q2_h1__A_CCA(mr_adc, T)
 
-        if nval > 0:
-            ### ACTIVE(2) - CVE
-            compute_T__q2_h1__A_CVE(mr_adc, T)
-            if ncas > 0:
-            ### ACTIVE(2) - CVA
+            if nval > 0:
+                ### ACTIVE(2) - CVE
+                compute_T__q2_h1__A_CVE(mr_adc, T)
+
+                ### ACTIVE(2) - CVA
                 compute_T__q2_h1__A_CVA(mr_adc, T)
 
-    # Transform to the orthogonal basis
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-        T_ortho = np.zeros((T.shape[0], mr_adc.h_orth.dim))
-        for p in range(T.shape[0]):
-            T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
-        T = T_ortho
+        # Transform to the orthogonal basis
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+            T_ortho = np.zeros((T.shape[0], mr_adc.h_orth.dim))
+            for p in range(T.shape[0]):
+                T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
+            T = T_ortho
 
-    X[ncore:nocc, :] = np.dot(T, U.T)
+        X[ncore:nocc, :] = np.dot(T, U.T)
 
     # EXTERNAL terms
     T = np.zeros((nextern, dim))
