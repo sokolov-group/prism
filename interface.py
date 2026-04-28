@@ -72,6 +72,7 @@ class PYSCF:
             self.mo_energy = mf.mo_energy.copy()
             self.symmetry = mf.mol.symmetry
             self.e_ref = [mf.e_tot]
+
             self.ncore = mf.mol.nelectron // 2
             self.nextern = self.nmo - self.ncore
             self.ncas = 0
