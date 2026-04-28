@@ -1860,10 +1860,10 @@ def compute_t2_0p_singles(mr_adc):
             v_ceee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.ceee[s_chunk:f_chunk])
 
         ## Amplitudes
-        t1_ccee = mr_adc.t1.ccee[:, s_chunk:f_chunk]
+        t1_ccee = mr_adc.t1.ccee[s_chunk:f_chunk]
 
-        V1 += einsum('Iiab,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
-        V1 -= 2 * einsum('Iiab,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
+        V1 += einsum('iIba,iaAb->IA', t1_ccee, v_ceee, optimize = einsum_type)
+        V1 -= 2 * einsum('iIba,ibAa->IA', t1_ccee, v_ceee, optimize = einsum_type)
 
         mr_adc.log.timer_debug("contracting v2e.ceee", *cput1)
     del(v_ceee, t1_ccee)
