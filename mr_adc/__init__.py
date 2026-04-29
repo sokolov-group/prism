@@ -87,6 +87,7 @@ class MRADC:
         self.e_tot = None               # Total energies of excited states (NEVPT2 + MR-ADC)
         self.h_evec = None              # Eigenvectors of effective Hamiltonian
         self.properties = {}            # Dictionary to store computed properties
+        self.remove_casci_with_s2_above = None # If set to a float x, CASCI states with S^2 greater than x will be removed
 
         self.compute_ntos = False       # Option for NTO computation
         self.compute_dyson = False      # Option for Dyson orbital computation
@@ -124,6 +125,7 @@ class MRADC:
 
     def _make_method_instance(self):
         cls_map = {
+            "ip": IPMRADC,
             "cvs-ip": CVSIPMRADC,
         }
 
@@ -170,6 +172,39 @@ class MRADC:
     def verbose(self, obj):
         self._verbose = obj
         self.log.verbose = obj
+
+
+# Classes for specific MRADC flavors go below
+# Only attributes unique to each class should be added
+class IPMRADC(MRADC):
+
+    def __init__(self, interface):
+        super().__init__(interface)
+        self._init_method()
+
+    def _init_method(self):
+        self.method_type = "ip"
+
+    def compute_excitation_manifolds(self):
+        return ip.compute_excitation_manifolds(self)
+
+    def compute_M_00(self):
+        return ip.compute_M_00(self)
+
+    def compute_M_01(self):
+        return ip.compute_M_01(self)
+
+    def compute_preconditioner(self):
+        return ip.compute_preconditioner(self)
+
+    def define_effective_hamiltonian(self):
+        return ip.define_effective_hamiltonian(self)
+
+    def compute_trans_moments(self):
+        return ip.compute_trans_moments(self)
+
+    def analyze_spec_factor(self):
+        return ip.analyze_spec_factor(self)
 
 
 # Classes for specific MRADC flavors go below

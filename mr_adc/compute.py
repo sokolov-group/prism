@@ -38,13 +38,17 @@ def kernel(mr_adc):
     # Initial checks
     initialize(mr_adc)
 
+    # Compute CASCI energies and states
+    if mr_adc.method_type == "ip":
+        compute_casci_states(mr_adc)
+
     # Print calculation info
     print_header(mr_adc)
 
     # Transform one- and two-electron integrals
     integrals.transform_integrals(mr_adc)
 
-    # Compute CASCI energies and reduced density matrices
+    # Compute reduced density matrices
     rdms.compute_reference_rdms(mr_adc)
 
     # Compute amplitudes
@@ -76,13 +80,8 @@ def initialize(mr_adc):
         log.error(msg)
         raise Exception(msg)
 
-    if mr_adc.method_type not in ("cvs-ip"):
+    if mr_adc.method_type not in ("ip", "cvs-ip"):
         msg = "Unknown method type %s" % mr_adc.method_type
-        log.error(msg)
-        raise Exception(msg)
-
-    if mr_adc.interface.with_df and mr_adc.method_type not in ('cvs-ip'):
-        msg = "Density-fitting currently only compatible with CVS-IP method type."
         log.error(msg)
         raise Exception(msg)
 
@@ -109,12 +108,6 @@ def initialize(mr_adc):
 
         mr_adc.ncasci = 0
 
-    # TODO: Temporary check of what methods are implemented in this version
-    if mr_adc.method_type not in ("cvs-ip"):
-        msg = "This spin-adapted version does not currently support method type %s" % mr_adc.method_type
-        log.error(msg)
-        raise Exception(msg)
-
 
 def print_header(mr_adc):
 
@@ -136,6 +129,10 @@ def print_header(mr_adc):
     mr_adc.log.info("Reference state active-space energy:         %20.12f" % mr_adc.e_ref_cas[0])
     mr_adc.log.info("Reference state spin multiplicity:                 %s" % str(mr_adc.ref_wfn_spin_mult))
     mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
+    if mr_adc.ncasci > 0:
+        mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
+        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_ref_cas)))
+
     if mr_adc.ncvs is not None:
         mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)
         mr_adc.log.info("Number of valence (non-CVS) orbitals:              %d" % (mr_adc.ncore - mr_adc.ncvs))
@@ -151,12 +148,64 @@ def print_header(mr_adc):
 
     mr_adc.log.info("\nEinsum Backend:                                    %s" % mr_adc.interface.einsum_backend)
 
-    # Print info about CASCI states
-    if mr_adc.ncasci > 0:
-        mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
 
-    if mr_adc.e_cas_ci is not None:
-        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_cas)))
+
+def compute_casci_states(mr_adc):
+
+    wfn_casci = None
+    e_cas_ci = None
+
+    # TODO: generalize this to multiple reference states
+    ref_nelecas = mr_adc.ref_nelecas[0]
+
+    # Compute CASCI wavefunctions for excited states in the active space
+    if mr_adc.method_type == "ip":
+
+        mr_adc.log.info("Running CASCI computation for %d IP roots...\n" % mr_adc.ncasci)
+
+        mr_adc.nelecasci = (ref_nelecas[0] - 1, ref_nelecas[1])
+
+        if (0 <= mr_adc.nelecasci[0] <= mr_adc.ncas and 0 <= mr_adc.nelecasci[1] <= mr_adc.ncas):
+            e_cas_ci, wfn_casci, mr_adc.nelecasci, e_frozen = mr_adc.interface.compute_casci_ip_ea(mr_adc.ncasci, mr_adc.nelecasci, mr_adc.remove_casci_with_s2_above)
+        else:
+            mr_adc.nelecasci = None
+
+    elif mr_adc.method_type == "ea":
+
+        mr_adc.log.info("Running CASCI computation for %d EA roots...\n" % mr_adc.ncasci)
+
+        mr_adc.nelecasci = (ref_nelecas[0] + 1, ref_nelecas[1])
+
+        if (0 <= mr_adc.nelecasci[0] <= mr_adc.ncas and 0 <= mr_adc.nelecasci[1] <= mr_adc.ncas):
+            e_cas_ci, wfn_casci, mr_adc.nelecasci, e_frozen = mr_adc.interface.compute_casci_ip_ea(mr_adc.ncasci, mr_adc.nelecasci, mr_adc.remove_casci_with_s2_above)
+        else:
+            mr_adc.nelecasci = None
+
+#    elif mr_adc.method_type == "ee":
+#
+#        mr_adc.log.info("Running CASCI computation for %d EE roots...\n" % mr_adc.ncasci)
+#        mr_adc.nelecasci = (ref_nelecas[0], ref_nelecas[1])
+#        
+#        if (mr_adc.nelecasci[0] != 0 or mr_adc.nelecasci[1] != 0) and (mr_adc.nelecasci[0] != mr_adc.ncas or mr_adc.nelecasci[1] != mr_adc.ncas): 
+#            e_cas_ci, wfn_casci, mr_adc.nelecasci, e_frozen = mr_adc.interface.compute_casci_ee(mr_adc.ncasci, mr_adc.remove_casci_with_s2_above)
+#        else:
+#            mr_adc.nelecasci = None
+    else:
+        raise Exception("CASCI states are not implemented for %s" % mr_adc.method_type)
+
+    if mr_adc.nelecasci is not None:
+        mr_adc.ncasci = len(e_cas_ci)
+        mr_adc.wfn_casci = wfn_casci
+        mr_adc.e_cas_ci = e_cas_ci
+    else:
+        mr_adc.log.info("WARNING: active orbitals are either empty of completely filled...")
+        mr_adc.log.info("Skipping the CASCI calculation...")
+        mr_adc.ncasci = 0
+        mr_adc.wfn_casci = None
+        mr_adc.e_cas_ci = None
+
+    mr_adc.log.info("\nFinal number of excited CASCI states: %d\n" % mr_adc.ncasci)
+
 
 def compute_energy(mr_adc):
 

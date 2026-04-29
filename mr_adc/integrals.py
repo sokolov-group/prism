@@ -36,7 +36,7 @@ def transform_integrals(mr_adc):
         transform_integrals_2e_df(mr_adc)
     else: 
         # TODO: this actually handles out-of-core integrals too, rename the function
-        transform_integrals_2e_incore(mr_adc)
+        transform_integrals_2e(mr_adc)
 
 
 def transform_integrals_1e(mr_adc):
@@ -57,7 +57,8 @@ def transform_integrals_1e(mr_adc):
 
     mr_adc.log.timer("transforming 1e integrals", *cput0)
 
-def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4, compacted=False):
+
+def transform_2e_chem(interface, mo_1, mo_2, mo_3, mo_4, compacted=False):
     'Two-electron integral transformation in Chemists notation'
 
     nmo_1 = mo_1.shape[1]
@@ -65,7 +66,7 @@ def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4, compacted=False)
     nmo_3 = mo_3.shape[1]
     nmo_4 = mo_4.shape[1]
 
-    v2e = interface.transform_2e_chem_incore(interface.v2e_ao, (mo_1, mo_2, mo_3, mo_4), compact=compacted)
+    v2e = interface.transform_2e_chem(interface.v2e_ao, (mo_1, mo_2, mo_3, mo_4), compact=compacted)
     if compacted:
         if nmo_1 == 0 or nmo_2 == 0:
             v2e = np.zeros((nmo_1, nmo_2, nmo_3 * nmo_4))
@@ -78,6 +79,7 @@ def transform_2e_chem_incore(interface, mo_1, mo_2, mo_3, mo_4, compacted=False)
             v2e = v2e.reshape(nmo_1, nmo_2, nmo_3, nmo_4)
 
     return np.ascontiguousarray(v2e)
+
 
 def compute_effective_1e(mr_adc, h1e_pq, v2e_ccpq, v2e_cpqc):
     'Effective one-electron integrals'
@@ -92,7 +94,8 @@ def compute_effective_1e(mr_adc, h1e_pq, v2e_ccpq, v2e_cpqc):
 
     return h1eff
 
-def transform_integrals_2e_incore(mr_adc):
+
+def transform_integrals_2e(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nTransforming 2e integrals to MO basis (in-core)...")
@@ -117,34 +120,34 @@ def transform_integrals_2e_incore(mr_adc):
         mr_adc.tmpfile.feri1 = None
     tmpfile = mr_adc.tmpfile.feri1
 
-    mr_adc.v2e.aaaa = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
+    mr_adc.v2e.aaaa = transform_2e_chem(interface, mo_a, mo_a, mo_a, mo_a)
 
     if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
         if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-            mr_adc.v2e.ccaa = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
-            mr_adc.v2e.ccae = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_e)
+            mr_adc.v2e.ccaa = transform_2e_chem(interface, mo_c, mo_c, mo_a, mo_a)
+            mr_adc.v2e.ccae = transform_2e_chem(interface, mo_c, mo_c, mo_a, mo_e)
 
-            mr_adc.v2e.caac = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
-            mr_adc.v2e.caec = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_c)
+            mr_adc.v2e.caac = transform_2e_chem(interface, mo_c, mo_a, mo_a, mo_c)
+            mr_adc.v2e.caec = transform_2e_chem(interface, mo_c, mo_a, mo_e, mo_c)
 
-            mr_adc.v2e.caca = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_a)
-            mr_adc.v2e.cace = transform_2e_chem_incore(interface, mo_c, mo_a, mo_c, mo_e)
+            mr_adc.v2e.caca = transform_2e_chem(interface, mo_c, mo_a, mo_c, mo_a)
+            mr_adc.v2e.cace = transform_2e_chem(interface, mo_c, mo_a, mo_c, mo_e)
 
-            mr_adc.v2e.caaa = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_a)
-            mr_adc.v2e.caae = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_e)
-            mr_adc.v2e.ceaa = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_a)
+            mr_adc.v2e.caaa = transform_2e_chem(interface, mo_c, mo_a, mo_a, mo_a)
+            mr_adc.v2e.caae = transform_2e_chem(interface, mo_c, mo_a, mo_a, mo_e)
+            mr_adc.v2e.ceaa = transform_2e_chem(interface, mo_c, mo_e, mo_a, mo_a)
 
-            mr_adc.v2e.aaae = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_e)
+            mr_adc.v2e.aaae = transform_2e_chem(interface, mo_a, mo_a, mo_a, mo_e)
 
             mr_adc.v2e.cece = tools.create_dataset('cece', tmpfile, (ncore, nextern, ncore, nextern))
             mr_adc.v2e.ceae = tools.create_dataset('ceae', tmpfile, (ncore, nextern, ncas, nextern))
 
-            mr_adc.v2e.cece[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_c, mo_e)
-            mr_adc.v2e.ceae[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_a, mo_e)
+            mr_adc.v2e.cece[:] = transform_2e_chem(interface, mo_c, mo_e, mo_c, mo_e)
+            mr_adc.v2e.ceae[:] = transform_2e_chem(interface, mo_c, mo_e, mo_a, mo_e)
 
-            mr_adc.v2e.cccc = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
+            mr_adc.v2e.cccc = transform_2e_chem(interface, mo_c, mo_c, mo_c, mo_c)
 
-            mr_adc.v2e.caea = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_a)
+            mr_adc.v2e.caea = transform_2e_chem(interface, mo_c, mo_a, mo_e, mo_a)
 
             mr_adc.v2e.ccee = tools.create_dataset('ccee', tmpfile, (ncore, ncore, nextern, nextern))
             mr_adc.v2e.ceec = tools.create_dataset('ceec', tmpfile, (ncore, nextern, nextern, ncore))
@@ -156,23 +159,23 @@ def transform_integrals_2e_incore(mr_adc):
             mr_adc.v2e.aaee = tools.create_dataset('aaee', tmpfile, (ncas, ncas, nextern, nextern))
             mr_adc.v2e.aeea = tools.create_dataset('aeea', tmpfile, (ncas, nextern, nextern, ncas))
 
-            mr_adc.v2e.ccee[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_e, mo_e)
-            mr_adc.v2e.ceec[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_c)
+            mr_adc.v2e.ccee[:] = transform_2e_chem(interface, mo_c, mo_c, mo_e, mo_e)
+            mr_adc.v2e.ceec[:] = transform_2e_chem(interface, mo_c, mo_e, mo_e, mo_c)
 
-            mr_adc.v2e.caee[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_e, mo_e)
-            mr_adc.v2e.ceea[:] = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_a)
+            mr_adc.v2e.caee[:] = transform_2e_chem(interface, mo_c, mo_a, mo_e, mo_e)
+            mr_adc.v2e.ceea[:] = transform_2e_chem(interface, mo_c, mo_e, mo_e, mo_a)
 
-            mr_adc.v2e.aeae[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_a, mo_e)
-            mr_adc.v2e.aaee[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_e, mo_e)
-            mr_adc.v2e.aeea[:] = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_a)
+            mr_adc.v2e.aeae[:] = transform_2e_chem(interface, mo_a, mo_e, mo_a, mo_e)
+            mr_adc.v2e.aaee[:] = transform_2e_chem(interface, mo_a, mo_a, mo_e, mo_e)
+            mr_adc.v2e.aeea[:] = transform_2e_chem(interface, mo_a, mo_e, mo_e, mo_a)
 
         if mr_adc.method == "mr-adc(2)-x" or (mr_adc.method == "mr-adc(2)" and not mr_adc.approx_trans_moments):
-            mr_adc.v2e.ceee = transform_2e_chem_incore(interface, mo_c, mo_e, mo_e, mo_e, compacted = True)
-            mr_adc.v2e.aeee = transform_2e_chem_incore(interface, mo_a, mo_e, mo_e, mo_e, compacted = True)
+            mr_adc.v2e.ceee = transform_2e_chem(interface, mo_c, mo_e, mo_e, mo_e, compacted = True)
+            mr_adc.v2e.aeee = transform_2e_chem(interface, mo_a, mo_e, mo_e, mo_e, compacted = True)
 
     # Effective one-electron integrals
-    mr_adc.v2e.ccca = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
-    mr_adc.v2e.ccce = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_e)
+    mr_adc.v2e.ccca = transform_2e_chem(interface, mo_c, mo_c, mo_c, mo_a)
+    mr_adc.v2e.ccce = transform_2e_chem(interface, mo_c, mo_c, mo_c, mo_e)
 
     v2e_ccac = mr_adc.v2e.ccca.transpose(1,0,3,2)
     v2e_ccec = mr_adc.v2e.ccce.transpose(1,0,3,2)
@@ -242,7 +245,7 @@ def transform_Heff_integrals_2e_df(mr_adc):
         p1 = 0
 
         for eri1 in with_df.loop():
-            Lpq = interface.transform_2e_pair_chem_incore(eri1, mo, ijslice, aosym='s2', out=Lpq).reshape(-1, nmo, nmo)
+            Lpq = interface.transform_2e_pair_chem(eri1, mo, ijslice, aosym='s2', out=Lpq).reshape(-1, nmo, nmo)
 
             p0, p1 = p1, p1 + Lpq.shape[0]
             Lcc[p0:p1] = Lpq[:, :ncore, :ncore]
@@ -274,22 +277,22 @@ def transform_Heff_integrals_2e_df(mr_adc):
         mr_adc.log.extra("\nTransforming Heff 2e integrals to MO basis (in-core)...")
 
         # Effective Hamiltonian 2e- integrals
-        mr_adc.v2e.aaaa[:] = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
+        mr_adc.v2e.aaaa[:] = transform_2e_chem(interface, mo_a, mo_a, mo_a, mo_a)
         tools.flush(tmpfile)
 
-        mr_adc.v2e.ccca[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_a)
+        mr_adc.v2e.ccca[:] = transform_2e_chem(interface, mo_c, mo_c, mo_c, mo_a)
         tools.flush(ctmpfile)
 
         if mr_adc.method_type == "ip" or mr_adc.method_type == "ea" or mr_adc.method_type == "cvs-ip":
             if mr_adc.method in ("mr-adc(0)", "mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
-                mr_adc.v2e.ccaa[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_a, mo_a)
+                mr_adc.v2e.ccaa[:] = transform_2e_chem(interface, mo_c, mo_c, mo_a, mo_a)
                 tools.flush(ctmpfile)
 
-                mr_adc.v2e.caac[:] = transform_2e_chem_incore(interface, mo_c, mo_a, mo_a, mo_c)
+                mr_adc.v2e.caac[:] = transform_2e_chem(interface, mo_c, mo_a, mo_a, mo_c)
                 tools.flush(ctmpfile)
 
             if mr_adc.method == "mr-adc(2)-x":
-                mr_adc.v2e.cccc[:] = transform_2e_chem_incore(interface, mo_c, mo_c, mo_c, mo_c)
+                mr_adc.v2e.cccc[:] = transform_2e_chem(interface, mo_c, mo_c, mo_c, mo_c)
                 tools.flush(ctmpfile)
 
     mr_adc.log.timer("transforming 2e integrals", *cput0)
@@ -344,7 +347,7 @@ def transform_integrals_2e_df(mr_adc):
     p1 = 0
 
     for eri1 in with_df.loop():
-        Lpq = interface.transform_2e_pair_chem_incore(eri1, mo, ijslice, aosym='s2', out=Lpq).reshape(-1, nmo, nmo)
+        Lpq = interface.transform_2e_pair_chem(eri1, mo, ijslice, aosym='s2', out=Lpq).reshape(-1, nmo, nmo)
 
         p0, p1 = p1, p1 + Lpq.shape[0]
         Lcc[p0:p1] = Lpq[:, :ncore, :ncore]
@@ -613,10 +616,10 @@ def transform_cvs_integrals(mr_adc):
     if mr_adc.interface.with_df:
         compute_cvs_integrals_2e_df(mr_adc)
     else:
-        compute_cvs_integrals_2e_incore(mr_adc)
+        compute_cvs_integrals_2e(mr_adc)
 
 
-def compute_cvs_integrals_2e_incore(mr_adc):
+def compute_cvs_integrals_2e(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.extra("\nComputing CVS integrals to MO basis (in-core)...")

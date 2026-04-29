@@ -136,6 +136,10 @@ class PYSCF:
             self.davidson_only = mc.fcisolver.davidson_only
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
+            self.enforce_degeneracy_add_states = 10 # Add this many states in the CASCI calculation to enforce degeneracy
+            self.fcisolver_conv_tol = 1e-10
+            self.fcisolver_max_cycle = 100
+
             # SOC params:
             self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
             self.unc = None
@@ -200,8 +204,8 @@ class PYSCF:
                 self.group_repr_symm = None
 
             from pyscf import ao2mo
-            self.transform_2e_chem_incore = ao2mo.general
-            self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
+            self.transform_2e_chem = ao2mo.general
+            self.transform_2e_pair_chem = ao2mo._ao2mo.nr_e2
 
             self.davidson = lib.linalg_helper.davidson1
 
@@ -390,6 +394,187 @@ class PYSCF:
         assert(len(spin_multiplet) == multiplicity), 'The number of reference states is not equal to the spin multiplicity'
 
         return spin_multiplet, spin_multiplet_ne
+
+
+    def compute_casci_ip_ea(self, ncasci, nelecasci, remove_casci_with_s2_above = None):
+
+        from pyscf import mcscf
+        from pyscf import fci
+
+        # Set up CASCI computation for IP in alpha
+        nalpha, nbeta = nelecasci
+
+        mc_casci = mcscf.CASCI(self.mf, self.ncas, (nalpha, nbeta), ncore = self.ncore)
+        mc_casci.verbose = self.verbose
+        mc_casci.canonicalization = False
+        mc_casci.fcisolver = fci.direct_spin1.FCISolver(self.mf.mol)
+        mc_casci.fcisolver.davidson_only = self.davidson_only
+        mc_casci.fcisolver.pspace_size = self.pspace_size
+        mc_casci.fcisolver.conv_tol = self.fcisolver_conv_tol
+        mc_casci.fcisolver.max_cycle = self.fcisolver_max_cycle
+        mc_casci.fcisolver.max_space = ncasci * 20
+
+        old_nelectron = mc_casci.mol.nelectron
+        mc_casci.mol.nelectron = 2 * mc_casci.ncore + nalpha + nbeta
+
+        # Increase the number of requested CASCI states to make sure we don't break spatial symmetry
+        ncasci_extra = self.enforce_degeneracy_add_states
+        if self.enforce_degeneracy:
+            self.log.info("Adding %d CASCI states to enforce degeneracy..." % ncasci_extra)
+            mc_casci.fcisolver.nroots = ncasci + ncasci_extra
+        else:
+            mc_casci.fcisolver.nroots = ncasci
+
+        # Run CASCI computation
+        mc_casci_results = mc_casci.casci(mo_coeff=self.mo)
+
+        e_cas_ci = mc_casci_results[1]
+        wfn_casci = mc_casci_results[2]
+
+        e_frozen_nuc = mc_casci_results[0][0] - mc_casci_results[1][0]
+        e_frozen = e_frozen_nuc - self.enuc
+
+        # Remove ionized states other than those with S^2 = 0.75
+        if remove_casci_with_s2_above is not None:
+            e_cas_roots_spinstate = []
+            psi_roots_spinstate = []
+            for root in range(len(e_cas_ci)):
+                spin_sq = fci.spin_op.spin_square(wfn_casci[root], mc_casci.ncas, (nalpha, nbeta))[0]
+                if spin_sq < remove_casci_with_s2_above:
+                    self.log.info("Keeping CASCI state %d with S^2 = %f" % (root, spin_sq))
+                    e_cas_roots_spinstate.append(e_cas_ci[root])
+                    psi_roots_spinstate.append(wfn_casci[root])
+                else:
+                    self.log.info("Discarding CASCI state %d with S^2 = %f" % (root, spin_sq))
+            e_cas_ci = np.array(e_cas_roots_spinstate)
+            wfn_casci = psi_roots_spinstate
+
+        # Check if the number of states in CASCI is smaller than requested
+        if len(e_cas_ci) < ncasci:
+            ncasci = len(e_cas_ci)
+            self.log.info("\nWARNING: The number of CASCI states is smaller than requested... Reducing the number of states to ", ncasci)
+
+        # Make sure that we do not break spatial symmetry
+        if self.enforce_degeneracy:
+            ncasci_old = ncasci
+            max_e = e_cas_ci[ncasci - 1]
+            e_diff = e_cas_ci[ncasci:] - max_e
+
+            for de in e_diff:
+                if abs(de) < 1e-6:
+                    ncasci += 1
+
+            if (ncasci > ncasci_old):
+                self.log.info("\nIncreased the number of CASCI states by %d to enforce degeneracy" % (ncasci - ncasci_old))
+
+            e_cas_ci = e_cas_ci[:ncasci]
+            wfn_casci = wfn_casci[:ncasci]
+
+        if self.select_casci is not None:
+            self.log.info("\nSelecting CASCI states using the user-provided list...")
+            self.log.info("List:")
+            self.log.info(str(self.select_casci))
+            selected_e_cas_ci = [e_cas_ci[i] for i in self.select_casci]
+            selected_wfn_casci = [wfn_casci[i] for i in self.select_casci]
+            e_cas_ci = selected_e_cas_ci
+            wfn_casci = selected_wfn_casci
+            ncasci = len(e_cas_ci)
+
+#        # Add spin-projections of non-singlet CASCI states:
+#        e_cas_roots_spinstate = []
+#        psi_roots_spinstate = []
+#        nelecasci = []
+#
+#        for root in range(len(e_cas_ci)):
+#            
+#            #S(S+1) for casci states:
+#            spin_sq = fci.spin_op.spin_square(wfn_casci[root], mc_casci.ncas, (nalpha, nbeta))[0]
+#            # Find the S value from S(S+1) value to obtain multiplicity
+#            s_value = round(((-1) + (np.sqrt(1 + 4 * spin_sq))) / 2, 2)
+#            multiplicity = int(round((2 * s_value) + 1))
+#            print("S^2, S and multiplicity of ROOT [%i]: %5.2f, %5.2f, %i"%(root, spin_sq, s_value, multiplicity))
+#
+#            msz_wfn = self.apply_S_z(wfn_casci[root], mc_casci.ncas, (nalpha, nbeta))
+#            msz_value = np.dot(wfn_casci[root].ravel(), msz_wfn.ravel())
+#
+#            ms = []
+#            for I in range(multiplicity):
+#                if not np.isclose(s_value-I, msz_value, rtol=1e-05):
+#                    ms.append(s_value-I)
+#
+#            plus_op_list = [x for x in ms if x > msz_value]
+#            minus_op_list = [x for x in ms if x < msz_value]
+#
+#            #Initialize spin up and spin down projection generators:
+#            print("Spin multiplicity of state [%i]: %i"%(root, multiplicity))
+#            psi_roots_spinstate.append(wfn_casci[root])
+#            e_cas_roots_spinstate.append(e_cas_ci[root])
+#            nelecasci.append((nalpha,nbeta))
+#
+#            spin_wf_plus = wfn_casci[root]
+#            spin_wf_minus = wfn_casci[root]
+#            spin_nelec_plus = (nalpha, nbeta)
+#            spin_nelec_minus = (nalpha, nbeta)
+#
+#            for I in range(len(plus_op_list)):
+#                # Apply spin operators for finding ms values
+#                sz_plus = self.apply_S_z(spin_wf_plus, mc_casci.ncas, spin_nelec_plus)
+#                msz_plus = np.dot(spin_wf_plus.ravel(), sz_plus.ravel())
+#                # Apply Raising operator:
+#                spin_wf_plus, spin_nelec_plus = self.apply_S_plus(spin_wf_plus, mc_casci.ncas, spin_nelec_plus)
+#                # Normalize the wfn
+#                spin_wf_plus = spin_wf_plus/(np.sqrt(spin_sq - msz_plus*(msz_plus + 1)))
+#                # Add spin states to list
+#                psi_roots_spinstate.append(spin_wf_plus)
+#                e_cas_roots_spinstate.append(e_cas_ci[root])
+#                nelecasci.append(spin_nelec_plus)
+#                ncasci += 1
+#            
+#            for I in range(len(minus_op_list)):
+#                # Apply spin operators for finding ms values
+#                sz_minus = self.apply_S_z(spin_wf_minus, mc_casci.ncas, spin_nelec_minus)
+#                msz_minus = np.dot(spin_wf_minus.ravel(), sz_minus.ravel()) 
+#                # Apply lowering operator:
+#                spin_wf_minus, spin_nelec_minus = self.apply_S_minus(spin_wf_minus, mc_casci.ncas, spin_nelec_minus)
+#                # Normalize the wfn
+#                spin_wf_minus = spin_wf_minus/(np.sqrt(spin_sq - msz_minus*(msz_minus - 1)))
+#                # Add spin states to list
+#                psi_roots_spinstate.append(spin_wf_minus)
+#                e_cas_roots_spinstate.append(e_cas_ci[root])
+#                nelecasci.append(spin_nelec_minus)
+#                ncasci += 1
+#
+#        e_cas_ci = np.array(e_cas_roots_spinstate)
+#        wfn_casci = psi_roots_spinstate
+#        assert(len(e_cas_ci) == ncasci), 'ncasci should be equal to the number of casci states requested'
+#
+#        # Get spatial + spin degeneracy of electronic  states:
+#        total_degeneracy = []
+#        count2, total_d = 0, 0
+#        for count1 in range(len(e_cas_ci)):
+#            if(e_cas_ci[count1] - e_cas_ci[count2] < 1e-4):
+#                total_d += 1
+#            else:
+#                total_degeneracy.append(total_d)
+#                total_d = 1
+#                count2 = count1
+#        if(total_d >= 1):
+#            total_degeneracy.append(total_d)
+#        
+#        print("Number of casci states with all spin-projections:", ncasci)
+#        print("list containing degeneracy of each state(spin+spatial):",total_degeneracy)
+#
+#        # Fix the phase for the CI coefficients
+#        for I in range(len(e_cas_ci)):
+#            psi_I = wfn_casci[I]
+#            i, j = np.unravel_index(np.absolute(psi_I).argmax(), psi_I.shape)
+#            if psi_I[i, j] < 0.0:
+#                wfn_casci[I] *= -1.0
+
+        # Restore the number of electrons in mol.nelectron
+        mc_casci.mol.nelectron = old_nelectron
+
+        return e_cas_ci, wfn_casci, nelecasci, e_frozen
 
 
     # X2C set up:
