@@ -131,7 +131,7 @@ def print_header(mr_adc):
     mr_adc.log.info("Number of MR-ADC roots requested:                  %d" % mr_adc.nroots)
     if mr_adc.ncasci > 0:
         mr_adc.log.info("Number of CASCI states:                            %d" % mr_adc.ncasci)
-        mr_adc.log.extra("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_ref_cas)))
+        mr_adc.log.info("CASCI excitation energies (eV):                    %s" % str(h2ev*(mr_adc.e_cas_ci - mr_adc.e_ref_cas)))
 
     if mr_adc.ncvs is not None:
         mr_adc.log.info("Number of CVS orbitals:                            %d" % mr_adc.ncvs)

@@ -20,6 +20,7 @@
 
 from prism.mr_adc import compute
 from prism.mr_adc import amplitudes
+from prism.mr_adc import ip
 from prism.mr_adc import cvs_ip
 
 
