@@ -28401,57 +28401,82 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         einsum = mr_adc.interface.einsum
         einsum_type = mr_adc.interface.einsum_type
 
-        ## Two-electron integrals
-        #v_xeea = mr_adc.v2e.xeea
+        ## Two-electron integral
         v_xxxa = mr_adc.v2e.xxxa
-        #v_xaee = mr_adc.v2e.xaee
  
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
-        #sigma_KLCW  = einsum('Ka,LWaC->KLCW', X, v_xaee, optimize = einsum_type)
-        #sigma_KLCW += einsum('La,KCaW->KLCW', X, v_xeea, optimize = einsum_type)
         sigma_KLCW =- einsum('iC,KiLW->KLCW', X, v_xxxa, optimize = einsum_type)
-        #sigma_KLCW -= 1/2 * einsum('Ka,LxaC,Wx->KLCW', X, v_xaee, rdm_ca, optimize = einsum_type)
-        #sigma_KLCW -= 1/2 * einsum('La,KCax,Wx->KLCW', X, v_xeea, rdm_ca, optimize = einsum_type)
         sigma_KLCW += 1/2 * einsum('iC,KiLx,Wx->KLCW', X, v_xxxa, rdm_ca, optimize = einsum_type)
+
+        chunks = tools.calculate_double_chunks(mr_adc, ncvs, [ncas, nextern, nextern],
+                                                                [ncvs, ncas, nextern], ntensors = 2)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            ## Two-electron integral
+            v_xaee = mr_adc.v2e.xaee[s_chunk:f_chunk]
+
+            temp  = einsum('Ka,LWaC->KLCW', X, v_xaee, optimize = einsum_type)
+            temp -= 1/2 * einsum('Ka,LxaC,Wx->KLCW', X, v_xaee, rdm_ca, optimize = einsum_type)
+            sigma_KLCW[:, s_chunk:f_chunk] += temp
+
+            mr_adc.log.timer_debug("contracting v2e.xaee", *cput2)
+        del(v_xaee, temp)
+
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.xeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            ## Two-electron integral
+            v_xeea = mr_adc.v2e.xeea[s_chunk:f_chunk]
+
+            temp  = einsum('La,KCaW->KLCW', X, v_xeea, optimize = einsum_type)
+            temp -= 1/2 * einsum('La,KCax,Wx->KLCW', X, v_xeea, rdm_ca, optimize = einsum_type)
+            sigma_KLCW[s_chunk:f_chunk] += temp
+
+            mr_adc.log.timer_debug("contracting v2e.xeea", *cput2)
+        del(v_xeea, temp)
+ 
         sigma[ccea] += np.ascontiguousarray(sigma_KLCW).reshape(-1)
 
         mr_adc.log.timer_debug("computing sigma H1 h1-h0 CCEA-CE", *cput1)
 
-    def compute_sigma_vector__H1__h1_h0__CCEA_CE__V_XEEA(mr_adc, X, sigma, v_xeea):
- 
-        cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        sigma_KLCW  = einsum('La,KCaW->KLCW', X, v_xeea, optimize = einsum_type)
-        sigma_KLCW -= 1/2 * einsum('La,KCax,Wx->KLCW', X, v_xeea, rdm_ca, optimize = einsum_type)
-        sigma[ccea] += np.ascontiguousarray(sigma_KLCW).reshape(-1)
-
-        mr_adc.log.timer_debug("contracting v2e.xeea", *cput1)
-
-    def compute_sigma_vector__H1__h1_h0__CCEA_CE__V_XAEE(mr_adc, X, sigma, v_xaee):
- 
-        cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        sigma_KLCW  = einsum('Ka,LWaC->KLCW', X, v_xaee, optimize = einsum_type)
-        sigma_KLCW -= 1/2 * einsum('Ka,LxaC,Wx->KLCW', X, v_xaee, rdm_ca, optimize = einsum_type)
-        sigma[ccea] += np.ascontiguousarray(sigma_KLCW).reshape(-1)
-
-        mr_adc.log.timer_debug("contracting v2e.xaee", *cput1)
+###    def compute_sigma_vector__H1__h1_h0__CCEA_CE__V_XEEA(mr_adc, X, sigma, v_xeea):
+### 
+###        cput1 = (logger.process_clock(), logger.perf_counter())
+###
+###        # Einsum definition from kernel
+###        einsum = mr_adc.interface.einsum
+###        einsum_type = mr_adc.interface.einsum_type
+###
+###        # Reduced Density Matrices
+###        rdm_ca = mr_adc.rdm.ca
+###
+###        sigma_KLCW  = einsum('La,KCaW->KLCW', X, v_xeea, optimize = einsum_type)
+###        sigma_KLCW -= 1/2 * einsum('La,KCax,Wx->KLCW', X, v_xeea, rdm_ca, optimize = einsum_type)
+###        sigma[ccea] += np.ascontiguousarray(sigma_KLCW).reshape(-1)
+###
+###        mr_adc.log.timer_debug("contracting v2e.xeea", *cput1)
+###
+###    def compute_sigma_vector__H1__h1_h0__CCEA_CE__V_XAEE(mr_adc, X, sigma, v_xaee):
+### 
+###        cput1 = (logger.process_clock(), logger.perf_counter())
+###
+###        # Einsum definition from kernel
+###        einsum = mr_adc.interface.einsum
+###        einsum_type = mr_adc.interface.einsum_type
+###
+###        # Reduced Density Matrices
+###        rdm_ca = mr_adc.rdm.ca
+###
+###        sigma_KLCW  = einsum('Ka,LWaC->KLCW', X, v_xaee, optimize = einsum_type)
+###        sigma_KLCW -= 1/2 * einsum('Ka,LxaC,Wx->KLCW', X, v_xaee, rdm_ca, optimize = einsum_type)
+###        sigma[ccea] += np.ascontiguousarray(sigma_KLCW).reshape(-1)
+###
+###        mr_adc.log.timer_debug("contracting v2e.xaee", *cput1)
 
     def compute_sigma_vector__H1__h1_h0__CVEA_CA(mr_adc, X, sigma):
 
@@ -30816,12 +30841,12 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             v_xaee = mr_adc.v2e.xaee[:, :, s_chunk:f_chunk]
             v_xeea = mr_adc.v2e.xeea[:, :, s_chunk:f_chunk]
 
-            ## CE block
-            X = np.ascontiguousarray(Xt[ce].reshape(ncvs, nextern))
-            X = X[:, s_chunk:f_chunk]
+            #### CE block
+            ##X = np.ascontiguousarray(Xt[ce].reshape(ncvs, nextern))
+            ##X = X[:, s_chunk:f_chunk]
 
-            compute_sigma_vector__H1__h1_h0__CCEA_CE__V_XAEE(mr_adc, X, sigma, v_xaee)
-            compute_sigma_vector__H1__h1_h0__CCEA_CE__V_XEEA(mr_adc, X, sigma, v_xeea)
+            ##compute_sigma_vector__H1__h1_h0__CCEA_CE__V_XAEE(mr_adc, X, sigma, v_xaee)
+            ##compute_sigma_vector__H1__h1_h0__CCEA_CE__V_XEEA(mr_adc, X, sigma, v_xeea)
 
             ## CCEA
             X = np.ascontiguousarray(Xt[ccea].reshape(ncvs, ncvs, nextern, ncas))
