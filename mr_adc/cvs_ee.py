@@ -26822,88 +26822,57 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         einsum_type = mr_adc.interface.einsum_type
 
         ## Molecular Orbitals Energies
-        e_val = mr_adc.mo_energy.v
         e_extern = mr_adc.mo_energy.e
 
         ## One-electron integrals
         h_aa = mr_adc.h1eff.aa
 
         ## Two-electron integrals
-        #v_veae = mr_adc.v2e.veae
         v_aaaa = mr_adc.v2e.aaaa
-
-        ## Amplitudes
-        t1_vaee = mr_adc.t1.vaee
 
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
-        #sigma_KW =- einsum('Kiab,iaWb->KW', X, v_veae, optimize = einsum_type)
-        #sigma_KW += 2 * einsum('Kiab,ibWa->KW', X, v_veae, optimize = einsum_type)
-        sigma_KW =- einsum('Kiab,a,iWab->KW', X, e_extern, t1_vaee, optimize = einsum_type)
-        sigma_KW += 2 * einsum('Kiab,a,iWba->KW', X, e_extern, t1_vaee, optimize = einsum_type)
-        sigma_KW -= einsum('Kiab,b,iWab->KW', X, e_extern, t1_vaee, optimize = einsum_type)
-        sigma_KW += 2 * einsum('Kiab,b,iWba->KW', X, e_extern, t1_vaee, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,i,iWab->KW', X, e_val, t1_vaee, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,i,iWba->KW', X, e_val, t1_vaee, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,Wx,ixab->KW', X, h_aa, t1_vaee, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,Wx,ixba->KW', X, h_aa, t1_vaee, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,ixab,Wxyz,yz->KW', X, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW -= 1/2 * einsum('Kiab,ixab,Wyzx,zy->KW', X, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,ixba,Wxyz,yz->KW', X, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,ixba,Wyzx,zy->KW', X, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
+        sigma_KW = np.zeros((ncvs, ncas))
+
+        chunks = tools.calculate_double_chunks(mr_adc, nval, [ncas, nextern, nextern],
+                                                                [ncvs, nextern, nextern], ntensors = 3)
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+            cput2 = (logger.process_clock(), logger.perf_counter())
+            mr_adc.log.debug("v2e.veae, t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+            ## Molecular Orbitals Energies
+            e_val = mr_adc.mo_energy.v[s_chunk:f_chunk]
+ 
+            ## Two-electron integral
+            v_veae = mr_adc.v2e.veae[s_chunk:f_chunk]
+
+            ## Amplitude
+            t1_vaee = mr_adc.t1.vaee[s_chunk:f_chunk] 
+
+            ## CVEE Block
+            X_i = X[:, s_chunk:f_chunk]
+ 
+            sigma_KW -= einsum('Kiab,iaWb->KW', X_i, v_veae, optimize = einsum_type)
+            sigma_KW += 2 * einsum('Kiab,ibWa->KW', X_i, v_veae, optimize = einsum_type)
+            sigma_KW -= einsum('Kiab,a,iWab->KW', X_i, e_extern, t1_vaee, optimize = einsum_type)
+            sigma_KW += 2 * einsum('Kiab,a,iWba->KW', X_i, e_extern, t1_vaee, optimize = einsum_type)
+            sigma_KW -= einsum('Kiab,b,iWab->KW', X_i, e_extern, t1_vaee, optimize = einsum_type)
+            sigma_KW += 2 * einsum('Kiab,b,iWba->KW', X_i, e_extern, t1_vaee, optimize = einsum_type)
+            sigma_KW += einsum('Kiab,i,iWab->KW', X_i, e_val, t1_vaee, optimize = einsum_type)
+            sigma_KW -= 2 * einsum('Kiab,i,iWba->KW', X_i, e_val, t1_vaee, optimize = einsum_type)
+            sigma_KW += einsum('Kiab,Wx,ixab->KW', X_i, h_aa, t1_vaee, optimize = einsum_type)
+            sigma_KW -= 2 * einsum('Kiab,Wx,ixba->KW', X_i, h_aa, t1_vaee, optimize = einsum_type)
+            sigma_KW += einsum('Kiab,ixab,Wxyz,yz->KW', X_i, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
+            sigma_KW -= 1/2 * einsum('Kiab,ixab,Wyzx,zy->KW', X_i, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
+            sigma_KW -= 2 * einsum('Kiab,ixba,Wxyz,yz->KW', X_i, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
+            sigma_KW += einsum('Kiab,ixba,Wyzx,zy->KW', X_i, t1_vaee, v_aaaa, rdm_ca, optimize = einsum_type)
+
+            mr_adc.log.timer_debug("v2e.veae, t1_vaee contractions", *cput2)
+
         sigma[ca] += np.ascontiguousarray(sigma_KW).reshape(-1)
 
         mr_adc.log.timer_debug("computing sigma H1 h0-h1 CA-CVEE", *cput1)
-
-    def compute_sigma_vector__H1__h0_h1__CA_CVEE__V_VEAE(mr_adc, X, v_veae): 
-
-        cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        sigma_KW =- einsum('Kiab,iaWb->KW', X, v_veae, optimize = einsum_type)
-        sigma_KW += 2 * einsum('Kiab,ibWa->KW', X, v_veae, optimize = einsum_type)
- 
-        mr_adc.log.timer_debug("contracting v2e.veae", *cput1)
-        return sigma_KW
-
-    def compute_sigma_vector__H1__h0_h1__CA_CVEE__T1_VAEE(mr_adc, X, sigma, t1_vaee_ab, t1_vaee_ba, e_extern_b): 
-        
-        cput1 = (logger.process_clock(), logger.perf_counter())
-
-        # Einsum definition from kernel
-        einsum = mr_adc.interface.einsum
-        einsum_type = mr_adc.interface.einsum_type
-
-        ## Molecular Orbitals Energies
-        e_val = mr_adc.mo_energy.v
-        e_extern = mr_adc.mo_energy.e
-
-        ## One-electron integrals
-        h_aa = mr_adc.h1eff.aa
-
-        ## Two-electron integrals
-        v_aaaa = mr_adc.v2e.aaaa
-
-        # Reduced Density Matrices
-        rdm_ca = mr_adc.rdm.ca
-
-        sigma_KW =- einsum('Kiab,a,iWab->KW', X, e_extern, t1_vaee_ab, optimize = einsum_type)
-        sigma_KW += 2 * einsum('Kiab,a,iWba->KW', X, e_extern, t1_vaee_ba, optimize = einsum_type)
-        sigma_KW -= einsum('Kiab,b,iWab->KW', X, e_extern_b, t1_vaee_ab, optimize = einsum_type)
-        sigma_KW += 2 * einsum('Kiab,b,iWba->KW', X, e_extern_b, t1_vaee_ba, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,i,iWab->KW', X, e_val, t1_vaee_ab, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,i,iWba->KW', X, e_val, t1_vaee_ba, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,Wx,ixab->KW', X, h_aa, t1_vaee_ab, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,Wx,ixba->KW', X, h_aa, t1_vaee_ba, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,ixab,Wxyz,yz->KW', X, t1_vaee_ab, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW -= 1/2 * einsum('Kiab,ixab,Wyzx,zy->KW', X, t1_vaee_ab, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW -= 2 * einsum('Kiab,ixba,Wxyz,yz->KW', X, t1_vaee_ba, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma_KW += einsum('Kiab,ixba,Wyzx,zy->KW', X, t1_vaee_ba, v_aaaa, rdm_ca, optimize = einsum_type)
-        sigma[ca] += np.ascontiguousarray(sigma_KW).reshape(-1)
 
     # CE <- CVEE
     def compute_sigma_vector__H1__h0_h1__CE_CVEE(mr_adc, X, sigma): 
@@ -30815,31 +30784,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             compute_sigma_vector__H1__h1_h0__CVEA_CA(mr_adc, X, sigma)
             compute_sigma_vector__H1__h1_h0__CVEE_CA(mr_adc, X, sigma)
 
-        sigma_KW = np.zeros_like(X)
-
-    if ncas > 0 and nval > 0 and nextern > 0:
-        # v_veae
-        chunks = tools.calculate_chunks(mr_adc, ncas, [nval, nextern, nextern], ntensors = 3)
-        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-            cput1 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.veae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-            ## Two-electron integral
-            v_veae = mr_adc.v2e.veae[:, :, s_chunk:f_chunk, :]
-
-            ## CVEE block
-            X = np.ascontiguousarray(Xt[cvee].reshape(ncvs, nval, nextern, nextern))
-
-            temp = compute_sigma_vector__H1__h0_h1__CA_CVEE__V_VEAE(mr_adc, X, v_veae)
-        
-            sigma_KW[:, s_chunk:f_chunk] += temp
-
-            mr_adc.log.timer_debug("v2e.veae contractions", *cput1)
-            del(v_veae, X)
-
-    if ncas > 0:
-        sigma[ca] += np.ascontiguousarray(sigma_KW).reshape(-1)
-
     #CE
     X = np.ascontiguousarray(Xt[ce].reshape(ncvs, nextern))
 
@@ -31184,31 +31128,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         ## h0-h1 contributions
         compute_sigma_vector__H1__h0_h1__CE_CVEE(mr_adc, X, sigma)
         if ncas > 0:
-
-            ## t1_vaee
-            chunks = tools.calculate_chunks(mr_adc, nextern, [nval, ncas, nextern], ntensors = 4)
-            for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-                cput1 = (logger.process_clock(), logger.perf_counter())
-                mr_adc.log.debug("t1.vaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
-
-                ## Molecular Orbitals Energies
-                e_extern_b = mr_adc.mo_energy.e[s_chunk:f_chunk]
-
-                ## Amplitudes
-                t1_vaee_ab = mr_adc.t1.vaee[:, :, :, s_chunk:f_chunk]
-                t1_vaee_ba = mr_adc.t1.vaee[:, :, s_chunk:f_chunk, :]
-
-                X = np.ascontiguousarray(Xt[cvee].reshape(ncvs, nval, nextern, nextern))
-                X = X[:, :, :, s_chunk:f_chunk]
-
-                ## CVEE block
-                compute_sigma_vector__H1__h0_h1__CA_CVEE__T1_VAEE(mr_adc, X, sigma, t1_vaee_ab, t1_vaee_ba, e_extern_b) 
-                del (t1_vaee_ab)
-
-                mr_adc.log.timer_debug("t1.xaee contractions", *cput1)
-                del(t1_vaee_ba, e_extern_b)
-
-            X = np.ascontiguousarray(Xt[cvee].reshape(ncvs, nval, nextern, nextern))
+            compute_sigma_vector__H1__h0_h1__CA_CVEE(mr_adc, X, sigma)
 
         ## h1-h1 contributions
         compute_sigma_vector__H0__h1_h1__CVEE(mr_adc, X, sigma)
