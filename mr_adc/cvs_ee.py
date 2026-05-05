@@ -26475,7 +26475,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
         mr_adc.log.timer_debug("computing sigma H1 h0-h1 CE-CCEA", *cput1)
 
-
     # CA <- CVEA
     def compute_sigma_vector__H1__h0_h1__CA_CVEA(mr_adc, X_abab, X_baab, sigma): 
 
@@ -26802,7 +26801,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
         mr_adc.log.timer_debug("computing sigma H1 h0-h1 CE-CCEE", *cput1)
 
-
     # CA <- CVEE
     def compute_sigma_vector__H1__h0_h1__CA_CVEE(mr_adc, X, sigma): 
         
@@ -26904,7 +26902,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
         mr_adc.log.timer_debug("computing sigma H1 h0-h1 CE-CVEE", *cput1)
 
-
     # CA <- CAEE
     def compute_sigma_vector__H1__h0_h1__CA_CAEE(mr_adc, X, sigma): 
 
@@ -26952,20 +26949,10 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             temp += 1/2 * einsum('Kxab,Wyba,yzwu,xwzu->KW', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
             sigma_KW[:, s_chunk:f_chunk] += temp
 
-            ##temp -= einsum('Kxab,Wy,yzab,xz->KW', X, h_aa, t1_aaee, rdm_ca[:, s_chunk:f_chunk], optimize = einsum_type)
-            ##temp += 1/2 * einsum('Kxab,Wy,zyab,xz->KW', X, h_aa, t1_aaee, rdm_ca[:, s_chunk:f_chunk], optimize = einsum_type)
-            ##temp += 1/2 * einsum('Kxab,yzab,Wwuy,xwzu->KW', X, t1_aaee, v_aaaa[:, :, :, s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
-            ##temp += 1/2 * einsum('Kxab,yzab,Wwuz,xwuy->KW', X, t1_aaee, v_aaaa, rdm_ccaa[:, :, :, s_chunk:f_chunk], optimize = einsum_type)
-            ##temp -= einsum('Kxab,yzab,Wywu,xuzw->KW', X, t1_aaee, v_aaaa[:, s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
-            ##temp -= einsum('Kxab,yzab,Wywz,xw->KW', X, t1_aaee, v_aaaa[:, s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-            ##temp += 1/2 * einsum('Kxab,yzab,Wzwu,xuyw->KW', X, t1_aaee, v_aaaa, rdm_ccaa[:, :, s_chunk:f_chunk], optimize = einsum_type)
-            ##temp += 1/2 * einsum('Kxab,yzab,Wzwy,xw->KW', X, t1_aaee, v_aaaa[:, :, :, s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
-
             sigma_KW -= einsum('Kxab,yW,yzab,xz->KW', X, h_aa[s_chunk:f_chunk], t1_aaee, rdm_ca, optimize = einsum_type)
             sigma_KW += 1/2 * einsum('Kxab,Wy,zyab,zx->KW', X, h_aa, t1_aaee, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
             sigma_KW += 1/2 * einsum('Kxab,yzab,yuwW,xwzu->KW', X, t1_aaee, v_aaaa[s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
             sigma_KW += 1/2 * einsum('Kxab,yzab,Wwuz,yuwx->KW', X, t1_aaee, v_aaaa, rdm_ccaa[s_chunk:f_chunk], optimize = einsum_type)
-
             sigma_KW -= einsum('Kxab,yzab,yWuw,xuzw->KW', X, t1_aaee, v_aaaa[s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
             sigma_KW -= einsum('Kxab,yzab,yWzw,xw->KW', X, t1_aaee, v_aaaa[s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
             sigma_KW += 1/2 * einsum('Kxab,yzab,Wzwu,ywxu->KW', X, t1_aaee, v_aaaa, rdm_ccaa[s_chunk:f_chunk], optimize = einsum_type)
@@ -27023,7 +27010,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         sigma[ce] += np.ascontiguousarray(sigma_KC).reshape(-1)
 
         mr_adc.log.timer_debug("computing sigma H1 h0-h1 CE-CAEE", *cput1)
-
 
     # CA <- CAAA
     def compute_sigma_vector__H0__h0_h1__CA_CAAA(mr_adc, X_aaaa, X_abab, sigma):
@@ -28603,27 +28589,26 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             ## Amplitude
             t1_xaee = mr_adc.t1.xaee[s_chunk:f_chunk]
 
-            temp_L  = einsum('Kx,LDxC->KLCD', X, v_xeae, optimize = einsum_type)
-            temp_L += einsum('Kx,C,LxDC->KLCD', X, e_extern, t1_xaee, optimize = einsum_type)
-            temp_L += einsum('Kx,D,LxDC->KLCD', X, e_extern, t1_xaee, optimize = einsum_type)
-            temp_L -= einsum('Kx,L,LxDC->KLCD', X, e_cvs, t1_xaee, optimize = einsum_type)
-            temp_L -= einsum('Kx,xy,LyDC->KLCD', X, h_aa, t1_xaee, optimize = einsum_type)
-            temp_L -= einsum('Kx,LyDC,xyzw,zw->KLCD', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-            temp_L += 1/2 * einsum('Kx,LyDC,xzwy,wz->KLCD', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
+            temp  = einsum('Kx,LDxC->KLCD', X, v_xeae, optimize = einsum_type)
+            temp += einsum('Kx,C,LxDC->KLCD', X, e_extern, t1_xaee, optimize = einsum_type)
+            temp += einsum('Kx,D,LxDC->KLCD', X, e_extern, t1_xaee, optimize = einsum_type)
+            temp -= einsum('Kx,L,LxDC->KLCD', X, e_cvs, t1_xaee, optimize = einsum_type)
+            temp -= einsum('Kx,xy,LyDC->KLCD', X, h_aa, t1_xaee, optimize = einsum_type)
+            temp -= einsum('Kx,LyDC,xyzw,zw->KLCD', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
+            temp += 1/2 * einsum('Kx,LyDC,xzwy,wz->KLCD', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
+            sigma_KLCD[:, s_chunk:f_chunk] += temp
 
-            temp_K  = einsum('Lx,KCxD->KLCD', X, v_xeae, optimize = einsum_type)
-            temp_K += einsum('Lx,C,KxCD->KLCD', X, e_extern, t1_xaee, optimize = einsum_type)
-            temp_K += einsum('Lx,D,KxCD->KLCD', X, e_extern, t1_xaee, optimize = einsum_type)
-            temp_K -= einsum('Lx,K,KxCD->KLCD', X, e_cvs, t1_xaee, optimize = einsum_type)
-            temp_K -= einsum('Lx,xy,KyCD->KLCD', X, h_aa, t1_xaee, optimize = einsum_type)
-            temp_K -= einsum('Lx,KyCD,xyzw,zw->KLCD', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
-            temp_K += 1/2 * einsum('Lx,KyCD,xzwy,wz->KLCD', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
- 
-            sigma_KLCD[s_chunk:f_chunk, :] += temp_K 
-            sigma_KLCD[:, s_chunk:f_chunk] += temp_L
+            temp  = einsum('Lx,KCxD->KLCD', X, v_xeae, optimize = einsum_type)
+            temp += einsum('Lx,C,KxCD->KLCD', X, e_extern, t1_xaee, optimize = einsum_type)
+            temp += einsum('Lx,D,KxCD->KLCD', X, e_extern, t1_xaee, optimize = einsum_type)
+            temp -= einsum('Lx,K,KxCD->KLCD', X, e_cvs, t1_xaee, optimize = einsum_type)
+            temp -= einsum('Lx,xy,KyCD->KLCD', X, h_aa, t1_xaee, optimize = einsum_type)
+            temp -= einsum('Lx,KyCD,xyzw,zw->KLCD', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
+            temp += 1/2 * einsum('Lx,KyCD,xzwy,wz->KLCD', X, t1_xaee, v_aaaa, rdm_ca, optimize = einsum_type)
+            sigma_KLCD[s_chunk:f_chunk] += temp
 
         mr_adc.log.timer_debug("contracting v2e.xeae, t1.xaee", *cput2)
-        del(temp_K, temp_L)
+        del(temp)
 
         sigma[ccee] += np.ascontiguousarray(sigma_KLCD).reshape(-1)
 
@@ -28796,15 +28781,6 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             sigma_KWCD += 1/2 * einsum('Kx,D,xyCD,Wy->KWCD', X_x, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
             sigma_KWCD -= 1/2 * einsum('Kx,yz,xyCD,Wz->KWCD', X_x, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
             sigma_KWCD -= 1/2 * einsum('Kx,xyCD,yzwu,Wwzu->KWCD', X_x, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-
-            ##sigma_KWCD -= 1/2 * einsum('Kx,xy,yzCD,Wz->KWCD', X, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
-            ##sigma_KWCD += 1/6 * einsum('Kx,yzCD,xwuy,Wwuz->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-            ##sigma_KWCD += 1/3 * einsum('Kx,yzCD,xwuy,Wwzu->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-            ##sigma_KWCD += 1/3 * einsum('Kx,yzCD,xwuz,Wwuy->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-            ##sigma_KWCD += 1/6 * einsum('Kx,yzCD,xwuz,Wwyu->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-            ##sigma_KWCD -= 1/2 * einsum('Kx,yzCD,xywu,Wuzw->KWCD', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-            ##sigma_KWCD -= 1/2 * einsum('Kx,yzCD,xywz,Ww->KWCD', X, t1_aaee, v_aaaa, rdm_ca, optimize = einsum_type)
-
             sigma_KWCD -= 1/2 * einsum('Kx,yx,yzCD,Wz->KWCD', X, h_aa[s_chunk:f_chunk], t1_aaee, rdm_ca, optimize = einsum_type)
             sigma_KWCD += 1/6 * einsum('Kx,yzCD,yuwx,Wwuz->KWCD', X, t1_aaee, v_aaaa[s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
             sigma_KWCD += 1/3 * einsum('Kx,yzCD,yuwx,Wwzu->KWCD', X, t1_aaee, v_aaaa[s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
@@ -28848,7 +28824,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             else:
                 v_aeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_chunk:f_chunk])
 
-            sigma_KWCD += 1/2 * einsum('Ka,xDaC,Wx->KWCD', X, v_aeee, rdm_ca[:, s_chunk:f_chunk], optimize = einsum_type)
+            sigma_KWCD += 1/2 * einsum('Ka,xDaC,xW->KWCD', X, v_aeee, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
 
             mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
         del(v_aeee)
