@@ -25,8 +25,8 @@ from functools import reduce
 import prism.lib.logger as logger
 import prism.lib.tools as tools
 
-from prism.lib.logger import detect_serial
-from prism.lib.logger import detect_memory_pressure
+##from prism.lib.logger import detect_serial
+##from prism.lib.logger import detect_memory_pressure
 
 def transform_integrals(mr_adc):
 
@@ -40,8 +40,6 @@ def transform_integrals(mr_adc):
         # TODO: this actually handles out-of-core integrals too, rename the function
         transform_integrals_2e_incore(mr_adc)
 
-#@detect_serial
-@detect_memory_pressure
 def transform_integrals_1e(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -95,8 +93,6 @@ def compute_effective_1e(mr_adc, h1e_pq, v2e_ccpq, v2e_cpqc):
 
     return h1eff
 
-#@detect_serial
-@detect_memory_pressure
 def transform_integrals_2e_incore(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -238,8 +234,6 @@ def transform_integrals_2e_incore(mr_adc):
 
     mr_adc.log.timer("transforming 1e integrals", *cput0)
 
-#@detect_serial
-@detect_memory_pressure
 def transform_Heff_integrals_2e_df(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -345,8 +339,6 @@ def transform_Heff_integrals_2e_df(mr_adc):
 
     mr_adc.log.timer("transforming 2e integrals", *cput0)
 
-#@detect_serial
-@detect_memory_pressure
 def transform_integrals_2e_df(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
