@@ -30,9 +30,9 @@ import prism.lib.tools as tools
 import prism.mr_adc.cvs_ee_functions.transition_moments as q2_trans_mom
 import prism.mr_adc.cvs_ee_functions.sigma_vector as h1_h1_sigma
 
-from prism.lib.logger import profile
-from prism.lib.logger import detect_serial
-from prism.lib.logger import detect_memory_pressure
+##from prism.lib.logger import profile
+##from prism.lib.logger import detect_serial
+##from prism.lib.logger import detect_memory_pressure
 
 def compute_excitation_manifolds(mr_adc):
 
@@ -301,9 +301,9 @@ def compute_M_00(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
-    # @profile
-    # @detect_serial
-    @detect_memory_pressure
+    # #@profile
+    # #@detect_serial
+    #@detect_memory_pressure
     def compute_M_00__H0_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -319,9 +319,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H0 h1-h1 CE-CE", *cput1)
         return temp
 
-    #@profile
-    #@detect_serial
-    @detect_memory_pressure
+    ##@profile
+    ##@detect_serial
+    #@detect_memory_pressure
     def compute_M_00__H0_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -343,9 +343,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H0 h1-h1 CA-CA", *cput1)
         return temp
 
-#    @profile
-    @detect_memory_pressure
-    #@detect_serial
+#    #@profile
+    #@detect_memory_pressure
+    ##@detect_serial
     def compute_M_00__H1_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -365,9 +365,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CE", *cput1)
         return temp
 
-#    @profile
-    @detect_memory_pressure
-    #@detect_serial
+#    #@profile
+    #@detect_memory_pressure
+    ##@detect_serial
     def compute_M_00__H1_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -395,9 +395,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CA-CA", *cput1)
         return temp
  
-#    @profile
-    @detect_memory_pressure
-    #@detect_serial
+#    #@profile
+    #@detect_memory_pressure
+    ##@detect_serial
     def compute_M_00__H1_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -458,9 +458,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CA", *cput1)
         return temp
 
-#    @profile
-    @detect_memory_pressure
-    #@detect_serial
+#    #@profile
+    #@detect_memory_pressure
+    ##@detect_serial
     def compute_M_00__H2_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -3389,9 +3389,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H2 h1-h1 CE-CE", *cput1)
         return temp
 
-#    @profile
-    @detect_memory_pressure
-    #@detect_serial
+#    #@profile
+    #@detect_memory_pressure
+    ##@detect_serial
     def compute_M_00__H2_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -20572,9 +20572,9 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H2 h1-h1 CA-CA", *cput1)
         return temp
 
-#    @profile
-    @detect_memory_pressure
-    #@detect_serial
+#    #@profile
+    #@detect_memory_pressure
+    ##@detect_serial
     def compute_M_00__H2_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -25869,7 +25869,7 @@ def apply_S_12(mr_adc, X, transpose = False):
     return Xt
 
 
-#@profile
+##@profile
 def compute_sigma_vector(mr_adc, Xt, ints):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -26435,7 +26435,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             v_xaee = mr_adc.v2e.xaee[s_chunk:f_chunk]
 
             ## CCEA Block
-            X_i = X[:, s_chunk:f_chunk]
+            X_i = np.ascontiguousarray(X[:, s_chunk:f_chunk])
 
             sigma_KC += 2 * einsum('Kiax,ixCa->KC', X_i, v_xaee, optimize = einsum_type)
             sigma_KC -= einsum('Kiax,iyCa,xy->KC', X_i, v_xaee, rdm_ca, optimize = einsum_type)
@@ -26457,7 +26457,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             v_xeea = mr_adc.v2e.xeea[s_chunk:f_chunk]
 
             ## CCEA Block
-            X_i = X[:, s_chunk:f_chunk]
+            X_i = np.ascontiguousarray(X[:, s_chunk:f_chunk])
 
             sigma_KC -= einsum('Kiax,iaCx->KC', X_i, v_xeea, optimize = einsum_type)
             sigma_KC += 1/2 * einsum('Kiax,iaCy,xy->KC', X_i, v_xeea, rdm_ca, optimize = einsum_type)
@@ -26840,7 +26840,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             t1_vaee = mr_adc.t1.vaee[s_chunk:f_chunk] 
 
             ## CVEE Block
-            X_i = X[:, s_chunk:f_chunk]
+            X_i = np.ascontiguousarray(X[:, s_chunk:f_chunk])
  
             sigma_KW -= einsum('Kiab,iaWb->KW', X_i, v_veae, optimize = einsum_type)
             sigma_KW += 2 * einsum('Kiab,ibWa->KW', X_i, v_veae, optimize = einsum_type)
@@ -26892,8 +26892,11 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             else:
                 v_veee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.veee[s_chunk:f_chunk])
 
-            sigma_KC -= einsum('Kiab,iaCb->KC', X[:, s_chunk:f_chunk], v_veee, optimize = einsum_type)
-            sigma_KC += 2 * einsum('Kiab,ibCa->KC', X[:, s_chunk:f_chunk], v_veee, optimize = einsum_type)
+            ## CVEE
+            X_i = np.ascontiguousarray(X[:, s_chunk:f_chunk])
+
+            sigma_KC -= einsum('Kiab,iaCb->KC', X_i, v_veee, optimize = einsum_type)
+            sigma_KC += 2 * einsum('Kiab,ibCa->KC', X_i, v_veee, optimize = einsum_type)
  
             mr_adc.log.timer_debug("v2e.veee contractions", *cput2)
         del(v_veee)
@@ -26996,13 +26999,16 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             else:
                 v_aeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_v_chunk:f_v_chunk])
 
+
             for s_x_chunk, f_x_chunk in chunks:
+
+                X_x = np.ascontiguousarray(X[:, s_x_chunk:f_x_chunk])
 
                 ## Reduced density matrices
                 rdm_ca_xy = rdm_ca[s_x_chunk:f_x_chunk,s_v_chunk:f_v_chunk]
 
-                sigma_KC -= 1/2 * einsum('Kxab,yaCb,xy->KC', X[:, s_x_chunk:f_x_chunk], v_aeee, rdm_ca_xy, optimize = einsum_type)
-                sigma_KC += einsum('Kxab,ybCa,xy->KC', X[:, s_x_chunk:f_x_chunk], v_aeee, rdm_ca_xy, optimize = einsum_type)
+                sigma_KC -= 1/2 * einsum('Kxab,yaCb,xy->KC', X_x, v_aeee, rdm_ca_xy, optimize = einsum_type)
+                sigma_KC += einsum('Kxab,ybCa,xy->KC', X_x, v_aeee, rdm_ca_xy, optimize = einsum_type)
 
             mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
         del (v_aeee, rdm_ca_xy)
@@ -28774,7 +28780,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             t1_aaee = mr_adc.t1.aaee[s_chunk:f_chunk]
 
             ## CA Block
-            X_x = X[:, s_chunk:f_chunk]
+            X_x = np.ascontiguousarray(X[:, s_chunk:f_chunk])
 
             sigma_KWCD += 1/2 * einsum('Kx,xCyD,Wy->KWCD', X_x, v_aeae, rdm_ca, optimize = einsum_type)
             sigma_KWCD += 1/2 * einsum('Kx,C,xyCD,Wy->KWCD', X_x, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
