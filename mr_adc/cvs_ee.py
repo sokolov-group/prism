@@ -301,9 +301,6 @@ def compute_M_00(mr_adc):
     ncas = mr_adc.ncas
     nextern = mr_adc.nextern
 
-    # #@profile
-    # #@detect_serial
-    #@detect_memory_pressure
     def compute_M_00__H0_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -319,9 +316,6 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H0 h1-h1 CE-CE", *cput1)
         return temp
 
-    ##@profile
-    ##@detect_serial
-    #@detect_memory_pressure
     def compute_M_00__H0_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -343,9 +337,6 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H0 h1-h1 CA-CA", *cput1)
         return temp
 
-#    #@profile
-    #@detect_memory_pressure
-    ##@detect_serial
     def compute_M_00__H1_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -365,9 +356,6 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CE", *cput1)
         return temp
 
-#    #@profile
-    #@detect_memory_pressure
-    ##@detect_serial
     def compute_M_00__H1_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -395,9 +383,6 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CA-CA", *cput1)
         return temp
  
-#    #@profile
-    #@detect_memory_pressure
-    ##@detect_serial
     def compute_M_00__H1_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -458,9 +443,6 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H1 h1-h1 CE-CA", *cput1)
         return temp
 
-#    #@profile
-    #@detect_memory_pressure
-    ##@detect_serial
     def compute_M_00__H2_h0_h0__CE_CE(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -3389,9 +3371,6 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H2 h1-h1 CE-CE", *cput1)
         return temp
 
-#    #@profile
-    #@detect_memory_pressure
-    ##@detect_serial
     def compute_M_00__H2_h0_h0__CA_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -20572,9 +20551,6 @@ def compute_M_00(mr_adc):
         mr_adc.log.timer_debug("computing M00 H2 h1-h1 CA-CA", *cput1)
         return temp
 
-#    #@profile
-    #@detect_memory_pressure
-    ##@detect_serial
     def compute_M_00__H2_h0_h0__CE_CA(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
@@ -25869,7 +25845,6 @@ def apply_S_12(mr_adc, X, transpose = False):
     return Xt
 
 
-##@profile
 def compute_sigma_vector(mr_adc, Xt, ints):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
