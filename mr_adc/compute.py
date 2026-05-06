@@ -261,6 +261,11 @@ def analyze(mr_adc):
         if mr_adc.compute_dyson:
             trans_prop.compute_dyson(mr_adc.interface, mr_adc.properties["spec_amplitudes"])
 
+        # GS to EXC
+        if mr_adc.compute_ntos:
+            for state, trdm_state in enumerate(mr_adc.properties["spec_amplitudes"]):
+                trans_prop.compute_ntos(mr_adc.interface, trdm_state, initial_state=0, target_state=state+1)
+
     if mr_adc.h_evec is not None:
         if hasattr(mr_adc, "analyze_eigenvector"):
             mr_adc.analyze_eigenvector()
