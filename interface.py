@@ -473,6 +473,47 @@ class PYSCF:
 
         return Sp_psi
 
+    #from prism_beta
+    def apply_a(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[0] == "a":
+                y_psi, y_psi_ne = self.act_des_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_des_b(psi, ncas, nelecas, y)
+            psi_list.append(y_psi)
+            psi_ne = y_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 1)
+
+        return psi_list, psi_ne
+
+    #from prism_beta
+    def extract_vectors(self, vec_list, ncas, dim):
+
+        if (vec_list[0] is not None):
+            ndim_a = vec_list[0].shape[0]
+            ndim_b = vec_list[0].shape[1]
+            vec_list = np.array(vec_list)
+            if dim == 1:
+                vec_list = vec_list.reshape(ncas, ndim_a, ndim_b).copy()
+            elif dim == 2:
+                vec_list = vec_list.reshape(ncas, ncas, ndim_a, ndim_b).transpose(1,0,2,3).copy()
+            elif dim == 3:
+                vec_list = vec_list.reshape(ncas, ncas, ncas, ndim_a, ndim_b).transpose(2,1,0,3,4).copy()
+            elif dim == 4:
+                vec_list = vec_list.reshape(ncas, ncas, ncas, ncas, ndim_a, ndim_b).transpose(3,2,1,0,4,5).copy()
+            else:
+                raise Exception("Unknown dimension")
+        else:
+            vec_list = None
+
+        return vec_list
+
 
     # Act annihilation operator (alpha spin)
     def act_cre_a(self, wfn, ncas, nelec, orb):
