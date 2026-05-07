@@ -152,6 +152,11 @@ class NEVPT:
         self.Bs_vec_chi = [0.1]
         self.T_vec_chi = [5,100,200,250]
 
+        ###For MCD
+        self.MCD = False
+        self.B_MCD = 10
+        self.T_MCD = 4
+
         ###For Heff coupling
         self.compute_coupling = False
         self.Heff_1e = None

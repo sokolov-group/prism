@@ -128,6 +128,157 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     return Mu_sf
 
 
+#Note that Mu should include spin orbit coupling 
+def mcd_vector_xyz(interface, B_s,T,en_soc,evec_soc, Mu, rdm_sf, S):
+
+    #Constant
+    kb = interface.kb 
+    mu_B = interface.mu_B_Eh
+
+    mf = interface.mf
+    mo = interface.mo
+    ncore = interface.ncore 
+    n_states = len(rdm_sf)
+    n_micro_states = len(evec_soc)
+    nmo = interface.nmo
+    ncas = interface.ncas
+    n_micro_states = len(en_soc)
+    dip_mom_ao = interface.dip_mom_ao
+    mo_coeff = interface.mo
+
+    # Calculate quantum number of spin-orbit state
+    ms_total = []
+    S_total = []
+    I_total = []
+    for I in range(n_states):
+        for i in range(int(S[I]*2 + 1)):
+            ms_total.append(S[I]-i)
+            S_total.append(S[I])
+            I_total.append(I)
+
+
+
+    #construct dipolemoment in spin-free basis
+    dip_mom_mo = np.zeros_like(dip_mom_ao)
+    for d in range(dip_mom_ao.shape[0]):
+        dip_mom_mo[d] = mo.T @ dip_mom_ao[d] @ mo
+
+
+    # Looping over CAS States
+    dip_evec = np.zeros((3,n_micro_states,n_micro_states),dtype='complex')
+    for I in range(n_micro_states):
+        for J in range(n_micro_states):
+            if J>=I:
+                if  (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
+                    i = I_total[I]
+                    j = I_total[J]
+                    dip_evec[0,I,J] = np.einsum('pq,pq', dip_mom_mo[0], rdm_sf[i,j])
+                    dip_evec[1,I,J] = np.einsum('pq,pq', dip_mom_mo[1], rdm_sf[i,j])
+                    dip_evec[2,I,J] = np.einsum('pq,pq', dip_mom_mo[2], rdm_sf[i,j])
+    dip_evec[0] = dip_evec[0] + np.conj(dip_evec[0]).T
+    dip_evec[1] = dip_evec[1] + np.conj(dip_evec[1]).T
+    dip_evec[2] = dip_evec[2] + np.conj(dip_evec[2]).T
+
+
+    dip_evec_soc = np.einsum('ai,kib,bj->kaj',np.conj(evec_soc).T , dip_evec , evec_soc)
+
+    
+
+    #B_svec = B_s * B_vec
+    #B_svec = [0.3]
+    en_ze_x, evec_ze_x = E_ze(B_s * np.array([1,0,0]),en_soc,Mu,mu_B )
+    en_ze_y, evec_ze_y = E_ze(B_s * np.array([0,1,0]),en_soc,Mu,mu_B )
+    en_ze_z, evec_ze_z = E_ze(B_s * np.array([0,0,1]),en_soc,Mu,mu_B )
+
+    en_ze_total = np.zeros((3,len(en_soc)))
+    en_ze_total[0] = en_ze_x
+    en_ze_total[1] = en_ze_y
+    en_ze_total[2] = en_ze_z
+
+
+    #For X:
+    dip_evec_ze_x = np.einsum('ai,kib,bj->kaj',np.conj(evec_ze_x).T , dip_evec_soc , evec_ze_x)
+    m_LCP_ze_x = dip_evec_ze_x[1] - 1j * dip_evec_ze_x[2]
+    m_RCP_ze_x = dip_evec_ze_x[1] + 1j * dip_evec_ze_x[2]
+
+
+    #For Y:
+    dip_evec_ze_y = np.einsum('ai,kib,bj->kaj',np.conj(evec_ze_y).T , dip_evec_soc , evec_ze_y)
+    m_LCP_ze_y = dip_evec_ze_y[2] - 1j * dip_evec_ze_y[0]
+    m_RCP_ze_y = dip_evec_ze_y[2] + 1j * dip_evec_ze_y[0]
+
+
+    #For Z:
+    dip_evec_ze_z = np.einsum('ai,kib,bj->kaj',np.conj(evec_ze_z).T , dip_evec_soc , evec_ze_z)
+    m_LCP_ze_z = dip_evec_ze_z[0] - 1j * dip_evec_ze_z[1]
+    m_RCP_ze_z = dip_evec_ze_z[0] + 1j * dip_evec_ze_z[1]
+
+
+    #define Zero point
+    en_soc = en_soc - en_soc[0]*np.ones(len(en_soc))
+    #Build N
+    N = np.zeros(n_micro_states)
+    Z = partial_function(en_soc,T, kb)
+    for i in range(n_micro_states):
+        N[i] = np.exp(-en_soc[i]/kb/T) / Z
+    print("Boltzmann:")
+    print(N)
+
+    C = np.zeros(n_micro_states-1,dtype='complex')
+    D = np.zeros(n_micro_states-1,dtype='complex')
+
+    C_xyz = np.zeros((3,n_micro_states-1),dtype='complex')
+    D_xyz = np.zeros((3,n_micro_states-1),dtype='complex')
+
+
+    for I in range(n_micro_states-1):
+        I += 1
+
+        #####X
+        LCP_square = np.conj(m_LCP_ze_x[0,I])  * m_LCP_ze_x[0,I]
+        RCP_square = np.conj(m_RCP_ze_x[0,I])  * m_RCP_ze_x[0,I]
+        C[I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)/3
+        D[I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)/3
+
+        C_xyz[0,I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)
+        D_xyz[0,I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)
+
+        #####Y
+        LCP_square = np.conj(m_LCP_ze_y[0,I])  * m_LCP_ze_y[0,I]
+        RCP_square = np.conj(m_RCP_ze_y[0,I])  * m_RCP_ze_y[0,I]
+        C[I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)/3
+        D[I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)/3
+
+        C_xyz[1,I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)
+        D_xyz[1,I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)
+
+        #####Z
+        LCP_square = np.conj(m_LCP_ze_z[0,I])  * m_LCP_ze_z[0,I]
+        RCP_square = np.conj(m_RCP_ze_z[0,I])  * m_RCP_ze_z[0,I]
+        C[I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)/3
+        D[I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)/3
+
+        C_xyz[2,I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)
+        D_xyz[2,I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)
+
+    C1 = np.zeros(n_micro_states-2)
+    D1 = np.zeros(n_micro_states-2)
+
+    print("\n")
+    print("B=",B_s)
+    print("T=", T)
+    for i in range(3):
+        print("coordinate=", i)
+        print("denze_"+str(i)+"=", (np.real(en_ze_total[i] - en_ze_total[i,0])) * 219474.63136314)
+        print("C_"+str(i)+"=",C_xyz[i])
+        print("\n")
+
+
+    return C, D, C_xyz, D_xyz, en_ze_total 
+
+
+
+#Note that Mu should include spin orbit coupling 
 def gtensor(interface, S, Mu, target_index = 1):
     ge = interface.g_free_elec
 

@@ -211,6 +211,14 @@ def compute_magnetic_properties(method, rdm_sf):
     Mu_sf = magnetic.mag_dip(method.interface, rdm_sf, S, origin_type = method.gtensor_origin_type)
     Mu = np.einsum('ai,kib,bj->kaj',np.conj(h_evec_soc).T, Mu_sf, h_evec_soc)
 
+    #MCD
+    if method.MCD:
+        method.log.info("\nCalculating MCD...")
+        B_s = method.B_MCD 
+        T = method.T_MCD 
+        C, D, C_xyz, D_xyz, en_ze_total = magnetic.mcd_vector_xyz(method.interface, B_s, T, en_soc, h_evec_soc, Mu, rdm_sf, S)
+
+
     #g-tensor
     if method.gtensor:
         method.log.info("\nCalculating g-tensor...")
