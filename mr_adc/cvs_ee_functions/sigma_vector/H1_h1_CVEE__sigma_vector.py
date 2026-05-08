@@ -132,7 +132,8 @@ def compute_sigma_vector__H1__h1_h1__CAEE_CVEE(mr_adc, X, sigma):
     sigma_KWCD += 1/2 * einsum('KiCD,ixyz,Wzwu,xuyw->KWCD', X, t1_vaaa, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KWCD += 1/2 * einsum('KiCD,ixyz,Wzwy,xw->KWCD', X, t1_vaaa, v_aaaa, rdm_ca, optimize = einsum_type)
 
-    chunks = tools.calculate_chunks(mr_adc, mr_adc.nval, [mr_adc.ncas, mr_adc.nextern, mr_adc.nextern], ntensors = 2)
+    chunks = tools.calculate_double_chunks(mr_adc, mr_adc.nval, [mr_adc.ncas, mr_adc.nextern, mr_adc.nextern], 
+                                                                    [mr_adc.ncvs, mr_adc.nextern, mr_adc.nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.xeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -299,7 +300,6 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CVEE(mr_adc, X, sigma):
     v_vxxe = mr_adc.v2e.vxxe
     v_vaae = mr_adc.v2e.vaae
     v_veaa = mr_adc.v2e.veaa
-    #v_veee = mr_adc.v2e.veee
     v_aaaa = mr_adc.v2e.aaaa
 
     ## Amplitudes
@@ -610,7 +610,6 @@ def compute_sigma_vector__H1__h1_h1__CVEA_CVEE(mr_adc, X, sigma):
     v_vaev = mr_adc.v2e.vaev
     v_aaaa = mr_adc.v2e.aaaa
     v_aaae = mr_adc.v2e.aaae
-    #v_aeee = mr_adc.v2e.aeee
 
     ## Amplitudes
     t1_ae = mr_adc.t1.ae
@@ -735,12 +734,7 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X, sigma):
 
     ## Two-electron integrals
     v_xxvv = mr_adc.v2e.xxvv
-    #v_xxee = mr_adc.v2e.xxee
     v_xvvx = mr_adc.v2e.xvvx
-    #v_xeex = mr_adc.v2e.xeex
-    #v_vvee = mr_adc.v2e.vvee
-    #v_veev = mr_adc.v2e.veev
-    #v_eeee = mr_adc.v2e.eeee
 
     # Variables from kernel
     ncvs    = mr_adc.ncvs
@@ -762,55 +756,71 @@ def compute_sigma_vector__H1__h1_h1__CVEE_CVEE(mr_adc, X, sigma):
     sigma_KLCD  = einsum('ijCD,KiLj->KLCD', X, v_xxvv, optimize = einsum_type)
     sigma_KLCD += einsum('ijDC,KjLi->KLCD', X, v_xvvx, optimize = einsum_type)
 
-    # v_xxee, v_xeex
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 4)
+    # v_xxee, v_xeex 
+    chunks = tools.calculate_double_chunks(mr_adc, ncvs, [ncvs, nextern, nextern], 
+                                                            [nval, nextern, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.xxee v2e.xeex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+        cput2 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integral
-        v_xxee = mr_adc.v2e.xxee[:, :, :, s_chunk:f_chunk]
-        v_xeex = mr_adc.v2e.xeex[:, :, s_chunk:f_chunk, :]
+        v_xxee = mr_adc.v2e.xxee[s_chunk:f_chunk]
 
-        ## CCEE block
-        X_a = X[:, :, :, s_chunk:f_chunk]
+        temp =- einsum('iLCa,iKDa->KLCD', X[s_chunk:f_chunk], v_xxee, optimize = einsum_type)
+        temp -= einsum('iLaD,iKCa->KLCD', X[s_chunk:f_chunk], v_xxee, optimize = einsum_type)
 
-        sigma_KLCD -= einsum('iLDa,KCai->KLCD', X_a, v_xeex, optimize = einsum_type)
-        sigma_KLCD -= einsum('iLCa,iKDa->KLCD', X_a, v_xxee, optimize = einsum_type)
+        sigma_KLCD += temp
+        mr_adc.log.timer_debug("v2e.xxee contractions", *cput2)
+    del(v_xxee, temp)
 
-        ## CCEE block
-        X_a = X[:, :, s_chunk:f_chunk, :]
-
-        sigma_KLCD += 2 * einsum('iLaD,KCai->KLCD', X_a, v_xeex, optimize = einsum_type)
-        sigma_KLCD -= einsum('iLaD,iKCa->KLCD', X_a, v_xxee, optimize = einsum_type)
-
-        mr_adc.log.timer_debug("v2e.xxee v2e.xeex contractions", *cput1)
-        del(v_xxee, v_xeex)
-
-    # v_vvee, v_veev
-    chunks = tools.calculate_chunks(mr_adc, nextern, [nval, nval, nextern], ntensors = 4)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
-        cput1 = (logger.process_clock(), logger.perf_counter())
-        mr_adc.log.debug("v2e.vvee v2e.veev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+        cput2 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.xeex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
         ## Two-electron integral
-        v_vvee = mr_adc.v2e.vvee[:, :, :, s_chunk:f_chunk]
-        v_veev = mr_adc.v2e.veev[:, :, s_chunk:f_chunk, :]
+        v_xeex = mr_adc.v2e.xeex[s_chunk:f_chunk]
 
-        ## CCEE block
-        X_a = X[:, :, :, s_chunk:f_chunk]
+        temp =- einsum('iLDa,iaCK->KLCD', X[s_chunk:f_chunk], v_xeex, optimize = einsum_type)
+        temp += 2 * einsum('iLaD,iaCK->KLCD', X[s_chunk:f_chunk], v_xeex, optimize = einsum_type)
 
-        sigma_KLCD += 2 * einsum('KiCa,LDai->KLCD', X_a, v_veev, optimize = einsum_type)
-        sigma_KLCD -= einsum('KiCa,iLDa->KLCD', X_a, v_vvee, optimize = einsum_type)
+        sigma_KLCD += temp
+        mr_adc.log.timer_debug("v2e.xeex contractions", *cput2)
+    del(v_xeex, temp)
 
-        ## CCEE block
-        X_a = X[:, :, s_chunk:f_chunk, :]
+    # v_vvee, v_veev 
+    chunks = tools.calculate_double_chunks(mr_adc, nval, [nval, nextern, nextern], 
+                                                            [ncvs, nextern, nextern], ntensors = 2)
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput2 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.vvee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
-        sigma_KLCD -= einsum('KiaC,LDai->KLCD', X_a, v_veev, optimize = einsum_type)
-        sigma_KLCD -= einsum('KiaD,iLCa->KLCD', X_a, v_vvee, optimize = einsum_type)
+        ## Two-electron integral
+        v_vvee = mr_adc.v2e.vvee[s_chunk:f_chunk]
 
-        mr_adc.log.timer_debug("v2e.vvee v2e.veev contractions", *cput1)
-        del(v_vvee, v_veev)
+        X_i = ascontiguousarray(X[:, s_chunk:f_chunk])
+
+        temp =- einsum('KiCa,iLDa->KLCD', X_i, v_vvee, optimize = einsum_type)
+        temp -= einsum('KiaD,iLCa->KLCD', X_i, v_vvee, optimize = einsum_type)
+ 
+        sigma_KLCD += temp
+        mr_adc.log.timer_debug("v2e.vvee contractions", *cput2)
+    del(v_vvee, temp, X_i)
+
+    for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
+        cput2 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.debug("v2e.veev [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
+
+        ## Two-electron integral
+        v_veev = mr_adc.v2e.veev[s_chunk:f_chunk]
+
+        X_i = ascontiguousarray(X[:, s_chunk:f_chunk])
+
+        temp  = 2 * einsum('KiCa,iaDL->KLCD', X, v_veev, optimize = einsum_type)
+        temp -= einsum('KiaC,iaDL->KLCD', X, v_veev, optimize = einsum_type)
+
+        sigma_KLCD += temp
+        mr_adc.log.timer_debug("v2e.veev contractions", *cput2)
+    del(v_veev, temp, X_i)
 
     # Pack X for ladder contractions
     X = ascontiguousarray(X.reshape(ncvs*nval, -1).T) 
