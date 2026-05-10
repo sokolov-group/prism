@@ -140,10 +140,10 @@ def compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X, sigma):
     sigma_KLCW -= einsum('KLCa,xyza,Wywu,zuxw->KLCW', X, t1_aaae, v_aaaa, rdm_ccaa, optimize = einsum_type)
     sigma_KLCW -= einsum('KLCa,xyza,Wywx,zw->KLCW', X, t1_aaae, v_aaaa, rdm_ca, optimize = einsum_type)
 
+    sigma_KLCW = ascontiguousarray(sigma_KLCW.transpose(3,0,1,2))
+
     # v_aeee
-    ncas = mr_adc.ncas
-    nextern = mr_adc.nextern
-    chunks = tools.calculate_chunks(mr_adc, ncas, [nextern, nextern, nextern])
+    chunks = tools.calculate_chunks(mr_adc, mr_adc.ncas, [mr_adc.nextern, mr_adc.nextern, mr_adc.nextern])
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -153,13 +153,16 @@ def compute_sigma_vector__H1__h1_h1__CCEA_CCEE(mr_adc, X, sigma):
         else:
             v_aeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_chunk:f_chunk])
 
-        sigma_KLCW[:, :, :, s_chunk:f_chunk] += einsum('KLab,WbCa->KLCW', X, v_aeee, optimize = einsum_type)
-        sigma_KLCW -= 1/2 * einsum('KLab,xbCa,xW->KLCW', X, v_aeee, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
+        # Reduced Density Matrices
+        rdm_ca = mr_adc.rdm.ca[s_chunk:f_chunk]
+
+        sigma_KLCW[s_chunk:f_chunk] += einsum('KLab,WbCa->WKLC', X, v_aeee, optimize = einsum_type)
+        sigma_KLCW -= 1/2 * einsum('KLab,xbCa,xW->WKLC', X, v_aeee, rdm_ca, optimize = einsum_type)
 
         mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
-    del(v_aeee)
+    del(v_aeee, rdm_ca)
 
-    sigma[ccea] += ascontiguousarray(sigma_KLCW).reshape(-1)
+    sigma[ccea] += ascontiguousarray(sigma_KLCW.transpose(1,2,3,0)).reshape(-1)
 
     mr_adc.log.timer_debug("computing sigma H1 h1-h1 CCEA-CCEE", *cput1)
 
