@@ -352,17 +352,17 @@ def Powder_magnetization(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_
             M_av = float(M_av)
             M_av_all[I,K] =  M_av
 
-    print("\nPowder_magnetization(Bohr magneton)" )
-    print("-----------------------------------")
-    print("TEMP(K)   B(T)    M(Bohr magneton)")
-    print("-----------------------------------")
-    
-    for  I in range(len(T_list)):
-        T = T_list[I]
-        for K in range(len(Bs_list)):
-            Bs = Bs_list[K]
-            print("%6.2f  %8.2f %14.6f " % (T, Bs, M_av_all[I,K]))
-    
+    #print("\nPowder_magnetization(Bohr magneton)" )
+    #print("-----------------------------------")
+    #print("TEMP(K)   B(T)    M(Bohr magneton)")
+    #print("-----------------------------------")
+    #
+    #for  I in range(len(T_list)):
+    #    T = T_list[I]
+    #    for K in range(len(Bs_list)):
+    #        Bs = Bs_list[K]
+    #        print("%6.2f  %8.2f %14.6f " % (T, Bs, M_av_all[I,K]))
+    #
     return M_av_all
 
 
@@ -384,16 +384,16 @@ def Powder_susceptibility(interface, powder_data, Bs_list, T_list, en_soc, Mu, h
             chi_av_all[I,K] = chi_av
 
     
-    print("\nPowder_susceptibility(cm3/mol)" )
-    print("--------------------------------------------")
-    print("TEMP(K)   B(T)         X_av          X_av*T")
-    print("--------------------------------------------")
+    #print("\nPowder_susceptibility(cm3/mol)" )
+    #print("--------------------------------------------")
+    #print("TEMP(K)   B(T)         X_av          X_av*T")
+    #print("--------------------------------------------")
     
-    for  I in range(len(T_list)):
-        T = T_list[I]
-        for K in range(len(Bs_list)):
-            Bs = Bs_list[K]
-            print("%6.2f  %8.2f %14.6f %14.6f" % (T, Bs, chi_av_all[I,K],chi_av_all[I,K]*T))
+    #for  I in range(len(T_list)):
+    #    T = T_list[I]
+    #    for K in range(len(Bs_list)):
+    #        Bs = Bs_list[K]
+    #        print("%6.2f  %8.2f %14.6f %14.6f" % (T, Bs, chi_av_all[I,K],chi_av_all[I,K]*T))
 
     return chi_av_all
 
@@ -410,16 +410,16 @@ def vector_magnetization(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
             M_xyz_all[I,K,2] = magnetization(interface,Bs,B_vec,en_soc,Mu,T,h_s,dB_k=B_unit[2])
 
     
-    print("\nMagnetization vector (Bohr magneton) in B vector=",B_vec)
-    print("--------------------------------------------------------")
-    print("TEMP(K)   B(T)          Mx           My           Mz")
-    print("--------------------------------------------------------")
+    #print("\nMagnetization vector (Bohr magneton) in B vector=",B_vec)
+    #print("--------------------------------------------------------")
+    #print("TEMP(K)   B(T)          Mx           My           Mz")
+    #print("--------------------------------------------------------")
     
-    for  I in range(len(T_list)):
-        T = T_list[I]
-        for K in range(len(Bs_list)):
-            Bs = Bs_list[K]
-            print("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, M_xyz_all[I,K,0],M_xyz_all[I,K,1],M_xyz_all[I,K,2]))
+    #for  I in range(len(T_list)):
+    #    T = T_list[I]
+    #    for K in range(len(Bs_list)):
+    #        Bs = Bs_list[K]
+    #        print("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, M_xyz_all[I,K,0],M_xyz_all[I,K,1],M_xyz_all[I,K,2]))
 
     return M_xyz_all
 
@@ -444,21 +444,21 @@ def tensor_susceptibility(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
                         chi[k,l]= susceptibility(interface,Bs,B_vec,en_soc,Mu,T,h_s,dB_k=B_k,dB_l=B_l) 
 
             chi_T = chi * T
-            print("TEMP(K)=",T," Bs(T)=",Bs)
-            print(chi_T)
+            interface.log.extra("TEMP(K)= %s, Bs(T)= %s" %(T, Bs))
+            interface.log.extra(chi_T)
             chi_T_eval, chi_T_evec = np.linalg.eigh(chi_T)
             chi_T_eval_all[I,K] = chi_T_eval
 
-    print("\nEigenvalue of Susceptibility tensor * T (cm3K/mol)" )
-    print("--------------------------------------------------------")
-    print("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
-    print("--------------------------------------------------------")
-    
-    for  I in range(len(T_list)):
-        T = T_list[I]
-        for K in range(len(Bs_list)):
-            Bs = Bs_list[K]
-            print("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, chi_T_eval_all[I,K,0],chi_T_eval_all[I,K,1],chi_T_eval_all[I,K,2]))
+    #print("\nEigenvalue of Susceptibility tensor * T (cm3K/mol)" )
+    #print("--------------------------------------------------------")
+    #print("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
+    #print("--------------------------------------------------------")
+    #
+    #for  I in range(len(T_list)):
+    #    T = T_list[I]
+    #    for K in range(len(Bs_list)):
+    #        Bs = Bs_list[K]
+    #        print("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, chi_T_eval_all[I,K,0],chi_T_eval_all[I,K,1],chi_T_eval_all[I,K,2]))
 
     return chi_T_eval_all
 

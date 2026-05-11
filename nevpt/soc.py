@@ -245,13 +245,13 @@ def compute_magnetic_properties(method, rdm_sf):
 
   
         h_s =method.step_h_s
-        method.log.info("h_s=",h_s,"T")
+        method.log.info("h_s= %.2f T" %(h_s))
 
 
         #Powder data information
         method.log.info("Import LebedevGrid in pyscf...")
         Powder_data_xyzw = pyscf.dft.LebedevGrid.MakeAngularGrid_266()
-        method.log.info("Number of LebedevGrid point:",len(Powder_data_xyzw))
+        method.log.info("Number of LebedevGrid point: %s" % len(Powder_data_xyzw))
 
 
         ###Powder magnetization
