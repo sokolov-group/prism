@@ -21215,8 +21215,7 @@ def analyze_eigenvector(mr_adc):
         ind_idx = np.argsort(-Y_sq)
 
         # Filter by tolerance
-        mask = Y_sq[ind_idx] > print_thresh**2
-        ind_idx = ind_idx[mask]
+        ind_idx = ind_idx[Y_sq[ind_idx] > print_thresh ** 2]
         Y_sorted = Y[ind_idx]
 
         # Tensor configurations: (tensor_obj, shape, offsets, labels, list_type)
@@ -21278,6 +21277,7 @@ def analyze_eigenvector(mr_adc):
             for p, p_label, val in sig_singles:
                 mr_adc.log.info(f"{p_label}({p:4d}) = {val:7.4f}")
             mr_adc.log.info("")
+
         # Filter and sort doubles by significance
         sig_doubles = sorted([d for d in doubles if d[6] > print_thresh], key=lambda x: x[6], reverse=True)
         if sig_doubles:
