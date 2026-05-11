@@ -24,7 +24,7 @@ def compute_reference_rdms(nevpt, ref_wfn_list = None, ref_nelecas_list = None):
 
     rdm = lambda:None
 
-    if (ref_wfn_list is None or ref_nelecas_list is None):
+    if ref_wfn_list is None or ref_nelecas_list is None:
         ref_wfn_list = nevpt.ref_wfn
         ref_nelecas_list = nevpt.ref_nelecas
 
@@ -34,13 +34,13 @@ def compute_reference_rdms(nevpt, ref_wfn_list = None, ref_nelecas_list = None):
     # Compute reference-state RDMs
     if nevpt.ncas > 0:
         rdm.ca, rdm.ccaa, rdm.cccaaa, rdm.ccccaaaa = nevpt.interface.compute_rdm1234(ref_wfn_list,
-                                                                                                                  ref_wfn_list,
-                                                                                                                  ref_nelecas_list)
+                                                                                     ref_wfn_list,
+                                                                                     ref_nelecas_list)
     else:
         rdm.ca = np.zeros((nevpt.ncas, nevpt.ncas))
-        rdm.ccaa =  np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
-        rdm.cccaaa =  np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
-        mr_adc.rdm.ccccaaaa =  np.zeros((mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas, mr_adc.ncas))
+        rdm.ccaa = np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
+        rdm.cccaaa = np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
+        rdm.ccccaaaa = np.zeros((nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas, nevpt.ncas))
 
     nevpt.log.timer("transforming RDMs", *cput0)
 
