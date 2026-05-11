@@ -252,7 +252,7 @@ def diagonalize_eff_H(method):
             h_eff[J, I] = H_IJ
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
-
+    
     return h_eval, h_evec
 
 

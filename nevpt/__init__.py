@@ -111,6 +111,14 @@ class NEVPT:
         self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
 
+        # Initiate the real-time calculations
+        self.rt = None                             # Turn-on real-time dynamics 
+        self.rt_init_cond = None                   # Generate the initial condition
+        self.time_step = 0.1                       # Required time step
+        self.rt_prop_method = "exact"              # Propagator type
+        self.rt_tmax = 500                         # How long propagate the wave-function
+        self.print_step = 50                       # Necessary printing at each 50 steps
+
     def _make_method_instance(self):
         cls_map = {
             "qd": QDNEVPT,
