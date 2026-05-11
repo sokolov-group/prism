@@ -21109,9 +21109,8 @@ def analyze_spec_factor(mr_adc):
 
     for state in range(nroots):
 
-        sort = np.argsort(-X_sq[state,:])
-        X_sq_row = X_sq[state,:]
-        X_sq_row = X_sq_row[sort]
+        sort = np.argsort(-X_sq[state, :])
+        X_sq_row = X_sq[state, sort]
 
         if mr_adc.symmetry:
             group_repr_symm = group_repr_symm[sort]
