@@ -146,6 +146,9 @@ class PYSCF:
             
             # Solvent potential
             if hasattr(mf, "with_solvent"):
+                log.info("Solvent method detected in mf object...")
+                
+                ### TODO: See about how to decide with model is being used for mf object
                 self.v_pe = mf.with_solvent.v
                 
             if getattr(mc, 'with_df', None):
