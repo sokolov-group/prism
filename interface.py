@@ -87,12 +87,6 @@ class PYSCF:
             self.mo_scf = self.mo
             self.ovlp = mf.get_ovlp(mf.mol)
 
-            ##from pyscf import ao2mo
-            ##self.transform_2e_chem_incore = ao2mo.general
-            ##self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2 
-
-            ##self.davidson = lib.linalg_helper.davidson1 
-
             self.reference_df = getattr(mf, "with_df", None)
 
             ##if self.symmetry:
@@ -219,12 +213,6 @@ class PYSCF:
             ##else:
             ##    self.group_repr_symm = None
 
-            ##from pyscf import ao2mo
-            ##self.transform_2e_chem_incore = ao2mo.general
-            ##self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
-
-            ##self.davidson = lib.linalg_helper.davidson1
-
             from pyscf.fci.direct_spin1 import trans_rdm1s
             self.trans_rdm1s = trans_rdm1s
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
@@ -232,14 +220,12 @@ class PYSCF:
 
         # Symmetry
         self.symmetry = self.mol.symmetry
+        self.group_repr_symm = None
         if self.symmetry:
             from pyscf import symm
-            if hasattr(mf.mo_coeff, 'orbsym'):
-                self.group_repr_symm = [symm.irrep_id2name(self.mol.groupname, x) for x in mf.mo_coeff.orbsym]
-            else:
-                self.group_repr_symm = None
-        else:
-            self.group_repr_symm = None
+            orbsym = getattr(mf.mo_coeff, 'orbsym', None)
+            if orbsym is not None:
+                self.group_repr_symm = [symm.irrep_id2name(self.mol.groupname, x) for x in orbsym]
 
         # Davidson
         self.davidson = lib.linalg_helper.davidson1
