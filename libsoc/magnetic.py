@@ -139,7 +139,6 @@ def mcd_vector_xyz(interface, B_s,T,en_soc,evec_soc, Mu, rdm_sf, S):
     mo = interface.mo
     ncore = interface.ncore 
     n_states = len(rdm_sf)
-    n_micro_states = len(evec_soc)
     nmo = interface.nmo
     ncas = interface.ncas
     n_micro_states = len(en_soc)
@@ -175,9 +174,10 @@ def mcd_vector_xyz(interface, B_s,T,en_soc,evec_soc, Mu, rdm_sf, S):
                     dip_evec[0,I,J] = np.einsum('pq,pq', dip_mom_mo[0], rdm_sf[i,j])
                     dip_evec[1,I,J] = np.einsum('pq,pq', dip_mom_mo[1], rdm_sf[i,j])
                     dip_evec[2,I,J] = np.einsum('pq,pq', dip_mom_mo[2], rdm_sf[i,j])
-    dip_evec[0] = dip_evec[0] + np.conj(dip_evec[0]).T
-    dip_evec[1] = dip_evec[1] + np.conj(dip_evec[1]).T
-    dip_evec[2] = dip_evec[2] + np.conj(dip_evec[2]).T
+
+                    dip_evec[0,J,I] =  np.conj(dip_evec[0,I,J]).T
+                    dip_evec[1,J,I] =  np.conj(dip_evec[1,I,J]).T
+                    dip_evec[2,J,I] =  np.conj(dip_evec[2,I,J]).T
 
 
     dip_evec_soc = np.einsum('ai,kib,bj->kaj',np.conj(evec_soc).T , dip_evec , evec_soc)
@@ -267,9 +267,10 @@ def mcd_vector_xyz(interface, B_s,T,en_soc,evec_soc, Mu, rdm_sf, S):
     print("\n")
     print("B=",B_s)
     print("T=", T)
+    print("number of excited state:", n_micro_states-1)
     for i in range(3):
         print("coordinate=", i)
-        print("denze_"+str(i)+"=", (np.real(en_ze_total[i] - en_ze_total[i,0])) * 219474.63136314)
+        print("denze_"+str(i)+"=", (np.real(en_ze_total[i,1:] - en_ze_total[i,0])) * 219474.63136314)
         print("C_"+str(i)+"=",C_xyz[i])
         print("\n")
 
