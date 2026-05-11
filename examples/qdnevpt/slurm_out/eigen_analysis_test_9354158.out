@@ -1,0 +1,20 @@
+----
+Job started at Mon May 11 01:40:52 PM EDT 2026
+----
+This job is working on compute node c0325.ten.osc.edu
+Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: None
+
+EnvironmentNameNotFound: Could not find conda environment: PrismDMET
+You can list all discoverable environments with `conda info --envs`.
+
+
+----
+Running  script: test
+Traceback (most recent call last):
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/examples/qdnevpt/test.py", line 12, in <module>
+    import prism.interface
+ModuleNotFoundError: No module named 'prism'
+----
+Job ended at Mon May 11 01:40:54 PM EDT 2026
+Total Walltime: 00:00:02
+----

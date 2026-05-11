@@ -1,0 +1,25 @@
+----
+Job started at Mon May 11 01:43:53 PM EDT 2026
+----
+This job is working on compute node c0325.ten.osc.edu
+Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: None
+----
+Running  script: test
+Traceback (most recent call last):
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/examples/qdnevpt/test.py", line 52, in <module>
+    e_tot, e_corr, osc = nevpt.kernel()
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/nevpt/__init__.py", line 147, in kernel
+    e_tot, e_corr, osc = compute.kernel(method)
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/nevpt/compute.py", line 42, in kernel
+    nevpt.compute_energy()
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/nevpt/__init__.py", line 219, in compute_energy
+    e_tot, e_corr = qd_nevpt.compute_energy(self)
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/nevpt/qd_nevpt.py", line 32, in compute_energy
+    nevpt.compute_energy(method)
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/nevpt/nevpt.py", line 53, in compute_energy
+    method.log.info("Reference state active-space energy:         %20.12f" % method.e_ref_cas[state])
+AttributeError: 'QDNEVPT' object has no attribute 'e_ref_cas'
+----
+Job ended at Mon May 11 01:44:14 PM EDT 2026
+Total Walltime: 00:00:21
+----

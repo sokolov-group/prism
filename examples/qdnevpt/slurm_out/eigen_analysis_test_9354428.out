@@ -1,0 +1,27 @@
+----
+Job started at Mon May 11 01:53:55 PM EDT 2026
+----
+This job is working on compute node c0325.ten.osc.edu
+Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: None
+----
+Running  script: test
+/users/PAS1583/bpickett/programs/pyscf/pyscf/gto/basis/__init__.py:661: UserWarning: Basis may be available in basis-set-exchange. It is recommended to install basis-set-exchange: pip install basis-set-exchange
+  warnings.warn(
+Traceback (most recent call last):
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/examples/qdnevpt/test.py", line 28, in <module>
+    mol.build()
+  File "/users/PAS1583/bpickett/programs/pyscf/pyscf/gto/mole.py", line 2556, in build
+    self._basis = self.format_basis(_basis)
+  File "/users/PAS1583/bpickett/programs/pyscf/pyscf/gto/mole.py", line 463, in format_basis
+    _basis = basis_converter(symb, atom_basis)
+  File "/users/PAS1583/bpickett/programs/pyscf/pyscf/gto/mole.py", line 502, in converter
+    _basis = load(raw_basis, _std_symbol_without_ghost(symb))
+  File "/users/PAS1583/bpickett/programs/pyscf/pyscf/gto/mole.py", line 495, in load
+    _basis = basis.load(basis_name, symb)
+  File "/users/PAS1583/bpickett/programs/pyscf/pyscf/gto/basis/__init__.py", line 673, in load
+    raise BasisNotFoundError(f'Unknown basis format or basis name for {filename_or_basisname}')
+pyscf.lib.exceptions.BasisNotFoundError: Unknown basis format or basis name for aug-cc
+----
+Job ended at Mon May 11 01:53:57 PM EDT 2026
+Total Walltime: 00:00:02
+----

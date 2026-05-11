@@ -13,6 +13,7 @@ import prism.interface
 import prism.mr_adc
 import prism.nevpt
 
+
 r = 0.96
 x = r * math.sin(104.5 * math.pi/(2 * 180.0))
 y = r * math.cos(104.5 * math.pi/(2 * 180.0))
@@ -22,7 +23,7 @@ mol.atom = [
             ['O', (0.0, 0.0, 0.0)],
             ['H', (0.0,  -x,   y)],
             ['H', (0.0,   x,   y)]]
-mol.basis = 'aug-cc-pvdz'
+mol.basis = 'aug-cc-pVDZ'
 mol.symmetry = False
 mol.verbose = 4
 mol.build()
@@ -47,8 +48,12 @@ print("CASSCF energy: %f\n" % emc)
 
 # QD-NEVPT2 with all electrons correlated
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
+print(interface.e_ref_cas)
 nevpt = prism.nevpt.NEVPT(interface)
+print(nevpt.e_ref_cas)
 nevpt.method_type = "qd"
 e_tot, e_corr, osc = nevpt.kernel()
+
+
 
 nevpt.analyze()

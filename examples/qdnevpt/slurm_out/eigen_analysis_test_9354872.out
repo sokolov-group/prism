@@ -1,0 +1,15 @@
+----
+Job started at Mon May 11 02:13:56 PM EDT 2026
+----
+This job is working on compute node c0326.ten.osc.edu
+Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: None
+----
+Running  script: test
+Traceback (most recent call last):
+  File "/users/PAS1583/bpickett/programs/prism_env/prism/examples/qdnevpt/test.py", line 60, in <module>
+    nevpt.analyze_eigenvectors()
+AttributeError: 'NEVPT' object has no attribute 'analyze_eigenvectors'
+----
+Job ended at Mon May 11 02:14:18 PM EDT 2026
+Total Walltime: 00:00:22
+----

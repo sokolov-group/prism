@@ -500,4 +500,9 @@ def analyze_eigenvectors(method):
     h_evec = method.h_evec
     ref_wfn = method.ref_wfn
     ref_wfn = np.array(ref_wfn)
-    print (ref_wfn.shape)
+    ref_wfn_shape = ref_wfn.shape 
+    ref_wfn = ref_wfn.reshape(ref_wfn.shape[0], -1)
+
+    print("ref_wfn shape", ref_wfn.shape)
+    qd_at_ref = h_evec.T @ ref_wfn
+    print("qd_at_ref shape", qd_at_ref.shape)
