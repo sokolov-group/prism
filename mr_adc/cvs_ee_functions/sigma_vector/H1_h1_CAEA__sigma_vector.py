@@ -5006,7 +5006,7 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
         mr_adc.log.debug("v2e.aeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
     
         ## Two-electron integral
-        v_aeea = mr_adc.v2e.aeea[:, s_chunk:f_chunk]
+        v_aeea = ascontiguousarray(mr_adc.v2e.aeea[:, s_chunk:f_chunk])
 
         temp =- 1/6 * einsum('KxaU,yCaz,Wzxy->KWCU', X_aaaa, v_aeea, rdm_ccaa, optimize = einsum_type)
         temp += 1/6 * einsum('KxaU,yCaz,Wzyx->KWCU', X_aaaa, v_aeea, rdm_ccaa, optimize = einsum_type)
@@ -5103,7 +5103,7 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
         mr_adc.log.debug("v2e.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
     
         ## Two-electron integral
-        v_aaee = mr_adc.v2e.aaee[:, :, s_chunk:f_chunk]
+        v_aaee = ascontiguousarray(mr_adc.v2e.aaee[:, :, s_chunk:f_chunk])
 
         temp  = 1/2 * einsum('KxaU,yzCa,Wyxz->KWCU', X_aaaa, v_aaee, rdm_ccaa, optimize = einsum_type)
         temp += 1/2 * einsum('Kxay,UyCa,Wx->KWCU', X_aaaa, v_aaee, rdm_ca, optimize = einsum_type)
