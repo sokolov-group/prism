@@ -91,7 +91,7 @@ class MRADC:
         self.compute_ntos = False       # Option for NTO computation
         self.compute_dyson = False      # Option for Dyson orbital computation
 
-        self.spec_factor_print_tol = 0.01 # Print tolerance for the spectroscopic factor analysis
+        self.analyze_print_tol = 0.01   # Print tolerance for analyses
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
