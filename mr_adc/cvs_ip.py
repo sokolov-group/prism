@@ -21201,7 +21201,10 @@ def analyze_eigenvector(mr_adc):
         _doubles = []
 
         # Transform eigenvectors to the non-orthogonal basis
-        Y = apply_S_12(mr_adc, U[state], transpose = False)
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+            Y = apply_S_12(mr_adc, U[state], transpose = False)
+        else:
+            Y = U[state]
 
         # Normalize Y
         Y_norm = np.linalg.norm(Y)
