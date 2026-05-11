@@ -33,9 +33,10 @@ class NEVPT:
 
         log.info("Initializing fully internally contracted NEVPT...")
 
-        if (interface.reference not in ("casscf", "casci", "sa-casscf", "ms-casci")):
-            log.info("The NEVPT code does not support %s reference" % interface.reference)
-            raise Exception("The NEVPT code does not support %s reference" % interface.reference)
+        if interface.reference not in ("casscf", "casci", "sa-casscf", "ms-casci"):
+            msg = "The NEVPT code does not support use of a %s reference" % interface.reference
+            log.info(msg)
+            raise Exception(msg)
 
         self.stdout = interface.stdout
         self.verbose = interface.verbose
