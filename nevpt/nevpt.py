@@ -320,7 +320,13 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
             R_t1_aaee = t1[J].aaee
             
             # Zeroth-order contributions
-            trdm_ca, trdm_ccaa, trdm_cccaaa = method.interface.compute_rdm123(method.ref_wfn[I], method.ref_wfn[J], method.ref_nelecas[I])
+            if method.ref_wfn is not None:
+                trdm_ca, trdm_ccaa, trdm_cccaaa = method.interface.compute_rdm123(method.ref_wfn[I], method.ref_wfn[J], method.ref_nelecas[I])
+            else:
+                trdm_ca = np.zeros((ncas,)*2)
+                trdm_ccaa = np.zeros((ncas,)*4)
+                trdm_cccaaa = np.zeros((ncas,)*6)
+
             rdm_final[ind_I, ind_J, ncore:ncore + ncas, ncore:ncore + ncas] = trdm_ca
 
             if I == J:
@@ -331,7 +337,7 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
                 
                 # Initial rdm array for correlated contributions
                 rdm_corr = np.zeros((nmo, nmo))
-                
+
                 # DIAGS #
                 if I == J:
                     # CORE-CORE #
