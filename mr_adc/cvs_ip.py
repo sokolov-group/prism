@@ -21197,8 +21197,8 @@ def analyze_eigenvector(mr_adc):
     result = []
     for state in range(nroots):
 
-        _singles = []
-        _doubles = []
+        _singles_dict = {}
+        _doubles_dict = {}
 
         # Transform eigenvectors to the non-orthogonal basis
         if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
@@ -21251,20 +21251,21 @@ def analyze_eigenvector(mr_adc):
 
         for orb_idx, eigvec in zip(ind_idx, Y_sorted):
             value = np.abs(eigvec)**2
-
             for tensor, shape, offsets, labels, list_type in tensor_configs:
                 if orb_idx in range(tensor.start, tensor.stop):
                     local_idx = orb_idx - tensor.start
                     indices = np.unravel_index(local_idx, shape)
                     values = tuple(idx + offset for idx, offset in zip(indices, offsets))
-                    entry = values + labels + (value,)
+                    key = values + labels
 
                     if list_type == 'singles':
-                        _singles.append(entry)
+                        _singles_dict[key] = _singles_dict.get(key, 0.0) + value
                     else:
-                        _doubles.append(entry)
+                        _doubles_dict[key] = _doubles_dict.get(key, 0.0) + value
                     break
 
+        _singles = [key + (val,) for key, val in _singles_dict.items()]
+        _doubles = [key + (val,) for key, val in _doubles_dict.items()]
         result.append((state, _singles, _doubles))
 
     for state, singles, doubles in result:
