@@ -186,14 +186,14 @@ def print_results(nevpt):
             deg = nevpt.spin_mult[p]
         de = nevpt.e_tot[p] - e_gs
         
-        de_ev = de * h2ev
-
-        if nevpt.pe is not None and p > 0:
+        if nevpt.pe is not None and p > 0 and nevpt.pe_method == "pert":
             ptss = nevpt.properties["ptss_corrections"]
             ptlr = nevpt.properties["ptlr_corrections"]
-            de_ev += ptss[p-1]
-            de_ev += ptlr[p-1]
+
+            de += (ptss[p - 1] + ptlr[p - 1]) / h2ev
         
+        de_ev = de * h2ev
+    
         de_cm = de * h2cm
         if p == 0 or abs(de) < 1e-5:
             nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))

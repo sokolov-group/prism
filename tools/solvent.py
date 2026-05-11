@@ -40,7 +40,7 @@ def get_pe_corrections(method, state = 0, rdms = None):
     ptlr = []
     
     # Warnings
-    if method.pe is None:
+    if method.pe is None and method.pe_method == "perturb":
         raise ValueError("Polarizable embedding (pe) object must be defined before calling this method.")
     
     for m in range(n_micro_states):
@@ -72,16 +72,21 @@ def get_pe_corrections(method, state = 0, rdms = None):
 def print_pe_results(method, ptss, ptlr):
     n_states = len(method.ref_wfn_deg)
     
-    method.log.info("\n\nPolarizable Embedding Contributions")
-    method.log.info("--------------------------------------------------")
-    method.log.info(f"{'State':<8}{'ptss (eV)':<15}{'ptlr (eV)':<15}")
-    method.log.info("--------------------------------------------------")
+    method.log.info("\n\nPolarizable Embedding Analysis")
+    method.log.info("------------------------------------------------------------------")
+    method.log.info(f"{'State':<8}{'ΔE (eV)':<15}{'ptss (eV)':<15}{'ptlr (eV)':<15}")
+    method.log.info("------------------------------------------------------------------")
 
     for p in range(1, n_states):
+        # Uncorrected excitation energy
+        de = method.e_tot[p] - method.e_tot[0]
+        de_ev = de * method.interface.hartree_to_ev
+
         method.log.info(
             f"{p:<8}"
+            f"{de_ev:<15.6f}"
             f"{ptss[p-1]:<15.6f}"
             f"{ptlr[p-1]:<15.6f}"
         )
 
-    method.log.info("--------------------------------------------------")
+    method.log.info("------------------------------------------------------------------")

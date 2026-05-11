@@ -111,7 +111,9 @@ class NEVPT:
         self.h_evec_soc = None
         
         # For PE
-        self.pe = None
+        self.pe = None                             # Required for PE use?
+        self.pe_method = "pert"                    # pertuabtive corrections
+                                                   # Also have "ss"/ "self-consistent" approach
 
     def _make_method_instance(self):
         cls_map = {

@@ -204,7 +204,7 @@ def compute_properties(method):
         osc_str = np.zeros(len(method.e_tot)-1)
         
         # Get PE contributions if needed
-        if method.pe is not None:
+        if method.pe is not None and method.pe_method == 'perturb':
             ptss, ptlr = solvent.get_pe_corrections(method, rdms = rdm_mo)
             method.properties["ptss_corrections"] = ptss
             method.properties["ptlr_corrections"] = ptlr
@@ -213,7 +213,7 @@ def compute_properties(method):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
         
-            if method.pe is not None:
+            if method.pe is not None and method.pe_method == 'perturb':
                 e_diff = [e_diff[i] + ptss[i] + ptlr[i] for i in range(len(ptss))]
                 
             osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
