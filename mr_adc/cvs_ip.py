@@ -21138,3 +21138,152 @@ def analyze_spec_factor(mr_adc):
         mr_adc.log.info("-------------------------------------------------------------")
     mr_adc.log.timer("computing spectroscopic factors analysis", *cput0)
 
+
+def analyze_eigenvector(mr_adc):
+    cput0 = (logger.process_clock(), logger.perf_counter())
+
+    print_thresh = mr_adc.analyze_print_tol
+
+    mr_adc.log.info("")
+    mr_adc.log.info("="*60)
+    mr_adc.log.info("Eigenvector Magnitude Analysis")
+    mr_adc.log.extra(f"> eigenvector elements threshold: {print_thresh:.2e}")
+    mr_adc.log.info("="*60)
+
+    # Variables from kernel
+    ncvs = mr_adc.ncvs
+    nval = mr_adc.nval
+    ncas = mr_adc.ncas
+    nextern = mr_adc.nextern
+
+    nroots  = mr_adc.nroots
+
+    # Eigenvectors and energies
+    U = mr_adc.h_evec
+    de_ev = mr_adc.e_diff * mr_adc.interface.hartree_to_ev
+
+    # Non-Orthogonal Excitation Manifold
+    h0_c = slice(mr_adc.h0.s_c, mr_adc.h0.f_c)
+
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        h1_cce__aaa = slice(mr_adc.h1.s_cce__aaa, mr_adc.h1.f_cce__aaa)
+        h1_cce__abb = slice(mr_adc.h1.s_cce__abb, mr_adc.h1.f_cce__abb)
+
+        h1_cca__aaa = slice(mr_adc.h1.s_cca__aaa, mr_adc.h1.f_cca__aaa)
+        h1_cca__abb = slice(mr_adc.h1.s_cca__abb, mr_adc.h1.f_cca__abb)
+
+        h1_caa__aaa = slice(mr_adc.h1.s_caa__aaa, mr_adc.h1.f_caa__aaa)
+        h1_caa__abb = slice(mr_adc.h1.s_caa__abb, mr_adc.h1.f_caa__abb)
+        h1_caa__bab = slice(mr_adc.h1.s_caa__bab, mr_adc.h1.f_caa__bab)
+
+        h1_cae__aaa = slice(mr_adc.h1.s_cae__aaa, mr_adc.h1.f_cae__aaa)
+        h1_cae__abb = slice(mr_adc.h1.s_cae__abb, mr_adc.h1.f_cae__abb)
+        h1_cae__bab = slice(mr_adc.h1.s_cae__bab, mr_adc.h1.f_cae__bab)
+
+        h1_cve__aaa = slice(0, 0)
+        h1_cve__abb = slice(0, 0)
+        h1_cve__bab = slice(0, 0)
+        h1_cva__aaa = slice(0, 0)
+        h1_cva__abb = slice(0, 0)
+        h1_cva__bab = slice(0, 0)
+        if nval > 0:
+            h1_cve__aaa = slice(mr_adc.h1.s_cve__aaa, mr_adc.h1.f_cve__aaa)
+            h1_cve__abb = slice(mr_adc.h1.s_cve__abb, mr_adc.h1.f_cve__abb)
+            h1_cve__bab = slice(mr_adc.h1.s_cve__bab, mr_adc.h1.f_cve__bab)
+
+            h1_cva__aaa = slice(mr_adc.h1.s_cva__aaa, mr_adc.h1.f_cva__aaa)
+            h1_cva__abb = slice(mr_adc.h1.s_cva__abb, mr_adc.h1.f_cva__abb)
+            h1_cva__bab = slice(mr_adc.h1.s_cva__bab, mr_adc.h1.f_cva__bab)
+
+    result = []
+    for state in range(nroots):
+
+        _singles = []
+        _doubles = []
+
+        # Transform eigenvectors to the non-orthogonal basis
+        Y = apply_S_12(mr_adc, U[state], transpose = False)
+
+        # Normalize Y
+        Y_norm = np.linalg.norm(Y)
+        if Y_norm > 0:
+            Y = Y / Y_norm
+
+        Y_sq = np.abs(Y) ** 2
+        ind_idx = np.argsort(-Y_sq)
+
+        # Filter by tolerance
+        mask = Y_sq[ind_idx] > print_thresh**2
+        ind_idx = ind_idx[mask]
+        Y_sorted = Y[ind_idx]
+
+        # Tensor configurations: (tensor_obj, shape, offsets, labels, list_type)
+        # Singles
+        tensor_configs = [(h0_c, (ncvs), (1,), ('CVS',), 'singles')]
+
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+
+            # Doubles
+            tensor_configs += [
+                (h1_cca__aaa, (ncvs, ncvs, ncas), (1, 1, 1+ncvs+nval), ('CVS', 'CVS', 'CAS'), 'doubles'),
+                (h1_cca__abb, (ncvs, ncvs, ncas), (1, 1, 1+ncvs+nval), ('CVS', 'CVS', 'CAS'), 'doubles'),
+
+                (h1_cce__aaa, (ncvs, ncvs, nextern), (1, 1, 1+ncvs+nval+ncas), ('CVS', 'CVS', 'EXT'), 'doubles'),
+                (h1_cce__abb, (ncvs, ncvs, nextern), (1, 1, 1+ncvs+nval+ncas), ('CVS', 'CVS', 'EXT'), 'doubles'),
+
+                (h1_cva__aaa, (ncvs, nval, ncas), (1, ncvs+1, 1+ncvs+nval), ('CVS', 'VAL', 'CAS'), 'doubles'),
+                (h1_cva__abb, (ncvs, nval, ncas), (1, ncvs+1, 1+ncvs+nval), ('CVS', 'VAL', 'CAS'), 'doubles'),
+                (h1_cva__bab, (ncvs, nval, ncas), (1, ncvs+1, 1+ncvs+nval), ('CVS', 'VAL', 'CAS'), 'doubles'),
+
+                (h1_cve__aaa, (ncvs, nval, nextern), (1, ncvs+1, 1+ncvs+nval+ncas), ('CVS', 'VAL', 'EXT'), 'doubles'),
+                (h1_cve__abb, (ncvs, nval, nextern), (1, ncvs+1, 1+ncvs+nval+ncas), ('CVS', 'VAL', 'EXT'), 'doubles'),
+                (h1_cve__bab, (ncvs, nval, nextern), (1, ncvs+1, 1+ncvs+nval+ncas), ('CVS', 'VAL', 'EXT'), 'doubles'),
+
+                (h1_cae__aaa, (ncvs, ncas, nextern), (1, 1+ncvs+nval, 1+ncvs+nval+ncas), ('CVS', 'CAS', 'EXT'), 'doubles'),
+                (h1_cae__abb, (ncvs, ncas, nextern), (1, 1+ncvs+nval, 1+ncvs+nval+ncas), ('CVS', 'CAS', 'EXT'), 'doubles'),
+                (h1_cae__bab, (ncvs, ncas, nextern), (1, 1+ncvs+nval, 1+ncvs+nval+ncas), ('CVS', 'CAS', 'EXT'), 'doubles'),
+
+                (h1_caa__aaa, (ncvs, ncas, ncas), (1, 1+ncvs+nval, 1+ncvs+nval), ('CVS', 'CAS','CAS'), 'doubles'),
+                (h1_caa__abb, (ncvs, ncas, ncas), (1, 1+ncvs+nval, 1+ncvs+nval), ('CVS', 'CAS','CAS'), 'doubles'),
+                (h1_caa__bab, (ncvs, ncas, ncas), (1, 1+ncvs+nval, 1+ncvs+nval), ('CVS', 'CAS','CAS'), 'doubles'),
+            ]
+
+        for orb_idx, eigvec in zip(ind_idx, Y_sorted):
+            value = np.abs(eigvec)**2
+
+            for tensor, shape, offsets, labels, list_type in tensor_configs:
+                if orb_idx in range(tensor.start, tensor.stop):
+                    local_idx = orb_idx - tensor.start
+                    indices = np.unravel_index(local_idx, shape)
+                    values = tuple(idx + offset for idx, offset in zip(indices, offsets))
+                    entry = values + labels + (value,)
+
+                    if list_type == 'singles':
+                        _singles.append(entry)
+                    else:
+                        _doubles.append(entry)
+                    break
+
+        result.append((state, _singles, _doubles))
+
+    for state, singles, doubles in result:
+        mr_adc.log.info("\n%s-%s | State %d | dE (eV) = %12.4f\n" % (mr_adc.method_type.upper(), mr_adc.method.upper(), state+1, de_ev[state]))
+
+        # Filter and sort singles by significance
+        sig_singles = sorted([s for s in singles if s[2] > print_thresh], key=lambda x: x[2], reverse=True)
+        if sig_singles:
+            mr_adc.log.info("1h block:")
+            for p, p_label, val in sig_singles:
+                mr_adc.log.info(f"{p_label}({p:4d}) = {val:7.4f}")
+            mr_adc.log.info("")
+        # Filter and sort doubles by significance
+        sig_doubles = sorted([d for d in doubles if d[6] > print_thresh], key=lambda x: x[6], reverse=True)
+        if sig_doubles:
+            mr_adc.log.info("2h1p block:")
+            for p, q, r, p_label, q_label, r_label, val in sig_doubles:
+                mr_adc.log.info(f"{p_label},{q_label}({p:4d}, {q:4d}) -> {r_label}({r:4d}) = {val:7.4f}")
+            mr_adc.log.info("")
+        mr_adc.log.info("-------------------------------------------------------------")
+
+    mr_adc.log.timer("computing eigenvector analysis", *cput0)
+

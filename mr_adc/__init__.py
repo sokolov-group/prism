@@ -203,3 +203,7 @@ class CVSIPMRADC(MRADC):
 
     def analyze_spec_factor(self):
         return cvs_ip.analyze_spec_factor(self)
+
+    def analyze_eigenvector(self):
+        return cvs_ip.analyze_eigenvector(self)
+
