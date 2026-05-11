@@ -21127,8 +21127,7 @@ def analyze_spec_factor(mr_adc):
         spec_Contribution = spec_Contribution[partial_Contribution > 1e-6]
         index_orb = index_orb[partial_Contribution > 1e-6]
         partial_Contribution = partial_Contribution[partial_Contribution > 1e-6]
-
-        mr_adc.log.info("\n%s | root %d \n" % (mr_adc.method, state))
+        mr_adc.log.info("\n%s-%s | State %d\n" % (mr_adc.method_type.upper(), mr_adc.method.upper(), state+1))
         mr_adc.log.info("  MO          Spec. Contribution       Partial Contribution")
         mr_adc.log.info("-------------------------------------------------------------")
 
