@@ -4947,57 +4947,58 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
     sigma_KWCU_baab += 1/12 * einsum('ixCy,Kzwi,wz,UxWy->KWCU', X_baab, v_xaax, rdm_ca, rdm_ccaa, optimize = einsum_type)
     sigma_KWCU_baab += 1/6 * einsum('ixCy,Kzwi,wz,UxyW->KWCU', X_baab, v_xaax, rdm_ca, rdm_ccaa, optimize = einsum_type)
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncvs, ncvs, nextern], ntensors = 2)
+    chunks = tools.calculate_double_chunks(mr_adc, ncvs, [ncvs, nextern, nextern],
+                                                            [ncas, ncas, nextern], ntensors = 2)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.xxee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
     
         ## Two-electron integral
-        v_xxee = mr_adc.v2e.xxee[:, :, s_chunk:f_chunk]
+        v_xxee = mr_adc.v2e.xxee[s_chunk:f_chunk]
 
-        temp =- 1/2 * einsum('ixaU,iKCa,Wx->KWCU', X_aaaa, v_xxee, rdm_ca, optimize = einsum_type)
-        temp -= 1/6 * einsum('ixay,iKCa,UxWy->KWCU', X_aaaa, v_xxee, rdm_ccaa, optimize = einsum_type)
-        temp += 1/6 * einsum('ixay,iKCa,UxyW->KWCU', X_aaaa, v_xxee, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/3 * einsum('ixay,iKCa,UxWy->KWCU', X_abab, v_xxee, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/6 * einsum('ixay,iKCa,UxyW->KWCU', X_abab, v_xxee, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCU_aaaa[:, :, s_chunk:f_chunk] += temp
+        temp =- 1/2 * einsum('ixaU,iKCa,Wx->KWCU', X_aaaa[s_chunk:f_chunk], v_xxee, rdm_ca, optimize = einsum_type)
+        temp -= 1/6 * einsum('ixay,iKCa,UxWy->KWCU', X_aaaa[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        temp += 1/6 * einsum('ixay,iKCa,UxyW->KWCU', X_aaaa[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/3 * einsum('ixay,iKCa,UxWy->KWCU', X_abab[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/6 * einsum('ixay,iKCa,UxyW->KWCU', X_abab[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        sigma_KWCU_aaaa += temp
 
-        temp =- 1/3 * einsum('ixay,iKCa,UxWy->KWCU', X_aaaa, v_xxee, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/6 * einsum('ixay,iKCa,UxyW->KWCU', X_aaaa, v_xxee, rdm_ccaa, optimize = einsum_type)
-        temp -= 1/2 * einsum('ixaU,iKCa,Wx->KWCU', X_abab, v_xxee, rdm_ca, optimize = einsum_type)
-        temp -= 1/6 * einsum('ixay,iKCa,UxWy->KWCU', X_abab, v_xxee, rdm_ccaa, optimize = einsum_type)
-        temp += 1/6 * einsum('ixay,iKCa,UxyW->KWCU', X_abab, v_xxee, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCU_abab[:, :, s_chunk:f_chunk] += temp
+        temp =- 1/3 * einsum('ixay,iKCa,UxWy->KWCU', X_aaaa[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/6 * einsum('ixay,iKCa,UxyW->KWCU', X_aaaa[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        temp -= 1/2 * einsum('ixaU,iKCa,Wx->KWCU', X_abab[s_chunk:f_chunk], v_xxee, rdm_ca, optimize = einsum_type)
+        temp -= 1/6 * einsum('ixay,iKCa,UxWy->KWCU', X_abab[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        temp += 1/6 * einsum('ixay,iKCa,UxyW->KWCU', X_abab[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        sigma_KWCU_abab += temp
 
-        temp =- 1/2 * einsum('ixaU,iKCa,Wx->KWCU', X_baab, v_xxee, rdm_ca, optimize = einsum_type)
-        temp += 1/6 * einsum('ixay,iKCa,UxWy->KWCU', X_baab, v_xxee, rdm_ccaa, optimize = einsum_type)
-        temp += 1/3 * einsum('ixay,iKCa,UxyW->KWCU', X_baab, v_xxee, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCU_baab[:, :, s_chunk:f_chunk] += temp
+        temp =- 1/2 * einsum('ixaU,iKCa,Wx->KWCU', X_baab[s_chunk:f_chunk], v_xxee, rdm_ca, optimize = einsum_type)
+        temp += 1/6 * einsum('ixay,iKCa,UxWy->KWCU', X_baab[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        temp += 1/3 * einsum('ixay,iKCa,UxyW->KWCU', X_baab[s_chunk:f_chunk], v_xxee, rdm_ccaa, optimize = einsum_type)
+        sigma_KWCU_baab += temp
 
         mr_adc.log.timer_debug("contracting v2e.xxee", *cput2)
-        del(v_xxee)
+    del(v_xxee, temp)
 
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.xeex [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
     
         ## Two-electron integral
-        v_xeex = mr_adc.v2e.xeex[:, s_chunk:f_chunk]
+        v_xeex = mr_adc.v2e.xeex[s_chunk:f_chunk]
 
-        temp  = 1/2 * einsum('ixaU,KCai,Wx->KWCU', X_aaaa, v_xeex, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('ixay,KCai,UxWy->KWCU', X_aaaa, v_xeex, rdm_ccaa, optimize = einsum_type)
-        temp += 1/2 * einsum('ixaU,KCai,Wx->KWCU', X_abab, v_xeex, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('ixay,KCai,UxWy->KWCU', X_abab, v_xeex, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCU_aaaa[:, :, s_chunk:f_chunk] += temp
+        temp  = 1/2 * einsum('ixaU,iaCK,Wx->KWCU', X_aaaa[s_chunk:f_chunk], v_xeex, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('ixay,iaCK,UxWy->KWCU', X_aaaa[s_chunk:f_chunk], v_xeex, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('ixaU,iaCK,Wx->KWCU', X_abab[s_chunk:f_chunk], v_xeex, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('ixay,iaCK,UxWy->KWCU', X_abab[s_chunk:f_chunk], v_xeex, rdm_ccaa, optimize = einsum_type)
+        sigma_KWCU_aaaa += temp
 
-        temp  = 1/2 * einsum('ixaU,KCai,Wx->KWCU', X_aaaa, v_xeex, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('ixay,KCai,UxWy->KWCU', X_aaaa, v_xeex, rdm_ccaa, optimize = einsum_type)
-        temp += 1/2 * einsum('ixaU,KCai,Wx->KWCU', X_abab, v_xeex, rdm_ca, optimize = einsum_type)
-        temp += 1/2 * einsum('ixay,KCai,UxWy->KWCU', X_abab, v_xeex, rdm_ccaa, optimize = einsum_type)
-        sigma_KWCU_abab[:, :, s_chunk:f_chunk] += temp
+        temp  = 1/2 * einsum('ixaU,iaCK,Wx->KWCU', X_aaaa[s_chunk:f_chunk], v_xeex, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('ixay,iaCK,UxWy->KWCU', X_aaaa[s_chunk:f_chunk], v_xeex, rdm_ccaa, optimize = einsum_type)
+        temp += 1/2 * einsum('ixaU,iaCK,Wx->KWCU', X_abab[s_chunk:f_chunk], v_xeex, rdm_ca, optimize = einsum_type)
+        temp += 1/2 * einsum('ixay,iaCK,UxWy->KWCU', X_abab[s_chunk:f_chunk], v_xeex, rdm_ccaa, optimize = einsum_type)
+        sigma_KWCU_abab += temp
 
         mr_adc.log.timer_debug("contracting v2e.xeex", *cput2)
-        del(v_xeex)
+    del(v_xeex, temp)
 
     chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 3)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
