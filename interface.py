@@ -148,8 +148,12 @@ class PYSCF:
             if hasattr(mf, "with_solvent"):
                 log.info("Solvent method detected in mf object...")
                 
-                ### TODO: See about how to decide with model is being used for mf object
-                self.v_pe = mf.with_solvent.v
+                solvent_obj = mf.with_solvent
+                solvent_name = solvent_obj.__class__.__name__.lower()
+                
+                if solvent_name == 'polembed':
+                    log.info("Polarizable Embedding detected in mf object...")
+                    self.v_pe = mf.with_solvent.v
                 
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df
