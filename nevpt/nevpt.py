@@ -54,7 +54,9 @@ def compute_energy(method):
         method.log.info("Number of active electrons:                        %s" % str(method.ref_nelecas[mstate:(mstate+deg)]))
 
         # Compute reduced density matrices for a specific state
-        rdms_ref = rdms.compute_reference_rdms(method, method.ref_wfn[mstate:(mstate+deg)], method.ref_nelecas[mstate:(mstate+deg)])
+        rdms_ref = lambda: None
+        if method.ref_wfn is not None:
+            rdms_ref = rdms.compute_reference_rdms(method, method.ref_wfn[mstate:(mstate+deg)], method.ref_nelecas[mstate:(mstate+deg)])
 
         # Compute amplitudes and correlation energy
         e_corr_state, t1_state = compute_energy_state(method, rdms_ref, e_0)
@@ -95,6 +97,12 @@ def compute_energy_state(method, rdms, e_0 = None):
     ncas = method.ncas
     nelecas = method.ref_nelecas
     nextern = method.nextern
+
+    if rdms is None:
+        rdms.ca = np.zeros((ncas,)*2)
+        rdms.ccaa = np.zeros((ncas,)*4)
+        rdms.cccaaa = np.zeros((ncas,)*6)
+        rdms.ccccaaaa = np.zeros((ncas,)*8)
 
     e_0p, e_p1p, e_m1p, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 7
 
