@@ -151,9 +151,11 @@ class PYSCF:
                 solvent_obj = mf.with_solvent
                 solvent_name = solvent_obj.__class__.__name__.lower()
                 
+                ### TODO: Look into solvent_name for other solvent 
+                
                 if solvent_name == 'polembed':
                     log.info("Polarizable Embedding detected in mf object...")
-                    self.v_pe = mf.with_solvent.v
+                
                 
             if getattr(mc, 'with_df', None):
                 self.reference_df = mc.with_df
