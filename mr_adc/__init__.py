@@ -36,9 +36,10 @@ class MRADC:
         if interface.reference == "scf":
             log.info("SCF reference given, defaulting to SR-ADC calculation")
 
-        elif (interface.reference not in ("casscf", "casci")):
-            log.info("The MR-ADC code does not support %s reference" % interface.reference)
-            raise Exception("The MR-ADC code does not support %s reference" % interface.reference)
+        elif interface.reference not in ("casscf", "casci"):
+            msg = "The MR-ADC code does not support use of a %s reference" % interface.reference
+            log.info(msg)
+            raise Exception(msg)
 
         self.stdout = interface.stdout
         self.verbose = interface.verbose
