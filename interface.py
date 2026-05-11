@@ -89,14 +89,6 @@ class PYSCF:
 
             self.reference_df = getattr(mf, "with_df", None)
 
-            ##if self.symmetry:
-            ##    from pyscf import symm
-            ##    if hasattr(mf._scf.mo_coeff, 'orbsym'):
-            ##        self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf._scf.mo_coeff.orbsym]
-            ##    else:
-            ##        self.group_repr_symm = None
-            ##else:
-            ##    self.group_repr_symm = None
         else:
 
             # Determine reference type
@@ -202,23 +194,13 @@ class PYSCF:
             self.ref_nelecas = len(ci) * [mc.nelecas, ]
             self.ref_wfn_deg = len(ci) * [1, ]
 
-            ### TODO: Check if this is done correctly when canonicalization changes the order of orbitals
-            ##self.symmetry = mc.mol.symmetry
-            ##if self.symmetry:
-            ##    from pyscf import symm
-            ##    if hasattr(mc._scf.mo_coeff, 'orbsym'):
-            ##        self.group_repr_symm = [symm.irrep_id2name(mc.mol.groupname, x) for x in mc._scf.mo_coeff.orbsym]
-            ##    else:
-            ##        self.group_repr_symm = None
-            ##else:
-            ##    self.group_repr_symm = None
-
             from pyscf.fci.direct_spin1 import trans_rdm1s
             self.trans_rdm1s = trans_rdm1s
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
             self.select_casci = None
 
         # Symmetry
+        # TODO: [MC OBJ] Check if this is done correctly when canonicalization changes the order of orbitals
         self.symmetry = self.mol.symmetry
         self.group_repr_symm = None
         if self.symmetry:
@@ -652,7 +634,4 @@ class PYSCF:
         rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))
 
         return rdm1, rdm2, rdm3, rdm4
-    
-    
-    
 
