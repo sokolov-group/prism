@@ -82,7 +82,7 @@ class PYSCF:
 
             self.ref_wfn = None
             self.ref_wfn_spin_mult = [1]
-            self.ref_wfn_deg = None
+            self.ref_wfn_deg = [1]
 
             self.mo_scf = self.mo
             self.ovlp = mf.get_ovlp(mf.mol)
