@@ -32505,8 +32505,8 @@ def analyze_eigenvector(mr_adc):
     result = []
     for state in range(nroots):
 
-        _singles = []
-        _doubles = []
+        _singles_dict = {}
+        _doubles_dict = {}
 
         # Transform eigenvectors to the non-orthogonal basis
         Y = apply_S_12(mr_adc, U[state], transpose = False)
@@ -32520,8 +32520,7 @@ def analyze_eigenvector(mr_adc):
         ind_idx = np.argsort(-Y_sq)
 
         # Filter by tolerance
-        mask = Y_sq[ind_idx] > print_thresh**2
-        ind_idx = ind_idx[mask]
+        ind_idx = ind_idx[Y_sq[ind_idx] > print_thresh ** 2]
         Y_sorted = Y[ind_idx]
 
         # Tensor configurations: (tensor_obj, shape, offsets, labels, list_type)
@@ -32557,33 +32556,37 @@ def analyze_eigenvector(mr_adc):
                     local_idx = orb_idx - tensor.start
                     indices = np.unravel_index(local_idx, shape)
                     values = tuple(idx + offset for idx, offset in zip(indices, offsets))
-                    entry = values + labels + (value,)
+                    key = values + labels
 
                     if list_type == 'singles':
-                        _singles.append(entry)
+                        _singles_dict[key] = _singles_dict.get(key, 0.0) + value
                     else:
-                        _doubles.append(entry)
+                        _doubles_dict[key] = _doubles_dict.get(key, 0.0) + value
                     break
 
+        _singles = [key + (val,) for key, val in _singles_dict.items()]
+        _doubles = [key + (val,) for key, val in _doubles_dict.items()]
         result.append((state, _singles, _doubles))
 
     for state, singles, doubles in result:
-        mr_adc.log.info(f"{mr_adc.method_type.upper()}-{mr_adc.method.upper()} | State {state+1:d} | dE (eV) = {de_ev[state]:12.4f}")
+        mr_adc.log.info("\n%s-%s | State %d | dE (eV) = %12.4f\n" % (mr_adc.method_type.upper(), mr_adc.method.upper(), state+1, de_ev[state]))
 
         # Filter and sort singles by significance
         sig_singles = sorted([s for s in singles if s[4] > print_thresh], key=lambda x: x[4], reverse=True)
         if sig_singles:
-            mr_adc.log.info("\n1p1h block:")
+            mr_adc.log.info("1p1h block:")
             for p, q, p_label, q_label, val in sig_singles:
-                mr_adc.log.info(f"{p_label}({p:4d}) -> {q_label}({q:4d}) = {val:7.4f}")
+                mr_adc.log.info("%s(%4d) -> %s(%4d) = %7.4f" % (p_label, p, q_label, q, val))
+            mr_adc.log.info("")
 
         # Filter and sort doubles by significance
         sig_doubles = sorted([d for d in doubles if d[8] > print_thresh], key=lambda x: x[8], reverse=True)
         if sig_doubles:
-            mr_adc.log.info("\n2p2h block:")
+            mr_adc.log.info("2p2h block:")
             for p, q, r, s, p_label, q_label, r_label, s_label, val in sig_doubles:
-                mr_adc.log.info(f"{p_label},{q_label}({p:4d}, {q:4d}) -> {r_label},{s_label}({r:4d}, {s:4d}) = {val:7.4f}")
-        mr_adc.log.info('')
+                mr_adc.log.info("%s,%s(%4d, %4d) -> %s,%s(%4d, %4d) = %7.4f" % (p_label, q_label, p, q, r_label, s_label, r, s, val))
+            mr_adc.log.info("")
+        mr_adc.log.info("-------------------------------------------------------------")
 
     mr_adc.log.timer("computing eigenvector analysis", *cput0)
 
