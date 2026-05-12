@@ -7238,11 +7238,11 @@ def compute_M_00(mr_adc):
             mr_adc.log.debug("v2e.xeae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
-            v_xeae_ab = mr_adc.v2e.xeae[:, s_chunk:f_chunk, :, :]
-            v_xeae_ba = mr_adc.v2e.xeae[:, :, :, s_chunk:f_chunk]
+            v_xeae_ab = np.ascontiguousarray(mr_adc.v2e.xeae[:, s_chunk:f_chunk, :, :])
+            v_xeae_ba = np.ascontiguousarray(mr_adc.v2e.xeae[:, :, :, s_chunk:f_chunk])
 
             ## Amplitudes
-            t1_xaee = mr_adc.t1.xaee[:, :, s_chunk:f_chunk, :]
+            t1_xaee = np.ascontiguousarray(mr_adc.t1.xaee[:, :, s_chunk:f_chunk, :])
 
             temp_chunk =- einsum('IYab,JaXb->IXJY', t1_xaee, v_xeae_ab, optimize = einsum_type)
             temp_chunk += 2 * einsum('IYab,JbXa->IXJY', t1_xaee, v_xeae_ba, optimize = einsum_type)
@@ -7285,8 +7285,8 @@ def compute_M_00(mr_adc):
             e_extern_a = mr_adc.mo_energy.e[s_chunk:f_chunk]
 
             ## Amplitudes
-            t1_xaee_ab = mr_adc.t1.xaee[:, :, s_chunk:f_chunk, :]
-            t1_xaee_ba = mr_adc.t1.xaee[:, :, :, s_chunk:f_chunk]
+            t1_xaee_ab = np.ascontiguousarray(mr_adc.t1.xaee[:, :, s_chunk:f_chunk, :])
+            t1_xaee_ba = np.ascontiguousarray(mr_adc.t1.xaee[:, :, :, s_chunk:f_chunk])
 
             temp_chunk  = 1/2 * einsum('I,IYab,JXab->IXJY', e_cvs, t1_xaee_ab, t1_xaee_ab, optimize = einsum_type)
             temp_chunk -= einsum('I,IYab,JXba->IXJY', e_cvs, t1_xaee_ab, t1_xaee_ba, optimize = einsum_type)
@@ -9033,11 +9033,11 @@ def compute_M_00(mr_adc):
             mr_adc.log.debug("v2e.aeae [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             ## Two-electron integrals
-            v_aeae_ab = mr_adc.v2e.aeae[:, s_chunk:f_chunk, :, :]
-            v_aeae_ba = mr_adc.v2e.aeae[:, :, :, s_chunk:f_chunk]
+            v_aeae_ab = np.ascontiguousarray(mr_adc.v2e.aeae[:, s_chunk:f_chunk, :, :])
+            v_aeae_ba = np.ascontiguousarray(mr_adc.v2e.aeae[:, :, :, s_chunk:f_chunk])
 
             ## Amplitudes
-            t1_aaee = mr_adc.t1.aaee[:, :, s_chunk:f_chunk, :]
+            t1_aaee = np.ascontiguousarray(mr_adc.t1.aaee[:, :, s_chunk:f_chunk, :])
 
             temp_chunk  = einsum('IJ,Xxab,Yayb,xy->IXJY', np.identity(ncvs), t1_aaee, v_aeae_ab, rdm_ca, optimize = einsum_type)
             temp_chunk -= 1/2 * einsum('IJ,Xxab,Ybya,xy->IXJY', np.identity(ncvs), t1_aaee, v_aeae_ba, rdm_ca, optimize = einsum_type)
@@ -9058,8 +9058,8 @@ def compute_M_00(mr_adc):
             e_extern_a = mr_adc.mo_energy.e[s_chunk:f_chunk]
 
             ## Amplitudes
-            t1_aaee_ab = mr_adc.t1.aaee[:, :, s_chunk:f_chunk, :]
-            t1_aaee_ba = mr_adc.t1.aaee[:, :, :, s_chunk:f_chunk]
+            t1_aaee_ab = np.ascontiguousarray(mr_adc.t1.aaee[:, :, s_chunk:f_chunk, :])
+            t1_aaee_ba = np.ascontiguousarray(mr_adc.t1.aaee[:, :, :, s_chunk:f_chunk])
 
             temp_chunk  = einsum('a,IJ,Xxab,Yyab,xy->IXJY', e_extern_a, np.identity(ncvs), t1_aaee_ab, t1_aaee_ab, rdm_ca, optimize = einsum_type)
             temp_chunk -= 1/2 * einsum('a,IJ,Xxab,Yyba,xy->IXJY', e_extern_a, np.identity(ncvs), t1_aaee_ab, t1_aaee_ba, rdm_ca, optimize = einsum_type)
@@ -32108,8 +32108,8 @@ def compute_trans_moments(mr_adc):
         Y[i] = apply_S_12(mr_adc, U[i], transpose = False)
     del U
 
-    Y_KC = Y[:, ce].reshape(nroots, ncvs, nextern)
-    Y_KW = Y[:, ca].reshape(nroots, ncvs, ncas)
+    Y_KC = np.ascontiguousarray(Y[:, ce].reshape(nroots, ncvs, nextern))
+    Y_KW = np.ascontiguousarray(Y[:, ca].reshape(nroots, ncvs, ncas))
 
     ## {q^(0)| h^(0)^dag}
     ### q(0) - CA
