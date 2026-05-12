@@ -24181,13 +24181,13 @@ def compute_M_00(mr_adc):
             for s_t_chunk, f_t_chunk in chunks:
 
                 ## Amplitudes
-                t1_aaee = mr_adc.t1.aaee[:, s_t_chunk:f_t_chunk]
+                t1_aaee = mr_adc.t1.aaee[s_t_chunk:f_t_chunk]
 
                 ## Reduced density matrices
                 rdm_ca_xy = mr_adc.rdm.ca[s_t_chunk:f_t_chunk,s_v_chunk:f_v_chunk]
 
-                temp_chunk =- 1/2 * einsum('IJ,Xxab,yaAb,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca_xy, optimize = einsum_type)
-                temp_chunk += einsum('IJ,Xxab,ybAa,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca_xy, optimize = einsum_type)
+                temp_chunk =- 1/2 * einsum('IJ,xXba,yaAb,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca_xy, optimize = einsum_type)
+                temp_chunk += einsum('IJ,xXba,ybAa,xy->IAJX', np.identity(ncvs), t1_aaee, v_aeee, rdm_ca_xy, optimize = einsum_type)
 
                 temp += temp_chunk
             mr_adc.log.timer_debug("contracting v2e.aeee", *cput1)
