@@ -32349,8 +32349,9 @@ def analyze_spec_factor(mr_adc):
 
         top_mo_cont = []
         for mo_idx in flat_idx:
-            p, q = np.unravel_index(mo_idx, (nmo, nmo))
-            p, q = min(p, q), max(p, q)
+            #p, q = np.unravel_index(mo_idx, (nmo, nmo))
+            #p, q = min(p, q), max(p, q)
+            p, q = sorted(np.unravel_index(mo_idx, (nmo, nmo)))
 
             frac = sq_norm[p, q] / total
 
@@ -32374,10 +32375,11 @@ def analyze_spec_factor(mr_adc):
 
     # Report results
     for state, mos in results:
-        mr_adc.log.info(f"\n{mr_adc.method_type.upper()}-{mr_adc.method.upper()} | State {state+1:d} | Intensity = {spec_intensity[state]:10.6f}")
+        mr_adc.log.info("\n%s-%s | State %d | Intensity = %10.6f\n" % (mr_adc.method_type.upper(), mr_adc.method.upper(), state+1, spec_intensity[state]))
         for p, q, p_label, q_label, sym_p, sym_q, frac in mos:
             mr_adc.log.info(f"{p_label.upper()}({p+1:3d}) -> {q_label.upper()}({q+1:3d})  [{sym_p:>4} -> {sym_q:>4}] = {frac:7.4f}")
-    mr_adc.log.info("")
+        mr_adc.log.info("")
+        mr_adc.log.info("-------------------------------------------------------------")
 
     mr_adc.log.timer("computing spectroscopic factors analysis", *cput0)
 
@@ -32554,7 +32556,8 @@ def analyze_eigenvector(mr_adc):
             for tensor, shape, offsets, labels, list_type in tensor_configs:
                 if orb_idx in range(tensor.start, tensor.stop):
                     local_idx = orb_idx - tensor.start
-                    indices = np.unravel_index(local_idx, shape)
+                    #indices = np.unravel_index(local_idx, shape)
+                    indices = sorted(np.unravel_index(local_idx, shape))
                     values = tuple(idx + offset for idx, offset in zip(indices, offsets))
                     key = values + labels
 
