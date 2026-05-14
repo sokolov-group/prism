@@ -1434,11 +1434,10 @@ def compute_M_00(mr_adc):
     # Copy redundant matrix blocks:
     M_00[s_c:f_c, s_casci:f_casci] = M_00[s_casci:f_casci, s_c:f_c].T.copy()
 
-    # DEBUG
-    en, ev = np.linalg.eigh(M_00)
-    print("Eigen values of M_00 block:", en)
-    exit()
-    # DEBUG
+####    # DEBUG
+####    en, ev = np.linalg.eigh(M_00)
+####    print("Eigen values of M_00 block:", en)
+####    # DEBUG
 
     mr_adc.M_00 = M_00
 
@@ -12268,15 +12267,45 @@ def compute_trans_moments(mr_adc):
         cput1 = (logger.process_clock(), logger.perf_counter())
 
         # Variables from kernel
-        ncvs = mr_adc.ncvs
+        ncore = mr_adc.ncore
 
         # Excitation Manifolds
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
 
-        T[:, s_c:f_c] = np.identity(ncvs)
+        T[:, s_c:f_c] = np.identity(ncore)
 
         mr_adc.log.timer_debug("computing T q0-h0 C-C", *cput1)
+
+    def compute_T__q1_h0__C_CAS(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Variables from kernel
+        ncore = mr_adc.ncore
+
+        # Excitation Manifolds
+        s_casci = mr_adc.h0.s_casci
+        f_casci = mr_adc.h0.f_casci
+
+        ## Amplitudes
+        t1_ca = mr_adc.t1.ca
+        t1_caaa = mr_adc.t1.caaa
+
+        # Reduced Density Matrices
+        trdm_a_c = mr_adc.rdm.c_a
+        trdm_aaa_cca = mr_adc.rdm.cca_aaa
+        trdm_abb_cca = mr_adc.rdm.cca_abb
+
+        T[:, s_casci:f_casci] =- einsum('Ix,Px->IP', t1_ca, trdm_a_c, optimize = einsum_type)
+        T[:, s_casci:f_casci] -= einsum('Ixyz,Pyzx->IP', t1_caaa, trdm_aaa_cca, optimize = einsum_type)
+        T[:, s_casci:f_casci] -= einsum('Ixyz,Pyzx->IP', t1_caaa, trdm_abb_cca, optimize = einsum_type)
+
+        mr_adc.log.timer_debug("computing T q1-h0 C-CAS", *cput1)
 
     def compute_T__q0_h1__C_CAA(mr_adc, T):
 
@@ -15578,6 +15607,25 @@ def compute_trans_moments(mr_adc):
 
         mr_adc.log.timer_debug("computing T q2-h1 V-CVA", *cput1)
 
+    def compute_T__q0_h0__A_CAS(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Reduced Density Matrices
+        trdm_a_c = mr_adc.rdm.c_a
+
+        ## Excitation Manifolds
+        s_casci = mr_adc.h0.s_casci
+        f_casci = mr_adc.h0.f_casci
+
+        T[:, s_casci:f_casci] = einsum('PX->XP', trdm_a_c, optimize = einsum_type).copy()
+
+        mr_adc.log.timer_debug("computing T q0-h0 A-CAS", *cput1)
+
     def compute_T__q1_h0__A_C(mr_adc, T):
 
         cput1 = (logger.process_clock(), logger.perf_counter())
@@ -15587,9 +15635,9 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Amplitudes
-        t1_xa = mr_adc.t1.xa
+        t1_ca = mr_adc.t1.ca
 
-        t1_xaaa = mr_adc.t1.xaaa
+        t1_caaa = mr_adc.t1.caaa
 
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
@@ -15598,10 +15646,10 @@ def compute_trans_moments(mr_adc):
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
 
-        T_a_c  = einsum('JX->XJ', t1_xa, optimize = einsum_type).copy()
-        T_a_c += einsum('JxXy,xy->XJ', t1_xaaa, rdm_ca, optimize = einsum_type)
-        T_a_c -= 1/2 * einsum('JxyX,xy->XJ', t1_xaaa, rdm_ca, optimize = einsum_type)
-        T[:, s_c:f_c] = T_a_c.copy()
+        T_a_c  = einsum('JX->XJ', t1_ca, optimize = einsum_type).copy()
+        T_a_c += einsum('JxXy,xy->XJ', t1_caaa, rdm_ca, optimize = einsum_type)
+        T_a_c -= 1/2 * einsum('JxyX,xy->XJ', t1_caaa, rdm_ca, optimize = einsum_type)
+        T[:, s_c:f_c] = T_a_c
 
         mr_adc.log.timer_debug("computing T q1-h0 A-C", *cput1)
 
@@ -18028,10 +18076,10 @@ def compute_trans_moments(mr_adc):
         einsum_type = mr_adc.interface.einsum_type
 
         # Amplitudes
-        t1_xe = mr_adc.t1.xe
+        t1_ce = mr_adc.t1.ce
 
-        t1_xaea = mr_adc.t1.xaea
-        t1_xaae = mr_adc.t1.xaae
+        t1_caea = mr_adc.t1.caea
+        t1_caae = mr_adc.t1.caae
 
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
@@ -18040,12 +18088,39 @@ def compute_trans_moments(mr_adc):
         s_c = mr_adc.h0.s_c
         f_c = mr_adc.h0.f_c
 
-        T_e_c  = einsum('JA->AJ', t1_xe, optimize = einsum_type).copy()
-        T_e_c += einsum('JxAy,yx->AJ', t1_xaea, rdm_ca, optimize = einsum_type)
-        T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t1_xaae, rdm_ca, optimize = einsum_type)
+        T_e_c  = einsum('JA->AJ', t1_ce, optimize = einsum_type).copy()
+        T_e_c += einsum('JxAy,yx->AJ', t1_caea, rdm_ca, optimize = einsum_type)
+        T_e_c -= 1/2 * einsum('JxyA,yx->AJ', t1_caae, rdm_ca, optimize = einsum_type)
         T[:, s_c:f_c] = T_e_c.copy()
 
         mr_adc.log.timer_debug("computing T q1-h0 E-C", *cput1)
+
+    def compute_T__q1_h0__E_CAS(mr_adc, T):
+
+        cput1 = (logger.process_clock(), logger.perf_counter())
+
+        # Einsum definition from kernel
+        einsum = mr_adc.interface.einsum
+        einsum_type = mr_adc.interface.einsum_type
+
+        # Amplitudes
+        t1_ae = mr_adc.t1.ae
+        t1_aaae = mr_adc.t1.aaae
+
+        # Reduced Density Matrices
+        trdm_a_c = mr_adc.rdm.c_a
+        trdm_aaa_cca = mr_adc.rdm.cca_aaa
+        trdm_abb_cca = mr_adc.rdm.cca_abb
+
+        ## Excitation Manifolds
+        s_casci = mr_adc.h0.s_casci
+        f_casci = mr_adc.h0.f_casci
+
+        T[:, s_casci:f_casci]  = einsum('xA,Px->AP', t1_ae, trdm_a_c, optimize = einsum_type)
+        T[:, s_casci:f_casci] += einsum('xyzA,Pyxz->AP', t1_aaae, trdm_aaa_cca, optimize = einsum_type)
+        T[:, s_casci:f_casci] += einsum('xyzA,Pyxz->AP', t1_aaae, trdm_abb_cca, optimize = einsum_type)
+
+        mr_adc.log.timer_debug("computing T q1-h0 E-CAS", *cput1)
 
     def compute_T__q1_h1__E_CAA(mr_adc, T):
 
@@ -20780,8 +20855,6 @@ def compute_trans_moments(mr_adc):
     nmo = mr_adc.nmo
     nroots = mr_adc.nroots
 
-    ncvs = mr_adc.ncvs
-    nval = mr_adc.nval
     ncore = mr_adc.ncore
     ncas = mr_adc.ncas
     nocc = mr_adc.nocc
@@ -20800,12 +20873,18 @@ def compute_trans_moments(mr_adc):
     X = np.zeros((nmo, nroots))
 
     # CORE terms
-    T = np.zeros((ncvs, dim))
+    T = np.zeros((ncore, dim))
 
     ## < [ q^(0), h^(0)^\dag ] >
     ### CORE(0) - C
     compute_T__q0_h0__C_C(mr_adc, T)
 
+    # MR-ADC(1) terms
+    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        ### CORE(1) - CAS
+        compute_T__q1_h0__C_CAS(mr_adc, T)
+
+    # MR-ADC(2) terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
         ## < [ q^(0), h^(1)^\dag ] >
         ### CORE(0) - CAA
@@ -20845,51 +20924,13 @@ def compute_trans_moments(mr_adc):
             T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
         T = T_ortho
 
-    X[:ncvs, :] = np.dot(T, U.T)
-
-    # VALENCE terms
-    # MR-ADC(2) terms
-    if nval > 0:
-        T = np.zeros((nval, dim))
-
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            ## < [ q^(2), h^(0)^\dag ] >
-            ### VALENCE(2) - C
-            compute_T__q2_h0__V_C(mr_adc, T)
-
-        # MR-ADC(2)-X terms
-        ## {q^(2)| h^(1)^dag}
-        if mr_adc.method == "mr-adc(2)-x":
-
-            ### VALENCE(2) - CAA
-            compute_T__q2_h1__V_CAA(mr_adc, T)
-
-            ### VALENCE(2) - CCE
-            compute_T__q2_h1__V_CCE(mr_adc, T)
-
-            ### VALENCE(2) - CAE
-            compute_T__q2_h1__V_CAE(mr_adc, T)
-
-            ### VALENCE(2) - CCA
-            compute_T__q2_h1__V_CCA(mr_adc, T)
-
-            ### VALENCE(2) - CVE
-            compute_T__q2_h1__V_CVE(mr_adc, T)
-
-            ### VALENCE(2) - CVA
-            compute_T__q2_h1__V_CVA(mr_adc, T)
-
-        # Transform to the orthogonal basis
-        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-            T_ortho = np.zeros((T.shape[0], mr_adc.h_orth.dim))
-            for p in range(T.shape[0]):
-                T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
-            T = T_ortho
-
-        X[ncvs:ncore, :] = np.dot(T, U.T)
+    X[:ncore, :] = np.dot(T, U.T)
 
     # ACTIVE terms
     T = np.zeros((ncas, dim))
+
+    # ACTIVE(0) - CAS
+    compute_T__q0_h0__A_CAS(mr_adc, T)
 
     # MR-ADC(1) terms
     ## < [ q^(1), h^(0)^\dag ] >
@@ -20966,6 +21007,9 @@ def compute_trans_moments(mr_adc):
 
         ### EXTERNAL(1) - C
         compute_T__q1_h0__E_C(mr_adc, T)
+
+        ### EXTERNAL(1) - CAS
+        compute_T__q1_h0__E_CAS(mr_adc, T)
 
     # MR-ADC(2) terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
