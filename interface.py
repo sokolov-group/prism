@@ -475,6 +475,24 @@ class PYSCF:
         return Sp_psi
 
     #from prism_beta
+    def apply_cre_a(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[0] == "a":
+                y_psi, y_psi_ne = self.act_cre_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_cre_b(psi, ncas, nelecas, y)
+            psi_list.append(y_psi)
+            psi_ne = y_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 1)
+
+        return psi_list, psi_ne
+
     def apply_a(self, psi, ncas, nelecas, spin):
 
         psi_list = []

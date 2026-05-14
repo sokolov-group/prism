@@ -252,9 +252,14 @@ def diagonalize_eff_H(method):
             h_eff[J, I] = H_IJ
 
     if method.compute_coupling:
-        print("H_eff_1e=")
+        H_dyall_off = method.H_dyall - np.diag(np.diagonal(method.H_dyall))
+        print("h_eff=")
         print(h_eff)
-        method.Heff_1e = h_eff
+        print("H_dyall_off=")
+        print(H_dyall_off)
+        print("total=")
+        method.Heff_1e = h_eff + H_dyall_off 
+        print(method.Heff_1e)
 
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
