@@ -26791,7 +26791,7 @@ def compute_sigma_vector(mr_adc, Xt, ints):
 
         sigma_KW = np.zeros((ncvs, ncas))
 
-        chunks = tools.calculate_chunks(mr_adc, ncas, [ncas, nextern, nextern], ntensors = 3)
+        chunks = tools.calculate_chunks(mr_adc, ncas, [ncas, nextern, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput2 = (logger.process_clock(), logger.perf_counter())
             mr_adc.log.debug("v2e.aeae, t1.aaee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
@@ -26802,18 +26802,16 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             ## Amplitude
             t1_aaee = mr_adc.t1.aaee[s_chunk:f_chunk]
 
-            temp  = einsum('Kxab,Wayb,xy->KW', X, v_aeae, rdm_ca, optimize = einsum_type)
-            temp -= 1/2 * einsum('Kxab,Wbya,xy->KW', X, v_aeae, rdm_ca, optimize = einsum_type)
-            temp += einsum('Kxab,a,Wyab,xy->KW', X, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-            temp -= 1/2 * einsum('Kxab,a,Wyba,xy->KW', X, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-            temp += einsum('Kxab,b,Wyab,xy->KW', X, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-            temp -= 1/2 * einsum('Kxab,b,Wyba,xy->KW', X, e_extern, t1_aaee, rdm_ca, optimize = einsum_type)
-            temp -= einsum('Kxab,yz,Wyab,xz->KW', X, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
-            temp += 1/2 * einsum('Kxab,yz,Wyba,xz->KW', X, h_aa, t1_aaee, rdm_ca, optimize = einsum_type)
-            temp -= einsum('Kxab,Wyab,yzwu,xwzu->KW', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-            temp += 1/2 * einsum('Kxab,Wyba,yzwu,xwzu->KW', X, t1_aaee, v_aaaa, rdm_ccaa, optimize = einsum_type)
-            sigma_KW[:, s_chunk:f_chunk] += temp
-
+            sigma_KW += einsum('Kxab,ybWa,yx->KW', X, v_aeae, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_KW -= 1/2 * einsum('Kxab,yaWb,yx->KW', X, v_aeae, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_KW += einsum('Kxab,a,yWba,yx->KW', X, e_extern, t1_aaee, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_KW -= 1/2 * einsum('Kxab,a,yWab,yx->KW', X, e_extern, t1_aaee, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_KW += einsum('Kxab,b,yWba,yx->KW', X, e_extern, t1_aaee, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_KW -= 1/2 * einsum('Kxab,b,yWab,yx->KW', X, e_extern, t1_aaee, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_KW -= einsum('Kxab,yz,yWba,xz->KW', X, h_aa[s_chunk:f_chunk], t1_aaee, rdm_ca, optimize = einsum_type)
+            sigma_KW += 1/2 * einsum('Kxab,yz,yWab,xz->KW', X, h_aa[s_chunk:f_chunk], t1_aaee, rdm_ca, optimize = einsum_type)
+            sigma_KW -= einsum('Kxab,yWba,yzwu,xwzu->KW', X, t1_aaee, v_aaaa[s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
+            sigma_KW += 1/2 * einsum('Kxab,yWab,yzwu,xwzu->KW', X, t1_aaee, v_aaaa[s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
             sigma_KW -= einsum('Kxab,yW,yzab,xz->KW', X, h_aa[s_chunk:f_chunk], t1_aaee, rdm_ca, optimize = einsum_type)
             sigma_KW += 1/2 * einsum('Kxab,Wy,zyab,zx->KW', X, h_aa, t1_aaee, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
             sigma_KW += 1/2 * einsum('Kxab,yzab,yuwW,xwzu->KW', X, t1_aaee, v_aaaa[s_chunk:f_chunk], rdm_ccaa, optimize = einsum_type)
