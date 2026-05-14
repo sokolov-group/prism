@@ -515,6 +515,21 @@ class PYSCF:
 
         return vec_list
 
+    
+    #from prism_beta
+    # Apply Hamiltonian on a vector: (H - E_0) |vec>
+    def apply_H(self, h1eff_act, eri, nelectron, e_zero, vec):
+
+        ncas = eri.shape[0]
+
+        from pyscf import fci
+        h_eri = fci.direct_spin1.absorb_h1e(h1eff_act.copy(), eri, ncas, nelectron, 0.5)
+        temp = fci.direct_spin1.contract_2e(h_eri, vec, ncas, nelectron)
+        ham_vec = temp - e_zero*vec
+
+        return ham_vec
+
+
 
     # Act annihilation operator (alpha spin)
     def act_cre_a(self, wfn, ncas, nelec, orb):
