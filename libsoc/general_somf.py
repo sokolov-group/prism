@@ -36,6 +36,7 @@ if prism_path not in sys.path:
 from socutils.somf import somf
 
 def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", verbose = 4):
+
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
     nmo = interface.nmo
@@ -126,9 +127,12 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     H_sf = np.diag(E_spinstate).astype('complex')
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
 
+    # Print results obtained from soc-sa-casscf
+    print_result_sa_casscf(interface, en_soc)
+
     sys.stdout.flush()
     interface.log.timer0("total %s calculation" % soc_name, *cput0)
-
+    
     return en_soc, evec_soc
 
 def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, soc = "breit-pauli", verbose = 4):
@@ -451,3 +455,40 @@ def get_hsf1e_x2c2(method, unc=True):
     return h1e_sfx2c1, h1e_sfx2c2
 
 
+def print_result_sa_casscf(interface, en_soc):
+    
+    h2ev = interface.hartree_to_ev
+    h2cm = interface.hartree_to_inv_cm
+    
+    interface.log.info("\nSummary of SOC-SA-CASSCF:")
+
+    if interface.soc:
+        interface.log.info("\nSummary of results for the %s calculation with the %s reference:" % (interface.soc.upper(), interface.reference.upper()))
+    else:
+        interface.log.info("\nSummary of results for the %s calculation with the %s reference:" % (interface.reference.upper()))
+
+    interface.log.info("------------------------------------------------------------------------------------------------------------------")
+    interface.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
+    interface.log.info("------------------------------------------------------------------------------------------------------------------")
+
+    e_gs  = en_soc[0]
+    e_tot = en_soc
+
+    n_states = len(e_tot)
+
+    for p in range(n_states):
+        deg = 1
+        if not interface.soc:
+            deg = interface.spin_mult[p]
+        de = e_tot[p] - e_gs
+        de_ev = de * h2ev
+        de_cm = de * h2cm
+        if p == 0 or abs(de) < 1e-5:
+            interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
+        else:
+            de_nm = 10000000 / de_cm
+            interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, 1997))
+
+    interface.log.info("----------------------------------------------------------------------------------------------------------------")
+
+    return
