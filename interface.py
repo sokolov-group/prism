@@ -697,8 +697,9 @@ class PYSCF:
 
     
 
-    def run_soc(self, soc_type):
-        self.soc = soc_type
+    def run_soc(self, soc_type=None):
+        if soc_type:
+            self.soc = soc_type
         from prism.libsoc import compute
         compute.compute_somf_soc(self)  
 

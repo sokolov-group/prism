@@ -425,7 +425,6 @@ def vector_magnetization(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
 
 
 def tensor_susceptibility(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
-    print("Susceptibility tensor X*T (cm3/mol) in B vector=", B_vec)
     B_unit = np.eye(3)
     chi_T_eval_all= np.zeros((len(T_list),len(Bs_list),3))
     for I in range(len(T_list)):
