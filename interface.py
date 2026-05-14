@@ -145,7 +145,6 @@ class PYSCF:
             # SOC params:
             self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
             self.unc = None
-            #self._soc = Non
 
             # Basis set uncontraction objects: xmol, contraction coefficients.
             # Use x2c_setup to obtain self.xmol and self.contr_coeff 
@@ -679,9 +678,6 @@ class PYSCF:
 
         return rdm1, rdm2, rdm3, rdm4
     
-
-    
-
     def run_soc(self, soc_type):
         self.soc = soc_type
         from prism.libsoc import compute
