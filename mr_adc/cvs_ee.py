@@ -26843,35 +26843,29 @@ def compute_sigma_vector(mr_adc, Xt, ints):
         # Reduced Density Matrices
         rdm_ca = mr_adc.rdm.ca
 
-        sigma_KC  = 1/2 * einsum('ixCa,Kyai,xy->KC', X, v_xaex, rdm_ca, optimize = einsum_type)
-        sigma_KC -= einsum('ixCa,iKya,xy->KC', X, v_xxae, rdm_ca, optimize = einsum_type)
-        sigma_KC -= einsum('ixaC,Kyai,xy->KC', X, v_xaex, rdm_ca, optimize = einsum_type)
-        sigma_KC += 1/2 * einsum('ixaC,iKya,xy->KC', X, v_xxae, rdm_ca, optimize = einsum_type)
+        X = einsum('Kxab,xy->yKab', X, rdm_ca, optimize = einsum_type)
+
+        sigma_KC  = 1/2 * einsum('yiCa,Kyai->KC', X, v_xaex, optimize = einsum_type)
+        sigma_KC -= einsum('yiCa,iKya->KC', X, v_xxae, optimize = einsum_type)
+        sigma_KC -= einsum('yiaC,Kyai->KC', X, v_xaex, optimize = einsum_type)
+        sigma_KC += 1/2 * einsum('yiaC,iKya->KC', X, v_xxae, optimize = einsum_type)
 
         chunks = tools.calculate_double_chunks(mr_adc, ncas, [nextern, nextern, nextern],
                                                                 [ncvs, nextern, nextern], ntensors = 2)
-        for i_v_chunk, (s_v_chunk, f_v_chunk) in enumerate(chunks):
+        for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput2 = (logger.process_clock(), logger.perf_counter())
-            mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_v_chunk + 1, len(chunks), s_v_chunk, f_v_chunk)
+            mr_adc.log.debug("v2e.aeee [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
 
             if mr_adc.interface.with_df:
-                v_aeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_v_chunk, f_v_chunk)
+                v_aeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lae, mr_adc.v2e.Lee, s_chunk, f_chunk)
             else:
-                v_aeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_v_chunk:f_v_chunk])
+                v_aeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.aeee[s_chunk:f_chunk])
 
-
-            for s_x_chunk, f_x_chunk in chunks:
-
-                X_x = np.ascontiguousarray(X[:, s_x_chunk:f_x_chunk])
-
-                ## Reduced density matrices
-                rdm_ca_xy = rdm_ca[s_x_chunk:f_x_chunk,s_v_chunk:f_v_chunk]
-
-                sigma_KC -= 1/2 * einsum('Kxab,yaCb,xy->KC', X_x, v_aeee, rdm_ca_xy, optimize = einsum_type)
-                sigma_KC += einsum('Kxab,ybCa,xy->KC', X_x, v_aeee, rdm_ca_xy, optimize = einsum_type)
+            sigma_KC -= 1/2 * einsum('yKab,yaCb->KC', X[s_chunk:f_chunk], v_aeee, optimize = einsum_type)
+            sigma_KC += einsum('yKab,ybCa->KC', X[s_chunk:f_chunk], v_aeee, optimize = einsum_type)
 
             mr_adc.log.timer_debug("computing v2e.aeee", *cput2)
-        del (v_aeee, rdm_ca_xy)
+        del (v_aeee)
 
         sigma[ce] += np.ascontiguousarray(sigma_KC).reshape(-1)
 
