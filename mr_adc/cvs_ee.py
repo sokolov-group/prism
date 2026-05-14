@@ -27618,8 +27618,8 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             # Reduced Density Matrices
             rdm_ccaa = mr_adc.rdm.ccaa[s_chunk:f_chunk]
 
-            sigma_KC -= 1/2 * einsum('Kxay,yCaz,xz->KC', X_aaaa[:, :, :, s_chunk:f_chunk], v_aeea, rdm_ca, optimize = einsum_type)
-            sigma_KC -= 1/2 * einsum('Kxay,yCaz,xz->KC', X_baab[:, :, :, s_chunk:f_chunk], v_aeea, rdm_ca, optimize = einsum_type)
+            sigma_KC -= 1/2 * einsum('Kxay,zaCy,zx->KC', X_aaaa, v_aeea, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
+            sigma_KC -= 1/2 * einsum('Kxay,zaCy,zx->KC', X_baab, v_aeea, rdm_ca[s_chunk:f_chunk], optimize = einsum_type)
             sigma_KC += 1/6 * einsum('Kxay,zCaw,zxyw->KC', X_aaaa, v_aeea, rdm_ccaa, optimize = einsum_type)
             sigma_KC -= 1/6 * einsum('Kxay,zCaw,zxwy->KC', X_aaaa, v_aeea, rdm_ccaa, optimize = einsum_type)
             sigma_KC -= 1/6 * einsum('Kxay,zCaw,zxyw->KC', X_abab, v_aeea, rdm_ccaa, optimize = einsum_type)
@@ -27639,8 +27639,8 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             ## Two-electron integral
             v_xxee = mr_adc.v2e.xxee[s_chunk:f_chunk]
 
-            sigma_KC -= 1/2 * einsum('ixay,iKCa,xy->KC', X_aaaa[s_chunk:f_chunk], v_xxee, rdm_ca, optimize = einsum_type)
-            sigma_KC -= 1/2 * einsum('ixay,iKCa,xy->KC', X_abab[s_chunk:f_chunk], v_xxee, rdm_ca, optimize = einsum_type)
+            sigma_KC[s_chunk:f_chunk] -= 1/2 * einsum('ixay,KiaC,xy->KC', X_aaaa, v_xxee, rdm_ca, optimize = einsum_type)
+            sigma_KC[s_chunk:f_chunk] -= 1/2 * einsum('ixay,KiaC,xy->KC', X_abab, v_xxee, rdm_ca, optimize = einsum_type)
 
             mr_adc.log.timer_debug("v2e.xxee contractions", *cput2)
  
@@ -28498,9 +28498,14 @@ def compute_sigma_vector(mr_adc, Xt, ints):
                 v_xeee = integrals.get_oeee_df(mr_adc, mr_adc.v2e.Lxe, mr_adc.v2e.Lee, s_chunk, f_chunk)
             else:
                 v_xeee = integrals.unpack_v2e_oeee(mr_adc, mr_adc.v2e.xeee[s_chunk:f_chunk])
-    
-            sigma_KLCD[:, s_chunk:f_chunk] += einsum('Ka,LDaC->KLCD', X, v_xeee, optimize = einsum_type)
-            sigma_KLCD[s_chunk:f_chunk, :] += einsum('La,KCaD->KLCD', X, v_xeee, optimize = einsum_type)
+
+            for s_x_chunk, f_x_chunk in chunks:
+
+                sigma_KLCD[s_x_chunk:f_x_chunk, s_chunk:f_chunk] += einsum('Ka,LDaC->KLCD', X[s_x_chunk:f_x_chunk], v_xeee, optimize = einsum_type)
+                sigma_KLCD[s_chunk:f_chunk, s_x_chunk:f_x_chunk] += einsum('La,KCaD->KLCD', X[s_x_chunk:f_x_chunk], v_xeee, optimize = einsum_type)
+
+##            sigma_KLCD[:, s_chunk:f_chunk] += einsum('Ka,LDaC->KLCD', X, v_xeee, optimize = einsum_type)
+##            sigma_KLCD[s_chunk:f_chunk, :] += einsum('La,KCaD->KLCD', X, v_xeee, optimize = einsum_type)
 
             mr_adc.log.timer_debug("v2e.xeee contractions", *cput2)
         del(v_xeee)
@@ -29106,10 +29111,10 @@ def compute_sigma_vector(mr_adc, Xt, ints):
             ## Two-electron integral
             v_xeex = mr_adc.v2e.xeex[s_chunk:f_chunk]
 
-            temp = einsum('ia,KCai,UW->KWCU', X, v_xeex, rdm_ca, optimize = einsum_type)
+            temp = einsum('ia,iaCK,UW->KWCU', X[s_chunk:f_chunk], v_xeex, rdm_ca, optimize = einsum_type)
 
-            sigma_KWCU_aaaa[s_chunk:f_chunk] += temp
-            sigma_KWCU_abab[s_chunk:f_chunk] += temp
+            sigma_KWCU_aaaa += temp
+            sigma_KWCU_abab += temp
  
             mr_adc.log.timer_debug("contracting v2e.xeex", *cput2)
         del (v_xeex, temp)
