@@ -209,8 +209,9 @@ class PYSCF:
 
             self.davidson = lib.linalg_helper.davidson1
 
-            from pyscf.fci.direct_spin1 import trans_rdm1s
-            self.trans_rdm1s = trans_rdm1s
+            from pyscf.fci import direct_spin1
+            self.trans_rdm1s = direct_spin1.trans_rdm1s
+            self.trans_rdm12s = direct_spin1.trans_rdm12s
             # If set to a list, can be used to select certain CASCI states during MR-ADC computations
             self.select_casci = None
 
@@ -564,12 +565,12 @@ class PYSCF:
 #        print("Number of casci states with all spin-projections:", ncasci)
 #        print("list containing degeneracy of each state(spin+spatial):",total_degeneracy)
 #
-#        # Fix the phase for the CI coefficients
-#        for I in range(len(e_cas_ci)):
-#            psi_I = wfn_casci[I]
-#            i, j = np.unravel_index(np.absolute(psi_I).argmax(), psi_I.shape)
-#            if psi_I[i, j] < 0.0:
-#                wfn_casci[I] *= -1.0
+        # Fix the phase for the CI coefficients
+        for I in range(len(e_cas_ci)):
+            psi_I = wfn_casci[I]
+            i, j = np.unravel_index(np.absolute(psi_I).argmax(), psi_I.shape)
+            if psi_I[i, j] < 0.0:
+                wfn_casci[I] *= -1.0
 
         # Restore the number of electrons in mol.nelectron
         mc_casci.mol.nelectron = old_nelectron

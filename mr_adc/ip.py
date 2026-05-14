@@ -199,28 +199,65 @@ def compute_M_00(mr_adc):
     # First-order terms
     if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
 
-        # TODO: replace x with c
         ## One-electron integrals
         h_aa = mr_adc.h1eff.aa
-        h_xa = mr_adc.h1eff.ca
-        h_xe = mr_adc.h1eff.ce
+        h_ca = mr_adc.h1eff.ca
+        h_ce = mr_adc.h1eff.ce
 
         ## Two-electron integrals
+        v_aaaa = mr_adc.v2e.aaaa
+        v_caaa = mr_adc.v2e.caaa
 
         ## Amplitudes
         t1_ae = mr_adc.t1.ae
         t1_aaae = mr_adc.t1.aaae
-        t1_xe = mr_adc.t1.ce
-        t1_xaea = mr_adc.t1.caea
-        t1_xaae = mr_adc.t1.caae
-        t1_xa = mr_adc.t1.ca
-        t1_xaaa = mr_adc.t1.caaa
+        t1_ce = mr_adc.t1.ce
+        t1_caea = mr_adc.t1.caea
+        t1_caae = mr_adc.t1.caae
+        t1_ca = mr_adc.t1.ca
+        t1_caaa = mr_adc.t1.caaa
+
+        # Reduced Density Matrices
+        trdm_a_c = mr_adc.rdm.c_a
+        trdm_aaa_cca = mr_adc.rdm.cca_aaa
+        trdm_abb_cca = mr_adc.rdm.cca_abb
+        trdm_aaaaa_cccaa = mr_adc.rdm.cccaa_aaaaa
+        trdm_aabab_cccaa = mr_adc.rdm.cccaa_aabab
+        trdm_abbbb_cccaa = mr_adc.rdm.cccaa_abbbb
 
         # CASCI - C
         if mr_adc.ncasci > 0:
-            x = 1
+            M_00[s_casci:f_casci, s_c:f_c]  = einsum('Jx,Ix->IJ', h_ca, trdm_a_c, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,Ixzy->IJ', v_caaa, trdm_aaa_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,Ixzy->IJ', v_caaa, trdm_abb_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('J,Jx,Ix->IJ', e_core, t1_ca, trdm_a_c, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('J,Jxyz,Iyzx->IJ', e_core, t1_caaa, trdm_aaa_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('J,Jxyz,Iyzx->IJ', e_core, t1_caaa, trdm_abb_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('xy,Jx,Iy->IJ', h_aa, t1_ca, trdm_a_c, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('xy,Jxzw,Izwy->IJ', h_aa, t1_caaa, trdm_aaa_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('xy,Jzwx,Iywz->IJ', h_aa, t1_caaa, trdm_aaa_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('xy,Jzxw,Iywz->IJ', h_aa, t1_caaa, trdm_aaa_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('xy,Jxzw,Izwy->IJ', h_aa, t1_caaa, trdm_abb_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('xy,Jzwx,Iwyz->IJ', h_aa, t1_caaa, trdm_abb_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('xy,Jzxw,Iywz->IJ', h_aa, t1_caaa, trdm_abb_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jx,xyzw,Iywz->IJ', t1_ca, v_aaaa, trdm_aaa_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,ywzu,Iwux->IJ', t1_caaa, v_aaaa, trdm_aaa_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,xwuv,Iyzuwv->IJ', t1_caaa, v_aaaa, trdm_aaaaa_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,ywuv,Izwvxu->IJ', t1_caaa, v_aaaa, trdm_aaaaa_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('Jxyz,zwuv,Iywvxu->IJ', t1_caaa, v_aaaa, trdm_aaaaa_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,xwuv,Iyuzvw->IJ', t1_caaa, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,xwuv,Iyzuwv->IJ', t1_caaa, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('Jxyz,ywuv,Iwvzux->IJ', t1_caaa, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,ywuv,Izwvxu->IJ', t1_caaa, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('Jxyz,zwuv,Iyvwux->IJ', t1_caaa, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('Jxyz,zwuv,Iywvxu->IJ', t1_caaa, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jx,xyzw,Iywz->IJ', t1_ca, v_aaaa, trdm_abb_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,ywzu,Iwux->IJ', t1_caaa, v_aaaa, trdm_abb_cca, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] += einsum('Jxyz,xwuv,Iyzuwv->IJ', t1_caaa, v_aaaa, trdm_abbbb_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('Jxyz,ywuv,Iwzvxu->IJ', t1_caaa, v_aaaa, trdm_abbbb_cccaa, optimize = einsum_type)
+            M_00[s_casci:f_casci, s_c:f_c] -= einsum('Jxyz,zwuv,Iywvxu->IJ', t1_caaa, v_aaaa, trdm_abbbb_cccaa, optimize = einsum_type)
 
-    # Second- and third-order terms
+    # Second-order terms
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
         ## Two-electron integrals
@@ -1393,6 +1430,15 @@ def compute_M_00(mr_adc):
                 M_00 += einsum('a,Ixba,Jyba,xy->IJ', e_extern, t1_xaee, t1_xaee, rdm_ca, optimize = einsum_type)
                 mr_adc.log.timer_debug("contracting t1.xaee v2e.xeae", *cput1)
                 del(v_xeae, t1_xaee)
+
+    # Copy redundant matrix blocks:
+    M_00[s_c:f_c, s_casci:f_casci] = M_00[s_casci:f_casci, s_c:f_c].T.copy()
+
+    # DEBUG
+    en, ev = np.linalg.eigh(M_00)
+    print("Eigen values of M_00 block:", en)
+    exit()
+    # DEBUG
 
     mr_adc.M_00 = M_00
 
