@@ -143,9 +143,9 @@ class PYSCF:
             self.pspace_size = mc.fcisolver.pspace_size
             self.enforce_degeneracy = True
             # SOC params:
-#            self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+            self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
             self.unc = None
-            self._soc = None
+            #self._soc = Non
 
             # Basis set uncontraction objects: xmol, contraction coefficients.
             # Use x2c_setup to obtain self.xmol and self.contr_coeff 
@@ -679,13 +679,11 @@ class PYSCF:
 
         return rdm1, rdm2, rdm3, rdm4
     
-    @property
-    def soc(self):
-        return self._soc
+
     
-    @soc.setter
-    def soc(self, soc_type):
-        self._soc = soc_type
+
+    def run_soc(self, soc_type):
+        self.soc = soc_type
         from prism.libsoc import compute
         compute.compute_somf_soc(self)  
 

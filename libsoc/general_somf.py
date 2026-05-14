@@ -487,7 +487,7 @@ def print_result_sa_casscf(interface, en_soc):
             interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
         else:
             de_nm = 10000000 / de_cm
-            interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, 1997))
+            interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, " "))
 
     interface.log.info("----------------------------------------------------------------------------------------------------------------")
 
