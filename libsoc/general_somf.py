@@ -129,7 +129,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
 
 
     sys.stdout.flush()
-    interface.log.timer0("total %s calculation" % soc_name, *cput0)
+    interface.log.timer0("total %s calculation" % interface.soc, *cput0)
     
     return en_soc, evec_soc
 

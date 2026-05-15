@@ -1,6 +1,7 @@
 import sys
 import prism
 import numpy as np
+import prism.lib.logger as logger
 
 def compute_somf_soc(interface):
 
@@ -33,7 +34,6 @@ def compute_somf_soc(interface):
     #generalSOC requires spin-free energy...
     en = interface.e_ref
     from prism.libsoc import general_somf
-    #en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm, S, ms)
     en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm, S, ms)
 
     # Print results obtained from soc-sa-casscf
@@ -44,6 +44,7 @@ def compute_somf_soc(interface):
 
 def print_result_sa_casscf(interface, en_soc):
     
+    cput0 = (logger.process_clock(), logger.perf_counter())
     h2ev = interface.hartree_to_ev
     h2cm = interface.hartree_to_inv_cm
     
@@ -77,5 +78,8 @@ def print_result_sa_casscf(interface, en_soc):
             interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, " "))
 
     interface.log.info("----------------------------------------------------------------------------------------------------------------")
+    
+    sys.stdout.flush()
+    interface.log.timer0("total %s calculation" % interface.soc, *cput0)
 
     return
