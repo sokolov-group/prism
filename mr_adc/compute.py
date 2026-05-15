@@ -50,7 +50,7 @@ def kernel(mr_adc):
 
     # Compute reduced density matrices
     rdms.compute_reference_rdms(mr_adc)
-    if mr_adc.method_type == "ip" and mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+    if mr_adc.method_type == "ip":
         rdms.compute_ip_transition_rdms(mr_adc)
 
     # Compute amplitudes

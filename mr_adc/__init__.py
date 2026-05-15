@@ -34,7 +34,7 @@ class MRADC:
 
         log.info("\nInitializing MR-ADC...")
 
-        if (interface.reference != "casscf"):
+        if (interface.reference not in ("casscf", "casci")):
             log.info("MR-ADC requires CASSCF reference")
             raise Exception("MR-ADC requires CASSCF reference")
 

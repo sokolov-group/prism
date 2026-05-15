@@ -55,11 +55,13 @@ def compute_ip_transition_rdms(mr_adc):
     wfn_casci = mr_adc.wfn_casci
 
     mr_adc.rdm.c_a = np.zeros((ncasci, ncas))
-    mr_adc.rdm.cca_aaa = np.zeros((ncasci, ncas, ncas, ncas))
-    mr_adc.rdm.cca_abb = np.zeros((ncasci, ncas, ncas, ncas))
-    mr_adc.rdm.cccaa_aaaaa = np.zeros((ncasci, ncas, ncas, ncas, ncas, ncas))
-    mr_adc.rdm.cccaa_aabab = np.zeros((ncasci, ncas, ncas, ncas, ncas, ncas))
-    mr_adc.rdm.cccaa_abbbb = np.zeros((ncasci, ncas, ncas, ncas, ncas, ncas))
+
+    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        mr_adc.rdm.cca_aaa = np.zeros((ncasci, ncas, ncas, ncas))
+        mr_adc.rdm.cca_abb = np.zeros((ncasci, ncas, ncas, ncas))
+        mr_adc.rdm.cccaa_aaaaa = np.zeros((ncasci, ncas, ncas, ncas, ncas, ncas))
+        mr_adc.rdm.cccaa_aabab = np.zeros((ncasci, ncas, ncas, ncas, ncas, ncas))
+        mr_adc.rdm.cccaa_abbbb = np.zeros((ncasci, ncas, ncas, ncas, ncas, ncas))
 
     if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
         #TODO
@@ -80,12 +82,13 @@ def compute_ip_transition_rdms(mr_adc):
         for I in range(ncasci):
             mr_adc.rdm.c_a[I, p] = np.dot(bra.reshape(-1), wfn_casci[I].reshape(-1))
 
-            rdm1, rdm2 = mr_adc.interface.trans_rdm12s(bra, wfn_casci[I], ncas, nelecasci)
-            mr_adc.rdm.cca_aaa[I, p] = rdm1[0].T
-            mr_adc.rdm.cca_abb[I, p] = rdm1[1].T
-            mr_adc.rdm.cccaa_aaaaa[I, p] = rdm2[0].transpose(0,2,3,1)
-            mr_adc.rdm.cccaa_aabab[I, p] = -rdm2[1].transpose(0,2,1,3) # Transpose to the ABAB order
-            mr_adc.rdm.cccaa_abbbb[I, p] = rdm2[3].transpose(0,2,3,1)
+            if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+                rdm1, rdm2 = mr_adc.interface.trans_rdm12s(bra, wfn_casci[I], ncas, nelecasci)
+                mr_adc.rdm.cca_aaa[I, p] = rdm1[0].T
+                mr_adc.rdm.cca_abb[I, p] = rdm1[1].T
+                mr_adc.rdm.cccaa_aaaaa[I, p] = rdm2[0].transpose(0,2,3,1)
+                mr_adc.rdm.cccaa_aabab[I, p] = -rdm2[1].transpose(0,2,1,3) # Transpose to the ABAB order
+                mr_adc.rdm.cccaa_abbbb[I, p] = rdm2[3].transpose(0,2,3,1)
 
 ####            if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 

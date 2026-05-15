@@ -453,7 +453,7 @@ class PYSCF:
         # Check if the number of states in CASCI is smaller than requested
         if len(e_cas_ci) < ncasci:
             ncasci = len(e_cas_ci)
-            self.log.info("\nWARNING: The number of CASCI states is smaller than requested... Reducing the number of states to ", ncasci)
+            self.log.info("\nWARNING: The number of CASCI states is smaller than requested... Reducing the number of states to %d" % ncasci)
 
         # Make sure that we do not break spatial symmetry
         if self.enforce_degeneracy:
