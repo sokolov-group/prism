@@ -5000,7 +5000,8 @@ def compute_sigma_vector__H1__h1_h1__CAEA_CAEA(mr_adc, X_aaaa, X_abab, X_baab, s
         mr_adc.log.timer_debug("contracting v2e.xeex", *cput2)
     del(v_xeex, temp)
 
-    chunks = tools.calculate_chunks(mr_adc, nextern, [ncas, ncas, nextern], ntensors = 3)
+    chunks = tools.calculate_double_chunks(mr_adc, nextern, [ncas, ncas, nextern], 
+                                                                [ncvs, ncas, nextern], ntensors = 3)
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput2 = (logger.process_clock(), logger.perf_counter())
         mr_adc.log.debug("v2e.aeea [%i/%i], chunk [%i:%i]", i_chunk + 1, len(chunks), s_chunk, f_chunk)
