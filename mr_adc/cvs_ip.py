@@ -21254,7 +21254,7 @@ def analyze_eigenvector(mr_adc):
             for tensor, shape, offsets, labels, list_type in tensor_configs:
                 if orb_idx in range(tensor.start, tensor.stop):
                     local_idx = orb_idx - tensor.start
-                    indices = np.unravel_index(local_idx, shape)
+                    indices = sorted(np.unravel_index(local_idx, shape))
                     values = tuple(idx + offset for idx, offset in zip(indices, offsets))
                     key = values + labels
 
