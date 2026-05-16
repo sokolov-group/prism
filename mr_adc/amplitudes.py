@@ -183,17 +183,15 @@ def compute_t2_amplitudes(mr_adc):
 
        if mr_adc.method_type == "cvs-ee":
 
-##            if ncas > 0 and nextern > 0 and nelecas_total > 0:
-##                mr_adc.t2.ae = compute_t2_m1p_singles(mr_adc)
-##            else:
-##                mr_adc.t2.ae = np.zeros((ncas, nextern))
-##
+            if ncas > 0 and nextern > 0 and nelecas_total > 0:
+                mr_adc.t2.ae = compute_t2_m1p_singles(mr_adc)
+            else:
+                mr_adc.t2.ae = np.zeros((ncas, nextern))
+
             if ncas > 0 and nelecas_total > 0:
                 mr_adc.t2.aa = compute_t2_0pp_singles(mr_adc)
             else:
                 mr_adc.t2.aa = np.zeros((ncas, ncas))
-
-            exit()
 
             if ncore > 0 and ncas > 0:
                 mr_adc.t2.ca = compute_t2_p1p_singles(mr_adc)
