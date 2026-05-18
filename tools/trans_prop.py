@@ -174,3 +174,94 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1):
     interface.log.note(f"NTOs written to {filename}")
 
     return weights, U, Vh
+
+def compute_exciton_analysis(interface, TDM, omega):
+
+    # Variables from kernel
+    ncore = interface.ncore
+    ncas = interface.ncas
+    nextern = interface.nextern
+
+    nroots = interface.nroots
+
+    mo = interface.mo
+    mol = interface.mol
+
+    # Hole/Particle
+    hole_idx = list(range(ncore + ncas))
+    particle_idx = list(range(ncore, ncore + ncas + nextern))
+
+    # AO Integrals
+    R_ao = mol.intor("int1e_r")
+    R2_ao = mol.intor("int1e_r2")
+
+    # Transform to MO basis
+    R_mo  = np.einsum('pi,rpq,qj->rij', mo, R_ao, mo)
+    R2_mo = mo.T @ R2_ao @ mo
+
+    # Restrict to hole/particle spaces
+    Rh  = R_mo[:, hole_idx][:,:,hole_idx]
+    Re  = R_mo[:, particle_idx][:,:,particle_idx]
+
+    R2h = R2_mo[np.ix_(hole_idx, hole_idx)]
+    R2e = R2_mo[np.ix_(particle_idx, particle_idx)]
+
+    # Orbital Centroids
+    rh_orb = np.stack([np.diag(Rh[a]) for a in range(3)], axis=1)
+    re_orb = np.stack([np.diag(Re[a]) for a in range(3)], axis=1)
+
+    ### code below takes TDM & omega from compute_ntos fcn ###
+
+    # e/h densities
+    rho_h = TDM @ TDM.T
+    rho_e = TDM.T @ TDM
+
+    # raw second moments: <r^2>
+    rh2 = np.einsum('ij,ij->', R2h, rho_h) / omega
+    re2 = np.einsum('ij,ij->', R2e, rho_e) / omega
+
+    # e-h dot product
+    dot_he = np.sum((TDM**2) * (rh_orb @ re_orb.T)) / omega
+
+    # mean positions: <r>
+    rh = np.einsum('rij,ij->r', Rh, rho_h) / omega
+    re = np.einsum('rij,ij->r', Re, rho_e) / omega
+
+    # RMS sizes: sigma
+    sigma_h = np.sqrt(max(rh2 - rh @ rh, 0.0))
+    sigma_e = np.sqrt(max(re2 - re @ re, 0.0))
+
+    # e-h separation metrics
+    d_lin = np.linalg.norm(re - rh)
+    d_exc = np.sqrt(max(re2 + rh2 - 2 * dot_he, 0.0))
+
+    # e-h covariance, correlation
+    cov = dot_he - rh @ re
+    denom = sigma_h * sigma_e
+    corr  = cov / denom if denom > 1e-16 else 0.0
+
+    exciton =  {
+        "rh":      rh      * interface.bohr_to_ang,
+        "re":      re      * interface.bohr_to_ang,
+        "sigma_h": sigma_h * interface.bohr_to_ang,
+        "sigma_e": sigma_e * interface.bohr_to_ang,
+        "d_lin":   d_lin   * interface.bohr_to_ang,
+        "d_exc":   d_exc   * interface.bohr_to_ang,
+        "cov":     cov     * interface.bohr_to_ang ** 2,
+        "corr":    corr,
+    }
+
+    interface.log.info("\n   === Exciton Analysis ===")
+    fmt = lambda x: f"{float(x): .3f}"
+    rh = np.array2string(exciton['rh'], formatter={'float_kind': fmt})
+    re = np.array2string(exciton['re'], formatter={'float_kind': fmt})
+    interface.log.info(f"   Mean position of hole:            {rh}")
+    interface.log.info(f"   Mean position of electron:        {re}")
+    interface.log.info(f"   Linear e-h distance [Ang]:        {exciton['d_lin']: .6f}")
+    interface.log.info(f"   Hole size [Ang]:                  {exciton['sigma_h']: .6f}")
+    interface.log.info(f"   Electron size [Ang]:              {exciton['sigma_e']: .6f}")
+    interface.log.info(f"   RMS e-h separation [Ang]:         {exciton['d_exc']: .6f}")
+    interface.log.info(f"   Covariance [Ang^2]:               {exciton['cov']: .6f}")
+    interface.log.info(f"   Correlation coefficient:          {exciton['corr']: .6f}")
+    interface.log.info("")
+
