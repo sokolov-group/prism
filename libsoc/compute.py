@@ -1,6 +1,7 @@
 import sys
 import prism
 import numpy as np
+from prism.tools import trans_prop
 
 def compute_somf_soc(interface):
 
@@ -21,7 +22,7 @@ def compute_somf_soc(interface):
     ms = [round(elem,2) for elem in ms]
 
     from pyscf.fci.direct_spin1 import trans_rdm1s
-    rdm = np.zeros((2, nstate, nstate, interface.nmo, interface.nmo))
+    rdm= np.zeros((2, nstate, nstate, interface.nmo, interface.nmo))
 
     for I in range(nstate):
         for J in range(nstate):
@@ -29,20 +30,66 @@ def compute_somf_soc(interface):
             rdm[0, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb[0]
             rdm[1, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb[1]
 
+            if I == J:
+                #uncorrelated diagonal terms
+                rdm[:,I, J, :interface.ncore, :interface.ncore] =   np.identity(interface.ncore)  
+
 
     #generalSOC requires spin-free energy...
     en = interface.e_ref
     from prism.libsoc import general_somf
-    #en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm, S, ms)
     en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm, S, ms)
 
+
+    #compute osc
+    #compute soc rdm
+    rdm_sf = rdm[0] + rdm[1]
+    I_total = []
+    S_total = []
+    ms_total = []
+    for i in range(nstate):
+        n = interface.ref_wfn_spin_mult[i]
+        s = (n-1)/2
+        for j in range(n):
+            I_total.append(i)
+            S_total.append(s)
+            m = s-j
+            ms_total.append(m)
+    
+    nstate_total = len(S_total)
+    rdm_mo = np.zeros((nstate_total, nstate_total, interface.nmo, interface.nmo),dtype='complex')
+    for I in range(nstate_total):
+        for J in  range(nstate_total):
+            if (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
+                rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
+    rdm_soc = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
+
+    # Calculate ground state degeneracy:
+    deg_gs = 1
+    for i in range(len(en_soc)-1):
+        if (np.abs(en_soc[i+1] - en_soc[0])) < 1e-5:
+            deg_gs += 1
+        else:
+            break
+    
+
+    # Calculate oscillator strengths for transitions from the first state
+    osc_str_soc_full=[]
+    osc_str_soc = np.zeros(len(en_soc)-1)
+    for gs_index in range(deg_gs):
+        e_diff = en_soc- en_soc[gs_index]
+        e_diff = e_diff[gs_index+1:]
+        osc = trans_prop.osc_strength(interface, e_diff, rdm_soc[ gs_index, gs_index+1:])
+        osc_str_soc_full.append(osc)
+        osc_str_soc[gs_index:] += osc 
+
     # Print results obtained from soc-sa-casscf
-    print_result_sa_casscf(interface, en_soc)
+    print_result_sa_casscf(interface, en_soc, osc_str_soc)
 
     return  
 
 
-def print_result_sa_casscf(interface, en_soc):
+def print_result_sa_casscf(interface, en_soc, osc_str_soc):
     
     h2ev = interface.hartree_to_ev
     h2cm = interface.hartree_to_inv_cm
@@ -74,7 +121,7 @@ def print_result_sa_casscf(interface, en_soc):
             interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
         else:
             de_nm = 10000000 / de_cm
-            interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, " "))
+            interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
 
     interface.log.info("----------------------------------------------------------------------------------------------------------------")
 
