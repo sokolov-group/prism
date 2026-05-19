@@ -260,6 +260,7 @@ def diagonalize_eff_H(method):
         print("total=")
         method.Heff_1e = h_eff + H_dyall_off 
         print(method.Heff_1e)
+        h_eff = method.Heff_1e
 
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
