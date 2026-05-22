@@ -25189,7 +25189,7 @@ def compute_preconditioner(mr_adc):
             precond_ce_caea__aa_abab += temp
 
             mr_adc.log.timer_debug("computing v2e.aaee", *cput2)
-        del(v_aaee, temp)
+            del(v_aaee, temp)
 
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
             cput2 = (logger.process_clock(), logger.perf_counter())
@@ -25211,7 +25211,7 @@ def compute_preconditioner(mr_adc):
             precond_ce_caea__aa_abab += temp__aa_abab
 
             mr_adc.log.timer_debug("computing v2e.aeea", *cput2)
-        del(v_aeea, temp__aa_aaaa, temp__aa_abab)
+            del(v_aeea, temp__aa_aaaa, temp__aa_abab)
 
         chunks = tools.calculate_chunks(mr_adc, ncvs, [ncvs, nextern, nextern], ntensors = 2)
         for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
