@@ -279,7 +279,8 @@ class PYSCF:
             self.ref_wfn_spin_mult = [1]
 
         self.ref_wfn = ci
-        self.ref_nelecas = len(ci) * [mc.nelecas, ]
+        self.ref_nelecas = len(ci) * [tuple(mc.nelecas)]
+
         self.ref_wfn_deg = len(ci) * [1, ]
 
         from pyscf.fci.direct_spin1 import trans_rdm1s
