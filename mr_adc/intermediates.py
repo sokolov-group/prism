@@ -827,3 +827,10 @@ def compute_K_m1p(mr_adc):
     K_m1p[s_abb:f_abb, s_abb:f_abb] = K22_abb_abb
 
     return K_m1p
+
+
+def compute_M2_CAS_CAS(mr_adc):
+
+
+
+    return H2_0, M
