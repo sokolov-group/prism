@@ -324,7 +324,7 @@ def compute_properties(method):
             e_diff = e_diff[gs_index+1:]
         
             if method.pe is not None and method.pe_method == 'pert':
-                e_diff = [e_diff[i] + ptss[i] + ptlr[i] for i in range(len(ptss))]
+                e_diff = [e_diff[i] + (ptss[i] / method.interface.hartree_to_ev) + (ptlr[i]/method.interface.hartree_to_ev) for i in range(len(ptss))]
                 
             osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
             osc_str_full.append(osc)
@@ -332,6 +332,20 @@ def compute_properties(method):
 
         method.properties["osc_strengths"] = osc_str
 
+        # Compute oscillator strengths starting from each state
+        if method.verbose >= 5:
+            for gs_index in range(deg_gs, len(method.e_tot)):  
+                e_diff = method.e_tot - method.e_tot[gs_index]
+                e_diff = e_diff[gs_index+1:]
+                
+                if method.pe is not None:
+                    ptss, ptlr = solvent.get_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                    e_diff = [e_diff[i] + (ptss[i] / method.interface.hartree_to_ev) + (ptlr[i]/method.interface.hartree_to_ev) for i in range(len(ptss))]
+ 
+                osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
+
+            method.properties["osc_strengths_full"] = osc_str_full
+            
     # Compute magnetic properties
     if method.gtensor and method.soc:
         from prism.nevpt import soc
