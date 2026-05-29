@@ -1130,10 +1130,6 @@ def compute_M_00(mr_adc):
         # CAS - blocks:
         if mr_adc.ncasci > 0:
 
-##            trdm_c_so = mr_adc.rdm_so.ct
-##            trdm_cca_so = mr_adc.rdm_so.ccat
-##            trdm_cccaa_so = mr_adc.rdm_so.cccaat
-
             # CASCI - CASCI: 2nd order
             H2_0, M_CAS = intermediates.compute_M2_CAS_CAS(mr_adc)
 
@@ -1143,15 +1139,12 @@ def compute_M_00(mr_adc):
             temp[IJ_ind[0], IJ_ind[1]] = M_CAS.copy()
             temp[IJ_ind[1], IJ_ind[0]] = M_CAS.copy()
 
-            M[s_casci:f_casci, s_casci:f_casci] += H2_0 * np.identity(n_casci)
-            M[s_casci:f_casci, s_casci:f_casci] -= temp
-####
-####            CI_CI_time = time.time()
-####            if mr_adc.print_level > 4:
-####                print ("Time for CI-CI block:                             %f sec" % (CI_CI_time - C_C_time))
-####                sys.stdout.flush()
-####
-####            # CASCI - C
+            M_00[s_casci:f_casci, s_casci:f_casci] += H2_0 * np.identity(n_casci)
+            M_00[s_casci:f_casci, s_casci:f_casci] -= temp
+
+            mr_adc.log.debug("<0|H^(2)|0> (with non-RDM terms removed):", H2_0)
+
+            # CASCI - C
 
     # Copy redundant matrix blocks:
     M_00[s_c:f_c, s_casci:f_casci] = M_00[s_casci:f_casci, s_c:f_c].T
