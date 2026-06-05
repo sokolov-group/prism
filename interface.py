@@ -652,6 +652,235 @@ class PYSCF:
         return Sp_psi
 
 
+    def apply_c(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[0] == "a":
+                y_psi, y_psi_ne = self.act_cre_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_cre_b(psi, ncas, nelecas, y)
+            psi_list.append(y_psi)
+            psi_ne = y_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 1)
+
+        return psi_list, psi_ne
+
+
+    def apply_a(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[0] == "a":
+                y_psi, y_psi_ne = self.act_des_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_des_b(psi, ncas, nelecas, y)
+            psi_list.append(y_psi)
+            psi_ne = y_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 1)
+
+        return psi_list, psi_ne
+
+
+    def apply_cc(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[1] == "a":
+                y_psi, y_psi_ne = self.act_cre_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_cre_b(psi, ncas, nelecas, y)
+            for z in range(ncas): 
+                zy_psi, zy_psi_ne = None, None
+                if spin[0] == "a":
+                    zy_psi, zy_psi_ne = self.act_cre_a(y_psi, ncas, y_psi_ne, z)
+                else:
+                    zy_psi, zy_psi_ne = self.act_cre_b(y_psi, ncas, y_psi_ne, z)
+                psi_list.append(zy_psi) 
+                psi_ne = zy_psi_ne
+                    
+        psi_list = self.extract_vectors(psi_list, ncas, 2)
+
+        return psi_list, psi_ne
+
+
+    def apply_ca(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[1] == "a":
+                y_psi, y_psi_ne = self.act_des_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_des_b(psi, ncas, nelecas, y)
+            for z in range(ncas):
+                zy_psi, zy_psi_ne = None, None
+                if spin[0] == "a":
+                    zy_psi, zy_psi_ne = self.act_cre_a(y_psi, ncas, y_psi_ne, z)
+                else:
+                    zy_psi, zy_psi_ne = self.act_cre_b(y_psi, ncas, y_psi_ne, z)
+                psi_list.append(zy_psi)
+                psi_ne = zy_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 2)
+
+        return psi_list, psi_ne
+
+
+    def apply_aa(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[1] == "a":
+                y_psi, y_psi_ne = self.act_des_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_des_b(psi, ncas, nelecas, y)
+            for z in range(ncas):
+                zy_psi, zy_psi_ne = None, None
+                if spin[0] == "a":
+                    zy_psi, zy_psi_ne = self.act_des_a(y_psi, ncas, y_psi_ne, z)
+                else:
+                    zy_psi, zy_psi_ne = self.act_des_b(y_psi, ncas, y_psi_ne, z)
+                psi_list.append(zy_psi)
+                psi_ne = zy_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 2)
+
+        return psi_list, psi_ne
+
+
+    def apply_cca(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[2] == "a":
+                y_psi, y_psi_ne = self.act_des_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_des_b(psi, ncas, nelecas, y)
+            for z in range(ncas):
+                zy_psi, zy_psi_ne = None, None
+                if spin[1] == "a":
+                    zy_psi, zy_psi_ne = self.act_cre_a(y_psi, ncas, y_psi_ne, z)
+                else:
+                    zy_psi, zy_psi_ne = self.act_cre_b(y_psi, ncas, y_psi_ne, z)
+                for w in range(ncas):
+                    wzy_psi, wzy_psi_ne = None, None
+                    if spin[0] == "a":
+                        wzy_psi, wzy_psi_ne = self.act_cre_a(zy_psi, ncas, zy_psi_ne, w)
+                    else:
+                        wzy_psi, wzy_psi_ne = self.act_cre_b(zy_psi, ncas, zy_psi_ne, w)
+                    psi_list.append(wzy_psi)
+                    psi_ne = wzy_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 3)
+
+        return psi_list, psi_ne
+
+
+    def apply_caa(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[2] == "a":
+                y_psi, y_psi_ne = self.act_des_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_des_b(psi, ncas, nelecas, y)
+            for z in range(ncas):
+                zy_psi, zy_psi_ne = None, None
+                if spin[1] == "a":
+                    zy_psi, zy_psi_ne = self.act_des_a(y_psi, ncas, y_psi_ne, z)
+                else:
+                    zy_psi, zy_psi_ne = self.act_des_b(y_psi, ncas, y_psi_ne, z)
+                for w in range(ncas):
+                    wzy_psi, wzy_psi_ne = None, None
+                    if spin[0] == "a":
+                        wzy_psi, wzy_psi_ne = self.act_cre_a(zy_psi, ncas, zy_psi_ne, w)
+                    else:
+                        wzy_psi, wzy_psi_ne = self.act_cre_b(zy_psi, ncas, zy_psi_ne, w)
+                    psi_list.append(wzy_psi)
+                    psi_ne = wzy_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 3)
+
+        return psi_list, psi_ne
+
+
+    def apply_aaa(self, psi, ncas, nelecas, spin):
+
+        psi_list = []
+        psi_ne = None
+
+        for y in range(ncas):
+            y_psi, y_psi_ne = None, None
+            if spin[2] == "a":
+                y_psi, y_psi_ne = self.act_des_a(psi, ncas, nelecas, y)
+            else:
+                y_psi, y_psi_ne = self.act_des_b(psi, ncas, nelecas, y)
+            for z in range(ncas):
+                zy_psi, zy_psi_ne = None, None
+                if spin[1] == "a":
+                    zy_psi, zy_psi_ne = self.act_des_a(y_psi, ncas, y_psi_ne, z)
+                else:
+                    zy_psi, zy_psi_ne = self.act_des_b(y_psi, ncas, y_psi_ne, z)
+                for w in range(ncas):
+                    wzy_psi, wzy_psi_ne = None, None
+                    if spin[0] == "a":
+                        wzy_psi, wzy_psi_ne = self.act_des_a(zy_psi, ncas, zy_psi_ne, w)
+                    else:
+                        wzy_psi, wzy_psi_ne = self.act_des_b(zy_psi, ncas, zy_psi_ne, w)
+                    psi_list.append(wzy_psi)
+                    psi_ne = wzy_psi_ne
+
+        psi_list = self.extract_vectors(psi_list, ncas, 3)
+
+        return psi_list, psi_ne
+
+
+    # Convert list of CI vectors into a numpy array
+    def extract_vectors(self, vec_list, ncas, dim):
+
+        if (vec_list[0] is not None):
+            ndim_a = vec_list[0].shape[0]
+            ndim_b = vec_list[0].shape[1]
+            vec_list = np.array(vec_list)
+            if dim == 1:
+                vec_list = vec_list.reshape(ncas, ndim_a, ndim_b).copy()
+            elif dim == 2:
+                vec_list = vec_list.reshape(ncas, ncas, ndim_a, ndim_b).transpose(1,0,2,3).copy()
+            elif dim == 3:
+                vec_list = vec_list.reshape(ncas, ncas, ncas, ndim_a, ndim_b).transpose(2,1,0,3,4).copy()
+            elif dim == 4:
+                vec_list = vec_list.reshape(ncas, ncas, ncas, ncas, ndim_a, ndim_b).transpose(3,2,1,0,4,5).copy()
+            else:
+                raise Exception("Unknown dimension")
+        else:
+            vec_list = None
+
+        return vec_list
+
+
     # Act annihilation operator (alpha spin)
     def act_cre_a(self, wfn, ncas, nelec, orb):
 
@@ -814,7 +1043,151 @@ class PYSCF:
         rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))
 
         return rdm1, rdm2, rdm3, rdm4
-    
-    
-    
+
+
+    def compute_trans_rdm3s(self, bra, ket, bra_ne, ket_ne = None):
+
+        if ket_ne is None:
+            ket_ne = bra_ne
+
+        ncas = self.ncas
+
+        rdm_aaaaaa, rdm_baaaab, rdm_bbaabb, rdm_bbbbbb = 4 * (None,)
+        rdm_aaabbb, rdm_bbbaaa = 2 * (None,)
+        rdm_aabbbb, rdm_aaaabb, rdm_bbaaaa, rdm_bbbbaa = 4 * (None,)
+        rdm_bbabbb, rdm_aaaaab = 2 * (None,)
+        rdm_baabba, rdm_abbaab = 2 * (None,)
+        rdm_bbbbba, rdm_aabaaa = 2 * (None,)
+
+        if (bra_ne == ket_ne):
+            # AAAAAA
+            wfns, wfn_ne = self.apply_aaa(ket, ncas, bra_ne, "aaa")
+            if wfns is not None:
+                wfns = wfns.reshape(ncas**3, -1)
+                wfns_I, wfn_I = self.apply_aaa(bra, ncas, bra_ne, "aaa")
+                wfns_I = wfns_I.reshape(ncas**3, -1)
+                rdm_aaaaaa = np.dot(wfns_I, wfns.T).reshape((ncas, ncas, ncas, ncas, ncas, ncas)).transpose(2,1,0,3,4,5).copy()
+
+            # BAAAAB
+            wfns, wfn_ne = self.apply_aaa(ket, ncas, bra_ne, "aab")
+            if wfns is not None:
+                wfns = wfns.reshape(ncas**3, -1)
+                wfns_I, wfn_I = self.apply_aaa(bra, ncas, bra_ne, "aab")
+                wfns_I = wfns_I.reshape(ncas**3, -1)
+                rdm_baaaab = np.dot(wfns_I, wfns.T).reshape((ncas, ncas, ncas, ncas, ncas, ncas)).transpose(2,1,0,3,4,5).copy()
+
+            # BBAABB
+            wfns, wfn_ne = self.apply_aaa(ket, ncas, bra_ne, "abb")
+            if wfns is not None:
+                wfns = wfns.reshape(ncas**3, -1)
+                wfns_I, wfn_I = self.apply_aaa(bra, ncas, bra_ne, "abb")
+                wfns_I = wfns_I.reshape(ncas**3, -1)
+                rdm_bbaabb = np.dot(wfns_I, wfns.T).reshape((ncas, ncas, ncas, ncas, ncas, ncas)).transpose(2,1,0,3,4,5).copy()
+
+            # BBBBBB
+            wfns, wfn_ne = self.apply_aaa(ket, ncas, bra_ne, "bbb")
+            if wfns is not None:
+                wfns = wfns.reshape(ncas**3, -1)
+                wfns_I, wfn_I = self.apply_aaa(bra, ncas, bra_ne, "bbb")
+                wfns_I = wfns_I.reshape(ncas**3, -1)
+                rdm_bbbbbb = np.dot(wfns_I, wfns.T).reshape((ncas, ncas, ncas, ncas, ncas, ncas)).transpose(2,1,0,3,4,5).copy()
+
+        # AAABBB
+        elif (bra_ne[0]-3)==ket_ne[0] and (bra_ne[1]+3)==ket_ne[1]:
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "aaa")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "bbb")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_aaabbb = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+        
+        # BBBAAA
+        elif (bra_ne[0]+3)==ket_ne[0] and (bra_ne[1]-3)==ket_ne[1]:
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "bbb")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "aaa")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_bbbaaa = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+
+        # AABBBB
+        elif (bra_ne[0]-2)==ket_ne[0] and (bra_ne[1]+2)==ket_ne[1]:
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "baa")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "bbb")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_aabbbb = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+        # AAAABB
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "aaa")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "abb")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_aaaabb = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+
+        # BBAAAA
+        elif (bra_ne[0]+2)==ket_ne[0] and (bra_ne[1]-2)==ket_ne[1]:
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "abb")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "aaa")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_bbaaaa = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+        # BBBBAA
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "bbb")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "baa")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_bbbbaa = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+
+        # BBABBB            
+        elif (bra_ne[0]-1)==ket_ne[0] and (bra_ne[1]+1)==ket_ne[1]:
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "abb")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "bbb")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_bbabbb = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+        # AAAAAB
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "aaa")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "aab")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_aaaaab = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+        # BAABBA
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "aab")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "bba")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_baabba = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+
+        # ABBAAB
+        elif (bra_ne[0]+1)==ket_ne[0] and (bra_ne[1]-1)==ket_ne[1]:
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "bba")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "aab")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_abbaab = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+        # BBBBBA
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "bbb")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "bba")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_bbbbba = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+        # AABAAA
+            bras, bras_ne = self.apply_aaa(bra, ncas, bra_ne, "baa")
+            if bras is not None:
+                bras = bras.reshape(ncas**3, -1)
+                kets, kets_ne = self.apply_aaa(ket, ncas, ket_ne, "aaa")
+                kets = kets.reshape(ncas**3, -1)
+                rdm_aabaaa = np.dot(bras, kets.T).reshape((ncas,ncas,ncas,ncas,ncas,ncas)).transpose(2,1,0,3,4,5).copy()
+
+        return rdm_aaaaaa, rdm_baaaab, rdm_bbaabb, rdm_bbbbbb, rdm_aaabbb, rdm_bbbaaa, rdm_aabbbb, rdm_aaaabb, rdm_bbaaaa, rdm_bbbbaa, rdm_bbabbb, rdm_aaaaab, rdm_baabba, rdm_abbaab, rdm_bbbbba, rdm_aabaaa
+
 

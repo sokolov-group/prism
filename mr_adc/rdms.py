@@ -40,8 +40,8 @@ def compute_reference_rdms(mr_adc):
     mr_adc.log.timer("reference RDMs", *cput0)
 
 
-# Transition reduced density matrices for the IP calculations (e.g., <Psi_0^N|a^+_p a^+_q a_r|Psi_I^N-1>)
-def compute_ip_transition_rdms(mr_adc):
+# Transition up to 2.5-reduced density matrices for the IP calculations (e.g., <Psi_0^N|a^+_p a^+_q a_r|Psi_I^N-1>)
+def compute_ip_trans_rdms(mr_adc):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     mr_adc.log.info("\nComputing IP transition RDMs...")
@@ -90,6 +90,51 @@ def compute_ip_transition_rdms(mr_adc):
                 mr_adc.rdm.cccaa_aabab[I, p] = -rdm2[1].transpose(0,2,1,3) # Transpose to the ABAB order
                 mr_adc.rdm.cccaa_abbbb[I, p] = rdm2[3].transpose(0,2,3,1)
 
-####            if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-
     mr_adc.log.timer("IP transition RDMs", *cput0)
+
+
+# Transition 3.5-reduced density matrices for the IP calculations
+def compute_ip_trans_rdm_ccccaaa(mr_adc, ket, ket_ne = None):
+
+    if ket_ne is None:
+        ket_ne = mr_adc.nelecasci
+
+    ncas = mr_adc.ncas
+    ref_wfn = mr_adc.ref_wfn[0]
+    ref_nelecas = mr_adc.ref_nelecas[0]
+
+    rdm_aaaaaaa =  np.zeros((ncas, ncas, ncas, ncas, ncas, ncas, ncas))
+    rdm_aaabaab =  np.zeros((ncas, ncas, ncas, ncas, ncas, ncas, ncas))
+    rdm_aabbabb =  np.zeros((ncas, ncas, ncas, ncas, ncas, ncas, ncas))
+    rdm_abbbbbb =  np.zeros((ncas, ncas, ncas, ncas, ncas, ncas, ncas))
+
+    # Compute a_p 
+    for p in range(ncas):
+        bra, bra_ne = None, None
+
+        if ref_nelecas[0] == (ket_ne[0] + 1) and ref_nelecas[1] == ket_ne[1]:
+            bra, bra_ne = mr_adc.interface.act_des_a(ref_wfn, ncas, ref_nelecas, p)
+        # TODO: Do we need this case?
+##        elif ref_nelecas[0] == ket_ne[0] and ref_nelecas[1] == (ket_ne[1] + 1):
+##            bra, bra_ne = mr_adc.interface.act_des_b(ref_wfn, ncas, ref_nelecas, p)
+        else:
+            raise Exception("IP CASCI states must have N - 1 electrons for a given N-electron reference state")
+
+        rdms = mr_adc.interface.compute_trans_rdm3s(bra, ket, bra_ne, ket_ne)
+        rdms = rdms[:4]
+
+        if rdms[0] is not None:
+            rdm_aaaaaaa[p] = rdms[0]
+        if rdms[1] is not None:
+            rdm_aaabaab[p] = rdms[1]
+        if rdms[2] is not None:
+            rdm_aabbabb[p] = rdms[2]
+        if rdms[3] is not None:
+            rdm_abbbbbb[p] = rdms[3]
+
+    # Convert ABAAAAB -> AAABAAB
+    rdm_aaabaab = rdm_aaabaab.transpose(0,2,3,1,4,5,6).copy()
+    # Convert ABBAABB -> AABBABB
+    rdm_aabbabb = rdm_aabbabb.transpose(0,3,1,2,4,5,6).copy()
+
+    return rdm_aaaaaaa, rdm_aaabaab, rdm_aabbabb, rdm_abbbbbb

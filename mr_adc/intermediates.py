@@ -869,7 +869,7 @@ def compute_M2_CAS_CAS(mr_adc):
     t1_ccaa = mr_adc.t1.ccaa
     t1_aaee = mr_adc.t1.aaee
 
-    mr_adc.log.info("\nWARNING: T_xy^(2) is currently set to zero...")
+    # Approximation: set [0''] to zero to be consistent with spin–orbital implementation (max_t_order = 1)
     t2_aa = np.zeros((mr_adc.ncas, mr_adc.ncas))
 
     # Reference-state contributions

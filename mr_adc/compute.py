@@ -51,7 +51,7 @@ def kernel(mr_adc):
     # Compute reduced density matrices
     rdms.compute_reference_rdms(mr_adc)
     if mr_adc.method_type == "ip":
-        rdms.compute_ip_transition_rdms(mr_adc)
+        rdms.compute_ip_trans_rdms(mr_adc)
 
     # Compute amplitudes
     e_tot, e_corr = mr_adc.compute_reference_energy()
