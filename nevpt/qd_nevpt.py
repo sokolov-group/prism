@@ -261,6 +261,36 @@ def diagonalize_eff_H(method):
         method.Heff_1e = h_eff + H_dyall_off 
         print(method.Heff_1e)
         h_eff = method.Heff_1e
+    
+    # compute the coupling elements of h_eff > 0.05
+    if method.verbose >= 5:
+
+        coupling_data = []
+
+        for I in range(dim):
+            for J in range(I):
+                if abs(h_eff[I, J]) > 0.05:
+                    
+                    # convert two indexes into one index
+                    P = (I*(I-1))//2 + J
+                   
+                    coupling_data.append(f"({I:>3d}, {J:>3d})   P = {P:<6d}   H_eff element = {h_eff[I,J]: .8f}")
+
+        if coupling_data:
+            
+            interface = method.interface
+            separator = "-" * 60
+            interface.log.info("\n\nCoupling elements with |H_eff[I,J]| > 0.05")
+            
+            # table header
+            interface.log.info(f"{'(I, J)':<15}{'P':<10}{'H_eff':<15}")
+
+            interface.log.info(separator)
+
+            for i in coupling_data:
+                interface.log.info(i)
+
+            interface.log.info(separator)
 
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
