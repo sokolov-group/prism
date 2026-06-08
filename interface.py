@@ -68,31 +68,7 @@ class PYSCF:
 
         log.info("Collecting reference wavefunction information...")
         if mc is None:
-            self.reference = "scf"
-            log.info("Reference wavefunction: %s\n" % self.reference)
-
-            self.max_memory = mf.max_memory
-
-            self.mo = mf.mo_coeff.copy()
-            self.nmo = self.mo.shape[1]
-            self.mo_energy = mf.mo_energy.copy()
-            self.symmetry = mf.mol.symmetry
-            self.e_ref = [mf.e_tot]
-            self.ncore = mf.mol.nelectron // 2
-            self.nextern = self.nmo - self.ncore
-            self.ncas = 0
-
-            self.ref_nelecas = [(0,0)]
-            self.e_ref_cas = [0]
-
-            self.ref_wfn = None
-            self.ref_wfn_spin_mult = [1]
-            self.ref_wfn_deg = [1]
-
-            self.mo_scf = self.mo
-            self.ovlp = mf.get_ovlp(mf.mol)
-
-            self.reference_df = getattr(mf, "with_df", None)
+            self.compute_scf_reference()
 
         else:
 
@@ -260,6 +236,36 @@ class PYSCF:
         self._einsum_backend = np_helper.einsum_backend(backend, self.log)
         self.einsum_type = "greedy"
         self.dot = np.dot
+
+    def compute_scf_reference(self):
+
+        self.reference = "scf"
+        self.log.info("Reference wavefunction: %s\n" % self.reference)
+
+        mf = self.mf
+        self.max_memory = mf.max_memory
+
+        self.mo = mf.mo_coeff.copy()
+        self.nmo = self.mo.shape[1]
+        self.mo_energy = mf.mo_energy.copy()
+        self.symmetry = mf.mol.symmetry
+        self.e_ref = [mf.e_tot]
+
+        self.ncore = mf.mol.nelectron // 2
+        self.nextern = self.nmo - self.ncore
+        self.ncas = 0
+
+        self.ref_nelecas = [(0,0)]
+        self.e_ref_cas = [0]
+
+        self.ref_wfn = None
+        self.ref_wfn_spin_mult = [1]
+        self.ref_wfn_deg = [1]
+
+        self.mo_scf = self.mo
+        self.ovlp = mf.get_ovlp(mf.mol)
+
+        self.reference_df = getattr(mf, "with_df", None)
 
     @property
     def einsum_backend(self):
