@@ -73,8 +73,11 @@ class PYSCF:
                 self.compute_scf_reference()
             elif mf.istype('ROHF') and socc:
                 from pyscf.mcscf.casci import CASCI
-                ncas = int(sum(i for i in mf.mo_occ if i==1))
-                self.mc = CASCI(mf, ncas, ncas).run() 
+                norb = sum((mf.mo_occ == 1).astype(np.int64))
+                if mf.with_df: 
+                    self.mc = CASCI(mf, norb, norb).density_fit().run()
+                else:
+                    self.mc = CASCI(mf, norb, norb).run()
                 self.compute_mcscf_reference(select_reference)
         else:
             self.compute_mcscf_reference(select_reference)
