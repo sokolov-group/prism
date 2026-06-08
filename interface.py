@@ -61,20 +61,22 @@ class PYSCF:
         self.g_free_elec = 2.002319
 
         log.info("Collecting reference wavefunction information...")
-        if mc is None:
-            socc = any(mf.mo_occ == 1)
-            if mf.istype('RHF') and not socc:
-                self.compute_scf_reference()
-            elif mf.istype('ROHF') and socc:
-                from pyscf.mcscf.casci import CASCI
-                norb = sum((mf.mo_occ == 1).astype(np.int64))
-                if mf.with_df: 
-                    self.mc = CASCI(mf, norb, norb).density_fit().run()
-                else:
-                    self.mc = CASCI(mf, norb, norb).run()
-                self.compute_mcscf_reference(select_reference)
-        else:
+
+        if mc is not None:
             self.compute_mcscf_reference(select_reference)
+        else:
+            socc = np.count_nonzero(mf.mo_occ == 1)
+
+            if mf.istype('RHF') and socc == 0:
+                self.compute_scf_reference()
+
+            elif mf.istype('ROHF') and socc > 0:
+                from pyscf.mcscf.casci import CASCI
+                casci = CASCI(mf, socc, socc)
+                if getattr(mf, 'with_df', None):
+                    casci = casci.density_fit()
+                self.mc = casci.run()
+                self.compute_mcscf_reference(select_reference)
 
         # Symmetry
         # TODO: [MC OBJ] Check if this is done correctly when canonicalization changes the order of orbitals
