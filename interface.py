@@ -62,8 +62,14 @@ class PYSCF:
 
         log.info("Collecting reference wavefunction information...")
         if mc is None:
-            self.compute_scf_reference()
-
+            socc = any(mf.mo_occ == 1)
+            if mf.istype('RHF') and not socc:
+                self.compute_scf_reference()
+            elif mf.istype('ROHF') and socc:
+                from pyscf.mcscf.casci import CASCI
+                ncas = int(sum(i for i in mf.mo_occ if i==1))
+                self.mc = CASCI(mf, ncas, ncas).run() 
+                self.compute_mcscf_reference(select_reference)
         else:
             self.compute_mcscf_reference(select_reference)
 
