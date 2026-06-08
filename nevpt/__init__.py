@@ -110,10 +110,13 @@ class NEVPT:
         self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
         
+        # Solvent methods
         # For PE
-        self.pe = None                             # Required for PE use?
+        self.pe = None                             # Required for PE use if pe_method = "pert"
         self.pe_method = "pert"                    # pertuabtive corrections
-                                                   # Also have "ss"/ "self-consistent" approach
+        
+        # For PCM
+        self.pcm = None                            # Required for PCM use
 
     def _make_method_instance(self):
         cls_map = {

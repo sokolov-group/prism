@@ -190,7 +190,7 @@ def print_results(nevpt):
             ptss = nevpt.properties["ptss_corrections"]
             ptlr = nevpt.properties["ptlr_corrections"]
 
-            de += (ptss[p - 1] + ptlr[p - 1]) / h2ev
+            de += (ptss[p - 1] + ptlr[p - 1]) 
         
         de_ev = de * h2ev
     

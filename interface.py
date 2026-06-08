@@ -250,9 +250,10 @@ class PYSCF:
         self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
         if hasattr(mf, "with_solvent"):
-            if mf.with_solvent.eef == True:
-                log.info("EEF enabled in solvent object, updating dipole moments...")
-                self.dip_mom_ao = np.array(mf.with_solvent.effective_dipole_operator())
+            if hasattr(mf.with_solvent, "eef"):
+                if mf.with_solvent.eef == True:
+                    log.info("EEF enabled in solvent object, updating dipole moments...")
+                    self.dip_mom_ao = np.array(mf.with_solvent.effective_dipole_operator())
         # Molden helper
         from pyscf.tools import molden
         self.molden = molden

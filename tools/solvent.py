@@ -19,7 +19,7 @@
 
 import numpy as np 
 
-def get_pe_corrections(method, state = 0, rdms = None):
+def get_pert_pe_corrections(method, state = 0, rdms = None):
     '''
     Compute perturbative energy corrections from
     polarizable embedding (current support)
@@ -27,9 +27,6 @@ def get_pe_corrections(method, state = 0, rdms = None):
     ptLR = perturbative linear-response type
     '''
     n_micro_states = sum(method.ref_wfn_deg)
-    nmo = method.nmo
-    ncas = method.ncas
-    ### TODO: add type flag for 'all', 'gs-only' or something ###
      
     # Compute all 1rdm
     if rdms is None:
@@ -55,24 +52,35 @@ def get_pe_corrections(method, state = 0, rdms = None):
 
                 dif = np.subtract(es_rdm_ao, gs_rdm_ao)
                 
-                e_ptss, v = method.pe.kernel(dm = dif, elec_only = True)
+                if method.pe is not None:
+                    e_ptss, v = method.pe.kernel(dm = dif, elec_only = True)
+                elif method.pcm is not None:
+                    e_ptss, v = method.pcm._get_vind(dms = dif)
                 
-                ptss.append(e_ptss * method.interface.hartree_to_ev)
+                ptss.append(e_ptss)
         
             elif m == state and n > state:
                 tr_rdm_mo = rdms[m,n]
                 tr_rdm_ao = np.dot(method.mo, np.dot(tr_rdm_mo, method.mo.T))
                 
-                e_ptlr, v = method.pe.kernel(dm = tr_rdm_ao, elec_only = True)
+                if method.pe is not None:
+                    e_ptlr, v = method.pe.kernel(dm = tr_rdm_ao, elec_only = True)
+                elif method.pcm is not None:
+                    e_ptlr, v = method.pe.kernel(dm = tr_rdm_ao, elec_only = True)
                 
-                ptlr.append(e_ptlr * method.interface.hartree_to_ev * 2)
+                ptlr.append(e_ptlr * 2)
     
     return ptss, ptlr
 
 def print_pe_results(method, ptss, ptlr):
     n_states = len(method.ref_wfn_deg)
     
-    method.log.info("\n\nPolarizable Embedding Analysis")
+    if method.pe is not None:
+        method_string = "Polarizable embedding"
+    elif method.pcm is not None:
+        method_string = "PCM"
+    
+    method.log.info(f"\n\n{method_string} Analysis")
     method.log.info("------------------------------------------------------------------")
     method.log.info(f"{'State':<8}{'ΔE (eV)':<15}{'ptss (eV)':<15}{'ptlr (eV)':<15}")
     method.log.info("------------------------------------------------------------------")
@@ -85,8 +93,8 @@ def print_pe_results(method, ptss, ptlr):
         method.log.info(
             f"{p:<8}"
             f"{de_ev:<15.6f}"
-            f"{ptss[p-1]:<15.6f}"
-            f"{ptlr[p-1]:<15.6f}"
+            f"{(ptss[p-1] * method.interface.hartree_to_ev):<15.6f}"
+            f"{(ptlr[p-1] * method.interface.hartree_to_ev):<15.6f}"
         )
 
     method.log.info("------------------------------------------------------------------")

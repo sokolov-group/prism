@@ -37,34 +37,6 @@ def compute_energy(method):
     # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
     e_tot, h_evec = diagonalize_eff_H(method)
     
-    if method.pe_method == "rediag":
-        diff = 0
-        
-        # casci_rdms
-        rdms = nevpt.make_rdm1(method, type = "ss") # (n_state, nstate, nmo, nmo)
-
-        n_states = rdms.shape[0]
-        nmo = rdms.shape[2]
-        
-        tot_rdm = np.zeros((nmo, nmo))
-
-        for i in range(n_states):
-            tot_rdm += rdms[i]
-
-        tot_rdm /= n_states
-        
-        mo = method.interface.mo 
-        rdm_ao = mo @ tot_rdm @ mo.T
-        
-        pe_e, pe_pot = method.pe.kernel(dm = rdm_ao, elec_only = True)
-        pe_pot_mo = mo.T @ pe_pot @ mo 
-        
-        pe_pot_IJ = np.einsum('IJpq,pq->IJ', rdms, pe_pot_mo)
-        
-        pe_pot_qd = np.einsum('Im,IJ,Jn->mn', h_evec, pe_pot_IJ, h_evec)
-        
-        e_tot, h_evec = diagonalize_eff_H(method, pe_pot = pe_pot_qd)
-
     # Update correlation energies
     e_corr = method.e_corr
     n_states = len(method.ref_wfn_deg)
@@ -83,7 +55,7 @@ def compute_energy(method):
     return e_tot, e_corr
 
 
-def diagonalize_eff_H(method, pe_pot = None):
+def diagonalize_eff_H(method):
 
     e_diag = method.e_tot
     t1 = method.t1
@@ -280,10 +252,6 @@ def diagonalize_eff_H(method, pe_pot = None):
 
             h_eff[I, J] = H_IJ
             h_eff[J, I] = H_IJ
-            
-    ### FOR self-consistent PE
-    if pe_pot is not None:
-        h_eff += pe_pot
         
     h_eval, h_evec = np.linalg.eigh(h_eff)
 
@@ -313,9 +281,9 @@ def compute_properties(method):
         osc_str_full=[]
         osc_str = np.zeros(len(method.e_tot)-1)
          
-        # Get PE contributions if needed
-        if method.pe is not None and method.pe_method == 'pert':
-            ptss, ptlr = solvent.get_pe_corrections(method, rdms = rdm_mo)
+        # Get perturbative energy contributions if needed
+        if (method.pe is not None and method.pe_method == 'pert'):
+            ptss, ptlr = solvent.get_pert_pe_corrections(method, rdms = rdm_mo)
             method.properties["ptss_corrections"] = ptss
             method.properties["ptlr_corrections"] = ptlr
             
@@ -323,10 +291,10 @@ def compute_properties(method):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
         
-            if method.pe is not None and method.pe_method == 'pert':
-                e_diff = [e_diff[i] + (ptss[i] / method.interface.hartree_to_ev) + (ptlr[i]/method.interface.hartree_to_ev) for i in range(len(ptss))]
+            if (method.pe is not None and method.pe_method == 'pert'):
+                e_diff = [e_diff[i] + (ptss[i]) + (ptlr[i]) for i in range(len(ptss))]
                 
-            osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
+            osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[gs_index, gs_index+1:])
             osc_str_full.append(osc)
             osc_str[gs_index:] += osc 
 
@@ -338,9 +306,9 @@ def compute_properties(method):
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
                 
-                if method.pe is not None:
-                    ptss, ptlr = solvent.get_pe_corrections(method, state = gs_index, rdms = rdm_mo)
-                    e_diff = [e_diff[i] + (ptss[i] / method.interface.hartree_to_ev) + (ptlr[i]/method.interface.hartree_to_ev) for i in range(len(ptss))]
+                if (method.pe is not None and method.pe_method == 'pert'):
+                    ptss, ptlr = solvent.get_pert_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                    e_diff = [e_diff[i] + (ptss[i]) + (ptlr[i]) for i in range(len(ptss))]
  
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
 
