@@ -497,12 +497,34 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
 
 def analyze_eigenvectors(method):
 
-    h_evec = method.h_evec
-    ref_wfn = method.ref_wfn
-    ref_wfn = np.array(ref_wfn)
-    ref_wfn_shape = ref_wfn.shape 
-    ref_wfn = ref_wfn.reshape(ref_wfn.shape[0], -1)
+    from pyscf.fci import cistring
 
-    print("ref_wfn shape", ref_wfn.shape)
-    qd_at_ref = h_evec.T @ ref_wfn
-    print("qd_at_ref shape", qd_at_ref.shape)
+    ncas = method.ncas
+    n_states = method.h_evec.shape[1]
+    h_evec = method.h_evec
+    nelecas = method.ref_nelecas[0]
+    n_alpha_elec, n_beta_elec = nelecas[0], nelecas[1]
+
+    alpha_strings = cistring.gen_occslst(range(ncas), n_alpha_elec)
+    beta_strings = cistring.gen_occslst(range(ncas), n_beta_elec)
+
+    ref_wfn = np.array(method.ref_wfn)
+    n_alpha_str, n_beta_str = ref_wfn.shape[1], ref_wfn.shape[2]
+    ref_wfn_flat = ref_wfn.reshape(ref_wfn.shape[0], -1)
+
+    qd_ci_flat = h_evec.T @ ref_wfn_flat
+    qd_ci = qd_ci_flat.reshape(n_states, n_alpha_str, n_beta_str)
+
+    method.log.info("\n ** QD-NEVPT2 Dominant Configurations **\n")
+    for n in range(n_states):
+        method.log.info("  State %d:" % (n + 1))
+        weights_2d = qd_ci[n] ** 2
+        for i_a in range(n_alpha_str):
+            for i_b in range(n_beta_str):
+                weight = weights_2d[i_a, i_b]
+                if weight > 0.01:
+                    coeff = qd_ci[n, i_a, i_b]
+                    alpha_occs = tuple(int(x) for x in alpha_strings[i_a])
+                    beta_occs = tuple(int(x) for x in beta_strings[i_b])
+                    method.log.info("    [alpha occ] %s  [beta occ] %s  coeff: %12.6f  weight: %10.6f"
+                                    % (str(alpha_occs), str(beta_occs), coeff, weight))

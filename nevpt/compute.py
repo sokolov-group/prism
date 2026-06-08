@@ -212,11 +212,6 @@ def analyze(nevpt):
             for state, trdm_state in enumerate(trdm):
                 trans_prop.compute_ntos(nevpt.interface, trdm_state, initial_state=0, target_state=state+1)
 
-    # TEMPORARY IMPORT
-    from prism.nevpt import qd_nevpt
     if nevpt.method_type == "qd":
+        from prism.nevpt import qd_nevpt
         qd_nevpt.analyze_eigenvectors(nevpt)
-    # Analyze QDNEVPT2 eigenvectors in terms of CASSCF wavefunctions
-    # Analyze QDNEVPT2 eigenvectors in terms of determinants
-    # Analyze QDNEVPT2 wavefunctions in terms of orbital contributions
-

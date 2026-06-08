@@ -16,7 +16,7 @@ module reset
 module load miniconda3/24.1.2-py310
 conda activate prismdmet
 
-export JOBNAME="test"
+export JOBNAME="test_qdnevpt2-egeienvector_analysis"
 
 cd "$SLURM_SUBMIT_DIR"
 
