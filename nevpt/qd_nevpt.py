@@ -556,7 +556,7 @@ def print_intruder_states_data(method, dim, h_eff, t1):
             )
         )
 
-    if coupling_data and method.verbose >= 5:
+    if coupling_data and method.verbose >= 4:
             
         separator = "-" * 120
             

@@ -85,6 +85,9 @@ def compute_t1_0(nevpt):
     nevpt.log.info("Correlation energy [0]:                      %20.12f" % e_0)
     nevpt.log.timer("computing T[0]^(1) amplitudes", *cput0)
 
+    if e_0 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [0] !!!!\n\n")
+
     return e_0, t1_ccee
 
 def compute_t1_p1(nevpt, rdms):
@@ -156,6 +159,10 @@ def compute_t1_p1(nevpt, rdms):
     nevpt.log.extra("Norm of T[+1]^(1):                           %20.12f" % np.linalg.norm(t1_ccae))
     nevpt.log.info("Correlation energy [+1]:                     %20.12f" % e_p1)
     nevpt.log.timer("computing T[+1]^(1) amplitudes", *cput0)
+
+
+    if e_p1 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+1] !!!!\n\n")
 
     return e_p1, t1_ccae
 
@@ -245,6 +252,9 @@ def compute_t1_m1(nevpt, rdms):
     nevpt.log.info("Correlation energy [-1]:                     %20.12f" % e_m1)
     nevpt.log.timer("computing T[-1]^(1) amplitudes", *cput0)
 
+    if e_m1 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-1] !!!!\n\n")
+
     return e_m1, t1_caee
 
 def compute_t1_p2(nevpt, rdms):
@@ -317,6 +327,9 @@ def compute_t1_p2(nevpt, rdms):
     nevpt.log.extra("Norm of T[+2]^(1):                           %20.12f" % np.linalg.norm(t1_ccaa))
     nevpt.log.info("Correlation energy [+2]:                     %20.12f" % e_p2)
     nevpt.log.timer("computing T[+2]^(1) amplitudes", *cput0)
+
+    if e_p2 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+2] !!!!\n\n")
 
     return e_p2, t1_ccaa
 
@@ -400,6 +413,9 @@ def compute_t1_m2(nevpt, rdms):
     nevpt.log.info("Correlation energy [-2]:                     %20.12f" % e_m2)
     nevpt.log.timer("computing T[-2]^(1) amplitudes", *cput0)
 
+    if e_m2 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-2] !!!!\n\n")
+    
     return e_m2, t1_aaee
 
 def compute_t1_0p(nevpt, rdms):
@@ -528,6 +544,9 @@ def compute_t1_0p(nevpt, rdms):
     nevpt.log.info("Correlation energy [0']:                     %20.12f" % e_0p)
     nevpt.log.timer("computing T[0']^(1) amplitudes", *cput0)
 
+    if e_0p > 0.0:
+        nevpt.tlog.info("\n\nWARNING: Positive correlation energy detected in class [0'] !!!!\n\n")
+    
     return e_0p, t1_ce, t1_caea, t1_caae
 
 def compute_t1_p1p(nevpt, rdms):
@@ -688,6 +707,9 @@ def compute_t1_p1p(nevpt, rdms):
     nevpt.log.info("Correlation energy [+1']:                    %20.12f" % e_p1p)
     nevpt.log.timer("computing T[+1']^(1) amplitudes", *cput0)
 
+    if e_p1p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+1'] !!!!\n\n")
+    
     return e_p1p, t1_ca, t1_caaa
 
 def compute_t1_m1p(nevpt, rdms):
@@ -823,6 +845,9 @@ def compute_t1_m1p(nevpt, rdms):
     nevpt.log.info("Correlation energy [-1']:                    %20.12f" % e_m1p)
     nevpt.log.timer("computing T[-1']^(1) amplitudes", *cput0)
 
+    if e_m1p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-1'] !!!!\n\n")
+    
     return e_m1p, t1_ae, t1_aaae
 
 def compute_t1_0p_no_singles(nevpt, rdms):
@@ -943,6 +968,9 @@ def compute_t1_0p_no_singles(nevpt, rdms):
     nevpt.log.info("Correlation energy [0']:                     %20.12f" % e_0p)
     nevpt.log.timer("computing T[0']^(1) amplitudes", *cput0)
 
+    if e_0p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [0'] !!!!\n\n")
+    
     return e_0p, t1_caea, t1_caae
 
 def compute_t1_p1p_no_singles(nevpt, rdms):
@@ -1085,6 +1113,9 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
     nevpt.log.info("Correlation energy [+1']:                    %20.12f" % e_p1p)
     nevpt.log.timer("computing T[+1']^(1) amplitudes", *cput0)
 
+    if e_p1p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+1'] !!!!\n\n")
+    
     return e_p1p, t1_caaa
 
 def compute_t1_m1p_no_singles(nevpt, rdms):
@@ -1207,6 +1238,9 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
     nevpt.log.extra("Norm of T[-1']^(1):                          %20.12f" % (np.linalg.norm(t1_aaae)))
     nevpt.log.info("Correlation energy [-1']:                    %20.12f" % e_m1p)
     nevpt.log.timer("computing T[-1']^(1) amplitudes", *cput0)
+
+    if e_m1p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-1'] !!!!\n\n")
 
     return e_m1p, t1_aaae
         
