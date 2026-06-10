@@ -261,36 +261,9 @@ def diagonalize_eff_H(method):
         method.Heff_1e = h_eff + H_dyall_off 
         print(method.Heff_1e)
         h_eff = method.Heff_1e
-    
-    # compute the coupling elements of h_eff > 0.05
-    if method.verbose >= 5:
-
-        coupling_data = []
-
-        for I in range(dim):
-            for J in range(I):
-                if abs(h_eff[I, J]) > 0.05:
-                    
-                    # convert two indexes into one index
-                    P = (I*(I-1))//2 + J
-                   
-                    coupling_data.append(f"({I:>3d}, {J:>3d})   P = {P:<6d}   H_eff element = {h_eff[I,J]: .8f}")
-
-        if coupling_data:
-            
-            interface = method.interface
-            separator = "-" * 60
-            interface.log.info("\n\nCoupling elements with |H_eff[I,J]| > 0.05")
-            
-            # table header
-            interface.log.info(f"{'(I, J)':<15}{'P':<10}{'H_eff':<15}")
-
-            interface.log.info(separator)
-
-            for i in coupling_data:
-                interface.log.info(i)
-
-            interface.log.info(separator)
+   
+    # print intruder states for qd-nevpt2
+    print_intruder_states_data(method, dim, h_eff, t1)
 
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
@@ -536,3 +509,74 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         
     return rdm_final
 
+def print_intruder_states_data(method, dim, h_eff, t1):
+
+    # compute the coupling elements of h_eff > 0.05 give warnings
+
+    interface = method.interface
+    coupling_data = []
+
+    I, J = np.tril_indices(dim, k=-1)
+    mask = abs(h_eff[I, J]) > 0.05
+
+    vals = h_eff[I, J]
+    
+    if np.any(mask):
+        interface.log.info("\n\nWARNING: Large coupling detected, possible intruder state!!!!!!\n\n")
+
+    header_fmt = (
+    "{:<12} {:>14} {:>14} {:>14} {:>14} {:>14} {:>14} {:>14}")
+
+    row_fmt = (
+    "{:<12} {:>14.8f} {:>14.8f} {:>14.8f} {:>14.8f} {:>14.8f} {:>14.8f} {:>14.8f}")
+
+    for i, j, val in zip(I[mask], J[mask], vals[mask]):
+
+        # use only amplitudes from t1[I]
+        t1_ccae = t1[i].ccae
+        t1_caee = t1[i].caee
+        t1_ccaa = t1[i].ccaa
+        t1_aaee = t1[i].aaee
+        t1_caea = t1[i].caea   
+        t1_caaa = t1[i].caaa 
+        t1_aaae = t1[i].aaae 
+
+
+        coupling_data.append(
+            row_fmt.format(
+                f"({i+1:>3d}, {j+1:>3d})",
+                val,
+                np.linalg.norm(t1_ccae),
+                np.linalg.norm(t1_caee),
+                np.linalg.norm(t1_ccaa),
+                np.linalg.norm(t1_aaee),
+                np.linalg.norm(t1_caea),  
+                np.linalg.norm(t1_caaa), 
+                np.linalg.norm(t1_aaae),
+            )
+        )
+
+    if coupling_data and method.verbose >= 5:
+            
+        separator = "-" * 120
+            
+        # table header
+        interface.log.info(header_fmt.format(
+            "(I, J)",
+            "H_eff",
+            "T[+1]^(1)",
+            "T[-1]^(1)",
+            "T[+2]^(1)",
+            "T[-2]^(1)",
+            "T[0']^(1)",
+            "T[+1']^(1)",
+            "T[-1']^(1)",))
+
+        interface.log.info(separator)
+
+        for i in coupling_data:
+            interface.log.info(i)
+
+        interface.log.info(separator)
+
+    return
