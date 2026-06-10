@@ -38,7 +38,8 @@ def kernel(nevpt):
     # Transform one- and two-electron integrals
     integrals.transform_integrals(nevpt)
 
-    if nevpt.soc_order == 2:   
+    if nevpt.soc_order == 2: 
+        raise Exception("The 2nd SOC implementation in Prism is still incomplete.")  
         from prism.nevpt import soc
         h_soc = soc.h_soc_mo(nevpt)
         h1_plus = (h_soc[0] + (1j*h_soc[1])) 

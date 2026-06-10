@@ -213,6 +213,7 @@ def compute_magnetic_properties(method, rdm_sf):
 
     #MCD
     if method.MCD:
+        raise Exception("MCD implementation in Prism is still incomplete.")
         method.log.info("\nCalculating MCD...")
         B_s = method.B_MCD 
         T = method.T_MCD 

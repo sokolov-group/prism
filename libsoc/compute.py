@@ -87,7 +87,7 @@ def compute_somf_soc(interface):
     # Print results obtained from soc-sa-casscf
     print_result_sa_casscf(interface, en_soc, osc_str_soc)
 
-    return  
+    return  en_soc, osc_str_soc
 
 
 def print_result_sa_casscf(interface, en_soc, osc_str_soc):

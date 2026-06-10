@@ -712,8 +712,13 @@ class PYSCF:
         return rdm1, rdm2, rdm3, rdm4
 
     def run_soc(self, soc_type=None):
+        
+        self.x2c_setup()
+        
         if soc_type:
             self.soc = soc_type
         from prism.libsoc import compute
-        compute.compute_somf_soc(self)  
+        en_soc, osc_str_soc = compute.compute_somf_soc(self) 
+
+        return  en_soc, osc_str_soc
 
