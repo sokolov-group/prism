@@ -153,6 +153,41 @@ def compute_S12_m2(mr_adc):
 
     return S_m2_12_inv
 
+def compute_S12_m2_aa(mr_adc):
+
+    # Einsum definition from kernel
+    einsum = mr_adc.interface.einsum
+    einsum_type = mr_adc.interface.einsum_type
+
+    # Variables from kernel
+    ncas = mr_adc.ncas
+
+    ## Reduced density matrices
+    rdm_ccaa = mr_adc.rdm.ccaa
+
+    # Compute S matrix: < Psi_0 | a^{\dag}_X a^{\dag}_Y a_Z a_W | Psi_0 > (AAAA sector)
+    S_m2  = 1/6 * einsum('WZXY->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+    S_m2 -= 1/6 * einsum('WZYX->XYWZ', rdm_ccaa, optimize = einsum_type).copy()
+
+    aa_ind = np.tril_indices(ncas, k=-1)
+    S_m2 = S_m2[:,:,aa_ind[0],aa_ind[1]]
+    S_m2 = S_m2[aa_ind[0],aa_ind[1]]
+
+    s_thresh = mr_adc.s_thresh_doubles
+    S_eval, S_evec = np.linalg.eigh(S_m2)
+    S_ind_nonzero = np.where(S_eval > s_thresh)[0]
+
+    S_inv_eval = 1.0/np.sqrt(S_eval[S_ind_nonzero])
+    S_evec = S_evec[:, S_ind_nonzero]
+
+    S_m2_12_inv = np.dot(S_evec, np.diag(S_inv_eval))
+
+    mr_adc.log.extra("Dimension of the [-2] (AAAA) orthonormalized subspace:    %d" % S_eval[S_ind_nonzero].shape[0])
+    if len(S_ind_nonzero) > 0:
+        mr_adc.log.extra("Smallest eigenvalue of the [-2] (AAAA) overlap metric:    %e" % np.amin(S_eval[S_ind_nonzero]))
+
+    return S_m2_12_inv
+
 def compute_S12_0p_projector(mr_adc):
 
     # Einsum definition from kernel
