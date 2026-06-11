@@ -61,5 +61,3 @@ interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.QDNEVPT(interface)
 nevpt.nfrozen = 1
 e_tot, e_corr, osc = nevpt.kernel()
-
-nevpt.analyze()

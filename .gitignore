@@ -128,3 +128,8 @@ dmypy.json
 .pyre/
 .vscode/settings.json
 .DS_Store
+
+# Slurm outputs
+*.out
+*/slurm_out
+*.slurm
