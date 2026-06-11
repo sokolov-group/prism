@@ -506,9 +506,11 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
     nelecas = method.ref_nelecas[0]
     n_alpha_elec, n_beta_elec = nelecas[0], nelecas[1]
 
+    # Generate physical orbital occupations for each string address
     alpha_strings = cistring.gen_occslst(range(ncas), n_alpha_elec)
     beta_strings = cistring.gen_occslst(range(ncas), n_beta_elec)
 
+    # Rotate the CASSCF wavefunctions into the QD-NEVPT2 eigenbasis
     ref_wfn = np.array(method.ref_wfn)
     n_alpha_str, n_beta_str = ref_wfn.shape[1], ref_wfn.shape[2]
     ref_wfn_flat = ref_wfn.reshape(ref_wfn.shape[0], -1)
@@ -535,12 +537,14 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
                     method.log.info("      [alpha occ] %s  [beta occ] %s  coeff: %12.6f  weight: %10.6f"
                                     % (str(alpha_occs), str(beta_occs), coeff, weight))
 
+        # Compute Natural Occupations by diagonalizing the active-space 1RDM
         rdm_mo = make_rdm1(method, L=n, R=n)
         d_cas = rdm_mo[ncore:ncore+ncas, ncore:ncore+ncas]
         nat_occ, _ = np.linalg.eigh(d_cas)
         nat_occ = nat_occ[::-1]
         method.log.info("    Natural Occupations (active space): %s" % np.array2string(nat_occ, precision=4, suppress_small=True))
 
+        # For open-shell systems, compute atomic Mulliken spin populations in the AO basis
         if n_alpha_elec != n_beta_elec:
             rdm1s = make_rdm1s(method, L=n, R=n)
             d_ao_a = mo @ rdm1s[0] @ mo.T
