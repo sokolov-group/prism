@@ -521,7 +521,7 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
 
     method.log.info("\n ** QD-NEVPT2 Eigenvector Analysis **\n")
     for n in range(n_states):
-        method.log.info("  State %d:" % (n))
+        method.log.info("  State %d:" % (n + 1))
 
         method.log.info("    Dominant Configurations:")
         weights_2d = qd_ci[n] ** 2
