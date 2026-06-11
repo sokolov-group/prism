@@ -200,7 +200,7 @@ def print_results(nevpt):
             nevpt.interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
 
 
-def analyze(nevpt):
+def analyze(nevpt, weight_cutoff=0.01):
 
     n_micro_states = sum(nevpt.ref_wfn_deg)
     if nevpt.compute_ntos:
@@ -214,4 +214,4 @@ def analyze(nevpt):
 
     if nevpt.method_type == "qd":
         from prism.nevpt import qd_nevpt
-        qd_nevpt.analyze_eigenvectors(nevpt)
+        qd_nevpt.analyze_eigenvectors(nevpt, weight_cutoff=weight_cutoff)

@@ -187,9 +187,9 @@ class NEVPT:
 
         return nevpt.compute_properties(self)
 
-    def analyze(self):
-
-        return compute.analyze(self)
+    def analyze(self, **kwargs):
+        from prism.nevpt import compute
+        return compute.analyze(self, **kwargs)
 
     @property
     def verbose(self):
