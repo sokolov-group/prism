@@ -552,7 +552,7 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
             spin_dm_ao = d_ao_a - d_ao_b
             spin_pop_ao = np.einsum('ij,ji->i', spin_dm_ao, ovlp)
             mol = method.interface.mol
-            method.log.info("    Mulliken Spin Populations (alpha - beta):")
+            method.log.info("    Mulliken Spin Populations:")
             for ia in range(mol.natm):
                 ao_start, ao_stop = mol.aoslice_by_atom()[ia][2], mol.aoslice_by_atom()[ia][3]
                 spin_atom = np.sum(spin_pop_ao[ao_start:ao_stop])
