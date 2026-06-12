@@ -186,10 +186,8 @@ class NEVPT:
 
         return nevpt.compute_properties(self)
 
-    def analyze(self):
-
-        method = self._make_method_instance()
-        return compute.analyze(method)
+    def analyze(self, **kwargs):
+        return compute.analyze(self, **kwargs)
 
     @property
     def verbose(self):
@@ -245,6 +243,4 @@ class QDNEVPT(NEVPT):
 
     def compute_properties(self):
 
-        return qd_nevpt.compute_properties(self)
-
-
+        return qd_nevpt.compute_properties(self)    
