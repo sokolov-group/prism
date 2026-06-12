@@ -31,7 +31,7 @@ class NEVPT:
         self.log = interface.log
         log = self.log
 
-        log.info("Initializing state-specific fully internally contracted NEVPT...")
+        log.info("Initializing fully internally contracted NEVPT...")
 
         if (interface.reference not in ("casscf", "casci", "sa-casscf", "ms-casci")):
             log.info("The NEVPT code does not support %s reference" % interface.reference)
@@ -112,6 +112,11 @@ class NEVPT:
         self.h_evec_soc = None
 
     def _make_method_instance(self):
+
+        self.method_type = self.method_type.lower()
+        if self.method_type == "ss":
+            return self
+
         cls_map = {
             "qd": QDNEVPT,
         }
@@ -135,13 +140,7 @@ class NEVPT:
 
     def kernel(self):
 
-        self.method_type = self.method_type.lower()
-
-        method = None
-        if (self.method_type != "ss"):
-            method = self._make_method_instance()
-        else:
-            method = self
+        method = self._make_method_instance()
 
         # Run NEVPT computation
         e_tot, e_corr, osc = compute.kernel(method)
@@ -211,7 +210,6 @@ class QDNEVPT(NEVPT):
 
     def _init_method(self):
         self.method_type = "qd"
-        self.h_evec = None # Eigenvectors of effective Hamiltonian
 
     def compute_energy(self):
 

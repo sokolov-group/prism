@@ -123,6 +123,7 @@ class PYSCF:
                 log.info("\nReference states selected: %s" % str(select_reference))
 
             self.max_memory = mc.max_memory
+            self.max_memory_soc = mc.max_memory
             self.mo = mc.mo_coeff.copy()
             self.mo_scf = mf.mo_coeff.copy()
             self.ovlp = mf.get_ovlp(mf.mol)
@@ -237,7 +238,7 @@ class PYSCF:
 
         # Einsum Backend
         if backend not in ("opt_einsum", "pytblis", "numpy", None):
-            msg = (f"Requested einsum backend '{einsum_backend}' is unknown. "
+            msg = (f"Requested einsum backend '{backend}' is unknown. "
                     "Valid backend options are: 'opt_einsum', 'pytblis', 'numpy', or None.")
             raise ValueError(msg)
 
