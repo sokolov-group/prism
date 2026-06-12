@@ -65,7 +65,7 @@ class PYSCF:
         if mc is not None:
             self.compute_mcscf_reference(select_reference)
         else:
-            socc = np.count_nonzero(mf.mo_occ == 1)
+            socc = int(np.count_nonzero(mf.mo_occ == 1))
 
             if mf.istype('RHF') and socc == 0:
                 self.compute_scf_reference()
