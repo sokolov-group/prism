@@ -532,10 +532,10 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
                 weight = weights_2d[i_a, i_b]
                 if weight > weight_cutoff:
                     coeff = qd_ci[n, i_a, i_b]
-                    alpha_occs = tuple(int(x) for x in alpha_strings[i_a])
-                    beta_occs = tuple(int(x) for x in beta_strings[i_b])
+                    alpha_occs = "[%s]" % " ".join(str(int(x)) for x in alpha_strings[i_a])
+                    beta_occs  = "[%s]" % " ".join(str(int(x)) for x in beta_strings[i_b])
                     method.log.info("      [alpha occ] %s  [beta occ] %s  coeff: %12.6f  weight: %10.6f"
-                                    % (str(alpha_occs), str(beta_occs), coeff, weight))
+                                    % (alpha_occs, beta_occs, coeff, weight))
 
         # Compute Natural Occupations by diagonalizing the active-space 1RDM
         rdm_mo = make_rdm1(method, L=n, R=n)
