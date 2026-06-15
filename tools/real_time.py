@@ -8,7 +8,7 @@ def real_time_prop(nevpt, evec, etot):
     if not (nevpt.method_type == "qd"): 
         raise Exception("Unrecognized methods for the Charge Migration!")
 
-    # Eigenvectors and transition moments
+    # Eigenvectors 
     evec = np.array(evec)
     evec_shape = evec.shape[0]
 
@@ -18,8 +18,9 @@ def real_time_prop(nevpt, evec, etot):
     else:
         raise Exception("Initial conditions are not provided for the Charge Migration!")
 
-    # Transform initial conditions from the eignstate basis to the MR-ADC excitation basis
-    wfn = np.dot(evec, init_cond)
+    # Transform initial conditions from the eignstate basis to the QD-NEVPT2  basis
+    #wfn = np.dot(evec, init_cond)
+    #wfn = init_cond.copy()
 
     t = 0.0
 
@@ -30,12 +31,17 @@ def real_time_prop(nevpt, evec, etot):
     sys.stdout.flush()
 
     if nevpt.rt_prop_method == "exact":
-        wfn = np.conj(evec.T) @ wfn
+        #wfn = np.conj(evec.T) @ wfn
         #H_eff = np.conj(evec.T) @ H_eff @ evec
+        wfn = init_cond.copy()
         H_eff  = np.diag(etot)
-
+    
     # wavefunction at t=0
     wfn0 = wfn.copy()
+
+    with open('auto_correlation.csv', 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(['Time (a.u.)', 'Auto-correlation \n'])
 
     while t < nevpt.rt_tmax:
 

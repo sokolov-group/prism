@@ -255,7 +255,7 @@ def diagonalize_eff_H(method):
     check_intruder_states(method, dim, h_eff, t1)
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
-    
+
     return h_eval, h_evec
 
 
