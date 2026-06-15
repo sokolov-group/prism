@@ -56,12 +56,12 @@ def kernel(nevpt):
     if "osc_strengths" in nevpt.properties:
         osc_str = nevpt.properties["osc_strengths"]
 
+    print("evec = ", nevpt.h_evec)
+    print("etot = ", nevpt.e_tot)
     # Initiate the Real-Time calculations
     if nevpt.rt == True:
-        #from prism.nevpt import real_time
         from prism.tools import real_time
         real_time.real_time_prop(nevpt, evec=nevpt.h_evec, etot=nevpt.e_tot)
-
     return nevpt.e_tot, nevpt.e_corr, osc_str
 
 
