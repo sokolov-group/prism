@@ -113,14 +113,15 @@ def compute_excitation_manifolds(mr_adc):
         mr_adc.S12.cca = overlap.compute_S12_p1(mr_adc)
 
         # Determine dimensions of orthogonalized excitation spaces
+        mr_adc.h_orth.n_casci    = mr_adc.h0.n_casci
         mr_adc.h_orth.n_c_caa    = mr_adc.ncore * mr_adc.S12.c_caa.shape[1]
         mr_adc.h_orth.n_cce      = mr_adc.h1.n_cce
         mr_adc.h_orth.n_cce_tril = mr_adc.h1.n_cce_tril
         mr_adc.h_orth.n_cae      = mr_adc.ncore * mr_adc.S12.cae.shape[1] * mr_adc.nextern
-        mr_adc.h_orth.n_aae      = mr_adc.nextern * mr_adc.S12.aae.shape[1]
-        mr_adc.h_orth.n_aae_tril = mr_adc.nextern * mr_adc.S12.aae_aa.shape[1]
         mr_adc.h_orth.n_cca      = mr_adc.ncore * mr_adc.ncore * mr_adc.S12.cca.shape[1]
         mr_adc.h_orth.n_cca_tril = mr_adc.ncore * (mr_adc.ncore - 1) * mr_adc.S12.cca.shape[1] // 2
+        mr_adc.h_orth.n_aae      = mr_adc.nextern * mr_adc.S12.aae.shape[1]
+        mr_adc.h_orth.n_aae_tril = mr_adc.nextern * mr_adc.S12.aae_aa.shape[1]
 
         mr_adc.h_orth.dim_c_caa = mr_adc.h_orth.n_c_caa
         mr_adc.h_orth.dim_cce   = mr_adc.h1.dim_cce
@@ -128,11 +129,14 @@ def compute_excitation_manifolds(mr_adc):
         mr_adc.h_orth.dim_cca   = mr_adc.h_orth.n_cca_tril + mr_adc.h_orth.n_cca
         mr_adc.h_orth.dim_aae   = mr_adc.h_orth.n_aae_tril + mr_adc.h_orth.n_aae
 
-        mr_adc.h_orth.dim = (mr_adc.h_orth.dim_c_caa + mr_adc.h_orth.dim_cce +
+        mr_adc.h_orth.dim = (mr_adc.h_orth.n_casci +
+                             mr_adc.h_orth.dim_c_caa + mr_adc.h_orth.dim_cce +
                              mr_adc.h_orth.dim_cae + mr_adc.h_orth.dim_cca +
                              mr_adc.h_orth.dim_aae)
 
-        mr_adc.h_orth.s_c_caa = 0
+        mr_adc.h_orth.s_casci = 0
+        mr_adc.h_orth.f_casci = mr_adc.h_orth.s_casci + mr_adc.h_orth.n_casci
+        mr_adc.h_orth.s_c_caa = mr_adc.h_orth.f_casci
         mr_adc.h_orth.f_c_caa = mr_adc.h_orth.s_c_caa + mr_adc.h_orth.dim_c_caa
         mr_adc.h_orth.s_cce = mr_adc.h_orth.f_c_caa
         mr_adc.h_orth.f_cce = mr_adc.h_orth.s_cce + mr_adc.h_orth.dim_cce
@@ -3248,37 +3252,41 @@ def compute_M_01(mr_adc):
         M_aae_abb += einsum('B,xyzB,PWzZxy->PWZB', e_extern, t1_aaae, trdm_aabab_cccaa, optimize = einsum_type)
         M_aae_abb -= einsum('B,xB,PWZx->PWZB', e_extern, t1_ae, trdm_abb_cca, optimize = einsum_type)
         M_aae_abb += einsum('B,xyzB,PWZzyx->PWZB', e_extern, t1_aaae, trdm_abbbb_cccaa, optimize = einsum_type)
-        M_aae_abb -= einsum('xy,xzwB,PWwZyz->PWZB', h_aa, t1_aaae, trdm_aabab_cccaa, optimize = einsum_type)
-        M_aae_abb += einsum('xy,zwxB,PWyZzw->PWZB', h_aa, t1_aaae, trdm_aabab_cccaa, optimize = einsum_type)
-        M_aae_abb -= einsum('xy,zxwB,PWwZzy->PWZB', h_aa, t1_aaae, trdm_aabab_cccaa, optimize = einsum_type)
+#        M_aae_abb -= einsum('xy,xzwB,PWwZyz->PWZB', h_aa, t1_aaae, trdm_aabab_cccaa, optimize = einsum_type)
+#        M_aae_abb += einsum('xy,zwxB,PWyZzw->PWZB', h_aa, t1_aaae, trdm_aabab_cccaa, optimize = einsum_type)
+#        M_aae_abb -= einsum('xy,zxwB,PWwZzy->PWZB', h_aa, t1_aaae, trdm_aabab_cccaa, optimize = einsum_type)
         M_aae_abb += einsum('xy,xB,PWZy->PWZB', h_aa, t1_ae, trdm_abb_cca, optimize = einsum_type)
-        M_aae_abb += einsum('xy,xzwB,PWZwyz->PWZB', h_aa, t1_aaae, trdm_abbbb_cccaa, optimize = einsum_type)
-        M_aae_abb += einsum('xy,zwxB,PWZywz->PWZB', h_aa, t1_aaae, trdm_abbbb_cccaa, optimize = einsum_type)
-        M_aae_abb -= einsum('xy,zxwB,PWZwyz->PWZB', h_aa, t1_aaae, trdm_abbbb_cccaa, optimize = einsum_type)
+#        M_aae_abb += einsum('xy,xzwB,PWZwyz->PWZB', h_aa, t1_aaae, trdm_abbbb_cccaa, optimize = einsum_type)
+#        M_aae_abb += einsum('xy,zwxB,PWZywz->PWZB', h_aa, t1_aaae, trdm_abbbb_cccaa, optimize = einsum_type)
+#        M_aae_abb -= einsum('xy,zxwB,PWZwyz->PWZB', h_aa, t1_aaae, trdm_abbbb_cccaa, optimize = einsum_type)
         M_aae_abb -= einsum('xB,xyzw,PWzZwy->PWZB', t1_ae, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
-        M_aae_abb -= einsum('xyzB,ywxu,PWzZuw->PWZB', t1_aaae, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
+#        M_aae_abb -= einsum('xyzB,ywxu,PWzZuw->PWZB', t1_aaae, v_aaaa, trdm_aabab_cccaa, optimize = einsum_type)
         M_aae_abb -= einsum('xB,xyzw,PWZzyw->PWZB', t1_ae, v_aaaa, trdm_abbbb_cccaa, optimize = einsum_type)
-        M_aae_abb -= einsum('xyzB,ywxu,PWZzwu->PWZB', t1_aaae, v_aaaa, trdm_abbbb_cccaa, optimize = einsum_type)
-
-        #3.5-RDM terms
-        wfn_casci = mr_adc.wfn_casci
-        nelecasci = mr_adc.nelecasci
-        for P in range(mr_adc.ncasci):
-            trdm_aaaaaaa, trdm_aaabaab, trdm_aabbabb, trdm_abbbbbb = rdms.compute_ip_trans_rdm_ccccaaa(mr_adc, wfn_casci[P], nelecasci)
-            M_aae_abb[P] -= einsum('xyzB,xwuv,WzuZwvy->WZB', t1_aaae, v_aaaa, trdm_aaabaab, optimize = einsum_type)
-            M_aae_abb[P] -= einsum('xyzB,ywuv,WzuZxvw->WZB', t1_aaae, v_aaaa, trdm_aaabaab, optimize = einsum_type)
-            M_aae_abb[P] += einsum('xyzB,zwuv,WwvZxuy->WZB', t1_aaae, v_aaaa, trdm_aaabaab, optimize = einsum_type)
-            M_aae_abb[P] -= einsum('xyzB,xwuv,WuZzvyw->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
-            M_aae_abb[P] -= einsum('xyzB,xwuv,WzZuwyv->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
-            M_aae_abb[P] += einsum('xyzB,ywuv,WuZzvxw->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
-            M_aae_abb[P] -= einsum('xyzB,ywuv,WzZuxwv->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
-            M_aae_abb[P] += einsum('xyzB,zwuv,WvZwuyx->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
-            M_aae_abb[P] += einsum('xyzB,zwuv,WwZvxyu->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
-            M_aae_abb[P] -= einsum('xyzB,xwuv,WZzuywv->WZB', t1_aaae, v_aaaa, trdm_abbbbbb, optimize = einsum_type)
-            M_aae_abb[P] += einsum('xyzB,ywuv,WZzuxwv->WZB', t1_aaae, v_aaaa, trdm_abbbbbb, optimize = einsum_type)
-            M_aae_abb[P] += einsum('xyzB,zwuv,WZwvyxu->WZB', t1_aaae, v_aaaa, trdm_abbbbbb, optimize = einsum_type)
+#        M_aae_abb -= einsum('xyzB,ywxu,PWZzwu->PWZB', t1_aaae, v_aaaa, trdm_abbbb_cccaa, optimize = einsum_type)
+#
+#        #3.5-RDM terms
+#        wfn_casci = mr_adc.wfn_casci
+#        nelecasci = mr_adc.nelecasci
+#        for P in range(mr_adc.ncasci):
+#            trdm_aaaaaaa, trdm_aaabaab, trdm_aabbabb, trdm_abbbbbb = rdms.compute_ip_trans_rdm_ccccaaa(mr_adc, wfn_casci[P], nelecasci)
+#            M_aae_abb[P] -= einsum('xyzB,xwuv,WzuZwvy->WZB', t1_aaae, v_aaaa, trdm_aaabaab, optimize = einsum_type)
+#            M_aae_abb[P] -= einsum('xyzB,ywuv,WzuZxvw->WZB', t1_aaae, v_aaaa, trdm_aaabaab, optimize = einsum_type)
+#            M_aae_abb[P] += einsum('xyzB,zwuv,WwvZxuy->WZB', t1_aaae, v_aaaa, trdm_aaabaab, optimize = einsum_type)
+#            M_aae_abb[P] -= einsum('xyzB,xwuv,WuZzvyw->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
+#            M_aae_abb[P] -= einsum('xyzB,xwuv,WzZuwyv->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
+#            M_aae_abb[P] += einsum('xyzB,ywuv,WuZzvxw->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
+#            M_aae_abb[P] -= einsum('xyzB,ywuv,WzZuxwv->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
+#            M_aae_abb[P] += einsum('xyzB,zwuv,WvZwuyx->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
+#            M_aae_abb[P] += einsum('xyzB,zwuv,WwZvxyu->WZB', t1_aaae, v_aaaa, trdm_aabbabb, optimize = einsum_type)
+#            M_aae_abb[P] -= einsum('xyzB,xwuv,WZzuywv->WZB', t1_aaae, v_aaaa, trdm_abbbbbb, optimize = einsum_type)
+#            M_aae_abb[P] += einsum('xyzB,ywuv,WZzuxwv->WZB', t1_aaae, v_aaaa, trdm_abbbbbb, optimize = einsum_type)
+#            M_aae_abb[P] += einsum('xyzB,zwuv,WZwvyxu->WZB', t1_aaae, v_aaaa, trdm_abbbbbb, optimize = einsum_type)
 
         M_aae_aaa = M_aae_abb - M_aae_abb.transpose(0,2,1,3)
+
+        for I in range(mr_adc.ncasci):
+            print(I, " state, norm(AAE_AAA):", np.linalg.norm(M_aae_aaa[I]))
+            print(I, " state, norm(AAE_ABB):", np.linalg.norm(M_aae_abb[I]))
 
         ## Reshape tensors to matrix form
         M_aae_aaa = M_aae_aaa[:, aa_ind[0], aa_ind[1]]
@@ -3387,6 +3395,12 @@ def compute_preconditioner(mr_adc):
     ## Excitation Manifolds
     s_c = mr_adc.h0.s_c
     f_c = mr_adc.h0.f_c
+
+    s_casci = mr_adc.h0.s_casci
+    f_casci = mr_adc.h0.f_casci
+
+    ho_s_casci = mr_adc.h_orth.s_casci
+    ho_f_casci = mr_adc.h_orth.f_casci
 
     ho_s_c_caa = mr_adc.h_orth.s_c_caa
     ho_f_c_caa = mr_adc.h_orth.f_c_caa
@@ -3771,6 +3785,8 @@ def compute_preconditioner(mr_adc):
     # Build the preconditioner
     precond = np.zeros(mr_adc.h_orth.dim)
 
+    precond[ho_s_casci:ho_f_casci] = np.diag(M_00[s_casci:f_casci, s_casci:f_casci])
+
     precond[ho_s_c_caa:ho_f_c_caa] = precond_caa.reshape(-1)
 
     precond[ho_s_cce__aaa:ho_f_cce__aaa] = precond_cce[core_tril_ind[0], core_tril_ind[1]].reshape(-1)
@@ -3812,6 +3828,8 @@ def apply_S_12(mr_adc, X, transpose = False):
     S12_aae_aa = mr_adc.S12.aae_aa
 
     ## Excitation Manifolds
+    s_casci = mr_adc.h0.s_casci
+    f_casci = mr_adc.h0.f_casci
     s_c = mr_adc.h0.s_c
     f_c = mr_adc.h0.f_c
 
@@ -3839,6 +3857,8 @@ def apply_S_12(mr_adc, X, transpose = False):
     s_aae__abb = mr_adc.h1.s_aae__abb
     f_aae__abb = mr_adc.h1.f_aae__abb
 
+    ho_s_casci = mr_adc.h_orth.s_casci
+    ho_f_casci = mr_adc.h_orth.f_casci
     ho_s_c_caa = mr_adc.h_orth.s_c_caa
     ho_f_c_caa = mr_adc.h_orth.f_c_caa
 
@@ -3876,6 +3896,9 @@ def apply_S_12(mr_adc, X, transpose = False):
             raise Exception("Dimensions do not match when applying S_12 transpose")
 
         Xt = np.zeros(mr_adc.h_orth.dim)
+
+        # CASCI
+        Xt[ho_s_casci:ho_f_casci] = X[s_casci:f_casci]
 
         ## C and CAA -> C_CAA
         temp = np.zeros((ncore, S12_c_caa.shape[0]))
@@ -3915,6 +3938,9 @@ def apply_S_12(mr_adc, X, transpose = False):
             raise Exception("Dimensions do not match when applying S_12")
 
         Xt = np.zeros(mr_adc.h0.dim + mr_adc.h1.dim)
+
+        # CASCI
+        Xt[s_casci:f_casci] = X[ho_s_casci:ho_f_casci]
 
         ## C_CAA -> C and CAA
         temp = X[ho_s_c_caa:ho_f_c_caa].reshape(ncore, S12_c_caa.shape[1]).copy()
@@ -4289,36 +4315,21 @@ def compute_sigma_vector(mr_adc, Xt):
 
         sigma[s_aae__aaa:f_aae__aaa] += sigma_aae[cas_tril_ind[0], cas_tril_ind[1]].reshape(-1).copy()
 
-        sigma_aae =- 1/6 * einsum('xyB,B,WZxy->WZB', X_abb, e_extern, rdm_ccaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,B,WZyx->WZB', X_abb, e_extern, rdm_ccaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,xz,WZyz->WZB', X_abb, h_aa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae += 1/6 * einsum('xyB,xz,WZzy->WZB', X_abb, h_aa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae += 1/6 * einsum('xyB,yz,WZxz->WZB', X_abb, h_aa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,yz,WZzx->WZB', X_abb, h_aa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,xzwu,WZwuyz->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,xzwu,WZwuzy->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,xzwu,WZwyuz->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,xzwu,WZwzuy->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,xzwu,WZwzyu->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,xzyw,WZwz->WZB', X_abb, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae += 1/6 * einsum('xyB,xzyw,WZzw->WZB', X_abb, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae += 1/6 * einsum('xyB,yzwu,WZwxzu->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,yzwu,WZwzxu->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,B,WZxy->WZB', X_bab, e_extern, rdm_ccaa, optimize = einsum_type)
-        sigma_aae += 1/6 * einsum('xyB,B,WZyx->WZB', X_bab, e_extern, rdm_ccaa, optimize = einsum_type)
-        sigma_aae -= 1/6 * einsum('xyB,xz,WZyz->WZB', X_bab, h_aa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,xz,WZzy->WZB', X_bab, h_aa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,yz,WZxz->WZB', X_bab, h_aa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae -= 1/6 * einsum('xyB,yz,WZzx->WZB', X_bab, h_aa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae -= 1/6 * einsum('xyB,xzwu,WZwyzu->WZB', X_bab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,xzwu,WZwzyu->WZB', X_bab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae -= 1/6 * einsum('xyB,xzyw,WZwz->WZB', X_bab, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,xzyw,WZzw->WZB', X_bab, v_aaaa, rdm_ccaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,yzwu,WZwuxz->WZB', X_bab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,yzwu,WZwuzx->WZB', X_bab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,yzwu,WZwxuz->WZB', X_bab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae += 1/12 * einsum('xyB,yzwu,WZwzux->WZB', X_bab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
-        sigma_aae -= 1/12 * einsum('xyB,yzwu,WZwzxu->WZB', X_bab, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_aae =- 1/3 * einsum('xyB,B,WZxy->WZB', X_abb, e_extern, rdm_ccaa, optimize = einsum_type)
+        sigma_aae -= 1/6 * einsum('xyB,B,WZyx->WZB', X_abb, e_extern, rdm_ccaa, optimize = einsum_type)
+        sigma_aae += 1/6 * einsum('xyB,xz,WZyz->WZB', X_abb, h_aa, rdm_ccaa, optimize = einsum_type)
+        sigma_aae += 1/3 * einsum('xyB,xz,WZzy->WZB', X_abb, h_aa, rdm_ccaa, optimize = einsum_type)
+        sigma_aae += 1/3 * einsum('xyB,yz,WZxz->WZB', X_abb, h_aa, rdm_ccaa, optimize = einsum_type)
+        sigma_aae += 1/6 * einsum('xyB,yz,WZzx->WZB', X_abb, h_aa, rdm_ccaa, optimize = einsum_type)
+        sigma_aae -= 1/6 * einsum('xyB,xzwu,WZwuyz->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_aae -= 1/6 * einsum('xyB,xzwu,WZwuzy->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_aae -= 1/6 * einsum('xyB,xzwu,WZwyuz->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_aae -= 1/6 * einsum('xyB,xzwu,WZwzuy->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_aae += 1/6 * einsum('xyB,xzwu,WZwzyu->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_aae += 1/6 * einsum('xyB,xzyw,WZwz->WZB', X_abb, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_aae += 1/3 * einsum('xyB,xzyw,WZzw->WZB', X_abb, v_aaaa, rdm_ccaa, optimize = einsum_type)
+        sigma_aae += 1/3 * einsum('xyB,yzwu,WZwxzu->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
+        sigma_aae += 1/6 * einsum('xyB,yzwu,WZwzxu->WZB', X_abb, v_aaaa, rdm_cccaaa, optimize = einsum_type)
 
         sigma[s_aae__abb:f_aae__abb] += sigma_aae.reshape(-1)
 
@@ -9191,25 +9202,26 @@ def compute_sigma_vector(mr_adc, Xt):
     sigma[s_c:f_c] += np.dot(M_01_c_aae, Xt[s_aae:f_aae])
     sigma[s_aae:f_aae] += np.dot(M_01_c_aae.T, Xt[s_c:f_c])
 
-    ### CAS <-> CAA
-    sigma[s_casci:f_casci] += np.dot(M_01_cas_caa, Xt[s_caa:f_caa])
-    sigma[s_caa:f_caa] += np.dot(M_01_cas_caa.T, Xt[s_casci:f_casci])
+    if mr_adc.ncasci > 0:
+        ### CAS <-> CAA
+        sigma[s_casci:f_casci] += np.dot(M_01_cas_caa, Xt[s_caa:f_caa])
+        sigma[s_caa:f_caa] += np.dot(M_01_cas_caa.T, Xt[s_casci:f_casci])
 
-    ### CAS <-> CCE
-    sigma[s_casci:f_casci] += np.dot(M_01_cas_cce, Xt[s_cce:f_cce])
-    sigma[s_cce:f_cce] += np.dot(M_01_cas_cce.T, Xt[s_casci:f_casci])
+        ### CAS <-> CCE
+        sigma[s_casci:f_casci] += np.dot(M_01_cas_cce, Xt[s_cce:f_cce])
+        sigma[s_cce:f_cce] += np.dot(M_01_cas_cce.T, Xt[s_casci:f_casci])
 
-    ### CAS <-> CAE
-    sigma[s_casci:f_casci] += np.dot(M_01_cas_cae, Xt[s_cae:f_cae])
-    sigma[s_cae:f_cae] += np.dot(M_01_cas_cae.T, Xt[s_casci:f_casci])
+        ### CAS <-> CAE
+        sigma[s_casci:f_casci] += np.dot(M_01_cas_cae, Xt[s_cae:f_cae])
+        sigma[s_cae:f_cae] += np.dot(M_01_cas_cae.T, Xt[s_casci:f_casci])
 
-    ### CAS <-> CCA
-    sigma[s_casci:f_casci] += np.dot(M_01_cas_cca, Xt[s_cca:f_cca])
-    sigma[s_cca:f_cca] += np.dot(M_01_cas_cca.T, Xt[s_casci:f_casci])
+        ### CAS <-> CCA
+        sigma[s_casci:f_casci] += np.dot(M_01_cas_cca, Xt[s_cca:f_cca])
+        sigma[s_cca:f_cca] += np.dot(M_01_cas_cca.T, Xt[s_casci:f_casci])
 
-    ### CAS <-> AAE
-    sigma[s_casci:f_casci] += np.dot(M_01_cas_aae, Xt[s_aae:f_aae])
-    sigma[s_aae:f_aae] += np.dot(M_01_cas_aae.T, Xt[s_casci:f_casci])
+        ### CAS <-> AAE
+        sigma[s_casci:f_casci] += np.dot(M_01_cas_aae, Xt[s_aae:f_aae])
+        sigma[s_aae:f_aae] += np.dot(M_01_cas_aae.T, Xt[s_casci:f_casci])
 
     ## h1-h1 contributions
     ### Excitation Manifolds

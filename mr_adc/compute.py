@@ -66,7 +66,8 @@ def kernel(mr_adc):
     de_ev = de * h2ev
 
     # Compute transition moments and spectroscopic factors
-    spec_intensity, X = mr_adc.compute_properties()
+    spec_intensity, X = None, None
+##    spec_intensity, X = mr_adc.compute_properties()
 
     print_results(mr_adc)
 
@@ -326,10 +327,11 @@ def print_results(mr_adc):
     de_ev = de * h2ev
     de_cm = de * h2cm
 
-    spec_intensity = mr_adc.properties["spec_probabilities"]
+##    spec_intensity = mr_adc.properties["spec_probabilities"]
 
     for p in range(len(de)):
         de_nm = 10000000 / de_cm[p]
-        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+##        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f    %10.6f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p], spec_intensity[p]))
+        mr_adc.log.info("%5d     %14.8f  %12.4f %10.4f  %14.4f" % ((p+1), de[p], de_ev[p], de_nm, de_cm[p]))
 
     mr_adc.log.info("------------------------------------------------------------------------------------------------")
