@@ -206,6 +206,10 @@ def print_results(nevpt):
     if "osc_strengths_full" in nevpt.properties:
         trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full"])
 
+    if "osc_strengths_full_uncorrected" in nevpt.properties:
+        nevpt.log.info('\nUncorrected (no ptSS and no ptLR) Oscillator Strengths below:')
+        trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full_uncorrected"])
+
     if "g-eigenvectors" in nevpt.properties:
         G_evecs = nevpt.properties["g-eigenvectors"]
         nevpt.interface.log.info("\nMagnetic g-tensor principal axes:")
