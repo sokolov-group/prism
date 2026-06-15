@@ -47,7 +47,7 @@ def compute_energy(method):
     # Update class objects
     method.e_tot = e_tot
     method.e_corr = e_corr
-    method.h_evec = h_evec
+    method.h_evec = h_evec.copy()
 
     # Determine spin multiplicity for the QDNEVPT states
     method.spin_mult = determine_spin_mult(method)
@@ -533,3 +533,66 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         
     return rdm_final
 
+
+def analyze_eigenvectors(method, weight_cutoff=0.01):
+
+    from pyscf.fci import cistring
+
+    ncore = method.ncore
+    ncas = method.ncas
+    n_states = method.h_evec.shape[1]
+    h_evec = method.h_evec
+    nelecas = method.ref_nelecas[0]
+    n_alpha_elec, n_beta_elec = nelecas[0], nelecas[1]
+
+    # Generate physical orbital occupations for each string address
+    alpha_strings = cistring.gen_occslst(range(ncas), n_alpha_elec)
+    beta_strings = cistring.gen_occslst(range(ncas), n_beta_elec)
+
+    # Rotate the CASSCF wavefunctions into the QD-NEVPT2 eigenbasis
+    ref_wfn = np.array(method.ref_wfn)
+    n_alpha_str, n_beta_str = ref_wfn.shape[1], ref_wfn.shape[2]
+    ref_wfn_flat = ref_wfn.reshape(ref_wfn.shape[0], -1)
+
+    qd_ci_flat = h_evec.T @ ref_wfn_flat
+    qd_ci = qd_ci_flat.reshape(n_states, n_alpha_str, n_beta_str)
+
+    mo = method.mo
+    ovlp = method.ovlp
+
+    method.log.info("\n ** QD-NEVPT2 Eigenvector Analysis **\n")
+    for n in range(n_states):
+        method.log.info("  State %d:" % (n + 1))
+
+        method.log.info("    Dominant Configurations:")
+        weights_2d = qd_ci[n] ** 2
+        for i_a in range(n_alpha_str):
+            for i_b in range(n_beta_str):
+                weight = weights_2d[i_a, i_b]
+                if weight > weight_cutoff:
+                    coeff = qd_ci[n, i_a, i_b]
+                    alpha_occs = "[%s]" % " ".join(str(int(x)) for x in alpha_strings[i_a])
+                    beta_occs  = "[%s]" % " ".join(str(int(x)) for x in beta_strings[i_b])
+                    method.log.info("      [alpha occ] %s  [beta occ] %s  coeff: %12.6f  weight: %10.6f"
+                                    % (alpha_occs, beta_occs, coeff, weight))
+
+        # Compute Natural Occupations by diagonalizing the active-space 1RDM
+        rdm_mo = make_rdm1(method, L=n, R=n)
+        d_cas = rdm_mo[ncore:ncore+ncas, ncore:ncore+ncas]
+        nat_occ, _ = np.linalg.eigh(d_cas)
+        nat_occ = nat_occ[::-1]
+        method.log.info("    Natural Occupations (active space): %s" % np.array2string(nat_occ, precision=4, suppress_small=True))
+
+        # For open-shell systems, compute atomic Mulliken spin populations in the AO basis
+        if n_alpha_elec != n_beta_elec:
+            rdm1s = make_rdm1s(method, L=n, R=n)
+            d_ao_a = mo @ rdm1s[0] @ mo.T
+            d_ao_b = mo @ rdm1s[1] @ mo.T
+            spin_dm_ao = d_ao_a - d_ao_b
+            spin_pop_ao = np.einsum('ij,ji->i', spin_dm_ao, ovlp)
+            mol = method.interface.mol
+            method.log.info("    Mulliken Spin Populations:")
+            for ia in range(mol.natm):
+                ao_start, ao_stop = mol.aoslice_by_atom()[ia][2], mol.aoslice_by_atom()[ia][3]
+                spin_atom = np.sum(spin_pop_ao[ao_start:ao_stop])
+                method.log.info("      Atom %d %-4s  spin pop: %10.6f" % (ia, mol.atom_symbol(ia), spin_atom))

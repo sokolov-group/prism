@@ -30,7 +30,6 @@ from prism.tools import solvent
 def compute_energy(method):
 
     n_states = len(method.ref_wfn_deg)
-    n_micro_states = sum(method.ref_wfn_deg)
 
     e_tot = []
     e_corr = []

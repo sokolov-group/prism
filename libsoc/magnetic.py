@@ -132,6 +132,10 @@ def gtensor(interface, evec_soc, rdm_sf, S, target_index = 1, origin_type = 'cha
     ge = interface.g_free_elec
 
     interface.log.info("\nTarget State index = %s", target_index)
+
+    if target_index < 1 or target_index > rdm_sf.shape[0]:
+        raise ValueError("Target index must be between 1 and the number of states")
+
     target_index -= 1
 
     S_target = S[target_index]
