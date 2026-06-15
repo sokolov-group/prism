@@ -1,0 +1,100 @@
+converged SCF energy = -108.960608507245
+SCF energy: -108.960609
+
+NEVPT2 test
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       ss
+Nuclear repulsion energy:                         23.615376443607
+Number of electrons:                               14
+Number of basis functions:                         46
+Reference wavefunction type:                       scf
+Number of reference states:                        1
+Number of reference microstates:                   1
+Number of frozen orbitals:                         0
+Number of core orbitals:                           7
+Number of active orbitals:                         0
+Number of external orbitals:                       39
+Number of active electrons:                        [(0, 0)]
+Spin–orbit coupling:                               None
+G-tensor:                                          False
+Reference density fitting?                         False
+Correlation density fitting?                       True
+Temporary directory path:                          /scratch/local/odhiambo.5
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-06
+Overlap truncation parameter (doubles):            1.00e-10
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+Correlation energy [0]:                           -0.322130418827
+
+Computing energy of state #1...
+Reference state active-space energy:               0.000000000000
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(0, 0)]
+Correlation energy [0]:                           -0.322130418827
+SCF reference state total energy:               -108.960608507245
+NEVPT2 correlation energy:                        -0.322130418827
+Total NEVPT2 energy:                            -109.282738926072
+
+Summary of results for the SS-NEVPT2 calculation with the SCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1         -109.282738926072     0.00000000       0.0000                      0.0000               
+----------------------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation      1.07 sec, wall time      0.05 sec
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       ss
+Nuclear repulsion energy:                         23.615376443607
+Number of electrons:                               14
+Number of basis functions:                         46
+Reference wavefunction type:                       scf
+Number of reference states:                        1
+Number of reference microstates:                   1
+Number of frozen orbitals:                         0
+Number of core orbitals:                           7
+Number of active orbitals:                         0
+Number of external orbitals:                       39
+Number of active electrons:                        [(0, 0)]
+Spin–orbit coupling:                               None
+G-tensor:                                          False
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /scratch/local/odhiambo.5
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-06
+Overlap truncation parameter (doubles):            1.00e-10
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+Correlation energy [0]:                           -0.322016923693
+
+Computing energy of state #1...
+Reference state active-space energy:               0.000000000000
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(0, 0)]
+Correlation energy [0]:                           -0.322016923693
+SCF reference state total energy:               -108.960608507245
+NEVPT2 correlation energy:                        -0.322016923693
+Total NEVPT2 energy:                            -109.282625430938
+
+Summary of results for the SS-NEVPT2 calculation with the SCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1         -109.282625430938     0.00000000       0.0000                      0.0000               
+----------------------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation      0.60 sec, wall time      0.03 sec
