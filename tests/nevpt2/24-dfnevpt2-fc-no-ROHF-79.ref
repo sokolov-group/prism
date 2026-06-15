@@ -1,0 +1,220 @@
+
+
+******** <class 'pyscf.scf.hf_symm.SymAdaptedROHF'> ********
+method = SymAdaptedROHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 250
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /tmp/tmp9pjyfd7r
+max_memory 4000 MB (current use 121 MB)
+num. doubly occ = 7  num. singly occ = 0
+Freeze 0 electrons in irreps []
+    14 free electrons in irreps A1 E1x E1y E2x E2y
+Set gradient conv threshold to 1e-06
+init E= -129.30484001526
+HOMO (A1) = -0.483393712166841  LUMO (E1y) = -0.0432991497549576
+cycle= 1 E= -128.755157358803  delta_E= 0.55  |g|= 0.783  |ddm|= 1.21
+HOMO (E1y) = -1.169053471598  LUMO (E1y) = -0.447878830625257
+cycle= 2 E= -128.81119378884  delta_E= -0.056  |g|= 0.663  |ddm|= 0.604
+HOMO (E1y) = -1.14541719674274  LUMO (E1y) = -0.365085677669116
+cycle= 3 E= -128.881374434518  delta_E= -0.0702  |g|= 0.193  |ddm|= 0.288
+HOMO (E1y) = -1.09808377842307  LUMO (E1y) = -0.329538819619014
+cycle= 4 E= -128.887379543397  delta_E= -0.00601  |g|= 0.0123  |ddm|= 0.0637
+HOMO (E1y) = -1.098853125771  LUMO (E1y) = -0.327230563966829
+cycle= 5 E= -128.887429378547  delta_E= -4.98e-05  |g|= 0.00276  |ddm|= 0.00888
+HOMO (E1y) = -1.09898020569107  LUMO (E1y) = -0.327638818428152
+cycle= 6 E= -128.887431534196  delta_E= -2.16e-06  |g|= 0.000439  |ddm|= 0.00243
+HOMO (E1y) = -1.09901447715223  LUMO (E1y) = -0.327670436916381
+cycle= 7 E= -128.887431592315  delta_E= -5.81e-08  |g|= 0.0002  |ddm|= 0.000378
+HOMO (E1y) = -1.09901013943427  LUMO (E1y) = -0.327665321012502
+cycle= 8 E= -128.88743160844  delta_E= -1.61e-08  |g|= 2.39e-05  |ddm|= 0.000248
+HOMO (E1y) = -1.09900810574498  LUMO (E1y) = -0.327667754903763
+cycle= 9 E= -128.887431608627  delta_E= -1.87e-10  |g|= 1.56e-06  |ddm|= 2.37e-05
+HOMO (E1y) = -1.09900822028642  LUMO (E1y) = -0.327667632933793
+cycle= 10 E= -128.887431608627  delta_E= -8.53e-13  |g|= 1.66e-07  |ddm|= 1.83e-06
+HOMO (E1y) = -1.09900816927138  LUMO (E1y) = -0.327667608243674
+Extra cycle  E= -128.887431608627  delta_E= 5.68e-14  |g|= 8.72e-08  |ddm|= 1.09e-07
+converged SCF energy = -128.887431608627
+SCF energy: -128.887432
+
+
+******** <class 'pyscf.mcscf.mc1step_symm.SymAdaptedCASSCF'> ********
+CAS (4e+3e, 9o), ncore = 4, nvir = 23
+max_cycle_macro = 150
+max_cycle_micro = 4
+conv_tol = 1e-08
+conv_tol_grad = 1e-05
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /tmp/tmp9pjyfd7r
+max_memory 4000 MB (current use 149 MB)
+internal_rotation = False
+******** <class 'pyscf.fci.direct_spin1_symm.FCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 1
+pspace_size = 400
+spin = None
+Input CI wfn symmetry = E1x
+Symmetries of active orbitals: A1 E1x E1y E1x E1y A1 A1 E1x E1y
+Active space CI wfn symmetry = E1x
+CASCI E = -129.317687825503  S^2 = 0.7500000
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -129.363525571896  dE = -4.58377464e-02  S^2 = 0.7500000
+               |grad[o]|=0.291  |grad[c]|=0.0832  |ddm|=0.0346  |maxRot[o]|=0.314
+macro iter   2 ( 21 JK    4 micro), CASSCF E = -129.387612788369  dE = -2.40872165e-02  S^2 = 0.7500000
+               |grad[o]|=0.149  |grad[c]|=0.0561  |ddm|=0.031  |maxRot[o]|=0.301
+macro iter   3 ( 21 JK    4 micro), CASSCF E = -129.396361410576  dE = -8.74862221e-03  S^2 = 0.7500000
+               |grad[o]|=0.0506  |grad[c]|=0.0276  |ddm|=0.0169  |maxRot[o]|=0.297
+macro iter   4 ( 21 JK    4 micro), CASSCF E = -129.400767024359  dE = -4.40561378e-03  S^2 = 0.7500000
+               |grad[o]|=0.0168  |grad[c]|=0.0189  |ddm|=0.00942  |maxRot[o]|=0.314
+macro iter   5 ( 18 JK    4 micro), CASSCF E = -129.402123031134  dE = -1.35600678e-03  S^2 = 0.7500000
+               |grad[o]|=0.00732  |grad[c]|=0.0112  |ddm|=0.00709  |maxRot[o]|=0.256
+macro iter   6 ( 15 JK    4 micro), CASSCF E = -129.402144974862  dE = -2.19437276e-05  S^2 = 0.7500000
+               |grad[o]|=0.00173  |grad[c]|=0.000676  |ddm|=0.00117  |maxRot[o]|=0.0294
+macro iter   7 ( 18 JK    4 micro), CASSCF E = -129.402145048877  dE = -7.40149346e-08  S^2 = 0.7500000
+               |grad[o]|=8.96e-05  |grad[c]|=3.29e-05  |ddm|=0.000129  |maxRot[o]|=0.00116
+macro iter   8 (  4 JK    1 micro), CASSCF E = -129.402145048918  dE = -4.11546353e-11  S^2 = 0.7500000
+               |grad[o]|=3.51e-06  |grad[c]|=1.08e-05  |ddm|=1.96e-17  |maxRot[o]|=8.98e-06
+1-step CASSCF converged in   8 macro (139 JK  29 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.97070114 1.9669598  1.92323347 1.01646083 0.07096046 0.01712732 0.01279319 0.01516097 0.00660282]
+CASSCF energy = -129.402145048918
+CASCI E = -129.402145048918  E(CI) = -17.5876339406788  S^2 = 0.7500000
+CASSCF energy: -129.402145
+
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 1
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.75000     0.5        2     -129.402145048918     -17.587633940679
+-----------------------------------------------------------------------------------
+
+Importing Pyscf density-fitting objects...
+Initializing fully internally contracted NEVPT...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       ss
+Nuclear repulsion energy:                         25.750715859854
+Number of electrons:                               15
+Number of basis functions:                         36
+Reference wavefunction type:                       casscf
+Number of reference states:                        1
+Number of reference microstates:                   1
+Number of frozen orbitals:                         2
+Number of core orbitals:                           4
+Number of active orbitals:                         9
+Number of external orbitals:                       23
+Number of active electrons:                        [(4, 3)]
+Spin–orbit coupling:                               None
+G-tensor:                                          False
+Reference density fitting?                         False
+Correlation density fitting?                       True
+Temporary directory path:                          /tmp
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-06
+Overlap truncation parameter (doubles):            1.00e-10
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+******** <class 'pyscf.df.df.DF'> ********
+auxbasis = cc-pvdz-ri
+max_memory = 4000
+Correlation energy [0]:                           -0.014813181106
+
+Computing energy of state #1...
+Reference state active-space energy:             -17.587633940679
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(4, 3)]
+Correlation energy [0']:                          -0.067182833116
+Correlation energy [+1']:                         -0.006670843873
+Correlation energy [-1']:                         -0.027517363970
+Correlation energy [+1]:                          -0.004868573014
+Correlation energy [-1]:                          -0.016791743134
+Correlation energy [+2]:                          -0.004075689893
+Correlation energy [-2]:                          -0.034461156424
+Correlation energy [0]:                           -0.014813181106
+CASSCF reference state total energy:            -129.402145048918
+NEVPT2 correlation energy:                        -0.176381384530
+Total NEVPT2 energy:                            -129.578526433448
+
+Summary of results for the SS-NEVPT2 calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        2         -129.578526433448     0.00000000       0.0000                      0.0000               
+----------------------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation    139.79 sec, wall time     12.71 sec
