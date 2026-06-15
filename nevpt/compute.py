@@ -213,7 +213,9 @@ def print_results(nevpt):
             nevpt.interface.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
             nevpt.interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
 
-
+    if "ptss_corrections" and "ptlr_corrections" in nevpt.properties and nevpt.verbose >= 5:
+        solvent.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"])
+        
 def analyze(nevpt, weight_cutoff=0.01):
 
     n_micro_states = sum(nevpt.ref_wfn_deg)
@@ -230,5 +232,4 @@ def analyze(nevpt, weight_cutoff=0.01):
         from prism.nevpt import qd_nevpt
         qd_nevpt.analyze_eigenvectors(nevpt, weight_cutoff=weight_cutoff)
             
-    if "ptss_corrections" and "ptlr_corrections" in nevpt.properties and nevpt.verbose >= 5:
-        solvent.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"])
+    
