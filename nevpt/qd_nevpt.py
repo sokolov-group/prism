@@ -526,9 +526,9 @@ def check_intruder_states(method, dim, h_eff, t1):
 
         interface.log.info("\n\nWARNING: Large coupling detected, possible intruder state!!!!!!")
         
-        header_fmt = "{:<8} " + "{:>8} " * 9 
+        header_fmt = "{:<8} " + "{:>8} " * 9
 
-        row_fmt = "{:<8} " + "{:>8.4f} " * 9 
+        row_fmt = "{:<8} " + "{:>8.4f} " * 9
 
         coupling_fmt = "{:<12} {:>12.8f}"
 
@@ -545,8 +545,9 @@ def check_intruder_states(method, dim, h_eff, t1):
 
         for state in states_with_large_coupling:
 
+            # smallest denominators
             tp1  = method.den_d_apij[state]
-            tp2  = method.den_d_pij[state] 
+            tp2  = method.den_d_pij[state]
 
             # amplitudes norms
             t1_ccae = np.linalg.norm(t1[state].ccae)
