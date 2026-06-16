@@ -537,7 +537,7 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
                     method.log.info("      [alpha occ] %s  [beta occ] %s  coeff: %12.6f  weight: %10.6f"
                                     % (alpha_occs, beta_occs, coeff, weight))
 
-        # Compute Natural Occupations by diagonalizing the active-space 1RDM
+        # Compute Natural Occupations by diagonalizing the 1RDM
         rdm_mo = make_rdm1(method, L=n, R=n)
         nat_occ_global, nat_orb_global = np.linalg.eigh(rdm_mo)
         active_weights = np.sum(nat_orb_global[ncore:ncore+ncas, :]**2, axis=0)

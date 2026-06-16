@@ -48,7 +48,7 @@ class PYSCF:
         # General info
         self.mol = mf.mol
         self.nelec = mf.mol.nelectron
-        self.enuc = mf.mol.energy_nuc()
+        self.enuc = mf.energy_nuc()
         self.e_scf = mf.e_tot
         self.mf = mf
         self.mc = mc
