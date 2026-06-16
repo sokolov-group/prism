@@ -99,6 +99,7 @@ class NEVPT:
         # Amplitudes
         self.t1 = None
         self.t1_0 = None 
+        self.denominator =None
         self.keep_amplitudes = True
 
         # Compute correlated RDMs

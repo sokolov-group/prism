@@ -143,7 +143,7 @@ def compute_t1_p1(nevpt, rdms):
     d_apij = d_apij**(-1)
 
     # for intuder state details
-    nevpt.den_d_apij.append(np.min(np.abs(d_apij)))
+    nevpt.den_d_apij.append(np.min(np.abs(d_apij**(-1))))
 
     # Compute T[+1] amplitudes
     S_12_V_p1 = einsum("IJAX,Xm->IJAm", V1_p1, S_p1_12_inv_act, optimize = einsum_type)
@@ -312,7 +312,7 @@ def compute_t1_p2(nevpt, rdms):
     d_pij = d_pij**(-1)
 
     # for intuder state details
-    nevpt.den_d_pij.append(np.min(np.abs(d_pij)))
+    nevpt.den_d_pij.append(np.min(np.abs(d_pij**(-1))))
     
     # Compute T[+2] amplitudes
     S_12_V_p2 = einsum("IJX,Xm->IJm", V1_p2, S_p2_12_inv_act, optimize = einsum_type)
