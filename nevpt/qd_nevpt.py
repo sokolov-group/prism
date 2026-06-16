@@ -537,12 +537,13 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
                     method.log.info("      [alpha occ] %s  [beta occ] %s  coeff: %12.6f  weight: %10.6f"
                                     % (alpha_occs, beta_occs, coeff, weight))
 
-        # Compute Natural Occupations by diagonalizing the active-space 1RDM
+        # Compute Natural Occupations by diagonalizing the 1RDM
         rdm_mo = make_rdm1(method, L=n, R=n)
-        d_cas = rdm_mo[ncore:ncore+ncas, ncore:ncore+ncas]
-        nat_occ, _ = np.linalg.eigh(d_cas)
-        nat_occ = nat_occ[::-1]
-        method.log.info("    Natural Occupations (active space): %s" % np.array2string(nat_occ, precision=4, suppress_small=True))
+        nat_occ_global, nat_orb_global = np.linalg.eigh(rdm_mo)
+        active_weights = np.sum(nat_orb_global[ncore:ncore+ncas, :]**2, axis=0)
+        active_no_indices = np.argsort(active_weights)[-ncas:]
+        active_nat_occ = np.sort(nat_occ_global[active_no_indices])[::-1]
+        method.log.info("    Natural Occupations (active space): %s" % np.array2string(active_nat_occ, precision=4, suppress_small=True))
 
         # For open-shell systems, compute atomic Mulliken spin populations in the AO basis
         if n_alpha_elec != n_beta_elec:
