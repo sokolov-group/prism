@@ -263,8 +263,8 @@ def diagonalize_eff_H(method):
         h_eff = method.Heff_1e
    
     # print intruder states for qd-nevpt2
-    print_intruder_states_data(method, dim, h_eff, t1)
-
+    #check_intruder_states(method, dim, h_eff, t1)
+    check_intruder_states(method, dim, h_eff, t1)
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
 
@@ -509,73 +509,110 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         
     return rdm_final
 
-def print_intruder_states_data(method, dim, h_eff, t1):
+def check_intruder_states(method, dim, h_eff, t1):
 
     # compute the coupling elements of h_eff > 0.05 give warnings
 
     interface = method.interface
+    data          = []
     coupling_data = []
 
     I, J = np.tril_indices(dim, k=-1)
     mask = abs(h_eff[I, J]) > 0.05
-
-    vals = h_eff[I, J]
     
+    vals = h_eff[I, J]
+
     if np.any(mask):
-        interface.log.info("\n\nWARNING: Large coupling detected, possible intruder state!!!!!!\n\n")
 
-    header_fmt = (
-    "{:<12} {:>14} {:>14} {:>14} {:>14} {:>14} {:>14} {:>14}")
+        interface.log.info("\n\nWARNING: Large coupling detected, possible intruder state!!!!!!")
+        
+        header_fmt = "{:<8} " + "{:>8} " * 9 
 
-    row_fmt = (
-    "{:<12} {:>14.8f} {:>14.8f} {:>14.8f} {:>14.8f} {:>14.8f} {:>14.8f} {:>14.8f}")
+        row_fmt = "{:<8} " + "{:>8.4f} " * 9 
 
-    for i, j, val in zip(I[mask], J[mask], vals[mask]):
+        coupling_fmt = "{:<12} {:>12.8f}"
 
-        # use only amplitudes from t1[I]
-        t1_ccae = t1[i].ccae
-        t1_caee = t1[i].caee
-        t1_ccaa = t1[i].ccaa
-        t1_aaee = t1[i].aaee
-        t1_caea = t1[i].caea   
-        t1_caaa = t1[i].caaa 
-        t1_aaae = t1[i].aaae 
-
-
-        coupling_data.append(
-            row_fmt.format(
-                f"({i+1:>3d}, {j+1:>3d})",
-                val,
-                np.linalg.norm(t1_ccae),
-                np.linalg.norm(t1_caee),
-                np.linalg.norm(t1_ccaa),
-                np.linalg.norm(t1_aaee),
-                np.linalg.norm(t1_caea),  
-                np.linalg.norm(t1_caaa), 
-                np.linalg.norm(t1_aaae),
+        # print data for coupling elements of H_eff
+        for i, j, val in zip(I[mask], J[mask], vals[mask]):
+            coupling_data.append(
+                coupling_fmt.format(
+                    f"({i+1},{j+1})",
+                    val
+                )
             )
-        )
 
+        states_with_large_coupling = np.unique(np.concatenate((I[mask], J[mask])))
+
+        for state in states_with_large_coupling:
+
+            tp1  = method.den_d_apij[state]
+            tp2  = method.den_d_pij[state] 
+
+            # amplitudes norms
+            t1_ccae = np.linalg.norm(t1[state].ccae)
+            t1_caee = np.linalg.norm(t1[state].caee)
+            t1_ccaa = np.linalg.norm(t1[state].ccaa)
+            t1_aaee = np.linalg.norm(t1[state].aaee)
+            t1_caea = np.linalg.norm(t1[state].caea)
+            t1_caaa = np.linalg.norm(t1[state].caaa)
+            t1_aaae = np.linalg.norm(t1[state].aaae)
+            
+            data.append(
+                row_fmt.format(
+                    " %d" % (state + 1),
+                    tp1,
+                    tp2,
+                    t1_ccae,
+                    t1_caee,
+                    t1_ccaa,
+                    t1_aaee,
+                    t1_caea,
+                    t1_caaa,
+                    t1_aaae
+             )
+            )
+
+    # print the coupling element data
     if coupling_data and method.verbose >= 4:
-            
+        
+        interface.log.info("\nCoupling Elements of Effective Hamiltonian")
+        interface.log.info("-" * 30)
+        interface.log.info("{:<12} {:>12}".format("(I,J)", "H_eff"))
+        interface.log.info("-" * 30)
+
+        for row in coupling_data:
+            interface.log.info(row)
+
+        interface.log.info("-" * 30)
+    
+    # print the results for amplitudes and denominators
+    if data and method.verbose >= 4:
+
         separator = "-" * 120
-            
-        # table header
-        interface.log.info(header_fmt.format(
-            "(I, J)",
-            "H_eff",
-            "T[+1]^(1)",
-            "T[-1]^(1)",
-            "T[+2]^(1)",
-            "T[-2]^(1)",
-            "T[0']^(1)",
-            "T[+1']^(1)",
-            "T[-1']^(1)",))
+        
+        interface.log.info("\n\nIntruder States and Corresponding Denominators for a Specific Class")
 
         interface.log.info(separator)
 
-        for i in coupling_data:
-            interface.log.info(i)
+        interface.log.info(
+            header_fmt.format(
+                "State",
+                "deno[+1]",
+                "deno[+2]",
+                "amp[+1]",
+                "amp[-1]",
+                "amp[+2]",
+                "amp[-2]",
+                "amp[0']",   
+                "amp[+1']",
+                "amp[-1']",
+            )
+        )
+
+        interface.log.info(separator)
+
+        for row in data:
+            interface.log.info(row)
 
         interface.log.info(separator)
 

@@ -56,6 +56,9 @@ def compute_t1_0(nevpt):
     t1_ccee = tools.create_dataset('ccee', ctmpfile, (ncore, ncore, nextern, nextern))
     chunks = tools.calculate_chunks(nevpt, nextern, [ncore, ncore, nextern], ntensors = 3)
 
+    if not hasattr(nevpt, "den_d_0"):
+         nevpt.den_d_0 = []
+
     e_0 = 0.0
     for i_chunk, (s_chunk, f_chunk) in enumerate(chunks):
         cput1 = (logger.process_clock(), logger.perf_counter())
@@ -69,6 +72,9 @@ def compute_t1_0(nevpt):
         temp = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
         temp = temp.reshape((ncore, ncore, -1, nextern))
         temp = temp**(-1)
+
+        # for intruder state details
+        nevpt.den_d_0.append(np.min(np.abs(temp)))
 
         # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
         temp *= - einsum('IAJB->IJAB', v_cece, optimize = einsum_type)
@@ -94,6 +100,9 @@ def compute_t1_p1(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1]^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_d_apij"):
+        nevpt.den_d_apij = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -139,6 +148,9 @@ def compute_t1_p1(nevpt, rdms):
     d_apij = (d_ap[:,None] - d_ij).reshape(nextern, evals.shape[0], ncore, ncore)
     d_apij = d_apij**(-1)
 
+    # for intuder state details
+    nevpt.den_d_apij.append(np.min(np.abs(d_apij)))
+
     # Compute T[+1] amplitudes
     S_12_V_p1 = einsum("IJAX,Xm->IJAm", V1_p1, S_p1_12_inv_act, optimize = einsum_type)
     S_12_V_p1 = einsum("mp,IJAm->IJAp", evecs, S_12_V_p1, optimize = einsum_type)
@@ -170,7 +182,7 @@ def compute_t1_m1(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-1]^(1) amplitudes...")
-
+    
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
@@ -200,9 +212,6 @@ def compute_t1_m1(nevpt, rdms):
 
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     S_m1_12_inv_act = overlap.compute_S12_m1(nevpt, rdms)
-
-    if hasattr(nevpt.S12, "cae"):
-        nevpt.S12.cae = S_m1_12_inv_act.copy()
 
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1_12_inv_act.T, K_ca, S_m1_12_inv_act))
@@ -262,6 +271,9 @@ def compute_t1_p2(nevpt, rdms):
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+2]^(1) amplitudes...")
 
+    if not hasattr(nevpt, "den_d_pij"):
+        nevpt.den_d_pij = []
+
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
@@ -305,6 +317,9 @@ def compute_t1_p2(nevpt, rdms):
     d_pij = (evals[:,None] - d_ij).reshape(evals.shape[0], ncore, ncore)
     d_pij = d_pij**(-1)
 
+    # for intuder state details
+    nevpt.den_d_pij.append(np.min(np.abs(d_pij)))
+    
     # Compute T[+2] amplitudes
     S_12_V_p2 = einsum("IJX,Xm->IJm", V1_p2, S_p2_12_inv_act, optimize = einsum_type)
     S_12_V_p2 = einsum("mp,IJm->IJp", evecs, S_12_V_p2, optimize = einsum_type)
@@ -423,6 +438,9 @@ def compute_t1_0p(nevpt, rdms):
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[0']^(1) amplitudes...")
 
+    if not hasattr(nevpt, "den_d_aip"):
+        nevpt.den_d_aip = []
+
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
@@ -504,6 +522,9 @@ def compute_t1_0p(nevpt, rdms):
     d_aip = (d_ai[:,None] + evals).reshape(nextern, ncore, -1)
     d_aip = d_aip**(-1)
 
+    # for intuder state details
+    nevpt.den_d_aip.append(np.min(np.abs(d_aip)))
+
     # Compute T[0'] amplitudes
     S_12_V_0p = einsum("iaP,Pm->iam", V_0p, S_0p_12_inv_act, optimize = einsum_type)
     S_12_V_0p = einsum("mp,iam->iap", evecs, S_12_V_0p, optimize = einsum_type)
@@ -553,6 +574,9 @@ def compute_t1_p1p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1']^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_d_ip"): 
+        nevpt.den_d_ip = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -660,6 +684,9 @@ def compute_t1_p1p(nevpt, rdms):
     ## Compute denominators
     d_ip = (-e_core[:,None] + evals)
     d_ip = d_ip**(-1)
+
+    # for intuder state details
+    nevpt.den_d_ip.append(np.min(np.abs(d_ip))) 
 
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
