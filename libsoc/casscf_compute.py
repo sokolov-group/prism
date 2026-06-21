@@ -22,29 +22,69 @@ def compute_somf_soc(interface):
 
     ms = [round(elem,2) for elem in ms]
 
-    from pyscf.fci.direct_spin1 import trans_rdm1s
-    rdm= np.zeros((2, nstate, nstate, interface.nmo, interface.nmo))
+    # Make sure ms is the same across all states:
+    for I in range(nstate):
+        if (np.abs(ms[I]-ms[0])>1e-8):
+            raise Exception("Each state's ms should be same for state_interaction_SOC function")
 
+    rdm_aabb = np.zeros((2, nstate, nstate, interface.nmo, interface.nmo))
     for I in range(nstate):
         for J in range(nstate):
-            tmprdm_aabb = trans_rdm1s(wfn[J], wfn[I], interface.ncas, interface.ref_nelecas[I])
-            rdm[0, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb[0]
-            rdm[1, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb[1]
+            tmprdm_aabb = interface.trans_rdm1s(wfn[J], wfn[I], interface.ncas, interface.ref_nelecas[I])
+            rdm_aabb[0, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb[0]
+            rdm_aabb[1, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb[1]
 
             if I == J:
                 #uncorrelated diagonal terms
-                rdm[:,I, J, :interface.ncore, :interface.ncore] =   np.identity(interface.ncore)  
+                rdm_aabb[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)  
 
 
     #generalSOC requires spin-free energy...
     en = interface.e_ref
     from prism.libsoc import general_somf
-    en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm, S, ms)
 
+    #If Ms=0 , CG coefficent vanish...
+    if ms[0] != 0:
+        en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm_aabb, S, ms, interface.soc, interface.verbose)
+    
+    else:    
+        interface.log.info("Apply S_plus due to Ms=0...")
+
+        wfn_plus = wfn.copy()
+        wfn_ref_nelecas_plus = interface.ref_nelecas.copy()
+        ms_plus = ms.copy()
+
+        for I in range(nstate):
+            if S[I] > 0 :
+                wfn_plus[I], Sp_ne = interface.apply_S_plus(wfn[I],interface.ncas,interface.ref_nelecas[I])
+                # Upadate ref_nelecas
+                wfn_ref_nelecas_plus[I] = Sp_ne
+                # Normalize the wfn
+                wfn_plus[I] = wfn_plus[I]/(np.sqrt( S[I]**2 + S[I] ))
+                # Upadate ms
+                ms_plus[I] = 1
+            elif S[I] == 0:     
+                wfn_plus[I] = np.zeros_like(wfn_plus[I])
+
+
+        # Calculate RDM_aabb_plus
+        rdm_aabb_plus = np.zeros((2, nstate, nstate, interface.nmo, interface.nmo))
+        for I in range(nstate):
+            for J in range(nstate):
+                if (wfn_ref_nelecas_plus[I] == wfn_ref_nelecas_plus[J]):
+                    tmprdm_aabb_plus = interface.trans_rdm1s(wfn_plus[J], wfn_plus[I], interface.ncas,  wfn_ref_nelecas_plus[I])
+                    rdm_aabb_plus[0, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb_plus[0]
+                    rdm_aabb_plus[1, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb_plus[1]
+
+                    if I == J:
+                        #uncorrelated diagonal terms
+                        rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)  
+
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, interface.soc, interface.verbose)
 
     #compute osc
     #compute soc rdm
-    rdm_sf = rdm[0] + rdm[1]
+    rdm_sf = rdm_aabb[0] + rdm_aabb[1]
     I_total = []
     S_total = []
     ms_total = []

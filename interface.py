@@ -146,6 +146,10 @@ class PYSCF:
             self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
             self.unc = None
 
+            # For
+            import pyscf.dft.LebedevGrid
+            self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
+
             # Basis set uncontraction objects: xmol, contraction coefficients.
             # Use x2c_setup to obtain self.xmol and self.contr_coeff 
             self.xmol = None
@@ -714,11 +718,12 @@ class PYSCF:
     def run_soc(self, soc_type=None):
         
         self.x2c_setup()
-        
+
         if soc_type:
             self.soc = soc_type
-        from prism.libsoc import compute
-        en_soc, osc_str_soc = compute.compute_somf_soc(self) 
+            
+        from prism.libsoc import casscf_compute
+        en_soc, osc_str_soc = casscf_compute.compute_somf_soc(self) 
 
         return  en_soc, osc_str_soc
 

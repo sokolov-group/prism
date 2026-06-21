@@ -12,6 +12,7 @@ import prism.interface
 import prism.mr_adc
 import prism.nevpt
 import time
+import unittest
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 mol = pyscf.gto.Mole()
@@ -42,17 +43,47 @@ mc.analyze()
 
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-interface.run_soc("x2c-1")
+e_tot, osc = interface.run_soc("x2c-1")
+exit()
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mc.e_tot,  -1791.47091104697, 6)
+        self.assertAlmostEqual(mc.e_cas,  -2.06221639685828, 6)
+
+    def test_prism(self):
+
+        e_tot, osc = interface.run_soc("x2c-1")
+
+        self.assertAlmostEqual(e_tot[0] ,  -1791.538029120867, 5)
+        self.assertAlmostEqual(e_tot[1] ,  -1791.538029120867, 5)
+        self.assertAlmostEqual(e_tot[2] ,  -1791.437997632768, 5)
+        self.assertAlmostEqual(e_tot[3] ,  -1791.437997632768, 5)
+        self.assertAlmostEqual(e_tot[4] ,  -1791.436706387278, 5)
+        self.assertAlmostEqual(e_tot[5] ,  -1791.436706387276, 5)
+
+
+        
+        self.assertAlmostEqual(osc[0], 0, 5)
+        self.assertAlmostEqual(osc[1], 0.05091721, 5)
+        self.assertAlmostEqual(osc[2], 0.05091721, 5)
+        self.assertAlmostEqual(osc[3], 0.05157016, 5)
+        self.assertAlmostEqual(osc[4], 0.05157016, 5)
+
+
+if __name__ == "__main__":
+    print("SOC-CASSCF test")
+    unittest.main()
 #INFO: ******************** input file end ********************
 
 
-System: uname_result(system='Linux', node='asccbc-nc206140.asc.ohio-state.edu', release='4.18.0-553.123.1.el8_10.x86_64', version='#1 SMP Mon May 4 13:45:48 EDT 2026', machine='x86_64')  Threads 24
+System: uname_result(system='Linux', node='asccbc-nc206140.asc.ohio-state.edu', release='4.18.0-553.129.1.el8_10.x86_64', version='#1 SMP Tue Jun 2 12:11:39 EDT 2026', machine='x86_64')  Threads 24
 Python 3.9.25 (main, Nov  3 2025, 22:33:05) 
 [GCC 11.2.0]
 numpy 2.0.1  scipy 1.13.1  h5py 3.14.0
-Date: Wed Jun 10 13:27:31 2026
+Date: Sun Jun 21 15:17:44 2026
 PySCF version 2.12.1
-PySCF path  /home/chiang.272/miniconda3/envs/pytblits/lib/python3.9/site-packages/pyscf
+PySCF path  /home/chiang.272/miniconda3/envs/pyscf_2_12/lib/python3.9/site-packages/pyscf
 
 [ENV] PYSCF_EXT_PATH /home/chiang.272:/home/chiang.272/sqa_plus:/home/chiang.272/pyscf
 [CONFIG] conf_file None
@@ -73,7 +104,7 @@ number of NR pGTOs = 103
 number of NR cGTOs = 54
 basis = def2-tzvp
 ecp = {}
-CPU time:         2.65
+CPU time:         2.66
 
 
 ******** <class 'pyscf.x2c.sfx2c1e.sfX2C1eROKS'> ********
@@ -90,8 +121,8 @@ SCF conv_tol_grad = None
 SCF max_cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /scratch/local/tmp3wgc3qb9
-max_memory 4000 MB (current use 97 MB)
+chkfile to save SCF result = /scratch/local/tmpcsw8fzwb
+max_memory 4000 MB (current use 94 MB)
 num. doubly occ = 15  num. singly occ = 1
 XC library pyscf.dft.libxc version 7.0.0
     S. Lehtola, C. Steigemann, M. J.T. Oliveira, and M. A.L. Marques.,  SoftwareX 7, 1–5 (2018)
@@ -102,10 +133,10 @@ radial grids:
     Treutler-Ahlrichs [JCP 102, 346 (1995); DOI:10.1063/1.469408] (M4) radial grids
     
 becke partition: Becke, JCP 88, 2547 (1988); DOI:10.1063/1.454033
-pruning grids: <function nwchem_prune at 0x7f8483021040>
+pruning grids: <function nwchem_prune at 0x7f9603f42550>
 grids dens level: 3
 symmetrized grids: False
-atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x7f8483899940>
+atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x7f9603f13ee0>
 small_rho_cutoff = 1e-07
 
 
@@ -115,89 +146,89 @@ xuncontract = 1
 Set gradient conv threshold to 3.16228e-05
 tot grids = 30448
 init E= -1792.9663240906
-  HOMO = -0.142893555588344  LUMO = -0.0483808573055413
+  HOMO = -0.142893555588356  LUMO = -0.0483808573055403
 cycle= 1 E= -1793.3110790913  delta_E= -0.345  |g|= 0.836  |ddm|= 0.846
-  HOMO = -0.175601784099894  LUMO = -0.0809971414462269
+  HOMO = -0.175601784099892  LUMO = -0.080997141446223
 cycle= 2 E= -1793.05452778456  delta_E= 0.257  |g|= 2.04  |ddm|= 0.845
-  HOMO = -0.156713951001986  LUMO = -0.0587438717694938
+  HOMO = -0.156713951001987  LUMO = -0.0587438717694932
 cycle= 3 E= -1793.37737285755  delta_E= -0.323  |g|= 0.155  |ddm|= 0.475
-  HOMO = -0.148613378009165  LUMO = -0.0509330559685112
+  HOMO = -0.148613378009159  LUMO = -0.050933055968517
 cycle= 4 E= -1793.38063946181  delta_E= -0.00327  |g|= 0.0245  |ddm|= 0.125
-  HOMO = -0.148732936788003  LUMO = -0.0515250417118919
+  HOMO = -0.148732936788006  LUMO = -0.0515250417118972
 cycle= 5 E= -1793.3809198474  delta_E= -0.00028  |g|= 0.00879  |ddm|= 0.0333
-  HOMO = -0.149198876396114  LUMO = -0.0520158006790639
+  HOMO = -0.14919887639611  LUMO = -0.0520158006790611
 cycle= 6 E= -1793.38092862365  delta_E= -8.78e-06  |g|= 0.000475  |ddm|= 0.00392
-  HOMO = -0.149203130971481  LUMO = -0.0520060956066378
+  HOMO = -0.149203130971483  LUMO = -0.0520060956066292
 cycle= 7 E= -1793.38092873566  delta_E= -1.12e-07  |g|= 0.000151  |ddm|= 0.000794
-  HOMO = -0.14918205195271  LUMO = -0.0519971627309348
+  HOMO = -0.149182051952711  LUMO = -0.0519971627309459
 cycle= 8 E= -1793.38092875048  delta_E= -1.48e-08  |g|= 1.7e-05  |ddm|= 0.000251
-  HOMO = -0.149183318596435  LUMO = -0.0519986719578224
-cycle= 9 E= -1793.38092875068  delta_E= -2.09e-10  |g|= 1.2e-06  |ddm|= 4.15e-05
-  HOMO = -0.149183434848605  LUMO = -0.0519986346721574
-Extra cycle  E= -1793.38092875068  delta_E= 6.82e-13  |g|= 1.79e-06  |ddm|= 1.97e-06
+  HOMO = -0.149183318596447  LUMO = -0.0519986719578299
+cycle= 9 E= -1793.38092875068  delta_E= -2.06e-10  |g|= 1.2e-06  |ddm|= 4.15e-05
+  HOMO = -0.149183434848603  LUMO = -0.0519986346721511
+Extra cycle  E= -1793.38092875068  delta_E= 2.27e-13  |g|= 1.79e-06  |ddm|= 1.97e-06
 converged SCF energy = -1793.38092875068
 **** SCF Summaries ****
-Total Energy =                       -1793.380928750683097
+Total Energy =                       -1793.380928750681733
 Nuclear Repulsion Energy =               9.953176380940441
-One-electron Energy =                -2516.601844215868823
-Two-electron Coulomb Energy =          785.095489331486419
-DFT Exchange-Correlation Energy =      -71.827750247241170
+One-electron Energy =                -2516.601844215865640
+Two-electron Coulomb Energy =          785.095489331484600
+DFT Exchange-Correlation Energy =      -71.827750247241113
 **** MO energy ****
                 Roothaan           | alpha              | beta
 MO #1   energy= -349.443635256877  | -349.444011931252  | -349.443258582503  occ= 2
 MO #2   energy= -42.5700858468813  | -42.5706148734073  | -42.5695568203553  occ= 2
-MO #3   energy= -37.0986261501613  | -37.0989437820667  | -37.098308518256   occ= 2
-MO #4   energy= -37.0986261501583  | -37.0989437820637  | -37.098308518253   occ= 2
+MO #3   energy= -37.0986261501613  | -37.0989437820666  | -37.098308518256   occ= 2
+MO #4   energy= -37.0986261501583  | -37.0989437820636  | -37.098308518253   occ= 2
 MO #5   energy= -37.0971566476353  | -37.0981256142048  | -37.0961876810658  occ= 2
-MO #6   energy= -4.75838686468533  | -4.75948793278563  | -4.75728579660267  occ= 2
-MO #7   energy= -3.1064706193905   | -3.10756861903558  | -3.10537261974542  occ= 2
-MO #8   energy= -3.10647061937036  | -3.10756861901542  | -3.10537261972529  occ= 2
-MO #9   energy= -3.10291064381401  | -3.10424616275709  | -3.10157512487176  occ= 2
-MO #10  energy= -0.420505975140082 | -0.425027381055266 | -0.415984568403692 occ= 2
-MO #11  energy= -0.409655698225262 | -0.411436917176235 | -0.407874479274287 occ= 2
-MO #12  energy= -0.409655694071289 | -0.411436912902529 | -0.407874475240049 occ= 2
-MO #13  energy= -0.407208232023925 | -0.409486632305981 | -0.404929831741865 occ= 2
-MO #14  energy= -0.40720823201574  | -0.409486632297872 | -0.404929831733603 occ= 2
-MO #15  energy= -0.303865068625748 | -0.313523866810437 | -0.294206271027492 occ= 2
-MO #16  energy= -0.149183434848605 | -0.171031268313397 | -0.127335613624492 occ= 1
-MO #17  energy= -0.0519986346721574 | -0.0593554264880557 | -0.0446418428562602 occ= 0
-MO #18  energy= -0.0519986346624143 | -0.0593554264783111 | -0.0446418428465216 occ= 0
-MO #19  energy= 0.0634903859910745 | 0.0549098023454745 | 0.0720709717710459 occ= 0
-MO #20  energy= 0.09597266867999   | 0.0906733313975982 | 0.101272006034239  occ= 0
-MO #21  energy= 0.164360888668837  | 0.150283811956113  | 0.178437972374662  occ= 0
-MO #22  energy= 0.171340868029725  | 0.166852143992086  | 0.175829592067367  occ= 0
-MO #23  energy= 0.171340868042295  | 0.166852144004707  | 0.175829592079882  occ= 0
-MO #24  energy= 0.205037758721223  | 0.192465184325583  | 0.217610333116865  occ= 0
-MO #25  energy= 0.205037758727851  | 0.192465184332407  | 0.217610333123296  occ= 0
-MO #26  energy= 0.221207426544432  | 0.214158307114142  | 0.228256545974723  occ= 0
-MO #27  energy= 0.221207458005989  | 0.214158371141228  | 0.228256544870751  occ= 0
-MO #28  energy= 0.328192836549453  | 0.316152252102175  | 0.340233423516056  occ= 0
-MO #29  energy= 0.427113925866106  | 0.41451827261906   | 0.439709578916547  occ= 0
-MO #30  energy= 1.10817239006903   | 1.098061420379     | 1.11828335975906   occ= 0
-MO #31  energy= 1.1081723900735    | 1.09806142038351   | 1.11828335976349   occ= 0
-MO #32  energy= 1.12959501699843   | 1.12331275828779   | 1.13587727570907   occ= 0
-MO #33  energy= 1.12959505765944   | 1.12331281335896   | 1.13587730195993   occ= 0
-MO #34  energy= 1.2019008441416    | 1.18834458148054   | 1.21545710783137   occ= 0
-MO #35  energy= 1.51656373645037   | 1.49627157065055   | 1.53685590225019   occ= 0
-MO #36  energy= 1.51656373646263   | 1.4962715706631    | 1.53685590226216   occ= 0
-MO #37  energy= 1.84387486413098   | 1.8273808914956    | 1.86036883692458   occ= 0
-MO #38  energy= 2.16241364097694   | 2.15887262842582   | 2.16595465352806   occ= 0
-MO #39  energy= 2.16241364100881   | 2.15887262845766   | 2.16595465355994   occ= 0
-MO #40  energy= 2.17851472741762   | 2.16450082571766   | 2.1925286285744    occ= 0
-MO #41  energy= 2.58728291324958   | 2.569986124097     | 2.60457970242163   occ= 0
-MO #42  energy= 3.12430013235647   | 3.12081892646435   | 3.1277813380641    occ= 0
-MO #43  energy= 4.62793796513695   | 4.6255245703373    | 4.6303513599366    occ= 0
+MO #6   energy= -4.75838686468531  | -4.75948793278561  | -4.75728579660265  occ= 2
+MO #7   energy= -3.10647061939049  | -3.10756861903556  | -3.1053726197454   occ= 2
+MO #8   energy= -3.10647061937033  | -3.10756861901538  | -3.10537261972525  occ= 2
+MO #9   energy= -3.10291064381398  | -3.10424616275708  | -3.10157512487175  occ= 2
+MO #10  energy= -0.42050597514007  | -0.425027381055256 | -0.415984568403681 occ= 2
+MO #11  energy= -0.409655698225243 | -0.411436917176217 | -0.407874479274268 occ= 2
+MO #12  energy= -0.409655694071266 | -0.411436912902504 | -0.407874475240025 occ= 2
+MO #13  energy= -0.407208232023909 | -0.409486632305968 | -0.40492983174185  occ= 2
+MO #14  energy= -0.407208232015737 | -0.409486632297871 | -0.404929831733601 occ= 2
+MO #15  energy= -0.303865068625757 | -0.313523866810441 | -0.2942062710275   occ= 2
+MO #16  energy= -0.149183434848603 | -0.171031268313396 | -0.127335613624491 occ= 1
+MO #17  energy= -0.0519986346721511 | -0.05935542648805  | -0.0446418428562556 occ= 0
+MO #18  energy= -0.0519986346624147 | -0.0593554264783067 | -0.0446418428465179 occ= 0
+MO #19  energy= 0.0634903859910742 | 0.054909802345477  | 0.0720709717710498 occ= 0
+MO #20  energy= 0.0959726686800191 | 0.090673331397644  | 0.101272006034257  occ= 0
+MO #21  energy= 0.164360888668837  | 0.150283811956115  | 0.178437972374664  occ= 0
+MO #22  energy= 0.171340868029736  | 0.166852143992096  | 0.175829592067378  occ= 0
+MO #23  energy= 0.17134086804229   | 0.166852144004704  | 0.17582959207988   occ= 0
+MO #24  energy= 0.205037758721224  | 0.192465184325582  | 0.217610333116866  occ= 0
+MO #25  energy= 0.205037758727853  | 0.192465184332407  | 0.2176103331233    occ= 0
+MO #26  energy= 0.221207426544445  | 0.214158307114154  | 0.228256545974735  occ= 0
+MO #27  energy= 0.221207458006002  | 0.21415837114124   | 0.228256544870763  occ= 0
+MO #28  energy= 0.328192836549414  | 0.31615225210215   | 0.340233423516022  occ= 0
+MO #29  energy= 0.427113925866111  | 0.414518272619067  | 0.439709578916554  occ= 0
+MO #30  energy= 1.10817239006905   | 1.09806142037901   | 1.11828335975908   occ= 0
+MO #31  energy= 1.10817239007349   | 1.0980614203835    | 1.11828335976348   occ= 0
+MO #32  energy= 1.12959501699844   | 1.12331275828781   | 1.13587727570908   occ= 0
+MO #33  energy= 1.12959505765947   | 1.12331281335898   | 1.13587730195995   occ= 0
+MO #34  energy= 1.20190084414159   | 1.18834458148053   | 1.21545710783136   occ= 0
+MO #35  energy= 1.51656373645035   | 1.49627157065053   | 1.53685590225016   occ= 0
+MO #36  energy= 1.51656373646261   | 1.49627157066308   | 1.53685590226213   occ= 0
+MO #37  energy= 1.84387486413097   | 1.82738089149559   | 1.86036883692457   occ= 0
+MO #38  energy= 2.16241364097698   | 2.15887262842587   | 2.1659546535281    occ= 0
+MO #39  energy= 2.16241364100882   | 2.15887262845768   | 2.16595465355996   occ= 0
+MO #40  energy= 2.17851472741763   | 2.16450082571766   | 2.1925286285744    occ= 0
+MO #41  energy= 2.58728291324957   | 2.56998612409699   | 2.60457970242162   occ= 0
+MO #42  energy= 3.12430013235659   | 3.12081892646448   | 3.12778133806421   occ= 0
+MO #43  energy= 4.62793796513699   | 4.62552457033735   | 4.63035135993664   occ= 0
 MO #44  energy= 4.62793813762929   | 4.62552474274992   | 4.63035153250866   occ= 0
-MO #45  energy= 4.63955172254072   | 4.63568953397074   | 4.64341391111068   occ= 0
-MO #46  energy= 4.63955172254869   | 4.63568953397876   | 4.64341391111862   occ= 0
-MO #47  energy= 4.74921969196722   | 4.74343383780743   | 4.75500554614971   occ= 0
-MO #48  energy= 6.3746817645168    | 6.37420742891068   | 6.37515610012291   occ= 0
-MO #49  energy= 6.37468176452233   | 6.37420742891622   | 6.37515610012846   occ= 0
-MO #50  energy= 6.37738100561561   | 6.37685107581702   | 6.37791093541421   occ= 0
-MO #51  energy= 6.37738119856836   | 6.37685126660333   | 6.37791113053337   occ= 0
-MO #52  energy= 6.38008066791053   | 6.37900464497827   | 6.3811566908428    occ= 0
-MO #53  energy= 6.38008066791159   | 6.37900464497934   | 6.38115669084388   occ= 0
-MO #54  energy= 6.42804956599905   | 6.42652452448082   | 6.42957460751825   occ= 0
+MO #45  energy= 4.63955172254071   | 4.63568953397074   | 4.64341391111069   occ= 0
+MO #46  energy= 4.63955172254866   | 4.63568953397873   | 4.64341391111858   occ= 0
+MO #47  energy= 4.74921969196724   | 4.74343383780745   | 4.75500554614973   occ= 0
+MO #48  energy= 6.37468176451681   | 6.3742074289107    | 6.37515610012293   occ= 0
+MO #49  energy= 6.37468176452235   | 6.37420742891622   | 6.37515610012846   occ= 0
+MO #50  energy= 6.37738100561563   | 6.37685107581703   | 6.37791093541422   occ= 0
+MO #51  energy= 6.37738119856836   | 6.37685126660334   | 6.37791113053339   occ= 0
+MO #52  energy= 6.38008066791054   | 6.37900464497829   | 6.38115669084281   occ= 0
+MO #53  energy= 6.38008066791161   | 6.37900464497935   | 6.38115669084388   occ= 0
+MO #54  energy= 6.42804956599907   | 6.42652452448085   | 6.42957460751827   occ= 0
  ** Mulliken pop on meta-lowdin orthogonal AOs  **
  ** Mulliken pop  **
 pop of  0 Zn 1s           2.00000
@@ -283,8 +314,8 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /scratch/local/tmp3wgc3qb9
-max_memory 4000 MB (current use 265 MB)
+chkfile = /scratch/local/tmpcsw8fzwb
+max_memory 4000 MB (current use 262 MB)
 internal_rotation = False
 ******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
 max. cycles = 50
@@ -299,28 +330,28 @@ pspace_size = 400
 spin = None
 State-average over 3 states with weights [0.33333333 0.33333333 0.33333333]
 CASCI E = -1791.42167092271  S^2 = 0.7500000
-macro iter   1 ( 21 JK    4 micro), CASSCF E = -1791.46257517317  dE = -4.09042505e-02  S^2 = 0.7500000
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -1791.46257518140  dE = -4.09042587e-02  S^2 = 0.7500000
                |grad[o]|=0.526  |ddm|=0.0326  |maxRot[o]|=0.311
-macro iter   2 ( 19 JK    4 micro), CASSCF E = -1791.47066857762  dE = -8.09340445e-03  S^2 = 0.7500000
+macro iter   2 ( 19 JK    4 micro), CASSCF E = -1791.47066857738  dE = -8.09339598e-03  S^2 = 0.7500000
                |grad[o]|=0.177  |ddm|=0.016  |maxRot[o]|= 0.25
-macro iter   3 ( 13 JK    4 micro), CASSCF E = -1791.47090139615  dE = -2.32818533e-04  S^2 = 0.7500000
+macro iter   3 ( 13 JK    4 micro), CASSCF E = -1791.47090139613  dE = -2.32818751e-04  S^2 = 0.7500000
                |grad[o]|=0.0062  |ddm|=0.0026  |maxRot[o]|=0.0471
-macro iter   4 ( 13 JK    4 micro), CASSCF E = -1791.47091102743  dE = -9.63127627e-06  S^2 = 0.7500000
+macro iter   4 ( 13 JK    4 micro), CASSCF E = -1791.47091102743  dE = -9.63129355e-06  S^2 = 0.7500000
                |grad[o]|=0.00121  |ddm|=0.000715  |maxRot[o]|=0.011
-macro iter   5 ( 13 JK    4 micro), CASSCF E = -1791.47091104697  dE = -1.95459506e-08  S^2 = 0.7500000
+macro iter   5 ( 13 JK    4 micro), CASSCF E = -1791.47091104697  dE = -1.95429948e-08  S^2 = 0.7500000
                |grad[o]|=6.26e-05  |ddm|=4.47e-05  |maxRot[o]|=0.00048
-macro iter   6 ( 16 JK    1 micro), CASSCF E = -1791.47091104697  dE =  1.36424205e-12  S^2 = 0.7500000
-               |grad[o]|=1.52e-07  |ddm|=1.97e-16  |maxRot[o]|=2.79e-08
+macro iter   6 ( 16 JK    1 micro), CASSCF E = -1791.47091104697  dE = -2.04636308e-12  S^2 = 0.7500000
+               |grad[o]|=1.52e-07  |ddm|=1.73e-16  |maxRot[o]|=2.79e-08
 1-step CASSCF converged in   6 macro ( 95 JK  21 micro) steps
 CASSCF canonicalization
 Density matrix diagonal elements [1.89625229 0.40148314 0.337135   0.337135   0.02799456]
 CASSCF energy = -1791.47091104697
-CASCI E = -1791.47091104697  E(CI) = -2.06221639685828  S^2 = 0.7500000
+CASCI E = -1791.47091104697  E(CI) = -2.06221639685918  S^2 = 0.7500000
 CASCI state-averaged energy = -1791.47091104697
 CASCI energy for each state
   State 0 weight 0.333333  E = -1791.53802316158 S^2 = 0.7500000
   State 1 weight 0.333333  E = -1791.43735498967 S^2 = 0.7500000
-  State 2 weight 0.333333  E = -1791.43735498966 S^2 = 0.7500000
+  State 2 weight 0.333333  E = -1791.43735498967 S^2 = 0.7500000
 Natural occ [1.91372803 0.38633441 0.337135   0.337135   0.02566755]
 Natural orbital (expansion on meta-Lowdin AOs) in CAS space
                #1        #2        #3        #4        #5       
@@ -336,8 +367,8 @@ Natural orbital (expansion on meta-Lowdin AOs) in CAS space
 0 Zn 3px        -0.00000  -0.00000   0.00035   0.00017   0.00000
 0 Zn 3py        -0.00000   0.00000  -0.00017   0.00035   0.00000
 0 Zn 3pz        -0.00254   0.00098  -0.00000   0.00000  -0.00216
-0 Zn 4px         0.00000  -0.00000  -0.89074  -0.43719   0.00000
-0 Zn 4py         0.00000   0.00000   0.43719  -0.89074  -0.00000
+0 Zn 4px         0.00000  -0.00000  -0.89073  -0.43721   0.00000
+0 Zn 4py         0.00000   0.00000   0.43721  -0.89073  -0.00000
 0 Zn 4pz        -0.08421   0.29066   0.00000   0.00000   0.72481
 0 Zn 5px         0.00000  -0.00000  -0.08266  -0.04057  -0.00000
 0 Zn 5py        -0.00000   0.00000   0.04057  -0.08266   0.00000
@@ -380,18 +411,18 @@ Natural orbital (expansion on meta-Lowdin AOs) in CAS space
 1 H 2pz         -0.04185   0.06401  -0.00000  -0.00000   0.08273
 <mo_coeff-mcscf|mo_coeff-hf>  1      1        0.99999993
 <mo_coeff-mcscf|mo_coeff-hf>  2      2        0.99999260
-<mo_coeff-mcscf|mo_coeff-hf>  3      3        0.99663491
-<mo_coeff-mcscf|mo_coeff-hf>  4      4        0.99663491
+<mo_coeff-mcscf|mo_coeff-hf>  3      3        0.99915147
+<mo_coeff-mcscf|mo_coeff-hf>  4      4        0.99915147
 <mo_coeff-mcscf|mo_coeff-hf>  5      5        0.99999869
 <mo_coeff-mcscf|mo_coeff-hf>  6      6        0.99998470
 <mo_coeff-mcscf|mo_coeff-hf>  7      9        0.99997650
-<mo_coeff-mcscf|mo_coeff-hf>  8      7        0.99996907
-<mo_coeff-mcscf|mo_coeff-hf>  9      8        0.99996907
+<mo_coeff-mcscf|mo_coeff-hf>  8      7        0.99997622
+<mo_coeff-mcscf|mo_coeff-hf>  9      8        0.99997622
 <mo_coeff-mcscf|mo_coeff-hf>  10     10       0.95948131
-<mo_coeff-mcscf|mo_coeff-hf>  11     11       0.98011153
-<mo_coeff-mcscf|mo_coeff-hf>  12     12       0.98011153
-<mo_coeff-mcscf|mo_coeff-hf>  13     13       0.98335710
-<mo_coeff-mcscf|mo_coeff-hf>  14     14       0.98335710
+<mo_coeff-mcscf|mo_coeff-hf>  11     11       0.98008048
+<mo_coeff-mcscf|mo_coeff-hf>  12     12       0.98008049
+<mo_coeff-mcscf|mo_coeff-hf>  13     13       0.98203285
+<mo_coeff-mcscf|mo_coeff-hf>  14     14       0.98203285
 <mo_coeff-mcscf|mo_coeff-hf>  15     15       0.96136363
 <mo_coeff-mcscf|mo_coeff-hf>  16     16       0.99465900
 <mo_coeff-mcscf|mo_coeff-hf>  17     17       0.99879441
@@ -401,57 +432,57 @@ Natural orbital (expansion on meta-Lowdin AOs) in CAS space
 <mo_coeff-mcscf|mo_coeff-hf>  20     20       0.95981218
 <mo_coeff-mcscf|mo_coeff-hf>  21     19       0.40009079
 <mo_coeff-mcscf|mo_coeff-hf>  21     21       0.84672418
-<mo_coeff-mcscf|mo_coeff-hf>  22     22       0.99663117
-<mo_coeff-mcscf|mo_coeff-hf>  23     23       0.99663117
-<mo_coeff-mcscf|mo_coeff-hf>  24     24       0.99459637
-<mo_coeff-mcscf|mo_coeff-hf>  25     25       0.99459637
-<mo_coeff-mcscf|mo_coeff-hf>  26     27       0.99559135
-<mo_coeff-mcscf|mo_coeff-hf>  27     26       0.99559135
+<mo_coeff-mcscf|mo_coeff-hf>  22     22       0.99664761
+<mo_coeff-mcscf|mo_coeff-hf>  23     23       0.99664761
+<mo_coeff-mcscf|mo_coeff-hf>  24     24       0.99467270
+<mo_coeff-mcscf|mo_coeff-hf>  25     25       0.99467270
+<mo_coeff-mcscf|mo_coeff-hf>  26     27       0.99540315
+<mo_coeff-mcscf|mo_coeff-hf>  27     26       0.99540315
 <mo_coeff-mcscf|mo_coeff-hf>  28     19       0.41484129
 <mo_coeff-mcscf|mo_coeff-hf>  28     21      -0.48622186
 <mo_coeff-mcscf|mo_coeff-hf>  28     28       0.60371318
 <mo_coeff-mcscf|mo_coeff-hf>  28     29      -0.44642594
 <mo_coeff-mcscf|mo_coeff-hf>  29     28       0.67251219
 <mo_coeff-mcscf|mo_coeff-hf>  29     29       0.70224614
-<mo_coeff-mcscf|mo_coeff-hf>  30     30       0.99510197
-<mo_coeff-mcscf|mo_coeff-hf>  31     31       0.99510197
-<mo_coeff-mcscf|mo_coeff-hf>  32     32       0.98322790
-<mo_coeff-mcscf|mo_coeff-hf>  33     33       0.98322789
+<mo_coeff-mcscf|mo_coeff-hf>  30     30       0.99464718
+<mo_coeff-mcscf|mo_coeff-hf>  31     31       0.99464718
+<mo_coeff-mcscf|mo_coeff-hf>  32     32       0.98333350
+<mo_coeff-mcscf|mo_coeff-hf>  33     33       0.98333350
 <mo_coeff-mcscf|mo_coeff-hf>  34     34       0.99761149
-<mo_coeff-mcscf|mo_coeff-hf>  35     35       0.99934251
-<mo_coeff-mcscf|mo_coeff-hf>  36     36       0.99934251
+<mo_coeff-mcscf|mo_coeff-hf>  35     35       0.99934294
+<mo_coeff-mcscf|mo_coeff-hf>  36     36       0.99934294
 <mo_coeff-mcscf|mo_coeff-hf>  37     37       0.98992846
 <mo_coeff-mcscf|mo_coeff-hf>  38     40       0.97015161
-<mo_coeff-mcscf|mo_coeff-hf>  39     38       0.99897670
-<mo_coeff-mcscf|mo_coeff-hf>  40     39       0.99897670
+<mo_coeff-mcscf|mo_coeff-hf>  39     38       0.99897111
+<mo_coeff-mcscf|mo_coeff-hf>  40     39       0.99897111
 <mo_coeff-mcscf|mo_coeff-hf>  41     41       0.97876877
 <mo_coeff-mcscf|mo_coeff-hf>  42     42       0.99894793
-<mo_coeff-mcscf|mo_coeff-hf>  43     44       0.97297758
-<mo_coeff-mcscf|mo_coeff-hf>  44     43       0.97297758
-<mo_coeff-mcscf|mo_coeff-hf>  45     45       0.99920670
-<mo_coeff-mcscf|mo_coeff-hf>  46     46       0.99920670
+<mo_coeff-mcscf|mo_coeff-hf>  43     44       0.97305667
+<mo_coeff-mcscf|mo_coeff-hf>  44     43       0.97305667
+<mo_coeff-mcscf|mo_coeff-hf>  45     45       0.99919880
+<mo_coeff-mcscf|mo_coeff-hf>  46     46       0.99919880
 <mo_coeff-mcscf|mo_coeff-hf>  47     47       0.99916163
-<mo_coeff-mcscf|mo_coeff-hf>  48     48       1.00000000
-<mo_coeff-mcscf|mo_coeff-hf>  49     49       1.00000000
-<mo_coeff-mcscf|mo_coeff-hf>  50     50       0.99959569
-<mo_coeff-mcscf|mo_coeff-hf>  51     51       0.99959569
-<mo_coeff-mcscf|mo_coeff-hf>  52     52       0.93953531
-<mo_coeff-mcscf|mo_coeff-hf>  53     53       0.93953531
+<mo_coeff-mcscf|mo_coeff-hf>  48     48       0.99999989
+<mo_coeff-mcscf|mo_coeff-hf>  49     49       0.99999989
+<mo_coeff-mcscf|mo_coeff-hf>  50     50       0.99958239
+<mo_coeff-mcscf|mo_coeff-hf>  51     51       0.99958239
+<mo_coeff-mcscf|mo_coeff-hf>  52     52       0.94271118
+<mo_coeff-mcscf|mo_coeff-hf>  53     53       0.94271118
 <mo_coeff-mcscf|mo_coeff-hf>  54     54       0.99998901
 ** Largest CI components **
   [alpha occ-orbitals] [beta occ-orbitals]  state 0   CI coefficient
-  [0 1]                [0]                             0.974181532954
-  [0 1]                [1]                            -0.122852465079
+  [0 1]                [0]                             0.974181533086
+  [0 1]                [1]                            -0.122852467344
   [alpha occ-orbitals] [beta occ-orbitals]  state 1   CI coefficient
-  [0 1]                [2]                            -0.135937693119
-  [0 2]                [0]                             0.952843946029
-  [0 2]                [1]                            -0.174756525349
-  [1 2]                [1]                            -0.136147163522
+  [0 1]                [2]                            -0.135937649256
+  [0 2]                [0]                             0.952843639411
+  [0 2]                [1]                            -0.174756470830
+  [1 2]                [1]                            -0.136147118678
   [alpha occ-orbitals] [beta occ-orbitals]  state 2   CI coefficient
-  [0 1]                [3]                            -0.135937693119
-  [0 3]                [0]                             0.952843946029
-  [0 3]                [1]                            -0.174756525350
-  [1 3]                [1]                            -0.136147163521
+  [0 1]                [3]                             0.135937649256
+  [0 3]                [0]                            -0.952843639411
+  [0 3]                [1]                             0.174756470831
+  [1 3]                [1]                             0.136147118678
  ** Mulliken pop on meta-lowdin orthogonal AOs  **
  ** Mulliken pop  **
 pop of  0 Zn 1s           2.00000
@@ -540,23 +571,23 @@ pop of  0 Zn 3dyz         0.00000
 pop of  0 Zn 3dz^2        0.00115
 pop of  0 Zn 3dxz         0.00000
 pop of  0 Zn 3dx2-y2      0.00000
-pop of  0 Zn 4dxy        -0.00000
+pop of  0 Zn 4dxy         0.00000
 pop of  0 Zn 4dyz         0.00007
 pop of  0 Zn 4dz^2        0.00118
 pop of  0 Zn 4dxz         0.00007
-pop of  0 Zn 4dx2-y2      0.00000
-pop of  0 Zn 5dxy         0.00000
+pop of  0 Zn 4dx2-y2     -0.00000
+pop of  0 Zn 5dxy        -0.00000
 pop of  0 Zn 5dyz         0.00012
 pop of  0 Zn 5dz^2        0.00228
 pop of  0 Zn 5dxz         0.00012
-pop of  0 Zn 5dx2-y2     -0.00000
+pop of  0 Zn 5dx2-y2      0.00000
 pop of  0 Zn 6dxy         0.00000
 pop of  0 Zn 6dyz         0.00007
 pop of  0 Zn 6dz^2        0.00082
 pop of  0 Zn 6dxz         0.00007
-pop of  0 Zn 6dx2-y2      0.00000
+pop of  0 Zn 6dx2-y2     -0.00000
 pop of  0 Zn 4f-3         0.00000
-pop of  0 Zn 4f-2         0.00000
+pop of  0 Zn 4f-2        -0.00000
 pop of  0 Zn 4f-1         0.00000
 pop of  0 Zn 4f+0         0.00000
 pop of  0 Zn 4f+1         0.00000
@@ -597,23 +628,23 @@ spop of 0 Zn 3dyz       0.00000
 spop of 0 Zn 3dz^2      0.00115
 spop of 0 Zn 3dxz       0.00000
 spop of 0 Zn 3dx2-y2    0.00000
-spop of 0 Zn 4dxy      -0.00000
+spop of 0 Zn 4dxy       0.00000
 spop of 0 Zn 4dyz       0.00007
 spop of 0 Zn 4dz^2      0.00118
 spop of 0 Zn 4dxz       0.00007
-spop of 0 Zn 4dx2-y2    0.00000
-spop of 0 Zn 5dxy       0.00000
+spop of 0 Zn 4dx2-y2   -0.00000
+spop of 0 Zn 5dxy      -0.00000
 spop of 0 Zn 5dyz       0.00012
 spop of 0 Zn 5dz^2      0.00228
 spop of 0 Zn 5dxz       0.00012
-spop of 0 Zn 5dx2-y2   -0.00000
+spop of 0 Zn 5dx2-y2    0.00000
 spop of 0 Zn 6dxy       0.00000
 spop of 0 Zn 6dyz       0.00007
 spop of 0 Zn 6dz^2      0.00082
 spop of 0 Zn 6dxz       0.00007
-spop of 0 Zn 6dx2-y2    0.00000
+spop of 0 Zn 6dx2-y2   -0.00000
 spop of 0 Zn 4f-3       0.00000
-spop of 0 Zn 4f-2       0.00000
+spop of 0 Zn 4f-2      -0.00000
 spop of 0 Zn 4f-1       0.00000
 spop of 0 Zn 4f+0       0.00000
 spop of 0 Zn 4f+1       0.00000
@@ -671,14 +702,35 @@ Summary of reference wavefunction manifold:
 Total number of reference states: 3
   State       S^2        S      (2S+1)        E(total)              E(CAS)
 -----------------------------------------------------------------------------------
-    1       0.75000     0.5        2    -1791.538023161576      -2.129328511464
-    2       0.75000     0.5        2    -1791.437354989673      -2.028660339560
-    3       0.75000     0.5        2    -1791.437354989664      -2.028660339551
+    1       0.75000     0.5        2    -1791.538023161578      -2.129328511465
+    2       0.75000     0.5        2    -1791.437354989675      -2.028660339561
+    3       0.75000     0.5        2    -1791.437354989665      -2.028660339552
 -----------------------------------------------------------------------------------
 
 Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+
+Note that SOC Hamiltionian is sf-X2C-1e+so-DKH1 instead of usual DKH. 
+
 Calculating Wigner 1-RDM...
-> CPU time for total x2c-1 calculation      4.89 sec, wall time      4.78 sec
+Cutting basis functions into 2 batches, need to calculate 16 integrals batches.
+Time elapsed for 1th batch in 8 batches is 13.1839, cumulates time is 13.1839.
+Time elapsed for 2th batch in 8 batches is 3.9748, cumulates time is 17.1588.
+Time elapsed for 3th batch in 8 batches is 4.04091, cumulates time is 21.1998.
+Time elapsed for 4th batch in 8 batches is 1.47577, cumulates time is 22.6756.
+Time elapsed for 5th batch in 8 batches is 2.99735, cumulates time is 25.673.
+Time elapsed for 6th batch in 8 batches is 0.944917, cumulates time is 26.618.
+Time elapsed for 7th batch in 8 batches is 0.949738, cumulates time is 27.5678.
+Time elapsed for 8th batch in 8 batches is 0.440343, cumulates time is 28.0082.
+Time elapsed for 9th batch in 8 batches is 3.73559, cumulates time is 31.7439.
+Time elapsed for 10th batch in 8 batches is 1.46179, cumulates time is 33.2058.
+Time elapsed for 11th batch in 8 batches is 1.35158, cumulates time is 34.5574.
+Time elapsed for 12th batch in 8 batches is 0.484767, cumulates time is 35.0423.
+Time elapsed for 13th batch in 8 batches is 1.04693, cumulates time is 36.0892.
+Time elapsed for 14th batch in 8 batches is 0.41556, cumulates time is 36.5049.
+Time elapsed for 15th batch in 8 batches is 0.4103, cumulates time is 36.9152.
+Time elapsed for 16th batch in 8 batches is 0.130219, cumulates time is 37.0455.
+Two electron part of SOC integral is done
+> CPU time for total x2c-1 calculation     41.48 sec, wall time      5.10 sec
 
 Summary of SOC-SA-CASSCF:
 
@@ -686,11 +738,11 @@ Summary of results for the X2C-1 calculation with the SA-CASSCF reference:
 ------------------------------------------------------------------------------------------------------------------
   State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
 ------------------------------------------------------------------------------------------------------------------
-    1        1        -1791.538029120867     0.00000000       0.0000                      0.0000               
-    2        1        -1791.538029120867     0.00000000       0.0000                      0.0000               
-    3        1        -1791.437997632768     0.10003149       2.7220     455.4901     21954.3740      0.05091721
-    4        1        -1791.437997632768     0.10003149       2.7220     455.4901     21954.3740      0.05091721
-    5        1        -1791.436706387278     0.10132273       2.7571     449.6854     22237.7696      0.05157016
-    6        1        -1791.436706387276     0.10132273       2.7571     449.6854     22237.7696      0.05157016
+    1        1        -1791.538028654810     0.00000000       0.0000                      0.0000               
+    2        1        -1791.538028654808     0.00000000       0.0000                      0.0000               
+    3        1        -1791.437972375422     0.10005628       2.7227     455.3772     21959.8150      0.05092973
+    4        1        -1791.437972375421     0.10005628       2.7227     455.3772     21959.8150      0.05092973
+    5        1        -1791.436732110689     0.10129654       2.7564     449.8016     22232.0217      0.05155707
+    6        1        -1791.436732110689     0.10129654       2.7564     449.8016     22232.0217      0.05155707
 ----------------------------------------------------------------------------------------------------------------
 > CPU time for total x2c-1 calculation      0.00 sec, wall time      0.00 sec

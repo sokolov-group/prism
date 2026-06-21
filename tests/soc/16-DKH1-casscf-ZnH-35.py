@@ -48,26 +48,26 @@ class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
         self.assertAlmostEqual(mc.e_tot,  -1791.47091104697, 6)
-        self.assertAlmostEqual(mc.e_cas,  -2.06221639685828, 6)
+        self.assertAlmostEqual(mc.e_cas,  -2.06221639685918, 6)
 
     def test_prism(self):
 
         e_tot, osc = interface.run_soc("x2c-1")
 
-        self.assertAlmostEqual(e_tot[0] ,  -1791.538029120867, 5)
-        self.assertAlmostEqual(e_tot[1] ,  -1791.538029120867, 5)
-        self.assertAlmostEqual(e_tot[2] ,  -1791.437997632768, 5)
-        self.assertAlmostEqual(e_tot[3] ,  -1791.437997632768, 5)
-        self.assertAlmostEqual(e_tot[4] ,  -1791.436706387278, 5)
-        self.assertAlmostEqual(e_tot[5] ,  -1791.436706387276, 5)
+        self.assertAlmostEqual(e_tot[0] ,  -1791.538028654810, 5)
+        self.assertAlmostEqual(e_tot[1] ,  -1791.538028654808, 5)
+        self.assertAlmostEqual(e_tot[2] ,  -1791.437972375422, 5)
+        self.assertAlmostEqual(e_tot[3] ,  -1791.437972375421, 5)
+        self.assertAlmostEqual(e_tot[4] ,  -1791.436732110689, 5)
+        self.assertAlmostEqual(e_tot[5] ,  -1791.436732110689, 5)
 
 
         
         self.assertAlmostEqual(osc[0], 0, 5)
-        self.assertAlmostEqual(osc[1], 0.05091721, 5)
-        self.assertAlmostEqual(osc[2], 0.05091721, 5)
-        self.assertAlmostEqual(osc[3], 0.05157016, 5)
-        self.assertAlmostEqual(osc[4], 0.05157016, 5)
+        self.assertAlmostEqual(osc[1],  0.05092973, 5)
+        self.assertAlmostEqual(osc[2],  0.05092973, 5)
+        self.assertAlmostEqual(osc[3],  0.05155707, 5)
+        self.assertAlmostEqual(osc[4],  0.05155707, 5)
 
 
 if __name__ == "__main__":

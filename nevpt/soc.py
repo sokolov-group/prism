@@ -73,7 +73,6 @@ def state_interaction_soc(method):
         en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
     
     else:    
-        #raise Exception("Ms=0 situation for state_interaction_SOC function not implement in state_interaction_SOC function.")
         method.log.info("Apply S_plus due to Ms=0...")
 
         wfn_plus = wfn.copy()
@@ -251,7 +250,7 @@ def compute_magnetic_properties(method, rdm_sf):
 
         #Powder data information
         method.log.info("Import LebedevGrid in pyscf...")
-        Powder_data_xyzw = pyscf.dft.LebedevGrid.MakeAngularGrid_266()
+        Powder_data_xyzw = method.interface.MakeAngularGrid_266()
         method.log.info("Number of LebedevGrid point: %s" % len(Powder_data_xyzw))
 
 
