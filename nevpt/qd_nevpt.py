@@ -252,7 +252,6 @@ def diagonalize_eff_H(method):
             h_eff[J, I] = H_IJ
    
     # print intruder states for qd-nevpt2
-    #check_intruder_states(method, dim, h_eff, t1)
     check_intruder_states(method, dim, h_eff, t1)
 
     h_eval, h_evec = np.linalg.eigh(h_eff)

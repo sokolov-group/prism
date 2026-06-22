@@ -22,7 +22,6 @@ import numpy as np
 
 from prism.libsoc import general_somf
 from prism.libsoc import magnetic
-import pyscf.dft.LebedevGrid
 
 def state_interaction_soc(method):
 
@@ -233,8 +232,6 @@ def compute_magnetic_properties(method, rdm_sf):
         method.log.info("\nCalculating magnetic susceptibility or magnetization...")
 
         # Parameter
-
-  
         h_s =method.step_h_s
         method.log.info("h_s= %.2f T" %(h_s))
 
@@ -263,7 +260,6 @@ def compute_magnetic_properties(method, rdm_sf):
             method.properties["chi_av"] = chi_av_all
 
 
-
         ###Vector magnetization
         if method.mag_vec:
             B_vec = method.B_vec_M
@@ -284,26 +280,5 @@ def compute_magnetic_properties(method, rdm_sf):
             method.properties["chi_T_eval_all"] = chi_T_eval_all
 
 
-def h_soc_mo(method):
-    interface = method.interface 
-    soc = method.soc
-    nstate = len(method.ref_wfn)
-    ncore = method.ncore
-    ncas = method.ncas
-    nextern = method.nextern
-    nmo = method.nmo
-    mo = method.mo
-
-    #rdm1ao
-    rdm1mo = np.zeros((nmo, nmo))
-    for I in range(nstate):
-        rdm_ca, rdm_ccaa, rdm_cccaaa = method.interface.compute_rdm123(method.ref_wfn[I], method.ref_wfn[I], method.ref_nelecas[I])
-        rdm1mo[ncore:ncore + ncas, ncore:ncore + ncas] += rdm_ca / nstate
-        rdm1mo[:ncore, :ncore] += 2 * np.identity(ncore)  / nstate
-
-    rdm1ao = np.einsum('ai,ib,bj->aj',mo, rdm1mo, mo.T) 
-    hsoc = general_somf.get_soc_integrals(interface, soc, rdm1ao)
-
-    return hsoc
 
 

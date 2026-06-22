@@ -21,10 +21,8 @@
 import sys
 import os
 import numpy as np
-
 from functools import reduce
 from sympy.physics.quantum.cg import CG
-
 import prism.lib.logger as logger
 
 # Add python path for socutils:
@@ -48,11 +46,11 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     if (soc=="breit-pauli" or soc=="bp"):
         soc_name = "BP"
     
-    elif(soc=="x2c-1" or "x2c1" or soc=="dkh1"):
+    elif(soc=="x2c-1" or soc=="x2c1" or soc=="dkh1"):
         interface.log.info("\nNote that SOC Hamiltionian is sf-X2C-1e+so-DKH1 instead of usual DKH. \n")  
         soc_name = "sf-X2C-1e+so-DKH1"
     
-    elif(soc=="x2c-2" or "x2c2" or soc=="dkh2"):
+    elif(soc=="x2c-2" or soc=="x2c2" or soc=="dkh2"):
         raise Exception("The sf-X2C-1e+so-DKH2 implementation in Prism is still incomplete.")
     
     else:
@@ -145,11 +143,11 @@ def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_
     if (soc=="breit-pauli" or soc=="bp"):
         soc_name = "BP"
     
-    elif(soc=="x2c-1" or soc=="dkh1"):
+    elif(soc=="x2c-1" or soc=="x2c-1" or soc=="dkh1"):
         interface.log.info("\nNote that SOC Hamiltionian is sf-X2C-1e+so-DKH1 instead of usual DKH. \n")  
         soc_name = "sf-X2C-1e+so-DKH1"
     
-    elif(soc=="x2c-2" or soc=="dkh2"):
+    elif(soc=="x2c-2" or soc=="x2c-2" or soc=="dkh2"):
         raise Exception("The sf-X2C-1e+so-DKH2 implementation in Prism is still incomplete.")
     
     else:

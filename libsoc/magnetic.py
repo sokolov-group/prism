@@ -120,13 +120,13 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
                     j = I_total[J]
   
                     rdm_mo = rdm_sf[i,j]
-                    l_mat[0,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[0])
-                    l_mat[1,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[1])
-                    l_mat[2,I,J] += np.einsum('ij,ij',rdm_mo,l1_mo[2])
+                    l_mat[0,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[0])
+                    l_mat[1,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[1])
+                    l_mat[2,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[2])
 
-                    l_mat[0,J,I] += np.conj(l_mat[0,I,J]).T
-                    l_mat[1,J,I] += np.conj(l_mat[1,I,J]).T
-                    l_mat[2,J,I] += np.conj(l_mat[2,I,J]).T
+                    l_mat[0,J,I] = np.conj(l_mat[0,I,J]).T
+                    l_mat[1,J,I] = np.conj(l_mat[1,I,J]).T
+                    l_mat[2,J,I] = np.conj(l_mat[2,I,J]).T
 
     #calculate magnetic dipole moment (without spin-orbit coupling)
     Mu_sf = l_mat + s_mat * interface.g_free_elec 
