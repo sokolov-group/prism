@@ -589,7 +589,7 @@ def check_intruder_states(method, dim, h_eff, t1):
 
         separator = "-" * 130
         
-        interface.log.info("\n\nIntruder States and Corresponding Denominators and Amplitudes for a Specific Class")
+        interface.log.info("\n\nIntruder States and Corresponding Denominators and Amplitude Norms for a Specific Class")
 
         interface.log.info(separator)
 
