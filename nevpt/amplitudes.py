@@ -140,7 +140,10 @@ def compute_t1_p1(nevpt, rdms):
     d_apij = d_apij**(-1)
 
     # for intuder state details
-    nevpt.den_t1_p1.append(np.min(np.abs(d_apij**(-1))))
+    if d_apij.size == 0:
+        nevpt.den_t1_p1.append(None)
+    else:
+        nevpt.den_t1_p1.append(np.min(np.abs(d_apij**(-1))))
 
     # Compute T[+1] amplitudes
     S_12_V_p1 = einsum("IJAX,Xm->IJAm", V1_p1, S_p1_12_inv_act, optimize = einsum_type)
@@ -230,7 +233,10 @@ def compute_t1_m1(nevpt, rdms):
         d_abix = d_abix**(-1)
 
         # for intuder state details
-        nevpt.den_t1_m1.append(np.min(np.abs(d_abix**(-1))))
+        if d_abix.size == 0:
+            nevpt.den_t1_m1.append(None)
+        else:
+            nevpt.den_t1_m1.append(np.min(np.abs(d_abix**(-1))))
 
         ## V matrix: - < Psi_0 | a^{\dag}_I a^{\dag}_X a_B a_A V | Psi_0>
         V1_m1 =- 1/2 * einsum('IAxB,Xx->IXAB', v_ceae[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
@@ -404,7 +410,10 @@ def compute_t1_m2(nevpt, rdms):
         d_abp = d_abp**(-1)
 
         # for intuder state details
-        nevpt.den_t1_m2.append(np.min(np.abs(d_abp**(-1))))
+        if d_abp.size == 0:
+            nevpt.den_t1_m2.append(None)
+        else:
+            nevpt.den_t1_m2.append(np.min(np.abs(d_abp**(-1))))
 
         ## V tensor: - < Psi_0 | a^{\dag}_X a^{\dag}_Y a_B a_A V | Psi_0>
         V1_m2 =- 1/3 * einsum('xAyB,XYxy->XYAB', v_aeae, rdm_ccaa, optimize = einsum_type)
@@ -524,6 +533,12 @@ def compute_t1_0p(nevpt, rdms):
     d_ai = (e_extern[:,None] - e_core).reshape(-1)
     d_aip = (d_ai[:,None] + evals).reshape(nextern, ncore, -1)
     d_aip = d_aip**(-1)
+
+    # for intuder state details
+    if d_aip.size == 0:
+        nevpt.den_t1_0p.append(None)
+    else:
+        nevpt.den_t1_0p.append(np.min(np.abs(d_aip**(-1))))
 
     # Compute T[0'] amplitudes
     S_12_V_0p = einsum("iaP,Pm->iam", V_0p, S_0p_12_inv_act, optimize = einsum_type)
@@ -682,6 +697,12 @@ def compute_t1_p1p(nevpt, rdms):
     d_ip = (-e_core[:,None] + evals)
     d_ip = d_ip**(-1)
 
+    # for intuder state details
+    if d_ip.size == 0:
+        nevpt.den_t1_p1p.append(None)
+    else:
+        nevpt.den_t1_p1p.append(np.min(np.abs(d_ip**(-1))))
+
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
@@ -832,6 +853,12 @@ def compute_t1_m1p(nevpt, rdms):
     d_pa = (evals[:,None] + e_extern)
     d_pa = d_pa**(-1)
 
+    # for intuder state details
+    if d_pa.size == 0:
+        nevpt.den_t1_m1p.append(None)
+    else:
+        nevpt.den_t1_m1p.append(np.min(np.abs(d_pa**(-1))))
+
     # Compute T[-1'] amplitudes
     S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
     S_12_V_m1p = einsum("mp,ma->pa", evecs, S_12_V_m1p, optimize = einsum_type)
@@ -958,7 +985,10 @@ def compute_t1_0p_no_singles(nevpt, rdms):
         d_aip = d_aip**(-1)
 
     # for intuder state details
-    nevpt.den_t1_0p.append(np.min(np.abs(d_aip**(-1))))
+    if d_aip.size == 0:
+        nevpt.den_t1_0p.append(None)
+    else:
+        nevpt.den_t1_0p.append(np.min(np.abs(d_aip**(-1))))
 
     # Compute T[0'] amplitudes
     S_12_V_0p = einsum("iaP,Pm->iam", V_0p, S_0p_12_inv_act, optimize = einsum_type)
@@ -1105,7 +1135,10 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
         d_ip = d_ip**(-1)
 
     # for intuder state details
-    nevpt.den_t1_p1p.append(np.min(np.abs(d_ip**(-1))))
+    if d_ip.size == 0:
+        nevpt.den_t1_p1p.append(None)
+    else:
+        nevpt.den_t1_p1p.append(np.min(np.abs(d_ip**(-1))))
         
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
@@ -1246,7 +1279,10 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
         d_pa = d_pa**(-1)
 
     # for intuder state details
-    nevpt.den_t1_m1p.append(np.min(np.abs(d_pa**(-1))))
+    if d_pa.size == 0:
+        nevpt.den_t1_m1p.append(None)
+    else:
+        nevpt.den_t1_m1p.append(np.min(np.abs(d_pa**(-1))))
 
     # Compute T[-1'] amplitudes
     S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
