@@ -453,6 +453,9 @@ def compute_t1_0p(nevpt, rdms):
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[0']^(1) amplitudes...")
 
+    if not hasattr(nevpt, "den_t1_0p"):
+        nevpt.den_t1_0p = []
+
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
@@ -589,6 +592,9 @@ def compute_t1_p1p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1']^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_p1p"):
+        nevpt.den_t1_p1p = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -758,6 +764,9 @@ def compute_t1_m1p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-1']^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_m1p"):
+        nevpt.den_t1_m1p = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
