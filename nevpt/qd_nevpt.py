@@ -250,17 +250,6 @@ def diagonalize_eff_H(method):
 
             h_eff[I, J] = H_IJ
             h_eff[J, I] = H_IJ
-
-    if method.compute_coupling:
-        H_dyall_off = method.H_dyall - np.diag(np.diagonal(method.H_dyall))
-        print("h_eff=")
-        print(h_eff)
-        print("H_dyall_off=")
-        print(H_dyall_off)
-        print("total=")
-        method.Heff_1e = h_eff + H_dyall_off 
-        print(method.Heff_1e)
-        h_eff = method.Heff_1e
    
     # print intruder states for qd-nevpt2
     #check_intruder_states(method, dim, h_eff, t1)
@@ -312,7 +301,7 @@ def compute_properties(method):
             method.properties["osc_strengths_full"] = osc_str_full
 
     # Compute magnetic properties
-    if (method.MCD or method.gtensor or method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor) and method.soc:
+    if (method.gtensor or method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor) and method.soc:
         from prism.nevpt import soc
         # Call make_rdm1 function directly to bypass including SOC effects
         rdm_sf = make_rdm1(method)

@@ -107,9 +107,7 @@ class NEVPT:
 
         # For SOC
         self.soc = None                            # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-        self.soc_order = 1
-        self.h_soc_sph = None # +1,-1,0
-        self.h_soc_so = None #Like prism_beta
+
 
         # For g-tensor
         self.gtensor = False                       # Enable calculating g-tensors (requires soc)
@@ -123,7 +121,7 @@ class NEVPT:
         self.mag_vec = False
         self.sus_tensor = False
 
-        self.step_h_s = 0.001 
+        self.step_h_s = 0.001 #Magnetic field step size used for numerical differentiation (Unit:T)
 
         ###Powder magnetization
         Bs_list = []
@@ -153,14 +151,6 @@ class NEVPT:
         self.Bs_vec_chi = [0.1]
         self.T_vec_chi = [5,100,200,250]
 
-        ###For MCD
-        self.MCD = False
-        self.B_MCD = 10
-        self.T_MCD = 4
-
-        ###For Heff coupling
-        self.compute_coupling = False
-        self.Heff_1e = None
 
 
     def _make_method_instance(self):

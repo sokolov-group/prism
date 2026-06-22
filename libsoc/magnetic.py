@@ -22,6 +22,12 @@ import numpy as np
 
 # magnetic dipole moment in microstates basis without spin-orbit coupling
 def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
+    '''
+    rdm_sf: spin free 1st rdm (without spin-orbit coupling)
+    S (list), spin quantum number of each state without spin-orbit coupling
+    origin_type: origin_type for computing angular momentum
+    '''
+
     interface.log.info("Calculating magnetic dipole moment...")
     mf = interface.mf
     mo = interface.mo
@@ -129,157 +135,13 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
 
 
 #Note that Mu should include spin orbit coupling 
-def mcd_vector_xyz(interface, B_s,T,en_soc,evec_soc, Mu, rdm_sf, S):
-
-    #Constant
-    kb = interface.kb 
-    mu_B = interface.mu_B_Eh
-
-    mf = interface.mf
-    mo = interface.mo
-    ncore = interface.ncore 
-    n_states = len(rdm_sf)
-    nmo = interface.nmo
-    ncas = interface.ncas
-    n_micro_states = len(en_soc)
-    dip_mom_ao = interface.dip_mom_ao
-    mo_coeff = interface.mo
-
-    # Calculate quantum number of spin-orbit state
-    ms_total = []
-    S_total = []
-    I_total = []
-    for I in range(n_states):
-        for i in range(int(S[I]*2 + 1)):
-            ms_total.append(S[I]-i)
-            S_total.append(S[I])
-            I_total.append(I)
-
-
-    #construct dipolemoment in spin-free basis
-    dip_mom_mo = np.zeros_like(dip_mom_ao)
-    for d in range(dip_mom_ao.shape[0]):
-        dip_mom_mo[d] = mo.T @ dip_mom_ao[d] @ mo
-
-
-    # Looping over CAS States
-    dip_evec = np.zeros((3,n_micro_states,n_micro_states),dtype='complex')
-    for I in range(n_micro_states):
-        for J in range(n_micro_states):
-            if J>=I:
-                if  (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
-                    i = I_total[I]
-                    j = I_total[J]
-                    dip_evec[0,I,J] = np.einsum('pq,pq', dip_mom_mo[0], rdm_sf[i,j])
-                    dip_evec[1,I,J] = np.einsum('pq,pq', dip_mom_mo[1], rdm_sf[i,j])
-                    dip_evec[2,I,J] = np.einsum('pq,pq', dip_mom_mo[2], rdm_sf[i,j])
-
-                    dip_evec[0,J,I] =  np.conj(dip_evec[0,I,J]).T
-                    dip_evec[1,J,I] =  np.conj(dip_evec[1,I,J]).T
-                    dip_evec[2,J,I] =  np.conj(dip_evec[2,I,J]).T
-
-
-    dip_evec_soc = np.einsum('ai,kib,bj->kaj',np.conj(evec_soc).T , dip_evec , evec_soc)
-
-    
-
-    #B_svec = B_s * B_vec
-    #B_svec = [0.3]
-    en_ze_x, evec_ze_x = E_ze(B_s * np.array([1,0,0]),en_soc,Mu,mu_B )
-    en_ze_y, evec_ze_y = E_ze(B_s * np.array([0,1,0]),en_soc,Mu,mu_B )
-    en_ze_z, evec_ze_z = E_ze(B_s * np.array([0,0,1]),en_soc,Mu,mu_B )
-
-    en_ze_total = np.zeros((3,len(en_soc)))
-    en_ze_total[0] = en_ze_x
-    en_ze_total[1] = en_ze_y
-    en_ze_total[2] = en_ze_z
-
-
-    #For X:
-    dip_evec_ze_x = np.einsum('ai,kib,bj->kaj',np.conj(evec_ze_x).T , dip_evec_soc , evec_ze_x)
-    m_LCP_ze_x = dip_evec_ze_x[1] - 1j * dip_evec_ze_x[2]
-    m_RCP_ze_x = dip_evec_ze_x[1] + 1j * dip_evec_ze_x[2]
-
-
-    #For Y:
-    dip_evec_ze_y = np.einsum('ai,kib,bj->kaj',np.conj(evec_ze_y).T , dip_evec_soc , evec_ze_y)
-    m_LCP_ze_y = dip_evec_ze_y[2] - 1j * dip_evec_ze_y[0]
-    m_RCP_ze_y = dip_evec_ze_y[2] + 1j * dip_evec_ze_y[0]
-
-
-    #For Z:
-    dip_evec_ze_z = np.einsum('ai,kib,bj->kaj',np.conj(evec_ze_z).T , dip_evec_soc , evec_ze_z)
-    m_LCP_ze_z = dip_evec_ze_z[0] - 1j * dip_evec_ze_z[1]
-    m_RCP_ze_z = dip_evec_ze_z[0] + 1j * dip_evec_ze_z[1]
-
-
-    #define Zero point
-    en_soc = en_soc - en_soc[0]*np.ones(len(en_soc))
-    #Build N
-    N = np.zeros(n_micro_states)
-    Z = partition_function(en_soc,T, kb)
-    for i in range(n_micro_states):
-        N[i] = np.exp(-en_soc[i]/kb/T) / Z
-    print("Boltzmann:")
-    print(N)
-
-    C = np.zeros(n_micro_states-1,dtype='complex')
-    D = np.zeros(n_micro_states-1,dtype='complex')
-
-    C_xyz = np.zeros((3,n_micro_states-1),dtype='complex')
-    D_xyz = np.zeros((3,n_micro_states-1),dtype='complex')
-
-
-    for I in range(n_micro_states-1):
-        I += 1
-
-        #####X
-        LCP_square = np.conj(m_LCP_ze_x[0,I])  * m_LCP_ze_x[0,I]
-        RCP_square = np.conj(m_RCP_ze_x[0,I])  * m_RCP_ze_x[0,I]
-        C[I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)/3
-        D[I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)/3
-
-        C_xyz[0,I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)
-        D_xyz[0,I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)
-
-        #####Y
-        LCP_square = np.conj(m_LCP_ze_y[0,I])  * m_LCP_ze_y[0,I]
-        RCP_square = np.conj(m_RCP_ze_y[0,I])  * m_RCP_ze_y[0,I]
-        C[I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)/3
-        D[I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)/3
-
-        C_xyz[1,I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)
-        D_xyz[1,I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)
-
-        #####Z
-        LCP_square = np.conj(m_LCP_ze_z[0,I])  * m_LCP_ze_z[0,I]
-        RCP_square = np.conj(m_RCP_ze_z[0,I])  * m_RCP_ze_z[0,I]
-        C[I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)/3
-        D[I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)/3
-
-        C_xyz[2,I-1] += (N[0]-N[I]) * (LCP_square - RCP_square)
-        D_xyz[2,I-1] += (N[0]-N[I]) * (LCP_square + RCP_square)
-
-    C1 = np.zeros(n_micro_states-2)
-    D1 = np.zeros(n_micro_states-2)
-
-    print("\n")
-    print("B=",B_s)
-    print("T=", T)
-    print("number of excited state:", n_micro_states-1)
-    for i in range(3):
-        print("coordinate=", i)
-        print("denze_"+str(i)+"=", (np.real(en_ze_total[i,1:] - en_ze_total[i,0])) * 219474.63136314)
-        print("C_"+str(i)+"=",C_xyz[i])
-        print("\n")
-
-
-    return C, D, C_xyz, D_xyz, en_ze_total 
-
-
-
-#Note that Mu should include spin orbit coupling 
 def gtensor(interface, S, Mu, target_index = 1):
+    '''
+    S(list): spin quantum number of each state without spin-orbit coupling
+    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    target_index (integer): target state to calculate g-tensor. Note that the index refers to the spin-free states.
+    '''
+
     ge = interface.g_free_elec
 
     interface.log.info("\nTarget State index = %s", target_index)
@@ -334,6 +196,14 @@ def gtensor(interface, S, Mu, target_index = 1):
 
 
 def Powder_magnetization(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_s):
+    '''
+    powder_data (np.array, n*3): vector data for compute powder properties. Can obtain from interface.MakeAngularGrid_266()
+    Bs_list (list): magnetic Field Strength. Unit: Telsa
+    T_list (list): temperature. Unit: K
+    en_soc (np.array, n): spin-orbit coupling energy
+    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    '''
     
     M_av_all = np.zeros((len(T_list),len(Bs_list)))
     for I in range(len(T_list)):
@@ -354,7 +224,15 @@ def Powder_magnetization(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_
 
 
 def Powder_susceptibility(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_s):
-    
+    '''
+    powder_data (np.array, n*3): vector data for compute powder properties. Can obtain from interface.MakeAngularGrid_266()
+    Bs_list (list): magnetic Field Strength. Unit: Telsa
+    T_list (list): temperature. Unit: K
+    en_soc (np.array, n): spin-orbit coupling energy
+    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    '''
+
     chi_av_all= np.zeros((len(T_list),len(Bs_list)))
     for I in range(len(T_list)):
         T = T_list[I]
@@ -365,7 +243,6 @@ def Powder_susceptibility(interface, powder_data, Bs_list, T_list, en_soc, Mu, h
                 B_vec1  = powder_data[i,0:3]
                 B_vec1  = np.reshape(B_vec1,3)
                 weight = powder_data[i,3]
-                #M_av += magnetization(H,B_vec,en_soc,J,T) * weight[i]
                 chi_av += susceptibility(interface,Bs,B_vec1,en_soc,Mu,T,h_s,dB_k=B_vec1) * weight
             
             chi_av_all[I,K] = chi_av
@@ -374,6 +251,15 @@ def Powder_susceptibility(interface, powder_data, Bs_list, T_list, en_soc, Mu, h
 
 
 def vector_magnetization(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
+    '''
+    B_vec (np.array, 3): direction of magmetic field. "magnetization" function will normalize it. 
+    Bs_list (list): magnetic Field Strength. Unit: Telsa
+    T_list (list): temperature. Unit: K
+    en_soc (np.array, n): spin-orbit coupling energy
+    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    '''
+
     B_unit = np.eye(3)
     M_xyz_all= np.zeros((len(T_list),len(Bs_list),3))
     for I in range(len(T_list)):
@@ -388,6 +274,15 @@ def vector_magnetization(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
 
 
 def tensor_susceptibility(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
+    '''
+    B_vec (np.array, 3): direction of magmetic field. "susceptibility" function will normalize it. 
+    Bs_list (list): magnetic Field Strength. Unit: Telsa
+    T_list (list): temperature. Unit: K
+    en_soc (np.array, n): spin-orbit coupling energy
+    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    '''
+
     B_unit = np.eye(3)
     chi_T_eval_all= np.zeros((len(T_list),len(Bs_list),3))
     for I in range(len(T_list)):
@@ -415,6 +310,15 @@ def tensor_susceptibility(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
 
     
 def magnetization(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None):
+    '''
+    B_s (float): magnetic Field Strength. Unit: Telsa
+    B_vec (np.array, 3): direction of magmetic field. "magnetization" function will normalize it. 
+    T (float): temperature. Unit: K
+    en_soc (np.array, n): spin-orbit coupling energy
+    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    dB_k (np.array, 3): Partial differential direction. Default follow  B_vec
+    '''
     
     kb = interface.kb 
     mu_B = interface.mu_B_Eh
@@ -452,7 +356,17 @@ def magnetization(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None):
     return MM #in Bohr magneton unit
     
    
-def susceptibility(interface,B_s,B_vec1,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
+def susceptibility(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
+    '''
+    B_s (float): magnetic Field Strength. Unit: Telsa
+    B_vec (np.array, 3): direction of magmetic field. "magnetization" function will normalize it. 
+    T (float): temperature. Unit: K
+    en_soc (np.array, n): spin-orbit coupling energy
+    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    dB_k (np.array, 3): Partial differential direction. Default follow  B_vec
+    dB_l (np.array, 3): Partial differential direction. Default follow  dB_k
+    '''
 
     kb = interface.kb 
     mu_B_Eh = interface.mu_B_Eh
@@ -460,12 +374,16 @@ def susceptibility(interface,B_s,B_vec1,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
     NA = interface.NA
     T_to_G = interface.T_to_G
 
-    B_vec1 = B_vec1 / np.linalg.norm(B_vec1)
-    dB_k = dB_k / np.linalg.norm(dB_k)
+    B_vec = B_vec / np.linalg.norm(B_vec)
+
+    if dB_k is None:
+        dB_k = B_vec
+    else:
+        dB_k = dB_k / np.linalg.norm(dB_k)
 
     n_micro_states = len(en_soc)
-    B_svec1 = B_s * B_vec1
-    en_ze, evec_ze =  E_ze(B_svec1,en_soc,Mu, mu_B_Eh)
+    B_svec = B_s * B_vec
+    en_ze, evec_ze =  E_ze(B_svec,en_soc,Mu, mu_B_Eh)
 
     #Set zero pint energy
     zero = en_soc[0]
@@ -477,9 +395,9 @@ def susceptibility(interface,B_s,B_vec1,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
         B1 =[]
         B2 =[]
         B3 =[]
-        B1 = B_svec1 + dB_k * h_s
-        B2 = B_svec1 
-        B3 = B_svec1 - dB_k * h_s
+        B1 = B_svec + dB_k * h_s
+        B2 = B_svec 
+        B3 = B_svec - dB_k * h_s
         
         E_ze1, evec_ze1 = E_ze(B1,en_soc,Mu, mu_B_Eh)  
         E_ze2, evec_ze2 = E_ze(B2,en_soc,Mu, mu_B_Eh)  
@@ -496,15 +414,16 @@ def susceptibility(interface,B_s,B_vec1,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
         chi = kb * T * d2lnZ  / mu_B_Eh * mu_B_erg * NA / T_to_G
 
     else:
+        dB_l = dB_l / np.linalg.norm(dB_l)
         B1 =[]
         B2 =[]
         B3 =[]
         B4 =[]
         
-        B1 = B_svec1 + dB_k*h_s + dB_l*h_s
-        B2 = B_svec1 + dB_k*h_s - dB_l*h_s
-        B3 = B_svec1 - dB_k*h_s + dB_l*h_s
-        B4 = B_svec1 - dB_k*h_s - dB_l*h_s
+        B1 = B_svec + dB_k*h_s + dB_l*h_s
+        B2 = B_svec + dB_k*h_s - dB_l*h_s
+        B3 = B_svec - dB_k*h_s + dB_l*h_s
+        B4 = B_svec - dB_k*h_s - dB_l*h_s
 
         E_ze1, evec_ze1 = E_ze(B1,en_soc,Mu, mu_B_Eh)  
         E_ze2, evec_ze2 = E_ze(B2,en_soc,Mu, mu_B_Eh)  
@@ -530,6 +449,13 @@ def susceptibility(interface,B_s,B_vec1,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
 
 
 def E_ze(B,en_soc,Mu,mu_B):
+    '''
+    B (float): magnetic Field Strength. Unit: Telsa
+    en_soc (np.array, n): spin-orbit coupling energy
+    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    mu_B: Bohr magneton. Can obtained from interface.mu_B_Eh (atomic unit)
+    '''
+
     B = np.array(B) 
     B = B *mu_B 
     H0 = np.diag(en_soc)
@@ -539,10 +465,16 @@ def E_ze(B,en_soc,Mu,mu_B):
 
     return en_ze,evec_ze #Hartree
 
-def partition_function(en_ze,T,kb):    
+def partition_function(en,T,kb):    
+    '''
+    en (np.array, n): state energy
+    T (float): temperature. Unit: K
+    kb: Boltzmann constant. Can obtained from interface.kb (1.3806483e-23 / 4.3597447222060e-18 Eh/K)
+    '''
+
     Z=0
-    for i in range(len(en_ze)):
-        Z += np.exp(-(en_ze[i])/(T*kb))
+    for i in range(len(en)):
+        Z += np.exp(-(en[i])/(T*kb))
 
     return Z
 
