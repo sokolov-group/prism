@@ -41,9 +41,8 @@ mol.symmetry = True
 mol.build()
 
 # RHF calculation
-mf = pyscf.scf.ROHF(mol)
+mf = pyscf.scf.RHF(mol)
 mf.conv_tol = 1e-12
-
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
