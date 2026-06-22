@@ -18,7 +18,7 @@
 #                  Ilia M. Mazin <ilia.mazin@gmail.com>
 #              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #                 James D. Serna <jserna456@gmail.com>
-
+#                Haden Dickerson <haden.dickerson423@outlook.com>
 import os
 import tempfile
 import numpy as np

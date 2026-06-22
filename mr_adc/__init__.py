@@ -16,7 +16,7 @@
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Donna Odhiambo <donna.odhiambo@proton.me>
-#
+#          Haden Dickerson <haden.dickerson423@outlook.com>
 
 from prism.mr_adc import compute
 from prism.mr_adc import amplitudes
