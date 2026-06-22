@@ -13,48 +13,19 @@ import prism.mr_adc
 import prism.nevpt
 
 mol = pyscf.gto.Mole()
-r = 1.098
 mol.atom = [
-    ['N', ( 0., 0.    , -r/2)],
-    ['N', ( 0., 0.    ,  r/2)],]
-mol.basis = {'N':'aug-cc-pvdz'}
-mol.verbose = 4
+            ['O', (0.0, 0.0, 0.0)],
+            ['H', (0.0,  -x,   y)],
+            ['H', (0.0,   x,   y)]]
+mol.basis = 'cc-pvdz'
+mol.symmetry = True
+mol.spin = 2
 mol.build()
 
 # ROHF calculation as guess for CASSCF
 mf = pyscf.scf.ROHF(mol)
 mf.kernel()
 
-####################
-# CASSCF reference
-####################
-mc = pyscf.mcscf.CASSCF(mf, 6, 6)
-emc = mc.mc1step()[0]
-
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-nevpt = prism.nevpt.NEVPT(interface)
-e_tot, e_corr, osc = nevpt.kernel()
-
-####################
-# SA-CASSCF reference
-####################
-n_states = 9
-weights = np.ones(n_states)/n_states
-mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_(weights)
-emc = mc.mc1step()[0]
-
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-nevpt = prism.nevpt.NEVPT(interface)
-e_tot, e_corr, osc = nevpt.kernel()
-
-####################
-# MS-CASCI reference
-####################
-n_states = 9
-mc = pyscf.mcscf.CASCI(mf, 6, 6)
-mc.fcisolver.nroots = n_states
-emc = mc.casci()[0]
-
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 e_tot, e_corr, osc = nevpt.kernel()
