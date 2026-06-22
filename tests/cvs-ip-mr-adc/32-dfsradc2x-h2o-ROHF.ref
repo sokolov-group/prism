@@ -1,0 +1,166 @@
+
+
+******** <class 'pyscf.scf.hf_symm.SymAdaptedROHF'> ********
+method = SymAdaptedROHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /tmp/tmpeddoacyr
+max_memory 4000 MB (current use 102 MB)
+num. doubly occ = 5  num. singly occ = 0
+Freeze 0 electrons in irreps []
+    10 free electrons in irreps A1 A2 B1 B2
+Set gradient conv threshold to 1e-06
+init E= -75.8645187434285
+HOMO (B1) = -0.476036756092842  LUMO (A1) = 0.0175174607734573
+cycle= 1 E= -76.00678929741  delta_E= -0.142  |g|= 0.416  |ddm|=    1
+HOMO (B1) = -0.437814834707161  LUMO (A1) = 0.0336022242282308
+cycle= 2 E= -76.0314751281078  delta_E= -0.0247  |g|= 0.234  |ddm|= 0.247
+HOMO (B1) = -0.517468404670938  LUMO (A1) = 0.0342367702298102
+cycle= 3 E= -76.0410824551194  delta_E= -0.00961  |g|= 0.026  |ddm|= 0.0866
+HOMO (B1) = -0.508366220838027  LUMO (A1) = 0.0353732003316577
+cycle= 4 E= -76.0412433810391  delta_E= -0.000161  |g|= 0.00513  |ddm|= 0.0122
+HOMO (B1) = -0.508975487967329  LUMO (A1) = 0.0353970377083674
+cycle= 5 E= -76.0412559852415  delta_E= -1.26e-05  |g|= 0.00102  |ddm|= 0.00414
+HOMO (B1) = -0.509165964571446  LUMO (A1) = 0.0353885792023973
+cycle= 6 E= -76.0412566706392  delta_E= -6.85e-07  |g|= 0.000178  |ddm|= 0.00128
+HOMO (B1) = -0.509212811715949  LUMO (A1) = 0.0353889764722583
+cycle= 7 E= -76.0412566936949  delta_E= -2.31e-08  |g|= 2.62e-05  |ddm|= 0.000256
+HOMO (B1) = -0.509216014990471  LUMO (A1) = 0.0353893201133067
+cycle= 8 E= -76.0412566941226  delta_E= -4.28e-10  |g|= 3.19e-06  |ddm|= 3.72e-05
+HOMO (B1) = -0.509215801066585  LUMO (A1) = 0.0353894375865529
+cycle= 9 E= -76.0412566941272  delta_E= -4.65e-12  |g|= 4.7e-07  |ddm|= 5.15e-06
+HOMO (B1) = -0.509215901299645  LUMO (A1) = 0.0353894479578543
+cycle= 10 E= -76.0412566941276  delta_E= -4.12e-13  |g|= 1.27e-07  |ddm|= 5.82e-07
+HOMO (B1) = -0.509215918444431  LUMO (A1) = 0.0353894478313474
+Extra cycle  E= -76.0412566941275  delta_E= 1.28e-13  |g|= 5.86e-08  |ddm|= 1.34e-07
+converged SCF energy = -76.0412566941275
+SCF energy: -76.041257
+
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: scf
+
+
+Initializing MR-ADC...
+SCF reference given, performing SR-ADC calculation
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)-x
+Nuclear repulsion energy:                          9.168193300756
+Number of electrons:                               10
+Number of basis functions:                         41
+Reference wavefunction type:                       scf
+Number of core orbitals:                           5
+Number of active orbitals:                         0
+Number of external orbitals:                       36
+Number of active electrons:                        [(0, 0)]
+Reference state active-space energy:               0.000000000000
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  4
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              4
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /tmp
+
+Internal contraction:                              Full
+Overlap truncation parameter (singles):            1.00e-06
+Overlap truncation parameter (doubles):            1.00e-10
+Projector for the semi-internal amplitudes:        gno
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+
+Computing reference wavefunction RDMs...
+
+Computing NEVPT2 amplitudes...
+Correlation energy [0]:                           -0.222069823015
+
+Reference energy:                                -76.041256694127
+NEVPT2 correlation energy:                        -0.222069823015
+Total NEVPT2 energy:                             -76.263326517142
+
+Transforming integrals for the CVS calculation...
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       468
+Total dimension of the excitation manifold:                469
+Dimension of the orthogonalized excitation manifold:       469
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 112  max_memory 4000  incore True
+davidson 0 4  |r|= 1.45  e= [20.5792064  21.73666308 21.74166142 21.79773116]  max|de|= 21.8  lindep=    1
+davidson 1 8  |r|= 0.35  e= [19.92296691 21.33890528 21.41515771 21.42731187]  max|de|= 21.4  lindep= 0.956
+davidson 2 12  |r|= 0.125  e= [19.87768249 21.19015371 21.27988312 21.3060392 ]  max|de|= -0.149  lindep= 0.974
+davidson 3 16  |r|= 0.147  e= [19.87637    21.17104043 21.26056092 21.2890849 ]  max|de|= -0.0193  lindep= 0.975
+davidson 4 20  |r|= 0.0479  e= [19.87626817 21.16854839 21.25760921 21.28675765]  max|de|= -0.00295  lindep= 0.74
+davidson 5 24  |r|= 0.016  e= [19.87626294 21.16837627 21.25718454 21.28639887]  max|de|= -0.000425  lindep= 0.878
+davidson 6 28  |r|= 0.00443  e= [19.87626269 21.16835458 21.25714435 21.28634627]  max|de|= -5.26e-05  lindep= 0.879
+davidson 7 32  |r|= 0.00353  e= [19.87626267 21.16834878 21.25714047 21.28633582]  max|de|= -1.05e-05  lindep= 0.834
+root 0 converged  |r|= 9.72e-06  e= 19.876262667667792  max|de|= -6.38e-10
+davidson 8 36  |r|= 0.00176  e= [19.87626267 21.16834815 21.25713963 21.2863336 ]  max|de|= -2.22e-06  lindep= 0.745
+davidson 9 39  |r|= 0.00068  e= [19.87626267 21.16834813 21.25713941 21.28633296]  max|de|= -6.36e-07  lindep= 0.763
+root 1 converged  |r|= 5e-06  e= 21.168348130547272  max|de|= -9.15e-10
+davidson 10 42  |r|= 0.000204  e= [19.87626267 21.16834813 21.25713938 21.28633286]  max|de|= -9.88e-08  lindep= 0.783
+davidson 11 44  |r|= 3.67e-05  e= [19.87626267 21.16834813 21.25713938 21.28633286]  max|de|= -6.74e-09  lindep= 0.816
+root 2 converged  |r|= 3.43e-06  e= 21.257139380890962  max|de|= -1.93e-10
+davidson 12 46  |r|= 2.34e-05  e= [19.87626267 21.16834813 21.25713938 21.28633286]  max|de|= -4.06e-10  lindep= 0.819
+root 3 converged  |r|= 4.12e-06  e= 21.28633285710482  max|de|= -4.4e-11
+converged 13 47  |r|= 9.72e-06  e= [19.87626267 21.16834813 21.25713938 21.28633286]  max|de|= -4.4e-11
+
+Summary of results for the CVS-IP-MR-ADC(2)-X calculation with the SCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        19.87626267      540.8607     2.2924    4362335.4219      1.569095
+    2        21.16834813      576.0201     2.1524    4645915.4025      0.000000
+    3        21.25713938      578.4362     2.1434    4665402.8295      0.000001
+    4        21.28633286      579.2306     2.1405    4671810.0569      0.000003
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2)-X calculation     31.16 sec, wall time      4.55 sec

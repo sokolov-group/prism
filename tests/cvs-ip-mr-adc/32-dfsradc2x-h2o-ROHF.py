@@ -39,7 +39,6 @@ mol.atom = [
 mol.basis = 'aug-cc-pvdz'
 mol.symmetry = True
 mol.build()
-mol.verbose = 4
 
 # RHF calculation
 mf = pyscf.scf.ROHF(mol)
@@ -48,44 +47,34 @@ mf.conv_tol = 1e-12
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
-# CASSCF calculation
-mc = pyscf.mcscf.CASSCF(mf, 4, 0)
-mc.conv_tol = 1e-11
-mc.conv_tol_grad = 1e-6
-
-emc = mc.mc1step()[0]
-print("CASSCF energy: %f\n" % emc)
-
 # MR-ADC calculation
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.ncvs = 1
 mr_adc.nroots = 4
 mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"
-mr_adc.method = "mr-adc(2)"
-
+mr_adc.method = "mr-adc(2)-x"
 
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot, -76.041256694128, 6)
-        self.assertAlmostEqual(mc.e_cas,   0.000000000000, 6)
+        self.assertAlmostEqual(mf.e_tot, -76.041256694127, 6)
 
     def test_prism(self):
 
         e, p, x = mr_adc.kernel()
 
-        self.assertAlmostEqual(e[0], 539.8266, 4)
-        self.assertAlmostEqual(e[1], 574.7681, 4)
-        self.assertAlmostEqual(e[2], 574.7681, 4)
-        self.assertAlmostEqual(e[3], 574.7681, 4)
+        self.assertAlmostEqual(e[0], 540.8607, 4)
+        self.assertAlmostEqual(e[1], 576.0201, 4)
+        self.assertAlmostEqual(e[2], 578.4362, 4)
+        self.assertAlmostEqual(e[3], 579.2306, 4)
 
-        self.assertAlmostEqual(p[0], 1.51974470, 4)
-        self.assertAlmostEqual(p[1], 0.00000000, 4)
-        self.assertAlmostEqual(p[2], 0.00000000, 4)
-        self.assertAlmostEqual(p[3], 0.00000000, 4)
+        self.assertAlmostEqual(p[0], 1.569095, 4)
+        self.assertAlmostEqual(p[1], 0.000000, 4)
+        self.assertAlmostEqual(p[2], 0.000001, 4)
+        self.assertAlmostEqual(p[3], 0.000003, 4)
 
 if __name__ == "__main__":
     print("CVS-IP calculations for different CVS-IP-MR-ADC methods")
