@@ -65,4 +65,28 @@ mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"
 mr_adc.method = "mr-adc(2)"
-mr_adc.kernel()
+
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mc.e_tot, -76.041256694128, 6)
+        self.assertAlmostEqual(mc.e_cas,   0.000000000000, 6)
+
+    def test_prism(self):
+
+        e, p, x = mr_adc.kernel()
+
+        self.assertAlmostEqual(e[0], 539.8266, 4)
+        self.assertAlmostEqual(e[1], 574.7681, 4)
+        self.assertAlmostEqual(e[2], 574.7681, 4)
+        self.assertAlmostEqual(e[3], 574.7681, 4)
+
+        self.assertAlmostEqual(p[0], 1.51974470, 4)
+        self.assertAlmostEqual(p[1], 0.00000000, 4)
+        self.assertAlmostEqual(p[2], 0.00000000, 4)
+        self.assertAlmostEqual(p[3], 0.00000000, 4)
+
+if __name__ == "__main__":
+    print("CVS-IP calculations for different CVS-IP-MR-ADC methods")
+    unittest.main()
