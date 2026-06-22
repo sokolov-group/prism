@@ -534,13 +534,13 @@ def check_intruder_states(method, dim, h_eff, t1):
         for state in states_with_large_coupling:
 
             # smallest denominators
-            tp1  = method.den_d_apij[state]
-            tp2  = method.den_d_pij[state]
-            tp3  = method.den_d_aip[state]
-            tp4  = method.den_d_ip[state]
-            tp5  = method.den_d_pa[state]
-            tp6  = method.den_d_abix[state]
-            tp7  = method.den_d_abp[state]
+            tp1  = method.den_t1_p1[state]
+            tp2  = method.den_t1_p2[state]
+            tp3  = method.den_t1_0p[state]
+            tp4  = method.den_t1_p1p[state]
+            tp5  = method.den_t1_m1p[state]
+            tp6  = method.den_t1_m1[state]
+            tp7  = method.den_t1_m2[state]
 
             # amplitudes norms
             t1_ccae = np.linalg.norm(t1[state].ccae)

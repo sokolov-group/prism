@@ -82,8 +82,6 @@ class NEVPT:
         self.shift_type_0p = None                 # Level shift type for [0']: imaginary, DSRG
         self.shift_epsilon = 0.01                 # Level shift value (in Hartree)
 
-        self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
-        
         self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk   
         self.e_tot = None                         # Total energies
         self.e_corr = None                        # Correlation energies
