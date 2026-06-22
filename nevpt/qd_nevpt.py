@@ -252,7 +252,7 @@ def diagonalize_eff_H(method):
             h_eff[J, I] = H_IJ
    
     # print intruder states for qd-nevpt2
-    check_intruder_states(method, dim, h_eff, t1)
+    check_intruder_states(method, dim, h_eff, t1, method.cutoff_intruder)
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
 
@@ -497,22 +497,22 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         
     return rdm_final
 
-def check_intruder_states(method, dim, h_eff, t1):
+def check_intruder_states(method, dim, h_eff, t1, cutoff_intruder):
 
-    # compute the coupling elements of h_eff > 0.05 give warnings
+    method.log.info("Compute the coupling elements of h_eff > %f Eh give warnings" %(cutoff_intruder))
 
     interface = method.interface
     data          = []
     coupling_data = []
 
     I, J = np.tril_indices(dim, k=-1)
-    mask = abs(h_eff[I, J]) > 0.05
+    mask = abs(h_eff[I, J]) > cutoff_intruder
     
     vals = h_eff[I, J]
 
     if np.any(mask):
 
-        interface.log.info("\n\nWARNING: Large coupling detected, possible intruder state!!!!!!")
+        interface.log.info("WARNING: Large coupling detected, possible intruder state!!!!!!")
         
         header_fmt = "{:<8} " + "{:>8} " * 13
 
@@ -589,7 +589,7 @@ def check_intruder_states(method, dim, h_eff, t1):
 
         separator = "-" * 130
         
-        interface.log.info("\n\nIntruder States and Corresponding Denominators and Amplitude Norms for a Specific Class")
+        interface.log.info("\nIntruder States and Corresponding Denominators and Amplitude Norms for a Specific Class")
 
         interface.log.info(separator)
 
