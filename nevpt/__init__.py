@@ -34,7 +34,7 @@ class NEVPT:
         log.info("Initializing fully internally contracted NEVPT...")
 
         if interface.reference == "scf":
-            log.info("SCF reference given, defaulting to MP2 calculation")
+            log.info("SCF reference given, performing MP2 calculation")
 
         elif interface.reference not in ("casscf", "casci", "sa-casscf", "ms-casci"):
             msg = "The NEVPT code does not support use of a %s reference" % interface.reference
