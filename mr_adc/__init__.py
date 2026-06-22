@@ -34,7 +34,7 @@ class MRADC:
         log.info("\nInitializing MR-ADC...")
 
         if interface.reference == "scf":
-            log.info("SCF reference given, defaulting to SR-ADC calculation")
+            log.info("SCF reference given, performing SR-ADC calculation")
 
         elif interface.reference not in ("casscf", "casci"):
             msg = "The MR-ADC code does not support use of a %s reference" % interface.reference
@@ -75,7 +75,6 @@ class MRADC:
         # MR-ADC specific variables
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
         self.method_type = "cvs-ip"     # Possible method types: cvs-ip
-        # self.max_t_order = 1          # Maximum order of t amplitudes to compute
         self.ncasci = 6                 # Number of CASCI roots requested
         self.nroots = 6                 # Number of MR-ADC roots requested
         self.max_space = 100            # Maximum size of the Davidson trial space

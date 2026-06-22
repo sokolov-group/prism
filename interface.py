@@ -656,4 +656,3 @@ class PYSCF:
         rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))
 
         return rdm1, rdm2, rdm3, rdm4
-
