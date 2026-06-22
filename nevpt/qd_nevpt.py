@@ -526,9 +526,9 @@ def check_intruder_states(method, dim, h_eff, t1):
 
         interface.log.info("\n\nWARNING: Large coupling detected, possible intruder state!!!!!!")
         
-        header_fmt = "{:<8} " + "{:>8} " * 9
+        header_fmt = "{:<8} " + "{:>8} " * 13
 
-        row_fmt = "{:<8} " + "{:>8.4f} " * 9
+        row_fmt = "{:<8} " + "{:>8.4f} " * 13
 
         coupling_fmt = "{:<12} {:>12.8f}"
 
@@ -548,6 +548,11 @@ def check_intruder_states(method, dim, h_eff, t1):
             # smallest denominators
             tp1  = method.den_d_apij[state]
             tp2  = method.den_d_pij[state]
+            tp3  = method.den_d_aip[state]
+            tp4  = method.den_d_ip[state]
+            tp5  = method.den_d_pa[state]
+            tp6  = method.den_d_abix[state]
+            tp7  = method.den_d_abp[state]
 
             # amplitudes norms
             t1_ccae = np.linalg.norm(t1[state].ccae)
@@ -557,12 +562,17 @@ def check_intruder_states(method, dim, h_eff, t1):
             t1_caea = np.linalg.norm(t1[state].caea)
             t1_caaa = np.linalg.norm(t1[state].caaa)
             t1_aaae = np.linalg.norm(t1[state].aaae)
-            
+
             data.append(
                 row_fmt.format(
                     " %d" % (state + 1),
                     tp1,
+                    tp6,
                     tp2,
+                    tp7,
+                    tp3,
+                    tp4,
+                    tp5,
                     t1_ccae,
                     t1_caee,
                     t1_ccaa,
@@ -589,9 +599,9 @@ def check_intruder_states(method, dim, h_eff, t1):
     # print the results for amplitudes and denominators
     if data and method.verbose >= 4:
 
-        separator = "-" * 120
+        separator = "-" * 130
         
-        interface.log.info("\n\nIntruder States and Corresponding Denominators for a Specific Class")
+        interface.log.info("\n\nIntruder States and Corresponding Denominators and Amplitudes for a Specific Class")
 
         interface.log.info(separator)
 
@@ -599,8 +609,13 @@ def check_intruder_states(method, dim, h_eff, t1):
             header_fmt.format(
                 "State",
                 "deno[+1]",
+                "deno[-1]",
                 "deno[+2]",
-                "amp[+1]",
+                "deno[-2]",
+                "deno[0']",
+                "deno[+1']",
+                "deno[-1']", 
+                "amp[+1]", 
                 "amp[-1]",
                 "amp[+2]",
                 "amp[-2]",
