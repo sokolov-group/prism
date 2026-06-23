@@ -91,7 +91,7 @@ class MRADC:
         self.compute_ntos = False       # Option for NTO computation
         self.compute_dyson = False      # Option for Dyson orbital computation
 
-        self.spec_factor_print_tol = 0.01 # Print tolerance for the spectroscopic factor analysis
+        self.analyze_print_tol = 0.01   # Print tolerance for analyses
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
@@ -203,3 +203,7 @@ class CVSIPMRADC(MRADC):
 
     def analyze_spec_factor(self):
         return cvs_ip.analyze_spec_factor(self)
+
+    def analyze_eigenvector(self):
+        return cvs_ip.analyze_eigenvector(self)
+

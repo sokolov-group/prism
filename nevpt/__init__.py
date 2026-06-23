@@ -152,6 +152,11 @@ class NEVPT:
 
 
     def _make_method_instance(self):
+
+        self.method_type = self.method_type.lower()
+        if self.method_type == "ss":
+            return self
+
         cls_map = {
             "qd": QDNEVPT,
         }
@@ -175,13 +180,7 @@ class NEVPT:
 
     def kernel(self):
 
-        self.method_type = self.method_type.lower()
-
-        method = None
-        if (self.method_type != "ss"):
-            method = self._make_method_instance()
-        else:
-            method = self
+        method = self._make_method_instance()
 
         # Run NEVPT computation
         e_tot, e_corr, osc = compute.kernel(method)
@@ -227,17 +226,8 @@ class NEVPT:
 
         return nevpt.compute_properties(self)
 
-    def analyze(self):
-
-        self.method_type = self.method_type.lower()
-
-        if self.method_type == "ss":
-            method = self
-        else:
-            method = self._make_method_instance()
-        self.__dict__.update(method.__dict__)
-
-        return compute.analyze(method)
+    def analyze(self, **kwargs):
+        return compute.analyze(self, **kwargs)
 
     @property
     def verbose(self):
@@ -260,7 +250,6 @@ class QDNEVPT(NEVPT):
 
     def _init_method(self):
         self.method_type = "qd"
-        self.h_evec = None # Eigenvectors of effective Hamiltonian
 
     def compute_energy(self):
 
@@ -294,6 +283,4 @@ class QDNEVPT(NEVPT):
 
     def compute_properties(self):
 
-        return qd_nevpt.compute_properties(self)
-
-
+        return qd_nevpt.compute_properties(self)    
