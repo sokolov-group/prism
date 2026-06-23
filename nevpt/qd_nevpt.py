@@ -252,7 +252,7 @@ def diagonalize_eff_H(method):
             h_eff[J, I] = H_IJ
    
     # print intruder states for qd-nevpt2
-    check_intruder_states(method, dim, h_eff, t1, method.cutoff_intruder)
+    check_intruder_states(method, dim, h_eff, t1)
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
 
@@ -497,11 +497,12 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         
     return rdm_final
 
-def check_intruder_states(method, dim, h_eff, t1, cutoff_intruder):
+def check_intruder_states(method, dim, h_eff, t1):
 
-    method.log.info("Compute the coupling elements of h_eff > %f Eh give warnings" %(cutoff_intruder))
-
+    #Compute the coupling elements of h_eff > %cutoff_intruder Eh give warnings
     interface = method.interface
+    cutoff_intruder = method.cutoff_intruder
+
     data          = []
     coupling_data = []
 
@@ -512,7 +513,7 @@ def check_intruder_states(method, dim, h_eff, t1, cutoff_intruder):
 
     if np.any(mask):
 
-        interface.log.info("WARNING: Large coupling detected, possible intruder state!!!!!!")
+        interface.log.info("\nWARNING: Large coupling detected (>%f Eh), possible intruder state!!!!!!"  %(cutoff_intruder))
         
         header_fmt = "{:<8} " + "{:>8} " * 13
 
