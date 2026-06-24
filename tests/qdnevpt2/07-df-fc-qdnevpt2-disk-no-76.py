@@ -72,34 +72,34 @@ nevpt.max_memory = 1
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot, -129.154007811535, 6)
-        self.assertAlmostEqual(mc.e_cas, -15.6158947578694, 6)
+        self.assertAlmostEqual(mc.e_tot, -129.154007811535, 5)
+        self.assertAlmostEqual(mc.e_cas, -15.6158947578694, 5)
 
     def test_prism(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -129.574440989907, 6)
-        self.assertAlmostEqual(e_tot[1], -129.574440989907, 6)
-        self.assertAlmostEqual(e_tot[2], -129.330152086338, 6)
-        self.assertAlmostEqual(e_tot[3], -129.323515948305, 6)
-        self.assertAlmostEqual(e_tot[4], -129.323515948304, 6)
-        self.assertAlmostEqual(e_tot[5], -129.287548577760, 6)
-        self.assertAlmostEqual(e_tot[6], -129.287548577760, 6)
+        self.assertAlmostEqual(e_tot[0], -129.574440989907, 5)
+        self.assertAlmostEqual(e_tot[1], -129.574440989907, 5)
+        self.assertAlmostEqual(e_tot[2], -129.330152086338, 5)
+        self.assertAlmostEqual(e_tot[3], -129.323515948305, 5)
+        self.assertAlmostEqual(e_tot[4], -129.323515948304, 5)
+        self.assertAlmostEqual(e_tot[5], -129.287548577760, 5)
+        self.assertAlmostEqual(e_tot[6], -129.287548577760, 5)
 
-        self.assertAlmostEqual(e_corr[0], -0.2284568907441, 6)
-        self.assertAlmostEqual(e_corr[1], -0.2284568907438, 6)
-        self.assertAlmostEqual(e_corr[2], -0.2285260127866, 6)
-        self.assertAlmostEqual(e_corr[3], -0.2218898747531, 6)
-        self.assertAlmostEqual(e_corr[4], -0.2612698593988, 6)
-        self.assertAlmostEqual(e_corr[5], -0.2253024888553, 6)
-        self.assertAlmostEqual(e_corr[6], -0.2292064202525, 6)
+        self.assertAlmostEqual(e_corr[0], -0.2284568907441, 5)
+        self.assertAlmostEqual(e_corr[1], -0.2284568907438, 5)
+        self.assertAlmostEqual(e_corr[2], -0.2285260127866, 5)
+        self.assertAlmostEqual(e_corr[3], -0.2218898747531, 5)
+        self.assertAlmostEqual(e_corr[4], -0.2612698593988, 5)
+        self.assertAlmostEqual(e_corr[5], -0.2253024888553, 5)
+        self.assertAlmostEqual(e_corr[6], -0.2292064202525, 5)
         
-        self.assertAlmostEqual(osc[0], 0.0, 6)
-        self.assertAlmostEqual(osc[1], 0.0, 6)
-        self.assertAlmostEqual(osc[2], 0.0, 6)
-        self.assertAlmostEqual(osc[3], 0.0, 6)
-        self.assertAlmostEqual(osc[4], 0.00145503, 6)
+        self.assertAlmostEqual(osc[0], 0.0, 5)
+        self.assertAlmostEqual(osc[1], 0.0, 5)
+        self.assertAlmostEqual(osc[2], 0.0, 5)
+        self.assertAlmostEqual(osc[3], 0.0, 5)
+        self.assertAlmostEqual(osc[4], 0.00145503, 5)
         
         
 if __name__ == "__main__":

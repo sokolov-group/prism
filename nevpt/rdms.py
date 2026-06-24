@@ -45,3 +45,4 @@ def compute_reference_rdms(nevpt, ref_wfn_list = None, ref_nelecas_list = None):
     nevpt.log.timer("transforming RDMs", *cput0)
 
     return rdm
+

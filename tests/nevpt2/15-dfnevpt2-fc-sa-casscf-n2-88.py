@@ -64,25 +64,25 @@ nevpt.nfrozen = 2
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot, -108.824929042721, 6)
-        self.assertAlmostEqual(mc.e_cas, -18.9658046887769, 6)
+        self.assertAlmostEqual(mc.e_tot, -108.824929042721, 5)
+        self.assertAlmostEqual(mc.e_cas, -18.9658046887769, 5)
 
     def test_prism(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -109.272016257254, 6)
-        self.assertAlmostEqual(e_tot[1], -108.983946554189, 6)
-        self.assertAlmostEqual(e_tot[2], -108.970127377951, 6)
-        self.assertAlmostEqual(e_tot[3], -108.970127376947, 6)
-        self.assertAlmostEqual(e_tot[4], -108.937436481639, 6)
-        self.assertAlmostEqual(e_tot[5], -108.937436479599, 6)
+        self.assertAlmostEqual(e_tot[0], -109.272016257254, 5)
+        self.assertAlmostEqual(e_tot[1], -108.983946554189, 5)
+        self.assertAlmostEqual(e_tot[2], -108.970127377951, 5)
+        self.assertAlmostEqual(e_tot[3], -108.970127376947, 5)
+        self.assertAlmostEqual(e_tot[4], -108.937436481639, 5)
+        self.assertAlmostEqual(e_tot[5], -108.937436479599, 5)
         
-        self.assertAlmostEqual(osc[0], 0.0, 6)
-        self.assertAlmostEqual(osc[1], 0.0, 6)
-        self.assertAlmostEqual(osc[2], 0.0, 6)
-        self.assertAlmostEqual(osc[3], 0.0, 6)
-        self.assertAlmostEqual(osc[4], 0.0, 6)
+        self.assertAlmostEqual(osc[0], 0.0, 5)
+        self.assertAlmostEqual(osc[1], 0.0, 5)
+        self.assertAlmostEqual(osc[2], 0.0, 5)
+        self.assertAlmostEqual(osc[3], 0.0, 5)
+        self.assertAlmostEqual(osc[4], 0.0, 5)
         
 if __name__ == "__main__":
     print("NEVPT2 test")

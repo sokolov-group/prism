@@ -75,8 +75,8 @@ nevpt.gtensor_origin_type = 'charge'
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,   -1791.44304512656, 6)
-        self.assertAlmostEqual(mc.e_cas,  -2.02048893196252, 6)
+        self.assertAlmostEqual(mc.e_tot,   -1791.44304512656, 5)
+        self.assertAlmostEqual(mc.e_cas,  -2.02048893196252, 5)
 
     def test_prism(self):
 

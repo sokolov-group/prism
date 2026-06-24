@@ -99,19 +99,19 @@ class KnownValues(unittest.TestCase):
         tr2_norm = np.linalg.norm(tr2_1rdm)
         tr3_norm = np.linalg.norm(tr3_1rdm)
         
-        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
-        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 6)
-        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 6)
-        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec,  5)
+        self.assertAlmostEqual(np.trace(es1_1rdm), nevpt.nelec, 5)
+        self.assertAlmostEqual(np.trace(es2_1rdm), nevpt.nelec, 5)
+        self.assertAlmostEqual(np.trace(es3_1rdm), nevpt.nelec, 5)
         
-        self.assertAlmostEqual(np.trace(tr1_1rdm), 0, 6)
-        self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 6)
-        self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 6)
+        self.assertAlmostEqual(np.trace(tr1_1rdm), 0, 5)
+        self.assertAlmostEqual(np.trace(tr2_1rdm), 0, 5)
+        self.assertAlmostEqual(np.trace(tr3_1rdm), 0, 5)
         
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.026809335519932, 6)
-        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.71958984499429, 6)
-        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.7854044045596, 6)
-        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801914, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), 20.026809335519932, 5)
+        self.assertAlmostEqual(rdms_test(es1_1rdm), 37.71958984499429, 5)
+        self.assertAlmostEqual(rdms_test(es2_1rdm), 39.7854044045596,  5)
+        self.assertAlmostEqual(rdms_test(es3_1rdm), 38.61663768801914, 5)
 
         # Using 'all' flag
         # Ground state

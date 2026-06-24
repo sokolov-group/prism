@@ -82,8 +82,6 @@ class NEVPT:
         self.shift_type_0p = None                 # Level shift type for [0']: imaginary, DSRG
         self.shift_epsilon = 0.01                 # Level shift value (in Hartree)
 
-        self.S12 = lambda:None                    # Matrices for orthogonalization of excitation spaces
-        
         self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk   
         self.e_tot = None                         # Total energies
         self.e_corr = None                        # Correlation energies
@@ -100,16 +98,58 @@ class NEVPT:
         self.t1 = None
         self.t1_0 = None 
         self.keep_amplitudes = True
+        self.cutoff_intruder = 0.05
 
         # Compute correlated RDMs
         self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
 
         # For SOC
         self.soc = None                            # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+
+
+        # For g-tensor
         self.gtensor = False                       # Enable calculating g-tensors (requires soc)
         self.gtensor_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)
         self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
+
+        # For magnetic susceptibility
+        self.mag_av = False
+        self.sus_av = False
+        self.mag_vec = False
+        self.sus_tensor = False
+
+        self.step_h_s = 0.001 #Magnetic field step size used for numerical differentiation (Unit:T)
+
+        ###Powder magnetization
+        Bs_list = []
+        for i in range(15):
+            H = i * 0.5
+            Bs_list.append(H)
+
+        self.Bs_powder_M = Bs_list 
+        self.T_powder_M = [1.8]
+
+        ###Powder susceptibility
+        T_list = []
+        for i in range(21):
+            T = 14.75 * i + 5
+            T_list.append(T)
+
+        self.T_powder_chi = T_list
+        self.Bs_powder_chi = [0.1]
+
+        ###Vector magnetization
+        self.B_vec_M = [0,0,1]
+        self.Bs_vec_M = Bs_list 
+        self.T_vec_M = [1.8]
+
+        ###Tensor  susceptibility
+        self.B_vec_chi = [0,0,1]
+        self.Bs_vec_chi = [0.1]
+        self.T_vec_chi = [5,100,200,250]
+
+
 
     def _make_method_instance(self):
 

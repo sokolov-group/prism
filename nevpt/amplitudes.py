@@ -69,7 +69,7 @@ def compute_t1_0(nevpt):
         temp = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
         temp = temp.reshape((ncore, ncore, -1, nextern))
         temp = temp**(-1)
-
+        
         # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
         temp *= - einsum('IAJB->IJAB', v_cece, optimize = einsum_type)
 
@@ -85,12 +85,18 @@ def compute_t1_0(nevpt):
     nevpt.log.info("Correlation energy [0]:                      %20.12f" % e_0)
     nevpt.log.timer("computing T[0]^(1) amplitudes", *cput0)
 
+    if e_0 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [0] !!!!\n\n")
+
     return e_0, t1_ccee
 
 def compute_t1_p1(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1]^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_p1"):
+        nevpt.den_t1_p1 = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -116,9 +122,6 @@ def compute_t1_p1(nevpt, rdms):
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     S_p1_12_inv_act = overlap.compute_S12_p1(nevpt, rdms)
 
-    if hasattr(nevpt.S12, "cca"):
-        nevpt.S12.cca = S_p1_12_inv_act.copy()
-
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_p1_12_inv_act.T, K_ac, S_p1_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
@@ -135,6 +138,12 @@ def compute_t1_p1(nevpt, rdms):
 
     d_apij = (d_ap[:,None] - d_ij).reshape(nextern, evals.shape[0], ncore, ncore)
     d_apij = d_apij**(-1)
+
+    # for intuder state details
+    if d_apij.size == 0:
+        nevpt.den_t1_p1.append(None)
+    else:
+        nevpt.den_t1_p1.append(np.min(np.abs(d_apij**(-1))))
 
     # Compute T[+1] amplitudes
     S_12_V_p1 = einsum("IJAX,Xm->IJAm", V1_p1, S_p1_12_inv_act, optimize = einsum_type)
@@ -157,6 +166,10 @@ def compute_t1_p1(nevpt, rdms):
     nevpt.log.info("Correlation energy [+1]:                     %20.12f" % e_p1)
     nevpt.log.timer("computing T[+1]^(1) amplitudes", *cput0)
 
+
+    if e_p1 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+1] !!!!\n\n")
+
     return e_p1, t1_ccae
 
 def compute_t1_m1(nevpt, rdms):
@@ -164,6 +177,9 @@ def compute_t1_m1(nevpt, rdms):
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-1]^(1) amplitudes...")
 
+    if not hasattr(nevpt, "den_t1_m1"):
+        nevpt.den_t1_m1 = []
+    
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
@@ -194,9 +210,6 @@ def compute_t1_m1(nevpt, rdms):
     # Compute S^{-1/2} matrix: Orthogonalization and overlap truncation only in the active space
     S_m1_12_inv_act = overlap.compute_S12_m1(nevpt, rdms)
 
-    if hasattr(nevpt.S12, "cae"):
-        nevpt.S12.cae = S_m1_12_inv_act.copy()
-
     # Compute K^{-1} matrix
     SKS = reduce(np.dot, (S_m1_12_inv_act.T, K_ca, S_m1_12_inv_act))
     evals, evecs = np.linalg.eigh(SKS)
@@ -218,6 +231,12 @@ def compute_t1_m1(nevpt, rdms):
         d_ab = (e_extern[s_chunk:f_chunk][:,None] + e_extern).reshape(-1)
         d_abix = (d_ab[:,None] - d_ix).reshape(-1, nextern, ncore, evals.shape[0])
         d_abix = d_abix**(-1)
+
+        # for intuder state details
+        if d_abix.size == 0:
+            nevpt.den_t1_m1.append(None)
+        else:
+            nevpt.den_t1_m1.append(np.min(np.abs(d_abix**(-1))))
 
         ## V matrix: - < Psi_0 | a^{\dag}_I a^{\dag}_X a_B a_A V | Psi_0>
         V1_m1 =- 1/2 * einsum('IAxB,Xx->IXAB', v_ceae[:,s_chunk:f_chunk], rdm_ca, optimize = einsum_type)
@@ -245,12 +264,18 @@ def compute_t1_m1(nevpt, rdms):
     nevpt.log.info("Correlation energy [-1]:                     %20.12f" % e_m1)
     nevpt.log.timer("computing T[-1]^(1) amplitudes", *cput0)
 
+    if e_m1 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-1] !!!!\n\n")
+
     return e_m1, t1_caee
 
 def compute_t1_p2(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+2]^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_p2"):
+        nevpt.den_t1_p2 = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -295,6 +320,12 @@ def compute_t1_p2(nevpt, rdms):
     d_pij = (evals[:,None] - d_ij).reshape(evals.shape[0], ncore, ncore)
     d_pij = d_pij**(-1)
 
+    # for intuder state details
+    if d_pij.size == 0:
+        nevpt.den_t1_p2.append(None)
+    else:
+        nevpt.den_t1_p2.append(np.min(np.abs(d_pij**(-1))))
+    
     # Compute T[+2] amplitudes
     S_12_V_p2 = einsum("IJX,Xm->IJm", V1_p2, S_p2_12_inv_act, optimize = einsum_type)
     S_12_V_p2 = einsum("mp,IJm->IJp", evecs, S_12_V_p2, optimize = einsum_type)
@@ -318,12 +349,18 @@ def compute_t1_p2(nevpt, rdms):
     nevpt.log.info("Correlation energy [+2]:                     %20.12f" % e_p2)
     nevpt.log.timer("computing T[+2]^(1) amplitudes", *cput0)
 
+    if e_p2 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+2] !!!!\n\n")
+
     return e_p2, t1_ccaa
 
 def compute_t1_m2(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-2]^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_m2"):
+        nevpt.den_t1_m2 = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -372,6 +409,12 @@ def compute_t1_m2(nevpt, rdms):
         d_abp = (d_ab[:,None] + evals).reshape(-1, nextern, evals.shape[0])
         d_abp = d_abp**(-1)
 
+        # for intuder state details
+        if d_abp.size == 0:
+            nevpt.den_t1_m2.append(None)
+        else:
+            nevpt.den_t1_m2.append(np.min(np.abs(d_abp**(-1))))
+
         ## V tensor: - < Psi_0 | a^{\dag}_X a^{\dag}_Y a_B a_A V | Psi_0>
         V1_m2 =- 1/3 * einsum('xAyB,XYxy->XYAB', v_aeae, rdm_ccaa, optimize = einsum_type)
         V1_m2 -= 1/6 * einsum('xAyB,XYyx->XYAB', v_aeae, rdm_ccaa, optimize = einsum_type)
@@ -400,12 +443,18 @@ def compute_t1_m2(nevpt, rdms):
     nevpt.log.info("Correlation energy [-2]:                     %20.12f" % e_m2)
     nevpt.log.timer("computing T[-2]^(1) amplitudes", *cput0)
 
+    if e_m2 > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-2] !!!!\n\n")
+    
     return e_m2, t1_aaee
 
 def compute_t1_0p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[0']^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_0p"):
+        nevpt.den_t1_0p = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -488,6 +537,12 @@ def compute_t1_0p(nevpt, rdms):
     d_aip = (d_ai[:,None] + evals).reshape(nextern, ncore, -1)
     d_aip = d_aip**(-1)
 
+    # for intuder state details
+    if d_aip.size == 0:
+        nevpt.den_t1_0p.append(None)
+    else:
+        nevpt.den_t1_0p.append(np.min(np.abs(d_aip**(-1))))
+
     # Compute T[0'] amplitudes
     S_12_V_0p = einsum("iaP,Pm->iam", V_0p, S_0p_12_inv_act, optimize = einsum_type)
     S_12_V_0p = einsum("mp,iam->iap", evecs, S_12_V_0p, optimize = einsum_type)
@@ -528,12 +583,18 @@ def compute_t1_0p(nevpt, rdms):
     nevpt.log.info("Correlation energy [0']:                     %20.12f" % e_0p)
     nevpt.log.timer("computing T[0']^(1) amplitudes", *cput0)
 
+    if e_0p > 0.0:
+        nevpt.tlog.info("\n\nWARNING: Positive correlation energy detected in class [0'] !!!!\n\n")
+    
     return e_0p, t1_ce, t1_caea, t1_caae
 
 def compute_t1_p1p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1']^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_p1p"):
+        nevpt.den_t1_p1p = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -642,6 +703,12 @@ def compute_t1_p1p(nevpt, rdms):
     d_ip = (-e_core[:,None] + evals)
     d_ip = d_ip**(-1)
 
+    # for intuder state details
+    if d_ip.size == 0:
+        nevpt.den_t1_p1p.append(None)
+    else:
+        nevpt.den_t1_p1p.append(np.min(np.abs(d_ip**(-1))))
+
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
@@ -688,12 +755,18 @@ def compute_t1_p1p(nevpt, rdms):
     nevpt.log.info("Correlation energy [+1']:                    %20.12f" % e_p1p)
     nevpt.log.timer("computing T[+1']^(1) amplitudes", *cput0)
 
+    if e_p1p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+1'] !!!!\n\n")
+    
     return e_p1p, t1_ca, t1_caaa
 
 def compute_t1_m1p(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-1']^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_m1p"):
+        nevpt.den_t1_m1p = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -789,6 +862,12 @@ def compute_t1_m1p(nevpt, rdms):
     d_pa = (evals[:,None] + e_extern)
     d_pa = d_pa**(-1)
 
+    # for intuder state details
+    if d_pa.size == 0:
+        nevpt.den_t1_m1p.append(None)
+    else:
+        nevpt.den_t1_m1p.append(np.min(np.abs(d_pa**(-1))))
+
     # Compute T[-1'] amplitudes
     S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
     S_12_V_m1p = einsum("mp,ma->pa", evecs, S_12_V_m1p, optimize = einsum_type)
@@ -823,12 +902,18 @@ def compute_t1_m1p(nevpt, rdms):
     nevpt.log.info("Correlation energy [-1']:                    %20.12f" % e_m1p)
     nevpt.log.timer("computing T[-1']^(1) amplitudes", *cput0)
 
+    if e_m1p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-1'] !!!!\n\n")
+    
     return e_m1p, t1_ae, t1_aaae
 
 def compute_t1_0p_no_singles(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[0']^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_0p"):
+        nevpt.den_t1_0p = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -907,7 +992,13 @@ def compute_t1_0p_no_singles(nevpt, rdms):
         d_aip = add_level_shift(nevpt, nevpt.shift_type_0p, d_aip)
     else:
         d_aip = d_aip**(-1)
-        
+
+    # for intuder state details
+    if d_aip.size == 0:
+        nevpt.den_t1_0p.append(None)
+    else:
+        nevpt.den_t1_0p.append(np.min(np.abs(d_aip**(-1))))
+
     # Compute T[0'] amplitudes
     S_12_V_0p = einsum("iaP,Pm->iam", V_0p, S_0p_12_inv_act, optimize = einsum_type)
     S_12_V_0p = einsum("mp,iam->iap", evecs, S_12_V_0p, optimize = einsum_type)
@@ -943,12 +1034,18 @@ def compute_t1_0p_no_singles(nevpt, rdms):
     nevpt.log.info("Correlation energy [0']:                     %20.12f" % e_0p)
     nevpt.log.timer("computing T[0']^(1) amplitudes", *cput0)
 
+    if e_0p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [0'] !!!!\n\n")
+    
     return e_0p, t1_caea, t1_caae
 
 def compute_t1_p1p_no_singles(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1']^(1) amplitudes...")
+       
+    if not hasattr(nevpt, "den_t1_p1p"):
+        nevpt.den_t1_p1p = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -1045,6 +1142,12 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
         d_ip = add_level_shift(nevpt, nevpt.shift_type_p1p, d_ip)
     else:
         d_ip = d_ip**(-1)
+
+    # for intuder state details
+    if d_ip.size == 0:
+        nevpt.den_t1_p1p.append(None)
+    else:
+        nevpt.den_t1_p1p.append(np.min(np.abs(d_ip**(-1))))
         
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
@@ -1085,12 +1188,18 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
     nevpt.log.info("Correlation energy [+1']:                    %20.12f" % e_p1p)
     nevpt.log.timer("computing T[+1']^(1) amplitudes", *cput0)
 
+    if e_p1p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+1'] !!!!\n\n")
+    
     return e_p1p, t1_caaa
 
 def compute_t1_m1p_no_singles(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[-1']^(1) amplitudes...")
+
+    if not hasattr(nevpt, "den_t1_m1p"):
+        nevpt.den_t1_m1p = []
 
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
@@ -1178,6 +1287,12 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
     else:
         d_pa = d_pa**(-1)
 
+    # for intuder state details
+    if d_pa.size == 0:
+        nevpt.den_t1_m1p.append(None)
+    else:
+        nevpt.den_t1_m1p.append(np.min(np.abs(d_pa**(-1))))
+
     # Compute T[-1'] amplitudes
     S_12_V_m1p = einsum("Pa,Pm->ma", V_m1p, S_m1p_12_inv_act, optimize = einsum_type)
     S_12_V_m1p = einsum("mp,ma->pa", evecs, S_12_V_m1p, optimize = einsum_type)
@@ -1207,6 +1322,9 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
     nevpt.log.extra("Norm of T[-1']^(1):                          %20.12f" % (np.linalg.norm(t1_aaae)))
     nevpt.log.info("Correlation energy [-1']:                    %20.12f" % e_m1p)
     nevpt.log.timer("computing T[-1']^(1) amplitudes", *cput0)
+
+    if e_m1p > 0.0:
+        nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-1'] !!!!\n\n")
 
     return e_m1p, t1_aaae
         
