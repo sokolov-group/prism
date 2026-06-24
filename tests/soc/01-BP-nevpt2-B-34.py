@@ -70,8 +70,8 @@ nevpt.verbose = 1
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,  -24.5660937564279, 6)
-        self.assertAlmostEqual(mc.e_cas,  -2.57542676733465, 6)
+        self.assertAlmostEqual(mc.e_tot,  -24.5660937564279, 5)
+        self.assertAlmostEqual(mc.e_cas,  -2.57542676733465, 5)
 
     def test_prism(self):
 

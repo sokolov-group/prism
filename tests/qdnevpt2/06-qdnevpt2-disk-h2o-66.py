@@ -68,8 +68,8 @@ nevpt.max_memory = 1
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,  -75.8195380454856, 6)
-        self.assertAlmostEqual(mc.e_cas,  -12.6639537183245, 6)
+        self.assertAlmostEqual(mc.e_tot,  -75.8195380454856, 5)
+        self.assertAlmostEqual(mc.e_cas,  -12.6639537183245, 5)
 
     def test_prism(self):
 

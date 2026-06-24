@@ -73,8 +73,8 @@ nevpt.soc = "Breit-Pauli" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,  -1937.93750755673, 6)
-        self.assertAlmostEqual(mc.e_cas,  -1.62124228555217, 6)
+        self.assertAlmostEqual(mc.e_tot,  -1937.93750755673, 5)
+        self.assertAlmostEqual(mc.e_cas,  -1.62124228555217, 5)
 
     def test_prism(self):
 

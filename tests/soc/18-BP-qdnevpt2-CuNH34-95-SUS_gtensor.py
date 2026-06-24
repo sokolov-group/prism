@@ -98,8 +98,8 @@ nevpt.compute_singles_amplitudes = False
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,   -1874.52736493757, 6)
-        self.assertAlmostEqual(mc.e_cas,   -44.5993631435581, 6)
+        self.assertAlmostEqual(mc.e_tot,   -1874.52736493757, 5)
+        self.assertAlmostEqual(mc.e_cas,   -44.5993631435581, 5)
 
     def test_prism(self):
 

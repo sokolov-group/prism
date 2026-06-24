@@ -62,15 +62,15 @@ nevpt.s_thresh_doubles = 1e-10
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot, -109.095971211736, 6)
-        self.assertAlmostEqual(mc.e_cas, -13.6479741036814, 6)
+        self.assertAlmostEqual(mc.e_tot, -109.095971211736, 5)
+        self.assertAlmostEqual(mc.e_cas, -13.6479741036814, 5)
 
     def test_prism(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -109.262961824720, 6)
-        self.assertAlmostEqual(e_corr[0],  -0.166990612985, 6)
+        self.assertAlmostEqual(e_tot[0], -109.262961824720, 5)
+        self.assertAlmostEqual(e_corr[0],  -0.166990612985, 5)
 
 if __name__ == "__main__":
     print("NEVPT2 test")

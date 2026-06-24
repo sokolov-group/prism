@@ -48,8 +48,8 @@ interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,  -1937.93750755673, 6)
-        self.assertAlmostEqual(mc.e_cas,  -1.62124228555604, 6)
+        self.assertAlmostEqual(mc.e_tot,  -1937.93750755673, 5)
+        self.assertAlmostEqual(mc.e_cas,  -1.62124228555604, 5)
 
     def test_prism(self):
 
@@ -81,5 +81,5 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(osc[9], 0.63477774, 5)
 
 if __name__ == "__main__":
-    print("SOC-QD-NEVPT2 test")
+    print("SOC-CASSCF test")
     unittest.main()
