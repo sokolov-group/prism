@@ -53,7 +53,7 @@ interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit('cc-pv
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.ncvs = 2
 mr_adc.nroots = 12
-mr_adc.s_thresh_singles = 1e-5
+mr_adc.s_thresh_singles = 1e-6
 mr_adc.s_thresh_doubles = 1e-10
 mr_adc.method_type = "cvs-ip"
 mr_adc.method = "mr-adc(2)"
@@ -75,8 +75,8 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(e[5], 41.3435, 3)
 
         self.assertAlmostEqual(p[0], 1.219608, 2)
-        self.assertAlmostEqual(p[1], 0.000279, 2)
-        self.assertAlmostEqual(p[2], 0.000140, 4)
+        self.assertAlmostEqual(p[1], 0.000140, 4)
+        self.assertAlmostEqual(p[2], 0.000279, 2)
         self.assertAlmostEqual(p[3], 0.000000, 4)
         self.assertAlmostEqual(p[4], 0.013537, 4)
         self.assertAlmostEqual(p[5], 0.000000, 4)
