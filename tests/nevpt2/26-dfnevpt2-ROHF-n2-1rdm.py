@@ -26,20 +26,20 @@ import prism.nevpt
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
-r = 1.098
-
 mol = pyscf.gto.Mole()
-mol.atom = [
-            ['N', (0.0, 0.0, -r/2)],
-            ['N', (0.0, 0.0,  r/2)]]
+mol.atom = '''
+N         0.0000000000    0.0000000000    0.55821
+N         0.0000000000    0.0000000000   -0.55821
+'''
 mol.basis = 'aug-cc-pvdz'
+mol.charge = +1
+mol.spin = 1
 mol.symmetry = True
 mol.build()
 
-# RHF calculation
+# ROHF calculation
 mf = pyscf.scf.RHF(mol)
 mf.conv_tol = 1e-12
-
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
@@ -63,20 +63,21 @@ def rdms_test(dm):
 class KnownValues(unittest.TestCase):
  
     def test_pyscf(self):
-        self.assertAlmostEqual(mf.e_tot, -108.960608507245, 6)
+        self.assertAlmostEqual(mf.e_tot, -108.372304278742, 6)
 
     def test_1rdm(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_corr[0], -0.322130418827, 6)
+        self.assertAlmostEqual(e_corr[0], -0.364252391832, 6)
+        r2_val = 32.61790939625783
         
         # Using L,R
         # Ground state
         gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
 
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 39.36588252621311, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), r2_val, 6)
 
         # Using 'all' flag
         # Ground state
@@ -86,7 +87,7 @@ class KnownValues(unittest.TestCase):
         gs_1rdm = rdms[0,0]
         
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 39.36588252621311, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), r2_val, 6)
         
         # Using ss flag
         rdms = nevpt.make_rdm1(type = 'ss')
@@ -95,7 +96,7 @@ class KnownValues(unittest.TestCase):
         gs_1rdm = rdms[0]
 
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
-        self.assertAlmostEqual(rdms_test(gs_1rdm), 39.36588252621311, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), r2_val, 6)
  
 if __name__ == "__main__":
     print("NEVPT2 test")
