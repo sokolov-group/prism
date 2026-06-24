@@ -18,51 +18,54 @@
 
 import unittest
 import numpy as np
-import math
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
 import prism.interface
-import prism.mr_adc
+import prism.nevpt
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
-r = 0.96
-x = r * math.sin(104.5 * math.pi/(2 * 180.0))
-y = r * math.cos(104.5 * math.pi/(2 * 180.0))
+r = 1.098
 
 mol = pyscf.gto.Mole()
 mol.atom = [
-            ['O', (0.0, 0.0, 0.0)],
-            ['H', (0.0,  -x,   y)],
-            ['H', (0.0,   x,   y)]]
+            ['N', (0.0, 0.0, -r/2)],
+            ['N', (0.0, 0.0,  r/2)]]
 mol.basis = 'aug-cc-pvdz'
 mol.symmetry = True
 mol.build()
-mol.verbose = 4
 
-# RHF calculation
+# ROHF calculation
 mf = pyscf.scf.ROHF(mol)
 mf.conv_tol = 1e-12
 
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
-# CASSCF calculation
-mc = pyscf.mcscf.CASSCF(mf, 4, 0)
-mc.conv_tol = 1e-11
-mc.conv_tol_grad = 1e-6
 
-emc = mc.mc1step()[0]
-print("CASSCF energy: %f\n" % emc)
+# NEVPT2 calculation
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit('aug-cc-pvdz-ri')
+nevpt = prism.nevpt.NEVPT(interface)
+nevpt.compute_singles_amplitudes = False
+nevpt.semi_internal_projector = "gs"
+nevpt.s_thresh_singles = 1e-6
+nevpt.s_thresh_doubles = 1e-10
 
-# MR-ADC calculation
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-mr_adc = prism.mr_adc.MRADC(interface)
-mr_adc.ncvs = 1
-mr_adc.nroots = 4
-mr_adc.s_thresh_singles = 1e-6
-mr_adc.s_thresh_doubles = 1e-10
-mr_adc.method_type = "cvs-ip"
-mr_adc.method = "mr-adc(2)"
-mr_adc.kernel()
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mf.e_tot, -108.960608507245, 6)
+
+    def test_prism(self):
+
+        e_tot, e_corr, osc = nevpt.kernel()
+
+        self.assertAlmostEqual(e_tot[0], -109.282738926072, 6)
+        self.assertAlmostEqual(e_corr[0],  -0.322130418827, 6)
+
+if __name__ == "__main__":
+    print("NEVPT2 test")
+    unittest.main()
+
+

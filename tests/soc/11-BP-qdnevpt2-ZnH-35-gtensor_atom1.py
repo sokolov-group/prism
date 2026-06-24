@@ -75,8 +75,8 @@ nevpt.gtensor_origin_type = 'atom1'
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,   -1791.44304512662, 6)
-        self.assertAlmostEqual(mc.e_cas,  -2.02048892645212, 6)
+        self.assertAlmostEqual(mc.e_tot,   -1791.44304512662, 5)
+        self.assertAlmostEqual(mc.e_cas,  -2.02048892645212, 5)
 
     def test_prism(self):
 

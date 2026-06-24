@@ -15,7 +15,7 @@
 #
 # Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Carlos E. V. de Moura <carlosevmoura@gmail.com>
-#          James D. Serna <jserna456@gmail.com>
+#
 
 import unittest
 import numpy as np
@@ -28,70 +28,47 @@ import prism.nevpt
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
-r = 1.1508
+r = 0.96
+x = r * math.sin(104.5 * math.pi/(2 * 180.0))
+y = r * math.cos(104.5 * math.pi/(2 * 180.0))
 
 mol = pyscf.gto.Mole()
 mol.atom = [
-            ['N', (0.0, 0.0, 0.0)],
-            ['O', (0.0, 0.0,   r)]]
+            ['O', (0.0, 0.0, 0.0)],
+            ['H', (0.0,  -x,   y)],
+            ['H', (0.0,   x,   y)]]
 mol.basis = 'cc-pvdz'
-mol.symmetry = False
-mol.spin = 0
-mol.charge = +1
+mol.symmetry = True
+mol.spin = 2
 mol.build()
 
 # ROHF calculation
 mf = pyscf.scf.ROHF(mol)
-mf.max_cycle = 250
 mf.conv_tol = 1e-12
 
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
-mol.spin = 1
-mol.charge = 0
-mol.build()
-
-# CASSCF calculation
-n_states = 7
-weights = np.ones(n_states)/n_states
-mc = pyscf.mcscf.CASSCF(mf, 6, 7).state_average_(weights)
-mc.conv_tol = 1e-11
-mc.conv_tol_grad = 1e-6
-emc = mc.mc1step()[0]
 
 # NEVPT2 calculation
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum').density_fit('cc-pvdz-ri')
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
-nevpt.s_thresh_singles = 1e-10
+nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-10
 
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot, -129.062246095547, 6)
-        self.assertAlmostEqual(mc.e_cas, -15.524133203025, 6)
+        self.assertAlmostEqual(mf.e_tot,  -75.775513684361, 5)
 
     def test_prism(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -129.578545596538, 6)
-        self.assertAlmostEqual(e_tot[1], -129.578545596539, 6)
-        self.assertAlmostEqual(e_tot[2], -129.327646000008, 6)
-        self.assertAlmostEqual(e_tot[3], -129.327646000008, 6)
-        self.assertAlmostEqual(e_tot[4], -129.291675548945, 6)
-        self.assertAlmostEqual(e_tot[5], -129.291675548946, 6)
-        self.assertAlmostEqual(e_tot[6], -129.334367959403, 6)
-        
-        self.assertAlmostEqual(osc[0], 0.0, 6)
-        self.assertAlmostEqual(osc[1], 0.0, 6)
-        self.assertAlmostEqual(osc[2], 0.0, 6)
-        self.assertAlmostEqual(osc[3], 0.0, 6)
-        self.assertAlmostEqual(osc[4], 0.00138312, 6)
-        self.assertAlmostEqual(osc[5], 0.00138312, 6)
+        self.assertAlmostEqual(e_tot[0], -75.948273728576, 6)
+        self.assertAlmostEqual(e_corr[0], -0.172760044215, 6)
 
 if __name__ == "__main__":
     print("NEVPT2 test")

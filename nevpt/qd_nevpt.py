@@ -45,7 +45,7 @@ def compute_energy(method):
     # Update class objects
     method.e_tot = e_tot
     method.e_corr = e_corr
-    method.h_evec = h_evec
+    method.h_evec = h_evec.copy()
 
     # Determine spin multiplicity for the QDNEVPT states
     method.spin_mult = determine_spin_mult(method)
@@ -250,6 +250,9 @@ def diagonalize_eff_H(method):
 
             h_eff[I, J] = H_IJ
             h_eff[J, I] = H_IJ
+   
+    # print intruder states for qd-nevpt2
+    check_intruder_states(method, dim, h_eff, t1)
 
     h_eval, h_evec = np.linalg.eigh(h_eff)
 
@@ -297,7 +300,7 @@ def compute_properties(method):
             method.properties["osc_strengths_full"] = osc_str_full
 
     # Compute magnetic properties
-    if method.gtensor and method.soc:
+    if (method.gtensor or method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor) and method.soc:
         from prism.nevpt import soc
         # Call make_rdm1 function directly to bypass including SOC effects
         rdm_sf = make_rdm1(method)
@@ -494,3 +497,194 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         
     return rdm_final
 
+  
+def check_intruder_states(method, dim, h_eff, t1):
+
+    #Compute the coupling elements of h_eff > %cutoff_intruder Eh give warnings
+    interface = method.interface
+    cutoff_intruder = method.cutoff_intruder
+
+    data          = []
+    coupling_data = []
+
+    I, J = np.tril_indices(dim, k=-1)
+    mask = abs(h_eff[I, J]) > cutoff_intruder
+    
+    vals = h_eff[I, J]
+
+    if np.any(mask):
+
+        interface.log.info("\nWARNING: Large coupling detected (>%f Eh), possible intruder state!!!!!!"  %(cutoff_intruder))
+        
+        header_fmt = "{:<8} " + "{:>8} " * 13
+
+        row_fmt = "{:<8} " + "{:>8.4f} " * 13
+
+        coupling_fmt = "{:<12} {:>12.8f}"
+
+        # print data for coupling elements of H_eff
+        for i, j, val in zip(I[mask], J[mask], vals[mask]):
+            coupling_data.append(
+                coupling_fmt.format(
+                    f"({i+1},{j+1})",
+                    val
+                )
+            )
+
+        states_with_large_coupling = np.unique(np.concatenate((I[mask], J[mask])))
+
+        for state in states_with_large_coupling:
+
+            # smallest denominators
+            tp1  = method.den_t1_p1[state]
+            tp2  = method.den_t1_p2[state]
+            tp3  = method.den_t1_0p[state]
+            tp4  = method.den_t1_p1p[state]
+            tp5  = method.den_t1_m1p[state]
+            tp6  = method.den_t1_m1[state]
+            tp7  = method.den_t1_m2[state]
+
+            # amplitudes norms
+            t1_ccae = np.linalg.norm(t1[state].ccae)
+            t1_caee = np.linalg.norm(t1[state].caee)
+            t1_ccaa = np.linalg.norm(t1[state].ccaa)
+            t1_aaee = np.linalg.norm(t1[state].aaee)
+            t1_caea = np.linalg.norm(t1[state].caea)
+            t1_caaa = np.linalg.norm(t1[state].caaa)
+            t1_aaae = np.linalg.norm(t1[state].aaae)
+
+            data.append(
+                row_fmt.format(
+                    " %d" % (state + 1),
+                    tp1,
+                    tp6,
+                    tp2,
+                    tp7,
+                    tp3,
+                    tp4,
+                    tp5,
+                    t1_ccae,
+                    t1_caee,
+                    t1_ccaa,
+                    t1_aaee,
+                    t1_caea,
+                    t1_caaa,
+                    t1_aaae
+             )
+            )
+
+    # print the coupling element data
+    if coupling_data and method.verbose >= 4:
+        
+        interface.log.info("\nCoupling Elements of Effective Hamiltonian")
+        interface.log.info("-" * 30)
+        interface.log.info("{:<12} {:>12}".format("(I,J)", "H_eff"))
+        interface.log.info("-" * 30)
+
+        for row in coupling_data:
+            interface.log.info(row)
+
+        interface.log.info("-" * 30)
+    
+    # print the results for amplitudes and denominators
+    if data and method.verbose >= 4:
+
+        separator = "-" * 130
+        
+        interface.log.info("\nIntruder States and Corresponding Denominators and Amplitude Norms for a Specific Class")
+
+        interface.log.info(separator)
+
+        interface.log.info(
+            header_fmt.format(
+                "State",
+                "deno[+1]",
+                "deno[-1]",
+                "deno[+2]",
+                "deno[-2]",
+                "deno[0']",
+                "deno[+1']",
+                "deno[-1']", 
+                "amp[+1]", 
+                "amp[-1]",
+                "amp[+2]",
+                "amp[-2]",
+                "amp[0']",   
+                "amp[+1']",
+                "amp[-1']",
+            )
+        )
+
+        interface.log.info(separator)
+
+        for row in data:
+            interface.log.info(row)
+
+        interface.log.info(separator)
+
+    return
+
+  
+def analyze_eigenvectors(method, weight_cutoff=0.01):
+
+    from pyscf.fci import cistring
+
+    ncore = method.ncore
+    ncas = method.ncas
+    n_states = method.h_evec.shape[1]
+    h_evec = method.h_evec
+    nelecas = method.ref_nelecas[0]
+    n_alpha_elec, n_beta_elec = nelecas[0], nelecas[1]
+
+    # Generate physical orbital occupations for each string address
+    alpha_strings = cistring.gen_occslst(range(ncas), n_alpha_elec)
+    beta_strings = cistring.gen_occslst(range(ncas), n_beta_elec)
+
+    # Rotate the CASSCF wavefunctions into the QD-NEVPT2 eigenbasis
+    ref_wfn = np.array(method.ref_wfn)
+    n_alpha_str, n_beta_str = ref_wfn.shape[1], ref_wfn.shape[2]
+    ref_wfn_flat = ref_wfn.reshape(ref_wfn.shape[0], -1)
+
+    qd_ci_flat = h_evec.T @ ref_wfn_flat
+    qd_ci = qd_ci_flat.reshape(n_states, n_alpha_str, n_beta_str)
+
+    mo = method.mo
+    ovlp = method.ovlp
+
+    method.log.info("\n ** QD-NEVPT2 Eigenvector Analysis **\n")
+    for n in range(n_states):
+        method.log.info("  State %d:" % (n + 1))
+
+        method.log.info("    Dominant Configurations:")
+        weights_2d = qd_ci[n] ** 2
+        for i_a in range(n_alpha_str):
+            for i_b in range(n_beta_str):
+                weight = weights_2d[i_a, i_b]
+                if weight > weight_cutoff:
+                    coeff = qd_ci[n, i_a, i_b]
+                    alpha_occs = "[%s]" % " ".join(str(int(x)) for x in alpha_strings[i_a])
+                    beta_occs  = "[%s]" % " ".join(str(int(x)) for x in beta_strings[i_b])
+                    method.log.info("      [alpha occ] %s  [beta occ] %s  coeff: %12.6f  weight: %10.6f"
+                                    % (alpha_occs, beta_occs, coeff, weight))
+
+        # Compute Natural Occupations by diagonalizing the 1RDM
+        rdm_mo = make_rdm1(method, L=n, R=n)
+        nat_occ_global, nat_orb_global = np.linalg.eigh(rdm_mo)
+        active_weights = np.sum(nat_orb_global[ncore:ncore+ncas, :]**2, axis=0)
+        active_no_indices = np.argsort(active_weights)[-ncas:]
+        active_nat_occ = np.sort(nat_occ_global[active_no_indices])[::-1]
+        method.log.info("    Natural Occupations (active space): %s" % np.array2string(active_nat_occ, precision=4, suppress_small=True))
+
+        # For open-shell systems, compute atomic Mulliken spin populations in the AO basis
+        if n_alpha_elec != n_beta_elec:
+            rdm1s = make_rdm1s(method, L=n, R=n)
+            d_ao_a = mo @ rdm1s[0] @ mo.T
+            d_ao_b = mo @ rdm1s[1] @ mo.T
+            spin_dm_ao = d_ao_a - d_ao_b
+            spin_pop_ao = np.einsum('ij,ji->i', spin_dm_ao, ovlp)
+            mol = method.interface.mol
+            method.log.info("    Mulliken Spin Populations:")
+            for ia in range(mol.natm):
+                ao_start, ao_stop = mol.aoslice_by_atom()[ia][2], mol.aoslice_by_atom()[ia][3]
+                spin_atom = np.sum(spin_pop_ao[ao_start:ao_stop])
+                method.log.info("      Atom %d %-4s  spin pop: %10.6f" % (ia, mol.atom_symbol(ia), spin_atom))

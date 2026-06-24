@@ -18,7 +18,7 @@
 #                  Ilia M. Mazin <ilia.mazin@gmail.com>
 #              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #                 James D. Serna <jserna456@gmail.com>
-
+#                Haden Dickerson <haden.dickerson423@outlook.com>
 import os
 import tempfile
 import numpy as np
@@ -48,7 +48,7 @@ class PYSCF:
         # General info
         self.mol = mf.mol
         self.nelec = mf.mol.nelectron
-        self.enuc = mf.mol.energy_nuc()
+        self.enuc = mf.energy_nuc()
         self.e_scf = mf.e_tot
         self.mf = mf
         self.mc = mc
@@ -59,6 +59,12 @@ class PYSCF:
         # Constants
         self.light_speed = lib.parameters.LIGHT_SPEED
         self.g_free_elec = 2.002319
+
+        self.kb = 1.3806483e-23 / 4.3597447222060e-18 #(Eh/K)
+        self.mu_B_Eh =  5.7883817982e-5 / self.hartree_to_ev  #Bohr magneton(Eh/T)
+        self.mu_B_erg = 9.27401549e-21
+        self.T_to_G = 10000
+        self.NA = 6.0221367e23 # Avogadro constant
 
         log.info("Collecting reference wavefunction information...")
 
@@ -220,6 +226,10 @@ class PYSCF:
         # SOC params:
         self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.unc = None
+
+        # For powder properties
+        import pyscf.dft.LebedevGrid
+        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
 
         # Basis set uncontraction objects: xmol, contraction coefficients.
         # Use x2c_setup to obtain self.xmol and self.contr_coeff 
@@ -656,4 +666,16 @@ class PYSCF:
         rdm4 = np.ascontiguousarray(rdm4.transpose(0, 2, 4, 6, 1, 3, 5, 7))
 
         return rdm1, rdm2, rdm3, rdm4
+
+    def run_soc(self, soc_type=None):
+        
+        self.x2c_setup()
+
+        if soc_type:
+            self.soc = soc_type
+
+        from prism.libsoc import casscf_compute
+        en_soc, osc_str_soc = casscf_compute.compute_somf_soc(self) 
+
+        return  en_soc, osc_str_soc
 

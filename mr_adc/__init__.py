@@ -16,7 +16,7 @@
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Donna Odhiambo <donna.odhiambo@proton.me>
-#
+#          Haden Dickerson <haden.dickerson423@outlook.com>
 
 from prism.mr_adc import compute
 from prism.mr_adc import amplitudes
@@ -34,7 +34,7 @@ class MRADC:
         log.info("\nInitializing MR-ADC...")
 
         if interface.reference == "scf":
-            log.info("SCF reference given, defaulting to SR-ADC calculation")
+            log.info("SCF reference given, performing SR-ADC calculation")
 
         elif interface.reference not in ("casscf", "casci"):
             msg = "The MR-ADC code does not support use of a %s reference" % interface.reference
@@ -56,6 +56,7 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
+       
 
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
@@ -75,7 +76,6 @@ class MRADC:
         # MR-ADC specific variables
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
         self.method_type = "cvs-ip"     # Possible method types: cvs-ip
-        # self.max_t_order = 1          # Maximum order of t amplitudes to compute
         self.ncasci = 6                 # Number of CASCI roots requested
         self.nroots = 6                 # Number of MR-ADC roots requested
         self.max_space = 100            # Maximum size of the Davidson trial space
@@ -95,7 +95,7 @@ class MRADC:
         self.compute_ntos = False       # Option for NTO computation
         self.compute_dyson = False      # Option for Dyson orbital computation
 
-        self.spec_factor_print_tol = 0.01 # Print tolerance for the spectroscopic factor analysis
+        self.analyze_print_tol = 0.01   # Print tolerance for analyses
 
         self.e_cas_ci = None            # Active-space energies of CASCI states
         self.wfn_casci = None           # Active-space wavefunctions of CASCI states
@@ -207,3 +207,7 @@ class CVSIPMRADC(MRADC):
 
     def analyze_spec_factor(self):
         return cvs_ip.analyze_spec_factor(self)
+
+    def analyze_eigenvector(self):
+        return cvs_ip.analyze_eigenvector(self)
+

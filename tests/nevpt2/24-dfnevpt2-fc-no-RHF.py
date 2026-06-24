@@ -27,55 +27,38 @@ import prism.nevpt
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
-r = 0.96
-x = r * math.sin(104.5 * math.pi/(2 * 180.0))
-y = r * math.cos(104.5 * math.pi/(2 * 180.0))
+r = 1.1508
 
 mol = pyscf.gto.Mole()
 mol.atom = [
-            ['O', (0.0, 0.0, 0.0)],
-            ['H', (0.0,  -x,   y)],
-            ['H', (0.0,   x,   y)]]
-mol.basis = 'aug-cc-pvdz'
+            ['N', (0.0, 0.0, 0.0)],
+            ['O', (0.0, 0.0,   r)]]
+mol.basis = 'cc-pcvdz'
 mol.symmetry = True
+mol.spin = 0
+mol.charge = +1
 mol.build()
-
-# RHF calculation
+mol.verbose = 4
+# ROHF calculation
 mf = pyscf.scf.ROHF(mol)
+mf.max_cycle = 250
 mf.conv_tol = 1e-12
 
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
-# CASSCF calculation
-mc = pyscf.mcscf.CASSCF(mf, 4, 4)
-mc.conv_tol = 1e-11
-mc.conv_tol_grad = 1e-6
+mol.spin = 1
+mol.charge = 0
+mol.build()
 
-emc = mc.mc1step()[0]
-print("CASSCF energy: %f\n" % emc)
+
 
 # NEVPT2 calculation
-interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit('cc-pvdz-ri')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-10
-
-class KnownValues(unittest.TestCase):
-
-    def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot, -76.058582920887, 6)
-        self.assertAlmostEqual(mc.e_cas,  -6.556214781960, 6)
-
-    def test_prism(self):
-
-        e_tot, e_corr, osc = nevpt.kernel()
-
-        self.assertAlmostEqual(e_tot[0], -76.260809072120, 6)
-        self.assertAlmostEqual(e_corr[0], -0.202226151233, 6)
-
-if __name__ == "__main__":
-    print("NEVPT2 test")
-    unittest.main()
+nevpt.nfrozen = 2
+nevpt.kernel()

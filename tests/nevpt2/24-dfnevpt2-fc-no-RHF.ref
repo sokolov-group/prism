@@ -1,0 +1,140 @@
+
+
+******** <class 'pyscf.scf.hf_symm.SymAdaptedROHF'> ********
+method = SymAdaptedROHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 250
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /tmp/tmpyggaikid
+max_memory 4000 MB (current use 121 MB)
+num. doubly occ = 7  num. singly occ = 0
+Freeze 0 electrons in irreps []
+    14 free electrons in irreps A1 E1x E1y E2x E2y
+Set gradient conv threshold to 1e-06
+init E= -129.30484001526
+HOMO (A1) = -0.483393712166837  LUMO (E1y) = -0.0432991497549564
+cycle= 1 E= -128.755157358803  delta_E= 0.55  |g|= 0.783  |ddm|= 1.21
+HOMO (E1y) = -1.16905347159799  LUMO (E1y) = -0.447878830625247
+cycle= 2 E= -128.811193788841  delta_E= -0.056  |g|= 0.663  |ddm|= 0.604
+HOMO (E1y) = -1.14541719674274  LUMO (E1y) = -0.365085677669112
+cycle= 3 E= -128.881374434518  delta_E= -0.0702  |g|= 0.193  |ddm|= 0.288
+HOMO (E1y) = -1.09808377842306  LUMO (E1y) = -0.329538819619005
+cycle= 4 E= -128.887379543397  delta_E= -0.00601  |g|= 0.0123  |ddm|= 0.0637
+HOMO (E1y) = -1.098853125771  LUMO (E1y) = -0.327230563966826
+cycle= 5 E= -128.887429378547  delta_E= -4.98e-05  |g|= 0.00276  |ddm|= 0.00888
+HOMO (E1y) = -1.09898020569107  LUMO (E1y) = -0.327638818428153
+cycle= 6 E= -128.887431534196  delta_E= -2.16e-06  |g|= 0.000439  |ddm|= 0.00243
+HOMO (E1y) = -1.09901447715223  LUMO (E1y) = -0.327670436916378
+cycle= 7 E= -128.887431592315  delta_E= -5.81e-08  |g|= 0.0002  |ddm|= 0.000378
+HOMO (E1y) = -1.09901013943427  LUMO (E1y) = -0.327665321012502
+cycle= 8 E= -128.88743160844  delta_E= -1.61e-08  |g|= 2.39e-05  |ddm|= 0.000248
+HOMO (E1y) = -1.099008105745  LUMO (E1y) = -0.32766775490374
+cycle= 9 E= -128.887431608626  delta_E= -1.87e-10  |g|= 1.56e-06  |ddm|= 2.37e-05
+HOMO (E1y) = -1.09900822028642  LUMO (E1y) = -0.32766763293379
+cycle= 10 E= -128.887431608627  delta_E= -6.82e-13  |g|= 1.66e-07  |ddm|= 1.83e-06
+HOMO (E1y) = -1.09900816927138  LUMO (E1y) = -0.327667608243672
+Extra cycle  E= -128.887431608627  delta_E= -1.14e-13  |g|= 8.72e-08  |ddm|= 1.09e-07
+converged SCF energy = -128.887431608627
+SCF energy: -128.887432
+
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: scf
+
+Importing Pyscf density-fitting objects...
+Initializing fully internally contracted NEVPT...
+SCF reference given, defaulting to MP2 calculation
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       ss
+Nuclear repulsion energy:                         25.750715859854
+Number of electrons:                               15
+Number of basis functions:                         36
+Reference wavefunction type:                       scf
+Number of reference states:                        1
+Number of reference microstates:                   1
+Number of frozen orbitals:                         2
+Number of core orbitals:                           7
+Number of active orbitals:                         0
+Number of external orbitals:                       29
+Number of active electrons:                        [(0, 0)]
+Spin–orbit coupling:                               None
+G-tensor:                                          False
+Reference density fitting?                         False
+Correlation density fitting?                       True
+Temporary directory path:                          /tmp
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-06
+Overlap truncation parameter (doubles):            1.00e-10
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+******** <class 'pyscf.df.df.DF'> ********
+auxbasis = cc-pvdz-ri
+max_memory = 4000
+Correlation energy [0]:                           -0.378640747064
+
+Computing energy of state #1...
+Reference state active-space energy:               0.000000000000
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(0, 0)]
+Correlation energy [0]:                           -0.378640747064
+SCF reference state total energy:               -128.887431608627
+NEVPT2 correlation energy:                        -0.378640747064
+Total NEVPT2 energy:                            -129.266072355692
+
+Summary of results for the SS-NEVPT2 calculation with the SCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1         -129.266072355692     0.00000000       0.0000                      0.0000               
+----------------------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation      0.43 sec, wall time      0.04 sec
