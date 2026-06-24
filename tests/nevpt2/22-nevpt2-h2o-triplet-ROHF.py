@@ -37,18 +37,16 @@ mol.atom = [
             ['O', (0.0, 0.0, 0.0)],
             ['H', (0.0,  -x,   y)],
             ['H', (0.0,   x,   y)]]
-mol.basis = 'cc-pvdz'
+mol.basis = 'aug-cc-pvdz'
 mol.symmetry = True
 mol.spin = 2
 mol.build()
 
-# ROHF calculation
-mf = pyscf.scf.ROHF(mol)
+# RHF calculation
+mf = pyscf.scf.ROHF(mol).density_fit()
 mf.conv_tol = 1e-12
-
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
-
 
 # NEVPT2 calculation
 interface = prism.interface.PYSCF(mf, backend = 'opt_einsum')
@@ -58,17 +56,36 @@ nevpt.semi_internal_projector = "gno"
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-10
 
+# NEVPT2 calculation
+df_interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit()
+df_nevpt = prism.nevpt.NEVPT(df_interface)
+df_nevpt.compute_singles_amplitudes = False
+df_nevpt.semi_internal_projector = "gno"
+df_nevpt.s_thresh_singles = 1e-6
+df_nevpt.s_thresh_doubles = 1e-10
+
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mf.e_tot,  -75.775513684361, 5)
+        self.assertAlmostEqual(mf.e_tot, -75.8159702269242, 5)
 
     def test_prism(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -75.948273728576, 6)
-        self.assertAlmostEqual(e_corr[0], -0.172760044215, 6)
+        self.assertAlmostEqual(interface.mc.e_tot, -75.815970226924, 5)
+
+        self.assertAlmostEqual(e_tot[0], -75.993734292602, 6)
+        self.assertAlmostEqual(e_corr[0], -0.177764065678, 6)
+
+    def test_df_prism(self):
+
+        e_tot, e_corr, osc = df_nevpt.kernel()
+
+        self.assertAlmostEqual(df_interface.mc.e_tot, -75.815970226924, 5)
+
+        self.assertAlmostEqual(e_tot[0], -75.993727586513, 6)
+        self.assertAlmostEqual(e_corr[0], -0.177757359589, 6)
 
 if __name__ == "__main__":
     print("NEVPT2 test")
