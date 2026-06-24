@@ -47,8 +47,6 @@ mf.conv_tol = 1e-12
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
-# CASSCF calculation
-
 # NEVPT2 calculation
 interface = prism.interface.PYSCF(mf, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)

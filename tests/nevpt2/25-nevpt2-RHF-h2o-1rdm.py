@@ -67,36 +67,29 @@ def rdms_test(dm):
     r2 = nevpt.interface.einsum('pq,pq->', r2_int, dm_ao)  
     return r2
 
-        # Using L,R
-        # Ground state
-
 class KnownValues(unittest.TestCase):
-    
+
     def test_1rdm(self):
 
         e_tot, e_corr, osc = nevpt.kernel()
-        
+
         # Using L,R
         # Ground state
         gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
         
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
-
-        
         self.assertAlmostEqual(rdms_test(gs_1rdm), 19.90404269, 6)
 
         # Using 'all' flag
         # Ground state
         rdms = nevpt.make_rdm1(type = 'all')
-        
+
         # Ground state
         gs_1rdm = rdms[0,0]
-        
+
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
-        print(rdms_test(gs_1rdm))
         self.assertAlmostEqual(rdms_test(gs_1rdm), 19.90404269, 6)
 
-        
         # Using ss flag
         rdms = nevpt.make_rdm1(type = 'ss')
 
@@ -104,7 +97,6 @@ class KnownValues(unittest.TestCase):
         gs_1rdm = rdms[0]
 
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
-
         self.assertAlmostEqual(rdms_test(gs_1rdm), 19.90404269, 6)
 
 if __name__ == "__main__":

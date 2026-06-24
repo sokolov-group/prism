@@ -38,7 +38,7 @@ mol.symmetry = True
 mol.spin = 0
 mol.charge = +1
 mol.build()
-mol.verbose = 4
+
 # ROHF calculation
 mf = pyscf.scf.ROHF(mol)
 mf.max_cycle = 250
@@ -51,8 +51,6 @@ mol.spin = 1
 mol.charge = 0
 mol.build()
 
-
-
 # NEVPT2 calculation
 interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit('cc-pvdz-ri')
 nevpt = prism.nevpt.NEVPT(interface)
@@ -62,3 +60,20 @@ nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-10
 nevpt.nfrozen = 2
 nevpt.kernel()
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mf.e_tot, -128.887431608627, 6)
+
+    def test_prism(self):
+
+        e_tot, e_corr, osc = nevpt.kernel()
+
+        self.assertAlmostEqual(e_tot[0], -129.266072355692, 6)
+        self.assertAlmostEqual(e_corr[0],  -0.378640747064, 6)
+
+if __name__ == "__main__":
+    print("NEVPT2 test")
+    unittest.main()
+
