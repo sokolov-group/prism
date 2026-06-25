@@ -2696,8 +2696,9 @@ def apply_S_12(mr_adc, X, transpose = False):
         Xt[ho_s_cae__bab:ho_f_cae__bab] = einsum("IXA,XP->IPA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
 
         ## CCA
-        temp = X[s_cca:f_cca].reshape(-1, S12_cca.shape[0]).copy()
-        Xt[ho_s_cca:ho_f_cca] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+        if ncas > 0:
+            temp = X[s_cca:f_cca].reshape(-1, S12_cca.shape[0]).copy()
+            Xt[ho_s_cca:ho_f_cca] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
         if nval > 0:
 
@@ -2718,8 +2719,9 @@ def apply_S_12(mr_adc, X, transpose = False):
             Xt[ho_s_cve:ho_f_cve] = X[s_cve:f_cve].copy()
 
             ## CVA
-            temp = X[s_cva:f_cva].reshape(-1, S12_cca.shape[0]).copy()
-            Xt[ho_s_cva:ho_f_cva] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+            if ncas > 0:
+                temp = X[s_cva:f_cva].reshape(-1, S12_cca.shape[0]).copy()
+                Xt[ho_s_cva:ho_f_cva] = einsum("IX,XP->IP", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
     else:
         if (X.shape[0] != (mr_adc.h_orth.dim)):
@@ -2750,8 +2752,9 @@ def apply_S_12(mr_adc, X, transpose = False):
         Xt[s_cae__bab:f_cae__bab] = einsum("IPA,XP->IXA", temp, S12_cae, optimize = einsum_type).reshape(-1).copy()
 
         ## CCA
-        temp = X[ho_s_cca:ho_f_cca].reshape(-1, S12_cca.shape[1]).copy()
-        Xt[s_cca:f_cca] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+        if ncas > 0:
+            temp = X[ho_s_cca:ho_f_cca].reshape(-1, S12_cca.shape[1]).copy()
+            Xt[s_cca:f_cca] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
         if nval > 0:
 
@@ -2772,8 +2775,9 @@ def apply_S_12(mr_adc, X, transpose = False):
             Xt[s_cve:f_cve] = X[ho_s_cve:ho_f_cve].copy()
 
             ## CVA
-            temp = X[ho_s_cva:ho_f_cva].reshape(-1, S12_cca.shape[1]).copy()
-            Xt[s_cva:f_cva] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
+            if ncas > 0:
+                temp = X[ho_s_cva:ho_f_cva].reshape(-1, S12_cca.shape[1]).copy()
+                Xt[s_cva:f_cva] = einsum("IP,XP->IX", temp, S12_cca, optimize = einsum_type).reshape(-1).copy()
 
     return Xt
 
@@ -20939,73 +20943,74 @@ def compute_trans_moments(mr_adc):
         X[ncvs:ncore, :] = np.dot(T, U.T)
 
     # ACTIVE terms
-    T = np.zeros((ncas, dim))
+    if ncas > 0:
+        T = np.zeros((ncas, dim))
 
-    # MR-ADC(1) terms
-    ## < [ q^(1), h^(0)^\dag ] >
-    if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
+        # MR-ADC(1) terms
+        ## < [ q^(1), h^(0)^\dag ] >
+        if mr_adc.method in ("mr-adc(1)", "mr-adc(2)", "mr-adc(2)-x"):
 
-        ### ACTIVE(1) - C
-        compute_T__q1_h0__A_C(mr_adc, T)
+            ### ACTIVE(1) - C
+            compute_T__q1_h0__A_C(mr_adc, T)
 
-    # MR-ADC(2) terms
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        # MR-ADC(2) terms
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
 
-        ## < [ q^(1), h^(1)^\dag ] >
-        ### ACTIVE(1) - CAA
-        compute_T__q1_h1__A_CAA(mr_adc, T)
+            ## < [ q^(1), h^(1)^\dag ] >
+            ### ACTIVE(1) - CAA
+            compute_T__q1_h1__A_CAA(mr_adc, T)
 
-        ### ACTIVE(1) - CCE
-        compute_T__q1_h1__A_CCE(mr_adc, T)
+            ### ACTIVE(1) - CCE
+            compute_T__q1_h1__A_CCE(mr_adc, T)
 
-        ### ACTIVE(1) - CAE
-        compute_T__q1_h1__A_CAE(mr_adc, T)
+            ### ACTIVE(1) - CAE
+            compute_T__q1_h1__A_CAE(mr_adc, T)
 
-        ### ACTIVE(1) - CCA
-        compute_T__q1_h1__A_CCA(mr_adc, T)
+            ### ACTIVE(1) - CCA
+            compute_T__q1_h1__A_CCA(mr_adc, T)
 
-        if nval > 0:
-            ### ACTIVE(1) - CVE
-            compute_T__q1_h1__A_CVE(mr_adc, T)
+            if nval > 0:
+                ### ACTIVE(1) - CVE
+                compute_T__q1_h1__A_CVE(mr_adc, T)
 
-            ### ACTIVE(1) - CVA
-            compute_T__q1_h1__A_CVA(mr_adc, T)
+                ### ACTIVE(1) - CVA
+                compute_T__q1_h1__A_CVA(mr_adc, T)
 
-        ## < [ q^(1), h^(1)^\dag ] >
-        ### ACTIVE(2) - C
-        compute_T__q2_h0__A_C(mr_adc, T)
+            ## < [ q^(1), h^(1)^\dag ] >
+            ### ACTIVE(2) - C
+            compute_T__q2_h0__A_C(mr_adc, T)
 
-    # MR-ADC(2)-X terms
-    ## {q^(2)| h^(1)^dag}
-    if mr_adc.method == "mr-adc(2)-x":
+        # MR-ADC(2)-X terms
+        ## {q^(2)| h^(1)^dag}
+        if mr_adc.method == "mr-adc(2)-x":
 
-        ### ACTIVE(2) - CAA
-        compute_T__q2_h1__A_CAA(mr_adc, T)
+            ### ACTIVE(2) - CAA
+            compute_T__q2_h1__A_CAA(mr_adc, T)
 
-        ### ACTIVE(2) - CCE
-        compute_T__q2_h1__A_CCE(mr_adc, T)
+            ### ACTIVE(2) - CCE
+            compute_T__q2_h1__A_CCE(mr_adc, T)
 
-        ### ACTIVE(2) - CAE
-        compute_T__q2_h1__A_CAE(mr_adc, T)
+            ### ACTIVE(2) - CAE
+            compute_T__q2_h1__A_CAE(mr_adc, T)
 
-        ### ACTIVE(2) - CCA
-        compute_T__q2_h1__A_CCA(mr_adc, T)
+            ### ACTIVE(2) - CCA
+            compute_T__q2_h1__A_CCA(mr_adc, T)
 
-        if nval > 0:
-            ### ACTIVE(2) - CVE
-            compute_T__q2_h1__A_CVE(mr_adc, T)
+            if nval > 0:
+                ### ACTIVE(2) - CVE
+                compute_T__q2_h1__A_CVE(mr_adc, T)
 
-            ### ACTIVE(2) - CVA
-            compute_T__q2_h1__A_CVA(mr_adc, T)
+                ### ACTIVE(2) - CVA
+                compute_T__q2_h1__A_CVA(mr_adc, T)
 
-    # Transform to the orthogonal basis
-    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
-        T_ortho = np.zeros((T.shape[0], mr_adc.h_orth.dim))
-        for p in range(T.shape[0]):
-            T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
-        T = T_ortho
+        # Transform to the orthogonal basis
+        if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+            T_ortho = np.zeros((T.shape[0], mr_adc.h_orth.dim))
+            for p in range(T.shape[0]):
+                T_ortho[p] = apply_S_12(mr_adc, T[p], transpose = True)
+            T = T_ortho
 
-    X[ncore:nocc, :] = np.dot(T, U.T)
+        X[ncore:nocc, :] = np.dot(T, U.T)
 
     # EXTERNAL terms
     T = np.zeros((nextern, dim))

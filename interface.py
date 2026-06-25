@@ -18,7 +18,7 @@
 #                  Ilia M. Mazin <ilia.mazin@gmail.com>
 #              Donna H. Odhiambo <donna.odhiambo@proton.me>
 #                 James D. Serna <jserna456@gmail.com>
-
+#                Haden Dickerson <haden.dickerson423@outlook.com>
 import os
 import tempfile
 import numpy as np
@@ -67,158 +67,35 @@ class PYSCF:
         self.NA = 6.0221367e23 # Avogadro constant
 
         log.info("Collecting reference wavefunction information...")
-        if mc is None:
-            self.reference = "scf"
-            log.info("Reference wavefunction: %s\n" % self.reference)
 
-            self.max_memory = mf.max_memory
-
-            self.mo = mf.mo_coeff.copy()
-            self.nmo = self.mo.shape[1]
-            self.mo_energy = mf.mo_energy.copy()
-            self.symmetry = mf.mol.symmetry
-            self.e_ref = [mf.e_tot]
-
-            self.reference_df = getattr(mf, "with_df", None)
-
-            if self.symmetry:
-                from pyscf import symm
-                if hasattr(mf._scf.mo_coeff, 'orbsym'):
-                    self.group_repr_symm = [symm.irrep_id2name(mf.mol.groupname, x) for x in mf._scf.mo_coeff.orbsym]
-                else:
-                    self.group_repr_symm = None
-            else:
-                self.group_repr_symm = None
+        if mc is not None:
+            self.compute_mcscf_reference(select_reference)
         else:
+            socc = int(np.count_nonzero(mf.mo_occ == 1))
 
-            # Determine reference type
-            from pyscf.mcscf.casci import CASCI
+            if mf.istype('RHF') and socc == 0:
+                self.compute_scf_reference()
 
-            e_ref = mc.e_tot.copy() 
-            e_cas = mc.e_cas.copy()
-            ci = mc.ci.copy()
+            elif mf.istype('ROHF') and socc > 0:
+                from pyscf.mcscf.casci import CASCI
+                casci = CASCI(mf, socc, socc)
+                if getattr(mf, 'with_df', None):
+                    casci = casci.density_fit()
+                self.mc = casci.run()
+                self.compute_mcscf_reference(select_reference)
 
-            if isinstance(mc, CASCI):
-                if isinstance(ci, list):
-                    self.reference = "ms-casci"
-                else:
-                    self.reference = "casci"
-            else:
-                if hasattr(mc, 'weights') and isinstance(mc.ci, list):
-                    self.weights = mc.weights
-                    self.reference = "sa-casscf"
-                else:
-                    self.reference = "casscf"
+        # Symmetry
+        # TODO: [MC OBJ] Check if this is done correctly when canonicalization changes the order of orbitals
+        self.symmetry = self.mol.symmetry
+        self.group_repr_symm = None
+        if self.symmetry:
+            from pyscf import symm
+            orbsym = getattr(mf.mo_coeff, 'orbsym', None)
+            if orbsym is not None:
+                self.group_repr_symm = [symm.irrep_id2name(self.mol.groupname, x) for x in orbsym]
 
-            log.info("Reference wavefunction: %s" % self.reference)
-
-            if self.reference == "sa-casscf":
-                e_fzc = e_ref - e_cas
-                e_ref = mc.e_states
-                e_cas = [e - e_fzc for e in e_ref]
-            elif self.reference in ("casscf", "casci"):
-                e_ref = [e_ref]
-                e_cas = [e_cas]
-                ci = [ci]
-
-            if select_reference is not None:
-                state_idx = [state-1 for state in select_reference]
-                e_ref = [e_ref[i] for i in state_idx]
-                e_cas = [e_cas[i] for i in state_idx]
-                ci = [ci[i] for i in state_idx]
-                log.info("\nReference states selected: %s" % str(select_reference))
-
-            self.max_memory = mc.max_memory
-            self.max_memory_soc = mc.max_memory
-            self.mo = mc.mo_coeff.copy()
-            self.mo_scf = mf.mo_coeff.copy()
-            self.ovlp = mf.get_ovlp(mf.mol)
-            self.nmo = self.mo.shape[1]
-            self.ncore = mc.ncore
-            self.ncas = mc.ncas
-            self.nextern = self.nmo - self.ncore - self.ncas
-            self.e_ref = e_ref
-            self.e_ref_cas = e_cas
-            self.davidson_only = mc.fcisolver.davidson_only
-            self.pspace_size = mc.fcisolver.pspace_size
-            self.enforce_degeneracy = True
-            # SOC params:
-            self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-            self.unc = None
-
-            # For powder properties
-            import pyscf.dft.LebedevGrid
-            self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
-
-            # Basis set uncontraction objects: xmol, contraction coefficients.
-            # Use x2c_setup to obtain self.xmol and self.contr_coeff 
-            self.xmol = None
-            self.contr_coeff = None
-
-            self.reference_df = getattr(mc, "with_df", None)
-
-            # Compute state-averaged 1-RDM with respect to the reference manifold
-            ref_rdm1 = np.zeros((mc.ncas, mc.ncas))
-            if self.reference == "sa-casscf":
-                mc_casci = CASCI(mf, mc.ncas, mc.nelecas)
-                for p in range(len(ci)):
-                    ref_rdm1 += mc_casci.fcisolver.make_rdm1(ci[p], mc.ncas, mc.nelecas)
-                ref_rdm1 /= len(ci)
-            else:
-                for p in range(len(ci)):
-                    ref_rdm1 += mc.fcisolver.make_rdm1(ci[p], mc.ncas, mc.nelecas)
-                ref_rdm1 /= len(ci)
-
-            # Canonicalize the orbitals
-            log.info("Canonicalizing molecular orbitals using reference wavefunction manifold...\n")
-            mo, ci, mo_energy = mc.canonicalize(casdm1 = ref_rdm1, ci = ci, cas_natorb = False)
-            del ref_rdm1
-
-            self.mo = mo.copy()
-            self.mo_energy = mo_energy.copy()
-
-# Removing the spin manifold code for now
-####            # Check spin symmetry of the reference wavefunction and, if necessary, generate complete reference spin manifold
-####            # TODO: make sure this is working with SA-CASSCF and MS-CASCI references that have states with different symmetries
-####            ref_ci, ref_nelecas, ref_spin_degeneracy = self.compute_ref_spin_manifold(ci, self.ncas, self.ref_nelecas, e_ref, e_cas)
-####
-####            # Store wavefunctions and their degeneracy for all microstate 
-####            self.ref_wfn = ref_ci
-####            self.ref_wfn_spin_mult = ref_spin_degeneracy
-####            self.ref_nelecas = ref_nelecas
-# Removing the spin manifold code for now
-
-            # Print reference info
-            if self.ncas > 0:
-                self.ref_wfn_spin_mult = self.print_reference_info(ci, self.ncas, mc.nelecas, e_ref, e_cas)
-            else:
-                self.ref_wfn_spin_mult = [1]
-
-            self.ref_wfn = ci
-            self.ref_nelecas = len(ci) * [mc.nelecas, ]
-            self.ref_wfn_deg = len(ci) * [1, ]
-
-            # TODO: Check if this is done correctly when canonicalization changes the order of orbitals
-            self.symmetry = mc.mol.symmetry
-            if self.symmetry:
-                from pyscf import symm
-                if hasattr(mc._scf.mo_coeff, 'orbsym'):
-                    self.group_repr_symm = [symm.irrep_id2name(mc.mol.groupname, x) for x in mc._scf.mo_coeff.orbsym]
-                else:
-                    self.group_repr_symm = None
-            else:
-                self.group_repr_symm = None
-
-            from pyscf import ao2mo
-            self.transform_2e_chem_incore = ao2mo.general
-            self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
-
-            self.davidson = lib.linalg_helper.davidson1
-
-            from pyscf.fci.direct_spin1 import trans_rdm1s
-            self.trans_rdm1s = trans_rdm1s
-            # If set to a list, can be used to select certain CASCI states during MR-ADC computations
-            self.select_casci = None
+        # Davidson
+        self.davidson = lib.linalg_helper.davidson1
 
         # Current Memory
         self.current_memory = lib.current_memory
@@ -230,6 +107,10 @@ class PYSCF:
             self.temp_dir = os.environ.get('TMPDIR', tempfile.gettempdir())
 
         # Integrals
+        from pyscf import ao2mo
+        self.transform_2e_chem_incore = ao2mo.general
+        self.transform_2e_pair_chem_incore = ao2mo._ao2mo.nr_e2
+
         self.h1e_ao = mf.get_hcore()
         if isinstance(mf._eri, np.ndarray):
             self.v2e_ao = mf._eri
@@ -255,6 +136,153 @@ class PYSCF:
         self._einsum_backend = np_helper.einsum_backend(backend, self.log)
         self.einsum_type = "greedy"
         self.dot = np.dot
+
+    def compute_scf_reference(self):
+
+        self.reference = "scf"
+        self.log.info("Reference wavefunction: %s\n" % self.reference)
+
+        mf = self.mf
+        self.max_memory = mf.max_memory
+
+        self.mo = mf.mo_coeff.copy()
+        self.nmo = self.mo.shape[1]
+        self.mo_energy = mf.mo_energy.copy()
+        self.symmetry = mf.mol.symmetry
+        self.e_ref = [mf.e_tot]
+
+        self.ncore = mf.mol.nelectron // 2
+        self.nextern = self.nmo - self.ncore
+        self.ncas = 0
+
+        self.ref_nelecas = [(0,0)]
+        self.e_ref_cas = [0]
+
+        self.ref_wfn = None
+        self.ref_wfn_spin_mult = [1]
+        self.ref_wfn_deg = [1]
+
+        self.mo_scf = self.mo
+        self.ovlp = mf.get_ovlp(mf.mol)
+
+        self.reference_df = getattr(mf, "with_df", None)
+
+    def compute_mcscf_reference(self, select_reference):
+
+        mf = self.mf
+        mc = self.mc
+
+        # Determine reference type
+        from pyscf.mcscf.casci import CASCI
+
+        e_ref = mc.e_tot.copy() 
+        e_cas = mc.e_cas.copy()
+        ci = mc.ci.copy()
+
+        if isinstance(mc, CASCI):
+            if isinstance(ci, list):
+                self.reference = "ms-casci"
+            else:
+                self.reference = "casci"
+        else:
+            if hasattr(mc, 'weights') and isinstance(mc.ci, list):
+                self.weights = mc.weights
+                self.reference = "sa-casscf"
+            else:
+                self.reference = "casscf"
+
+        self.log.info("Reference wavefunction: %s" % self.reference)
+
+        if self.reference == "sa-casscf":
+            e_fzc = e_ref - e_cas
+            e_ref = mc.e_states
+            e_cas = [e - e_fzc for e in e_ref]
+        elif self.reference in ("casscf", "casci"):
+            e_ref = [e_ref]
+            e_cas = [e_cas]
+            ci = [ci]
+
+        if select_reference is not None:
+            state_idx = [state-1 for state in select_reference]
+            e_ref = [e_ref[i] for i in state_idx]
+            e_cas = [e_cas[i] for i in state_idx]
+            ci = [ci[i] for i in state_idx]
+            self.log.info("\nReference states selected: %s" % str(select_reference))
+
+        self.max_memory = mc.max_memory
+        self.max_memory_soc = mc.max_memory
+        self.mo = mc.mo_coeff.copy()
+        self.mo_scf = mf.mo_coeff.copy()
+        self.ovlp = mf.get_ovlp(mf.mol)
+        self.nmo = self.mo.shape[1]
+        self.ncore = mc.ncore
+        self.ncas = mc.ncas
+        self.nextern = self.nmo - self.ncore - self.ncas
+        self.e_ref = e_ref
+        self.e_ref_cas = e_cas
+        self.davidson_only = mc.fcisolver.davidson_only
+        self.pspace_size = mc.fcisolver.pspace_size
+        self.enforce_degeneracy = True
+        # SOC params:
+        self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+        self.unc = None
+
+        # For powder properties
+        import pyscf.dft.LebedevGrid
+        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
+
+        # Basis set uncontraction objects: xmol, contraction coefficients.
+        # Use x2c_setup to obtain self.xmol and self.contr_coeff 
+        self.xmol = None
+        self.contr_coeff = None
+
+        self.reference_df = getattr(mc, "with_df", None)
+
+        # Compute state-averaged 1-RDM with respect to the reference manifold
+        ref_rdm1 = np.zeros((mc.ncas, mc.ncas))
+        if self.reference == "sa-casscf":
+            mc_casci = CASCI(mf, mc.ncas, mc.nelecas)
+            for p in range(len(ci)):
+                ref_rdm1 += mc_casci.fcisolver.make_rdm1(ci[p], mc.ncas, mc.nelecas)
+            ref_rdm1 /= len(ci)
+        else:
+            for p in range(len(ci)):
+                ref_rdm1 += mc.fcisolver.make_rdm1(ci[p], mc.ncas, mc.nelecas)
+            ref_rdm1 /= len(ci)
+
+        # Canonicalize the orbitals
+        self.log.info("Canonicalizing molecular orbitals using reference wavefunction manifold...\n")
+        mo, ci, mo_energy = mc.canonicalize(casdm1 = ref_rdm1, ci = ci, cas_natorb = False)
+        del ref_rdm1
+
+        self.mo = mo.copy()
+        self.mo_energy = mo_energy.copy()
+
+# Removing the spin manifold code for now
+####            # Check spin symmetry of the reference wavefunction and, if necessary, generate complete reference spin manifold
+####            # TODO: make sure this is working with SA-CASSCF and MS-CASCI references that have states with different symmetries
+####            ref_ci, ref_nelecas, ref_spin_degeneracy = self.compute_ref_spin_manifold(ci, self.ncas, self.ref_nelecas, e_ref, e_cas)
+####
+####            # Store wavefunctions and their degeneracy for all microstate 
+####            self.ref_wfn = ref_ci
+####            self.ref_wfn_spin_mult = ref_spin_degeneracy
+####            self.ref_nelecas = ref_nelecas
+# Removing the spin manifold code for now
+
+        # Print reference info
+        if self.ncas > 0:
+            self.ref_wfn_spin_mult = self.print_reference_info(ci, self.ncas, mc.nelecas, e_ref, e_cas)
+        else:
+            self.ref_wfn_spin_mult = [1]
+
+        self.ref_wfn = ci
+        self.ref_nelecas = len(ci) * [mc.nelecas, ]
+        self.ref_wfn_deg = len(ci) * [1, ]
+
+        from pyscf.fci.direct_spin1 import trans_rdm1s
+        self.trans_rdm1s = trans_rdm1s
+        # If set to a list, can be used to select certain CASCI states during MR-ADC computations
+        self.select_casci = None
 
     @property
     def einsum_backend(self):
