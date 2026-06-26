@@ -261,7 +261,7 @@ def diagonalize_eff_H(method):
 
 def compute_properties(method):
 
-    n_states = len(method.ref_wfn_deg)
+    n_states = len(method.e_tot)
 
     osc_str = None
 
