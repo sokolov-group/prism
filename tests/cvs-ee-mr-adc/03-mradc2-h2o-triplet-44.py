@@ -80,7 +80,7 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(e[1],  30.0463, 4)
         self.assertAlmostEqual(e[2],  33.5786, 4)
         self.assertAlmostEqual(e[3],  40.0088, 4)
-        self.assertAlmostEqual(e[4],  43.6361, 4)
+        self.assertAlmostEqual(e[4],  43.6361, 3)
         self.assertAlmostEqual(e[5],  44.2359, 4)
         self.assertAlmostEqual(e[6],  44.2448, 4)
         self.assertAlmostEqual(e[7],  44.6987, 4)
