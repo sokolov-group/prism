@@ -188,7 +188,7 @@ def compute_energy_state(method, rdms, e_0 = None):
 
 def compute_properties(method):
 
-    n_states = len(method.ref_wfn_deg)
+    n_states = len(method.e_tot)
 
     osc_str = None
 
