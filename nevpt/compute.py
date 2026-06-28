@@ -75,22 +75,27 @@ def initialize(nevpt):
     if nevpt.nfrozen is None:
         nevpt.nfrozen = 0
 
+    if not isinstance(nevpt.nfrozen, int):
+        msg = "nfrozen must be an integer less than the number of core orbitals."
+        nevpt.log.error(msg)
+        raise TypeError(msg)
+
     if nevpt.nfrozen > nevpt.ncore:
         msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
         nevpt.log.error(msg)
-        raise Exception(msg)
-    
+        raise ValueError(msg)
+
     if nevpt.rdm_order not in [0,2]:
          raise ValueError(f"Invalid {'rdm_order'}: '{nevpt.rdm_order}'. Available options are {0,2}.")
-     
+
     avail_shifts = ['imaginary', 'DSRG']
-    
+
     if nevpt.shift_type_m1p is not None and nevpt.shift_type_m1p not in avail_shifts:
         raise ValueError(f"Invalid {'shift_type_m1p'}: '{nevpt.shift_type_m1p}'. Available options are {avail_shifts}.")
 
     if nevpt.shift_type_p1p is not None and nevpt.shift_type_p1p not in avail_shifts:
         raise ValueError(f"Invalid {'shift_type_p1p'}: '{nevpt.shift_type_p1p}'. Available options are {avail_shifts}.")
-    
+
     if nevpt.shift_type_0p is not None and nevpt.shift_type_0p not in avail_shifts:
         raise ValueError(f"Invalid {'shift_type_0p'}: '{nevpt.shift_type_0p}'. Available options are {avail_shifts}.")
 
@@ -241,7 +246,7 @@ def print_results(nevpt):
         nevpt.interface.log.info("--------------------------------------------------------")
         nevpt.interface.log.info("TEMP(K)   B(T)          Mx           My           Mz")
         nevpt.interface.log.info("--------------------------------------------------------")
-    
+
         for I in range(len(T_list)):
             T = T_list[I]
             for K in range(len(Bs_list)):
@@ -259,7 +264,7 @@ def print_results(nevpt):
         nevpt.interface.log.info("--------------------------------------------------------")
         nevpt.interface.log.info("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
         nevpt.interface.log.info("--------------------------------------------------------")
-    
+
         for I in range(len(T_list)):
             T = T_list[I]
             for K in range(len(Bs_list)):
