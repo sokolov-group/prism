@@ -17,11 +17,9 @@
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #
 
-
 from prism.nevpt import compute
 from prism.nevpt import nevpt
 from prism.nevpt import qd_nevpt
-
 
 class NEVPT:
     def __init__(self, interface):
@@ -80,13 +78,13 @@ class NEVPT:
         self.semi_internal_projector = "gno"      # Possible values: gno, gs, only matters when compute_singles_amplitudes is True
         self.s_thresh_singles = 1e-8
         self.s_thresh_doubles = 1e-8
-        
+
         self.shift_type_p1p = None                # Level shift type for [+1']: imaginary, DSRG
         self.shift_type_m1p = None                # Level shift type for [-1']: imaginary, DSRG
         self.shift_type_0p = None                 # Level shift type for [0']: imaginary, DSRG
         self.shift_epsilon = 0.01                 # Level shift value (in Hartree)
 
-        self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk   
+        self.outcore_expensive_tensors = True     # Store expensive (ooee) integrals and amplitudes on disk
         self.e_tot = None                         # Total energies
         self.e_corr = None                        # Correlation energies
         self.spin_mult = self.ref_wfn_spin_mult   # Spin multiplicities
@@ -100,7 +98,7 @@ class NEVPT:
 
         # Amplitudes
         self.t1 = None
-        self.t1_0 = None 
+        self.t1_0 = None
         self.keep_amplitudes = True
         self.cutoff_intruder = 0.05
 
@@ -109,7 +107,6 @@ class NEVPT:
 
         # For SOC
         self.soc = None                            # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-
 
         # For g-tensor
         self.gtensor = False                       # Enable calculating g-tensors (requires soc)
@@ -131,7 +128,7 @@ class NEVPT:
             H = i * 0.5
             Bs_list.append(H)
 
-        self.Bs_powder_M = Bs_list 
+        self.Bs_powder_M = Bs_list
         self.T_powder_M = [1.8]
 
         ###Powder susceptibility
@@ -145,15 +142,13 @@ class NEVPT:
 
         ###Vector magnetization
         self.B_vec_M = [0,0,1]
-        self.Bs_vec_M = Bs_list 
+        self.Bs_vec_M = Bs_list
         self.T_vec_M = [1.8]
 
         ###Tensor  susceptibility
         self.B_vec_chi = [0,0,1]
         self.Bs_vec_chi = [0.1]
         self.T_vec_chi = [5,100,200,250]
-
-
 
     def _make_method_instance(self):
 
@@ -193,7 +188,7 @@ class NEVPT:
             del(self.t1)
             del(self.t1_0)
 
-        return e_tot, e_corr, osc 
+        return e_tot, e_corr, osc
 
     def compute_energy(self):
 
@@ -287,4 +282,4 @@ class QDNEVPT(NEVPT):
 
     def compute_properties(self):
 
-        return qd_nevpt.compute_properties(self)    
+        return qd_nevpt.compute_properties(self)
