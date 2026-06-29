@@ -115,22 +115,32 @@ def compute_dyson(interface, X):
 
     return dyson_mos
 
-def compute_ntos(interface, trdm, initial_state=0, target_state=1):
+def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=None):
     '''
     Computes natural transition orbitals between two given states
     given an interface object (source of MO coefficients
     and PySCF mol object) and a transition density matrix.
     '''
-    ## Needs mask dependent on nto_thresh
 
     interface.log.info(f"\nComputing NTOs...")
 
+    # Threshold
+    if orb_thresh is None:
+        orb_thresh = getattr(interface, "orb_thresh", 1e-3)
+
     U, s, Vh =  np.linalg.svd(trdm, full_matrices = False)
-    V = Vh.T
-    weights = s**2
 
     assert np.allclose(U.T @ U, np.eye(U.shape[1])), "U is not unitary"
     assert np.allclose(Vh @ Vh.T, np.eye(Vh.shape[0])), "Vh is not unitary"
+
+    # Apply threshold
+    mask = s**2 > orb_thresh
+    weights = s[mask]**2
+    U, V = U[:, mask], Vh[mask].T
+
+    if weights.size == 0:
+        interface.log.note(f"No significant NTO weights found for S{initial_state} -> S{target_state}")
+        return None
 
     # NTO Metrics
     omega = np.sum(weights)                # sum of NTO occupation numbers
