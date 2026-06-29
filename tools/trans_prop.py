@@ -186,3 +186,96 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=No
     interface.log.note(f"NTOs written to {filename}")
 
     return weights, U, Vh
+
+def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, orb_thresh=None):
+
+    interface.log.info("\nComputing exciton analysis...\n")
+
+    # Threshold
+    if orb_thresh is None:
+        orb_thresh = getattr(interface, "orb_thresh", 1e-3)
+
+    U, s, Vh =  np.linalg.svd(trdm, full_matrices = False)
+
+    assert np.allclose(U.T @ U, np.eye(U.shape[1])), "U is not unitary"
+    assert np.allclose(Vh @ Vh.T, np.eye(Vh.shape[0])), "Vh is not unitary"
+
+    # Apply threshold
+    mask = s**2 > orb_thresh
+    weights = s[mask]**2
+
+    if weights.size == 0:
+        interface.log.note(f"No significant NTO weights found for S{initial_state} -> S{target_state}")
+        return None
+
+    U, V = U[:, mask], Vh[mask].T
+    w = weights / np.sum(weights) # normalized weights
+ 
+    # Integrals: AO to MO to NTO
+    mo_coeff = interface.mo
+    R_ao = interface.mol.intor("int1e_r")
+    R2_ao = interface.mol.intor("int1e_r2")
+
+    R_mo = np.stack([mo_coeff.T @ R_ao[i] @ mo_coeff for i in range(3)])
+    R_h = np.stack([U.T @ R_mo[i] @ U for i in range(3)])
+    R_e = np.stack([V.T @ R_mo[i] @ V for i in range(3)])
+
+    R2_mo = mo_coeff.T @ R2_ao @ mo_coeff
+    R2_h = U.T @ R2_mo @ U
+    R2_e = V.T @ R2_mo @ V
+
+    # Diag
+    rh_diag = np.array([np.diag(R_h[i]) for i in range(3)])
+    re_diag = np.array([np.diag(R_e[i]) for i in range(3)])
+
+    # mean positions: <r>
+    rh = rh_diag @ w
+    re = re_diag @ w
+
+    # raw second moments: <r^2>
+    r2h = np.diag(R2_h) @ w
+    r2e = np.diag(R2_e) @ w
+
+    # RMS sizes: sigma
+    sigma_h = np.sqrt(max(r2h - rh @ rh, 0.0))
+    sigma_e = np.sqrt(max(r2e - re @ re, 0.0))
+
+    # e-h dot product
+    s_norm = np.sqrt(w)
+    dot_he = np.einsum("j,k,ijk,ijk->", s_norm, s_norm, R_h, R_e)
+
+    # e-h separation metrics
+    d_lin = np.linalg.norm(re - rh)
+    d_exc = np.sqrt(max(r2e + r2h - 2 * dot_he, 0.0))
+
+    # e-h covariance, correlation
+    cov = dot_he - rh @ re
+    denom = sigma_h * sigma_e
+    corr  = cov / denom if denom > 1e-12 else 0.0
+
+    exciton = {
+        "rh":      rh      * interface.bohr_to_ang,
+        "re":      re      * interface.bohr_to_ang,
+        "sigma_h": sigma_h * interface.bohr_to_ang,
+        "sigma_e": sigma_e * interface.bohr_to_ang,
+        "d_lin":   d_lin   * interface.bohr_to_ang,
+        "d_exc":   d_exc   * interface.bohr_to_ang,
+        "cov":     cov     * interface.bohr_to_ang ** 2,
+        "corr":    corr,
+    }
+
+    interface.log.info(f"State {initial_state} -> State {target_state}:")
+    fmt= lambda x: f"{float(x): .3f}"
+    rh_str = np.array2string(exciton['rh'], formatter={'float_kind': fmt})
+    re_str = np.array2string(exciton['re'], formatter={'float_kind': fmt})
+    interface.log.info(f"Mean position of hole:            {rh_str}")
+    interface.log.info(f"Mean position of electron:        {re_str}")
+    interface.log.info(f"Linear e-h distance [Ang]:        {exciton['d_lin']: .6f}")
+    interface.log.info(f"Hole size [Ang]:                  {exciton['sigma_h']: .6f}")
+    interface.log.info(f"Electron size [Ang]:              {exciton['sigma_e']: .6f}")
+    interface.log.info(f"RMS e-h separation [Ang]:         {exciton['d_exc']: .6f}")
+    interface.log.info(f"Covariance [Ang^2]:               {exciton['cov']: .6f}")
+    interface.log.info(f"Correlation coefficient:          {exciton['corr']: .6f}")
+    interface.log.info("")
+
+    return exciton
