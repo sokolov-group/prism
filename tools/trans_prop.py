@@ -237,8 +237,11 @@ def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, o
     r2e = np.diag(R2_e) @ w
 
     # RMS sizes: sigma
-    sigma_h = np.sqrt(max(r2h - rh @ rh, 0.0))
-    sigma_e = np.sqrt(max(r2e - re @ re, 0.0))
+    var_h = r2h - rh @ rh
+    var_e = r2e - re @ re
+
+    sigma_h = np.sqrt(max(var_h, 0.0))
+    sigma_e = np.sqrt(max(var_e, 0.0))
 
     # e-h dot product
     s_norm = np.sqrt(w)
@@ -253,15 +256,19 @@ def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, o
     denom = sigma_h * sigma_e
     corr  = cov / denom if denom > 1e-12 else 0.0
 
+    # center-of-mass size
+    sigma_com = 0.5 * np.sqrt(max(var_h + var_e + 2 * cov, 0.0))
+
     exciton = {
-        "rh":      rh      * interface.bohr_to_ang,
-        "re":      re      * interface.bohr_to_ang,
-        "sigma_h": sigma_h * interface.bohr_to_ang,
-        "sigma_e": sigma_e * interface.bohr_to_ang,
-        "d_lin":   d_lin   * interface.bohr_to_ang,
-        "d_exc":   d_exc   * interface.bohr_to_ang,
-        "cov":     cov     * interface.bohr_to_ang ** 2,
-        "corr":    corr,
+        "rh":        rh        * interface.bohr_to_ang,
+        "re":        re        * interface.bohr_to_ang,
+        "sigma_h":   sigma_h   * interface.bohr_to_ang,
+        "sigma_e":   sigma_e   * interface.bohr_to_ang,
+        "d_lin":     d_lin     * interface.bohr_to_ang,
+        "d_exc":     d_exc     * interface.bohr_to_ang,
+        "cov":       cov       * interface.bohr_to_ang ** 2,
+        "sigma_com": sigma_com * interface.bohr_to_ang,
+        "corr":      corr,
     }
 
     interface.log.info(f"State {initial_state} -> State {target_state}:")
@@ -276,5 +283,6 @@ def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, o
     interface.log.info("RMS e-h separation [Ang]:         % .6f"  % exciton['d_exc'])
     interface.log.info("Covariance [Ang^2]:               % .6f"  % exciton['cov'])
     interface.log.info("Correlation coefficient:          % .6f"  % exciton['corr'])
+    interface.log.info("Center-of-mass size [Ang]:        % .6f"  % exciton['sigma_com'])
 
     return exciton
