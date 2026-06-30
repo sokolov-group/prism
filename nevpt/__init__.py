@@ -206,23 +206,23 @@ class NEVPT:
 
         return e_tot, e_corr
 
-    def make_rdm1(self, L = None, R = None, type = 'all'):
+    def make_rdm1(self, L = None, R = None, rdm_type = 'all'):
 
         # For state-interaction spin–orbit coupling, transform to microstate basis
         if self.soc:
             rdm1 = nevpt.make_rdm1(self)
 
             from prism.nevpt import soc
-            rdm1 = soc.transform_rdm1(self, rdm1, L, R, type)
+            rdm1 = soc.transform_rdm1(self, rdm1, L, R, rdm_type)
 
         else:
-            rdm1 = nevpt.make_rdm1(self, L, R, type)
+            rdm1 = nevpt.make_rdm1(self, L, R, rdm_type)
 
         return rdm1
 
-    def make_rdm1s(self, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
+    def make_rdm1s(self, wfn=None, wfn_ref_nelecas=None, L = None, R = None, rdm_type = 'all'):
 
-        rdm1s = nevpt.make_rdm1s(self, wfn, wfn_ref_nelecas, L, R, type)
+        rdm1s = nevpt.make_rdm1s(self, wfn, wfn_ref_nelecas, L, R, rdm_type)
 
         return rdm1s
 
@@ -266,22 +266,22 @@ class QDNEVPT(NEVPT):
 
         return e_tot, e_corr
 
-    def make_rdm1(self, L = None, R = None, type = 'all'):
+    def make_rdm1(self, L = None, R = None, rdm_type = 'all'):
 
         if self.soc:
             rdm1 = qd_nevpt.make_rdm1(self)
 
             from prism.nevpt import soc
-            rdm1 = soc.transform_rdm1(self, rdm1, L, R, type)
+            rdm1 = soc.transform_rdm1(self, rdm1, L, R, rdm_type)
 
         else:
-            rdm1 = qd_nevpt.make_rdm1(self, L, R, type)
+            rdm1 = qd_nevpt.make_rdm1(self, L, R, rdm_type)
 
         return rdm1
 
-    def make_rdm1s(self, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
+    def make_rdm1s(self, wfn=None, wfn_ref_nelecas=None, L = None, R = None, rdm_type = 'all'):
 
-        rdm1s = qd_nevpt.make_rdm1s(self, wfn, wfn_ref_nelecas, L, R, type)
+        rdm1s = qd_nevpt.make_rdm1s(self, wfn, wfn_ref_nelecas, L, R, rdm_type)
 
         return rdm1s
 

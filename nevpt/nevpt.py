@@ -238,7 +238,7 @@ def compute_properties(method):
 
 # Compute 1-RDM for either all CASCI states or a specific states
 # L is initial, R is final
-def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
+def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = None):
 
     ncore = method.ncore
     ncas = method.ncas
@@ -286,8 +286,8 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
     )
 
     avail_types = ["all", "ss", "state-specific"]
-    if type not in avail_types:
-        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
+    if rdm_type not in avail_types:
+        raise ValueError(f"Invalid type: {rdm_type}. "f"Allowed types are {avail_types}.")
         
     # Initial rdm array
     rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], nmo, nmo))
@@ -307,7 +307,7 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
             
         for ind_J, J in enumerate(R_list): 
             
-            if type in ("ss", "state-specific") and I != J:
+            if rdm_type in ("ss", "state-specific") and I != J:
                 continue
 
             R_t1_caea = t1[J].caea
@@ -592,14 +592,14 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
         rdm_final = rdm_final[:, 0, :, :]
 
     # State-specific
-    if type in ("ss", "state-specific"):
+    if rdm_type in ("ss", "state-specific"):
         rdm_final = np.diagonal(rdm_final, axis1=0, axis2=1)
         rdm_final = np.moveaxis(rdm_final, -1, 0)
 
     return rdm_final
 
 
-def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type = 'all'):
+def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, rdm_type = 'all'):
     ncore = method.ncore
     ncas = method.ncas
     n_micro_states = sum(method.ref_wfn_deg)
@@ -639,8 +639,8 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type 
     )
 
     avail_types = ["all", "ss", "state-specific"]
-    if type not in avail_types:
-        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
+    if rdm_type not in avail_types:
+        raise ValueError(f"Invalid type: {rdm_type}. "f"Allowed types are {avail_types}.")
         
     # Initial rdm array
     rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], nmo, nmo))
@@ -657,7 +657,7 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type 
     for ind_I, I in enumerate(L_list):
         for ind_J, J in enumerate(R_list): 
 
-            if type in ("ss", "state-specific") and I != J:
+            if rdm_type in ("ss", "state-specific") and I != J:
                 continue
             
             if (wfn_ref_nelecas[I] == wfn_ref_nelecas[J]):
@@ -682,7 +682,7 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, type 
         rdm_final = rdm_final[:, 0, :, :]
 
     # State-specific
-    if type in ("ss", "state-specific"):
+    if rdm_type in ("ss", "state-specific"):
         rdm_final[0] = np.diagonal(rdm_final[0], axis1=0, axis2=1)
         rdm_final[0] = np.moveaxis(rdm_final[0], -1, 0)
 
