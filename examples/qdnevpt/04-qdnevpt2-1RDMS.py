@@ -70,7 +70,7 @@ coords  = nevpt.interface.mol.atom_coords()
 nucl_dip = nevpt.interface.einsum('i,ix->x', charges, coords)
 
 # Compute all QD-NEVPT2 1RDMS
-rdms = nevpt.make_rdm1(type = 'ss')
+rdms = nevpt.make_rdm1(rdm_type = 'ss')
 
 # Extract GS 1RDM
 gs_1rdm = rdms[0]
