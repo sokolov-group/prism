@@ -107,11 +107,11 @@ def compute_dyson(interface, X):
     interface.log.note("\nComputing Dyson orbitals...")
     dyson_mos = np.dot(interface.mo, X)
 
-    filename = os.path.basename(sys.argv[0])
-    name = os.path.splitext(filename)[0]
-    interface.molden.from_mo(interface.mol, f'{name}_dyson.molden', dyson_mos)
+    input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+    filename = f"{input_file}_dyson.molden"
 
-    interface.log.note(f"Dyson orbitals written to {name}_dyson.molden")
+    interface.molden.from_mo(interface.mol, filename, dyson_mos)
+    interface.log.note("Dyson orbitals written to %s" % filename)
 
     return dyson_mos
 
@@ -203,7 +203,7 @@ def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, o
     weights = s[mask]**2
 
     if weights.size == 0:
-        interface.log.note(f"No significant NTO weights found for S{initial_state} -> S{target_state}")
+        interface.log.note("No significant NTO weights found for S%s -> S%s" % (initial_state, target_state))
         return None
 
     U, V = U[:, mask], Vh[mask].T
