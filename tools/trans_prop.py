@@ -139,7 +139,7 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=No
     U, V = U[:, mask], Vh[mask].T
 
     if weights.size == 0:
-        interface.log.note(f"No significant NTO weights found for S{initial_state} -> S{target_state}")
+        interface.log.note("No significant NTO weights found for S%s -> S%s" % (initial_state, target_state))
         return None
 
     # NTO Metrics
@@ -149,12 +149,12 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=No
     S = -np.sum(w * np.log(w + 1e-16))     # entanglement entropy
     Z = np.exp(S)                          # number of entangled states
 
-    interface.log.info(f"State {initial_state} -> State {target_state}:")
-    interface.log.info(f"   Sum of SVs (Omega):               {omega: .6f}")
-    interface.log.info(f"   Participation ratio (PR_NTO):     {PR: .6f}")
-    interface.log.info(f"   Entanglement entropy (S_HE):      {S: .6f}")
-    interface.log.info(f"   Nr of entangled states (Z_HE):    {Z: .6f}")
-    interface.log.info(f"   Renormalized S_HE/Z_HE:  {S/Z:.6f} / {1.0: .6f}")
+    interface.log.info("State %s -> State %s" % (initial_state, target_state))
+    interface.log.info("   Sum of SVs (Omega):               % .6f" % omega)
+    interface.log.info("   Participation ratio (PR_NTO):     % .6f" % PR)
+    interface.log.info("   Entanglement entropy (S_HE):      % .6f" % S)
+    interface.log.info("   Nr of entangled states (Z_HE):    % .6f" % Z)
+    interface.log.info("   Renormalized S_HE/Z_HE:  %.6f / % .6f" % (S/Z, 1.0))
 
     # MO to AO
     C_hole = interface.mo @ U
@@ -181,7 +181,7 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=No
         interface.molden.header(interface.mol, f)
         interface.molden.orbital_coeff(interface.mol, f, C_nto, occ=occ_nto)
 
-    interface.log.note(f"NTOs written to {filename}")
+    interface.log.note("NTOs written to %s" % filename)
 
     return weights, U, Vh
 
@@ -208,7 +208,7 @@ def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, o
 
     U, V = U[:, mask], Vh[mask].T
     w = weights / np.sum(weights) # normalized weights
- 
+
     # Integrals: AO to MO to NTO
     mo_coeff = interface.mo
     R_ao = interface.mol.intor("int1e_r")
@@ -269,12 +269,12 @@ def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, o
         "corr":      corr,
     }
 
-    interface.log.info(f"State {initial_state} -> State {target_state}:")
+    interface.log.info("State %s -> State %s" % (initial_state, target_state))
     fmt= lambda x: f"{float(x): .3f}"
     rh_str = np.array2string(exciton['rh'], formatter={'float_kind': fmt})
     re_str = np.array2string(exciton['re'], formatter={'float_kind': fmt})
-    interface.log.info("Mean position of hole:            %s"      % rh_str)
-    interface.log.info("Mean position of electron:        %s"      % re_str)
+    interface.log.info("Mean position of hole:            %s"     % rh_str)
+    interface.log.info("Mean position of electron:        %s"     % re_str)
     interface.log.info("Linear e-h distance [Ang]:        % .6f"  % exciton['d_lin'])
     interface.log.info("Hole size [Ang]:                  % .6f"  % exciton['sigma_h'])
     interface.log.info("Electron size [Ang]:              % .6f"  % exciton['sigma_e'])
