@@ -186,6 +186,11 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=No
     return weights, U, Vh
 
 def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, orb_thresh=None):
+    '''
+    Computes exciton analysis between two given states
+    given an interface object (source of MO coefficients
+    and PySCF mol object) and a transition density matrix.
+    '''
 
     interface.log.info("\nComputing exciton analysis...")
 
