@@ -115,7 +115,7 @@ class KnownValues(unittest.TestCase):
         
         # Using 'all' flag
         # Ground state
-        rdms = nevpt.make_rdm1(type = 'all')
+        rdms = nevpt.make_rdm1(rdm_type = 'all')
         
         # Ground state
         gs_1rdm = rdms[0,0]
@@ -150,7 +150,7 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(rdms_test(es3_1rdm), 39.05984123370054, 6)
         
         # Using ss flag
-        rdms = nevpt.make_rdm1(type = 'ss')
+        rdms = nevpt.make_rdm1(rdm_type = 'ss')
         
         # Ground state
         gs_1rdm = rdms[0]
