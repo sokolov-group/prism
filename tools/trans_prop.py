@@ -124,7 +124,7 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=No
     and PySCF mol object) and a transition density matrix.
     '''
 
-    interface.log.info(f"\nComputing NTOs...")
+    interface.log.info("\nComputing NTOs...")
 
     # Threshold
     if orb_thresh is None:
@@ -275,14 +275,14 @@ def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, o
     fmt= lambda x: f"{float(x): .3f}"
     rh_str = np.array2string(exciton['rh'], formatter={'float_kind': fmt})
     re_str = np.array2string(exciton['re'], formatter={'float_kind': fmt})
-    interface.log.info("Mean position of hole:            %s"     % rh_str)
-    interface.log.info("Mean position of electron:        %s"     % re_str)
-    interface.log.info("Linear e-h distance [Ang]:        % .6f"  % exciton['d_lin'])
-    interface.log.info("Hole size [Ang]:                  % .6f"  % exciton['sigma_h'])
-    interface.log.info("Electron size [Ang]:              % .6f"  % exciton['sigma_e'])
-    interface.log.info("RMS e-h separation [Ang]:         % .6f"  % exciton['d_exc'])
-    interface.log.info("Covariance [Ang^2]:               % .6f"  % exciton['cov'])
-    interface.log.info("Correlation coefficient:          % .6f"  % exciton['corr'])
-    interface.log.info("Center-of-mass size [Ang]:        % .6f"  % exciton['sigma_com'])
+    interface.log.info("   Mean position of hole:            %s"     % rh_str)
+    interface.log.info("   Mean position of electron:        %s"     % re_str)
+    interface.log.info("   Linear e-h distance [Ang]:        % .6f"  % exciton['d_lin'])
+    interface.log.info("   Hole size [Ang]:                  % .6f"  % exciton['sigma_h'])
+    interface.log.info("   Electron size [Ang]:              % .6f"  % exciton['sigma_e'])
+    interface.log.info("   RMS e-h separation [Ang]:         % .6f"  % exciton['d_exc'])
+    interface.log.info("   Covariance [Ang^2]:               % .6f"  % exciton['cov'])
+    interface.log.info("   Correlation coefficient:          % .6f"  % exciton['corr'])
+    interface.log.info("   Center-of-mass size [Ang]:        % .6f"  % exciton['sigma_com'])
 
     return exciton
