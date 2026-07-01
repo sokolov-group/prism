@@ -115,7 +115,7 @@ def compute_dyson(interface, X):
 
     return dyson_mos
 
-def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=None):
+def compute_ntos(interface, trdm, initial_state=1, target_state=2, orb_thresh=None):
     '''
     Computes natural transition orbitals between two given states
     given an interface object (source of MO coefficients
@@ -185,7 +185,7 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1, orb_thresh=No
 
     return weights, U, Vh
 
-def compute_exciton_analysis(interface, trdm, initial_state=0, target_state=1, orb_thresh=None):
+def compute_exciton_analysis(interface, trdm, initial_state=1, target_state=2, orb_thresh=None):
     '''
     Computes exciton analysis between two given states
     given an interface object (source of MO coefficients
