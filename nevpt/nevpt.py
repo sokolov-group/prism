@@ -25,7 +25,6 @@ from prism.nevpt import rdms
 from prism.nevpt import amplitudes
 from prism.tools import trans_prop
 
-
 def compute_energy(method):
 
     n_states = len(method.ref_wfn_deg)
@@ -211,7 +210,7 @@ def compute_properties(method):
         for gs_index in range(deg_gs):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
-            osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
+            osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[gs_index, gs_index+1:])
             osc_str_full.append(osc)
             osc_str[gs_index:] += osc 
 
@@ -222,7 +221,7 @@ def compute_properties(method):
             for gs_index in range(deg_gs, len(method.e_tot)):  
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
-                osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
+                osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[gs_index, gs_index+1:]))
 
             method.properties["osc_strengths_full"] = osc_str_full
 
@@ -255,45 +254,38 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
     if t1_0 is None:
         t1_0 = method.t1_0
 
-    L_states = 0
-    R_states = 0
-    L_list = None
-    R_list = None
+    avail_types = ["all", "ss", "state-specific"]
+    if rdm_type not in avail_types:
+        raise ValueError(f"Invalid type: {rdm_type}. "f"Allowed types are {avail_types}.")
 
     if L is None:
-        L_states = n_micro_states
-        L_list = np.arange(L_states)
+        L_list = np.arange(n_micro_states)
     elif isinstance(L, int):
-        L_list = np.array([L])
-        if L > n_micro_states:
-            raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
+        if not (1 <= L <= n_micro_states):
+            raise ValueError(f"Invalid index: L={L}. Valid range is [1, {n_micro_states}].")
+        L_list = np.array([L - 1])
     else:
-         raise ValueError(f"Value L={L} not supported")
+        raise ValueError(f"Value L={L} not supported. Must be an int or None.")
 
     if R is None:
-        R_states = n_micro_states
-        R_list = np.arange(R_states)
+        R_list = np.arange(n_micro_states)
     elif isinstance(R, int):
-        R_list = np.array([R])
-        if R > n_micro_states:
-            raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
+        if not (1 <= R <= n_micro_states):
+            raise ValueError(f"Invalid index: R={R}. Valid range is [1, {n_micro_states}].")
+        R_list = np.array([R - 1])
     else:
-         raise ValueError(f"Value R={R} not supported")
+        raise ValueError(f"Value R={R} not supported. Must be an int or None.")
 
     error_msg = (
         f"Instability detected in correlated 1RDM. "
         "Consider loosening truncation thresholds."
     )
-
-    avail_types = ["all", "ss", "state-specific"]
-    if rdm_type not in avail_types:
-        raise ValueError(f"Invalid type: {rdm_type}. "f"Allowed types are {avail_types}.")
         
     # Initial rdm array
     rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], nmo, nmo))
-    
+
     t1_ccee = t1_0
-    
+
     # Looping over states I,J
     for ind_I, I in enumerate(L_list):
         L_t1_caea = t1[I].caea
@@ -545,6 +537,7 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
                     rdm_corr[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern] -= 1/3 * einsum('xyzA,wuvB,zuwyvx->AB', L_t1_aaae, R_t1_aaae, trdm_cccaaa, optimize = einsum_type)
                     rdm_corr[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern] -= 1/3 * einsum('xyzA,wuvB,zuwyxv->AB', L_t1_aaae, R_t1_aaae, trdm_cccaaa, optimize = einsum_type)
                     rdm_corr[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern] += einsum('xyzA,wuzB,yxuw->AB', L_t1_aaae, R_t1_aaae, trdm_ccaa, optimize = einsum_type)
+
                 # OFF-DIAGS #
                 else:
                     # COR-ACT #
@@ -582,14 +575,14 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
 
     # Single pair of states
     if L is not None and R is not None:
-        rdm_final = rdm_final[0,0]
+        rdm_final = rdm_final[0, 0]
 
     # One state on the left or right
-    if L_list.shape[0] == 1 and R_list.shape[0] > 1:
+    elif L is not None and R is None:
         rdm_final = rdm_final[0]
 
-    if L_list.shape[0] > 1 and R_list.shape[0] == 1:
-        rdm_final = rdm_final[:, 0, :, :]
+    elif L is None and R is not None:
+        rdm_final = rdm_final[:, 0]
 
     # State-specific
     if rdm_type in ("ss", "state-specific"):
@@ -605,43 +598,36 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, rdm_t
     n_micro_states = sum(method.ref_wfn_deg)
     nmo = method.nmo
 
-    L_states = 0
-    R_states = 0
-    L_list = None
-    R_list = None
-
     if method.rdm_order == 2:
         raise ValueError(f"Invalid type: corelation not implement in spin-orbital RDM. ")
 
+    avail_types = ["all", "ss", "state-specific"]
+    if rdm_type not in avail_types:
+        raise ValueError(f"Invalid type: {rdm_type}. "f"Allowed types are {avail_types}.")
+
     if L is None:
-        L_states = n_micro_states
-        L_list = np.arange(L_states)
+        L_list = np.arange(n_micro_states)
     elif isinstance(L, int):
-        L_list = np.array([L])
-        if L > n_micro_states:
-            raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
+        if not (1 <= L <= n_micro_states):
+            raise ValueError(f"Invalid index: L={L}. Valid range is [1, {n_micro_states}].")
+        L_list = np.array([L - 1])
     else:
-         raise ValueError(f"Value L={L} not supported")
+        raise ValueError(f"Value L={L} not supported. Must be an int or None.")
 
     if R is None:
-        R_states = n_micro_states
-        R_list = np.arange(R_states)
+        R_list = np.arange(n_micro_states)
     elif isinstance(R, int):
-        R_list = np.array([R])
-        if R > n_micro_states:
-            raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
+        if not (1 <= R <= n_micro_states):
+            raise ValueError(f"Invalid index: R={R}. Valid range is [1, {n_micro_states}].")
+        R_list = np.array([R - 1])
     else:
-         raise ValueError(f"Value R={R} not supported")
+        raise ValueError(f"Value R={R} not supported. Must be an int or None.")
 
     error_msg = (
         f"Instability detected in correlated 1RDM. "
         "Consider loosening truncation thresholds."
     )
-
-    avail_types = ["all", "ss", "state-specific"]
-    if rdm_type not in avail_types:
-        raise ValueError(f"Invalid type: {rdm_type}. "f"Allowed types are {avail_types}.")
-        
+    
     # Initial rdm array
     rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], nmo, nmo))
     
@@ -667,28 +653,24 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, rdm_t
 
                 if I == J:
                     #uncorrelated diagonal terms
-                    rdm_final[:,ind_I, ind_J, :ncore, :ncore] =   np.identity(ncore)     
+                    rdm_final[:, ind_I, ind_J, :ncore, :ncore] = np.identity(ncore)     
 
     # Single pair of states
     if L is not None and R is not None:
-        rdm_final = rdm_final[:,0,0]
+        rdm_final = rdm_final[:, 0, 0]
 
     # One state on the left or right
-    if L_list.shape[0] == 1 and R_list.shape[0] > 1:
-        rdm_final[0] = rdm_final[0, 0, :, :]
-        rdm_final[1] = rdm_final[1, 0, :, :]
+    elif L is not None and R is None:
+        rdm_final = rdm_final[:, 0]
 
-    if L_list.shape[0] > 1 and R_list.shape[0] == 1:
-        rdm_final = rdm_final[:, 0, :, :]
+    elif L is None and R is not None:
+        rdm_final = rdm_final[:, :, 0]
 
     # State-specific
     if rdm_type in ("ss", "state-specific"):
-        rdm_final[0] = np.diagonal(rdm_final[0], axis1=0, axis2=1)
-        rdm_final[0] = np.moveaxis(rdm_final[0], -1, 0)
+        rdm_final = np.diagonal(rdm_final, axis1=1, axis2=2)
+        rdm_final = np.moveaxis(rdm_final, -1, 1)
 
-        rdm_final[1] = np.diagonal(rdm_final[1], axis1=0, axis2=1)
-        rdm_final[1] = np.moveaxis(rdm_final[1], -1, 0)
-        
     return rdm_final
 
 
