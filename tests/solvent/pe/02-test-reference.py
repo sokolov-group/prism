@@ -75,5 +75,7 @@ nevpt.verbose = 5
 nevpt.keep_amplitudes = True
 
 e_tot, e_corr, osc = nevpt.kernel()
-nevpt.analyze()
+
+print('QD-NEVPT2 Correlation Energies: ')
+print(e_corr)
     

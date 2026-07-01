@@ -21,7 +21,7 @@ import numpy as np
 
 from prism.nevpt import nevpt
 from prism.tools import trans_prop
-from prism.tools import solvent
+from prism.solvent import pol_embed
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -281,15 +281,16 @@ def compute_properties(method):
         osc_str_full=[]
         osc_str = np.zeros(len(method.e_tot)-1)
         
-        # Uncorrected PE data
-        if (method.pe is not None and method.pe_method == 'pert'):
-                osc_str_full_uncorrected = []
-         
         # Get perturbative energy contributions if needed
         if (method.pe is not None and method.pe_method == 'pert'):
-            ptss, ptlr = solvent.get_pert_pe_corrections(method, rdms = rdm_mo)
+            osc_str_full_uncorrected = []
+            ptss, ptlr = pol_embed.get_pert_pe_corrections(method, rdms = rdm_mo)
             method.properties["ptss_corrections"] = ptss
             method.properties["ptlr_corrections"] = ptlr
+            
+        # Uncorrected PE data
+        if (method.pe is not None and method.pe_method == 'pert' and method.verbose >= 5):
+                osc_str_full_uncorrected = []
             
         for gs_index in range(deg_gs):
             e_diff = method.e_tot - method.e_tot[gs_index]
@@ -298,11 +299,12 @@ def compute_properties(method):
             if (method.pe is not None and method.pe_method == 'pert'):
                 e_diff_uncorrected = e_diff
                     
-                ptss, ptlr = solvent.get_pert_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                ptss, ptlr = pol_embed.get_pert_pe_corrections(method, state = gs_index, rdms = rdm_mo)
                 e_diff = [e_diff[i] + (ptss[i]) + (ptlr[i]) for i in range(len(ptss))]
-                    
-                osc_uncorrected = trans_prop.osc_strength(method.interface, e_diff_uncorrected, rdm_mo[gs_index, gs_index+1:])
-                osc_str_full_uncorrected.append(osc_uncorrected)
+                
+                if method.verbose >= 5:
+                    osc_uncorrected = trans_prop.osc_strength(method.interface, e_diff_uncorrected, rdm_mo[gs_index, gs_index+1:])
+                    osc_str_full_uncorrected.append(osc_uncorrected)
                 
             osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[gs_index, gs_index+1:])
             
@@ -322,7 +324,7 @@ def compute_properties(method):
                     
                     e_diff_uncorrected = e_diff
                     
-                    ptss, ptlr = solvent.get_pert_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                    ptss, ptlr = pol_embed.get_pert_pe_corrections(method, state = gs_index, rdms = rdm_mo)
                     e_diff = [e_diff[i] + (ptss[i]) + (ptlr[i]) for i in range(len(ptss))]
                     
                     osc_uncorrected = trans_prop.osc_strength(method.interface, e_diff_uncorrected, rdm_mo[gs_index, gs_index+1:])

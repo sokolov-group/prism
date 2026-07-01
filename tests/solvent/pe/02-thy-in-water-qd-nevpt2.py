@@ -85,7 +85,6 @@ class KnownValues(unittest.TestCase):
         interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
         nevpt = prism.nevpt.NEVPT(interface)
         nevpt.compute_singles_amplitudes = False
-        #nevpt.semi_internal_projector = "gno"
         nevpt.s_thresh_singles = 1e-6
         nevpt.s_thresh_doubles = 1e-6
         nevpt.rdm_order = 2

@@ -62,8 +62,7 @@ pe.verbose = 3
 mf = pyscf.scf.RHF(mol)
 mf = pyscf.solvent.PE(mf, pe)
 
-ehf = mf.scf()
-print("SCF energy: %f\n" % ehf)
+mf.kernel()
 
 # CASSCF calculation
 n_states = 4
@@ -72,7 +71,7 @@ mc = pyscf.mcscf.CASSCF(mf, 4,4).state_average_(weights)
 mc = pyscf.solvent.PE(mc, pe)
 mc.fix_spin_(ss=0)
 
-emc = mc.mc1step()[0]
+mc.kernel()
 
 class KnownValues(unittest.TestCase):
 
@@ -86,7 +85,6 @@ class KnownValues(unittest.TestCase):
         interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
         nevpt = prism.nevpt.NEVPT(interface)
         nevpt.compute_singles_amplitudes = False
-        nevpt.semi_internal_projector = "gno"
         nevpt.s_thresh_singles = 1e-6
         nevpt.s_thresh_doubles = 1e-6
         nevpt.rdm_order = 2
@@ -95,15 +93,15 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -491.342839236442, 5)
-        self.assertAlmostEqual(e_tot[1], -491.160823788946, 5)
-        self.assertAlmostEqual(e_tot[2],- 491.187272465265, 5)
-        self.assertAlmostEqual(e_tot[3], -491.131360847730, 5)
+        self.assertAlmostEqual(e_tot[0], -491.344779269272, 5)
+        self.assertAlmostEqual(e_tot[1], -491.187214772889, 5)
+        self.assertAlmostEqual(e_tot[2], -491.166343104560, 5)
+        self.assertAlmostEqual(e_tot[3], -491.123959191654, 5)
         
-        self.assertAlmostEqual(e_corr[0], -1.511444173370, 5)
-        self.assertAlmostEqual(e_corr[1], -1.513158054498, 5)
-        self.assertAlmostEqual(e_corr[2], -1.568920634308, 5)
-        self.assertAlmostEqual(e_corr[3], -1.572078524592, 5)
+        self.assertAlmostEqual(e_corr[0], -1.5133842062004, 5)
+        self.assertAlmostEqual(e_corr[1], -1.5395490384419, 5)
+        self.assertAlmostEqual(e_corr[2], -1.5479912736046, 5)
+        self.assertAlmostEqual(e_corr[3], -1.5646768685172, 5)
         
         self.assertAlmostEqual(osc[0], 0.23410191, 5)
         self.assertAlmostEqual(osc[1], 0.18033790, 5)

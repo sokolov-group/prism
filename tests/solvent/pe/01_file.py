@@ -1,3 +1,4 @@
+#INFO: **** input file is /users/PAS0291/jdserna22/repos/prism/tests/solvent/pe/01-test-reference.py ****
 # AUTHOR: James Serna
 #!/usr/bin/env python
 
@@ -61,7 +62,7 @@ mc.fix_spin_(ss=0)
 
 mc.kernel(mo)
 
-interface = prism.interface.PYSCF(mf, mc, backend = 'pytblis')
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 nevpt = prism.nevpt.NEVPT(interface)
 
 nevpt.method_type = "qd"
@@ -76,5 +77,6 @@ nevpt.verbose = 5
 nevpt.keep_amplitudes = True
 
 e_tot, e_corr, osc = nevpt.kernel()
-nevpt.analyze()
-    
+
+print('QD-NEVPT2 Correlation Energies: ')
+print(e_corr)

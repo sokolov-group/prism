@@ -22,7 +22,7 @@
 import numpy as np
 from prism.nevpt import integrals
 from prism.tools import trans_prop
-from prism.tools import solvent
+from prism.solvent import pol_embed
 import prism.lib.logger as logger
 
 def kernel(nevpt):
@@ -214,7 +214,7 @@ def print_results(nevpt):
             nevpt.interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
 
     if "ptss_corrections" and "ptlr_corrections" in nevpt.properties and nevpt.verbose >= 5:
-        solvent.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"])
+        pol_embed.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"])
         
 def analyze(nevpt, weight_cutoff=0.01):
 
