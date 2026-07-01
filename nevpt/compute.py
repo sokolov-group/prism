@@ -216,8 +216,8 @@ def analyze(nevpt, weight_cutoff=0.01):
         else:
             # GS -> ES only
             trdm = nevpt.make_rdm1(L=0)[1:]
-            for state, trdm_state in enumerate(trdm):
-                trans_prop.compute_ntos(nevpt.interface, trdm_state, initial_state=0, target_state=state+1)
+            for state_id, trdm_state in enumerate(trdm, start=1):
+                trans_prop.compute_ntos(nevpt.interface, trdm_state, initial_state=1, target_state=state_id+1)
 
     if nevpt.method_type == "qd":
         from prism.nevpt import qd_nevpt
