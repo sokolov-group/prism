@@ -149,7 +149,6 @@ class NEVPT:
         self.Bs_vec_chi = [0.1]
         self.T_vec_chi = [5,100,200,250]
 
-
         # Initiate the real-time calculations
         self.rt = None                             # Turn-on real-time dynamics 
         self.rt_init_cond = None                   # Generate the initial condition

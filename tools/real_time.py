@@ -21,6 +21,10 @@ def real_time_prop(nevpt, evec, etot):
     else:
         raise Exception("Initial conditions are not provided for the Charge Migration!")
 
+    # Transform initial conditions from the eignstate basis to the QD-NEVPT2  basis
+    #wfn = np.dot(evec, init_cond)
+    #wfn = init_cond.copy()
+
     t = 0.0
 
     time_step = nevpt.time_step
@@ -30,6 +34,8 @@ def real_time_prop(nevpt, evec, etot):
     sys.stdout.flush()
 
     if nevpt.rt_prop_method == "exact":
+        #wfn = np.conj(evec.T) @ wfn
+        #H_eff = np.conj(evec.T) @ H_eff @ evec
         wfn = init_cond.copy()
         H_eff  = np.diag(etot)
     
@@ -39,7 +45,7 @@ def real_time_prop(nevpt, evec, etot):
     with open('auto_correlation.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerow(['Time (a.u.)', 'Auto-correlation \n'])
-   
+    
     while t < nevpt.rt_tmax:
 
         # Check the norm of the wavefunction, the energy
