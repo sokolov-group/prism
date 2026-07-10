@@ -82,17 +82,17 @@ class KnownValues(unittest.TestCase):
     
         # Using L,R
         # Ground state
-        gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
+        gs_1rdm = nevpt.make_rdm1(L = 1, R = 1)
 
         # Excited States
-        es1_1rdm = nevpt.make_rdm1(L = 1, R = 1)
-        es2_1rdm = nevpt.make_rdm1(L = 2, R = 2)
-        es3_1rdm = nevpt.make_rdm1(L = 3, R = 3)
+        es1_1rdm = nevpt.make_rdm1(L = 2, R = 2)
+        es2_1rdm = nevpt.make_rdm1(L = 3, R = 3)
+        es3_1rdm = nevpt.make_rdm1(L = 4, R = 4)
 
         # Transition 1RDMS
-        tr1_1rdm = nevpt.make_rdm1(L = 0, R = 1)
-        tr2_1rdm = nevpt.make_rdm1(L = 0, R = 2)
-        tr3_1rdm = nevpt.make_rdm1(L = 0, R = 3)
+        tr1_1rdm = nevpt.make_rdm1(L = 1, R = 2)
+        tr2_1rdm = nevpt.make_rdm1(L = 1, R = 3)
+        tr3_1rdm = nevpt.make_rdm1(L = 1, R = 4)
         
         # Store norms for different type check
         tr1_norm = np.linalg.norm(tr1_1rdm)
