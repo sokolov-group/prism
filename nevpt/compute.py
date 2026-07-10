@@ -215,7 +215,7 @@ def analyze(nevpt, weight_cutoff=0.01):
             nevpt.log.warn('Only one state provided for NTO analysis.')
         else:
             # GS -> ES only
-            trdm = nevpt.make_rdm1(L=0)[1:]
+            trdm = nevpt.make_rdm1(L=1)[1:]
             for state_id, trdm_state in enumerate(trdm, start=1):
                 trans_prop.compute_ntos(nevpt.interface, trdm_state, initial_state=1, target_state=state_id+1)
 
