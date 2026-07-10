@@ -113,7 +113,6 @@ class NEVPT:
         self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
 
-<<<<<<< HEAD
         # For magnetic susceptibility
         self.mag_av = False
         self.sus_av = False
@@ -158,6 +157,7 @@ class NEVPT:
         self.rt_prop_method = "exact"              # Propagator type
         self.rt_tmax = 500                         # How long propagate the wave-function
         self.print_step = 50                       # Necessary printing at each 50 steps
+        self.density = True                        # Calculate density difference
 
     def _make_method_instance(self):
 

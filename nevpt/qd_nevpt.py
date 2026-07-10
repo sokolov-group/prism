@@ -688,3 +688,4 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
                 ao_start, ao_stop = mol.aoslice_by_atom()[ia][2], mol.aoslice_by_atom()[ia][3]
                 spin_atom = np.sum(spin_pop_ao[ao_start:ao_stop])
                 method.log.info("      Atom %d %-4s  spin pop: %10.6f" % (ia, mol.atom_symbol(ia), spin_atom))
+
