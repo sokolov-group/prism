@@ -1,5 +1,5 @@
 '''
-SOC CASSCF calculation for ZnH
+SOC CASSCF calculation for ZnH g-tensor
 '''
 
 import numpy as np
@@ -41,4 +41,6 @@ mc.analyze()
 
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-interface.run_soc("x2c-1")
+interface.gtensor = True
+interface.soc = "bp"
+interface.run_soc()

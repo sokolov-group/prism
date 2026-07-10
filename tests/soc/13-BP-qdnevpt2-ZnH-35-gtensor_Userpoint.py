@@ -69,7 +69,7 @@ nevpt.soc = "Breit-Pauli" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 nevpt.verbose = 1
 nevpt.gtensor = True
 nevpt.gtensor_target_state = 1
-nevpt.magnetics_origin_type = [3,0.623445,0.114514]
+nevpt.magnetic_origin_type = [3,0.623445,0.114514]
 
 
 class KnownValues(unittest.TestCase):

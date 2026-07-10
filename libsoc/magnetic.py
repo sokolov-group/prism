@@ -21,6 +21,13 @@
 import numpy as np
 
 def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None):
+    '''
+    rdm_sf: spin free 1st rdm (without spin-orbit coupling)
+    en_soc (np.array, n): spin-orbit coupling energy
+    h_evec_soc (np.array): spin-orbit coupling eigenvector
+    S (list), spin quantum number of each state without spin-orbit coupling
+    method: nevpt or qdnevpt object. If "None", using interface (SOC-CASSCF)
+    '''
     
     if method is None:
         method = interface
@@ -36,17 +43,17 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
     #g-tensor
     if method.gtensor:
         method.log.info("\nCalculating g-tensor...")
-    target_state = method.gtensor_target_state
-    if isinstance(target_state, int):
-        target_state = [target_state]
-    g_factor = []
-    g_evector = []
-    for I in target_state:
-        g_fac, g_evec = gtensor(method.interface, S, Mu, target_index = I )
-        g_factor.append(g_fac)
-        g_evector.append(g_evec)
-    properties_mag["g-factors"] = g_factor
-    properties_mag["g-eigenvectors"] = g_evector
+        target_state = method.gtensor_target_state
+        if isinstance(target_state, int):
+            target_state = [target_state]
+        g_factor = []
+        g_evector = []
+        for I in target_state:
+            g_fac, g_evec = gtensor(interface, S, Mu, target_index = I )
+            g_factor.append(g_fac)
+            g_evector.append(g_evec)
+        properties_mag["g-factors"] = g_factor
+        properties_mag["g-eigenvectors"] = g_evector
 
 
     #magnetic susceptibility
@@ -60,7 +67,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
 
         #Powder data information
         method.log.info("Import LebedevGrid in pyscf...")
-        Powder_data_xyzw = method.interface.MakeAngularGrid_266()
+        Powder_data_xyzw = interface.MakeAngularGrid_266()
         method.log.info("Number of LebedevGrid point: %s" % len(Powder_data_xyzw))
 
 
@@ -68,7 +75,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
         if method.mag_av:
             Bs_list = method.Bs_powder_M
             T_list  = method.T_powder_M
-            M_av_all = Powder_magnetization(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+            M_av_all = Powder_magnetization(interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
             
             properties_mag["M_av"] = M_av_all
 
@@ -77,7 +84,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
         if method.sus_av:
             Bs_list = method.Bs_powder_chi
             T_list  = method.T_powder_chi
-            chi_av_all = Powder_susceptibility(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+            chi_av_all = Powder_susceptibility(interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
            
             properties_mag["chi_av"] = chi_av_all
 
@@ -87,7 +94,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
             B_vec = method.B_vec_M
             Bs_list = method.Bs_vec_M
             T_list  = method.T_vec_M
-            M_xyz_all = vector_magnetization(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
+            M_xyz_all = vector_magnetization(interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
 
             properties_mag["M_xyz_all"] = M_xyz_all
 
@@ -97,7 +104,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
             B_vec = method.B_vec_chi
             Bs_list = method.Bs_vec_chi
             T_list  = method.T_vec_chi
-            chi_T_eval_all = tensor_susceptibility(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
+            chi_T_eval_all = tensor_susceptibility(interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
 
             properties_mag["chi_T_eval_all"] = chi_T_eval_all
 
@@ -105,7 +112,11 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
 
 
 def print_mag_properties(interface, properties,  method = None):
-
+    '''
+    properties(dictionary): magnetic properties result
+    method: nevpt or qdnevpt object. If "None", using interface (SOC-CASSCF)
+    '''
+    
     if method is None:
         method = interface
 

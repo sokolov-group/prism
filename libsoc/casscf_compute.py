@@ -3,6 +3,8 @@ import prism
 import numpy as np
 import prism.lib.logger as logger
 from prism.tools import trans_prop
+from prism.libsoc import general_somf
+from prism.libsoc import magnetic
 
 def compute_somf_soc(interface):
 
@@ -41,7 +43,6 @@ def compute_somf_soc(interface):
 
     #generalSOC requires spin-free energy...
     en = interface.e_ref
-    from prism.libsoc import general_somf
 
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
@@ -118,14 +119,36 @@ def compute_somf_soc(interface):
     osc_str_soc_full=[]
     osc_str_soc = np.zeros(len(en_soc)-1)
     for gs_index in range(deg_gs):
-        e_diff = en_soc- en_soc[gs_index]
+        e_diff = en_soc - en_soc[gs_index]
         e_diff = e_diff[gs_index+1:]
         osc = trans_prop.osc_strength(interface, e_diff, rdm_soc[ gs_index, gs_index+1:])
         osc_str_soc_full.append(osc)
         osc_str_soc[gs_index:] += osc 
 
+    interface.properties_cas["osc_strengths"] = osc_str_soc
+
+    # Compute oscillator strengths starting from each state
+    if interface.verbose >= 5:
+        for gs_index in range(deg_gs, len(en_soc)):  
+            e_diff = en_soc - en_soc[gs_index]
+            e_diff = e_diff[gs_index+1:]
+            osc_str_soc_full.append(trans_prop.osc_strength(interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
+
+        interface.properties_cas["osc_strengths_full"] = osc_str_soc_full
+
+    if (interface.gtensor or interface.mag_av or  interface.sus_av or  interface.mag_vec or  interface.sus_tensor):
+        properties_mag = magnetic.compute_properties(interface, rdm_sf, en_soc, evec_soc, S,  method = None)
+        interface.properties_cas.update(properties_mag)
+
+
     # Print results obtained from soc-sa-casscf
     print_result_sa_casscf(interface, en_soc, osc_str_soc)
+    
+    if "osc_strengths_full" in interface.properties_cas:
+        trans_prop.print_osc_strength(interface, interface.properties_cas["osc_strengths_full"])
+
+    if "magnetic_properties" in interface.properties_cas:
+        magnetic.print_mag_properties(interface, interface.properties_cas,  method = None)
 
     return  en_soc, osc_str_soc
 
