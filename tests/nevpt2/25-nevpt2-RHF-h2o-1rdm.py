@@ -75,7 +75,7 @@ class KnownValues(unittest.TestCase):
 
         # Using L,R
         # Ground state
-        gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
+        gs_1rdm = nevpt.make_rdm1(L = 1, R = 1)
         
         self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
         self.assertAlmostEqual(rdms_test(gs_1rdm), 19.90404269, 6)
