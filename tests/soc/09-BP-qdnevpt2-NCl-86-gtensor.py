@@ -70,7 +70,7 @@ nevpt.soc = "Breit-Pauli" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 nevpt.verbose = 1
 nevpt.gtensor = True
 nevpt.gtensor_target_state = 1 
-nevpt.gtensor_origin_type = 'charge' 
+nevpt.magnetic__origin_type = 'charge' 
 
 
 

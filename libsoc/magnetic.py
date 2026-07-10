@@ -20,6 +20,181 @@
 
 import numpy as np
 
+def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None):
+    
+    if method is None:
+        method = interface
+
+    properties_mag = {}                      # Dictionary to store computed magnetic properties
+    properties_mag["magnetic_properties"] = True
+
+    # Calculate magnetic dipole moment without spin-orbit coupling
+    Mu_sf = mag_dip(interface, rdm_sf, S, origin_type = method.magnetic_origin_type)
+    Mu    = np.einsum('ai,kib,bj->kaj',np.conj(h_evec_soc).T, Mu_sf, h_evec_soc)
+
+
+    #g-tensor
+    if method.gtensor:
+        method.log.info("\nCalculating g-tensor...")
+    target_state = method.gtensor_target_state
+    if isinstance(target_state, int):
+        target_state = [target_state]
+    g_factor = []
+    g_evector = []
+    for I in target_state:
+        g_fac, g_evec = gtensor(method.interface, S, Mu, target_index = I )
+        g_factor.append(g_fac)
+        g_evector.append(g_evec)
+    properties_mag["g-factors"] = g_factor
+    properties_mag["g-eigenvectors"] = g_evector
+
+
+    #magnetic susceptibility
+    if method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor:
+        method.log.info("\nCalculating magnetic susceptibility or magnetization...")
+
+        # Parameter
+        h_s =method.step_h_s
+        method.log.info("h_s= %.2f T" %(h_s))
+
+
+        #Powder data information
+        method.log.info("Import LebedevGrid in pyscf...")
+        Powder_data_xyzw = method.interface.MakeAngularGrid_266()
+        method.log.info("Number of LebedevGrid point: %s" % len(Powder_data_xyzw))
+
+
+        ###Powder magnetization
+        if method.mag_av:
+            Bs_list = method.Bs_powder_M
+            T_list  = method.T_powder_M
+            M_av_all = Powder_magnetization(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+            
+            properties_mag["M_av"] = M_av_all
+
+
+        ###Powder susceptibility
+        if method.sus_av:
+            Bs_list = method.Bs_powder_chi
+            T_list  = method.T_powder_chi
+            chi_av_all = Powder_susceptibility(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+           
+            properties_mag["chi_av"] = chi_av_all
+
+
+        ###Vector magnetization
+        if method.mag_vec:
+            B_vec = method.B_vec_M
+            Bs_list = method.Bs_vec_M
+            T_list  = method.T_vec_M
+            M_xyz_all = vector_magnetization(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
+
+            properties_mag["M_xyz_all"] = M_xyz_all
+
+
+        ###Tensor  susceptibility
+        if method.sus_tensor:
+            B_vec = method.B_vec_chi
+            Bs_list = method.Bs_vec_chi
+            T_list  = method.T_vec_chi
+            chi_T_eval_all = tensor_susceptibility(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
+
+            properties_mag["chi_T_eval_all"] = chi_T_eval_all
+
+    return properties_mag
+
+
+def print_mag_properties(interface, properties,  method = None):
+
+    if method is None:
+        method = interface
+
+    Bs_powder_M   = method.Bs_powder_M
+    T_powder_M    = method.T_powder_M
+    Bs_powder_chi = method.Bs_powder_chi
+    T_powder_chi  = method.T_powder_chi
+    B_vec_M       = method.B_vec_M
+    Bs_vec_M      = method.Bs_vec_M
+    T_vec_M       = method.T_vec_M
+    B_vec_chi     = method.B_vec_chi
+    Bs_vec_chi    = method.Bs_vec_chi
+    T_vec_chi     = method.T_vec_chi
+
+
+    if "g-eigenvectors" in properties:
+        G_evecs = properties["g-eigenvectors"]
+        interface.log.info("\nMagnetic g-tensor principal axes:")
+        for G_evec in G_evecs:
+            interface.log.info("%s", np.array2string(G_evec, precision=6, suppress_small=True))
+            
+    if "g-factors" in properties:
+        ge = interface.g_free_elec
+        G_sq = properties["g-factors"]
+        interface.log.info("\nMagnetic g-factors (ge = %s):" % ge)
+        for G_sq_en in G_sq:
+            interface.log.info("%14.6f, %14.6f, %14.6f" % (G_sq_en[0], G_sq_en[1], G_sq_en[2]))
+            interface.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
+            interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
+
+    #SUS
+    if "M_av" in properties:
+        M_av_all = properties["M_av"]
+
+        interface.log.info("\nPowder_magnetization(Bohr magneton)" )
+        interface.log.info("-----------------------------------")
+        interface.log.info("TEMP(K)   B(T)    M(Bohr magneton)")
+        interface.log.info("-----------------------------------")
+        for  I in range(len(T_powder_M)):
+            T = T_powder_M[I]
+            for K in range(len(Bs_powder_M)):
+                Bs = Bs_powder_M[K]
+                interface.log.info("%6.2f  %8.2f %14.6f " % (T, Bs, M_av_all[I,K]))
+
+    if "chi_av" in properties:
+        chi_av_all = properties["chi_av"]
+
+        interface.log.info("\nPowder_susceptibility(cm3/mol)" )
+        interface.log.info("--------------------------------------------")
+        interface.log.info("TEMP(K)   B(T)         X_av          X_av*T")
+        interface.log.info("--------------------------------------------")
+
+        for I in range(len(T_powder_chi)):
+            T = T_powder_chi[I]
+            for K in range(len(Bs_powder_chi)):
+                Bs = Bs_powder_chi[K]
+                interface.log.info("%6.2f  %8.2f %14.6f %14.6f" % (T, Bs, chi_av_all[I,K],chi_av_all[I,K]*T))
+
+    if "M_xyz_all" in properties:
+        M_xyz_all = properties["M_xyz_all"]
+
+        interface.log.info("\nMagnetization vector (Bohr magneton) in B vector= %s",B_vec_M)
+        interface.log.info("--------------------------------------------------------")
+        interface.log.info("TEMP(K)   B(T)          Mx           My           Mz")
+        interface.log.info("--------------------------------------------------------")
+    
+        for I in range(len(T_vec_M)):
+            T = T_vec_M[I]
+            for K in range(len(Bs_vec_M)):
+                Bs = Bs_vec_M[K]
+                interface.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, M_xyz_all[I,K,0],M_xyz_all[I,K,1],M_xyz_all[I,K,2]))
+
+    if "chi_T_eval_all" in properties:
+        chi_T_eval_all = properties["chi_T_eval_all"]
+
+        interface.log.info("Susceptibility tensor X*T (cm3/mol) in B vector= %s", B_vec_chi)
+        interface.log.info("\nEigenvalue of Susceptibility tensor * T (cm3K/mol)" )
+        interface.log.info("--------------------------------------------------------")
+        interface.log.info("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
+        interface.log.info("--------------------------------------------------------")
+    
+        for I in range(len(T_vec_chi)):
+            T = T_vec_chi[I]
+            for K in range(len(Bs_vec_chi)):
+                Bs = Bs_vec_chi[K]
+                interface.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, chi_T_eval_all[I,K,0],chi_T_eval_all[I,K,1],chi_T_eval_all[I,K,2]))
+
+
+
 # magnetic dipole moment in microstates basis without spin-orbit coupling
 def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     '''
