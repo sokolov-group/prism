@@ -484,8 +484,8 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, rdm_
             if rdm_type in ("ss", "state-specific") and I != J:
                 continue
 
-            if (wfn_ref_nelecas[I] == wfn_ref_nelecas[J]):
-                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], ncas, wfn_ref_nelecas[ind_I])
+            if wfn_ref_nelecas[I] == wfn_ref_nelecas[J]:
+                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], ncas, wfn_ref_nelecas[I])
                 rdm_final[0, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[0]
                 rdm_final[1, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[1]
 
