@@ -28,7 +28,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
     S (list), spin quantum number of each state without spin-orbit coupling
     method: nevpt or qdnevpt object. If "None", using interface (SOC-CASSCF)
     '''
-    
+
     if method is None:
         method = interface
 
@@ -488,7 +488,7 @@ def tensor_susceptibility(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
 
             chi_T = chi * T
             interface.log.extra("TEMP(K)= %s, Bs(T)= %s" %(T, Bs))
-            interface.log.extra(chi_T)
+            interface.log.extra("%s", np.array2string(chi_T, precision=8))
             chi_T_eval, chi_T_evec = np.linalg.eigh(chi_T)
             chi_T_eval_all[I,K] = chi_T_eval
 
@@ -518,16 +518,15 @@ def magnetization(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None):
     
     #Set zero pint energy
     zero = en_soc[0]
-    for i in range(n_micro_states):
-        en_soc[i] = (en_soc[i] - zero)
+    en_soc_diff = en_soc - zero
 
     B_svec = B_s * B_vec
-    en_ze, evec_ze =  E_ze(B_svec,en_soc,Mu, mu_B)
+    en_ze, evec_ze =  E_ze(B_svec,en_soc_diff,Mu, mu_B)
     B1 = B_svec + dB_k * h_s
     B2 = B_svec - dB_k * h_s
 
-    A1, evec_A1 = E_ze(B1,en_soc,Mu, mu_B)
-    A2, evec_A2 = E_ze(B2,en_soc,Mu, mu_B)
+    A1, evec_A1 = E_ze(B1,en_soc_diff,Mu, mu_B)
+    A2, evec_A2 = E_ze(B2,en_soc_diff,Mu, mu_B)
     
     dE = np.zeros(n_micro_states)
     for i in range(n_micro_states):
@@ -573,8 +572,7 @@ def susceptibility(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
 
     #Set zero pint energy
     zero = en_soc[0]
-    for i in range(n_micro_states):
-        en_soc[i] = (en_soc[i] - zero)
+    en_soc_diff = en_soc - zero
 
     #same direction
     if dB_l is None:
@@ -585,9 +583,9 @@ def susceptibility(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
         B2 = B_svec 
         B3 = B_svec - dB_k * h_s
         
-        E_ze1, evec_ze1 = E_ze(B1,en_soc,Mu, mu_B_Eh)  
-        E_ze2, evec_ze2 = E_ze(B2,en_soc,Mu, mu_B_Eh)  
-        E_ze3, evec_ze3 = E_ze(B3,en_soc,Mu, mu_B_Eh)  
+        E_ze1, evec_ze1 = E_ze(B1,en_soc_diff,Mu, mu_B_Eh)  
+        E_ze2, evec_ze2 = E_ze(B2,en_soc_diff,Mu, mu_B_Eh)  
+        E_ze3, evec_ze3 = E_ze(B3,en_soc_diff,Mu, mu_B_Eh)  
 
         Z1 = partition_function(E_ze1,T, kb)
         Z2 = partition_function(E_ze2,T, kb)
@@ -611,10 +609,10 @@ def susceptibility(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
         B3 = B_svec - dB_k*h_s + dB_l*h_s
         B4 = B_svec - dB_k*h_s - dB_l*h_s
 
-        E_ze1, evec_ze1 = E_ze(B1,en_soc,Mu, mu_B_Eh)  
-        E_ze2, evec_ze2 = E_ze(B2,en_soc,Mu, mu_B_Eh)  
-        E_ze3, evec_ze3 = E_ze(B3,en_soc,Mu, mu_B_Eh)  
-        E_ze4, evec_ze4 = E_ze(B4,en_soc,Mu, mu_B_Eh)  
+        E_ze1, evec_ze1 = E_ze(B1,en_soc_diff,Mu, mu_B_Eh)  
+        E_ze2, evec_ze2 = E_ze(B2,en_soc_diff,Mu, mu_B_Eh)  
+        E_ze3, evec_ze3 = E_ze(B3,en_soc_diff,Mu, mu_B_Eh)  
+        E_ze4, evec_ze4 = E_ze(B4,en_soc_diff,Mu, mu_B_Eh)  
 
         Z1 = partition_function(E_ze1,T,kb)
         Z2 = partition_function(E_ze2,T,kb)

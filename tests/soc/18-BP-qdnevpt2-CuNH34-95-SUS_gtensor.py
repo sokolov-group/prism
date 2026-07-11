@@ -118,6 +118,11 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(e_tot[9], -1875.178070630574  , 5)
 
 
+        g_factor_all =  nevpt.properties["g-factors"]
+        g_factor = g_factor_all[0]
+        self.assertAlmostEqual(g_factor[0], 2.082427, 5)
+        self.assertAlmostEqual(g_factor[1], 2.082485, 5)
+        self.assertAlmostEqual(g_factor[2], 2.431688, 5)
 
 
 

@@ -136,6 +136,7 @@ def compute_somf_soc(interface):
 
         interface.properties_cas["osc_strengths_full"] = osc_str_soc_full
 
+
     if (interface.gtensor or interface.mag_av or  interface.sus_av or  interface.mag_vec or  interface.sus_tensor):
         properties_mag = magnetic.compute_properties(interface, rdm_sf, en_soc, evec_soc, S,  method = None)
         interface.properties_cas.update(properties_mag)
