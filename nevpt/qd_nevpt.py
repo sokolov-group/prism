@@ -58,7 +58,8 @@ def diagonalize_eff_H(method):
 
     e_diag = method.e_tot
     t1 = method.t1
-    t1_0 = method.t1_0
+    # t1_0 = method.t1_0
+    t1_ccee = method.t1_0
 
     # Einsum definition from kernel
     einsum = method.interface.einsum
@@ -71,7 +72,7 @@ def diagonalize_eff_H(method):
     h_eff = np.diag(e_diag)
     dim = h_eff.shape[0]
 
-    t1_ccee = t1_0
+    # t1_ccee = t1_0
 
     ## One-electron integrals
     h_ca = method.h1eff.ca
@@ -685,7 +686,7 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
                                     % (alpha_occs, beta_occs, coeff, weight))
 
         # Compute Natural Occupations by diagonalizing the 1RDM
-        rdm_mo = make_rdm1(method, L=n, R=n)
+        rdm_mo = make_rdm1(method, L=n+1, R=n+1)
         nat_occ_global, nat_orb_global = np.linalg.eigh(rdm_mo)
         active_weights = np.sum(nat_orb_global[ncore:ncore+ncas, :]**2, axis=0)
         active_no_indices = np.argsort(active_weights)[-ncas:]
@@ -694,7 +695,7 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
 
         # For open-shell systems, compute atomic Mulliken spin populations in the AO basis
         if n_alpha_elec != n_beta_elec:
-            rdm1s = make_rdm1s(method, L=n, R=n)
+            rdm1s = make_rdm1s(method, L=n+1, R=n+1)
             d_ao_a = mo @ rdm1s[0] @ mo.T
             d_ao_b = mo @ rdm1s[1] @ mo.T
             spin_dm_ao = d_ao_a - d_ao_b
