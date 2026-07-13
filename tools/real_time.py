@@ -13,7 +13,11 @@ def real_time_prop(nevpt, evec, etot):
 
     # Eigenvectors 
     evec = np.array(evec)
-    evec_shape = evec.shape[0]
+    #evec_shape = evec.shape[0]
+    evec_shape = etot.shape[0]
+    
+    # Energy difference
+    e_diff = etot - etot[0]
 
     init_cond = None
     if nevpt.rt_init_cond is not None:
@@ -38,14 +42,19 @@ def real_time_prop(nevpt, evec, etot):
         #H_eff = np.conj(evec.T) @ H_eff @ evec
         wfn = init_cond.copy()
         H_eff  = np.diag(etot)
-    
+
     # wavefunction at t=0
     wfn0 = wfn.copy()
+
 
     with open('auto_correlation.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerow(['Time (a.u.)', 'Auto-correlation \n'])
-    
+   
+    dipole_csv = open("dipole_moment.csv", "w", newline="")
+    dipole_writer = csv.writer(dipole_csv)
+    dipole_writer.writerow(["Time (a.u.)", "Dipole_Mom_X", "Dipole_Mom_Y", "Dipole_Mom_Z"])
+
     while t < nevpt.rt_tmax:
 
         # Check the norm of the wavefunction, the energy
@@ -59,7 +68,15 @@ def real_time_prop(nevpt, evec, etot):
 
         # time-dependent rdm 
         if nevpt.density == True and int(t // time_step) % nevpt.print_step == 0:
+            
+            # Time-dependent RDM for hole density
             td_rdm1(nevpt, wfn, t)
+
+            # Time-dependent dipole moment
+            dipmom_x, dipmom_y, dipmom_z = td_dip_mom(nevpt, e_diff, wfn, t)
+        
+            # Print dipole moments in CSV file
+            dipole_writer.writerow([t, dipmom_x, dipmom_y, dipmom_z])
 
         # Print propagation info
         print (" %10.6f         %10.6e           %10.6f" % (t, wfn_norm, E))
@@ -133,7 +150,7 @@ def td_rdm1(method, coeff_t, t):
     from prism.nevpt.qd_nevpt import make_rdm1
     rdm_qd = make_rdm1(method, L = None, R = None)
     td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdm_qd).real
-
+    
     rdm_diff = td_rdms - rdm_init
     rdm_diff = mc.mo_coeff @ rdm_diff @ mc.mo_coeff.T
    
@@ -157,18 +174,26 @@ def td_rdm1(method, coeff_t, t):
     cubegen.density(mol, f"hole_density_rt_{t:010.6f}.cube",
                 hole_dm, nx=100, ny=100, nz=100)
 
-    return
+    return td_rdms
 
-def td_dip_mo(interface, e_diff, trdm_mo):
-    
+def td_dip_mom(method, e_diff, coeff_t, t):
+
+    # Time dependent RDM
+    from prism.nevpt.qd_nevpt import make_rdm1
+    rdm_qd = make_rdm1(method, L = None, R = None)
+    td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdm_qd).real
+
     n_micro_states = len(e_diff)
-    dip_mom_ao = interface.dip_mom_ao
-    mo_coeff = interface.mo
+    dip_mom_ao = method.interface.dip_mom_ao
+    mo_coeff = method.interface.mo
 
     dip_mom_mo = np.zeros_like(dip_mom_ao)
 
-    # Transform dipole moments from AO to MO basis
     for d in range(dip_mom_ao.shape[0]):
-        dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
+        dip_mom_mo[d] = (mo_coeff.conj().T @ dip_mom_ao[d] @ mo_coeff)
+    
+    dip_evec_x = np.einsum('pq,pq->', dip_mom_mo[0], td_rdms)
+    dip_evec_y = np.einsum('pq,pq->', dip_mom_mo[1], td_rdms)
+    dip_evec_z = np.einsum('pq,pq->', dip_mom_mo[2], td_rdms)
 
-    return
+    return dip_evec_x, dip_evec_y, dip_evec_z 

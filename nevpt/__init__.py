@@ -156,7 +156,7 @@ class NEVPT:
         self.rt_prop_method = "exact"              # Propagator type
         self.rt_tmax = 500                         # How long propagate the wave-function
         self.print_step = 50                       # Necessary printing at each 50 steps
-        self.density = True                        # Calculate density difference
+        self.density = False                       # Calculate density difference
 
     def _make_method_instance(self):
 
