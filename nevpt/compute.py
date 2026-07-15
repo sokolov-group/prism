@@ -95,7 +95,7 @@ def initialize(nevpt):
             msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
             nevpt.log.error(msg)
             raise ValueError(msg)
-        nevpt.frozen_mask[:frozen] = True
+        nevpt.frozen_mask[:nevpt.nfrozen] = True
 
     elif isinstance(nevpt.nfrozen, (list, np.ndarray)):
         if max(nevpt.nfrozen) > nevpt.ncore:
@@ -103,6 +103,7 @@ def initialize(nevpt):
             nevpt.log.error(msg)
             raise ValueError(msg)
         nevpt.frozen_mask[nevpt.nfrozen] = True
+
     else:
         msg = "nfrozen must be an integer or a list of integers."
         nevpt.log.error(msg)
