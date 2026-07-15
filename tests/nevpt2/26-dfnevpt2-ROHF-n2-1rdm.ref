@@ -1,0 +1,329 @@
+#INFO: **** input file is /home/odhiambo.5/Programming/prism/tests/nevpt2/26-dfnevpt2-n2-1rdm.py ****
+# Copyright 2026 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          Carlos E. V. de Moura <carlosevmoura@gmail.com>
+
+import unittest
+import numpy as np
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.nevpt
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = '''
+N         0.0000000000    0.0000000000    0.55821
+N         0.0000000000    0.0000000000   -0.55821
+'''
+mol.basis = 'aug-cc-pvdz'
+mol.charge = +1
+mol.spin = 1
+mol.symmetry = True
+mol.verbose = 4
+mol.build()
+
+# ROHF calculation
+mf = pyscf.scf.RHF(mol)
+mf.conv_tol = 1e-12
+ehf = mf.scf()
+print("SCF energy: %f\n" % ehf)
+
+# NEVPT2 calculation
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit('aug-cc-pvdz-ri')
+nevpt = prism.nevpt.NEVPT(interface)
+nevpt.compute_singles_amplitudes = False
+nevpt.keep_amplitudes = True
+nevpt.semi_internal_projector = "gs"
+nevpt.s_thresh_singles = 1e-6
+nevpt.s_thresh_doubles = 1e-10
+
+nevpt.rdm_order = 2 
+
+def rdms_test(dm):
+    r2_int = interface.mol.intor('int1e_r2')  
+    dm_ao = interface.einsum('pi,ij,qj->pq', nevpt.mo, dm, nevpt.mo.conj())  
+    r2 = interface.einsum('pq,pq->', r2_int, dm_ao)  
+    print(r2)
+    return r2
+
+class KnownValues(unittest.TestCase):
+ 
+    def test_pyscf(self):
+        self.assertAlmostEqual(mf.e_tot, -108.372304278742, 6)
+
+    def test_1rdm(self):
+
+        e_tot, e_corr, osc = nevpt.kernel()
+
+        self.assertAlmostEqual(e_corr[0], -0.364252391832, 6)
+        r2_val = 32.61790939625783
+        
+        # Using L,R
+        # Ground state
+        gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
+
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), r2_val, 6)
+
+        # Using 'all' flag
+        # Ground state
+        rdms = nevpt.make_rdm1(type = 'all')
+        
+        # Ground state
+        gs_1rdm = rdms[0,0]
+        
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), r2_val, 6)
+        
+        # Using ss flag
+        rdms = nevpt.make_rdm1(type = 'ss')
+        
+        # Ground state
+        gs_1rdm = rdms[0]
+
+        self.assertAlmostEqual(np.trace(gs_1rdm), nevpt.nelec, 6)
+        self.assertAlmostEqual(rdms_test(gs_1rdm), r2_val, 6)
+ 
+if __name__ == "__main__":
+    print("NEVPT2 test")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc271712.asc.ohio-state.edu', release='4.18.0-553.129.1.el8_10.x86_64', version='#1 SMP Tue Jun 2 12:11:39 EDT 2026', machine='x86_64')  Threads 24
+Python 3.14.3 | packaged by conda-forge | (main, Feb  9 2026, 21:56:02) [GCC 14.3.0]
+numpy 2.4.3  scipy 1.17.1  h5py 3.16.0
+Date: Wed Jun 24 17:11:34 2026
+PySCF version 2.12.1
+PySCF path  /home/odhiambo.5/Programming/pyscf-2.12.1
+GIT HEAD (branch master) 0d1a5ced3ef24947eb02f0cc07360aeb299e970f
+
+[ENV] PYSCF_TMPDIR /scratch/local/odhiambo.5
+[ENV] PYSCF_EXT_PATH /home/lmod/intel/2024.2.0/advisor/2024.2/etc/modulefiles/pythonapi:/home/odhiambo.5/Programming/pyscf-2.12.1:/home/odhiambo.5/Programming:/home/odhiambo.5/odhiambo.5/Programming/gpu4pyscf:/opt/modules/python/3.9/lib/python3.8/site-packages
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 13
+[INPUT] charge = 1
+[INPUT] spin (= nelec alpha-beta = 2S) = 1
+[INPUT] symmetry True subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 N      0.000000000000   0.000000000000   0.558210000000 AA    0.000000000000   0.000000000000   1.054864019993 Bohr   0.0
+[INPUT]  2 N      0.000000000000   0.000000000000  -0.558210000000 AA    0.000000000000   0.000000000000  -1.054864019993 Bohr   0.0
+
+nuclear repulsion = 23.225742404364
+point group symmetry = Dooh
+symmetry origin: [0. 0. 0.]
+symmetry axis x: [1. 0. 0.]
+symmetry axis y: [0. 1. 0.]
+symmetry axis z: [0. 0. 1.]
+num. orbitals of irrep A1g = 9
+num. orbitals of irrep E1gx = 5
+num. orbitals of irrep E1gy = 5
+num. orbitals of irrep A1u = 9
+num. orbitals of irrep E1uy = 5
+num. orbitals of irrep E1ux = 5
+num. orbitals of irrep E2gx = 2
+num. orbitals of irrep E2gy = 2
+num. orbitals of irrep E2uy = 2
+num. orbitals of irrep E2ux = 2
+number of shells = 16
+number of NR pGTOs = 70
+number of NR cGTOs = 46
+basis = aug-cc-pvdz
+ecp = {}
+CPU time:         0.70
+
+
+******** <class 'pyscf.scf.hf_symm.SymAdaptedROHF'> ********
+method = SymAdaptedROHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/odhiambo.5/tmpr3ug1eok
+max_memory 4000 MB (current use 128 MB)
+num. doubly occ = 6  num. singly occ = 1
+Freeze 0 electrons in irreps []
+    13 free electrons in irreps A1g E1gx E1gy A1u E1uy E1ux E2gx E2gy E2uy E2ux
+Set gradient conv threshold to 1e-06
+init E= -108.93414512484
+HOMO (A1g) = -0.379644408664079  LUMO (E1gy) = 0.0468075888855685
+cycle= 1 E= -108.262932664764  delta_E= 0.671  |g|= 0.599  |ddm|=  1.2
+HOMO (A1g) = -0.965441392810898  LUMO (E1gy) = -0.367098303849445
+cycle= 2 E= -108.367014381362  delta_E= -0.104  |g|= 0.149  |ddm|= 0.621
+HOMO (A1g) = -0.832293965014504  LUMO (E1gy) = -0.250708792716984
+cycle= 3 E= -108.372235838997  delta_E= -0.00522  |g|= 0.0134  |ddm|= 0.301
+HOMO (A1g) = -0.825327590655961  LUMO (E1gy) = -0.244469304382204
+cycle= 4 E= -108.372302273721  delta_E= -6.64e-05  |g|= 0.00208  |ddm|= 0.0416
+HOMO (A1g) = -0.825558370621609  LUMO (E1gy) = -0.244235849549925
+cycle= 5 E= -108.37230424991  delta_E= -1.98e-06  |g|= 0.000286  |ddm|= 0.00675
+HOMO (A1g) = -0.825625545795055  LUMO (E1gy) = -0.244254348773347
+cycle= 6 E= -108.372304278528  delta_E= -2.86e-08  |g|= 2.21e-05  |ddm|= 0.00102
+HOMO (A1g) = -0.825628291476882  LUMO (E1gy) = -0.244254368498989
+cycle= 7 E= -108.37230427874  delta_E= -2.12e-10  |g|= 1.8e-06  |ddm|= 8.31e-05
+HOMO (A1g) = -0.825628246084088  LUMO (E1gy) = -0.244254514293381
+cycle= 8 E= -108.372304278741  delta_E= -1.19e-12  |g|= 2.21e-07  |ddm|= 4.44e-06
+HOMO (A1g) = -0.825628269081512  LUMO (E1gy) = -0.244254539527081
+cycle= 9 E= -108.372304278741  delta_E= 5.68e-14  |g|= 4.09e-08  |ddm|= 1.43e-06
+HOMO (A1g) = -0.825628274624491  LUMO (E1gy) = -0.244254540837321
+Extra cycle  E= -108.372304278741  delta_E= -1.99e-13  |g|= 1.07e-08  |ddm|= 2.46e-07
+converged SCF energy = -108.372304278741
+SCF energy: -108.372304
+
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+
+******** <class 'pyscf.mcscf.casci.CASCI'> ********
+CAS (1e+0e, 1o), ncore = 6, nvir = 39
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+max_memory 4000 MB (current use 177 MB)
+******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
+max. cycles = 200
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 1
+pspace_size = 400
+spin = None
+Density matrix diagonal elements [1.]
+CASCI converged
+CASCI E = -108.372304278742  E(CI) = -1.12368393328747  S^2 = 0.7500000
+Reference wavefunction: casci
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 1
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.75000     0.5        2     -108.372304278742      -1.123683933287
+-----------------------------------------------------------------------------------
+
+Importing Pyscf density-fitting objects...
+Initializing fully internally contracted NEVPT...
+NEVPT2 test
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       ss
+Nuclear repulsion energy:                         23.225742404364
+Number of electrons:                               13
+Number of basis functions:                         46
+Reference wavefunction type:                       casci
+Number of reference states:                        1
+Number of reference microstates:                   1
+Number of frozen orbitals:                         0
+Number of core orbitals:                           6
+Number of active orbitals:                         1
+Number of external orbitals:                       39
+Number of active electrons:                        [(1, 0)]
+Spin–orbit coupling:                               None
+G-tensor:                                          False
+Reference density fitting?                         False
+Correlation density fitting?                       True
+Temporary directory path:                          /scratch/local/odhiambo.5
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-06
+Overlap truncation parameter (doubles):            1.00e-10
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+******** <class 'pyscf.df.df.DF'> ********
+auxbasis = aug-cc-pvdz-ri
+max_memory = 4000
+Correlation energy [0]:                           -0.234160179862
+
+Computing energy of state #1...
+Reference state active-space energy:              -1.123683933287
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(1, 0)]
+Correlation energy [0']:                          -0.019542759410
+Correlation energy [+1']:                         -0.000000000412
+Correlation energy [-1']:                          0.000000000000
+Correlation energy [+1]:                          -0.063955809086
+Correlation energy [-1]:                          -0.046593643061
+Correlation energy [+2]:                           0.000000000000
+Correlation energy [0]:                           -0.234160179862
+CASCI reference state total energy:             -108.372304278742
+NEVPT2 correlation energy:                        -0.364252391832
+Total NEVPT2 energy:                            -108.736556670573
+
+Summary of results for the SS-NEVPT2 calculation with the CASCI reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        2         -108.736556670573     0.00000000       0.0000                      0.0000               
+----------------------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation      3.50 sec, wall time      0.15 sec
+32.61790939625769
+32.61790939625769
+32.61790939625769

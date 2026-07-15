@@ -55,20 +55,6 @@ def state_interaction_soc(method):
         if (np.abs(ms[I]-ms[0])>1e-8):
             raise Exception("Each state's ms should be same for state_interaction_SOC function")
 
-    #If Ms=0 , CG coefficent vanish...
-    wfn_ref_nelecas = method.ref_nelecas.copy()
-    if ms[0] == 0:
-        raise Exception("Ms=0 situation for state_interaction_SOC function not implement in state_interaction_SOC function.")
-        method.log.info("Apply S_plus due to Ms=0...")
-        for I in range(nstate):
-            if S[I] > 0 :
-                wfn[I], Sp_ne = method.interface.apply_S_plus(wfn[I],method.ncas,method.ref_nelecas[I])
-                # Upadate ref_nelecas
-                wfn_ref_nelecas[I] = Sp_ne
-                # Normalize the wfn
-                wfn[I] = wfn[I]/(np.sqrt( S[I]**2 + S[I] ))
-                # Upadate ms
-                ms[I] = 1
 
 
     # Make sure that S is consistent with spin_mult
@@ -77,9 +63,43 @@ def state_interaction_soc(method):
             raise Exception("Spin value and multiplicity are not consistent")
 
     # Calculate RDM_aabb
+    wfn_ref_nelecas = method.ref_nelecas.copy()
     rdm_aabb = method.make_rdm1s(wfn, wfn_ref_nelecas)
 
-    en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
+
+    #If Ms=0 , CG coefficent vanish...
+    if ms[0] != 0:
+        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
+    
+    else:    
+        method.log.info("Apply S_plus due to Ms=0...")
+
+        wfn_plus = wfn.copy()
+        wfn_ref_nelecas_plus = wfn_ref_nelecas.copy()
+        ms_plus = ms.copy()
+
+        for I in range(nstate):
+            if S[I] > 0 :
+                wfn_plus[I], Sp_ne = method.interface.apply_S_plus(wfn[I],method.ncas,method.ref_nelecas[I])
+                # Upadate ref_nelecas
+                wfn_ref_nelecas_plus[I] = Sp_ne
+                # Normalize the wfn
+                wfn_plus[I] = wfn_plus[I]/(np.sqrt( S[I]**2 + S[I] ))
+                # Upadate ms
+                ms_plus[I] = 1
+            elif S[I] == 0:     
+                wfn_plus[I] = np.zeros_like(wfn_plus[I])
+
+
+        # Calculate RDM_aabb_plus
+        rdm_aabb_plus = method.make_rdm1s(wfn_plus, wfn_ref_nelecas_plus)
+
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms1(method.interface, method.e_tot, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, method.soc, method.verbose)
+
+
+
+    
+
 
     method.e_tot = en_soc
     method.h_evec_soc = evec_soc
@@ -178,23 +198,87 @@ def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
 def compute_magnetic_properties(method, rdm_sf):
 
     nstate = len(method.spin_mult)
+    en_soc = method.e_tot.copy()
+    h_evec_soc = method.h_evec_soc
 
     S = []
     for i in range(nstate):
         S.append(float((method.spin_mult[i] - 1) / 2))
-    method.log.info("\nCalculating g-tensor...")
 
-    target_state = method.gtensor_target_state
-    if isinstance(target_state, int):
-        target_state = [target_state]
+    # Calculate magnetic dipole moment without spin-orbit coupling
+    Mu_sf = magnetic.mag_dip(method.interface, rdm_sf, S, origin_type = method.gtensor_origin_type)
+    Mu = np.einsum('ai,kib,bj->kaj',np.conj(h_evec_soc).T, Mu_sf, h_evec_soc)
 
-    g_factor = []
-    g_evector = []
-    for I in target_state:
-        g_fac, g_evec = magnetic.gtensor(method.interface, method.h_evec_soc, rdm_sf, S, target_index = I, origin_type=method.gtensor_origin_type)
-        g_factor.append(g_fac)
-        g_evector.append(g_evec)
+    #g-tensor
+    if method.gtensor:
+        method.log.info("\nCalculating g-tensor...")
 
-    method.properties["g-factors"] = g_factor
-    method.properties["g-eigenvectors"] = g_evector
+        target_state = method.gtensor_target_state
+        if isinstance(target_state, int):
+            target_state = [target_state]
+
+        g_factor = []
+        g_evector = []
+        for I in target_state:
+            g_fac, g_evec = magnetic.gtensor(method.interface, S, Mu, target_index = I )
+            g_factor.append(g_fac)
+            g_evector.append(g_evec)
+
+        method.properties["g-factors"] = g_factor
+        method.properties["g-eigenvectors"] = g_evector
+
+    #magnetic susceptibility
+    if method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor:
+        method.log.info("\nCalculating magnetic susceptibility or magnetization...")
+
+        # Parameter
+        h_s =method.step_h_s
+        method.log.info("h_s= %.2f T" %(h_s))
+
+
+        #Powder data information
+        method.log.info("Import LebedevGrid in pyscf...")
+        Powder_data_xyzw = method.interface.MakeAngularGrid_266()
+        method.log.info("Number of LebedevGrid point: %s" % len(Powder_data_xyzw))
+
+
+        ###Powder magnetization
+        if method.mag_av:
+            Bs_list = method.Bs_powder_M
+            T_list  = method.T_powder_M
+            M_av_all = magnetic.Powder_magnetization(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+            
+            method.properties["M_av"] = M_av_all
+
+
+        ###Powder susceptibility
+        if method.sus_av:
+            Bs_list = method.Bs_powder_chi
+            T_list  = method.T_powder_chi
+            chi_av_all = magnetic.Powder_susceptibility(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+           
+            method.properties["chi_av"] = chi_av_all
+
+
+        ###Vector magnetization
+        if method.mag_vec:
+            B_vec = method.B_vec_M
+            Bs_list = method.Bs_vec_M
+            T_list  = method.T_vec_M
+            M_xyz_all = magnetic.vector_magnetization(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
+
+            method.properties["M_xyz_all"] = M_xyz_all
+
+
+        ###Tensor  susceptibility
+        if method.sus_tensor:
+            B_vec = method.B_vec_chi
+            Bs_list = method.Bs_vec_chi
+            T_list  = method.T_vec_chi
+            chi_T_eval_all = magnetic.tensor_susceptibility(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
+
+            method.properties["chi_T_eval_all"] = chi_T_eval_all
+
+
+
 

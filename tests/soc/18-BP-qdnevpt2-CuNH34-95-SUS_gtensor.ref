@@ -1,0 +1,1460 @@
+#INFO: **** input file is /home/chiang.272/prism/tests/soc/18-BP-qdnevpt2-CuNH34-95-SUS_gtensor.py ****
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.mr_adc
+import prism.nevpt
+import time
+import unittest
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+r = 0.96
+x = r * math.sin(104.5 * math.pi/(2 * 180.0))
+y = r * math.cos(104.5 * math.pi/(2 * 180.0))
+
+mol = pyscf.gto.Mole()
+mol.atom = """
+Cu       0.000000000      0.000000000      0.000000000 
+N        2.069792801     -0.000154321      0.000000000 
+H        2.505629535      0.929497774      0.002402263 
+H        2.449007235     -0.480559296     -0.826605894 
+H        2.449000743     -0.484842588      0.824073697 
+N        0.000226341     -2.069317025     -0.000084937 
+H       -0.480514452     -2.448524769     -0.826508323 
+H       -0.483911864     -2.449104555      0.824065649 
+H        0.930005537     -2.504881604      0.001655634 
+N       -2.069872326      0.000035799     -0.000084931 
+H       -2.505703662     -0.929614259      0.000861464 
+H       -2.448912402      0.483428698      0.824837149 
+H       -2.449124383      0.481833183     -0.825845134 
+N        0.000000000      2.069316351      0.000000000 
+H        0.480213314      2.448208910      0.826866142 
+H        0.484816003      2.449083940     -0.823753797 
+H       -0.929693551      2.505065105     -0.002401724
+"""
+
+mol.basis = '6-31g'
+mol.symmetry = False
+mol.spin = 1
+mol.charge = 2
+mol.verbose = 4
+mol.build()
+
+# RHF calculation
+mf = pyscf.scf.RKS(mol).x2c()
+mf.xc = "bp86"
+ehf = mf.scf()
+mf.analyze()
+print("SCF energy: %f\n" % ehf)
+
+# SA-CASSCF calculation
+n_states = 5
+weights = np.ones(n_states)/n_states
+mc = pyscf.mcscf.CASSCF(mf, 5, 9).state_average_(weights)
+mc.conv_tol = 1e-11
+mc.conv_tol_grad = 1e-6
+emc = mc.mc1step()[0]
+mc.analyze()
+
+# QD-NEVPT2 with all electrons correlated
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
+nevpt = prism.nevpt.QDNEVPT(interface)
+nevpt.soc = "breit-pauli"
+nevpt.s_thresh_singles = 1e-10
+nevpt.s_thresh_doubles = 1e-10
+
+nevpt.gtensor = True
+nevpt.mag_av = True
+nevpt.sus_av = True
+nevpt.mag_vec = True
+nevpt.sus_tensor = True
+nevpt.step_h_s = 0.001 
+
+Bs_list = []
+for i in range(15):
+    H = i * 0.5
+    Bs_list.append(H)
+
+T_list = []
+for i in range(21):
+    T = 14.75 * i + 5
+    T_list.append(T)
+
+nevpt.Bs_powder_M = Bs_list 
+nevpt.T_powder_M = [1.8]
+nevpt.T_powder_chi = T_list
+nevpt.Bs_powder_chi = [0.1]
+nevpt.B_vec_M = [0,0,1]
+nevpt.Bs_vec_M = Bs_list 
+nevpt.T_vec_M = [1.8]
+nevpt.B_vec_chi = [0,0,1]
+nevpt.Bs_vec_chi = [0.1]
+nevpt.T_vec_chi = [5,100,200,250]
+
+
+nevpt.compute_singles_amplitudes = False
+e_tot, e_corr, osc = nevpt.kernel()
+exit()
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mc.e_tot,   -1791.47091104697, 6)
+        self.assertAlmostEqual(mc.e_cas,  -2.06221691833025, 6)
+
+    def test_prism(self):
+
+        e_tot, e_corr, osc = nevpt.kernel()
+
+        #Prism
+        self.assertAlmostEqual(e_tot[0],-1792.202314822049  , 5)
+        self.assertAlmostEqual(e_tot[1],-1792.202314822048  , 5)
+        self.assertAlmostEqual(e_tot[2],-1792.098920578952  , 5)
+        self.assertAlmostEqual(e_tot[3],-1792.098920578951  , 5)
+        self.assertAlmostEqual(e_tot[4],-1792.097629143424  , 5)
+        self.assertAlmostEqual(e_tot[5],-1792.097629143423  , 5)
+
+
+
+
+        M_av = nevpt.properties["M_av"]
+        chi_av = nevpt.properties["chi_av"]
+        M_xyz_all = nevpt.properties["M_xyz_all"]
+        chi_T_eval_all = nevpt.properties["chi_T_eval_all"]
+\
+        self.assertAlmostEqual(M_av[0,0],  -0.000000 , 5)
+        self.assertAlmostEqual(M_av[0,1],   0.182779 , 5)
+        self.assertAlmostEqual(M_av[0,2],   0.353635 , 5)
+        self.assertAlmostEqual(M_av[0,3],   0.503566 , 5)
+        self.assertAlmostEqual(M_av[0,4],   0.628012 , 5)
+        self.assertAlmostEqual(M_av[0,5],   0.726620 , 5)
+        self.assertAlmostEqual(M_av[0,6],   0.801921 , 5)
+        self.assertAlmostEqual(M_av[0,7],   0.857818 , 5)
+        self.assertAlmostEqual(M_av[0,8],   0.898445 , 5)
+        self.assertAlmostEqual(M_av[0,9],   0.927523 , 5)
+        self.assertAlmostEqual(M_av[0,10],   0.948108 , 5)
+        self.assertAlmostEqual(M_av[0,11],   0.962567 , 5)
+        self.assertAlmostEqual(M_av[0,12],   0.972669 , 5)
+        self.assertAlmostEqual(M_av[0,13],   0.979700 , 5)
+        self.assertAlmostEqual(M_av[0,14],   0.984582 , 5)
+
+        self.assertAlmostEqual(chi_av[0,0],    0.074335  , 5)
+        self.assertAlmostEqual(chi_av[1,0],    0.018830  , 5)
+        self.assertAlmostEqual(chi_av[2,0],    0.010784  , 5)
+        self.assertAlmostEqual(chi_av[3,0],    0.007557  , 5)
+        self.assertAlmostEqual(chi_av[4,0],    0.005818  , 5)
+        self.assertAlmostEqual(chi_av[5,0],    0.004730  , 5)
+        self.assertAlmostEqual(chi_av[6,0],    0.003986  , 5)
+        self.assertAlmostEqual(chi_av[7,0],    0.003444  , 5)
+        self.assertAlmostEqual(chi_av[8,0],    0.003032  , 5)
+        self.assertAlmostEqual(chi_av[9,0],    0.002709  , 5)
+        self.assertAlmostEqual(chi_av[10,0],   0.002448  , 5)
+        self.assertAlmostEqual(chi_av[11,0],   0.002233  , 5)
+        self.assertAlmostEqual(chi_av[12,0],   0.002053  , 5)
+        self.assertAlmostEqual(chi_av[13,0],   0.001900  , 5)
+        self.assertAlmostEqual(chi_av[14,0],   0.001768  , 5)
+        self.assertAlmostEqual(chi_av[15,0],   0.001653  , 5)
+        self.assertAlmostEqual(chi_av[16,0],   0.001553  , 5)
+        self.assertAlmostEqual(chi_av[17,0],   0.001464  , 5)
+        self.assertAlmostEqual(chi_av[18,0],   0.001384  , 5)
+        self.assertAlmostEqual(chi_av[19,0],   0.001313  , 5)
+        self.assertAlmostEqual(chi_av[20,0],   0.001249  , 5)
+
+        self.assertAlmostEqual(M_xyz_all[0,0,2],  0.00000000, 5)
+        self.assertAlmostEqual(M_xyz_all[0,1,2],  0.18485319, 5)
+        self.assertAlmostEqual(M_xyz_all[0,2,2],  0.35751669, 5)
+        self.assertAlmostEqual(M_xyz_all[0,3,2],  0.50881722, 5)
+        self.assertAlmostEqual(M_xyz_all[0,4,2],  0.63415541, 5)
+        self.assertAlmostEqual(M_xyz_all[0,5,2],  0.73324311, 5)
+        self.assertAlmostEqual(M_xyz_all[0,6,2],  0.80872181, 5)
+        self.assertAlmostEqual(M_xyz_all[0,7,2],  0.86460576, 5)
+        self.assertAlmostEqual(M_xyz_all[0,8,2],  0.90511724, 5)
+        self.assertAlmostEqual(M_xyz_all[0,9,2],  0.93403744, 5)
+        self.assertAlmostEqual(M_xyz_all[0,10,2], 0.95445736 , 5)
+        self.assertAlmostEqual(M_xyz_all[0,11,2], 0.96876385 , 5)
+        self.assertAlmostEqual(M_xyz_all[0,12,2], 0.97873270 , 5)
+        self.assertAlmostEqual(M_xyz_all[0,13,2], 0.98565273 , 5)
+        self.assertAlmostEqual(M_xyz_all[0,14,2], 0.99044370 , 5)
+
+
+       #self.assertAlmostEqual(chi_T_eval_all[0,0,0],  0.369609    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[1,0,0],  0.371271    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[2,0,0],  0.372986    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[3,0,0],  0.373810    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[0,0,1],  0.369642    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[1,0,1],  0.371932    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[2,0,1],  0.374327    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[3,0,1],  0.375500    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[0,0,2],  0.375909    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[1,0,2],  0.375991    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[2,0,2],  0.376018    , 5)
+       #self.assertAlmostEqual(chi_T_eval_all[3,0,2],  0.376059    , 5)
+
+
+
+if __name__ == "__main__":
+    print("SOC-QD-NEVPT2 test")
+    unittest.main()#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc206140.asc.ohio-state.edu', release='4.18.0-553.129.1.el8_10.x86_64', version='#1 SMP Tue Jun 2 12:11:39 EDT 2026', machine='x86_64')  Threads 24
+Python 3.9.25 (main, Nov  3 2025, 22:33:05) 
+[GCC 11.2.0]
+numpy 2.0.1  scipy 1.13.1  h5py 3.14.0
+Date: Sun Jun 21 16:35:21 2026
+PySCF version 2.12.1
+PySCF path  /home/chiang.272/miniconda3/envs/pyscf_2_12/lib/python3.9/site-packages/pyscf
+
+[ENV] PYSCF_EXT_PATH /home/chiang.272:/home/chiang.272/sqa_plus:/home/chiang.272/pyscf
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 17
+[INPUT] num. electrons = 67
+[INPUT] charge = 2
+[INPUT] spin (= nelec alpha-beta = 2S) = 1
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 Cu     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 N      2.069792801000  -0.000154321000   0.000000000000 AA    3.911341528486  -0.000291624425   0.000000000000 Bohr   0.0
+[INPUT]  3 H      2.505629535000   0.929497774000   0.002402263000 AA    4.734953590771   1.756496226253   0.004539619149 Bohr   0.0
+[INPUT]  4 H      2.449007235000  -0.480559296000  -0.826605894000 AA    4.627952951228  -0.908125456054  -1.562058752611 Bohr   0.0
+[INPUT]  5 H      2.449000743000  -0.484842588000   0.824073697000 AA    4.627940683126  -0.916219704845   1.557273593788 Bohr   0.0
+[INPUT]  6 N      0.000226341000  -2.069317025000  -0.000084937000 AA    0.000427722501  -3.910442442150  -0.000160507668 Bohr   0.0
+[INPUT]  7 H     -0.480514452000  -2.448524769000  -0.826508323000 AA   -0.908040713175  -4.627041222624  -1.561874370144 Bohr   0.0
+[INPUT]  8 H     -0.483911864000  -2.449104555000   0.824065649000 AA   -0.914460891388  -4.628136859375   1.557258385272 Bohr   0.0
+[INPUT]  9 H      0.930005537000  -2.504881604000   0.001655634000 AA    1.757455759259  -4.733540206021   0.003128694823 Bohr   0.0
+[INPUT] 10 N     -2.069872326000   0.000035799000  -0.000084931000 AA   -3.911491808956   0.000067650306  -0.000160496329 Bohr   0.0
+[INPUT] 11 H     -2.505703662000  -0.929614259000   0.000861464000 AA   -4.735093670500  -1.756716351000   0.001627931026 Bohr   0.0
+[INPUT] 12 H     -2.448912402000   0.483428698000   0.824837149000 AA   -4.627773742831   0.913547839975   1.558716308977 Bohr   0.0
+[INPUT] 13 H     -2.449124383000   0.481833183000  -0.825845134000 AA   -4.628174328864   0.910532753597  -1.560621124565 Bohr   0.0
+[INPUT] 14 N      0.000000000000   2.069316351000   0.000000000000 AA    0.000000000000   3.910441168474   0.000000000000 Bohr   0.0
+[INPUT] 15 H      0.480213314000   2.448208910000   0.826866142000 AA    0.907471644830   4.626444335620   1.562550550056 Bohr   0.0
+[INPUT] 16 H      0.484816003000   2.449083940000  -0.823753797000 AA    0.916169466476   4.628097902671  -1.556669070401 Bohr   0.0
+[INPUT] 17 H     -0.929693551000   2.505065105000  -0.002401724000 AA   -1.756866191164   4.733886972655  -0.004538600587 Bohr   0.0
+
+nuclear repulsion = 416.293234452971
+number of shells = 55
+number of NR pGTOs = 226
+number of NR cGTOs = 87
+basis = 6-31g
+ecp = {}
+CPU time:         2.67
+
+
+******** <class 'pyscf.x2c.sfx2c1e.sfX2C1eROKS'> ********
+method = sfX2C1eROKS
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/tmprbnurtxe
+max_memory 4000 MB (current use 98 MB)
+num. doubly occ = 33  num. singly occ = 1
+XC library pyscf.dft.libxc version 7.0.0
+    S. Lehtola, C. Steigemann, M. J.T. Oliveira, and M. A.L. Marques.,  SoftwareX 7, 1–5 (2018)
+XC functionals = bp86
+    A. D. Becke.,  Phys. Rev. A 38, 3098 (1988)
+    J. P. Perdew.,  Phys. Rev. B 33, 8822 (1986)
+radial grids: 
+    Treutler-Ahlrichs [JCP 102, 346 (1995); DOI:10.1063/1.469408] (M4) radial grids
+    
+becke partition: Becke, JCP 88, 2547 (1988); DOI:10.1063/1.454033
+pruning grids: <function nwchem_prune at 0x7f3327279550>
+grids dens level: 3
+symmetrized grids: False
+atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x7f33272a6ee0>
+small_rho_cutoff = 1e-07
+
+
+******** <class 'pyscf.x2c.sfx2c1e.SpinFreeX2CHelper'> ********
+approx = 1e
+xuncontract = 1
+Set gradient conv threshold to 3.16228e-05
+tot grids = 193944
+init E= -1877.81714227769
+  HOMO = -0.0167483147595028  LUMO = -0.0154160227178507
+cycle= 1 E= -1858.41444765039  delta_E= 19.4  |g|= 8.11  |ddm|= 6.55
+
+WARN: HOMO -1.00174658660823 >= LUMO -1.00147345677165
+
+cycle= 2 E= -1804.13777183559  delta_E= 54.3  |g|= 9.45  |ddm|= 18.7
+  HOMO = -0.38299676384803  LUMO = -0.371754172323856
+cycle= 3 E= -1838.37986499351  delta_E= -34.2  |g|=  5.6  |ddm|= 19.3
+
+WARN: HOMO -0.154715122249878 >= LUMO -0.759294941176882
+
+cycle= 4 E= -1861.00641737583  delta_E= -22.6  |g|= 7.74  |ddm|= 11.8
+
+WARN: HOMO -0.408017730532045 >= LUMO -0.768246830413266
+
+cycle= 5 E= -1868.44431996881  delta_E= -7.44  |g|=  6.6  |ddm|= 5.32
+
+WARN: HOMO -0.363281701938795 >= LUMO -0.638911055889113
+
+cycle= 6 E= -1864.60150507266  delta_E= 3.84  |g|= 6.45  |ddm|=  6.3
+
+WARN: HOMO -0.299626851122425 >= LUMO -0.734715395621098
+
+cycle= 7 E= -1873.13291043795  delta_E= -8.53  |g|= 5.03  |ddm|= 6.72
+
+WARN: HOMO -0.380315750696159 >= LUMO -0.641012821235869
+
+cycle= 8 E= -1872.26587881286  delta_E= 0.867  |g|= 4.82  |ddm|= 5.67
+  HOMO = -0.67263798907497  LUMO = -0.589998725506196
+cycle= 9 E= -1873.52650853321  delta_E= -1.26  |g|= 4.63  |ddm|= 3.79
+  HOMO = -0.49370325626122  LUMO = -0.489950898220982
+cycle= 10 E= -1868.27526858446  delta_E= 5.25  |g|= 5.53  |ddm|= 2.49
+
+WARN: HOMO -0.539299904923835 >= LUMO -0.63403309619781
+
+cycle= 11 E= -1864.50136554341  delta_E= 3.77  |g|=  6.7  |ddm|= 3.34
+
+WARN: HOMO -0.0606676847544226 >= LUMO -0.303492012886415
+
+cycle= 12 E= -1847.97678460543  delta_E= 16.5  |g|= 8.02  |ddm|= 12.9
+
+WARN: HOMO 1.0533110417911 >= LUMO -0.694621505396297
+
+cycle= 13 E= -1872.65467566181  delta_E= -24.7  |g|= 3.93  |ddm|= 11.8
+
+WARN: HOMO -0.293355821620909 >= LUMO -0.624040341150698
+
+cycle= 14 E= -1875.59843803686  delta_E= -2.94  |g|=  3.1  |ddm|= 4.16
+
+WARN: HOMO -0.208990813355097 >= LUMO -0.495995248472166
+
+cycle= 15 E= -1875.1104549602  delta_E= 0.488  |g|= 2.87  |ddm|= 5.39
+
+WARN: HOMO -0.353487483126543 >= LUMO -0.57413382685854
+
+cycle= 16 E= -1873.43450954746  delta_E= 1.68  |g|= 3.55  |ddm|= 5.93
+  HOMO = -0.640080934716786  LUMO = -0.442283012036181
+cycle= 17 E= -1877.1744834431  delta_E= -3.74  |g|=  1.6  |ddm|= 4.04
+
+WARN: HOMO -0.191648023660011 >= LUMO -0.514469242014732
+
+cycle= 18 E= -1877.04653579272  delta_E= 0.128  |g|= 1.18  |ddm|= 4.53
+  HOMO = -0.552282035603782  LUMO = -0.36059672817098
+cycle= 19 E= -1877.64310820536  delta_E= -0.597  |g|= 0.886  |ddm|= 4.45
+  HOMO = -0.524314107666306  LUMO = -0.338988731178775
+cycle= 20 E= -1877.70072516778  delta_E= -0.0576  |g|= 0.669  |ddm|= 0.285
+  HOMO = -0.461439624906266  LUMO = -0.326263701141094
+cycle= 21 E= -1877.76900347445  delta_E= -0.0683  |g|= 0.17  |ddm|= 0.385
+  HOMO = -0.474554126993763  LUMO = -0.331555539530064
+cycle= 22 E= -1877.77075750474  delta_E= -0.00175  |g|= 0.142  |ddm|= 0.122
+  HOMO = -0.479141190640718  LUMO = -0.330295036462089
+cycle= 23 E= -1877.77460516896  delta_E= -0.00385  |g|= 0.0424  |ddm|= 0.068
+  HOMO = -0.486064928423679  LUMO = -0.331721377926156
+cycle= 24 E= -1877.77494267247  delta_E= -0.000338  |g|= 0.00852  |ddm|= 0.0341
+  HOMO = -0.484985874974732  LUMO = -0.331510858442539
+cycle= 25 E= -1877.77495728573  delta_E= -1.46e-05  |g|= 0.00547  |ddm|= 0.00905
+  HOMO = -0.48548068448364  LUMO = -0.331577262060488
+cycle= 26 E= -1877.77496271684  delta_E= -5.43e-06  |g|= 0.000668  |ddm|= 0.00316
+  HOMO = -0.485527554819235  LUMO = -0.331571404518181
+cycle= 27 E= -1877.77496281989  delta_E= -1.03e-07  |g|= 7.9e-05  |ddm|= 0.000517
+  HOMO = -0.485533219640449  LUMO = -0.331571784085512
+cycle= 28 E= -1877.77496282096  delta_E= -1.07e-09  |g|= 2.19e-05  |ddm|= 5.27e-05
+  HOMO = -0.485535260825965  LUMO = -0.331572113653177
+cycle= 29 E= -1877.77496282105  delta_E= -9.28e-11  |g|= 5.27e-06  |ddm|= 1.33e-05
+  HOMO = -0.485537979358569  LUMO = -0.331572524670242
+Extra cycle  E= -1877.77496282099  delta_E= 6.64e-11  |g|= 2.15e-05  |ddm|= 1.5e-05
+converged SCF energy = -1877.77496282099
+**** SCF Summaries ****
+Total Energy =                       -1877.774962820987412
+Nuclear Repulsion Energy =             416.293234452971035
+One-electron Energy =                -3407.438459565862559
+Two-electron Coulomb Energy =         1212.404249235055659
+DFT Exchange-Correlation Energy =      -99.033986943151447
+**** MO energy ****
+                Roothaan           | alpha              | beta
+MO #1   energy= -325.315614150893  | -325.3156311332    | -325.315597168586  occ= 2
+MO #2   energy= -39.5271529996416  | -39.5348523536112  | -39.5194536456721  occ= 2
+MO #3   energy= -34.3677907698447  | -34.3755519921177  | -34.3600295475717  occ= 2
+MO #4   energy= -34.3677857412798  | -34.3755476019066  | -34.3600238806532  occ= 2
+MO #5   energy= -34.3536707441405  | -34.3553198930392  | -34.3520215952418  occ= 2
+MO #6   energy= -14.3915831897646  | -14.3923786540193  | -14.3907877255098  occ= 2
+MO #7   energy= -14.3915508067572  | -14.3923463732126  | -14.3907552403022  occ= 2
+MO #8   energy= -14.3915479232044  | -14.3923439913354  | -14.3907518550736  occ= 2
+MO #9   energy= -14.391510775497   | -14.3923068240283  | -14.3907147269663  occ= 2
+MO #10  energy= -4.61168744927306  | -4.62689990649682  | -4.5964749920493   occ= 2
+MO #11  energy= -3.08001980355837  | -3.09981523049963  | -3.06022437661712  occ= 2
+MO #12  energy= -3.08000855012987  | -3.09980265947898  | -3.0602144407808   occ= 2
+MO #13  energy= -3.05369554705881  | -3.05839445164084  | -3.04899664247677  occ= 2
+MO #14  energy= -1.1630128937162   | -1.16437588408967  | -1.16164990334282  occ= 2
+MO #15  energy= -1.15522044866302  | -1.15655768208134  | -1.15388321524473  occ= 2
+MO #16  energy= -1.15517554295204  | -1.156514178115    | -1.153836907789    occ= 2
+MO #17  energy= -1.14972561638187  | -1.15111874819161  | -1.14833248456809  occ= 2
+MO #18  energy= -0.800777966555408 | -0.801570144781093 | -0.799985788423851 occ= 2
+MO #19  energy= -0.787482726155259 | -0.788243865932346 | -0.786721586378177 occ= 2
+MO #20  energy= -0.782929345848718 | -0.783744170533485 | -0.782114521163959 occ= 2
+MO #21  energy= -0.782907604715945 | -0.783722920910817 | -0.782092288521081 occ= 2
+MO #22  energy= -0.781730871176911 | -0.782514956139925 | -0.7809467862139   occ= 2
+MO #23  energy= -0.78169026354785  | -0.782474865559921 | -0.780905661535714 occ= 2
+MO #24  energy= -0.776277157121886 | -0.777047072492829 | -0.775507241750982 occ= 2
+MO #25  energy= -0.761741097079342 | -0.762526684076941 | -0.760955510081736 occ= 2
+MO #26  energy= -0.708130836586515 | -0.711343270664713 | -0.704918402488609 occ= 2
+MO #27  energy= -0.670699706388185 | -0.683912680141285 | -0.657487212790863 occ= 2
+MO #28  energy= -0.639579710345972 | -0.643324884609054 | -0.635834536081453 occ= 2
+MO #29  energy= -0.639496404884775 | -0.643245462819198 | -0.635747346949248 occ= 2
+MO #30  energy= -0.56954987218017  | -0.574273724216042 | -0.564826020149714 occ= 2
+MO #31  energy= -0.553598569667824 | -0.56163760893795  | -0.545559530397697 occ= 2
+MO #32  energy= -0.553590286330676 | -0.56162939392645  | -0.545551178734894 occ= 2
+MO #33  energy= -0.55186310371596  | -0.560761379274307 | -0.542964828159001 occ= 2
+MO #34  energy= -0.485537979358569 | -0.512927809882108 | -0.458147639481263 occ= 1
+MO #35  energy= -0.331572524670242 | -0.332819167801051 | -0.330325881540106 occ= 0
+MO #36  energy= -0.302063598519552 | -0.302282099286268 | -0.301845097752839 occ= 0
+MO #37  energy= -0.284836335704282 | -0.285222345874686 | -0.284450325533842 occ= 0
+MO #38  energy= -0.284817679786063 | -0.285203912609783 | -0.28443144696238  occ= 0
+MO #39  energy= -0.229625176274177 | -0.231272509100655 | -0.227977843448033 occ= 0
+MO #40  energy= -0.219576547592354 | -0.220200400012097 | -0.21895269700544  occ= 0
+MO #41  energy= -0.200621640361407 | -0.201204836278673 | -0.200038444444143 occ= 0
+MO #42  energy= -0.198235325963326 | -0.198859308805443 | -0.197611343117023 occ= 0
+MO #43  energy= -0.191933241799469 | -0.192649220444206 | -0.191217263162398 occ= 0
+MO #44  energy= -0.191902340816184 | -0.192627021900985 | -0.19117766096025  occ= 0
+MO #45  energy= -0.191893586716698 | -0.192610524372504 | -0.191176649138963 occ= 0
+MO #46  energy= -0.190787713930376 | -0.191460340861019 | -0.190115087005425 occ= 0
+MO #47  energy= -0.190760506088744 | -0.1914336488634   | -0.19008736332782  occ= 0
+MO #48  energy= -0.174753684868787 | -0.176004565494694 | -0.173502804242952 occ= 0
+MO #49  energy= -0.0811285617543219 | -0.081856160490913 | -0.0804009630178015 occ= 0
+MO #50  energy= -0.0510507872718217 | -0.0518990506392839 | -0.0502025239043872 occ= 0
+MO #51  energy= -0.0509837571421866 | -0.0518300851936493 | -0.0501374290907176 occ= 0
+MO #52  energy= -0.0458901905403218 | -0.0462980544400918 | -0.045482326640556 occ= 0
+MO #53  energy= 0.0560416193913617 | 0.0532032472537185 | 0.058879991529002  occ= 0
+MO #54  energy= 0.0562171734047012 | 0.0533792591533501 | 0.0590550876560519 occ= 0
+MO #55  energy= 0.161227618157519  | 0.160706517155625  | 0.161748719162137  occ= 0
+MO #56  energy= 0.295797516761043  | 0.295115334050268  | 0.296479699471817  occ= 0
+MO #57  energy= 0.29583921694467   | 0.295157140948639  | 0.2965212929407    occ= 0
+MO #58  energy= 0.378546637037683  | 0.375812875511456  | 0.38128039856377   occ= 0
+MO #59  energy= 0.399257414488874  | 0.398712794310621  | 0.399802034667154  occ= 0
+MO #60  energy= 0.411496815213754  | 0.410471532847275  | 0.412522097580252  occ= 0
+MO #61  energy= 0.411539294122798  | 0.410513065917928  | 0.412565522327666  occ= 0
+MO #62  energy= 0.445360636791565  | 0.444960255628537  | 0.445761017954591  occ= 0
+MO #63  energy= 0.495819746488802  | 0.494691701179599  | 0.49694779136517   occ= 0
+MO #64  energy= 0.509362574077935  | 0.507792832758629  | 0.510932315396771  occ= 0
+MO #65  energy= 0.509388269125414  | 0.507819815708338  | 0.510956722541552  occ= 0
+MO #66  energy= 0.51169938107099   | 0.509871420865676  | 0.513527340608498  occ= 0
+MO #67  energy= 0.514173035006856  | 0.513611955989548  | 0.514734114025042  occ= 0
+MO #68  energy= 0.531042241852665  | 0.530424356764436  | 0.531660126940887  occ= 0
+MO #69  energy= 0.533812916476861  | 0.533188941314523  | 0.534436891639201  occ= 0
+MO #70  energy= 0.53385021316433   | 0.533225767976834  | 0.534474658351839  occ= 0
+MO #71  energy= 0.577569003337017  | 0.576964703626244  | 0.57817330304771   occ= 0
+MO #72  energy= 0.58624374561681   | 0.585591603180267  | 0.586895888053355  occ= 0
+MO #73  energy= 0.589866647089433  | 0.588556514357613  | 0.591176778740177  occ= 0
+MO #74  energy= 0.600072427551414  | 0.599303874506258  | 0.600840980596583  occ= 0
+MO #75  energy= 0.600121573126054  | 0.599353367620756  | 0.600889778631395  occ= 0
+MO #76  energy= 0.624900424921866  | 0.624404255583374  | 0.625396594260467  occ= 0
+MO #77  energy= 0.684145458432429  | 0.683229576787009  | 0.685061340077842  occ= 0
+MO #78  energy= 0.684176905367491  | 0.683261283564991  | 0.685092527169966  occ= 0
+MO #79  energy= 0.916048063403851  | 0.912149856169969  | 0.919946262544492  occ= 0
+MO #80  energy= 0.937675297784377  | 0.936373224929632  | 0.938977370639757  occ= 0
+MO #81  energy= 1.2149805590296    | 1.21306688745456   | 1.21689423060467   occ= 0
+MO #82  energy= 1.21532841581475   | 1.21341609229578   | 1.2172407393337    occ= 0
+MO #83  energy= 1.62984164563514   | 1.62499915048983   | 1.63468414078045   occ= 0
+MO #84  energy= 1.62994175957464   | 1.62510148918686   | 1.63478202996242   occ= 0
+MO #85  energy= 1.66300815064387   | 1.66036011101165   | 1.66565619013173   occ= 0
+MO #86  energy= 1.75581806038574   | 1.74933982152759   | 1.76229629924387   occ= 0
+MO #87  energy= 1.88661101955278   | 1.86680303034781   | 1.90641899321606   occ= 0
+ ** Mulliken pop on meta-lowdin orthogonal AOs  **
+ ** Mulliken pop  **
+pop of  0 Cu 1s           2.00000
+pop of  0 Cu 2s           2.00000
+pop of  0 Cu 3s           1.99997
+pop of  0 Cu 4s           0.64833
+pop of  0 Cu 5s           0.00848
+pop of  0 Cu 2px          2.00000
+pop of  0 Cu 2py          2.00000
+pop of  0 Cu 2pz          2.00000
+pop of  0 Cu 3px          1.99995
+pop of  0 Cu 3py          1.99995
+pop of  0 Cu 3pz          1.99999
+pop of  0 Cu 4px          0.02125
+pop of  0 Cu 4py          0.02122
+pop of  0 Cu 4pz          0.00071
+pop of  0 Cu 5px          0.00147
+pop of  0 Cu 5py          0.00147
+pop of  0 Cu 5pz          0.00024
+pop of  0 Cu 3dxy         1.97831
+pop of  0 Cu 3dyz         1.98814
+pop of  0 Cu 3dz^2        1.89324
+pop of  0 Cu 3dxz         1.98816
+pop of  0 Cu 3dx2-y2      1.34198
+pop of  0 Cu 4dxy         0.00142
+pop of  0 Cu 4dyz         0.00145
+pop of  0 Cu 4dz^2        0.00123
+pop of  0 Cu 4dxz         0.00145
+pop of  0 Cu 4dx2-y2      0.00325
+pop of  1 N 1s            1.99990
+pop of  1 N 2s            1.36741
+pop of  1 N 3s            0.00438
+pop of  1 N 2px           1.61628
+pop of  1 N 2py           1.28571
+pop of  1 N 2pz           1.28340
+pop of  1 N 3px           0.01334
+pop of  1 N 3py           0.00453
+pop of  1 N 3pz           0.00410
+pop of  2 H 1s            0.71938
+pop of  2 H 2s            0.01496
+pop of  3 H 1s            0.71562
+pop of  3 H 2s            0.01496
+pop of  4 H 1s            0.71566
+pop of  4 H 2s            0.01496
+pop of  5 N 1s            1.99990
+pop of  5 N 2s            1.36743
+pop of  5 N 3s            0.00438
+pop of  5 N 2px           1.28571
+pop of  5 N 2py           1.61623
+pop of  5 N 2pz           1.28345
+pop of  5 N 3px           0.00454
+pop of  5 N 3py           0.01333
+pop of  5 N 3pz           0.00410
+pop of  6 H 1s            0.71562
+pop of  6 H 2s            0.01496
+pop of  7 H 1s            0.71563
+pop of  7 H 2s            0.01496
+pop of  8 H 1s            0.71939
+pop of  8 H 2s            0.01496
+pop of  9 N 1s            1.99990
+pop of  9 N 2s            1.36738
+pop of  9 N 3s            0.00438
+pop of  9 N 2px           1.61630
+pop of  9 N 2py           1.28571
+pop of  9 N 2pz           1.28339
+pop of  9 N 3px           0.01334
+pop of  9 N 3py           0.00453
+pop of  9 N 3pz           0.00410
+pop of  10 H 1s           0.71937
+pop of  10 H 2s           0.01496
+pop of  11 H 1s           0.71565
+pop of  11 H 2s           0.01496
+pop of  12 H 1s           0.71564
+pop of  12 H 2s           0.01496
+pop of  13 N 1s           1.99990
+pop of  13 N 2s           1.36741
+pop of  13 N 3s           0.00438
+pop of  13 N 2px          1.28573
+pop of  13 N 2py          1.61624
+pop of  13 N 2pz          1.28344
+pop of  13 N 3px          0.00454
+pop of  13 N 3py          0.01333
+pop of  13 N 3pz          0.00410
+pop of  14 H 1s           0.71563
+pop of  14 H 2s           0.01496
+pop of  15 H 1s           0.71562
+pop of  15 H 2s           0.01497
+pop of  16 H 1s           0.71938
+pop of  16 H 2s           0.01496
+ ** Mulliken atomic charges  **
+charge of    0Cu =      1.09833
+charge of    1N =     -0.57904
+charge of    2H =      0.26566
+charge of    3H =      0.26941
+charge of    4H =      0.26937
+charge of    5N =     -0.57906
+charge of    6H =      0.26942
+charge of    7H =      0.26940
+charge of    8H =      0.26565
+charge of    9N =     -0.57903
+charge of   10H =      0.26566
+charge of   11H =      0.26938
+charge of   12H =      0.26940
+charge of   13N =     -0.57906
+charge of   14H =      0.26941
+charge of   15H =      0.26941
+charge of   16H =      0.26566
+Dipole moment(X, Y, Z, Debye):  0.00074, -0.00022, -0.00039
+SCF energy: -1877.774963
+
+
+******** <class 'pyscf.mcscf.addons.StateAverageCASSCF'> ********
+CAS (5e+4e, 5o), ncore = 29, nvir = 53
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = 1e-06
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /scratch/local/tmprbnurtxe
+max_memory 4000 MB (current use 384 MB)
+internal_rotation = False
+******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 5
+pspace_size = 400
+spin = None
+State-average over 5 states with weights [0.2 0.2 0.2 0.2 0.2]
+CASCI E = -1874.45449649148  S^2 = 0.7500000
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -1874.51966200566  dE = -6.51655142e-02  S^2 = 0.7500000
+               |grad[o]|=0.533  |ddm|=8.03e-16  |maxRot[o]|=0.315
+macro iter   2 ( 10 JK    4 micro), CASSCF E = -1874.52735993053  dE = -7.69792487e-03  S^2 = 0.7500000
+               |grad[o]|=0.188  |ddm|=1.29e-14  |maxRot[o]|=0.0461
+macro iter   3 (  9 JK    4 micro), CASSCF E = -1874.52736493731  dE = -5.00678220e-06  S^2 = 0.7500000
+               |grad[o]|=0.00181  |ddm|=5.49e-16  |maxRot[o]|=0.00458
+macro iter   4 (  7 JK    3 micro), CASSCF E = -1874.52736493757  dE = -2.59205990e-10  S^2 = 0.7500000
+               |grad[o]|=8.42e-06  |ddm|=2.91e-15  |maxRot[o]|=3.4e-05
+macro iter   5 (  1 JK    1 micro), CASSCF E = -1874.52736493757  dE =  0.00000000e+00  S^2 = 0.7500000
+               |grad[o]|=3.77e-08  |ddm|=7.08e-16  |maxRot[o]|=    0
+1-step CASSCF converged in   5 macro ( 48 JK  16 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.8 1.8 1.8 1.8 1.8]
+CASSCF energy = -1874.52736493757
+CASCI E = -1874.52736493757  E(CI) = -44.5993631435581  S^2 = 0.7500000
+CASCI state-averaged energy = -1874.52736493757
+CASCI energy for each state
+  State 0 weight 0.2  E = -1874.56930572055 S^2 = 0.7500000
+  State 1 weight 0.2  E = -1874.52647116923 S^2 = 0.7500000
+  State 2 weight 0.2  E = -1874.51474569657 S^2 = 0.7500000
+  State 3 weight 0.2  E = -1874.5147442153 S^2 = 0.7500000
+  State 4 weight 0.2  E = -1874.5115578862 S^2 = 0.7500000
+Natural occ [1.8 1.8 1.8 1.8 1.8]
+Natural orbital (expansion on meta-Lowdin AOs) in CAS space
+               #1        #2        #3        #4        #5       
+0 Cu 1s         -0.00000   0.00000  -0.00001   0.00000  -0.00000
+0 Cu 2s         -0.00000  -0.00000   0.00003  -0.00001   0.00000
+0 Cu 3s          0.00000  -0.00016   0.00218  -0.00044   0.00011
+0 Cu 4s         -0.00002   0.01061  -0.14153   0.02828  -0.00707
+0 Cu 5s         -0.00000   0.00098  -0.01311   0.00260  -0.00066
+0 Cu 2px        -0.00000  -0.00000  -0.00000   0.00000   0.00000
+0 Cu 2py         0.00000  -0.00000   0.00000   0.00000  -0.00000
+0 Cu 2pz         0.00000   0.00000  -0.00000   0.00000  -0.00000
+0 Cu 3px        -0.00000  -0.00000  -0.00000   0.00000   0.00000
+0 Cu 3py         0.00000  -0.00000   0.00000   0.00000  -0.00000
+0 Cu 3pz         0.00000   0.00000  -0.00000   0.00000  -0.00000
+0 Cu 4px         0.00001   0.00000   0.00001  -0.00000  -0.00000
+0 Cu 4py        -0.00001   0.00000  -0.00000   0.00000   0.00000
+0 Cu 4pz        -0.00000  -0.00000  -0.00000  -0.00000   0.00000
+0 Cu 5px        -0.00000   0.00000   0.00000  -0.00000  -0.00000
+0 Cu 5py        -0.00000  -0.00001  -0.00000   0.00000  -0.00001
+0 Cu 5pz         0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+0 Cu 3dxy        0.99665   0.00047   0.00421   0.02122   0.00096
+0 Cu 3dyz       -0.00009   0.63860   0.00082  -0.04428   0.76553
+0 Cu 3dz^2       0.00004  -0.07231   0.96419  -0.19357   0.04809
+0 Cu 3dxz        0.00010   0.76299   0.08695  -0.01019  -0.63717
+0 Cu 3dx2-y2    -0.02196   0.02145   0.18900   0.94261   0.03641
+0 Cu 4dxy       -0.04043  -0.00003  -0.00029  -0.00143  -0.00006
+0 Cu 4dyz        0.00000  -0.02647  -0.00004   0.00183  -0.03167
+0 Cu 4dz^2      -0.00000   0.00292  -0.03892   0.00782  -0.00194
+0 Cu 4dxz       -0.00000  -0.03157  -0.00360   0.00042   0.02641
+0 Cu 4dx2-y2     0.00081  -0.00137  -0.01202  -0.05993  -0.00232
+1 N 1s          -0.00000  -0.00001  -0.00001  -0.00022  -0.00001
+1 N 2s           0.00053  -0.00157  -0.00837  -0.05882  -0.00209
+1 N 3s           0.00056   0.00022  -0.00598  -0.00516  -0.00047
+1 N 2px         -0.00028   0.00402   0.00312   0.11624   0.00337
+1 N 2py         -0.00967  -0.00032   0.00198  -0.00481  -0.00004
+1 N 2pz         -0.00001  -0.00826  -0.00112  -0.00000   0.01036
+1 N 3px          0.00036  -0.00007   0.00970   0.01621   0.00098
+1 N 3py          0.01764  -0.00010   0.00042  -0.00169  -0.00003
+1 N 3pz          0.00000   0.01423   0.00150  -0.00026  -0.00960
+2 H 1s          -0.02199   0.00071  -0.00355   0.01391   0.00023
+2 H 2s           0.00315   0.00054  -0.00600   0.00329  -0.00024
+3 H 1s           0.01076   0.01606   0.00040   0.01023  -0.01061
+3 H 2s          -0.00217  -0.00147  -0.00517   0.00346   0.00408
+4 H 1s           0.01085  -0.01508  -0.00292   0.01078   0.01100
+4 H 2s          -0.00219   0.00236  -0.00444   0.00356  -0.00442
+5 N 1s           0.00000   0.00000   0.00007   0.00020   0.00001
+5 N 2s          -0.00052   0.00108   0.01497   0.05750   0.00241
+5 N 3s          -0.00056   0.00049  -0.00352   0.00707  -0.00000
+5 N 2px          0.00969  -0.00012   0.00367   0.00364   0.00031
+5 N 2py         -0.00026   0.00110   0.04197   0.10843   0.00531
+5 N 2pz          0.00000   0.01038   0.00027  -0.00057   0.00830
+5 N 3px         -0.01765  -0.00003   0.00105   0.00138   0.00010
+5 N 3py          0.00036   0.00086  -0.00269   0.01869   0.00037
+5 N 3pz          0.00000  -0.00963   0.00015   0.00075  -0.01428
+6 H 1s          -0.01078  -0.01085  -0.00508  -0.00837  -0.01619
+6 H 2s           0.00217   0.00460  -0.00560  -0.00160   0.00157
+7 H 1s          -0.01086   0.01085  -0.00536  -0.01005   0.01508
+7 H 2s           0.00218  -0.00391  -0.00597  -0.00118  -0.00228
+8 H 1s           0.02202   0.00020  -0.00864  -0.01147  -0.00076
+8 H 2s          -0.00315   0.00043  -0.00681  -0.00073  -0.00041
+9 N 1s          -0.00000  -0.00001  -0.00001  -0.00022  -0.00001
+9 N 2s           0.00053  -0.00158  -0.00837  -0.05881  -0.00208
+9 N 3s           0.00056   0.00022  -0.00598  -0.00515  -0.00047
+9 N 2px          0.00027  -0.00402  -0.00312  -0.11623  -0.00337
+9 N 2py          0.00967   0.00031  -0.00198   0.00481   0.00002
+9 N 2pz          0.00001   0.00825   0.00114  -0.00001  -0.01036
+9 N 3px         -0.00037   0.00007  -0.00970  -0.01620  -0.00098
+9 N 3py         -0.01764   0.00009  -0.00042   0.00169   0.00002
+9 N 3pz         -0.00000  -0.01423  -0.00149   0.00025   0.00959
+10 H 1s         -0.02199   0.00076  -0.00354   0.01391   0.00017
+10 H 2s          0.00315   0.00052  -0.00600   0.00329  -0.00024
+11 H 1s          0.01082   0.01603   0.00039   0.01022  -0.01057
+11 H 2s         -0.00218  -0.00146  -0.00517   0.00346   0.00409
+12 H 1s          0.01079  -0.01510  -0.00292   0.01077   0.01103
+12 H 2s         -0.00217   0.00237  -0.00443   0.00356  -0.00442
+13 N 1s          0.00000   0.00000   0.00007   0.00020   0.00001
+13 N 2s         -0.00053   0.00108   0.01497   0.05750   0.00241
+13 N 3s         -0.00056   0.00049  -0.00352   0.00707  -0.00000
+13 N 2px        -0.00969   0.00013  -0.00368  -0.00366  -0.00032
+13 N 2py         0.00028  -0.00111  -0.04197  -0.10843  -0.00532
+13 N 2pz        -0.00000  -0.01038  -0.00029   0.00055  -0.00831
+13 N 3px         0.01765   0.00003  -0.00104  -0.00139  -0.00010
+13 N 3py        -0.00036  -0.00087   0.00269  -0.01870  -0.00037
+13 N 3pz        -0.00000   0.00963  -0.00015  -0.00076   0.01428
+14 H 1s         -0.01077  -0.01085  -0.00507  -0.00836  -0.01620
+14 H 2s          0.00217   0.00460  -0.00560  -0.00160   0.00158
+15 H 1s         -0.01088   0.01085  -0.00537  -0.01005   0.01507
+15 H 2s          0.00219  -0.00391  -0.00597  -0.00118  -0.00227
+16 H 1s          0.02202   0.00021  -0.00864  -0.01147  -0.00075
+16 H 2s         -0.00315   0.00044  -0.00681  -0.00073  -0.00041
+<mo_coeff-mcscf|mo_coeff-hf>  1      1        0.99999993
+<mo_coeff-mcscf|mo_coeff-hf>  2      2        0.99999739
+<mo_coeff-mcscf|mo_coeff-hf>  3      5        0.99999984
+<mo_coeff-mcscf|mo_coeff-hf>  4      4        0.99612095
+<mo_coeff-mcscf|mo_coeff-hf>  5      3        0.99612095
+<mo_coeff-mcscf|mo_coeff-hf>  6      6        0.97719928
+<mo_coeff-mcscf|mo_coeff-hf>  7      7        0.87147962
+<mo_coeff-mcscf|mo_coeff-hf>  7      8        0.44041428
+<mo_coeff-mcscf|mo_coeff-hf>  8      7       -0.45075587
+<mo_coeff-mcscf|mo_coeff-hf>  8      8        0.87506853
+<mo_coeff-mcscf|mo_coeff-hf>  9      9        0.98349436
+<mo_coeff-mcscf|mo_coeff-hf>  10     10       0.99996969
+<mo_coeff-mcscf|mo_coeff-hf>  11     13       0.99999789
+<mo_coeff-mcscf|mo_coeff-hf>  12     11       0.99973277
+<mo_coeff-mcscf|mo_coeff-hf>  13     12       0.99973281
+<mo_coeff-mcscf|mo_coeff-hf>  14     14       0.99917423
+<mo_coeff-mcscf|mo_coeff-hf>  15     15       0.99915373
+<mo_coeff-mcscf|mo_coeff-hf>  16     16       0.99915388
+<mo_coeff-mcscf|mo_coeff-hf>  17     17       0.99912376
+<mo_coeff-mcscf|mo_coeff-hf>  18     18       0.99742588
+<mo_coeff-mcscf|mo_coeff-hf>  19     19       0.99985709
+<mo_coeff-mcscf|mo_coeff-hf>  20     20       0.99803329
+<mo_coeff-mcscf|mo_coeff-hf>  21     21       0.99801368
+<mo_coeff-mcscf|mo_coeff-hf>  22     22       0.99799728
+<mo_coeff-mcscf|mo_coeff-hf>  23     23       0.99801843
+<mo_coeff-mcscf|mo_coeff-hf>  24     24       0.99979304
+<mo_coeff-mcscf|mo_coeff-hf>  25     25       0.99901805
+<mo_coeff-mcscf|mo_coeff-hf>  26     26       0.99072246
+<mo_coeff-mcscf|mo_coeff-hf>  27     27       0.93466510
+<mo_coeff-mcscf|mo_coeff-hf>  28     28       0.99844531
+<mo_coeff-mcscf|mo_coeff-hf>  29     29       0.99844671
+<mo_coeff-mcscf|mo_coeff-hf>  30     30       0.99595227
+<mo_coeff-mcscf|mo_coeff-hf>  31     31       0.99782275
+<mo_coeff-mcscf|mo_coeff-hf>  32     32       0.99782701
+<mo_coeff-mcscf|mo_coeff-hf>  33     33       0.98472826
+<mo_coeff-mcscf|mo_coeff-hf>  34     34       0.93436826
+<mo_coeff-mcscf|mo_coeff-hf>  35     35       0.95826035
+<mo_coeff-mcscf|mo_coeff-hf>  36     36       0.96440960
+<mo_coeff-mcscf|mo_coeff-hf>  37     37       0.94355365
+<mo_coeff-mcscf|mo_coeff-hf>  38     38       0.94355869
+<mo_coeff-mcscf|mo_coeff-hf>  39     39       0.94509189
+<mo_coeff-mcscf|mo_coeff-hf>  40     40       0.98960266
+<mo_coeff-mcscf|mo_coeff-hf>  41     41       0.94119643
+<mo_coeff-mcscf|mo_coeff-hf>  42     42       0.99149953
+<mo_coeff-mcscf|mo_coeff-hf>  43     46       0.87484694
+<mo_coeff-mcscf|mo_coeff-hf>  43     47      -0.41787790
+<mo_coeff-mcscf|mo_coeff-hf>  44     46       0.44260531
+<mo_coeff-mcscf|mo_coeff-hf>  44     47       0.87877638
+<mo_coeff-mcscf|mo_coeff-hf>  45     44       0.91899981
+<mo_coeff-mcscf|mo_coeff-hf>  46     43       0.98431902
+<mo_coeff-mcscf|mo_coeff-hf>  47     45       0.93807881
+<mo_coeff-mcscf|mo_coeff-hf>  48     48       0.93444075
+<mo_coeff-mcscf|mo_coeff-hf>  49     49       0.91526548
+<mo_coeff-mcscf|mo_coeff-hf>  50     50       0.90795225
+<mo_coeff-mcscf|mo_coeff-hf>  51     51       0.90805196
+<mo_coeff-mcscf|mo_coeff-hf>  52     52       0.94475525
+<mo_coeff-mcscf|mo_coeff-hf>  53     53       0.95735087
+<mo_coeff-mcscf|mo_coeff-hf>  54     54       0.95746557
+<mo_coeff-mcscf|mo_coeff-hf>  55     55       0.99831005
+<mo_coeff-mcscf|mo_coeff-hf>  56     56       0.99228962
+<mo_coeff-mcscf|mo_coeff-hf>  57     57       0.99229042
+<mo_coeff-mcscf|mo_coeff-hf>  58     59       0.98121000
+<mo_coeff-mcscf|mo_coeff-hf>  59     58       0.98946062
+<mo_coeff-mcscf|mo_coeff-hf>  60     60       0.96652429
+<mo_coeff-mcscf|mo_coeff-hf>  61     61       0.96658874
+<mo_coeff-mcscf|mo_coeff-hf>  62     62       0.99572591
+<mo_coeff-mcscf|mo_coeff-hf>  63     63      -0.65548981
+<mo_coeff-mcscf|mo_coeff-hf>  63     66       0.75246826
+<mo_coeff-mcscf|mo_coeff-hf>  64     64       0.73427460
+<mo_coeff-mcscf|mo_coeff-hf>  64     65      -0.64235835
+<mo_coeff-mcscf|mo_coeff-hf>  65     64       0.64227470
+<mo_coeff-mcscf|mo_coeff-hf>  65     65       0.73418171
+<mo_coeff-mcscf|mo_coeff-hf>  66     63       0.74445752
+<mo_coeff-mcscf|mo_coeff-hf>  66     66       0.65412312
+<mo_coeff-mcscf|mo_coeff-hf>  67     67       0.97305820
+<mo_coeff-mcscf|mo_coeff-hf>  68     69       0.98492659
+<mo_coeff-mcscf|mo_coeff-hf>  69     70       0.98505611
+<mo_coeff-mcscf|mo_coeff-hf>  70     68       0.98630475
+<mo_coeff-mcscf|mo_coeff-hf>  71     72       0.50628768
+<mo_coeff-mcscf|mo_coeff-hf>  71     76       0.85806744
+<mo_coeff-mcscf|mo_coeff-hf>  72     71       0.98701139
+<mo_coeff-mcscf|mo_coeff-hf>  73     74       0.80894909
+<mo_coeff-mcscf|mo_coeff-hf>  73     75      -0.52240659
+<mo_coeff-mcscf|mo_coeff-hf>  74     74       0.52239757
+<mo_coeff-mcscf|mo_coeff-hf>  74     75       0.80900976
+<mo_coeff-mcscf|mo_coeff-hf>  75     73       0.99042883
+<mo_coeff-mcscf|mo_coeff-hf>  76     72       0.85170624
+<mo_coeff-mcscf|mo_coeff-hf>  76     76      -0.51182999
+<mo_coeff-mcscf|mo_coeff-hf>  77     77       0.97143967
+<mo_coeff-mcscf|mo_coeff-hf>  78     78       0.97144002
+<mo_coeff-mcscf|mo_coeff-hf>  79     79       0.99629387
+<mo_coeff-mcscf|mo_coeff-hf>  80     80       0.99861615
+<mo_coeff-mcscf|mo_coeff-hf>  81     81       0.99859374
+<mo_coeff-mcscf|mo_coeff-hf>  82     82       0.99859513
+<mo_coeff-mcscf|mo_coeff-hf>  83     83       0.99992503
+<mo_coeff-mcscf|mo_coeff-hf>  84     84       0.99992502
+<mo_coeff-mcscf|mo_coeff-hf>  85     85       0.99990897
+<mo_coeff-mcscf|mo_coeff-hf>  86     86       0.99977097
+<mo_coeff-mcscf|mo_coeff-hf>  87     87       0.99978253
+** Largest CI components **
+  [alpha occ-orbitals] [beta occ-orbitals]  state 0   CI coefficient
+  [0 1 2 3 4]          [0 1 2 3]                       0.999991303734
+  [alpha occ-orbitals] [beta occ-orbitals]  state 1   CI coefficient
+  [0 1 2 3 4]          [1 2 3 4]                      -0.999991190210
+  [alpha occ-orbitals] [beta occ-orbitals]  state 2   CI coefficient
+  [0 1 2 3 4]          [0 1 3 4]                       0.958687043726
+  [0 1 2 3 4]          [0 2 3 4]                      -0.284462211920
+  [alpha occ-orbitals] [beta occ-orbitals]  state 3   CI coefficient
+  [0 1 2 3 4]          [0 1 3 4]                      -0.284462684675
+  [0 1 2 3 4]          [0 2 3 4]                      -0.958684587309
+  [alpha occ-orbitals] [beta occ-orbitals]  state 4   CI coefficient
+  [0 1 2 3 4]          [0 1 2 4]                       0.999997489598
+ ** Mulliken pop on meta-lowdin orthogonal AOs  **
+ ** Mulliken pop  **
+pop of  0 Cu 1s           2.00000
+pop of  0 Cu 2s           2.00000
+pop of  0 Cu 3s           1.99994
+pop of  0 Cu 4s           0.48288
+pop of  0 Cu 5s           0.00581
+pop of  0 Cu 2px          2.00000
+pop of  0 Cu 2py          2.00000
+pop of  0 Cu 2pz          2.00000
+pop of  0 Cu 3px          1.99988
+pop of  0 Cu 3py          1.99988
+pop of  0 Cu 3pz          1.99997
+pop of  0 Cu 4px          0.01853
+pop of  0 Cu 4py          0.01852
+pop of  0 Cu 4pz          0.00031
+pop of  0 Cu 5px          0.00170
+pop of  0 Cu 5py          0.00170
+pop of  0 Cu 5pz          0.00032
+pop of  0 Cu 3dxy         1.79354
+pop of  0 Cu 3dyz         1.79536
+pop of  0 Cu 3dz^2        1.77608
+pop of  0 Cu 3dxz         1.79536
+pop of  0 Cu 3dx2-y2      1.80789
+pop of  0 Cu 4dxy         0.00295
+pop of  0 Cu 4dyz         0.00307
+pop of  0 Cu 4dz^2        0.00308
+pop of  0 Cu 4dxz         0.00307
+pop of  0 Cu 4dx2-y2      0.00764
+pop of  1 N 1s            1.99998
+pop of  1 N 2s            1.37248
+pop of  1 N 3s            0.00425
+pop of  1 N 2px           1.70227
+pop of  1 N 2py           1.28350
+pop of  1 N 2pz           1.27998
+pop of  1 N 3px           0.01818
+pop of  1 N 3py           0.00108
+pop of  1 N 3pz           0.00056
+pop of  2 H 1s            0.72294
+pop of  2 H 2s            0.01426
+pop of  3 H 1s            0.72140
+pop of  3 H 2s            0.01417
+pop of  4 H 1s            0.72143
+pop of  4 H 2s            0.01417
+pop of  5 N 1s            1.99998
+pop of  5 N 2s            1.37251
+pop of  5 N 3s            0.00425
+pop of  5 N 2px           1.28350
+pop of  5 N 2py           1.70218
+pop of  5 N 2pz           1.28005
+pop of  5 N 3px           0.00108
+pop of  5 N 3py           0.01817
+pop of  5 N 3pz           0.00056
+pop of  6 H 1s            0.72139
+pop of  6 H 2s            0.01417
+pop of  7 H 1s            0.72138
+pop of  7 H 2s            0.01417
+pop of  8 H 1s            0.72293
+pop of  8 H 2s            0.01426
+pop of  9 N 1s            1.99998
+pop of  9 N 2s            1.37246
+pop of  9 N 3s            0.00425
+pop of  9 N 2px           1.70229
+pop of  9 N 2py           1.28349
+pop of  9 N 2pz           1.27998
+pop of  9 N 3px           0.01818
+pop of  9 N 3py           0.00108
+pop of  9 N 3pz           0.00056
+pop of  10 H 1s           0.72293
+pop of  10 H 2s           0.01426
+pop of  11 H 1s           0.72143
+pop of  11 H 2s           0.01417
+pop of  12 H 1s           0.72141
+pop of  12 H 2s           0.01417
+pop of  13 N 1s           1.99998
+pop of  13 N 2s           1.37249
+pop of  13 N 3s           0.00425
+pop of  13 N 2px          1.28352
+pop of  13 N 2py          1.70220
+pop of  13 N 2pz          1.28003
+pop of  13 N 3px          0.00108
+pop of  13 N 3py          0.01817
+pop of  13 N 3pz          0.00056
+pop of  14 H 1s           0.72140
+pop of  14 H 2s           0.01417
+pop of  15 H 1s           0.72137
+pop of  15 H 2s           0.01417
+pop of  16 H 1s           0.72292
+pop of  16 H 2s           0.01426
+ ** Mulliken atomic charges  **
+charge of    0Cu =      1.48250
+charge of    1N =     -0.66229
+charge of    2H =      0.26280
+charge of    3H =      0.26443
+charge of    4H =      0.26440
+charge of    5N =     -0.66229
+charge of    6H =      0.26444
+charge of    7H =      0.26444
+charge of    8H =      0.26281
+charge of    9N =     -0.66228
+charge of   10H =      0.26281
+charge of   11H =      0.26440
+charge of   12H =      0.26442
+charge of   13N =     -0.66230
+charge of   14H =      0.26443
+charge of   15H =      0.26446
+charge of   16H =      0.26282
+Mulliken spin population analysis on meta-Lowdin AOs:
+ ** Mulliken pop on meta-lowdin orthogonal AOs  **
+ ** Mulliken pop  **
+pop of  0 Cu 1s           0.00000
+pop of  0 Cu 2s           0.00000
+pop of  0 Cu 3s           0.00000
+pop of  0 Cu 4s           0.00420
+pop of  0 Cu 5s           0.00004
+pop of  0 Cu 2px          0.00000
+pop of  0 Cu 2py          0.00000
+pop of  0 Cu 2pz          0.00000
+pop of  0 Cu 3px          0.00000
+pop of  0 Cu 3py          0.00000
+pop of  0 Cu 3pz          0.00000
+pop of  0 Cu 4px          0.00000
+pop of  0 Cu 4py          0.00000
+pop of  0 Cu 4pz          0.00000
+pop of  0 Cu 5px          0.00000
+pop of  0 Cu 5py          0.00000
+pop of  0 Cu 5pz          0.00000
+pop of  0 Cu 3dxy         0.19876
+pop of  0 Cu 3dyz         0.19916
+pop of  0 Cu 3dz^2        0.19493
+pop of  0 Cu 3dxz         0.19916
+pop of  0 Cu 3dx2-y2      0.18530
+pop of  0 Cu 4dxy         0.00033
+pop of  0 Cu 4dyz         0.00034
+pop of  0 Cu 4dz^2        0.00032
+pop of  0 Cu 4dxz         0.00034
+pop of  0 Cu 4dx2-y2      0.00075
+pop of  1 N 1s            0.00000
+pop of  1 N 2s            0.00071
+pop of  1 N 3s            0.00001
+pop of  1 N 2px           0.00271
+pop of  1 N 2py           0.00002
+pop of  1 N 2pz           0.00004
+pop of  1 N 3px           0.00007
+pop of  1 N 3py           0.00006
+pop of  1 N 3pz           0.00006
+pop of  2 H 1s            0.00014
+pop of  2 H 2s            0.00001
+pop of  3 H 1s            0.00012
+pop of  3 H 2s            0.00001
+pop of  4 H 1s            0.00012
+pop of  4 H 2s            0.00001
+pop of  5 N 1s            0.00000
+pop of  5 N 2s            0.00071
+pop of  5 N 3s            0.00001
+pop of  5 N 2px           0.00002
+pop of  5 N 2py           0.00271
+pop of  5 N 2pz           0.00004
+pop of  5 N 3px           0.00006
+pop of  5 N 3py           0.00007
+pop of  5 N 3pz           0.00006
+pop of  6 H 1s            0.00012
+pop of  6 H 2s            0.00001
+pop of  7 H 1s            0.00012
+pop of  7 H 2s            0.00001
+pop of  8 H 1s            0.00014
+pop of  8 H 2s            0.00001
+pop of  9 N 1s            0.00000
+pop of  9 N 2s            0.00071
+pop of  9 N 3s            0.00001
+pop of  9 N 2px           0.00271
+pop of  9 N 2py           0.00002
+pop of  9 N 2pz           0.00004
+pop of  9 N 3px           0.00007
+pop of  9 N 3py           0.00006
+pop of  9 N 3pz           0.00006
+pop of  10 H 1s           0.00014
+pop of  10 H 2s           0.00001
+pop of  11 H 1s           0.00012
+pop of  11 H 2s           0.00001
+pop of  12 H 1s           0.00012
+pop of  12 H 2s           0.00001
+pop of  13 N 1s           0.00000
+pop of  13 N 2s           0.00071
+pop of  13 N 3s           0.00001
+pop of  13 N 2px          0.00002
+pop of  13 N 2py          0.00271
+pop of  13 N 2pz          0.00004
+pop of  13 N 3px          0.00006
+pop of  13 N 3py          0.00007
+pop of  13 N 3pz          0.00006
+pop of  14 H 1s           0.00012
+pop of  14 H 2s           0.00001
+pop of  15 H 1s           0.00012
+pop of  15 H 2s           0.00001
+pop of  16 H 1s           0.00014
+pop of  16 H 2s           0.00001
+ ** Mulliken atomic charges  **
+charge of    0Cu =     28.01638
+charge of    1N =      6.99632
+charge of    2H =      0.99985
+charge of    3H =      0.99987
+charge of    4H =      0.99987
+charge of    5N =      6.99632
+charge of    6H =      0.99987
+charge of    7H =      0.99987
+charge of    8H =      0.99985
+charge of    9N =      6.99632
+charge of   10H =      0.99985
+charge of   11H =      0.99987
+charge of   12H =      0.99987
+charge of   13N =      6.99632
+charge of   14H =      0.99987
+charge of   15H =      0.99987
+charge of   16H =      0.99985
+spop of 0 Cu 1s         0.00000
+spop of 0 Cu 2s         0.00000
+spop of 0 Cu 3s         0.00000
+spop of 0 Cu 4s         0.00420
+spop of 0 Cu 5s         0.00004
+spop of 0 Cu 2px        0.00000
+spop of 0 Cu 2py        0.00000
+spop of 0 Cu 2pz        0.00000
+spop of 0 Cu 3px        0.00000
+spop of 0 Cu 3py        0.00000
+spop of 0 Cu 3pz        0.00000
+spop of 0 Cu 4px        0.00000
+spop of 0 Cu 4py        0.00000
+spop of 0 Cu 4pz        0.00000
+spop of 0 Cu 5px        0.00000
+spop of 0 Cu 5py        0.00000
+spop of 0 Cu 5pz        0.00000
+spop of 0 Cu 3dxy       0.19876
+spop of 0 Cu 3dyz       0.19916
+spop of 0 Cu 3dz^2      0.19493
+spop of 0 Cu 3dxz       0.19916
+spop of 0 Cu 3dx2-y2    0.18530
+spop of 0 Cu 4dxy       0.00033
+spop of 0 Cu 4dyz       0.00034
+spop of 0 Cu 4dz^2      0.00032
+spop of 0 Cu 4dxz       0.00034
+spop of 0 Cu 4dx2-y2    0.00075
+spop of 1 N 1s          0.00000
+spop of 1 N 2s          0.00071
+spop of 1 N 3s          0.00001
+spop of 1 N 2px         0.00271
+spop of 1 N 2py         0.00002
+spop of 1 N 2pz         0.00004
+spop of 1 N 3px         0.00007
+spop of 1 N 3py         0.00006
+spop of 1 N 3pz         0.00006
+spop of 2 H 1s          0.00014
+spop of 2 H 2s          0.00001
+spop of 3 H 1s          0.00012
+spop of 3 H 2s          0.00001
+spop of 4 H 1s          0.00012
+spop of 4 H 2s          0.00001
+spop of 5 N 1s          0.00000
+spop of 5 N 2s          0.00071
+spop of 5 N 3s          0.00001
+spop of 5 N 2px         0.00002
+spop of 5 N 2py         0.00271
+spop of 5 N 2pz         0.00004
+spop of 5 N 3px         0.00006
+spop of 5 N 3py         0.00007
+spop of 5 N 3pz         0.00006
+spop of 6 H 1s          0.00012
+spop of 6 H 2s          0.00001
+spop of 7 H 1s          0.00012
+spop of 7 H 2s          0.00001
+spop of 8 H 1s          0.00014
+spop of 8 H 2s          0.00001
+spop of 9 N 1s          0.00000
+spop of 9 N 2s          0.00071
+spop of 9 N 3s          0.00001
+spop of 9 N 2px         0.00271
+spop of 9 N 2py         0.00002
+spop of 9 N 2pz         0.00004
+spop of 9 N 3px         0.00007
+spop of 9 N 3py         0.00006
+spop of 9 N 3pz         0.00006
+spop of 10 H 1s         0.00014
+spop of 10 H 2s         0.00001
+spop of 11 H 1s         0.00012
+spop of 11 H 2s         0.00001
+spop of 12 H 1s         0.00012
+spop of 12 H 2s         0.00001
+spop of 13 N 1s         0.00000
+spop of 13 N 2s         0.00071
+spop of 13 N 3s         0.00001
+spop of 13 N 2px        0.00002
+spop of 13 N 2py        0.00271
+spop of 13 N 2pz        0.00004
+spop of 13 N 3px        0.00006
+spop of 13 N 3py        0.00007
+spop of 13 N 3pz        0.00006
+spop of 14 H 1s         0.00012
+spop of 14 H 2s         0.00001
+spop of 15 H 1s         0.00012
+spop of 15 H 2s         0.00001
+spop of 16 H 1s         0.00014
+spop of 16 H 2s         0.00001
+Mulliken atomic spins:
+spin of  0Cu =      0.98362
+spin of  1N =      0.00368
+spin of  2H =      0.00015
+spin of  3H =      0.00013
+spin of  4H =      0.00013
+spin of  5N =      0.00368
+spin of  6H =      0.00013
+spin of  7H =      0.00013
+spin of  8H =      0.00015
+spin of  9N =      0.00368
+spin of  10H =      0.00015
+spin of  11H =      0.00013
+spin of  12H =      0.00013
+spin of  13N =      0.00368
+spin of  14H =      0.00013
+spin of  15H =      0.00013
+spin of  16H =      0.00015
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: sa-casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 5
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.75000     0.5        2    -1874.569305720553     -44.641303926542
+    2       0.75000     0.5        2    -1874.526471169228     -44.598469375216
+    3       0.75000     0.5        2    -1874.514745696569     -44.586743902558
+    4       0.75000     0.5        2    -1874.514744215299     -44.586742421288
+    5       0.75000     0.5        2    -1874.511557886198     -44.583556092187
+-----------------------------------------------------------------------------------
+
+Initializing fully internally contracted NEVPT...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       qd
+Nuclear repulsion energy:                        416.293234452971
+Number of electrons:                               67
+Number of basis functions:                         87
+Reference wavefunction type:                       sa-casscf
+Number of reference states:                        5
+Number of reference microstates:                   5
+Number of frozen orbitals:                         0
+Number of core orbitals:                           29
+Number of active orbitals:                         5
+Number of external orbitals:                       53
+Number of active electrons:                        [(5, 4), (5, 4), (5, 4), (5, 4), (5, 4)]
+Spin–orbit coupling:                               breit-pauli
+G-tensor:                                          True
+G-tensor origin:                                   charge
+G-tensor target state:                             1
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /scratch/local
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-10
+Overlap truncation parameter (doubles):            1.00e-10
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+Correlation energy [0]:                           -0.488090868396
+
+Computing energy of state #1...
+Reference state active-space energy:             -44.641303926542
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(5, 4)]
+Correlation energy [0']:                          -0.011587387645
+Correlation energy [+1']:                         -0.000000000000
+Correlation energy [-1']:                         -0.001477523652
+Correlation energy [+1]:                          -0.010215989947
+Correlation energy [-1]:                          -0.049911092211
+d_pij= []
+evals= []
+Correlation energy [+2]:                           0.000000000000
+Correlation energy [-2]:                          -0.124743806416
+Correlation energy [0]:                           -0.488090868396
+SA-CASSCF reference state total energy:        -1874.569305720553
+NEVPT2 correlation energy:                        -0.686026668267
+Total NEVPT2 energy:                           -1875.255332388821
+
+Computing energy of state #2...
+Reference state active-space energy:             -44.598469375216
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(5, 4)]
+Correlation energy [0']:                          -0.001620094032
+Correlation energy [+1']:                         -0.000000000000
+Correlation energy [-1']:                         -0.001452877832
+Correlation energy [+1]:                          -0.004845093039
+Correlation energy [-1]:                          -0.052092143924
+d_pij= []
+evals= []
+Correlation energy [+2]:                           0.000000000000
+Correlation energy [-2]:                          -0.121839439876
+Correlation energy [0]:                           -0.488090868396
+SA-CASSCF reference state total energy:        -1874.526471169228
+NEVPT2 correlation energy:                        -0.669940517098
+Total NEVPT2 energy:                           -1875.196411686326
+
+Computing energy of state #3...
+Reference state active-space energy:             -44.586743902558
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(5, 4)]
+Correlation energy [0']:                          -0.001443356024
+Correlation energy [+1']:                         -0.000000000000
+Correlation energy [-1']:                         -0.001449976609
+Correlation energy [+1]:                          -0.004793581647
+Correlation energy [-1]:                          -0.052682357376
+d_pij= []
+evals= []
+Correlation energy [+2]:                           0.000000000000
+Correlation energy [-2]:                          -0.121617316135
+Correlation energy [0]:                           -0.488090868396
+SA-CASSCF reference state total energy:        -1874.514745696569
+NEVPT2 correlation energy:                        -0.670077456186
+Total NEVPT2 energy:                           -1875.184823152755
+
+Computing energy of state #4...
+Reference state active-space energy:             -44.586742421288
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(5, 4)]
+Correlation energy [0']:                          -0.001443689816
+Correlation energy [+1']:                         -0.000000000000
+Correlation energy [-1']:                         -0.001449981865
+Correlation energy [+1]:                          -0.004793882511
+Correlation energy [-1]:                          -0.052681873940
+d_pij= []
+evals= []
+Correlation energy [+2]:                           0.000000000000
+Correlation energy [-2]:                          -0.121617117343
+Correlation energy [0]:                           -0.488090868396
+SA-CASSCF reference state total energy:        -1874.514744215299
+NEVPT2 correlation energy:                        -0.670077413871
+Total NEVPT2 energy:                           -1875.184821629171
+
+Computing energy of state #5...
+Reference state active-space energy:             -44.583556092187
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(5, 4)]
+Correlation energy [0']:                          -0.002517444333
+Correlation energy [+1']:                         -0.000000000000
+Correlation energy [-1']:                         -0.001491526228
+Correlation energy [+1]:                          -0.004749827773
+Correlation energy [-1]:                          -0.052788124698
+d_pij= []
+evals= []
+Correlation energy [+2]:                           0.000000000000
+Correlation energy [-2]:                          -0.120562275764
+Correlation energy [0]:                           -0.488090868396
+SA-CASSCF reference state total energy:        -1874.511557886198
+NEVPT2 correlation energy:                        -0.670200067192
+Total NEVPT2 energy:                           -1875.181757953390
+
+Computing the QD-NEVPT2 effective Hamiltonian...
+
+Initializing state-interaction spin–orbit coupling program...
+Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+Calculating Wigner 1-RDM...
+> CPU time for total None calculation     96.21 sec, wall time     43.24 sec
+Calculating magnetic dipole moment...
+Coordinate system origin (charge, Bohr) = [ 0.00005039 -0.00003407 -0.00004223]
+
+Calculating g-tensor...
+
+Target State index = 1
+Micro state index: 1 to 2
+Calculating g-tensor for multiplicity = 2
+
+Calculating magnetic susceptibility or magnetization...
+h_s= 0.00 T
+Import LebedevGrid in pyscf...
+Number of LebedevGrid point: 266
+
+Summary of results for the BREIT-PAULI-QD-NEVPT2 calculation with the SA-CASSCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1        -1875.255627300661     0.00000000       0.0000                      0.0000               
+    2        1        -1875.255627300661     0.00000000       0.0000                      0.0000               
+    3        1        -1875.196872480976     0.05875482       1.5988     775.4828     12895.1924     0.00000000
+    4        1        -1875.196872480975     0.05875482       1.5988     775.4828     12895.1924     0.00000000
+    5        1        -1875.186735324158     0.06889198       1.8746     661.3739     15120.0411     0.00000000
+    6        1        -1875.186735324155     0.06889198       1.8746     661.3739     15120.0411     0.00000000
+    7        1        -1875.185841074099     0.06978623       1.8990     652.8989     15316.3063     0.00000000
+    8        1        -1875.185841074097     0.06978623       1.8990     652.8989     15316.3063     0.00000000
+    9        1        -1875.178070630576     0.07755667       2.1104     587.4846     17021.7216     0.00000000
+   10        1        -1875.178070630574     0.07755667       2.1104     587.4846     17021.7216     0.00000000
+----------------------------------------------------------------------------------------------------------------
+
+Magnetic g-tensor principal axes:
+[[-0.027506  0.999622 -0.000072]
+ [ 0.999622  0.027506  0.000151]
+ [-0.000152  0.000068  1.      ]]
+
+Magnetic g-factors (ge = 2.002319):
+      2.082427,       2.082485,       2.431688
+      0.080108,       0.080166,       0.429369 (g-shift)
+        80.108,         80.166,        429.369 (g-shift, ppt)
+
+Powder_magnetization(Bohr magneton)
+-----------------------------------
+TEMP(K)   B(T)    M(Bohr magneton)
+-----------------------------------
+  1.80      0.00      -0.000000 
+  1.80      0.50       0.223687 
+  1.80      1.00       0.429555 
+  1.80      1.50       0.605082 
+  1.80      2.00       0.745296 
+  1.80      2.50       0.851618 
+  1.80      3.00       0.929124 
+  1.80      3.50       0.984029 
+  1.80      4.00       1.022147 
+  1.80      4.50       1.048250 
+  1.80      5.00       1.065962 
+  1.80      5.50       1.077910 
+  1.80      6.00       1.085944 
+  1.80      6.50       1.091338 
+  1.80      7.00       1.094959 
+
+Powder_susceptibility(cm3/mol)
+--------------------------------------------
+TEMP(K)   B(T)         X_av          X_av*T
+--------------------------------------------
+  5.00      0.10       0.091247       0.456236
+ 19.75      0.10       0.023155       0.457313
+ 34.50      0.10       0.013284       0.458300
+ 49.25      0.10       0.009326       0.459284
+ 64.00      0.10       0.007192       0.460267
+ 78.75      0.10       0.005857       0.461250
+ 93.50      0.10       0.004944       0.462233
+108.25      0.10       0.004279       0.463216
+123.00      0.10       0.003774       0.464198
+137.75      0.10       0.003377       0.465182
+152.50      0.10       0.003057       0.466164
+167.25      0.10       0.002793       0.467146
+182.00      0.10       0.002572       0.468130
+196.75      0.10       0.002384       0.469111
+211.50      0.10       0.002223       0.470095
+226.25      0.10       0.002082       0.471078
+241.00      0.10       0.001959       0.472059
+255.75      0.10       0.001850       0.473042
+270.50      0.10       0.001752       0.474026
+285.25      0.10       0.001665       0.475007
+300.00      0.10       0.001587       0.475992
+
+Magnetization vector (Bohr magneton) in B vector= [0, 0, 1]
+--------------------------------------------------------
+TEMP(K)   B(T)          Mx           My           Mz
+--------------------------------------------------------
+  1.80      0.00       0.000000    -0.000000    -0.000000
+  1.80      0.50      -0.000005     0.000011     0.271316
+  1.80      1.00      -0.000010     0.000021     0.516926
+  1.80      1.50      -0.000014     0.000029     0.720030
+  1.80      2.00      -0.000017     0.000035     0.875788
+  1.80      2.50      -0.000019     0.000040     0.988481
+  1.80      3.00      -0.000020     0.000043     1.066633
+  1.80      3.50      -0.000021     0.000045     1.119261
+  1.80      4.00      -0.000022     0.000046     1.154013
+  1.80      4.50      -0.000023     0.000047     1.176673
+  1.80      5.00      -0.000023     0.000048     1.191338
+  1.80      5.50      -0.000023     0.000048     1.200791
+  1.80      6.00      -0.000023     0.000049     1.206879
+  1.80      6.50      -0.000023     0.000049     1.210808
+  1.80      7.00      -0.000023     0.000049     1.213355
+Susceptibility tensor X*T (cm3/mol) in B vector= [0, 0, 1]
+
+Eigenvalue of Susceptibility tensor * T (cm3K/mol)
+--------------------------------------------------------
+TEMP(K)   B(T)         X1*T         X2*T         X3*T
+--------------------------------------------------------
+  5.00      0.10       0.406857     0.406876     0.555147
+100.00      0.10       0.410262     0.410501     0.568995
+200.00      0.10       0.413804     0.414289     0.583420
+250.00      0.10       0.415572     0.416178     0.590612
+> CPU time for total SOC-NEVPT2 calculation    168.50 sec, wall time     53.85 sec

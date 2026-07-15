@@ -16,7 +16,7 @@
 # Authors: Carlos E. V. de Moura <carlosevmoura@gmail.com>
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          Donna Odhiambo <donna.odhiambo@proton.me>
-#
+#          Haden Dickerson <haden.dickerson423@outlook.com>
 
 from prism.mr_adc import compute
 from prism.mr_adc import amplitudes
@@ -33,9 +33,13 @@ class MRADC:
 
         log.info("\nInitializing MR-ADC...")
 
-        if (interface.reference != "casscf"):
-            log.info("MR-ADC requires CASSCF reference")
-            raise Exception("MR-ADC requires CASSCF reference")
+        if interface.reference == "scf":
+            log.info("SCF reference given, performing SR-ADC calculation")
+
+        elif interface.reference not in ("casscf", "casci"):
+            msg = "The MR-ADC code does not support use of a %s reference" % interface.reference
+            log.info(msg)
+            raise Exception(msg)
 
         self.stdout = interface.stdout
         self.verbose = interface.verbose
@@ -52,6 +56,7 @@ class MRADC:
         self.nelec = interface.nelec
         self.enuc = interface.enuc
         self.e_scf = interface.e_scf
+       
 
         self.symmetry = interface.symmetry
         self.group_repr_symm = interface.group_repr_symm
@@ -60,7 +65,7 @@ class MRADC:
         self.ncore = interface.ncore
         self.ncas = interface.ncas
         self.nextern = interface.nextern
-        self.nocc = self.ncas + self.ncore
+        self.nocc = self.ncore + self.ncas
         self.ref_nelecas = interface.ref_nelecas
         self.e_ref = interface.e_ref           # Total reference energy
         self.e_ref_cas = interface.e_ref_cas   # Reference active-space energy
@@ -71,7 +76,6 @@ class MRADC:
         # MR-ADC specific variables
         self.method = "mr-adc(2)"       # Possible methods: mr-adc(0), mr-adc(1), mr-adc(2), mr-adc(2)-x
         self.method_type = "cvs-ip"     # Possible method types: cvs-ip
-        # self.max_t_order = 1          # Maximum order of t amplitudes to compute
         self.ncasci = 6                 # Number of CASCI roots requested
         self.nroots = 6                 # Number of MR-ADC roots requested
         self.max_space = 100            # Maximum size of the Davidson trial space

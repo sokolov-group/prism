@@ -252,7 +252,10 @@ def diagonalize_eff_H(method):
 
             h_eff[I, J] = H_IJ
             h_eff[J, I] = H_IJ
-        
+   
+    # print intruder states for qd-nevpt2
+    check_intruder_states(method, dim, h_eff, t1)
+
     h_eval, h_evec = np.linalg.eigh(h_eff)
 
     return h_eval, h_evec
@@ -260,7 +263,7 @@ def diagonalize_eff_H(method):
 
 def compute_properties(method):
 
-    n_states = len(method.ref_wfn_deg)
+    n_states = len(method.e_tot)
 
     osc_str = None
 
@@ -338,7 +341,7 @@ def compute_properties(method):
                 method.properties["osc_strengths_full_uncorrected"] = osc_str_full_uncorrected
             
     # Compute magnetic properties
-    if method.gtensor and method.soc:
+    if (method.gtensor or method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor) and method.soc:
         from prism.nevpt import soc
         # Call make_rdm1 function directly to bypass including SOC effects
         rdm_sf = make_rdm1(method)
@@ -535,7 +538,134 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
         
     return rdm_final
 
+  
+def check_intruder_states(method, dim, h_eff, t1):
 
+    #Compute the coupling elements of h_eff > %cutoff_intruder Eh give warnings
+    interface = method.interface
+    cutoff_intruder = method.cutoff_intruder
+
+    data          = []
+    coupling_data = []
+
+    I, J = np.tril_indices(dim, k=-1)
+    mask = abs(h_eff[I, J]) > cutoff_intruder
+    
+    vals = h_eff[I, J]
+
+    if np.any(mask):
+
+        interface.log.info("\nWARNING: Large coupling detected (>%f Eh), possible intruder state!!!!!!"  %(cutoff_intruder))
+        
+        header_fmt = "{:<8} " + "{:>8} " * 13
+
+        row_fmt = "{:<8} " + "{:>8.4f} " * 13
+
+        coupling_fmt = "{:<12} {:>12.8f}"
+
+        # print data for coupling elements of H_eff
+        for i, j, val in zip(I[mask], J[mask], vals[mask]):
+            coupling_data.append(
+                coupling_fmt.format(
+                    f"({i+1},{j+1})",
+                    val
+                )
+            )
+
+        states_with_large_coupling = np.unique(np.concatenate((I[mask], J[mask])))
+
+        for state in states_with_large_coupling:
+
+            # smallest denominators
+            tp1  = method.den_t1_p1[state]
+            tp2  = method.den_t1_p2[state]
+            tp3  = method.den_t1_0p[state]
+            tp4  = method.den_t1_p1p[state]
+            tp5  = method.den_t1_m1p[state]
+            tp6  = method.den_t1_m1[state]
+            tp7  = method.den_t1_m2[state]
+
+            # amplitudes norms
+            t1_ccae = np.linalg.norm(t1[state].ccae)
+            t1_caee = np.linalg.norm(t1[state].caee)
+            t1_ccaa = np.linalg.norm(t1[state].ccaa)
+            t1_aaee = np.linalg.norm(t1[state].aaee)
+            t1_caea = np.linalg.norm(t1[state].caea)
+            t1_caaa = np.linalg.norm(t1[state].caaa)
+            t1_aaae = np.linalg.norm(t1[state].aaae)
+
+            data.append(
+                row_fmt.format(
+                    " %d" % (state + 1),
+                    tp1,
+                    tp6,
+                    tp2,
+                    tp7,
+                    tp3,
+                    tp4,
+                    tp5,
+                    t1_ccae,
+                    t1_caee,
+                    t1_ccaa,
+                    t1_aaee,
+                    t1_caea,
+                    t1_caaa,
+                    t1_aaae
+             )
+            )
+
+    # print the coupling element data
+    if coupling_data and method.verbose >= 4:
+        
+        interface.log.info("\nCoupling Elements of Effective Hamiltonian")
+        interface.log.info("-" * 30)
+        interface.log.info("{:<12} {:>12}".format("(I,J)", "H_eff"))
+        interface.log.info("-" * 30)
+
+        for row in coupling_data:
+            interface.log.info(row)
+
+        interface.log.info("-" * 30)
+    
+    # print the results for amplitudes and denominators
+    if data and method.verbose >= 4:
+
+        separator = "-" * 130
+        
+        interface.log.info("\nIntruder States and Corresponding Denominators and Amplitude Norms for a Specific Class")
+
+        interface.log.info(separator)
+
+        interface.log.info(
+            header_fmt.format(
+                "State",
+                "deno[+1]",
+                "deno[-1]",
+                "deno[+2]",
+                "deno[-2]",
+                "deno[0']",
+                "deno[+1']",
+                "deno[-1']", 
+                "amp[+1]", 
+                "amp[-1]",
+                "amp[+2]",
+                "amp[-2]",
+                "amp[0']",   
+                "amp[+1']",
+                "amp[-1']",
+            )
+        )
+
+        interface.log.info(separator)
+
+        for row in data:
+            interface.log.info(row)
+
+        interface.log.info(separator)
+
+    return
+
+  
 def analyze_eigenvectors(method, weight_cutoff=0.01):
 
     from pyscf.fci import cistring
@@ -578,12 +708,13 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
                     method.log.info("      [alpha occ] %s  [beta occ] %s  coeff: %12.6f  weight: %10.6f"
                                     % (alpha_occs, beta_occs, coeff, weight))
 
-        # Compute Natural Occupations by diagonalizing the active-space 1RDM
+        # Compute Natural Occupations by diagonalizing the 1RDM
         rdm_mo = make_rdm1(method, L=n, R=n)
-        d_cas = rdm_mo[ncore:ncore+ncas, ncore:ncore+ncas]
-        nat_occ, _ = np.linalg.eigh(d_cas)
-        nat_occ = nat_occ[::-1]
-        method.log.info("    Natural Occupations (active space): %s" % np.array2string(nat_occ, precision=4, suppress_small=True))
+        nat_occ_global, nat_orb_global = np.linalg.eigh(rdm_mo)
+        active_weights = np.sum(nat_orb_global[ncore:ncore+ncas, :]**2, axis=0)
+        active_no_indices = np.argsort(active_weights)[-ncas:]
+        active_nat_occ = np.sort(nat_occ_global[active_no_indices])[::-1]
+        method.log.info("    Natural Occupations (active space): %s" % np.array2string(active_nat_occ, precision=4, suppress_small=True))
 
         # For open-shell systems, compute atomic Mulliken spin populations in the AO basis
         if n_alpha_elec != n_beta_elec:

@@ -55,7 +55,9 @@ def compute_energy(method):
         method.log.info("Number of active electrons:                        %s" % str(method.ref_nelecas[mstate:(mstate+deg)]))
 
         # Compute reduced density matrices for a specific state
-        rdms_ref = rdms.compute_reference_rdms(method, method.ref_wfn[mstate:(mstate+deg)], method.ref_nelecas[mstate:(mstate+deg)])
+        rdms_ref = lambda: None
+        if method.ref_wfn is not None:
+            rdms_ref = rdms.compute_reference_rdms(method, method.ref_wfn[mstate:(mstate+deg)], method.ref_nelecas[mstate:(mstate+deg)])
 
         # Compute amplitudes and correlation energy
         e_corr_state, t1_state = compute_energy_state(method, rdms_ref, e_0)
@@ -96,6 +98,12 @@ def compute_energy_state(method, rdms, e_0 = None):
     ncas = method.ncas
     nelecas = method.ref_nelecas
     nextern = method.nextern
+
+    if rdms is None:
+        rdms.ca = np.zeros((ncas,)*2)
+        rdms.ccaa = np.zeros((ncas,)*4)
+        rdms.cccaaa = np.zeros((ncas,)*6)
+        rdms.ccccaaaa = np.zeros((ncas,)*8)
 
     e_0p, e_p1p, e_m1p, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 7
 
@@ -181,7 +189,7 @@ def compute_energy_state(method, rdms, e_0 = None):
 
 def compute_properties(method):
 
-    n_states = len(method.ref_wfn_deg)
+    n_states = len(method.e_tot)
 
     osc_str = None
 
@@ -256,7 +264,7 @@ def compute_properties(method):
             method.properties["osc_strengths_full"] = osc_str_full
             
     # Compute magnetic properties
-    if method.gtensor and method.soc:
+    if (method.gtensor or method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor) and method.soc:
         from prism.nevpt import soc
         # Call make_rdm1 function directly to bypass including SOC effects
         rdm_sf = make_rdm1(method)
@@ -349,7 +357,13 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
             R_t1_aaee = t1[J].aaee
             
             # Zeroth-order contributions
-            trdm_ca, trdm_ccaa, trdm_cccaaa = method.interface.compute_rdm123(method.ref_wfn[I], method.ref_wfn[J], method.ref_nelecas[I])
+            if method.ref_wfn is not None:
+                trdm_ca, trdm_ccaa, trdm_cccaaa = method.interface.compute_rdm123(method.ref_wfn[I], method.ref_wfn[J], method.ref_nelecas[I])
+            else:
+                trdm_ca = np.zeros((ncas,)*2)
+                trdm_ccaa = np.zeros((ncas,)*4)
+                trdm_cccaaa = np.zeros((ncas,)*6)
+
             rdm_final[ind_I, ind_J, ncore:ncore + ncas, ncore:ncore + ncas] = trdm_ca
 
             if I == J:
@@ -360,7 +374,7 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
                 
                 # Initial rdm array for correlated contributions
                 rdm_corr = np.zeros((nmo, nmo))
-                
+
                 # DIAGS #
                 if I == J:
                     # CORE-CORE #
