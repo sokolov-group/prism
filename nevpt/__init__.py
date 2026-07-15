@@ -150,6 +150,9 @@ class NEVPT:
         self.Bs_vec_chi = [0.1]
         self.T_vec_chi = [5,100,200,250]
 
+        # Frozen
+        self.frozen_mask = None
+
     def _make_method_instance(self):
 
         self.method_type = self.method_type.lower()

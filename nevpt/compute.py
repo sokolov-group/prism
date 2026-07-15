@@ -72,18 +72,41 @@ def initialize(nevpt):
         nevpt.log.info(msg)
         raise Exception(msg)
 
+    # if nevpt.nfrozen is None:
+    #     nevpt.nfrozen = 0
+
+    # if not isinstance(nevpt.nfrozen, int):
+    #     msg = "nfrozen must be an integer less than the number of core orbitals."
+    #     nevpt.log.error(msg)
+    #     raise TypeError(msg)
+
+    # if nevpt.nfrozen > nevpt.ncore:
+    #     msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
+    #     nevpt.log.error(msg)
+    #     raise ValueError(msg)
+
+    nevpt.frozen_mask = np.zeros(nevpt.nmo, dtype=bool)
+
     if nevpt.nfrozen is None:
         nevpt.nfrozen = 0
 
-    if not isinstance(nevpt.nfrozen, int):
-        msg = "nfrozen must be an integer less than the number of core orbitals."
+    elif isinstance(nevpt.nfrozen, (int, np.integer)):
+        if nevpt.nfrozen > nevpt.ncore:
+            msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
+            nevpt.log.error(msg)
+            raise ValueError(msg)
+        nevpt.frozen_mask[:frozen] = True
+
+    elif isinstance(nevpt.nfrozen, (list, np.ndarray)):
+        if max(nevpt.nfrozen) > nevpt.ncore:
+            msg = "Only occupied orbitals can be frozen."
+            nevpt.log.error(msg)
+            raise ValueError(msg)
+        nevpt.frozen_mask[nevpt.nfrozen] = True
+    else:
+        msg = "nfrozen must be an integer or a list of integers."
         nevpt.log.error(msg)
         raise TypeError(msg)
-
-    if nevpt.nfrozen > nevpt.ncore:
-        msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
-        nevpt.log.error(msg)
-        raise ValueError(msg)
 
     if nevpt.rdm_order not in [0,2]:
          raise ValueError(f"Invalid {'rdm_order'}: '{nevpt.rdm_order}'. Available options are {0,2}.")
