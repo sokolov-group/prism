@@ -98,12 +98,6 @@ def transform_integrals_2e_incore(nevpt):
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
-    # mo = nevpt.mo
-    # mo_c = mo[:, :ncore].copy()
-    # mo_c_wof = mo[:, nfrozen:ncore].copy()
-    # mo_a = mo[:, ncore:nocc].copy()
-    # mo_e = mo[:, nocc:].copy()
-
     masks = _mo_splitter(nevpt)
     mo_fc, mo_c_wof, mo_a, mo_e = [nevpt.mo[:, m] for m in masks]
     mo_c = np.hstack([mo_fc, mo_c_wof])
@@ -129,25 +123,6 @@ def transform_integrals_2e_incore(nevpt):
     nevpt.h1eff.ce = compute_effective_1e(nevpt, nevpt.h1e[:ncore, nocc:], nevpt.v2e.ccce, v2e_ccec)
     nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, ncore:nocc], nevpt.v2e.ccaa, nevpt.v2e.caac)
     nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, nocc:], nevpt.v2e.ccae, nevpt.v2e.caec)
-
-### use non-frozen core to form  (instead of full)
-    # # Effective two-electron integrals
-    # nevpt.v2e.ccaa = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_a, mo_a)
-    # nevpt.v2e.ccae = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_a, mo_e)
-    # nevpt.v2e.caac = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_a, mo_c_wof)
-    # nevpt.v2e.caec = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_e, mo_c_wof)
-    # nevpt.v2e.ccca = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_c_wof, mo_a)
-    # nevpt.v2e.ccce = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_c_wof, mo_e)
-
-    # v2e_ccac = nevpt.v2e.ccca.transpose(1, 0, 3, 2)
-    # v2e_ccec = nevpt.v2e.ccce.transpose(1, 0, 3, 2)
-
-    # _, c_mask, a_mask, e_mask = _mo_splitter(nevpt)
-    # nevpt.h1eff.ca = compute_effective_1e(nevpt, nevpt.h1e[c_mask][:, a_mask], nevpt.v2e.ccca, v2e_ccac)
-    # nevpt.h1eff.ce = compute_effective_1e(nevpt, nevpt.h1e[c_mask][:, e_mask], nevpt.v2e.ccce, v2e_ccec)
-    # nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[a_mask][:, a_mask], nevpt.v2e.ccaa, nevpt.v2e.caac)
-    # nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[a_mask][:, e_mask], nevpt.v2e.ccae, nevpt.v2e.caec)
-###
 
     # # Store diagonal elements of the generalized Fock operator
     # nevpt.mo_energy.c = nevpt.interface.mo_energy[:ncore]
@@ -315,7 +290,8 @@ def transform_integrals_2e_df(nevpt):
     # Variables from kernel
     nfrozen = nevpt.nfrozen
     ncore = nevpt.ncore
-    ncore_wof = ncore - nfrozen
+    # ncore_wof = ncore - nfrozen
+    ncore_wof = nevpt.ncore_wof
     ncas = nevpt.ncas
     nocc = nevpt.nocc
     nextern = nevpt.nextern
