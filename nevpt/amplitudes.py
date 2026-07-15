@@ -43,7 +43,8 @@ def compute_t1_0(nevpt):
         ctmpfile = None
 
     # Variables from kernel
-    ncore = nevpt.ncore - nevpt.nfrozen
+    # ncore = nevpt.ncore - nevpt.nfrozen
+    ncore = nevpt.ncore_wof
     nextern = nevpt.nextern
 
     ## Molecular Orbitals Energies
@@ -103,7 +104,8 @@ def compute_t1_p1(nevpt, rdms):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore - nevpt.nfrozen
+    # ncore = nevpt.ncore - nevpt.nfrozen
+    ncore = nevpt.ncore_wof
     nextern = nevpt.nextern
 
     ## Molecular Orbitals Energies
@@ -190,7 +192,8 @@ def compute_t1_m1(nevpt, rdms):
         ctmpfile = None
 
     # Variables from kernel
-    ncore = nevpt.ncore - nevpt.nfrozen
+    # ncore = nevpt.ncore - nevpt.nfrozen
+    ncore = nevpt.ncore_wof
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
@@ -282,7 +285,8 @@ def compute_t1_p2(nevpt, rdms):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore - nevpt.nfrozen
+    # ncore = nevpt.ncore - nevpt.nfrozen
+    ncore = nevpt.ncore_wof
     ncas = nevpt.ncas
 
     ## Molecular Orbitals Energies
@@ -461,7 +465,8 @@ def compute_t1_0p(nevpt, rdms):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore - nevpt.nfrozen
+    # ncore = nevpt.ncore - nevpt.nfrozen
+    ncore = nevpt.ncore_wof
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
@@ -601,7 +606,8 @@ def compute_t1_p1p(nevpt, rdms):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore - nevpt.nfrozen
+    # ncore = nevpt.ncore - nevpt.nfrozen
+    ncore = nevpt.ncore_wof
     ncas = nevpt.ncas
 
     ## Molecular Orbitals Energies
@@ -920,7 +926,8 @@ def compute_t1_0p_no_singles(nevpt, rdms):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore - nevpt.nfrozen
+    # ncore = nevpt.ncore - nevpt.nfrozen
+    ncore = nevpt.ncore_wof
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
@@ -1052,7 +1059,8 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
     einsum_type = nevpt.interface.einsum_type
 
     # Variables from kernel
-    ncore = nevpt.ncore - nevpt.nfrozen
+    # ncore = nevpt.ncore - nevpt.nfrozen
+    ncore = nevpt.ncore_wof
     ncas = nevpt.ncas
 
     ## Molecular Orbitals Energies
