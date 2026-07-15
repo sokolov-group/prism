@@ -92,16 +92,21 @@ def transform_integrals_2e_incore(nevpt):
     # Variables from kernel
     nfrozen = nevpt.nfrozen
     ncore = nevpt.ncore
-    ncore_wof = ncore - nfrozen
+    # ncore_wof = ncore - nfrozen
+    ncore_wof = nevpt.ncore_wof
     nocc = nevpt.nocc
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
-    mo = nevpt.mo
-    mo_c = mo[:, :ncore].copy()
-    mo_c_wof = mo[:, nfrozen:ncore].copy()
-    mo_a = mo[:, ncore:nocc].copy()
-    mo_e = mo[:, nocc:].copy()
+    # mo = nevpt.mo
+    # mo_c = mo[:, :ncore].copy()
+    # mo_c_wof = mo[:, nfrozen:ncore].copy()
+    # mo_a = mo[:, ncore:nocc].copy()
+    # mo_e = mo[:, nocc:].copy()
+
+    masks = _mo_splitter(nevpt)
+    mo_fc, mo_c_wof, mo_a, mo_e = [nevpt.mo[:, m] for m in masks]
+    mo_c = np.hstack([mo_fc, mo_c_wof])
 
     if nevpt.outcore_expensive_tensors:
         nevpt.tmpfile.feri1 = tools.create_temp_file(nevpt)
@@ -125,14 +130,41 @@ def transform_integrals_2e_incore(nevpt):
     nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, ncore:nocc], nevpt.v2e.ccaa, nevpt.v2e.caac)
     nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, nocc:], nevpt.v2e.ccae, nevpt.v2e.caec)
 
-    # Store diagonal elements of the generalized Fock operator
-    nevpt.mo_energy.c = nevpt.interface.mo_energy[:ncore]
-    nevpt.mo_energy.e = nevpt.interface.mo_energy[nocc:]
+### use non-frozen core to form  (instead of full)
+    # # Effective two-electron integrals
+    # nevpt.v2e.ccaa = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_a, mo_a)
+    # nevpt.v2e.ccae = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_a, mo_e)
+    # nevpt.v2e.caac = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_a, mo_c_wof)
+    # nevpt.v2e.caec = transform_2e_chem_incore(interface, mo_c_wof, mo_a, mo_e, mo_c_wof)
+    # nevpt.v2e.ccca = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_c_wof, mo_a)
+    # nevpt.v2e.ccce = transform_2e_chem_incore(interface, mo_c_wof, mo_c_wof, mo_c_wof, mo_e)
 
-    if nfrozen > 0:
-        nevpt.h1eff.ca = nevpt.h1eff.ca[nfrozen:,:].copy()
-        nevpt.h1eff.ce = nevpt.h1eff.ce[nfrozen:,:].copy()
-        nevpt.mo_energy.c = nevpt.mo_energy.c[nfrozen:]
+    # v2e_ccac = nevpt.v2e.ccca.transpose(1, 0, 3, 2)
+    # v2e_ccec = nevpt.v2e.ccce.transpose(1, 0, 3, 2)
+
+    # _, c_mask, a_mask, e_mask = _mo_splitter(nevpt)
+    # nevpt.h1eff.ca = compute_effective_1e(nevpt, nevpt.h1e[c_mask][:, a_mask], nevpt.v2e.ccca, v2e_ccac)
+    # nevpt.h1eff.ce = compute_effective_1e(nevpt, nevpt.h1e[c_mask][:, e_mask], nevpt.v2e.ccce, v2e_ccec)
+    # nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[a_mask][:, a_mask], nevpt.v2e.ccaa, nevpt.v2e.caac)
+    # nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[a_mask][:, e_mask], nevpt.v2e.ccae, nevpt.v2e.caec)
+###
+
+    # # Store diagonal elements of the generalized Fock operator
+    # nevpt.mo_energy.c = nevpt.interface.mo_energy[:ncore]
+    # nevpt.mo_energy.e = nevpt.interface.mo_energy[nocc:]
+
+    # if nfrozen > 0:
+    #     nevpt.h1eff.ca = nevpt.h1eff.ca[nfrozen:,:].copy()
+    #     nevpt.h1eff.ce = nevpt.h1eff.ce[nfrozen:,:].copy()
+    #     nevpt.mo_energy.c = nevpt.mo_energy.c[nfrozen:]
+
+    # Store diagonal elements of the generalized Fock operator
+    _, c_mask, a_mask, e_mask = _mo_splitter(nevpt)
+    nevpt.mo_energy.c = nevpt.interface.mo_energy[c_mask]
+    nevpt.mo_energy.e = nevpt.interface.mo_energy[e_mask]
+
+    nevpt.h1eff.ca = nevpt.h1e[c_mask][:, a_mask]
+    nevpt.h1eff.ce = nevpt.h1e[c_mask][:, e_mask]
 
     # Other integrals
     nevpt.v2e.aaaa = transform_2e_chem_incore(interface, mo_a, mo_a, mo_a, mo_a)
@@ -520,3 +552,14 @@ def get_v2e_df(nevpt, Lpq, Lrs, pqrs_string = None):
     nevpt.log.timer_debug("computing v2e.{:} DF".format(pqrs_string), *cput0)
     return v_pqrs
 
+def _mo_splitter(nevpt):
+    idx = np.arange(nevpt.nmo)
+    is_core = idx < nevpt.ncore
+    is_occ = idx < nevpt.nocc
+
+    return [
+        is_core  &  nevpt.frozen_mask, # frozen core
+        is_core  & ~nevpt.frozen_mask, # unfrozen core
+        ~is_core & is_occ,             # active space
+        ~is_occ                        # external space
+    ]
