@@ -99,7 +99,7 @@ def initialize(nevpt):
 
     elif isinstance(nevpt.nfrozen, (list, np.ndarray)):
         if max(nevpt.nfrozen) > nevpt.ncore:
-            msg = "Only occupied orbitals can be frozen."
+            msg = "Only core orbitals can be frozen."
             nevpt.log.error(msg)
             raise ValueError(msg)
         nevpt.frozen_mask[nevpt.nfrozen] = True
@@ -141,7 +141,11 @@ def print_header(nevpt):
     nevpt.log.info("Reference wavefunction type:                       %s" % nevpt.interface.reference)
     nevpt.log.info("Number of reference states:                        %d" % n_states)
     nevpt.log.info("Number of reference microstates:                   %d" % n_micro_states)
-    nevpt.log.info("Number of frozen orbitals:                         %d" % nevpt.nfrozen)
+    # nevpt.log.info("Number of frozen orbitals:                         %d" % nevpt.nfrozen)
+    frozen_list = np.arange(nevpt.nmo)[nevpt.frozen_mask]
+    nevpt.log.info("Number of frozen orbitals:                         %d" % frozen_list.size or 0)
+    if frozen_list.size > 0:
+        nevpt.log.info("Frozen orbitals:                                   %s" % frozen_list)
     nevpt.log.info("Number of core orbitals:                           %d" % nevpt.ncore)
     nevpt.log.info("Number of active orbitals:                         %d" % nevpt.ncas)
     nevpt.log.info("Number of external orbitals:                       %d" % nevpt.nextern)
