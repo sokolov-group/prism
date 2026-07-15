@@ -76,14 +76,16 @@ nevpt.verbose = 5
 nevpt.keep_amplitudes = True
 
 e_tot, e_corr, osc = nevpt.kernel()
-nevpt.analyze()
+
+print('QD-NEVPT2 Correlation Energies: ')
+print(e_corr)
     #INFO: ******************** input file end ********************
 
 
-System: uname_result(system='Linux', node='pitzer-login03.hpc.osc.edu', release='5.14.0-570.119.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Mon Jun 1 07:14:38 EDT 2026', machine='x86_64')  Threads 12
+System: uname_result(system='Linux', node='pitzer-login02.hpc.osc.edu', release='5.14.0-570.119.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Mon Jun 1 07:14:38 EDT 2026', machine='x86_64')  Threads 12
 Python 3.10.13 (main, Sep 11 2023, 13:44:35) [GCC 11.2.0]
 numpy 2.2.6  scipy 1.15.3  h5py 3.16.0
-Date: Mon Jun 15 15:02:40 2026
+Date: Wed Jul 15 19:31:33 2026
 PySCF version 2.9.0
 PySCF path  /users/PAS0291/jdserna22/repos/pyscf
 GIT ORIG_HEAD f9a3aced519f6fdfdb86988da6498f6fcd315d6d
@@ -121,7 +123,7 @@ number of NR pGTOs = 276
 number of NR cGTOs = 156
 basis = cc-pVDZ
 ecp = {}
-CPU time:         1.22
+CPU time:         2.62
 
 
 ******** <class 'pyscf.solvent._attach_solvent.PolEmbedRHF'> ********
@@ -138,214 +140,214 @@ SCF conv_tol_grad = None
 SCF max_cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /fs/scratch/PAS1963/jserna/tmpceo4s4s4
-max_memory 4000 MB (current use 115 MB)
+chkfile to save SCF result = /fs/scratch/PAS1963/jserna/tmptpl2ox73
+max_memory 4000 MB (current use 119 MB)
 Set gradient conv threshold to 3.16228e-05
 Initial guess from minao.
 Solvent Energy = -0.0429130462410978
 init E= -454.303376870168
-  HOMO = -0.196019018994632  LUMO = 0.0596493312796127
-Solvent Energy = -0.217826615921946
-cycle= 1 E= -451.344712873627  delta_E= 2.96  |g|= 1.21  |ddm|= 3.89
-  HOMO = -0.307582551253527  LUMO = 0.018947568802075
-Solvent Energy = -0.131982005830483
-cycle= 2 E= -451.500356706188  delta_E= -0.156  |g|= 0.988  |ddm|= 1.85
-  HOMO = -0.339997781300681  LUMO = 0.101810223611622
-Solvent Energy = -0.166041843160473
+  HOMO = -0.196019018994632  LUMO = 0.0596493312796239
+Solvent Energy = -0.217826615921949
+cycle= 1 E= -451.344712873626  delta_E= 2.96  |g|= 1.21  |ddm|= 3.89
+  HOMO = -0.307582551253529  LUMO = 0.0189475688021045
+Solvent Energy = -0.131982005830482
+cycle= 2 E= -451.500356706189  delta_E= -0.156  |g|= 0.988  |ddm|= 1.85
+  HOMO = -0.339997781300676  LUMO = 0.101810223611637
+Solvent Energy = -0.166041843160471
 cycle= 3 E= -451.686636926085  delta_E= -0.186  |g|= 0.0984  |ddm|= 0.861
-  HOMO = -0.336607985264739  LUMO = 0.118035570097306
-Solvent Energy = -0.164503405627861
+  HOMO = -0.336607985264753  LUMO = 0.118035570097298
+Solvent Energy = -0.164503405627858
 cycle= 4 E= -451.690675625093  delta_E= -0.00404  |g|= 0.0325  |ddm|= 0.152
-  HOMO = -0.339232074860802  LUMO = 0.116835662967982
-Solvent Energy = -0.163712113373988
-cycle= 5 E= -451.691131864924  delta_E= -0.000456  |g|= 0.0129  |ddm|= 0.0492
-  HOMO = -0.339619964484318  LUMO = 0.117008386027367
-Solvent Energy = -0.163568959927486
-cycle= 6 E= -451.691250856773  delta_E= -0.000119  |g|= 0.00607  |ddm|= 0.0264
-  HOMO = -0.339579849877077  LUMO = 0.117701012798336
-Solvent Energy = -0.163338664386863
-cycle= 7 E= -451.691281259053  delta_E= -3.04e-05  |g|= 0.00219  |ddm|= 0.017
-  HOMO = -0.33966729799572  LUMO = 0.117850989428059
-Solvent Energy = -0.163282470475736
+  HOMO = -0.339232074860807  LUMO = 0.116835662967985
+Solvent Energy = -0.163712113373989
+cycle= 5 E= -451.691131864922  delta_E= -0.000456  |g|= 0.0129  |ddm|= 0.0492
+  HOMO = -0.339619964484321  LUMO = 0.117008386027379
+Solvent Energy = -0.163568959927483
+cycle= 6 E= -451.691250856774  delta_E= -0.000119  |g|= 0.00607  |ddm|= 0.0264
+  HOMO = -0.339579849877085  LUMO = 0.117701012798355
+Solvent Energy = -0.163338664386869
+cycle= 7 E= -451.691281259054  delta_E= -3.04e-05  |g|= 0.00219  |ddm|= 0.017
+  HOMO = -0.33966729799574  LUMO = 0.117850989428057
+Solvent Energy = -0.163282470475748
 cycle= 8 E= -451.691284072902  delta_E= -2.81e-06  |g|= 0.000698  |ddm|= 0.00498
-  HOMO = -0.339653212393362  LUMO = 0.117877262016482
-Solvent Energy = -0.16325598687214
-cycle= 9 E= -451.69128431491  delta_E= -2.42e-07  |g|= 0.000217  |ddm|= 0.00152
-  HOMO = -0.339638860920335  LUMO = 0.117886454359022
-Solvent Energy = -0.16325018369275
+  HOMO = -0.339653212393356  LUMO = 0.117877262016475
+Solvent Energy = -0.16325598687213
+cycle= 9 E= -451.691284314909  delta_E= -2.42e-07  |g|= 0.000217  |ddm|= 0.00152
+  HOMO = -0.339638860920346  LUMO = 0.117886454359016
+Solvent Energy = -0.163250183692749
 cycle= 10 E= -451.691284341807  delta_E= -2.69e-08  |g|= 8.35e-05  |ddm|= 0.000408
-  HOMO = -0.339630199445405  LUMO = 0.117887633675027
-Solvent Energy = -0.163247810302012
-cycle= 11 E= -451.691284346393  delta_E= -4.59e-09  |g|= 2.75e-05  |ddm|= 0.000213
-  HOMO = -0.339630783816028  LUMO = 0.117885318347923
-Solvent Energy = -0.163247433159818
-cycle= 12 E= -451.691284346699  delta_E= -3.07e-10  |g|= 9.46e-06  |ddm|= 5.49e-05
-  HOMO = -0.339629247133832  LUMO = 0.117886335845515
-Solvent Energy = -0.163247428544816
-Extra cycle  E= -451.691284346675  delta_E= 2.43e-11  |g|= 4.93e-06  |ddm|= 1.52e-05
-converged SCF energy = -451.691284346675
+  HOMO = -0.339630199445383  LUMO = 0.117887633675035
+Solvent Energy = -0.163247810302011
+cycle= 11 E= -451.691284346394  delta_E= -4.59e-09  |g|= 2.75e-05  |ddm|= 0.000213
+  HOMO = -0.339630783816038  LUMO = 0.117885318347936
+Solvent Energy = -0.16324743315982
+cycle= 12 E= -451.691284346699  delta_E= -3.05e-10  |g|= 9.46e-06  |ddm|= 5.49e-05
+  HOMO = -0.339629247133842  LUMO = 0.1178863358455
+Solvent Energy = -0.16324742854481
+Extra cycle  E= -451.691284346676  delta_E= 2.3e-11  |g|= 4.93e-06  |ddm|= 1.52e-05
+converged SCF energy = -451.691284346676
 **** SCF Summaries ****
-Total Energy =                        -451.691284346675161
+Total Energy =                        -451.691284346675729
 Nuclear Repulsion Energy =             442.300285447431520
-One-electron Energy =                -1492.780904309728612
-Two-electron Energy =                  598.952581944166695
+One-electron Energy =                -1492.780904309728385
+Two-electron Energy =                  598.952581944165900
 **** MO energy ****
-MO #1   energy= -20.5496739580983  occ= 2
-MO #2   energy= -20.5331756946576  occ= 2
-MO #3   energy= -15.6183628690506  occ= 2
-MO #4   energy= -15.6139630465661  occ= 2
+MO #1   energy= -20.5496739580984  occ= 2
+MO #2   energy= -20.5331756946575  occ= 2
+MO #3   energy= -15.6183628690507  occ= 2
+MO #4   energy= -15.613963046566   occ= 2
 MO #5   energy= -11.4203925061995  occ= 2
-MO #6   energy= -11.3728161726551  occ= 2
+MO #6   energy= -11.3728161726552  occ= 2
 MO #7   energy= -11.3137587299986  occ= 2
 MO #8   energy= -11.2384180462301  occ= 2
-MO #9   energy= -11.2320853168823  occ= 2
-MO #10  energy= -1.43517058714989  occ= 2
-MO #11  energy= -1.39237522414593  occ= 2
-MO #12  energy= -1.30192603227556  occ= 2
-MO #13  energy= -1.23149197033134  occ= 2
-MO #14  energy= -1.10059964952669  occ= 2
-MO #15  energy= -0.961814165083688 occ= 2
-MO #16  energy= -0.906544521074612 occ= 2
-MO #17  energy= -0.883637057556687 occ= 2
-MO #18  energy= -0.759921101123926 occ= 2
-MO #19  energy= -0.756599506825439 occ= 2
-MO #20  energy= -0.692891870284988 occ= 2
-MO #21  energy= -0.673149264442107 occ= 2
-MO #22  energy= -0.660261455451673 occ= 2
-MO #23  energy= -0.649057712368586 occ= 2
-MO #24  energy= -0.601681912179309 occ= 2
-MO #25  energy= -0.589058699071299 occ= 2
-MO #26  energy= -0.55694736199824  occ= 2
-MO #27  energy= -0.550875697386074 occ= 2
-MO #28  energy= -0.540921374416469 occ= 2
-MO #29  energy= -0.501190862470936 occ= 2
-MO #30  energy= -0.480690366023515 occ= 2
-MO #31  energy= -0.442868427506107 occ= 2
+MO #9   energy= -11.2320853168824  occ= 2
+MO #10  energy= -1.4351705871499   occ= 2
+MO #11  energy= -1.39237522414592  occ= 2
+MO #12  energy= -1.30192603227557  occ= 2
+MO #13  energy= -1.23149197033135  occ= 2
+MO #14  energy= -1.1005996495267   occ= 2
+MO #15  energy= -0.961814165083711 occ= 2
+MO #16  energy= -0.906544521074626 occ= 2
+MO #17  energy= -0.883637057556696 occ= 2
+MO #18  energy= -0.75992110112394  occ= 2
+MO #19  energy= -0.756599506825451 occ= 2
+MO #20  energy= -0.692891870284993 occ= 2
+MO #21  energy= -0.673149264442111 occ= 2
+MO #22  energy= -0.660261455451677 occ= 2
+MO #23  energy= -0.64905771236858  occ= 2
+MO #24  energy= -0.601681912179314 occ= 2
+MO #25  energy= -0.589058699071308 occ= 2
+MO #26  energy= -0.556947361998256 occ= 2
+MO #27  energy= -0.550875697386078 occ= 2
+MO #28  energy= -0.540921374416481 occ= 2
+MO #29  energy= -0.501190862470949 occ= 2
+MO #30  energy= -0.480690366023531 occ= 2
+MO #31  energy= -0.442868427506101 occ= 2
 MO #32  energy= -0.430016914953792 occ= 2
-MO #33  energy= -0.339629247133832 occ= 2
-MO #34  energy= 0.117886335845515  occ= 0
-MO #35  energy= 0.176176752701037  occ= 0
-MO #36  energy= 0.200460282691021  occ= 0
-MO #37  energy= 0.231597765446673  occ= 0
-MO #38  energy= 0.255847769925483  occ= 0
-MO #39  energy= 0.272659367465255  occ= 0
-MO #40  energy= 0.281684746055856  occ= 0
-MO #41  energy= 0.315013502632467  occ= 0
-MO #42  energy= 0.345082797694846  occ= 0
-MO #43  energy= 0.383612324014474  occ= 0
-MO #44  energy= 0.398062469925596  occ= 0
-MO #45  energy= 0.416703735116857  occ= 0
-MO #46  energy= 0.423849485306297  occ= 0
-MO #47  energy= 0.475929539809168  occ= 0
-MO #48  energy= 0.507970368243842  occ= 0
-MO #49  energy= 0.512662584278703  occ= 0
-MO #50  energy= 0.540778334112646  occ= 0
-MO #51  energy= 0.580741084757773  occ= 0
-MO #52  energy= 0.603119711742619  occ= 0
-MO #53  energy= 0.641867265455821  occ= 0
-MO #54  energy= 0.657506985353226  occ= 0
-MO #55  energy= 0.688720974810192  occ= 0
-MO #56  energy= 0.698978981664123  occ= 0
-MO #57  energy= 0.717159030621512  occ= 0
-MO #58  energy= 0.740773417539688  occ= 0
-MO #59  energy= 0.765178616806559  occ= 0
-MO #60  energy= 0.769260318959531  occ= 0
-MO #61  energy= 0.796524526643745  occ= 0
-MO #62  energy= 0.840270659104375  occ= 0
-MO #63  energy= 0.856725401580991  occ= 0
-MO #64  energy= 0.866108813780767  occ= 0
-MO #65  energy= 0.878596318278634  occ= 0
-MO #66  energy= 0.881583637699466  occ= 0
-MO #67  energy= 0.904899768050976  occ= 0
-MO #68  energy= 0.923139473131287  occ= 0
-MO #69  energy= 0.93844191832267   occ= 0
-MO #70  energy= 0.954350851025841  occ= 0
-MO #71  energy= 0.978050559176636  occ= 0
-MO #72  energy= 0.992823770077925  occ= 0
-MO #73  energy= 1.03117572273888   occ= 0
-MO #74  energy= 1.0431445567178    occ= 0
-MO #75  energy= 1.08652315778215   occ= 0
-MO #76  energy= 1.09925455040278   occ= 0
-MO #77  energy= 1.12527020100304   occ= 0
-MO #78  energy= 1.1367482512219    occ= 0
-MO #79  energy= 1.15516857925031   occ= 0
-MO #80  energy= 1.21265592415027   occ= 0
-MO #81  energy= 1.23881662628682   occ= 0
-MO #82  energy= 1.28187480545825   occ= 0
-MO #83  energy= 1.29549762941366   occ= 0
-MO #84  energy= 1.31005091026668   occ= 0
-MO #85  energy= 1.32026864342508   occ= 0
-MO #86  energy= 1.33899946686706   occ= 0
-MO #87  energy= 1.35142434926694   occ= 0
-MO #88  energy= 1.35878076264521   occ= 0
-MO #89  energy= 1.36941186851783   occ= 0
+MO #33  energy= -0.339629247133842 occ= 2
+MO #34  energy= 0.1178863358455    occ= 0
+MO #35  energy= 0.176176752701041  occ= 0
+MO #36  energy= 0.200460282691036  occ= 0
+MO #37  energy= 0.231597765446679  occ= 0
+MO #38  energy= 0.255847769925481  occ= 0
+MO #39  energy= 0.272659367465195  occ= 0
+MO #40  energy= 0.281684746055847  occ= 0
+MO #41  energy= 0.315013502632588  occ= 0
+MO #42  energy= 0.345082797694842  occ= 0
+MO #43  energy= 0.383612324014371  occ= 0
+MO #44  energy= 0.398062469925631  occ= 0
+MO #45  energy= 0.416703735117012  occ= 0
+MO #46  energy= 0.423849485306292  occ= 0
+MO #47  energy= 0.475929539809227  occ= 0
+MO #48  energy= 0.507970368243865  occ= 0
+MO #49  energy= 0.51266258427886   occ= 0
+MO #50  energy= 0.540778334113265  occ= 0
+MO #51  energy= 0.580741084757414  occ= 0
+MO #52  energy= 0.603119711742599  occ= 0
+MO #53  energy= 0.641867265455805  occ= 0
+MO #54  energy= 0.657506985353142  occ= 0
+MO #55  energy= 0.688720974810263  occ= 0
+MO #56  energy= 0.69897898166401   occ= 0
+MO #57  energy= 0.717159030621563  occ= 0
+MO #58  energy= 0.740773417539694  occ= 0
+MO #59  energy= 0.765178616806492  occ= 0
+MO #60  energy= 0.769260318959486  occ= 0
+MO #61  energy= 0.796524526643869  occ= 0
+MO #62  energy= 0.840270659104309  occ= 0
+MO #63  energy= 0.856725401581017  occ= 0
+MO #64  energy= 0.866108813780876  occ= 0
+MO #65  energy= 0.878596318278572  occ= 0
+MO #66  energy= 0.881583637699515  occ= 0
+MO #67  energy= 0.904899768050992  occ= 0
+MO #68  energy= 0.923139473131343  occ= 0
+MO #69  energy= 0.938441918322816  occ= 0
+MO #70  energy= 0.95435085102568   occ= 0
+MO #71  energy= 0.978050559176585  occ= 0
+MO #72  energy= 0.992823770077947  occ= 0
+MO #73  energy= 1.0311757227391    occ= 0
+MO #74  energy= 1.0431445567177    occ= 0
+MO #75  energy= 1.08652315778213   occ= 0
+MO #76  energy= 1.09925455040306   occ= 0
+MO #77  energy= 1.12527020100296   occ= 0
+MO #78  energy= 1.13674825122172   occ= 0
+MO #79  energy= 1.1551685792503    occ= 0
+MO #80  energy= 1.2126559241514    occ= 0
+MO #81  energy= 1.23881662628596   occ= 0
+MO #82  energy= 1.28187480545824   occ= 0
+MO #83  energy= 1.2954976294129    occ= 0
+MO #84  energy= 1.31005091026646   occ= 0
+MO #85  energy= 1.32026864342511   occ= 0
+MO #86  energy= 1.33899946686704   occ= 0
+MO #87  energy= 1.35142434926711   occ= 0
+MO #88  energy= 1.35878076264522   occ= 0
+MO #89  energy= 1.36941186851781   occ= 0
 MO #90  energy= 1.41252196144207   occ= 0
-MO #91  energy= 1.41779677533781   occ= 0
-MO #92  energy= 1.44766205267219   occ= 0
-MO #93  energy= 1.50181271347513   occ= 0
-MO #94  energy= 1.55657614438024   occ= 0
-MO #95  energy= 1.57976749268639   occ= 0
-MO #96  energy= 1.60197079973281   occ= 0
-MO #97  energy= 1.68670824709252   occ= 0
-MO #98  energy= 1.69006354055648   occ= 0
-MO #99  energy= 1.72161644654156   occ= 0
-MO #100 energy= 1.7442190955375    occ= 0
-MO #101 energy= 1.77968347124243   occ= 0
-MO #102 energy= 1.81625089574943   occ= 0
-MO #103 energy= 1.83105517199392   occ= 0
-MO #104 energy= 1.84117746824674   occ= 0
-MO #105 energy= 1.90330883216301   occ= 0
-MO #106 energy= 1.90775506809398   occ= 0
-MO #107 energy= 1.91930258201358   occ= 0
-MO #108 energy= 1.92411293232402   occ= 0
-MO #109 energy= 1.95406165027657   occ= 0
-MO #110 energy= 1.98698677325254   occ= 0
-MO #111 energy= 2.01418882826319   occ= 0
-MO #112 energy= 2.02360405247917   occ= 0
-MO #113 energy= 2.0400525644989    occ= 0
-MO #114 energy= 2.05508225558067   occ= 0
-MO #115 energy= 2.09790833600186   occ= 0
-MO #116 energy= 2.11189893434446   occ= 0
-MO #117 energy= 2.16154506817142   occ= 0
-MO #118 energy= 2.20277502146973   occ= 0
-MO #119 energy= 2.22767995266332   occ= 0
-MO #120 energy= 2.23258693327273   occ= 0
-MO #121 energy= 2.25283027562952   occ= 0
-MO #122 energy= 2.29609283966896   occ= 0
-MO #123 energy= 2.34850513537876   occ= 0
-MO #124 energy= 2.40354190948127   occ= 0
-MO #125 energy= 2.44708052768853   occ= 0
-MO #126 energy= 2.45249801629141   occ= 0
-MO #127 energy= 2.48052524613905   occ= 0
-MO #128 energy= 2.48919810770951   occ= 0
-MO #129 energy= 2.50728781237633   occ= 0
-MO #130 energy= 2.553204664667     occ= 0
-MO #131 energy= 2.58174349616072   occ= 0
-MO #132 energy= 2.67324268481891   occ= 0
-MO #133 energy= 2.67538909378259   occ= 0
-MO #134 energy= 2.67935476378377   occ= 0
+MO #91  energy= 1.41779677533814   occ= 0
+MO #92  energy= 1.44766205267202   occ= 0
+MO #93  energy= 1.50181271347452   occ= 0
+MO #94  energy= 1.55657614438074   occ= 0
+MO #95  energy= 1.57976749268641   occ= 0
+MO #96  energy= 1.60197079973353   occ= 0
+MO #97  energy= 1.68670824709366   occ= 0
+MO #98  energy= 1.69006354055646   occ= 0
+MO #99  energy= 1.72161644654141   occ= 0
+MO #100 energy= 1.7442190955388    occ= 0
+MO #101 energy= 1.77968347124242   occ= 0
+MO #102 energy= 1.81625089575017   occ= 0
+MO #103 energy= 1.8310551719939    occ= 0
+MO #104 energy= 1.8411774682467    occ= 0
+MO #105 energy= 1.90330883216295   occ= 0
+MO #106 energy= 1.90775506809414   occ= 0
+MO #107 energy= 1.91930258201372   occ= 0
+MO #108 energy= 1.924112932324     occ= 0
+MO #109 energy= 1.95406165027652   occ= 0
+MO #110 energy= 1.98698677325256   occ= 0
+MO #111 energy= 2.01418882826318   occ= 0
+MO #112 energy= 2.02360405247924   occ= 0
+MO #113 energy= 2.04005256449885   occ= 0
+MO #114 energy= 2.05508225558073   occ= 0
+MO #115 energy= 2.09790833600184   occ= 0
+MO #116 energy= 2.11189893434447   occ= 0
+MO #117 energy= 2.16154506817162   occ= 0
+MO #118 energy= 2.20277502146956   occ= 0
+MO #119 energy= 2.2276799526633    occ= 0
+MO #120 energy= 2.23258693327409   occ= 0
+MO #121 energy= 2.25283027562949   occ= 0
+MO #122 energy= 2.2960928396676    occ= 0
+MO #123 energy= 2.34850513537873   occ= 0
+MO #124 energy= 2.40354190948098   occ= 0
+MO #125 energy= 2.44708052768823   occ= 0
+MO #126 energy= 2.4524980162914    occ= 0
+MO #127 energy= 2.4805252461394    occ= 0
+MO #128 energy= 2.4891981077095    occ= 0
+MO #129 energy= 2.50728781237619   occ= 0
+MO #130 energy= 2.55320466466699   occ= 0
+MO #131 energy= 2.58174349615976   occ= 0
+MO #132 energy= 2.67324268481885   occ= 0
+MO #133 energy= 2.67538909378258   occ= 0
+MO #134 energy= 2.67935476378376   occ= 0
 MO #135 energy= 2.75635735923337   occ= 0
-MO #136 energy= 2.78749036124455   occ= 0
-MO #137 energy= 2.82052122294358   occ= 0
-MO #138 energy= 2.85659816267454   occ= 0
-MO #139 energy= 2.87589908060645   occ= 0
-MO #140 energy= 2.91441138543327   occ= 0
-MO #141 energy= 2.96202553087127   occ= 0
-MO #142 energy= 3.01691069250186   occ= 0
-MO #143 energy= 3.04989480785363   occ= 0
-MO #144 energy= 3.08340759813961   occ= 0
-MO #145 energy= 3.13550193540816   occ= 0
-MO #146 energy= 3.13556492055313   occ= 0
-MO #147 energy= 3.18800205453285   occ= 0
-MO #148 energy= 3.30919799688067   occ= 0
-MO #149 energy= 3.43900780087161   occ= 0
-MO #150 energy= 3.45703003362826   occ= 0
-MO #151 energy= 3.50072157994393   occ= 0
-MO #152 energy= 3.78832475846972   occ= 0
-MO #153 energy= 3.80704494012177   occ= 0
-MO #154 energy= 3.85811503246723   occ= 0
-MO #155 energy= 3.88163741828641   occ= 0
-MO #156 energy= 4.01276255159756   occ= 0
+MO #136 energy= 2.78749036124452   occ= 0
+MO #137 energy= 2.82052122294359   occ= 0
+MO #138 energy= 2.8565981626745    occ= 0
+MO #139 energy= 2.8758990806068    occ= 0
+MO #140 energy= 2.91441138543302   occ= 0
+MO #141 energy= 2.96202553087129   occ= 0
+MO #142 energy= 3.01691069250158   occ= 0
+MO #143 energy= 3.04989480785362   occ= 0
+MO #144 energy= 3.08340759813956   occ= 0
+MO #145 energy= 3.13550193540829   occ= 0
+MO #146 energy= 3.13556492055311   occ= 0
+MO #147 energy= 3.18800205453282   occ= 0
+MO #148 energy= 3.3091979968806    occ= 0
+MO #149 energy= 3.4390078008716    occ= 0
+MO #150 energy= 3.45703003362828   occ= 0
+MO #151 energy= 3.50072157994392   occ= 0
+MO #152 energy= 3.78832475846975   occ= 0
+MO #153 energy= 3.80704494012169   occ= 0
+MO #154 energy= 3.8581150324672    occ= 0
+MO #155 energy= 3.88163741828643   occ= 0
+MO #156 energy= 4.01276255159749   occ= 0
  ** Mulliken pop on meta-lowdin orthogonal AOs  **
  ** Mulliken pop  **
 pop of  0 N 1s            1.99999
@@ -546,8 +548,8 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /fs/scratch/PAS1963/jserna/tmpceo4s4s4
-max_memory 4000 MB (current use 826 MB)
+chkfile = /fs/scratch/PAS1963/jserna/tmptpl2ox73
+max_memory 4000 MB (current use 843 MB)
 internal_rotation = False
 ******** <class 'pyscf.fci.addons.SpinPenaltyStateAverageFCISolver'> ********
 max. cycles = 50
@@ -562,84 +564,84 @@ pspace_size = 400
 spin = None
 State-average over 4 states with weights [0.25 0.25 0.25 0.25]
 CASCI E = -451.093062329279  S^2 = 0.0000000
-Removing duplication 0.214601765551113, adding E(solvent) = -0.163247428544816 to total energy:
+Removing duplication 0.214601765551154, adding E(solvent) = -0.16324742854481 to total energy:
     E(CASSCF+solvent) = -451.470911523375
 Set conv_tol_grad to 0.000316228
-macro iter   1 ( 21 JK    4 micro), CASSCF E = -451.101871489582  dE = -8.80916030e-03  S^2 = 0.0000000
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -451.101871489595  dE = -8.80916032e-03  S^2 = 0.0000000
                |grad[o]|=0.108  |ddm|=0.0248  |maxRot[o]|=0.276
-Removing duplication 0.211605044019965, adding E(solvent) = -0.160521024382418 to total energy:
-    E(CASSCF+solvent) = -451.473997557984
-macro iter   2 ( 21 JK    4 micro), CASSCF E = -451.113406902417  dE = -1.15354128e-02  S^2 = 0.0000000
+Removing duplication 0.211605044022672, adding E(solvent) = -0.160521024382004 to total energy:
+    E(CASSCF+solvent) = -451.473997557999
+macro iter   2 ( 21 JK    4 micro), CASSCF E = -451.113406902431  dE = -1.15354128e-02  S^2 = 0.0000000
                |grad[o]|=0.0678  |ddm|=0.0437  |maxRot[o]|=0.314
-Removing duplication 0.207695224867252, adding E(solvent) = -0.161019015647056 to total energy:
-    E(CASSCF+solvent) = -451.482121142932
-macro iter   3 ( 21 JK    4 micro), CASSCF E = -451.122629278503  dE = -9.22237609e-03  S^2 = 0.0000000
+Removing duplication 0.207695224861168, adding E(solvent) = -0.161019015651086 to total energy:
+    E(CASSCF+solvent) = -451.482121142943
+macro iter   3 ( 21 JK    4 micro), CASSCF E = -451.122629278507  dE = -9.22237608e-03  S^2 = 0.0000000
                |grad[o]|=0.0513  |ddm|=0.0537  |maxRot[o]|=0.313
-Removing duplication 0.206401031346332, adding E(solvent) = -0.160517369878384 to total energy:
-    E(CASSCF+solvent) = -451.489547679728
-macro iter   4 ( 19 JK    4 micro), CASSCF E = -451.124027022907  dE = -1.39774440e-03  S^2 = 0.0000000
+Removing duplication 0.206401031344233, adding E(solvent) = -0.160517369880999 to total energy:
+    E(CASSCF+solvent) = -451.489547679732
+macro iter   4 ( 19 JK    4 micro), CASSCF E = -451.124027022908  dE = -1.39774440e-03  S^2 = 0.0000000
                |grad[o]|=0.033  |ddm|=0.0464  |maxRot[o]|=0.267
-Removing duplication 0.207220594595928, adding E(solvent) = -0.160160471509496 to total energy:
-    E(CASSCF+solvent) = -451.491408089012
-macro iter   5 ( 15 JK    4 micro), CASSCF E = -451.124771577002  dE = -7.44554096e-04  S^2 = 0.0000000
+Removing duplication 0.207220594595986, adding E(solvent) = -0.160160471510971 to total energy:
+    E(CASSCF+solvent) = -451.491408089014
+macro iter   5 ( 15 JK    4 micro), CASSCF E = -451.124771577000  dE = -7.44554093e-04  S^2 = 0.0000000
                |grad[o]|=0.0165  |ddm|=0.0512  |maxRot[o]|=0.0643
-Removing duplication 0.208722501526256, adding E(solvent) = -0.160302329326964 to total energy:
-    E(CASSCF+solvent) = -451.493796407856
-macro iter   6 ( 16 JK    4 micro), CASSCF E = -451.129158864715  dE = -4.38728771e-03  S^2 = 0.0000000
+Removing duplication 0.208722501527657, adding E(solvent) = -0.160302329326105 to total energy:
+    E(CASSCF+solvent) = -451.493796407854
+macro iter   6 ( 16 JK    4 micro), CASSCF E = -451.129158864714  dE = -4.38728771e-03  S^2 = 0.0000000
                |grad[o]|=0.0074  |ddm|=0.267  |maxRot[o]|=0.132
-Removing duplication 0.209886236861994, adding E(solvent) = -0.158174538297955 to total energy:
-    E(CASSCF+solvent) = -451.497219639875
-macro iter   7 ( 16 JK    4 micro), CASSCF E = -451.119252353516  dE =  9.90651120e-03  S^2 = 0.0000000
+Removing duplication 0.20988623686321, adding E(solvent) = -0.158174538293152 to total energy:
+    E(CASSCF+solvent) = -451.49721963987
+macro iter   7 ( 16 JK    4 micro), CASSCF E = -451.119252353519  dE =  9.90651120e-03  S^2 = 0.0000000
                |grad[o]|=0.0486  |ddm|=0.0936  |maxRot[o]|=0.197
-Removing duplication 0.224693010165307, adding E(solvent) = -0.154650610159017 to total energy:
-    E(CASSCF+solvent) = -451.498595973841
-macro iter   8 ( 12 JK    4 micro), CASSCF E = -451.109757489717  dE =  9.49486380e-03  S^2 = 0.0000000
+Removing duplication 0.224693010164654, adding E(solvent) = -0.154650610160605 to total energy:
+    E(CASSCF+solvent) = -451.498595973844
+macro iter   8 ( 12 JK    4 micro), CASSCF E = -451.109757489720  dE =  9.49486380e-03  S^2 = 0.0000000
                |grad[o]|=0.00484  |ddm|=0.0212  |maxRot[o]|=0.0352
-Removing duplication 0.2344896778453, adding E(solvent) = -0.154569587563594 to total energy:
-    E(CASSCF+solvent) = -451.498816755126
-macro iter   9 ( 11 JK    4 micro), CASSCF E = -451.108480207942  dE =  1.27728177e-03  S^2 = 0.0000000
+Removing duplication 0.234489677843984, adding E(solvent) = -0.154569587563405 to total energy:
+    E(CASSCF+solvent) = -451.498816755127
+macro iter   9 ( 11 JK    4 micro), CASSCF E = -451.108480207941  dE =  1.27728178e-03  S^2 = 0.0000000
                |grad[o]|=0.00109  |ddm|=0.00524  |maxRot[o]|=0.00869
-Removing duplication 0.235822126361661, adding E(solvent) = -0.15434237177163 to total energy:
-    E(CASSCF+solvent) = -451.498644706076
-macro iter  10 (  4 JK    2 micro), CASSCF E = -451.108306230873  dE =  1.73977069e-04  S^2 = 0.0000000
+Removing duplication 0.235822126362288, adding E(solvent) = -0.154342371771456 to total energy:
+    E(CASSCF+solvent) = -451.498644706074
+macro iter  10 (  4 JK    2 micro), CASSCF E = -451.108306230872  dE =  1.73977069e-04  S^2 = 0.0000000
                |grad[o]|=0.000212  |ddm|=0.000201  |maxRot[o]|=0.000395
-Removing duplication 0.235990560104941, adding E(solvent) = -0.154342334423844 to total energy:
-    E(CASSCF+solvent) = -451.498639125402
-macro iter  11 (  3 JK    1 micro), CASSCF E = -451.108514929088  dE = -2.08698215e-04  S^2 = 0.0000000
+Removing duplication 0.235990560104206, adding E(solvent) = -0.154342334424228 to total energy:
+    E(CASSCF+solvent) = -451.4986391254
+macro iter  11 (  3 JK    1 micro), CASSCF E = -451.108514929089  dE = -2.08698217e-04  S^2 = 0.0000000
                |grad[o]|=0.000167  |ddm|=0.00317  |maxRot[o]|=0.000576
-Removing duplication 0.235782973859319, adding E(solvent) = -0.154427003734987 to total energy:
-    E(CASSCF+solvent) = -451.498724906683
-macro iter  12 (  3 JK    1 micro), CASSCF E = -451.108510363949  dE =  4.56513914e-06  S^2 = 0.0000000
+Removing duplication 0.235782973858116, adding E(solvent) = -0.154427003735447 to total energy:
+    E(CASSCF+solvent) = -451.498724906682
+macro iter  12 (  3 JK    1 micro), CASSCF E = -451.108510363951  dE =  4.56513760e-06  S^2 = 0.0000000
                |grad[o]|=8.91e-05  |ddm|=0.0032  |maxRot[o]|=0.00025
-Removing duplication 0.235789599208334, adding E(solvent) = -0.154428146276705 to total energy:
-    E(CASSCF+solvent) = -451.498728109434
-macro iter  13 (  3 JK    1 micro), CASSCF E = -451.108504538057  dE =  5.82589178e-06  S^2 = 0.0000000
+Removing duplication 0.235789599208773, adding E(solvent) = -0.154428146276643 to total energy:
+    E(CASSCF+solvent) = -451.498728109437
+macro iter  13 (  3 JK    1 micro), CASSCF E = -451.108504538056  dE =  5.82589507e-06  S^2 = 0.0000000
                |grad[o]|=5.61e-05  |ddm|=0.00321  |maxRot[o]|=0.00014
-Removing duplication 0.23579661820484, adding E(solvent) = -0.154427303330974 to total energy:
-    E(CASSCF+solvent) = -451.498728459593
-macro iter  14 (  3 JK    1 micro), CASSCF E = -451.108500489399  dE =  4.04865852e-06  S^2 = 0.0000000
+Removing duplication 0.235796618205103, adding E(solvent) = -0.154427303330972 to total energy:
+    E(CASSCF+solvent) = -451.498728459592
+macro iter  14 (  3 JK    1 micro), CASSCF E = -451.108500489397  dE =  4.04865898e-06  S^2 = 0.0000000
                |grad[o]|=3.3e-05  |ddm|=0.00322  |maxRot[o]|=8.34e-05
-Removing duplication 0.235801396969245, adding E(solvent) = -0.154426754759312 to total energy:
-    E(CASSCF+solvent) = -451.498728641127
-macro iter  15 (  1 JK    1 micro), CASSCF E = -451.108498590240  dE =  1.89915909e-06  S^2 = 0.0000000
+Removing duplication 0.235801396968929, adding E(solvent) = -0.154426754759395 to total energy:
+    E(CASSCF+solvent) = -451.498728641126
+macro iter  15 (  1 JK    1 micro), CASSCF E = -451.108498590240  dE =  1.89915767e-06  S^2 = 0.0000000
                |grad[o]|=1.88e-05  |ddm|=0.00323  |maxRot[o]|=    0
-Removing duplication 0.235803204137852, adding E(solvent) = -0.154426513603564 to total energy:
+Removing duplication 0.23580320413821, adding E(solvent) = -0.154426513603534 to total energy:
     E(CASSCF+solvent) = -451.498728307981
-macro iter  16 (  1 JK    1 micro), CASSCF E = -451.108498567177  dE =  2.30625119e-08  S^2 = 0.0000000
+macro iter  16 (  1 JK    1 micro), CASSCF E = -451.108498567177  dE =  2.30629098e-08  S^2 = 0.0000000
                |grad[o]|=1.92e-05  |ddm|=0.00323  |maxRot[o]|=    0
-Removing duplication 0.235803217028087, adding E(solvent) = -0.154426509006458 to total energy:
-    E(CASSCF+solvent) = -451.498728293212
+Removing duplication 0.23580321702763, adding E(solvent) = -0.154426509006423 to total energy:
+    E(CASSCF+solvent) = -451.498728293211
 1-step CASSCF converged in  16 macro (170 JK  44 micro) steps
 CASSCF canonicalization
 Density matrix diagonal elements [1.49924245 1.60394011 0.6183917  0.27842574]
-CASSCF energy = -451.498728293212
-CASCI E = -451.498728293212  E(CI) = -3.30287176296997  S^2 = 0.0000000
+CASSCF energy = -451.498728293211
+CASCI E = -451.498728293211  E(CI) = -3.30287176297065  S^2 = 0.0000000
 CASCI state-averaged energy = -451.108498567177
 CASCI energy for each state
-  State 0 weight 0.25  E = -451.296781870673 S^2 = 0.0000000
-  State 1 weight 0.25  E = -451.111471919782 S^2 = 0.0000000
-  State 2 weight 0.25  E = -451.023893726818 S^2 = 0.0000000
-  State 3 weight 0.25  E = -451.001846751436 S^2 = 0.0000000
+  State 0 weight 0.25  E = -451.296781870672 S^2 = 0.0000000
+  State 1 weight 0.25  E = -451.111471919781 S^2 = 0.0000000
+  State 2 weight 0.25  E = -451.023893726817 S^2 = 0.0000000
+  State 3 weight 0.25  E = -451.001846751435 S^2 = 0.0000000
 
 
 ------------------------------------------------------------------------------
@@ -685,10 +687,10 @@ Summary of reference wavefunction manifold:
 Total number of reference states: 4
   State       S^2        S      (2S+1)        E(total)              E(CAS)
 -----------------------------------------------------------------------------------
-    1       0.00000     0.0        1     -451.296781870673      -3.100925340431
-    2       0.00000     0.0        1     -451.111471919782      -2.915615389540
-    3       0.00000     0.0        1     -451.023893726818      -2.828037196576
-    4       0.00000     0.0        1     -451.001846751436      -2.805990221194
+    1       0.00000     0.0        1     -451.296781870672      -3.100925340432
+    2       0.00000     0.0        1     -451.111471919781      -2.915615389541
+    3       0.00000     0.0        1     -451.023893726817      -2.828037196577
+    4       0.00000     0.0        1     -451.001846751435      -2.805990221195
 -----------------------------------------------------------------------------------
 
 Initializing fully internally contracted NEVPT...
@@ -724,239 +726,239 @@ Einsum Backend:                                    pytblis
 Transforming integrals to MO basis...
 
 Transforming 1e integrals to MO basis...
-> CPU time for transforming 1e integrals      0.53 sec, wall time      0.19 sec
+> CPU time for transforming 1e integrals      0.01 sec, wall time      0.00 sec
 
 Transforming 2e integrals to MO basis (in-core)...
-> CPU time for transforming 1e integrals     78.47 sec, wall time     33.51 sec
+> CPU time for transforming 1e integrals     70.75 sec, wall time     10.21 sec
 
 Computing T[0]^(1) amplitudes...
 Norm of T[0]^(1):                                  0.449993202723
 Correlation energy [0]:                           -0.978012157833
-> CPU time for computing T[0]^(1) amplitudes      0.96 sec, wall time      1.09 sec
+> CPU time for computing T[0]^(1) amplitudes      1.74 sec, wall time      0.38 sec
 
 Computing energy of state #1...
-Reference state active-space energy:              -3.100925340431
+Reference state active-space energy:              -3.100925340432
 Reference state spin multiplicity:                 1
 Number of active electrons:                        [(2, 2)]
 Computing reference wavefunction RDMs...
-> CPU time for transforming RDMs      0.38 sec, wall time      0.10 sec
+> CPU time for transforming RDMs      0.24 sec, wall time      0.01 sec
 
 Computing T[0']^(1) amplitudes...
 Dimension of the [0'] orthonormalized subspace:    26
-Smallest eigenvalue of the [0'] overlap metric:    1.982463e-06
-Norm of T[0']^(1):                                 2.856443876317
+Smallest eigenvalue of the [0'] overlap metric:    1.982462e-06
+Norm of T[0']^(1):                                 2.856443874775
 Correlation energy [0']:                          -0.070479126154
-> CPU time for computing T[0']^(1) amplitudes      1.38 sec, wall time      0.49 sec
+> CPU time for computing T[0']^(1) amplitudes      1.50 sec, wall time      0.20 sec
 
 Computing T[+1']^(1) amplitudes...
 Dimension of the [+1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [+1'] overlap metric:   1.494762e-05
-Norm of T[+1']^(1):                                0.151357474944
+Norm of T[+1']^(1):                                0.151357474843
 Correlation energy [+1']:                         -0.010121035078
-> CPU time for computing T[+1']^(1) amplitudes      1.88 sec, wall time      0.61 sec
+> CPU time for computing T[+1']^(1) amplitudes      1.55 sec, wall time      0.22 sec
 
 Computing T[-1']^(1) amplitudes...
 Dimension of the [-1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [-1'] overlap metric:   1.290700e-05
-Norm of T[-1']^(1):                                0.252873700257
+Norm of T[-1']^(1):                                0.252873700162
 Correlation energy [-1']:                         -0.010953865734
-> CPU time for computing T[-1']^(1) amplitudes      1.25 sec, wall time      0.50 sec
+> CPU time for computing T[-1']^(1) amplitudes      0.84 sec, wall time      0.09 sec
 
 Computing T[+1]^(1) amplitudes...
-Norm of T[+1]^(1):                                 0.153269013834
+Norm of T[+1]^(1):                                 0.153269013801
 Correlation energy [+1]:                          -0.094846959043
-> CPU time for computing T[+1]^(1) amplitudes      0.80 sec, wall time      0.30 sec
+> CPU time for computing T[+1]^(1) amplitudes      0.77 sec, wall time      0.17 sec
 
 Computing T[-1]^(1) amplitudes...
-Norm of T[-1]^(1):                                 0.171855489860
+Norm of T[-1]^(1):                                 0.171855489858
 Correlation energy [-1]:                          -0.157810149495
-> CPU time for computing T[-1]^(1) amplitudes      3.12 sec, wall time      1.39 sec
+> CPU time for computing T[-1]^(1) amplitudes      2.13 sec, wall time      0.31 sec
 
 Computing T[+2]^(1) amplitudes...
 Dimension of the [+2] orthonormalized subspace:    13
 Smallest eigenvalue of the [+2] overlap metric:    4.088329e-06
-Norm of T[+2]^(1):                                 0.135645547119
+Norm of T[+2]^(1):                                 0.135645548594
 Correlation energy [+2]:                          -0.009267471198
-> CPU time for computing T[+2]^(1) amplitudes      0.61 sec, wall time      0.20 sec
+> CPU time for computing T[+2]^(1) amplitudes      0.25 sec, wall time      0.01 sec
 
 Computing T[-2]^(1) amplitudes...
 Dimension of the [-2] orthonormalized subspace:    12
 Smallest eigenvalue of the [-2] overlap metric:    4.387039e-06
-Norm of T[-2]^(1):                                 0.478598402709
+Norm of T[-2]^(1):                                 0.478598406985
 Correlation energy [-2]:                          -0.020849381148
-> CPU time for computing T[-2]^(1) amplitudes      0.89 sec, wall time      0.39 sec
+> CPU time for computing T[-2]^(1) amplitudes      0.45 sec, wall time      0.08 sec
 Correlation energy [0]:                           -0.978012157833
-SA-CASSCF reference state total energy:         -451.296781870673
+SA-CASSCF reference state total energy:         -451.296781870672
 NEVPT2 correlation energy:                        -1.352340145682
-Total NEVPT2 energy:                            -452.649122016355
+Total NEVPT2 energy:                            -452.649122016354
 
 Computing energy of state #2...
-Reference state active-space energy:              -2.915615389540
+Reference state active-space energy:              -2.915615389541
 Reference state spin multiplicity:                 1
 Number of active electrons:                        [(2, 2)]
 Computing reference wavefunction RDMs...
-> CPU time for transforming RDMs      0.31 sec, wall time      0.02 sec
+> CPU time for transforming RDMs      0.34 sec, wall time      0.01 sec
 
 Computing T[0']^(1) amplitudes...
 Dimension of the [0'] orthonormalized subspace:    31
 Smallest eigenvalue of the [0'] overlap metric:    1.038608e-06
-Norm of T[0']^(1):                                 6.290109217126
+Norm of T[0']^(1):                                 6.290109203743
 Correlation energy [0']:                          -0.079090568728
-> CPU time for computing T[0']^(1) amplitudes      1.17 sec, wall time      0.40 sec
+> CPU time for computing T[0']^(1) amplitudes      1.19 sec, wall time      0.19 sec
 
 Computing T[+1']^(1) amplitudes...
 Dimension of the [+1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [+1'] overlap metric:   1.877519e-02
-Norm of T[+1']^(1):                                0.069154989049
+Norm of T[+1']^(1):                                0.069154989051
 Correlation energy [+1']:                         -0.014047246527
-> CPU time for computing T[+1']^(1) amplitudes      2.05 sec, wall time      0.79 sec
+> CPU time for computing T[+1']^(1) amplitudes      1.44 sec, wall time      0.21 sec
 
 Computing T[-1']^(1) amplitudes...
 Dimension of the [-1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [-1'] overlap metric:   1.846510e-02
-Norm of T[-1']^(1):                                0.060995170428
+Norm of T[-1']^(1):                                0.060995170429
 Correlation energy [-1']:                         -0.012425854169
-> CPU time for computing T[-1']^(1) amplitudes      0.93 sec, wall time      0.30 sec
+> CPU time for computing T[-1']^(1) amplitudes      0.88 sec, wall time      0.10 sec
 
 Computing T[+1]^(1) amplitudes...
-Norm of T[+1]^(1):                                 0.151784421556
+Norm of T[+1]^(1):                                 0.151784421555
 Correlation energy [+1]:                          -0.086319852511
-> CPU time for computing T[+1]^(1) amplitudes      0.67 sec, wall time      0.19 sec
+> CPU time for computing T[+1]^(1) amplitudes      0.87 sec, wall time      0.18 sec
 
 Computing T[-1]^(1) amplitudes...
-Norm of T[-1]^(1):                                 0.177788707332
+Norm of T[-1]^(1):                                 0.177788707331
 Correlation energy [-1]:                          -0.156759712368
-> CPU time for computing T[-1]^(1) amplitudes      2.52 sec, wall time      1.00 sec
+> CPU time for computing T[-1]^(1) amplitudes      2.36 sec, wall time      0.33 sec
 
 Computing T[+2]^(1) amplitudes...
 Dimension of the [+2] orthonormalized subspace:    14
 Smallest eigenvalue of the [+2] overlap metric:    6.351055e-05
-Norm of T[+2]^(1):                                 0.174564309801
+Norm of T[+2]^(1):                                 0.174564309706
 Correlation energy [+2]:                          -0.003468421350
-> CPU time for computing T[+2]^(1) amplitudes      0.72 sec, wall time      0.21 sec
+> CPU time for computing T[+2]^(1) amplitudes      0.26 sec, wall time      0.01 sec
 
 Computing T[-2]^(1) amplitudes...
 Dimension of the [-2] orthonormalized subspace:    14
 Smallest eigenvalue of the [-2] overlap metric:    7.318416e-05
-Norm of T[-2]^(1):                                 0.141676018751
-Correlation energy [-2]:                          -0.010452885892
-> CPU time for computing T[-2]^(1) amplitudes      0.77 sec, wall time      0.30 sec
+Norm of T[-2]^(1):                                 0.141676018808
+Correlation energy [-2]:                          -0.010452885893
+> CPU time for computing T[-2]^(1) amplitudes      0.49 sec, wall time      0.07 sec
 Correlation energy [0]:                           -0.978012157833
-SA-CASSCF reference state total energy:         -451.111471919782
-NEVPT2 correlation energy:                        -1.340576699380
+SA-CASSCF reference state total energy:         -451.111471919781
+NEVPT2 correlation energy:                        -1.340576699379
 Total NEVPT2 energy:                            -452.452048619161
 
 Computing energy of state #3...
-Reference state active-space energy:              -2.828037196576
+Reference state active-space energy:              -2.828037196577
 Reference state spin multiplicity:                 1
 Number of active electrons:                        [(2, 2)]
 Computing reference wavefunction RDMs...
-> CPU time for transforming RDMs      0.52 sec, wall time      0.20 sec
+> CPU time for transforming RDMs      0.36 sec, wall time      0.08 sec
 
 Computing T[0']^(1) amplitudes...
 Dimension of the [0'] orthonormalized subspace:    28
 Smallest eigenvalue of the [0'] overlap metric:    2.007098e-06
-Norm of T[0']^(1):                                 9.084063665201
-Correlation energy [0']:                          -0.105628918253
-> CPU time for computing T[0']^(1) amplitudes      1.09 sec, wall time      0.40 sec
+Norm of T[0']^(1):                                 9.084063782448
+Correlation energy [0']:                          -0.105628918227
+> CPU time for computing T[0']^(1) amplitudes      0.83 sec, wall time      0.11 sec
 
 Computing T[+1']^(1) amplitudes...
 Dimension of the [+1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [+1'] overlap metric:   1.150104e-04
-Norm of T[+1']^(1):                                0.363526565093
-Correlation energy [+1']:                         -0.016103369282
-> CPU time for computing T[+1']^(1) amplitudes      2.14 sec, wall time      0.80 sec
+Norm of T[+1']^(1):                                0.363526568701
+Correlation energy [+1']:                         -0.016103369284
+> CPU time for computing T[+1']^(1) amplitudes      1.57 sec, wall time      0.22 sec
 
 Computing T[-1']^(1) amplitudes...
 Dimension of the [-1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [-1'] overlap metric:   9.215537e-05
-Norm of T[-1']^(1):                                0.182902559606
-Correlation energy [-1']:                         -0.019569982814
-> CPU time for computing T[-1']^(1) amplitudes      0.89 sec, wall time      0.31 sec
+Norm of T[-1']^(1):                                0.182902560353
+Correlation energy [-1']:                         -0.019569982816
+> CPU time for computing T[-1']^(1) amplitudes      0.87 sec, wall time      0.10 sec
 
 Computing T[+1]^(1) amplitudes...
-Norm of T[+1]^(1):                                 0.178977912372
-Correlation energy [+1]:                          -0.104063639646
-> CPU time for computing T[+1]^(1) amplitudes      0.81 sec, wall time      0.31 sec
+Norm of T[+1]^(1):                                 0.178977912434
+Correlation energy [+1]:                          -0.104063639645
+> CPU time for computing T[+1]^(1) amplitudes      0.97 sec, wall time      0.19 sec
 
 Computing T[-1]^(1) amplitudes...
-Norm of T[-1]^(1):                                 0.207525765153
-Correlation energy [-1]:                          -0.163973748667
-> CPU time for computing T[-1]^(1) amplitudes      2.51 sec, wall time      1.00 sec
+Norm of T[-1]^(1):                                 0.207525765466
+Correlation energy [-1]:                          -0.163973748668
+> CPU time for computing T[-1]^(1) amplitudes      2.61 sec, wall time      0.39 sec
 
 Computing T[+2]^(1) amplitudes...
 Dimension of the [+2] orthonormalized subspace:    14
 Smallest eigenvalue of the [+2] overlap metric:    1.988007e-06
-Norm of T[+2]^(1):                                 8.685843252818
-Correlation energy [+2]:                          -0.011738985346
-> CPU time for computing T[+2]^(1) amplitudes      0.76 sec, wall time      0.29 sec
+Norm of T[+2]^(1):                                 8.685843154166
+Correlation energy [+2]:                          -0.011738985343
+> CPU time for computing T[+2]^(1) amplitudes      0.27 sec, wall time      0.01 sec
 
 Computing T[-2]^(1) amplitudes...
 Dimension of the [-2] orthonormalized subspace:    13
 Smallest eigenvalue of the [-2] overlap metric:    1.756101e-05
-Norm of T[-2]^(1):                                 0.675572293833
-Correlation energy [-2]:                          -0.023117103981
-> CPU time for computing T[-2]^(1) amplitudes      0.64 sec, wall time      0.21 sec
+Norm of T[-2]^(1):                                 0.675572317132
+Correlation energy [-2]:                          -0.023117103984
+> CPU time for computing T[-2]^(1) amplitudes      0.51 sec, wall time      0.09 sec
 Correlation energy [0]:                           -0.978012157833
-SA-CASSCF reference state total energy:         -451.023893726818
-NEVPT2 correlation energy:                        -1.422207905823
-Total NEVPT2 energy:                            -452.446101632641
+SA-CASSCF reference state total energy:         -451.023893726817
+NEVPT2 correlation energy:                        -1.422207905799
+Total NEVPT2 energy:                            -452.446101632617
 
 Computing energy of state #4...
-Reference state active-space energy:              -2.805990221194
+Reference state active-space energy:              -2.805990221195
 Reference state spin multiplicity:                 1
 Number of active electrons:                        [(2, 2)]
 Computing reference wavefunction RDMs...
-> CPU time for transforming RDMs      0.45 sec, wall time      0.19 sec
+> CPU time for transforming RDMs      0.37 sec, wall time      0.01 sec
 
 Computing T[0']^(1) amplitudes...
 Dimension of the [0'] orthonormalized subspace:    30
 Smallest eigenvalue of the [0'] overlap metric:    2.155809e-05
-Norm of T[0']^(1):                                 0.532724172132
-Correlation energy [0']:                          -0.079185642539
-> CPU time for computing T[0']^(1) amplitudes      1.20 sec, wall time      0.41 sec
+Norm of T[0']^(1):                                 0.532724171874
+Correlation energy [0']:                          -0.079185642538
+> CPU time for computing T[0']^(1) amplitudes      1.02 sec, wall time      0.19 sec
 
 Computing T[+1']^(1) amplitudes...
 Dimension of the [+1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [+1'] overlap metric:   4.829761e-02
 Norm of T[+1']^(1):                                0.085776720074
-Correlation energy [+1']:                         -0.014882248754
-> CPU time for computing T[+1']^(1) amplitudes      2.17 sec, wall time      0.89 sec
+Correlation energy [+1']:                         -0.014882248753
+> CPU time for computing T[+1']^(1) amplitudes      1.53 sec, wall time      0.21 sec
 
 Computing T[-1']^(1) amplitudes...
 Dimension of the [-1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [-1'] overlap metric:   4.804373e-02
-Norm of T[-1']^(1):                                0.081665997564
+Norm of T[-1']^(1):                                0.081665997563
 Correlation energy [-1']:                         -0.017294870563
-> CPU time for computing T[-1']^(1) amplitudes      1.50 sec, wall time      0.51 sec
+> CPU time for computing T[-1']^(1) amplitudes      0.86 sec, wall time      0.10 sec
 
 Computing T[+1]^(1) amplitudes...
 Norm of T[+1]^(1):                                 0.156592907245
 Correlation energy [+1]:                          -0.091528968753
-> CPU time for computing T[+1]^(1) amplitudes      0.88 sec, wall time      0.39 sec
+> CPU time for computing T[+1]^(1) amplitudes      0.98 sec, wall time      0.19 sec
 
 Computing T[-1]^(1) amplitudes...
 Norm of T[-1]^(1):                                 0.184877255901
 Correlation energy [-1]:                          -0.163397873998
-> CPU time for computing T[-1]^(1) amplitudes      2.56 sec, wall time      1.01 sec
+> CPU time for computing T[-1]^(1) amplitudes      2.55 sec, wall time      0.34 sec
 
 Computing T[+2]^(1) amplitudes...
 Dimension of the [+2] orthonormalized subspace:    14
 Smallest eigenvalue of the [+2] overlap metric:    3.083299e-06
-Norm of T[+2]^(1):                                 0.603632611123
+Norm of T[+2]^(1):                                 0.603632621908
 Correlation energy [+2]:                          -0.004490546022
-> CPU time for computing T[+2]^(1) amplitudes      0.62 sec, wall time      0.20 sec
+> CPU time for computing T[+2]^(1) amplitudes      0.34 sec, wall time      0.06 sec
 
 Computing T[-2]^(1) amplitudes...
 Dimension of the [-2] orthonormalized subspace:    14
 Smallest eigenvalue of the [-2] overlap metric:    7.832456e-05
-Norm of T[-2]^(1):                                 0.134058481684
+Norm of T[-2]^(1):                                 0.134058481928
 Correlation energy [-2]:                          -0.010295676377
-> CPU time for computing T[-2]^(1) amplitudes      0.48 sec, wall time      0.10 sec
+> CPU time for computing T[-2]^(1) amplitudes      0.41 sec, wall time      0.02 sec
 Correlation energy [0]:                           -0.978012157833
-SA-CASSCF reference state total energy:         -451.001846751436
-NEVPT2 correlation energy:                        -1.359087984839
-Total NEVPT2 energy:                            -452.360934736275
+SA-CASSCF reference state total energy:         -451.001846751435
+NEVPT2 correlation energy:                        -1.359087984838
+Total NEVPT2 energy:                            -452.360934736273
 
 Computing the QD-NEVPT2 effective Hamiltonian...
 
@@ -966,8 +968,8 @@ Summary of results for the QD-NEVPT2 calculation with the SA-CASSCF reference:
 ------------------------------------------------------------------------------------------------------------------
     1        1         -452.649960328815     0.00000000       0.0000                      0.0000               
     2        1         -452.452408027427     0.19395348       5.2777     234.9190     42567.8684     0.02309020
-    3        1         -452.445109880367     0.19476324       5.2998     233.9423     42745.5909     0.46128347
-    4        1         -452.360728767823     0.28391559       7.7257     160.4820     62312.2687     0.00041447
+    3        1         -452.445109880339     0.19476324       5.2998     233.9423     42745.5909     0.46128347
+    4        1         -452.360728767825     0.28391559       7.7257     160.4820     62312.2687     0.00041447
 ----------------------------------------------------------------------------------------------------------------
 
 
@@ -997,4 +999,6 @@ State   ΔE (eV)        ptss (eV)      ptlr (eV)
 2       5.574265       -0.214358      -0.060129      
 3       7.870392       -0.144381      -0.000274      
 ------------------------------------------------------------------
-> CPU time for total NEVPT2 calculation    259.99 sec, wall time    110.11 sec
+> CPU time for total NEVPT2 calculation    209.62 sec, wall time     30.52 sec
+QD-NEVPT2 Correlation Energies: 
+[np.float64(-1.353178458143077), np.float64(-1.3409361076454047), np.float64(-1.421216153521982), np.float64(-1.3588820163892024)]

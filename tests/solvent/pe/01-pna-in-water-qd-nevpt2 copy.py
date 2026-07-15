@@ -54,7 +54,7 @@ mol.basis = "cc-pVDZ"
 mol.build()
 
 # Polarizable Embedding
-pe_options = {"potfile": "01-pna-water-6-angstrom.pot"} # Given .pot file
+pe_options = {"potfile": "potential_files/01-pna-water-6-angstrom.pot"} # Given .pot file
 pe = PolEmbed(mol, pe_options)
 pe.verbose = 3
 

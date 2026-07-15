@@ -1,0 +1,113 @@
+# Copyright 2026 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
+#          James D. Serna <jserna456@gmail.com>
+ 
+import unittest
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.nevpt
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+
+from pyscf.solvent.pol_embed import PolEmbed
+
+mol = pyscf.gto.Mole()
+mol.atom = '''
+N     29.660000    27.490000    28.690000
+C     29.850000    28.660000    29.350000
+C     31.000000    28.870000    30.210000
+C     31.170000    30.170000    30.870000
+C     30.170000    31.240000    30.650000
+C     29.000000    31.020000    29.780000
+C     28.840000    29.750000    29.140000
+N     30.340000    32.580000    31.300000
+O     31.300000    32.810000    32.020000
+O     29.510000    33.460000    31.110000
+H     30.320000    26.750000    28.790000
+H     28.860000    27.380000    28.090000
+H     31.730000    28.090000    30.370000
+H     32.020000    30.340000    31.520000
+H     28.260000    31.810000    29.640000
+H     27.980000    29.580000    28.490000
+'''
+
+# Matching PE potential basis
+mol.basis = "cc-pVDZ"
+mol.build()
+
+# Polarizable Embedding
+pe_options = {"potfile": "potential_files/01-pna-water-6-angstrom.pot"} # Given .pot file
+pe = PolEmbed(mol, pe_options)
+pe.verbose = 3
+
+# RHF calculation
+mf = pyscf.scf.RHF(mol)
+mf = pyscf.solvent.PE(mf, pe)
+
+mf.kernel()
+
+# CASSCF calculation
+n_states = 4
+weights = np.ones(n_states)/n_states
+mc = pyscf.mcscf.CASSCF(mf, 4,4).state_average_(weights)
+mc = pyscf.solvent.PE(mc, pe)
+mc.fix_spin_(ss=0)
+
+mc.kernel()
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mc.e_tot,  -489.205012266252, 6)
+        self.assertAlmostEqual(mc.e_cas,  -2.85073510564507, 6)
+
+    def test_prism(self):
+
+        # QD-NEVPT2 calculation
+        interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
+        nevpt = prism.nevpt.NEVPT(interface)
+        nevpt.compute_singles_amplitudes = False
+        nevpt.s_thresh_singles = 1e-6
+        nevpt.s_thresh_doubles = 1e-6
+        nevpt.rdm_order = 2
+        nevpt.pe = pe
+        nevpt.method_type = "qd"
+
+        e_tot, e_corr, osc = nevpt.kernel()
+
+        self.assertAlmostEqual(e_tot[0], -491.344779269272, 5)
+        self.assertAlmostEqual(e_tot[1], -491.187214772889, 5)
+        self.assertAlmostEqual(e_tot[2], -491.166343104560, 5)
+        self.assertAlmostEqual(e_tot[3], -491.123959191654, 5)
+        
+        self.assertAlmostEqual(e_corr[0], -1.5133842062004, 5)
+        self.assertAlmostEqual(e_corr[1], -1.5395490384419, 5)
+        self.assertAlmostEqual(e_corr[2], -1.5479912736046, 5)
+        self.assertAlmostEqual(e_corr[3], -1.5646768685172, 5)
+        
+        self.assertAlmostEqual(osc[0], 0.23410191, 5)
+        self.assertAlmostEqual(osc[1], 0.18033790, 5)
+        self.assertAlmostEqual(osc[2], 0.31501824, 5)
+        
+if __name__ == "__main__":
+    print("QD-NEVPT2 test")
+    unittest.main()
+       

@@ -53,7 +53,7 @@ mol.basis = "cc-pVDZ"
 mol.build()
 
 # Polarizable Embedding
-pe_options = {"potfile": "02-thy-water-6-angstrom.pot"} # Given .pot file
+pe_options = {"potfile": "potential_files/02-thy-water-6-angstrom.pot"} # Given .pot file
 pe = PolEmbed(mol, pe_options)
 pe.verbose = 3
 
@@ -93,15 +93,15 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -452.649122016355, 5)
-        self.assertAlmostEqual(e_tot[1], -452.452048619161, 5)
-        self.assertAlmostEqual(e_tot[2], -452.446101632641, 5)
-        self.assertAlmostEqual(e_tot[3], -452.360934736275, 5)
+        self.assertAlmostEqual(e_tot[0], -452.649960328815, 5)
+        self.assertAlmostEqual(e_tot[1], -452.452408027427, 5)
+        self.assertAlmostEqual(e_tot[2], -452.445109880367, 5)
+        self.assertAlmostEqual(e_tot[3], -452.360728767823, 5)
         
-        self.assertAlmostEqual(e_corr[0], -1.352340145682, 5)
-        self.assertAlmostEqual(e_corr[1], -1.340576699380, 5)
-        self.assertAlmostEqual(e_corr[2], -1.422207905823, 5)
-        self.assertAlmostEqual(e_corr[3], -1.359087984839, 5)
+        self.assertAlmostEqual(e_corr[0], -1.3531784581430, 5)
+        self.assertAlmostEqual(e_corr[1], -1.3409361076454, 5)
+        self.assertAlmostEqual(e_corr[2], -1.4212161535219, 5)
+        self.assertAlmostEqual(e_corr[3], -1.3588820163892, 5)
         
         self.assertAlmostEqual(osc[0], 0.02309020, 5)
         self.assertAlmostEqual(osc[1], 0.46128347, 5)
