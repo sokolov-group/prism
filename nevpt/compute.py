@@ -109,6 +109,8 @@ def initialize(nevpt):
         nevpt.log.error(msg)
         raise TypeError(msg)
 
+    nevpt.ncore_wof = nevpt.ncore - np.count_nonzero(nevpt.frozen_mask)
+
     if nevpt.rdm_order not in [0,2]:
          raise ValueError(f"Invalid {'rdm_order'}: '{nevpt.rdm_order}'. Available options are {0,2}.")
 
