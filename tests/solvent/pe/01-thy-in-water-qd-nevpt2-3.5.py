@@ -53,7 +53,7 @@ mol.basis = "cc-pVDZ"
 mol.build()
 
 # Polarizable Embedding
-pe_options = {"potfile": "potential_files/thy-water-6-angstrom.pot"} # Given .pot file
+pe_options = {"potfile": "potential_files/thy-water-3.5-angstrom.pot"} # Given .pot file
 pe = PolEmbed(mol, pe_options)
 pe.verbose = 3
 
@@ -69,15 +69,14 @@ n_states = 4
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 4,4).state_average_(weights)
 mc = pyscf.solvent.PE(mc, pe)
-mc.fix_spin_(ss=0)
 
 emc = mc.mc1step()[0]
 
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
-        self.assertAlmostEqual(mc.e_tot,  -451.498728293212, 6)
-        self.assertAlmostEqual(mc.e_cas,  -3.30287176296997, 6)
+        self.assertAlmostEqual(mc.e_tot,  -451.422393237738, 6)
+        self.assertAlmostEqual(mc.e_cas,  -3.36152742085011, 6)
 
     def test_prism(self):
 
@@ -92,19 +91,19 @@ class KnownValues(unittest.TestCase):
 
         e_tot, e_corr, osc = nevpt.kernel()
 
-        self.assertAlmostEqual(e_tot[0], -452.649960328815, 5)
-        self.assertAlmostEqual(e_tot[1], -452.452408027427, 5)
-        self.assertAlmostEqual(e_tot[2], -452.445109880367, 5)
-        self.assertAlmostEqual(e_tot[3], -452.360728767823, 5)
+        self.assertAlmostEqual(e_tot[0], -453.380723576322, 5)
+        self.assertAlmostEqual(e_tot[1], -453.228057545257, 5)
+        self.assertAlmostEqual(e_tot[2], -453.154915433032, 5)
+        self.assertAlmostEqual(e_tot[3], -453.119453932058, 5)
         
-        self.assertAlmostEqual(e_corr[0], -1.3531784581430, 5)
-        self.assertAlmostEqual(e_corr[1], -1.3409361076454, 5)
-        self.assertAlmostEqual(e_corr[2], -1.4212161535219, 5)
-        self.assertAlmostEqual(e_corr[3], -1.3588820163892, 5)
+        self.assertAlmostEqual(e_corr[0], -1.3189530532159, 5)
+        self.assertAlmostEqual(e_corr[1], -1.3076134519201, 5)
+        self.assertAlmostEqual(e_corr[2], -1.3037780509501, 5)
+        self.assertAlmostEqual(e_corr[3], -1.3289760427419, 5)
         
-        self.assertAlmostEqual(osc[0], 0.02781835, 5)
-        self.assertAlmostEqual(osc[1], 0.48346893, 5)
-        self.assertAlmostEqual(osc[2], 0.00080834, 5)
+        self.assertAlmostEqual(osc[0], 0.0, 5)
+        self.assertAlmostEqual(osc[1], 0.0, 5)
+        self.assertAlmostEqual(osc[2], 0.15246147, 5)
         
 if __name__ == "__main__":
     print("QD-NEVPT2 test")

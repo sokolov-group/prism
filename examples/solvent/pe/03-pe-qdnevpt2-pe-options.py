@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+BASIC QD-NEVPT2 + PE calculation for thymine + 3.5 angstrom water shell
+'''
+
 import numpy as np
 import pyscf.gto
 import pyscf.scf
@@ -34,42 +38,40 @@ mol.basis = "cc-pVDZ"
 mol.verbose = 4
 mol.build()
 
-# Polarizable Embedding
-pe_options = {"potfile": "potential_files/thy-water-6-angstrom.pot", 'eef': True} # Given .pot file
+# Polarizable Embedding Options
+# eef: external electric field used from PySCF
+# pe_border: option to remove sites near QM/MM boundary
+pe_options = {"potfile": "thy-water-3.5-angstrom.pot", "eef": True, "pe_border": True} 
 pe = PolEmbed(mol, pe_options)
 pe.verbose = 3
 
-# RHF calculation as guess for CASSCF
+# RHF calculation 
 mf = pyscf.scf.RHF(mol)
 mf = pyscf.solvent.PE(mf, pe)
-
 mf.kernel()
 
-# CAS
+# CASSCF
 n_states = 4
 weights = np.ones(n_states)/n_states
 
 mc = pyscf.mcscf.CASSCF(mf, 4,4).state_average_(weights)
 mc = pyscf.solvent.PE(mc, pe)
-#mc.fix_spin_(ss=0)
-
+mc.fix_spin_(ss=0)
 mc.kernel(mf.mo_coeff)
 
 # QD-NEVPT2
 interface = prism.interface.PYSCF(mf, mc)
 nevpt = prism.nevpt.NEVPT(interface)
 
+# Polarizable Embedding
 nevpt.method_type = "qd"
-nevpt.pe = pe  # Needed to compute ptss and ptlr
+nevpt.pe = pe  
 
+# ptSS and ptLR contributions computed with correalted 1RDM
+nevpt.rdm_order = 2
+
+# Recommended for PE use
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-6
-#nevpt.rdm_order = 2
-nevpt.verbose = 4
-
-nevpt.keep_amplitudes = True
 
 e_tot, e_corr, osc = nevpt.kernel()
-
-print('QD-NEVPT2 Correlation Energies: ')
-print(e_corr)
