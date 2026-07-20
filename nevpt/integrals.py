@@ -90,7 +90,7 @@ def transform_integrals_2e_incore(nevpt):
     interface = nevpt.interface
 
     # Variables from kernel
-    nfrozen = nevpt.nfrozen
+    # nfrozen = nevpt.nfrozen
     ncore = nevpt.ncore
     # ncore_wof = ncore - nfrozen
     ncore_wof = nevpt.ncore_wof
@@ -98,8 +98,7 @@ def transform_integrals_2e_incore(nevpt):
     ncas = nevpt.ncas
     nextern = nevpt.nextern
 
-    masks = _mo_splitter(nevpt)
-    mo_fc, mo_c_wof, mo_a, mo_e = [nevpt.mo[:, m] for m in masks]
+    mo_fc, mo_c_wof, mo_a, mo_e = [nevpt.mo[:, m] for m in _mo_splitter(nevpt)]
     mo_c = np.hstack([mo_fc, mo_c_wof])
 
     if nevpt.outcore_expensive_tensors:
@@ -123,15 +122,6 @@ def transform_integrals_2e_incore(nevpt):
     nevpt.h1eff.ce = compute_effective_1e(nevpt, nevpt.h1e[:ncore, nocc:], nevpt.v2e.ccce, v2e_ccec)
     nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, ncore:nocc], nevpt.v2e.ccaa, nevpt.v2e.caac)
     nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, nocc:], nevpt.v2e.ccae, nevpt.v2e.caec)
-
-    # # Store diagonal elements of the generalized Fock operator
-    # nevpt.mo_energy.c = nevpt.interface.mo_energy[:ncore]
-    # nevpt.mo_energy.e = nevpt.interface.mo_energy[nocc:]
-
-    # if nfrozen > 0:
-    #     nevpt.h1eff.ca = nevpt.h1eff.ca[nfrozen:,:].copy()
-    #     nevpt.h1eff.ce = nevpt.h1eff.ce[nfrozen:,:].copy()
-    #     nevpt.mo_energy.c = nevpt.mo_energy.c[nfrozen:]
 
     # Store diagonal elements of the generalized Fock operator
     _, c_mask, a_mask, e_mask = _mo_splitter(nevpt)
@@ -288,9 +278,8 @@ def transform_integrals_2e_df(nevpt):
     naux = interface.get_naux()
 
     # Variables from kernel
-    nfrozen = nevpt.nfrozen
+    # nfrozen = nevpt.nfrozen
     ncore = nevpt.ncore
-    # ncore_wof = ncore - nfrozen
     ncore_wof = nevpt.ncore_wof
     ncas = nevpt.ncas
     nocc = nevpt.nocc
@@ -367,18 +356,28 @@ def transform_integrals_2e_df(nevpt):
     nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, ncore:nocc], nevpt.v2e.ccaa, nevpt.v2e.caac)
     nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, nocc:], nevpt.v2e.ccae, nevpt.v2e.caec)
 
-    # Store diagonal elements of the generalized Fock operator
-    nevpt.mo_energy.c = nevpt.interface.mo_energy[:ncore]
-    nevpt.mo_energy.e = nevpt.interface.mo_energy[nocc:]
+    # if nfrozen > 0:
+    #     nevpt.h1eff.ca = nevpt.h1eff.ca[nfrozen:,:].copy()
+    #     nevpt.h1eff.ce = nevpt.h1eff.ce[nfrozen:,:].copy()
+    #     nevpt.mo_energy.c = nevpt.mo_energy.c[nfrozen:]
+    #     Lcc = Lcc[:, nfrozen:, nfrozen:].copy()
+    #     Lca = Lca[:, nfrozen:, :].copy()
+    #     nevpt.v2e.Lce = nevpt.v2e.Lce[:, nfrozen:, :].copy()
+    #     Lec = Lec[:, :, nfrozen:].copy()
 
-    if nfrozen > 0:
-        nevpt.h1eff.ca = nevpt.h1eff.ca[nfrozen:,:].copy()
-        nevpt.h1eff.ce = nevpt.h1eff.ce[nfrozen:,:].copy()
-        nevpt.mo_energy.c = nevpt.mo_energy.c[nfrozen:]
-        Lcc = Lcc[:, nfrozen:, nfrozen:].copy()
-        Lca = Lca[:, nfrozen:, :].copy()
-        nevpt.v2e.Lce = nevpt.v2e.Lce[:, nfrozen:, :].copy()
-        Lec = Lec[:, :, nfrozen:].copy()
+    # Store diagonal elements of the generalized Fock operator
+    _, c_mask, a_mask, e_mask = _mo_splitter(nevpt)
+    nevpt.mo_energy.c = nevpt.interface.mo_energy[c_mask]
+    nevpt.mo_energy.e = nevpt.interface.mo_energy[e_mask]
+
+    nevpt.h1eff.ca = nevpt.h1e[c_mask][:, a_mask]
+    nevpt.h1eff.ce = nevpt.h1e[c_mask][:, e_mask]
+
+    c_submask = c_mask[:nevpt.ncore]
+    Lcc = Lcc[:, c_submask, :][:, :, c_submask].copy()
+    Lca = Lca[:, c_submask, :].copy()
+    nevpt.v2e.Lce = nevpt.v2e.Lce[:, c_submask, :].copy()
+    Lec = Lec[:, :, c_submask].copy()
 
     # Other integrals
     nevpt.v2e.caca = tools.create_dataset('caca', ctmpfile, (ncore_wof, ncas, ncore_wof, ncas))
