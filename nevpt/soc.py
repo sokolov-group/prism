@@ -24,6 +24,9 @@ from prism.libsoc import general_somf
 from prism.libsoc import magnetic
 
 def state_interaction_soc(method):
+    '''
+    Calculate SOC-NEVPT2 or SOC-QDNEVPT2
+    '''
 
     method.interface.mol.max_memory = method.interface.max_memory_soc
 
@@ -94,7 +97,7 @@ def state_interaction_soc(method):
         # Calculate RDM_aabb_plus
         rdm_aabb_plus = method.make_rdm1s(wfn_plus, wfn_ref_nelecas_plus)
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms1(method.interface, method.e_tot, rdm_aabb, S, rdm_aabb_plus, method.soc, method.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, S, rdm_aabb_plus, method.soc, method.verbose)
 
 
 
@@ -117,6 +120,9 @@ def state_interaction_soc(method):
     
 
 def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
+    '''
+    Transform rdm_sf into n_micro_states basis
+    '''
 
     evec_soc = method.h_evec_soc
     nstate = len(method.spin_mult)
@@ -196,6 +202,9 @@ def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
 
 
 def compute_magnetic_properties(method, rdm_sf):
+    '''
+    Calculate SOC-NEVPT2 or SOC-QDNEVPT2 magnetic_properties
+    '''
 
     properties_mag = {}                      # Dictionary to store computed magnetic properties
     properties_mag["magnetic_properties"] = True

@@ -22,11 +22,18 @@ import numpy as np
 
 def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None):
     '''
+    Calculate magnetic properties required by flag in interface or method
+    Note that flag should have gtensor, mag_av, sus_av, mag_vec, sus_tensor
+    ********
+    INPUT:
     rdm_sf(np.array, nstate*nstate*nmo*nmo): spin free 1st rdm (without spin-orbit coupling)
     en_soc (np.array, n): spin-orbit coupling energy
     h_evec_soc (np.array): spin-orbit coupling eigenvector
     S (list), spin quantum number of each state without spin-orbit coupling
     method: nevpt or qdnevpt object. If "None", using interface (SOC-CASSCF)
+
+    OUTPUT:
+    properties_mag(dictionary): All magnetic properties
     '''
 
     if method is None:
@@ -75,7 +82,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
         if method.mag_av:
             Bs_list = method.Bs_powder_M
             T_list  = method.T_powder_M
-            M_av_all = Powder_magnetization(interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+            M_av_all = powder_magnetization(interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
             
             properties_mag["M_av"] = M_av_all
 
@@ -84,7 +91,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
         if method.sus_av:
             Bs_list = method.Bs_powder_chi
             T_list  = method.T_powder_chi
-            chi_av_all = Powder_susceptibility(interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
+            chi_av_all = powder_susceptibility(interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
            
             properties_mag["chi_av"] = chi_av_all
 
@@ -113,7 +120,10 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
 
 def print_mag_properties(interface, properties,  method = None):
     '''
-    properties(dictionary): magnetic properties result
+    print out magnetic properties result
+    ********
+    INPUT:
+    properties (dictionary): magnetic properties result
     method: nevpt or qdnevpt object. If "None", using interface (SOC-CASSCF)
     '''
     
@@ -192,7 +202,7 @@ def print_mag_properties(interface, properties,  method = None):
     if "chi_T_eval_all" in properties:
         chi_T_eval_all = properties["chi_T_eval_all"]
 
-        interface.log.info("Susceptibility tensor X*T (cm3/mol) in B vector= %s", B_vec_chi)
+        interface.log.info("Susceptibility tensor X*T (cm3K/mol) in B vector= %s", B_vec_chi)
         interface.log.info("\nEigenvalue of Susceptibility tensor * T (cm3K/mol)" )
         interface.log.info("--------------------------------------------------------")
         interface.log.info("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
@@ -208,9 +218,15 @@ def print_mag_properties(interface, properties,  method = None):
 # magnetic dipole moment in microstates basis without spin-orbit coupling
 def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     '''
-    rdm_sf(np.array, nstate*nstate*nmo*nmo): spin free 1st rdm (without spin-orbit coupling)
-    S (list), spin quantum number of each state without spin-orbit coupling
-    origin_type: origin_type for computing angular momentum
+    Calculate magnetic dipole moment matrix(L+geS) in microstates basis without spin-orbit coupling 
+    ********
+    INPUT:
+    rdm_sf (np.array, nstate*nstate*nmo*nmo): spin free 1st rdm (without spin-orbit coupling)
+    S (list): spin quantum number of each state without spin-orbit coupling
+    origin_type (str or list, 3): origin_type for computing angular momentum. 
+
+    OUTPUT:
+    Mu_sf (np.array, n_micro_states*n_micro_states): magnetic dipole moment matrix
     '''
 
     interface.log.info("Calculating magnetic dipole moment...")
@@ -322,9 +338,17 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
 #Note that Mu should include spin orbit coupling 
 def gtensor(interface, S, Mu, target_index = 1):
     '''
+    Calculate gtensor by employing method from:
+    J. Chem. Phys. 2026, 164 (17), 174117
+    ********
+    INPUT:
     S(list): spin quantum number of each state without spin-orbit coupling
     Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
     target_index (integer): target state to calculate g-tensor. Note that the index refers to the spin-free states.
+
+    OUTPUT:
+    G_sq_en (np.array, 3): g-factor
+    G_evec (np.array, 3*3): g-axis
     '''
 
     ge = interface.g_free_elec
@@ -380,14 +404,20 @@ def gtensor(interface, S, Mu, target_index = 1):
     return G_sq_en, G_evec
 
 
-def Powder_magnetization(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_s):
+def powder_magnetization(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_s):
     '''
+    Calculate powder magnetization(Bohr magneton)
+    ********
+    INPUT:
     powder_data (np.array, n*3): vector data for compute powder properties. Can obtain from interface.MakeAngularGrid_266()
     Bs_list (list): magnetic Field Strength. Unit: Telsa
     T_list (list): temperature. Unit: K
     en_soc (np.array, n): spin-orbit coupling energy
     Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
     h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+
+    OUTPUT:
+    M_av_all(np.array, T*Bs): powder magnetization(Bohr magneton)
     '''
     
     M_av_all = np.zeros((len(T_list),len(Bs_list)))
@@ -408,14 +438,20 @@ def Powder_magnetization(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_
     return M_av_all
 
 
-def Powder_susceptibility(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_s):
+def powder_susceptibility(interface, powder_data, Bs_list, T_list, en_soc, Mu, h_s):
     '''
+    Calculate powder susceptibility(cm3/mol)
+    ********
+    INPUT:
     powder_data (np.array, n*3): vector data for compute powder properties. Can obtain from interface.MakeAngularGrid_266()
     Bs_list (list): magnetic Field Strength. Unit: Telsa
     T_list (list): temperature. Unit: K
     en_soc (np.array, n): spin-orbit coupling energy
-    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    Mu (np.array, n*n):  magnetic dipole moment built by spin-orbit coupling basis
     h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+
+    OUTPUT:
+    chi_av_all(np.array, T*Bs): powder susceptibility(cm3/mol)
     '''
 
     chi_av_all= np.zeros((len(T_list),len(Bs_list)))
@@ -437,12 +473,18 @@ def Powder_susceptibility(interface, powder_data, Bs_list, T_list, en_soc, Mu, h
 
 def vector_magnetization(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
     '''
+    Calculate vector magnetization(Bohr magneton)
+    ********
+    INPUT:
     B_vec (np.array, 3): direction of magmetic field. "magnetization" function will normalize it. 
     Bs_list (list): magnetic Field Strength. Unit: Telsa
     T_list (list): temperature. Unit: K
     en_soc (np.array, n): spin-orbit coupling energy
     Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
-    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    h_s (float): Magnetic field step size used for numerical differentiation. Unit: Telsa
+
+    OUTPUT:
+    M_xyz_all (np.array, T*B*3): vector magnetization(Bohr magneton). The third index is x,y,z
     '''
 
     B_unit = np.eye(3)
@@ -460,12 +502,18 @@ def vector_magnetization(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
 
 def tensor_susceptibility(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
     '''
+    Calculate tensor susceptibility(cm3K/mol)
+    ********
+    INPUT:
     B_vec (np.array, 3): direction of magmetic field. "susceptibility" function will normalize it. 
     Bs_list (list): magnetic Field Strength. Unit: Telsa
     T_list (list): temperature. Unit: K
     en_soc (np.array, n): spin-orbit coupling energy
     Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
-    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    h_s (float): Magnetic field step size used for numerical differentiation. Unit: Telsa
+    
+    OUTPUT:
+    chi_T_eval_all (np.array, T*Bs*3): tensor susceptibility eigenvalue * temperature(cm3K/mol).  The third index is x,y,z.
     '''
 
     B_unit = np.eye(3)
@@ -496,13 +544,19 @@ def tensor_susceptibility(interface, B_vec, Bs_list, T_list, en_soc, Mu, h_s):
     
 def magnetization(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None):
     '''
+    Calculate magnetization(Bohr magneton) in specfic B and T
+    ********
+    INPUT:
     B_s (float): magnetic Field Strength. Unit: Telsa
     B_vec (np.array, 3): direction of magmetic field. "magnetization" function will normalize it. 
     T (float): temperature. Unit: K
     en_soc (np.array, n): spin-orbit coupling energy
     Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
-    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    h_s (float): Magnetic field step size used for numerical differentiation. Unit: Telsa
     dB_k (np.array, 3): Partial differential direction. Default follow  B_vec
+
+    OUTPUT:
+    MM (float):  magnetization(Bohr magneton)
     '''
     
     kb = interface.kb 
@@ -542,14 +596,20 @@ def magnetization(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None):
    
 def susceptibility(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
     '''
+    Calculate susceptibility(cm3/mol) in specfic B and T
+    ********
+    INPUT:
     B_s (float): magnetic Field Strength. Unit: Telsa
     B_vec (np.array, 3): direction of magmetic field. "magnetization" function will normalize it. 
     T (float): temperature. Unit: K
     en_soc (np.array, n): spin-orbit coupling energy
     Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
-    h_s: Magnetic field step size used for numerical differentiation. Unit: Telsa
+    h_s (float): Magnetic field step size used for numerical differentiation. Unit: Telsa
     dB_k (np.array, 3): Partial differential direction. Default follow  B_vec
     dB_l (np.array, 3): Partial differential direction. Default follow  dB_k
+
+    OUTPUT:
+    chi(float): susceptibility(cm3/mol)
     '''
 
     kb = interface.kb 
@@ -633,10 +693,17 @@ def susceptibility(interface,B_s,B_vec,en_soc,Mu,T,h_s,dB_k=None,dB_l=None):
 
 def E_ze(B,en_soc,Mu,mu_B):
     '''
+    Calculate energy state with magnrtic field
+    ********
+    INPUT:
     B (float): magnetic Field Strength. Unit: Telsa
     en_soc (np.array, n): spin-orbit coupling energy
-    Mu (np.array, n*n);  magnetic dipole moment built by spin-orbit coupling basis
+    Mu (np.array, n*n):  magnetic dipole moment built by spin-orbit coupling basis
     mu_B: Bohr magneton. Can obtained from interface.mu_B_Eh (atomic unit)
+
+    OUTPUT:
+    en_ze (np.array,n_micro_states): energy with magnrtic field
+    evec_ze (np.array, n_micro_states*n_micro_states):  wavefunction with magnrtic field
     '''
 
     B = np.array(B) 
@@ -650,9 +717,14 @@ def E_ze(B,en_soc,Mu,mu_B):
 
 def partition_function(en,T,kb):    
     '''
+    Calculate partition_function \sum^{n_state}_{i}exp(-(en_{i})/(T*kb))
+    ********
     en (np.array, n): state energy
     T (float): temperature. Unit: K
     kb: Boltzmann constant. Can obtained from interface.kb (1.3806483e-23 / 4.3597447222060e-18 Eh/K)
+
+    OUTPUT:
+    Z (float): partition_function
     '''
 
     Z=0

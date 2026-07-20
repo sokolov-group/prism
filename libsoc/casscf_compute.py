@@ -7,6 +7,9 @@ from prism.libsoc import general_somf
 from prism.libsoc import magnetic
 
 def compute_somf_soc(interface):
+    '''
+    Calculate SOC-CASSCF
+    '''
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     wfn = interface.ref_wfn
@@ -82,7 +85,7 @@ def compute_somf_soc(interface):
                         #uncorrelated diagonal terms
                         rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)  
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms1(interface, en, rdm_aabb, S, rdm_aabb_plus, interface.soc, interface.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb, S, rdm_aabb_plus, interface.soc, interface.verbose)
 
     #compute osc
     #compute soc rdm
@@ -158,6 +161,9 @@ def compute_somf_soc(interface):
 
 
 def print_result_casscf(interface, en_soc, osc_str_soc):
+    '''
+    Print energy of SOC-CASSCF
+    '''
     
     cput0 = (logger.process_clock(), logger.perf_counter())
     h2ev = interface.hartree_to_ev

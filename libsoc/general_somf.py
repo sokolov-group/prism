@@ -35,12 +35,19 @@ from socutils.somf import somf
 
 def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     '''
+    Calculate ms!=0 SOC energy(en_soc) and wavefunction(evec_soc) by employing state_interaction 
+    ********
+    INPUT:
     rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
     en (np.array, n): reference energy
     S (list), spin quantum number of each state without spin-orbit coupling
     ms (float, should be multiply of 0.5), spin projection quantum number of reference state without spin-orbit coupling
     soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
     verbose(int): print out level.
+
+    OUTPUT:
+    en_soc(np.array,n_micro_states): SOC energy
+    evec_soc(np.array, n_micro_states*n_micro_states): SOC wavefunction
     '''
 
     cput0 = (logger.process_clock(), logger.perf_counter())
@@ -139,14 +146,21 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     
     return en_soc, evec_soc
 
-def state_interaction_soc_ms1(interface, en, rdm_aabb, S, rdm_aabb_plus, soc, verbose = 4):
+def state_interaction_soc_ms0(interface, en, rdm_aabb, S, rdm_aabb_plus, soc, verbose = 4):
     '''
+    Calculate ms=0 SOC energy(en_soc) and wavefunction(evec_soc) by employing state_interaction 
+    ********
+    INPUT:
     rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): ms=0 spin alpha-alpha and beta-beta 1st rdm for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
     rdm_aabb_plus(np.array, 2*nstate*nstate*nmo*nmo): ms=1 spin alpha-alpha and beta-beta 1st rdm for same spin coupling
     en (np.array, n): reference energy
     S (list), spin quantum number of each state without spin-orbit coupling
     soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
     verbose(int): print out level.
+
+    OUTPUT:
+    en_soc(np.array,n_micro_states): SOC energy
+    evec_soc(np.array, n_micro_states*n_micro_states): SOC wavefunction
     '''
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
@@ -254,9 +268,15 @@ def state_interaction_soc_ms1(interface, en, rdm_aabb, S, rdm_aabb_plus, soc, ve
 
 def get_soc_integrals(interface, soc, rdm1ao):
     '''
+    Calculate SOC MO Hamiltionian (hsoc)  
+    ********
+    INPUT:
     soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
     rdm1ao(np.array, nmo*nmo): spin-free 1st rdm in atomic orbital basis, can be obtained by (rdm_aabb[0,I,I] + rdm_aabb[1,I,I]) / nstate 
     verbose(int): print out level.
+
+    OUTPUT:
+    hsoc(p.array, 3*nmo*nmo): SOC MO Hamiltionian
     '''
     mo = interface.mo
     nmo = interface.nmo
