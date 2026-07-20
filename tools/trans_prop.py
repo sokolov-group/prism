@@ -49,13 +49,13 @@ def osc_strength(interface, e_diff, trdm_mo):
         dip_evec_x = np.einsum('pq,pq', dip_mom_mo[0], trdm_mo[state])
         dip_evec_y = np.einsum('pq,pq', dip_mom_mo[1], trdm_mo[state])
         dip_evec_z = np.einsum('pq,pq', dip_mom_mo[2], trdm_mo[state])
-        
+
         osc_x = (2/3)*(e_diff[state])*(np.conj(dip_evec_x) * dip_evec_x)
         osc_y = (2/3)*(e_diff[state])*(np.conj(dip_evec_y) * dip_evec_y)
         osc_z = (2/3)*(e_diff[state])*(np.conj(dip_evec_z) * dip_evec_z)
 
         osc_total.append((osc_x + osc_y + osc_z).real)
-        
+
     return (np.array(osc_total))
 
 
@@ -67,8 +67,8 @@ def print_osc_strength(interface, osc_str):
     col_width = 18  # characters per column
 
     # Collect all transitions per ground state
-    transition_data = [[] for _ in range(len(osc_str))] 
-    
+    transition_data = [[] for _ in range(len(osc_str))]
+
     for i in range(len(osc_str)):
         transitions = osc_str[i]
 

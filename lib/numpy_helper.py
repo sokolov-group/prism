@@ -265,7 +265,7 @@ def _analyze_indices(idx_str):
     external_A = [i for i in idxA if i not in internal_ind]
     external_B = [i for i in idxB if i not in internal_ind]
 
-    # reject when external index is in both GEMM axes or 
+    # reject when external index is in both GEMM axes or
     # when multiple external indices cannot be flattened
     if ((external_ind and external_A and external_B) or
         ((len(external_ind) > 1) and (external_A or external_B))):
