@@ -84,19 +84,21 @@ def initialize(nevpt):
             raise ValueError(msg)
         nevpt.frozen_mask[:nevpt.nfrozen] = True
 
-    elif isinstance(nevpt.nfrozen, (list, np.ndarray)):
-        if max(nevpt.nfrozen) > nevpt.ncore:
-            msg = "Only core orbitals can be frozen."
-            nevpt.log.error(msg)
-            raise ValueError(msg)
-        nevpt.frozen_mask[nevpt.nfrozen] = True
+    # elif isinstance(nevpt.nfrozen, (list, np.ndarray)):
+    #     if max(nevpt.nfrozen) > nevpt.ncore:
+    #         msg = "Only core orbitals can be frozen."
+    #         nevpt.log.error(msg)
+    #         raise ValueError(msg)
+    #     nevpt.frozen_mask[nevpt.nfrozen] = True
 
     else:
-        msg = "nfrozen must be an integer or a list of integers."
+        # msg = "nfrozen must be an integer or a list of integers."
+        msg = "nfrozen must be an integer."
         nevpt.log.error(msg)
         raise TypeError(msg)
 
-    nevpt.ncore_wof = nevpt.ncore - np.count_nonzero(nevpt.frozen_mask)
+    # nevpt.ncore_wof = nevpt.ncore - np.count_nonzero(nevpt.frozen_mask)
+    nevpt.ncore_wof = nevpt.ncore - nevpt.nfrozen
 
     if nevpt.rdm_order not in [0,2]:
          raise ValueError(f"Invalid {'rdm_order'}: '{nevpt.rdm_order}'. Available options are {0,2}.")
@@ -130,11 +132,11 @@ def print_header(nevpt):
     nevpt.log.info("Reference wavefunction type:                       %s" % nevpt.interface.reference)
     nevpt.log.info("Number of reference states:                        %d" % n_states)
     nevpt.log.info("Number of reference microstates:                   %d" % n_micro_states)
-    # nevpt.log.info("Number of frozen orbitals:                         %d" % nevpt.nfrozen)
-    frozen_list = np.arange(nevpt.nmo)[nevpt.frozen_mask]
-    nevpt.log.info("Number of frozen orbitals:                         %d" % frozen_list.size or 0)
-    if frozen_list.size > 0:
-        nevpt.log.info("Frozen orbitals:                                   %s" % frozen_list)
+    nevpt.log.info("Number of frozen orbitals:                         %d" % nevpt.nfrozen)
+    # frozen_list = np.arange(nevpt.nmo)[nevpt.frozen_mask]
+    # nevpt.log.info("Number of frozen orbitals:                         %d" % frozen_list.size or 0)
+    # if frozen_list.size > 0:
+    #     nevpt.log.info("Frozen orbitals:                                   %s" % frozen_list)
     nevpt.log.info("Number of core orbitals:                           %d" % nevpt.ncore)
     nevpt.log.info("Number of active orbitals:                         %d" % nevpt.ncas)
     nevpt.log.info("Number of external orbitals:                       %d" % nevpt.nextern)
