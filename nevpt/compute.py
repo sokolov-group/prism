@@ -17,6 +17,7 @@
 #          Alexander Yu. Sokolov <alexander.y.sokolov@gmail.com>
 #          James D. Serna <jserna456@gmail.com>
 #          Nicholas Y. Chiang <nicholas.yiching.chiang@gmail.com>
+#          Donna H. Odhiambo <donna.odhiambo@proton.me>
 #
 
 import numpy as np
