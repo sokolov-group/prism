@@ -33,7 +33,15 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", verbose = 4):
+def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
+    '''
+    rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    en (np.array, n): reference energy
+    S (list), spin quantum number of each state without spin-orbit coupling
+    ms (list, should be same number in the list), spin projection quantum number of each state without spin-orbit coupling
+    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
+    verbose(int): print out level.
+    '''
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
@@ -131,7 +139,15 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     
     return en_soc, evec_soc
 
-def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, soc = "breit-pauli", verbose = 4):
+def state_interaction_soc_ms1(interface, en, rdm_aabb, S, rdm_aabb_plus, soc, verbose = 4):
+    '''
+    rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm of ms=0 for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    rdm_aabb_plus(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm ms=1 for same spin coupling
+    en (np.array, n): reference energy
+    S (list), spin quantum number of each state without spin-orbit coupling
+    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
+    verbose(int): print out level.
+    '''
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
     nmo = interface.nmo
@@ -158,14 +174,14 @@ def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_
     for I in range(nstate):
         for J in range(nstate):
             if S[I] == S[J]:
-                cg = CG(S[J], ms_plus[J], 1, 0, S[I], ms_plus[I]).doit()
+                cg = CG(S[J], 1, 1, 0, S[I], 1).doit() #ms_plus should be 1
                 cg = float(cg)
                 if np.abs(cg) > 1e-5:               
                     T_z = 1/np.sqrt(2) * (rdm_aabb_plus[0,I,J] - rdm_aabb_plus[1,I,J]) / cg
                     rdm_wigner[I,J] = T_z 
             
             else:
-                cg = CG(S[J], ms[J], 1, 0, S[I], ms[I]).doit()
+                cg = CG(S[J], 0, 1, 0, S[I], 0).doit() #ms should be 0
                 cg = float(cg)
                 if np.abs(cg) > 1e-5:               
                     T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
@@ -237,6 +253,11 @@ def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_
 
 
 def get_soc_integrals(interface, soc, rdm1ao):
+    '''
+    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
+    rdm1ao(np.array, nmo*nmo): spin-free 1st rdm in atomic orbital basis, can be obtained by (rdm_aabb[0,I,I] + rdm_aabb[1,I,I]) / nstate 
+    verbose(int): print out level.
+    '''
     mo = interface.mo
     nmo = interface.nmo
     nao = interface.mo.shape[1]

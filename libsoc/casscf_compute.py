@@ -8,6 +8,7 @@ from prism.libsoc import magnetic
 
 def compute_somf_soc(interface):
 
+    cput0 = (logger.process_clock(), logger.perf_counter())
     wfn = interface.ref_wfn
 
     # Calculate the total spin (S)
@@ -81,7 +82,7 @@ def compute_somf_soc(interface):
                         #uncorrelated diagonal terms
                         rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)  
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, interface.soc, interface.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms1(interface, en, rdm_aabb, S, rdm_aabb_plus, interface.soc, interface.verbose)
 
     #compute osc
     #compute soc rdm
@@ -143,7 +144,7 @@ def compute_somf_soc(interface):
 
 
     # Print results obtained from soc-sa-casscf
-    print_result_sa_casscf(interface, en_soc, osc_str_soc)
+    print_result_casscf(interface, en_soc, osc_str_soc)
     
     if "osc_strengths_full" in interface.properties_cas:
         trans_prop.print_osc_strength(interface, interface.properties_cas["osc_strengths_full"])
@@ -151,10 +152,12 @@ def compute_somf_soc(interface):
     if "magnetic_properties" in interface.properties_cas:
         magnetic.print_mag_properties(interface, interface.properties_cas,  method = None)
 
+    interface.log.timer0("total %s calculation" % interface.soc, *cput0)
+
     return  en_soc, osc_str_soc
 
 
-def print_result_sa_casscf(interface, en_soc, osc_str_soc):
+def print_result_casscf(interface, en_soc, osc_str_soc):
     
     cput0 = (logger.process_clock(), logger.perf_counter())
     h2ev = interface.hartree_to_ev
@@ -192,6 +195,6 @@ def print_result_sa_casscf(interface, en_soc, osc_str_soc):
     interface.log.info("----------------------------------------------------------------------------------------------------------------")
     
     sys.stdout.flush()
-    interface.log.timer0("total %s calculation" % interface.soc, *cput0)
+    
 
     return

@@ -22,7 +22,7 @@ import numpy as np
 
 def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None):
     '''
-    rdm_sf: spin free 1st rdm (without spin-orbit coupling)
+    rdm_sf(np.array, nstate*nstate*nmo*nmo): spin free 1st rdm (without spin-orbit coupling)
     en_soc (np.array, n): spin-orbit coupling energy
     h_evec_soc (np.array): spin-orbit coupling eigenvector
     S (list), spin quantum number of each state without spin-orbit coupling
