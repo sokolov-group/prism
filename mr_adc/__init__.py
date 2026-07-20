@@ -122,6 +122,9 @@ class MRADC:
         self.M_00 = None
         self.M_01 = lambda:None
 
+        # Eigen value solver
+        self.eigen_solver = "davidson"  # lanczos
+
     def _make_method_instance(self):
         cls_map = {
             "cvs-ip": CVSIPMRADC,

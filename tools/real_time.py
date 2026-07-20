@@ -53,7 +53,7 @@ def real_time_prop(nevpt, evec, etot):
    
     dipole_csv = open("dipole_moment.csv", "w", newline="")
     dipole_writer = csv.writer(dipole_csv)
-    dipole_writer.writerow(["Time (a.u.)", "Dipole_Mom_X", "Dipole_Mom_Y", "Dipole_Mom_Z"])
+    dipole_writer.writerow(["Time (a.u.)", "Dipole_Mom_X", "Dipole_Mom_Y", "Dipole_Mom_Z", "Total_Dipole_Mom"])
 
     while t < nevpt.rt_tmax:
 
@@ -73,10 +73,10 @@ def real_time_prop(nevpt, evec, etot):
             td_rdm1(nevpt, wfn, t)
 
             # Time-dependent dipole moment
-            dipmom_x, dipmom_y, dipmom_z = td_dip_mom(nevpt, e_diff, wfn, t)
+            dipmom_x, dipmom_y, dipmom_z, td_dip_total = td_dip_mom(nevpt, e_diff, wfn, t)
         
             # Print dipole moments in CSV file
-            dipole_writer.writerow([t, dipmom_x, dipmom_y, dipmom_z])
+            dipole_writer.writerow([t, dipmom_x, dipmom_y, dipmom_z, td_dip_total])
 
         # Print propagation info
         print (" %10.6f         %10.6e           %10.6f" % (t, wfn_norm, E))
@@ -135,32 +135,27 @@ def exact_propagator(nevpt, wfn, H_eff):
 
     return wfn
 
-def td_rdm1(method, coeff_t, t):
+def td_rdm1(nevpt, coeff_t, t):
 
-    mc = method.interface.mc
-    mol = method.interface.mf.mol 
+    mc = nevpt.interface.mc
+    mf = nevpt.interface.mf
+    mol = nevpt.interface.mf.mol 
     mo_coeff = mc.mo_coeff
 
     # Compute all 1-RDMs
-    rdms = method.make_rdm1().real
-
-    rdm_init = rdms[0,0].copy()
+    rdms = nevpt.make_rdm1()
+    
+    # Ground state RDM
+    rdm_init = rdms[0,0].copy().real
 
     # Time dependent RDM
-    from prism.nevpt.qd_nevpt import make_rdm1
-    rdm_qd = make_rdm1(method, L = None, R = None)
-    td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdm_qd).real
-    
+    td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t).T, coeff_t, rdms).real
+
     rdm_diff = td_rdms - rdm_init
-    rdm_diff = mc.mo_coeff @ rdm_diff @ mc.mo_coeff.T
-   
+    
     # diagonalize the time-dependent rdm
     non, no = np.linalg.eigh(rdm_diff)
-
-    # hole and electron density
-    cube = f"density_rt_{t:010.6f}.cube"
-    cubegen.density(mol, cube, rdm_diff, nx=100, ny=100, nz=100)
-
+    
     # print Hole density
     hole_dm = np.zeros_like(rdm_diff)
 
@@ -171,23 +166,41 @@ def td_rdm1(method, coeff_t, t):
             orb = no[:, i]
             hole_dm += (-occ_change) * np.outer(orb, orb)
 
+    # Transform densities to the AO basis for cube generation
+    rdm_diff = mo_coeff @ rdm_diff @ mo_coeff.T
+    hole_dm = mo_coeff @ hole_dm @ mo_coeff.T
+
+    # hole and electron density
+    cube = f"density_rt_{t:010.6f}.cube"
+    cubegen.density(mol, cube, rdm_diff, nx=100, ny=100, nz=100)
+
     cubegen.density(mol, f"hole_density_rt_{t:010.6f}.cube",
                 hole_dm, nx=100, ny=100, nz=100)
 
     return td_rdms
 
-def td_dip_mom(method, e_diff, coeff_t, t):
-
-    # Time dependent RDM
-    from prism.nevpt.qd_nevpt import make_rdm1
-    rdm_qd = make_rdm1(method, L = None, R = None)
-    td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdm_qd).real
+def td_dip_mom(nevpt, e_diff, coeff_t, t):
 
     n_micro_states = len(e_diff)
-    dip_mom_ao = method.interface.dip_mom_ao
-    mo_coeff = method.interface.mo
+    dip_mom_ao = nevpt.interface.dip_mom_ao
+    mo_coeff = nevpt.interface.mo
+    mc = nevpt.interface.mc
+    mf = nevpt.interface.mf
+    mol = nevpt.interface.mf.mol
+    mo_coeff = mc.mo_coeff
 
+    # Compute all 1-RDMs
+    rdms = nevpt.make_rdm1()
+
+    rdm_init = rdms[0,0].copy().real
+ 
+    # Time-dependent RDMS
+    td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t).T, coeff_t, rdms).real
+
+    # TODO: need to check dipole moment and td_rdms need in AO or MO basis
     dip_mom_mo = np.zeros_like(dip_mom_ao)
+    
+    td_dip_total = []
 
     for d in range(dip_mom_ao.shape[0]):
         dip_mom_mo[d] = (mo_coeff.conj().T @ dip_mom_ao[d] @ mo_coeff)
@@ -196,4 +209,7 @@ def td_dip_mom(method, e_diff, coeff_t, t):
     dip_evec_y = np.einsum('pq,pq->', dip_mom_mo[1], td_rdms)
     dip_evec_z = np.einsum('pq,pq->', dip_mom_mo[2], td_rdms)
 
-    return dip_evec_x, dip_evec_y, dip_evec_z 
+    td_dip_total.append((dip_evec_x + dip_evec_y + dip_evec_z).real)
+
+    return dip_evec_x, dip_evec_y, dip_evec_z, (np.array(td_dip_total))
+

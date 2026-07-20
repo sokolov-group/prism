@@ -168,23 +168,29 @@ def compute_energy(mr_adc):
 
     davidson_verbose = 6 if mr_adc.verbose > 3 else 3
 
-    # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
-    cput1 = (logger.process_clock(), logger.perf_counter())
-    mr_adc.log.info("")
-    conv, de, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
-                                           nroots = mr_adc.nroots,
-                                           verbose = davidson_verbose,
-                                           max_space = mr_adc.max_space,
-                                           max_cycle = mr_adc.max_cycle,
-                                           tol = mr_adc.tol_e,
-                                           tol_residual = mr_adc.tol_r)
+    if mr_adc.eigen_solver == "davidson":
+
+        # Using Davidson algorithm, solve the [S^(-1/2) M S^(-1/2) C = C E] eigenvalue problem
+        cput1 = (logger.process_clock(), logger.perf_counter())
+        mr_adc.log.info("")
+        conv, de, U = mr_adc.interface.davidson(lambda xs: [apply_M(x) for x in xs], x0, precond,
+                                               nroots = mr_adc.nroots,
+                                               verbose = davidson_verbose,
+                                               max_space = mr_adc.max_space,
+                                               max_cycle = mr_adc.max_cycle,
+                                               tol = mr_adc.tol_e,
+                                               tol_residual = mr_adc.tol_r)
+
+
+    elif mr_adc.eigen_solver == "lanczos":
+        block_lanczos(mr_adc)
 
     mr_adc.h_evec = np.array(U)
     mr_adc.e_tot = mr_adc.e_ref_nevpt2 + de
     mr_adc.e_diff = de
 
     mr_adc.log.timer("solving eigenvalue problem", *cput1)
-
+    
     return mr_adc.e_tot, mr_adc.e_diff
 
 
@@ -207,6 +213,40 @@ def setup_davidson(mr_adc):
     apply_M = mr_adc.define_effective_hamiltonian()
 
     return apply_M, precond, x0
+
+
+def block_lanczos(mr_adc):
+
+    precond = None
+
+    mr_adc.compute_M_00()
+
+    if mr_adc.method in ("mr-adc(2)", "mr-adc(2)-x"):
+        mr_adc.compute_M_01()
+
+    # Compute diagonal of the M matrix
+    precond = mr_adc.compute_preconditioner()
+
+    # Compute guess vectors
+    x0 = compute_guess_vectors(mr_adc, precond)
+
+    # Define M * vec
+    apply_M = mr_adc.define_effective_hamiltonian()
+
+    # Convert list into a matrix
+    x0 = np.column_stack(x0)
+
+    print("heloo world")
+    #print("shape of x0 = ", x0.shape)
+    #print("type of x0 = ", x0.dtype)
+    print("x0 = ", x0)
+    print(type(x0))
+    print(len(x0))                 # 8
+    print(type(x0[0]))
+    print(x0[0].shape)
+    print("shape of x0 ", x0.shape)
+
+    return 
 
 
 def compute_guess_vectors(mr_adc, precond, ascending = True):
