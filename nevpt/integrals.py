@@ -90,9 +90,7 @@ def transform_integrals_2e_incore(nevpt):
     interface = nevpt.interface
 
     # Variables from kernel
-    # nfrozen = nevpt.nfrozen
     ncore = nevpt.ncore
-    # ncore_wof = ncore - nfrozen
     ncore_wof = nevpt.ncore_wof
     nocc = nevpt.nocc
     ncas = nevpt.ncas
@@ -278,7 +276,6 @@ def transform_integrals_2e_df(nevpt):
     naux = interface.get_naux()
 
     # Variables from kernel
-    # nfrozen = nevpt.nfrozen
     ncore = nevpt.ncore
     ncore_wof = nevpt.ncore_wof
     ncas = nevpt.ncas
@@ -355,15 +352,6 @@ def transform_integrals_2e_df(nevpt):
     nevpt.h1eff.ce = compute_effective_1e(nevpt, nevpt.h1e[:ncore, nocc:], nevpt.v2e.ccce, nevpt.v2e.ccec)
     nevpt.h1eff.aa = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, ncore:nocc], nevpt.v2e.ccaa, nevpt.v2e.caac)
     nevpt.h1eff.ae = compute_effective_1e(nevpt, nevpt.h1e[ncore:nocc, nocc:], nevpt.v2e.ccae, nevpt.v2e.caec)
-
-    # if nfrozen > 0:
-    #     nevpt.h1eff.ca = nevpt.h1eff.ca[nfrozen:,:].copy()
-    #     nevpt.h1eff.ce = nevpt.h1eff.ce[nfrozen:,:].copy()
-    #     nevpt.mo_energy.c = nevpt.mo_energy.c[nfrozen:]
-    #     Lcc = Lcc[:, nfrozen:, nfrozen:].copy()
-    #     Lca = Lca[:, nfrozen:, :].copy()
-    #     nevpt.v2e.Lce = nevpt.v2e.Lce[:, nfrozen:, :].copy()
-    #     Lec = Lec[:, :, nfrozen:].copy()
 
     # Store diagonal elements of the generalized Fock operator
     _, c_mask, a_mask, e_mask = _mo_splitter(nevpt)
