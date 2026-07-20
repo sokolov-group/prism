@@ -146,7 +146,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     
     return en_soc, evec_soc
 
-def state_interaction_soc_ms0(interface, en, rdm_aabb, S, rdm_aabb_plus, soc, verbose = 4):
+def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, verbose = 4):
     '''
     Calculate ms=0 SOC energy(en_soc) and wavefunction(evec_soc) by employing state_interaction 
     ********

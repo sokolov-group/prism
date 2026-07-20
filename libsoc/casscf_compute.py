@@ -85,7 +85,7 @@ def compute_somf_soc(interface):
                         #uncorrelated diagonal terms
                         rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)  
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb, S, rdm_aabb_plus, interface.soc, interface.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb,  rdm_aabb_plus, S, interface.soc, interface.verbose)
 
     #compute osc
     #compute soc rdm

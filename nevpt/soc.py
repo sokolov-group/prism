@@ -97,7 +97,7 @@ def state_interaction_soc(method):
         # Calculate RDM_aabb_plus
         rdm_aabb_plus = method.make_rdm1s(wfn_plus, wfn_ref_nelecas_plus)
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, S, rdm_aabb_plus, method.soc, method.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.soc, method.verbose)
 
 
 
