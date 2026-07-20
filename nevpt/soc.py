@@ -46,7 +46,7 @@ def state_interaction_soc(method):
         ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
         SS = method.interface.compute_spin_square(wfn[I], method.ncas, method.ref_nelecas[I])
         S.append((-1+np.sqrt(1+4*SS))/2)
-    
+
     ms = [round(elem,2) for elem in ms]
     S  = [round(elem,2) for elem in S]
 
@@ -70,8 +70,8 @@ def state_interaction_soc(method):
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
         en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
-    
-    else:    
+
+    else:
         method.log.info("Apply S_plus due to Ms=0...")
 
         wfn_plus = wfn.copy()
@@ -87,7 +87,7 @@ def state_interaction_soc(method):
                 wfn_plus[I] = wfn_plus[I]/(np.sqrt( S[I]**2 + S[I] ))
                 # Upadate ms
                 ms_plus[I] = 1
-            elif S[I] == 0:     
+            elif S[I] == 0:
                 wfn_plus[I] = np.zeros_like(wfn_plus[I])
 
 
@@ -98,7 +98,7 @@ def state_interaction_soc(method):
 
 
 
-    
+
 
 
     method.e_tot = en_soc
@@ -110,11 +110,11 @@ def state_interaction_soc(method):
         n = int(S[i]*2 + 1)
         for j in range(n):
             e_ref_spinstate.append(method.e_ref[i])
-    
+
     e_corr_soc = en_soc - e_ref_spinstate
 
     return en_soc, e_corr_soc
-    
+
 
 def transform_rdm1(method, rdm_sf, L = None, R = None, rdm_type = 'all'):
 
@@ -247,7 +247,7 @@ def compute_magnetic_properties(method, rdm_sf):
             Bs_list = method.Bs_powder_M
             T_list  = method.T_powder_M
             M_av_all = magnetic.Powder_magnetization(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
-            
+
             method.properties["M_av"] = M_av_all
 
 
@@ -256,7 +256,7 @@ def compute_magnetic_properties(method, rdm_sf):
             Bs_list = method.Bs_powder_chi
             T_list  = method.T_powder_chi
             chi_av_all = magnetic.Powder_susceptibility(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
-           
+
             method.properties["chi_av"] = chi_av_all
 
 

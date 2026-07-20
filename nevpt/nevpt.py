@@ -43,7 +43,7 @@ def compute_energy(method):
         e_0, t1_0 = amplitudes.compute_t1_0(method)
     else:
         t1_0 = np.zeros((ncore, ncore, method.nextern, method.nextern))
-    
+
     for state in range(n_states):
         deg = method.ref_wfn_deg[state]
 
@@ -201,7 +201,7 @@ def compute_properties(method):
                 deg_gs += 1
             else:
                 break
-        
+
         rdm_mo = method.make_rdm1() # for all osc calculation
 
         # Calculate oscillator strengths for transitions from the first state
@@ -212,13 +212,13 @@ def compute_properties(method):
             e_diff = e_diff[gs_index+1:]
             osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[gs_index, gs_index+1:])
             osc_str_full.append(osc)
-            osc_str[gs_index:] += osc 
+            osc_str[gs_index:] += osc
 
         method.properties["osc_strengths"] = osc_str
 
         # Compute oscillator strengths starting from each state
         if method.verbose >= 5:
-            for gs_index in range(deg_gs, len(method.e_tot)):  
+            for gs_index in range(deg_gs, len(method.e_tot)):
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[gs_index, gs_index+1:]))
@@ -250,7 +250,7 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
 
     if t1 is None:
         t1 = method.t1
-    
+
     if t1_0 is None:
         t1_0 = method.t1_0
 
@@ -280,7 +280,7 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
         f"Instability detected in correlated 1RDM. "
         "Consider loosening truncation thresholds."
     )
-        
+
     # Initial rdm array
     rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], nmo, nmo))
 
@@ -294,11 +294,11 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
         L_t1_aaae = t1[I].aaae
         L_t1_ccae = t1[I].ccae
         L_t1_ccaa = t1[I].ccaa
-        L_t1_caee = t1[I].caee 
+        L_t1_caee = t1[I].caee
         L_t1_aaee = t1[I].aaee
-            
-        for ind_J, J in enumerate(R_list): 
-            
+
+        for ind_J, J in enumerate(R_list):
+
             if rdm_type in ("ss", "state-specific") and I != J:
                 continue
 
@@ -308,9 +308,9 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
             R_t1_aaae = t1[J].aaae
             R_t1_ccae = t1[J].ccae
             R_t1_ccaa = t1[J].ccaa
-            R_t1_caee = t1[J].caee 
+            R_t1_caee = t1[J].caee
             R_t1_aaee = t1[J].aaee
-            
+
             # Zeroth-order contributions
             if method.ref_wfn is not None:
                 trdm_ca, trdm_ccaa, trdm_cccaaa = method.interface.compute_rdm123(method.ref_wfn[I], method.ref_wfn[J], method.ref_nelecas[I])
@@ -323,10 +323,10 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
 
             if I == J:
                 #uncorrelated diagonal terms
-                rdm_final[ind_I, ind_J, :ncore, :ncore] = 2 * np.identity(ncore)    
+                rdm_final[ind_I, ind_J, :ncore, :ncore] = 2 * np.identity(ncore)
 
             if method.rdm_order == 2:
-                
+
                 # Initial rdm array for correlated contributions
                 rdm_corr = np.zeros((nmo, nmo))
 
@@ -372,8 +372,8 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
                     rdm_corr[:ncore, :ncore] += einsum('Ixyz,Jwzy,xw->IJ', L_t1_caaa, R_t1_caaa, trdm_ca, optimize = einsum_type)
                     rdm_corr[:ncore, :ncore] -= einsum('iIxa,Jiya,xy->IJ', L_t1_ccae, R_t1_ccae, trdm_ca, optimize = einsum_type)
                     rdm_corr[:ncore, :ncore] += 2 * einsum('iIxa,iJya,xy->IJ', L_t1_ccae, R_t1_ccae, trdm_ca, optimize = einsum_type)
-                    
-                    # ACT-ACT # 
+
+                    # ACT-ACT #
                     rdm_corr[ncore:ncore + ncas, ncore:ncore + ncas] += 4 * einsum('ijXa,ijYa->XY', L_t1_ccae, R_t1_ccae, optimize = einsum_type)
                     rdm_corr[ncore:ncore + ncas, ncore:ncore + ncas] -= 2 * einsum('ijXa,jiYa->XY', L_t1_ccae, R_t1_ccae, optimize = einsum_type)
                     rdm_corr[ncore:ncore + ncas, ncore:ncore + ncas] += 4 * einsum('ijXx,ijYx->XY', L_t1_ccaa, R_t1_ccaa, optimize = einsum_type)
@@ -509,7 +509,7 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
                     rdm_corr[ncore:ncore + ncas, ncore:ncore + ncas] += 1/3 * einsum('xyYa,zwua,Xwzxyu->XY', L_t1_aaae, R_t1_aaae, trdm_cccaaa, optimize = einsum_type)
                     rdm_corr[ncore:ncore + ncas, ncore:ncore + ncas] -= 1/6 * einsum('xyYa,zwua,Xwzyux->XY', L_t1_aaae, R_t1_aaae, trdm_cccaaa, optimize = einsum_type)
                     rdm_corr[ncore:ncore + ncas, ncore:ncore + ncas] -= 1/6 * einsum('xyYa,zwua,Xwzyxu->XY', L_t1_aaae, R_t1_aaae, trdm_cccaaa, optimize = einsum_type)
-                    
+
                     # EXT-EXT #
                     rdm_corr[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern] += 4 * einsum('ijAa,ijBa->AB', t1_ccee, t1_ccee, optimize = einsum_type)
                     rdm_corr[ncore + ncas:ncore + ncas + nextern, ncore + ncas:ncore + ncas + nextern] -= 2 * einsum('ijAa,jiBa->AB', t1_ccee, t1_ccee, optimize = einsum_type)
@@ -544,29 +544,29 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', t1 = None, t1_0 = No
                     rdm_corr[:ncore, ncore:ncore + ncas] += einsum('IxXy,yx->IX', R_t1_caaa, trdm_ca, optimize = einsum_type)
                     rdm_corr[:ncore, ncore:ncore + ncas] -= 1/2 * einsum('IxyX,yx->IX', R_t1_caaa, trdm_ca, optimize = einsum_type)
                     rdm_corr[:ncore, ncore:ncore + ncas] -= 1/2 * einsum('Ixyz,yzXx->IX', R_t1_caaa, trdm_ccaa, optimize = einsum_type)
-                    
+
                     # ACT-COR #
                     rdm_corr[ncore:ncore + ncas, :ncore] += einsum('IxXy,xy->XI', L_t1_caaa, trdm_ca, optimize = einsum_type)
                     rdm_corr[ncore:ncore + ncas, :ncore] -= 1/2 * einsum('IxyX,xy->XI', L_t1_caaa, trdm_ca, optimize = einsum_type)
                     rdm_corr[ncore:ncore + ncas, :ncore] -= 1/2 * einsum('Ixyz,Xxyz->XI', L_t1_caaa, trdm_ccaa, optimize = einsum_type)
-                    
+
                     # COR-EXT #
                     rdm_corr[:ncore, ncore + ncas:ncore + ncas + nextern] += einsum('IxAy,yx->IA', R_t1_caea, trdm_ca, optimize = einsum_type)
                     rdm_corr[:ncore, ncore + ncas:ncore + ncas + nextern] -= 1/2 * einsum('IxyA,yx->IA', R_t1_caae, trdm_ca, optimize = einsum_type)
-                    
+
                     # EXT-COR #
                     rdm_corr[ncore + ncas:ncore + ncas + nextern, :ncore] += einsum('IxAy,xy->AI', L_t1_caea, trdm_ca, optimize = einsum_type)
                     rdm_corr[ncore + ncas:ncore + ncas + nextern, :ncore] -= 1/2 * einsum('IxyA,xy->AI', L_t1_caae, trdm_ca, optimize = einsum_type)
-                    
+
                     # ACT-EXT #
                     rdm_corr[ncore:ncore + ncas, ncore + ncas:ncore + ncas + nextern] += 1/2 * einsum('xyzA,Xzyx->XA', R_t1_aaae, trdm_ccaa, optimize = einsum_type)
-                    
+
                     # EXT-ACT #
                     rdm_corr[ncore + ncas:ncore + ncas + nextern, ncore:ncore + ncas] += 1/2 * einsum('xyzA,Xzyx->AX', L_t1_aaae, trdm_ccaa, optimize = einsum_type)
 
                 # Add the correlated contribution
                 rdm_final[ind_I, ind_J, :, :] += rdm_corr
-                    
+
                 # RDM warning
                 norm_check = np.linalg.norm(rdm_corr) / method.nelec
 
@@ -627,10 +627,10 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, rdm_t
         f"Instability detected in correlated 1RDM. "
         "Consider loosening truncation thresholds."
     )
-    
+
     # Initial rdm array
     rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], nmo, nmo))
-    
+
     # Method's wfn
     if wfn is None:
         wfn = list(method.ref_wfn)
@@ -641,11 +641,11 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, rdm_t
 
     # Looping over states I,J
     for ind_I, I in enumerate(L_list):
-        for ind_J, J in enumerate(R_list): 
+        for ind_J, J in enumerate(R_list):
 
             if rdm_type in ("ss", "state-specific") and I != J:
                 continue
-            
+
             if (wfn_ref_nelecas[I] == wfn_ref_nelecas[J]):
                 tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], ncas, wfn_ref_nelecas[ind_I])
                 rdm_final[0, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[0]
@@ -653,7 +653,7 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None, L = None, R = None, rdm_t
 
                 if I == J:
                     #uncorrelated diagonal terms
-                    rdm_final[:, ind_I, ind_J, :ncore, :ncore] = np.identity(ncore)     
+                    rdm_final[:, ind_I, ind_J, :ncore, :ncore] = np.identity(ncore)
 
     # Single pair of states
     if L is not None and R is not None:

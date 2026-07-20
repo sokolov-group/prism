@@ -35,7 +35,7 @@ def compute_energy(method):
 
     # Compute and diagonalize the QD-NEVPT2 effective Hamiltonian
     e_tot, h_evec = diagonalize_eff_H(method)
-    
+
     # Update correlation energies
     e_corr = method.e_corr
     n_states = len(method.ref_wfn_deg)
@@ -251,7 +251,7 @@ def diagonalize_eff_H(method):
 
             h_eff[I, J] = H_IJ
             h_eff[J, I] = H_IJ
-   
+
     # print intruder states for qd-nevpt2
     check_intruder_states(method, dim, h_eff, t1)
 
@@ -287,13 +287,13 @@ def compute_properties(method):
             e_diff = e_diff[gs_index+1:]
             osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
             osc_str_full.append(osc)
-            osc_str[gs_index:] += osc 
+            osc_str[gs_index:] += osc
 
         method.properties["osc_strengths"] = osc_str
 
         # Compute oscillator strengths starting from each state
         if method.verbose >= 5:
-            for gs_index in range(deg_gs, len(method.e_tot)):  
+            for gs_index in range(deg_gs, len(method.e_tot)):
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
@@ -326,7 +326,7 @@ def determine_spin_mult(method):
 
 def make_rdm1(method, L = None, R = None, rdm_type = 'all', evec = None):
 
-    if evec is None: 
+    if evec is None:
         evec = method.h_evec
 
     n_micro_states = sum(method.ref_wfn_deg)
@@ -337,7 +337,7 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', evec = None):
     avail_types = ["all", "ss", "state-specific"]
     if rdm_type not in avail_types:
         raise ValueError(f"Invalid type: {rdm_type}. Allowed types are {avail_types}.")
- 
+
     if L is None:
         L_list = np.arange(n_micro_states)
     elif isinstance(L, int):
@@ -358,7 +358,7 @@ def make_rdm1(method, L = None, R = None, rdm_type = 'all', evec = None):
 
     # Compute model state 1RDM
     rdm_casci = nevpt.make_rdm1(method)
-    
+
     # Compute qdnevpt2 1RDMS
     rdm_qd = einsum('Im,IJpq,Jn->mnpq', evec, rdm_casci, evec, optimize = einsum_type)
 
@@ -437,7 +437,7 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, rdm_
 
     # Looping over states I,J
     for ind_I, I in enumerate(L_list):
-        for ind_J, J in enumerate(R_list): 
+        for ind_J, J in enumerate(R_list):
 
             if rdm_type in ("ss", "state-specific") and I != J:
                 continue
@@ -484,13 +484,13 @@ def check_intruder_states(method, dim, h_eff, t1):
 
     I, J = np.tril_indices(dim, k=-1)
     mask = abs(h_eff[I, J]) > cutoff_intruder
-    
+
     vals = h_eff[I, J]
 
     if np.any(mask):
 
         interface.log.info("\nWARNING: Large coupling detected (>%f Eh), possible intruder state!!!!!!"  %(cutoff_intruder))
-        
+
         header_fmt = "{:<8} " + "{:>8} " * 13
 
         row_fmt = "{:<8} " + "{:>8.4f} " * 13
@@ -550,7 +550,7 @@ def check_intruder_states(method, dim, h_eff, t1):
 
     # print the coupling element data
     if coupling_data and method.verbose >= 4:
-        
+
         interface.log.info("\nCoupling Elements of Effective Hamiltonian")
         interface.log.info("-" * 30)
         interface.log.info("{:<12} {:>12}".format("(I,J)", "H_eff"))
@@ -560,12 +560,12 @@ def check_intruder_states(method, dim, h_eff, t1):
             interface.log.info(row)
 
         interface.log.info("-" * 30)
-    
+
     # print the results for amplitudes and denominators
     if data and method.verbose >= 4:
 
         separator = "-" * 130
-        
+
         interface.log.info("\nIntruder States and Corresponding Denominators and Amplitude Norms for a Specific Class")
 
         interface.log.info(separator)
@@ -579,12 +579,12 @@ def check_intruder_states(method, dim, h_eff, t1):
                 "deno[-2]",
                 "deno[0']",
                 "deno[+1']",
-                "deno[-1']", 
-                "amp[+1]", 
+                "deno[-1']",
+                "amp[+1]",
                 "amp[-1]",
                 "amp[+2]",
                 "amp[-2]",
-                "amp[0']",   
+                "amp[0']",
                 "amp[+1']",
                 "amp[-1']",
             )
@@ -599,7 +599,7 @@ def check_intruder_states(method, dim, h_eff, t1):
 
     return
 
-  
+
 def analyze_eigenvectors(method, weight_cutoff=0.01):
 
     from pyscf.fci import cistring

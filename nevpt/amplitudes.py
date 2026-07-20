@@ -69,7 +69,7 @@ def compute_t1_0(nevpt):
         temp = -d_ij.reshape(-1,1) + d_ab.reshape(-1)
         temp = temp.reshape((ncore, ncore, -1, nextern))
         temp = temp**(-1)
-        
+
         # Compute T[0] t1_ccee tensor: V1_0 / D2 = - < Psi_0 | a^{\dag}_I a^{\dag}_J a_B a_A V | Psi_0> / D2
         temp *= - einsum('IAJB->IJAB', v_cece, optimize = einsum_type)
 
@@ -179,7 +179,7 @@ def compute_t1_m1(nevpt, rdms):
 
     if not hasattr(nevpt, "den_t1_m1"):
         nevpt.den_t1_m1 = []
-    
+
     # Einsum definition from kernel
     einsum = nevpt.interface.einsum
     einsum_type = nevpt.interface.einsum_type
@@ -325,7 +325,7 @@ def compute_t1_p2(nevpt, rdms):
         nevpt.den_t1_p2.append(None)
     else:
         nevpt.den_t1_p2.append(np.min(np.abs(d_pij**(-1))))
-    
+
     # Compute T[+2] amplitudes
     S_12_V_p2 = einsum("IJX,Xm->IJm", V1_p2, S_p2_12_inv_act, optimize = einsum_type)
     S_12_V_p2 = einsum("mp,IJm->IJp", evecs, S_12_V_p2, optimize = einsum_type)
@@ -445,7 +445,7 @@ def compute_t1_m2(nevpt, rdms):
 
     if e_m2 > 0.0:
         nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-2] !!!!\n\n")
-    
+
     return e_m2, t1_aaee
 
 def compute_t1_0p(nevpt, rdms):
@@ -585,7 +585,7 @@ def compute_t1_0p(nevpt, rdms):
 
     if e_0p > 0.0:
         nevpt.tlog.info("\n\nWARNING: Positive correlation energy detected in class [0'] !!!!\n\n")
-    
+
     return e_0p, t1_ce, t1_caea, t1_caae
 
 def compute_t1_p1p(nevpt, rdms):
@@ -757,7 +757,7 @@ def compute_t1_p1p(nevpt, rdms):
 
     if e_p1p > 0.0:
         nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+1'] !!!!\n\n")
-    
+
     return e_p1p, t1_ca, t1_caaa
 
 def compute_t1_m1p(nevpt, rdms):
@@ -904,7 +904,7 @@ def compute_t1_m1p(nevpt, rdms):
 
     if e_m1p > 0.0:
         nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-1'] !!!!\n\n")
-    
+
     return e_m1p, t1_ae, t1_aaae
 
 def compute_t1_0p_no_singles(nevpt, rdms):
@@ -988,7 +988,7 @@ def compute_t1_0p_no_singles(nevpt, rdms):
     d_aip = (d_ai[:,None] + evals).reshape(nextern, ncore, -1)
 
     ## Level shift
-    if nevpt.shift_type_0p is not None:    
+    if nevpt.shift_type_0p is not None:
         d_aip = add_level_shift(nevpt, nevpt.shift_type_0p, d_aip)
     else:
         d_aip = d_aip**(-1)
@@ -1036,14 +1036,14 @@ def compute_t1_0p_no_singles(nevpt, rdms):
 
     if e_0p > 0.0:
         nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [0'] !!!!\n\n")
-    
+
     return e_0p, t1_caea, t1_caae
 
 def compute_t1_p1p_no_singles(nevpt, rdms):
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     nevpt.log.extra("\nComputing T[+1']^(1) amplitudes...")
-       
+
     if not hasattr(nevpt, "den_t1_p1p"):
         nevpt.den_t1_p1p = []
 
@@ -1138,7 +1138,7 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
     d_ip = (-e_core[:,None] + evals)
 
     ## Level shift
-    if nevpt.shift_type_p1p is not None:    
+    if nevpt.shift_type_p1p is not None:
         d_ip = add_level_shift(nevpt, nevpt.shift_type_p1p, d_ip)
     else:
         d_ip = d_ip**(-1)
@@ -1148,7 +1148,7 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
         nevpt.den_t1_p1p.append(None)
     else:
         nevpt.den_t1_p1p.append(np.min(np.abs(d_ip**(-1))))
-        
+
     # Compute T[+1'] amplitudes
     S_12_V_p1p = einsum("iP,Pm->im", V_p1p, S_p1p_12_inv_act, optimize = einsum_type)
     S_12_V_p1p = einsum("mp,im->ip", evecs, S_12_V_p1p, optimize = einsum_type)
@@ -1190,7 +1190,7 @@ def compute_t1_p1p_no_singles(nevpt, rdms):
 
     if e_p1p > 0.0:
         nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [+1'] !!!!\n\n")
-    
+
     return e_p1p, t1_caaa
 
 def compute_t1_m1p_no_singles(nevpt, rdms):
@@ -1327,7 +1327,7 @@ def compute_t1_m1p_no_singles(nevpt, rdms):
         nevpt.log.info("\n\nWARNING: Positive correlation energy detected in class [-1'] !!!!\n\n")
 
     return e_m1p, t1_aaae
-        
+
 def add_level_shift(nevpt, ls_type, d):
     '''
     d: input unshifted denominator
@@ -1338,11 +1338,11 @@ def add_level_shift(nevpt, ls_type, d):
         nevpt.log.info("shift_epsilon(imaginary) = %s" % shift)
         epsilon = shift * np.ones(d.shape)
         d = d / (d**2 + epsilon**2)
-        
+
     elif ls_type == 'DSRG':
         nevpt.log.info("shift_epsilon(DSRG) = %s" % shift)
         flow = shift**(-2) * np.ones(d.shape)
         factor =  np.ones(d.shape) - np.exp(-flow * (d)**2)
         d = (factor) / d
-        
+
     return d
