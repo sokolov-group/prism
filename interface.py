@@ -176,7 +176,7 @@ class PYSCF:
         # Determine reference type
         from pyscf.mcscf.casci import CASCI
 
-        e_ref = mc.e_tot.copy() 
+        e_ref = mc.e_tot.copy()
         e_cas = mc.e_cas.copy()
         ci = mc.ci.copy()
 
@@ -233,7 +233,7 @@ class PYSCF:
         self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
 
         # Basis set uncontraction objects: xmol, contraction coefficients.
-        # Use x2c_setup to obtain self.xmol and self.contr_coeff 
+        # Use x2c_setup to obtain self.xmol and self.contr_coeff
         self.xmol = None
         self.contr_coeff = None
 
@@ -264,7 +264,7 @@ class PYSCF:
 ####            # TODO: make sure this is working with SA-CASSCF and MS-CASCI references that have states with different symmetries
 ####            ref_ci, ref_nelecas, ref_spin_degeneracy = self.compute_ref_spin_manifold(ci, self.ncas, self.ref_nelecas, e_ref, e_cas)
 ####
-####            # Store wavefunctions and their degeneracy for all microstate 
+####            # Store wavefunctions and their degeneracy for all microstate
 ####            self.ref_wfn = ref_ci
 ####            self.ref_wfn_spin_mult = ref_spin_degeneracy
 ####            self.ref_nelecas = ref_nelecas
@@ -413,11 +413,11 @@ class PYSCF:
             # Add spin states to list
             spin_multiplet.append(spin_wf_plus)
             spin_multiplet_ne.append(spin_nelec_plus)
-        
+
         for I in range(len(minus_op_list)):
             # Apply spin operators for finding ms values
             sz_minus = self.apply_S_z(spin_wf_minus, ncas, spin_nelec_minus)
-            msz_minus = np.dot(spin_wf_minus.ravel(), sz_minus.ravel()) 
+            msz_minus = np.dot(spin_wf_minus.ravel(), sz_minus.ravel())
             # Apply lowering operator:
             spin_wf_minus, spin_nelec_minus = self.apply_S_minus(spin_wf_minus, ncas, spin_nelec_minus)
             # Normalize the wfn
@@ -594,11 +594,11 @@ class PYSCF:
                 rdm1 += rdm1_p
 
             rdm1 /= len(nelecas)
-        
+
         else:
            rdm1 = trans_rdm1(bra, ket, self.ncas, nelecas)
 
-        return rdm1  
+        return rdm1
 
     def compute_rdm123(self, bra, ket, nelecas):
 
@@ -669,14 +669,14 @@ class PYSCF:
         return rdm1, rdm2, rdm3, rdm4
 
     def run_soc(self, soc_type=None):
-        
+
         self.x2c_setup()
 
         if soc_type:
             self.soc = soc_type
 
         from prism.libsoc import casscf_compute
-        en_soc, osc_str_soc = casscf_compute.compute_somf_soc(self) 
+        en_soc, osc_str_soc = casscf_compute.compute_somf_soc(self)
 
         return  en_soc, osc_str_soc
 

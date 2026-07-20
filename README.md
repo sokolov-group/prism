@@ -93,7 +93,7 @@ Some important parameters for the NEVPT calculations are:
  - ```max_memory``` (integer): Controls how much memory (in MB) will be used in a calculation. Prism **loves** memory. Allowing the calculation to use more memory tends to speed it up since less input/output operations on disk are performed. Note that this parameter is just an estimate and the calculation can use more memory than allowed. For large jobs, it is recommended to run each calculation on a dedicated computer node to prevent memory errors. Default is set by PySCF.
  - ```rdm_order``` (integer): Paramater to set the order of the one-particle density matrix (1-RDM) used to evaluate one-particle properties (e.g., oscillator strengths or natural transition orbitals). 0 = reference (default), 2 = includes NEVPT2/QD-NEVPT2 correlation.
  - ```compute_singles_amplitudes``` (boolean): Whether to compute single excitation amplitudes. If False (default), singles are not computed as in the standard NEVPT2 calculation. Switching to True has a very small effect on the NEVPT2 energy since the semi-internal double excitations capture the effect of singles when this option is set to False. Default is False. For experts only.
- - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-8. For experts only. 
+ - ```s_thresh_singles``` (float): Parameter for removing linearly dependent single and semi-internal double excitations. Default is 1e-8. For experts only.
  - ```s_thresh_doubles``` (float): Parameter for removing linearly dependent (external) double excitations. Default is 1e-8. For experts only.
 
 The natural transition orbitals for any multistate NEVPT calculation can be produced by calling:
@@ -150,9 +150,9 @@ dyson_mo = trans_prop.compute_dyson(interface, x)
 The resulting `_dyson.molden` file can be visualized using orbital visualization software such as [JMOL](http://jmol.sourceforge.net/).
 
 ## Density fitting
-The memory and disk usage of NEVPT and MR-ADC calculations can be greatly reduced by approximating the two-electron integrals with density fitting (DF). 
-An example of using density fitting can be found [here](examples/nevpt/03-nevpt2-density-fitting.py) and [here](examples/mr_adc/05-density_fitting.py). 
-DF is not used by default but can be invoked using the ```density_fit()``` function call. 
+The memory and disk usage of NEVPT and MR-ADC calculations can be greatly reduced by approximating the two-electron integrals with density fitting (DF).
+An example of using density fitting can be found [here](examples/nevpt/03-nevpt2-density-fitting.py) and [here](examples/mr_adc/05-density_fitting.py).
+DF is not used by default but can be invoked using the ```density_fit()``` function call.
 One can overwrite the default auxiliary basis with a specified one (for example, ```density_fit('cc-pvdz-ri')```).
 More details about setting up calculations with density fitting can be found on the [Pyscf website](https://pyscf.org/user/df.html).
 Please note that DF is an approximation, which accuracy depends on the quality of the auxiliary basis set.
@@ -162,7 +162,7 @@ The reference CASSCF calculations can be run either using the exact or density-f
 Note that DF can significantly speed up the CASSCF calculation since the cost of integral transformation at every iteration is reduced.
 
 ## Spin-orbit coupling
-The spin-orbit coupling (SOC) is avaliable in NEVPT2 and QD-NEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using: 
+The spin-orbit coupling (SOC) is avaliable in NEVPT2 and QD-NEVPT2. To run SOC code, [socutils](https://github.com/xubwa/socutils) is required and can be installed by using:
 
 ```python
 git submodule update --init --recursive
