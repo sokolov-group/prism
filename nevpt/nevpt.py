@@ -37,7 +37,6 @@ def compute_energy(method):
     t1_0 = None
     t1 = []
 
-    # ncore = method.ncore - method.nfrozen
     ncore = method.ncore_wof
 
     if ncore > 0 and method.nextern > 0:
@@ -93,7 +92,6 @@ def compute_energy(method):
 
 def compute_energy_state(method, rdms, e_0 = None):
 
-    # ncore = method.ncore - method.nfrozen
     ncore = method.ncore_wof
     ncas = method.ncas
     nelecas = method.ref_nelecas

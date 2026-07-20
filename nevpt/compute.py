@@ -72,19 +72,6 @@ def initialize(nevpt):
         nevpt.log.info(msg)
         raise Exception(msg)
 
-    # if nevpt.nfrozen is None:
-    #     nevpt.nfrozen = 0
-
-    # if not isinstance(nevpt.nfrozen, int):
-    #     msg = "nfrozen must be an integer less than the number of core orbitals."
-    #     nevpt.log.error(msg)
-    #     raise TypeError(msg)
-
-    # if nevpt.nfrozen > nevpt.ncore:
-    #     msg = "The number of frozen orbitals cannot exceed the number of core orbitals"
-    #     nevpt.log.error(msg)
-    #     raise ValueError(msg)
-
     nevpt.frozen_mask = np.zeros(nevpt.nmo, dtype=bool)
 
     if nevpt.nfrozen is None:
