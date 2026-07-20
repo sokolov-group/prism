@@ -205,7 +205,6 @@ def print_mag_properties(interface, properties,  method = None):
                 interface.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, chi_T_eval_all[I,K,0],chi_T_eval_all[I,K,1],chi_T_eval_all[I,K,2]))
 
 
-
 # magnetic dipole moment in microstates basis without spin-orbit coupling
 def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     '''
