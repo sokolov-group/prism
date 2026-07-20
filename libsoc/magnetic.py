@@ -209,7 +209,7 @@ def print_mag_properties(interface, properties,  method = None):
 # magnetic dipole moment in microstates basis without spin-orbit coupling
 def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     '''
-    rdm_sf: spin free 1st rdm (without spin-orbit coupling)
+    rdm_sf(np.array, nstate*nstate*nmo*nmo): spin free 1st rdm (without spin-orbit coupling)
     S (list), spin quantum number of each state without spin-orbit coupling
     origin_type: origin_type for computing angular momentum
     '''

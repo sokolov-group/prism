@@ -38,7 +38,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
     en (np.array, n): reference energy
     S (list), spin quantum number of each state without spin-orbit coupling
-    ms (list, should be same number in the list), spin projection quantum number of each state without spin-orbit coupling
+    ms (float, should be multiply of 0.5), spin projection quantum number of reference state without spin-orbit coupling
     soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
     verbose(int): print out level.
     '''
@@ -68,7 +68,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     for I in range(nstate):
         for J in range(nstate):
-            cg = CG(S[J], ms[J], 1, 0, S[I], ms[I]).doit()
+            cg = CG(S[J], ms, 1, 0, S[I], ms).doit()
             cg = float(cg)
             if np.abs(cg) > 1e-5:               
                 T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
@@ -141,8 +141,8 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
 
 def state_interaction_soc_ms1(interface, en, rdm_aabb, S, rdm_aabb_plus, soc, verbose = 4):
     '''
-    rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm of ms=0 for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
-    rdm_aabb_plus(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm ms=1 for same spin coupling
+    rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): ms=0 spin alpha-alpha and beta-beta 1st rdm for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    rdm_aabb_plus(np.array, 2*nstate*nstate*nmo*nmo): ms=1 spin alpha-alpha and beta-beta 1st rdm for same spin coupling
     en (np.array, n): reference energy
     S (list), spin quantum number of each state without spin-orbit coupling
     soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")

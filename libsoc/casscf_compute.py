@@ -47,7 +47,7 @@ def compute_somf_soc(interface):
 
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
-        en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm_aabb, S, ms, interface.soc, interface.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm_aabb, S, ms[0], interface.soc, interface.verbose)
     
     else:    
         interface.log.info("Apply S_plus due to Ms=0...")

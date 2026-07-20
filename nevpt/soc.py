@@ -69,7 +69,7 @@ def state_interaction_soc(method):
 
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
-        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.soc, method.verbose)
     
     else:    
         method.log.info("Apply S_plus due to Ms=0...")
