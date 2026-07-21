@@ -237,10 +237,6 @@ class PYSCF:
         self.contr_coeff = None
 
         self.reference_df = getattr(mc, "with_df", None)
-        # Basis set uncontraction objects: xmol, contraction coefficients.
-        # Use x2c_setup to obtain self.xmol and self.contr_coeff 
-        self.xmol = None
-        self.contr_coeff = None
             
         # Solvent potential
         if hasattr(mf, "with_solvent"):
@@ -263,8 +259,6 @@ class PYSCF:
             self.reference_df = mc.with_df
         else:
             self.reference_df = None
-
-        self.reference_df = getattr(mc, "with_df", None)
 
         # Compute state-averaged 1-RDM with respect to the reference manifold
         ref_rdm1 = np.zeros((mc.ncas, mc.ncas))

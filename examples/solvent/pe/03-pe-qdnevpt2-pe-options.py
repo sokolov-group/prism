@@ -74,4 +74,10 @@ nevpt.rdm_order = 2
 nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-6
 
+nevpt.keep_amplitudes = True
+
+# Additional analysis features
+nevpt.compute_ntos = True
 e_tot, e_corr, osc = nevpt.kernel()
+
+nevpt.analyze()

@@ -121,9 +121,6 @@ class NEVPT:
         self.pe = None                             # Required for PE use if pe_method = "pert"
         self.pe_method = "pert"                    # pertuabtive corrections
         
-        # For PCM
-        self.pcm = None                            # Required for PCM use
-
         # For magnetic susceptibility
         self.mag_av = False
         self.sus_av = False
@@ -261,7 +258,7 @@ class QDNEVPT(NEVPT):
 
     def _init_method(self):
         self.method_type = "qd"
-        #self.h_evec = None # Eigenvectors of effective Hamiltonian
+        self.h_evec = None # Eigenvectors of effective Hamiltonian
 
     def compute_energy(self):
 

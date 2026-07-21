@@ -215,7 +215,8 @@ def print_results(nevpt):
 
     if "ptss_corrections" and "ptlr_corrections" in nevpt.properties and nevpt.verbose >= 5:
         pol_embed.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"])
-            #SUS
+        
+    #SUS
     if "M_av" in nevpt.properties:
         M_av_all = nevpt.properties["M_av"]
         Bs_list = nevpt.Bs_powder_M

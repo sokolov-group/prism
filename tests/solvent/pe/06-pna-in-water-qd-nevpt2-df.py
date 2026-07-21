@@ -24,10 +24,11 @@ import pyscf.scf
 import pyscf.mcscf
 import prism.interface
 import prism.nevpt
+import importlib.util
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
-from pyscf.solvent.pol_embed import PolEmbed
+HAS_CPPE = importlib.util.find_spec("cppe") is not None
 
 mol = pyscf.gto.Mole()
 mol.atom = '''
@@ -54,13 +55,17 @@ mol.basis = "cc-pVDZ"
 mol.build()
 
 # Polarizable Embedding
-pe_options = {"potfile": "potential_files/pna-water-3.5-angstrom.pot"} # Given .pot file
-pe = PolEmbed(mol, pe_options)
-pe.verbose = 3
+if HAS_CPPE:
+    from pyscf.solvent.pol_embed import PolEmbed
+    pe_options = {"potfile": "potential_files/pna-water-3.5-angstrom.pot"} # Given .pot file
+    pe = PolEmbed(mol, pe_options)
+    pe.verbose = 3
 
 # RHF calculation
 mf = pyscf.scf.RHF(mol)
-mf = pyscf.solvent.PE(mf, pe).density_fit('cc-pvdz-jkfit')
+
+if HAS_CPPE:
+    mf = pyscf.solvent.PE(mf, pe).density_fit('cc-pvdz-jkfit')
 
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
@@ -69,10 +74,13 @@ print("SCF energy: %f\n" % ehf)
 n_states = 4
 weights = np.ones(n_states)/n_states
 mc = pyscf.mcscf.CASSCF(mf, 4,4).state_average_(weights).density_fit('cc-pvdz-jkfit')
-mc = pyscf.solvent.PE(mc, pe)
+
+if HAS_CPPE:
+    mc = pyscf.solvent.PE(mc, pe)
 
 emc = mc.mc1step()[0]
 
+@unittest.skipUnless(HAS_CPPE, "Skipping PE tests: CPPE not installed")
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):

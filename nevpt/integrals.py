@@ -22,7 +22,6 @@ from functools import reduce
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
-from prism.interface import PYSCF
 
 def transform_integrals(nevpt):
 
