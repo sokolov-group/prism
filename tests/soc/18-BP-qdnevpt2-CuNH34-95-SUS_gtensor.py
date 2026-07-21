@@ -8,6 +8,7 @@ import prism.mr_adc
 import prism.nevpt
 import time
 import unittest
+from pathlib import Path
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 r = 0.96
@@ -102,7 +103,10 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(mc.e_cas,   -44.5993631435581, 5)
 
     def test_prism(self):
-
+        socutils_dir = Path(prism.__file__).parent / "socutils"
+        if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
+            print("\nsocutilis is not available. Skip soc test")
+            self.skipTest('socutilis is not available')
         e_tot, e_corr, osc = nevpt.kernel()
 
         #Prism

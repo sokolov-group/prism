@@ -19,7 +19,6 @@
 #
 
 import numpy as np
-
 from prism.libsoc import general_somf
 from prism.libsoc import magnetic
 

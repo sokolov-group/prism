@@ -27,6 +27,7 @@ import pyscf.scf
 import pyscf.mcscf
 import prism.interface
 import prism.nevpt
+from pathlib import Path
 
 np.set_printoptions(suppress=True)
 
@@ -58,7 +59,7 @@ mc.analyze()
 
 # NEVPT2 with all electrons correlated
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-interface.run_soc("BP")
+
 
 class KnownValues(unittest.TestCase):
 
@@ -67,7 +68,10 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(mc.e_cas,   -16.1552700236644, 5)
 
     def test_prism(self):
-
+        socutils_dir = Path(prism.__file__).parent / "socutils"
+        if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
+            print("\nsocutilis is not available. Skip soc test")
+            self.skipTest('socutilis is not available')
         e_tot, osc = interface.run_soc("BP")
 
         self.assertAlmostEqual(e_tot[0],   -515.206651213314      , 5)

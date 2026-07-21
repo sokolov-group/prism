@@ -24,6 +24,10 @@ import numpy as np
 from functools import reduce
 from sympy.physics.quantum.cg import CG
 import prism.lib.logger as logger
+from pathlib import Path
+socutils_dir = Path(__file__).resolve().parent.parent / "socutils"
+if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
+    raise Exception('socutilis is not available. Use "git submodule update --init --recursive" to install it')
 
 # Add python path for socutils:
 prism_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
