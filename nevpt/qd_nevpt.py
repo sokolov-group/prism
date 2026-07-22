@@ -21,7 +21,6 @@ import numpy as np
 
 from prism.nevpt import nevpt
 from prism.tools import trans_prop
-from prism.solvent import pol_embed
 
 import prism.lib.logger as logger
 import prism.lib.tools as tools
@@ -286,6 +285,8 @@ def compute_properties(method):
         
         # Get perturbative energy contributions if needed
         if (method.pe is not None and method.pe_method == 'pert'):
+            from prism.solvent import pol_embed
+            
             osc_str_full_uncorrected = []
             ptss, ptlr = pol_embed.get_pert_pe_corrections(method, rdms = rdm_mo)
             method.properties["ptss_corrections"] = ptss
