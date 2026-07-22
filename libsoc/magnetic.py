@@ -144,75 +144,75 @@ def print_mag_properties(interface, properties,  method = None):
 
     if "g-eigenvectors" in properties:
         G_evecs = properties["g-eigenvectors"]
-        interface.log.info("\nMagnetic g-tensor principal axes:")
+        method.log.info("\nMagnetic g-tensor principal axes:")
         for G_evec in G_evecs:
-            interface.log.info("%s", np.array2string(G_evec, precision=6, suppress_small=True))
+            method.log.info("%s", np.array2string(G_evec, precision=6, suppress_small=True))
             
     if "g-factors" in properties:
         ge = interface.g_free_elec
         G_sq = properties["g-factors"]
-        interface.log.info("\nMagnetic g-factors (ge = %s):" % ge)
+        method.log.info("\nMagnetic g-factors (ge = %s):" % ge)
         for G_sq_en in G_sq:
-            interface.log.info("%14.6f, %14.6f, %14.6f" % (G_sq_en[0], G_sq_en[1], G_sq_en[2]))
-            interface.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
-            interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
+            method.log.info("%14.6f, %14.6f, %14.6f" % (G_sq_en[0], G_sq_en[1], G_sq_en[2]))
+            method.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
+            method.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
 
     #SUS
     if "M_av" in properties:
         M_av_all = properties["M_av"]
 
-        interface.log.info("\nPowder_magnetization(Bohr magneton)" )
-        interface.log.info("-----------------------------------")
-        interface.log.info("TEMP(K)   B(T)    M(Bohr magneton)")
-        interface.log.info("-----------------------------------")
+        method.log.info("\nPowder_magnetization(Bohr magneton)" )
+        method.log.info("-----------------------------------")
+        method.log.info("TEMP(K)   B(T)    M(Bohr magneton)")
+        method.log.info("-----------------------------------")
         for  I in range(len(T_powder_M)):
             T = T_powder_M[I]
             for K in range(len(Bs_powder_M)):
                 Bs = Bs_powder_M[K]
-                interface.log.info("%6.2f  %8.2f %14.6f " % (T, Bs, M_av_all[I,K]))
+                method.log.info("%6.2f  %8.2f %14.6f " % (T, Bs, M_av_all[I,K]))
 
     if "chi_av" in properties:
         chi_av_all = properties["chi_av"]
 
-        interface.log.info("\nPowder_susceptibility(cm3/mol)" )
-        interface.log.info("--------------------------------------------")
-        interface.log.info("TEMP(K)   B(T)         X_av          X_av*T")
-        interface.log.info("--------------------------------------------")
+        method.log.info("\nPowder_susceptibility(cm3/mol)" )
+        method.log.info("--------------------------------------------")
+        method.log.info("TEMP(K)   B(T)         X_av          X_av*T")
+        method.log.info("--------------------------------------------")
 
         for I in range(len(T_powder_chi)):
             T = T_powder_chi[I]
             for K in range(len(Bs_powder_chi)):
                 Bs = Bs_powder_chi[K]
-                interface.log.info("%6.2f  %8.2f %14.6f %14.6f" % (T, Bs, chi_av_all[I,K],chi_av_all[I,K]*T))
+                method.log.info("%6.2f  %8.2f %14.6f %14.6f" % (T, Bs, chi_av_all[I,K],chi_av_all[I,K]*T))
 
     if "M_xyz_all" in properties:
         M_xyz_all = properties["M_xyz_all"]
 
-        interface.log.info("\nMagnetization vector (Bohr magneton) in B vector= %s",B_vec_M)
-        interface.log.info("--------------------------------------------------------")
-        interface.log.info("TEMP(K)   B(T)          Mx           My           Mz")
-        interface.log.info("--------------------------------------------------------")
+        method.log.info("\nMagnetization vector (Bohr magneton) in B vector= %s",B_vec_M)
+        method.log.info("--------------------------------------------------------")
+        method.log.info("TEMP(K)   B(T)          Mx           My           Mz")
+        method.log.info("--------------------------------------------------------")
     
         for I in range(len(T_vec_M)):
             T = T_vec_M[I]
             for K in range(len(Bs_vec_M)):
                 Bs = Bs_vec_M[K]
-                interface.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, M_xyz_all[I,K,0],M_xyz_all[I,K,1],M_xyz_all[I,K,2]))
+                method.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, M_xyz_all[I,K,0],M_xyz_all[I,K,1],M_xyz_all[I,K,2]))
 
     if "chi_T_eval_all" in properties:
         chi_T_eval_all = properties["chi_T_eval_all"]
 
-        interface.log.info("Susceptibility tensor X*T (cm3K/mol) in B vector= %s", B_vec_chi)
-        interface.log.info("\nEigenvalue of Susceptibility tensor * T (cm3K/mol)" )
-        interface.log.info("--------------------------------------------------------")
-        interface.log.info("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
-        interface.log.info("--------------------------------------------------------")
+        method.log.info("Susceptibility tensor X*T (cm3K/mol) in B vector= %s", B_vec_chi)
+        method.log.info("\nEigenvalue of Susceptibility tensor * T (cm3K/mol)" )
+        method.log.info("--------------------------------------------------------")
+        method.log.info("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
+        method.log.info("--------------------------------------------------------")
     
         for I in range(len(T_vec_chi)):
             T = T_vec_chi[I]
             for K in range(len(Bs_vec_chi)):
                 Bs = Bs_vec_chi[K]
-                interface.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, chi_T_eval_all[I,K,0],chi_T_eval_all[I,K,1],chi_T_eval_all[I,K,2]))
+                method.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, chi_T_eval_all[I,K,0],chi_T_eval_all[I,K,1],chi_T_eval_all[I,K,2]))
 
 
 # magnetic dipole moment in microstates basis without spin-orbit coupling
