@@ -280,8 +280,8 @@ def compute_exciton_analysis(interface, trdm, initial_state=1, target_state=2, o
     fmt= lambda x: f"{float(x): .3f}"
     rh_str = np.array2string(exciton['rh'], formatter={'float_kind': fmt})
     re_str = np.array2string(exciton['re'], formatter={'float_kind': fmt})
-    interface.log.info("   Mean position of hole:            %s"     % rh_str)
-    interface.log.info("   Mean position of electron:        %s"     % re_str)
+    interface.log.info("   Mean position of hole [Ang]:       %s"     % rh_str)
+    interface.log.info("   Mean position of electron [Ang]:   %s"     % re_str)
     interface.log.info("   Linear e-h distance [Ang]:        % .6f"  % exciton['d_lin'])
     interface.log.info("   Hole size [Ang]:                  % .6f"  % exciton['sigma_h'])
     interface.log.info("   Electron size [Ang]:              % .6f"  % exciton['sigma_e'])
