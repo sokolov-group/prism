@@ -120,7 +120,7 @@ def print_header(nevpt):
     nevpt.log.info("Spin–orbit coupling:                               %s" % str(nevpt.soc))
     nevpt.log.info("G-tensor:                                          %s" % str(nevpt.gtensor))
     if nevpt.gtensor:
-        nevpt.log.info("G-tensor origin:                                   %s" % str(nevpt.gtensor_origin_type))
+        nevpt.log.info("G-tensor origin:                                   %s" % str(nevpt.magnetic_origin_type))
         nevpt.log.info("G-tensor target state:                             %s" % str(nevpt.gtensor_target_state))
 
     if nevpt.shift_type_p1p is not None:
@@ -144,6 +144,7 @@ def print_header(nevpt):
         nevpt.log.info("Projector for the semi-internal amplitudes:        %s" % nevpt.semi_internal_projector)
 
     nevpt.log.info("\nEinsum Backend:                                    %s" % nevpt.interface.einsum_backend)
+
 
 def print_results(nevpt):
 
@@ -186,85 +187,9 @@ def print_results(nevpt):
     if "osc_strengths_full" in nevpt.properties:
         trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full"])
 
-    if "g-eigenvectors" in nevpt.properties:
-        G_evecs = nevpt.properties["g-eigenvectors"]
-        nevpt.interface.log.info("\nMagnetic g-tensor principal axes:")
-        for G_evec in G_evecs:
-            nevpt.interface.log.info("%s", np.array2string(G_evec, precision=6, suppress_small=True))
-    if "g-factors" in nevpt.properties:
-        ge = nevpt.interface.g_free_elec
-        G_sq = nevpt.properties["g-factors"]
-        nevpt.interface.log.info("\nMagnetic g-factors (ge = %s):" % ge)
-        for G_sq_en in G_sq:
-            nevpt.interface.log.info("%14.6f, %14.6f, %14.6f" % (G_sq_en[0], G_sq_en[1], G_sq_en[2]))
-            nevpt.interface.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
-            nevpt.interface.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
-
-    #SUS
-    if "M_av" in nevpt.properties:
-        M_av_all = nevpt.properties["M_av"]
-        Bs_list = nevpt.Bs_powder_M
-        T_list  = nevpt.T_powder_M
-        nevpt.interface.log.info("\nPowder_magnetization(Bohr magneton)" )
-        nevpt.interface.log.info("-----------------------------------")
-        nevpt.interface.log.info("TEMP(K)   B(T)    M(Bohr magneton)")
-        nevpt.interface.log.info("-----------------------------------")
-        for  I in range(len(T_list)):
-            T = T_list[I]
-            for K in range(len(Bs_list)):
-                Bs = Bs_list[K]
-                nevpt.interface.log.info("%6.2f  %8.2f %14.6f " % (T, Bs, M_av_all[I,K]))
-
-    if "chi_av" in nevpt.properties:
-        chi_av_all = nevpt.properties["chi_av"]
-        Bs_list = nevpt.Bs_powder_chi
-        T_list  = nevpt.T_powder_chi
-
-        nevpt.interface.log.info("\nPowder_susceptibility(cm3/mol)" )
-        nevpt.interface.log.info("--------------------------------------------")
-        nevpt.interface.log.info("TEMP(K)   B(T)         X_av          X_av*T")
-        nevpt.interface.log.info("--------------------------------------------")
-
-        for I in range(len(T_list)):
-            T = T_list[I]
-            for K in range(len(Bs_list)):
-                Bs = Bs_list[K]
-                nevpt.interface.log.info("%6.2f  %8.2f %14.6f %14.6f" % (T, Bs, chi_av_all[I,K],chi_av_all[I,K]*T))
-
-    if "M_xyz_all" in nevpt.properties:
-        M_xyz_all = nevpt.properties["M_xyz_all"]
-        B_vec = nevpt.B_vec_M
-        Bs_list = nevpt.Bs_vec_M
-        T_list  = nevpt.T_vec_M
-
-        nevpt.interface.log.info("\nMagnetization vector (Bohr magneton) in B vector= %s",B_vec)
-        nevpt.interface.log.info("--------------------------------------------------------")
-        nevpt.interface.log.info("TEMP(K)   B(T)          Mx           My           Mz")
-        nevpt.interface.log.info("--------------------------------------------------------")
-    
-        for I in range(len(T_list)):
-            T = T_list[I]
-            for K in range(len(Bs_list)):
-                Bs = Bs_list[K]
-                nevpt.interface.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, M_xyz_all[I,K,0],M_xyz_all[I,K,1],M_xyz_all[I,K,2]))
-
-    if "chi_T_eval_all" in nevpt.properties:
-        chi_T_eval_all = nevpt.properties["chi_T_eval_all"]
-        B_vec = nevpt.B_vec_chi
-        Bs_list = nevpt.Bs_vec_chi
-        T_list  = nevpt.T_vec_chi
-
-        nevpt.interface.log.info("Susceptibility tensor X*T (cm3/mol) in B vector= %s", B_vec)
-        nevpt.interface.log.info("\nEigenvalue of Susceptibility tensor * T (cm3K/mol)" )
-        nevpt.interface.log.info("--------------------------------------------------------")
-        nevpt.interface.log.info("TEMP(K)   B(T)         X1*T         X2*T         X3*T")
-        nevpt.interface.log.info("--------------------------------------------------------")
-    
-        for I in range(len(T_list)):
-            T = T_list[I]
-            for K in range(len(Bs_list)):
-                Bs = Bs_list[K]
-                nevpt.interface.log.info("%6.2f  %8.2f %14.6f %12.6f %12.6f" % (T, Bs, chi_T_eval_all[I,K,0],chi_T_eval_all[I,K,1],chi_T_eval_all[I,K,2]))
+    if "magnetic_properties" in nevpt.properties:
+        from prism.libsoc import magnetic
+        magnetic.print_mag_properties(nevpt.interface, nevpt.properties,  method = nevpt)
 
 
 def analyze(nevpt, weight_cutoff=0.01):

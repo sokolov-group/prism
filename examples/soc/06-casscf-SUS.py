@@ -1,5 +1,5 @@
 '''
-SOC CASSCF calculation for ZnH
+SOC CASSCF calculation for ZnH magnetic susceptibility and  magnetization
 '''
 
 import numpy as np
@@ -41,4 +41,31 @@ mc.analyze()
 
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-interface.run_soc("x2c-1")
+interface.soc = "bp"
+interface.mag_av = True
+interface.sus_av = True
+interface.mag_vec = True
+interface.sus_tensor = True
+interface.step_h_s = 0.001 
+
+Bs_list = []
+for i in range(15):
+    H = i * 0.5
+    Bs_list.append(H)
+
+T_list = []
+for i in range(21):
+    T = 14.75 * i + 5
+    T_list.append(T)
+
+interface.Bs_powder_M = Bs_list 
+interface.T_powder_M = [1.8]
+interface.T_powder_chi = T_list
+interface.Bs_powder_chi = [0.1]
+interface.B_vec_M = [0,0,1]
+interface.Bs_vec_M = Bs_list 
+interface.T_vec_M = [1.8]
+interface.B_vec_chi = [0,0,1]
+interface.Bs_vec_chi = [0.1]
+interface.T_vec_chi = [5,100,200,250]
+interface.run_soc()

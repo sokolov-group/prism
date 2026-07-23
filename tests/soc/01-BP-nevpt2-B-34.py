@@ -22,6 +22,7 @@
 import unittest
 import numpy as np
 import math
+from pathlib import Path
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
@@ -74,6 +75,10 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(mc.e_cas,  -2.57542676733465, 5)
 
     def test_prism(self):
+        socutils_dir = Path(prism.__file__).parent / "socutils"
+        if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
+            print("\nsocutilis is not available. Skip soc test")
+            self.skipTest('socutilis is not available')
 
         e_tot, e_corr, osc = nevpt.kernel()
 
