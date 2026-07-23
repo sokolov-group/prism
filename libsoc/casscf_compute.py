@@ -10,6 +10,8 @@ def compute_somf_soc(interface):
     '''
     Calculate SOC-CASSCF
     '''
+    
+    interface.mol.max_memory = interface.max_memory_soc
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     wfn = interface.ref_wfn
