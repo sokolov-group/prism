@@ -58,8 +58,6 @@ def diagonalize_eff_H(method):
 
     e_diag = method.e_tot
     t1 = method.t1
-    # t1_0 = method.t1_0
-    t1_ccee = method.t1_0
 
     # Einsum definition from kernel
     einsum = method.interface.einsum
@@ -71,8 +69,6 @@ def diagonalize_eff_H(method):
 
     h_eff = np.diag(e_diag)
     dim = h_eff.shape[0]
-
-    # t1_ccee = t1_0
 
     ## One-electron integrals
     h_ca = method.h1eff.ca
