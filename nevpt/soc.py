@@ -19,11 +19,13 @@
 #
 
 import numpy as np
-
 from prism.libsoc import general_somf
 from prism.libsoc import magnetic
 
 def state_interaction_soc(method):
+    '''
+    Calculate SOC-NEVPT2 or SOC-QDNEVPT2
+    '''
 
     method.interface.mol.max_memory = method.interface.max_memory_soc
 
@@ -69,7 +71,7 @@ def state_interaction_soc(method):
 
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
-        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms, method.soc, method.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.soc, method.verbose)
     
     else:    
         method.log.info("Apply S_plus due to Ms=0...")
@@ -94,7 +96,7 @@ def state_interaction_soc(method):
         # Calculate RDM_aabb_plus
         rdm_aabb_plus = method.make_rdm1s(wfn_plus, wfn_ref_nelecas_plus)
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms1(method.interface, method.e_tot, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, method.soc, method.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.soc, method.verbose)
 
 
 
@@ -117,6 +119,9 @@ def state_interaction_soc(method):
     
 
 def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
+    '''
+    Transform rdm_sf into n_micro_states basis
+    '''
 
     evec_soc = method.h_evec_soc
     nstate = len(method.spin_mult)
@@ -196,6 +201,12 @@ def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
 
 
 def compute_magnetic_properties(method, rdm_sf):
+    '''
+    Calculate SOC-NEVPT2 or SOC-QDNEVPT2 magnetic_properties
+    '''
+
+    properties_mag = {}                      # Dictionary to store computed magnetic properties
+    properties_mag["magnetic_properties"] = True
 
     nstate = len(method.spin_mult)
     en_soc = method.e_tot.copy()
@@ -205,79 +216,9 @@ def compute_magnetic_properties(method, rdm_sf):
     for i in range(nstate):
         S.append(float((method.spin_mult[i] - 1) / 2))
 
-    # Calculate magnetic dipole moment without spin-orbit coupling
-    Mu_sf = magnetic.mag_dip(method.interface, rdm_sf, S, origin_type = method.gtensor_origin_type)
-    Mu = np.einsum('ai,kib,bj->kaj',np.conj(h_evec_soc).T, Mu_sf, h_evec_soc)
+    properties_mag = magnetic.compute_properties(method.interface, rdm_sf, en_soc, h_evec_soc, S,  method = method)
 
-    #g-tensor
-    if method.gtensor:
-        method.log.info("\nCalculating g-tensor...")
-
-        target_state = method.gtensor_target_state
-        if isinstance(target_state, int):
-            target_state = [target_state]
-
-        g_factor = []
-        g_evector = []
-        for I in target_state:
-            g_fac, g_evec = magnetic.gtensor(method.interface, S, Mu, target_index = I )
-            g_factor.append(g_fac)
-            g_evector.append(g_evec)
-
-        method.properties["g-factors"] = g_factor
-        method.properties["g-eigenvectors"] = g_evector
-
-    #magnetic susceptibility
-    if method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor:
-        method.log.info("\nCalculating magnetic susceptibility or magnetization...")
-
-        # Parameter
-        h_s =method.step_h_s
-        method.log.info("h_s= %.2f T" %(h_s))
-
-
-        #Powder data information
-        method.log.info("Import LebedevGrid in pyscf...")
-        Powder_data_xyzw = method.interface.MakeAngularGrid_266()
-        method.log.info("Number of LebedevGrid point: %s" % len(Powder_data_xyzw))
-
-
-        ###Powder magnetization
-        if method.mag_av:
-            Bs_list = method.Bs_powder_M
-            T_list  = method.T_powder_M
-            M_av_all = magnetic.Powder_magnetization(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
-            
-            method.properties["M_av"] = M_av_all
-
-
-        ###Powder susceptibility
-        if method.sus_av:
-            Bs_list = method.Bs_powder_chi
-            T_list  = method.T_powder_chi
-            chi_av_all = magnetic.Powder_susceptibility(method.interface,Powder_data_xyzw,Bs_list,T_list,en_soc,Mu,h_s)
-           
-            method.properties["chi_av"] = chi_av_all
-
-
-        ###Vector magnetization
-        if method.mag_vec:
-            B_vec = method.B_vec_M
-            Bs_list = method.Bs_vec_M
-            T_list  = method.T_vec_M
-            M_xyz_all = magnetic.vector_magnetization(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
-
-            method.properties["M_xyz_all"] = M_xyz_all
-
-
-        ###Tensor  susceptibility
-        if method.sus_tensor:
-            B_vec = method.B_vec_chi
-            Bs_list = method.Bs_vec_chi
-            T_list  = method.T_vec_chi
-            chi_T_eval_all = magnetic.tensor_susceptibility(method.interface,B_vec,Bs_list,T_list,en_soc,Mu,h_s)
-
-            method.properties["chi_T_eval_all"] = chi_T_eval_all
+    return properties_mag
 
 
 

@@ -24,6 +24,10 @@ import numpy as np
 from functools import reduce
 from sympy.physics.quantum.cg import CG
 import prism.lib.logger as logger
+from pathlib import Path
+socutils_dir = Path(__file__).resolve().parent.parent / "socutils"
+if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
+    raise Exception('socutilis is not available. Use "git submodule update --init --recursive" to install it')
 
 # Add python path for socutils:
 prism_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,7 +37,22 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", verbose = 4):
+def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
+    '''
+    Calculate ms!=0 SOC energy(en_soc) and wavefunction(evec_soc) by employing state_interaction 
+    ********
+    INPUT:
+    rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    en (np.array, n): reference energy
+    S (list), spin quantum number of each state without spin-orbit coupling
+    ms (float, should be multiply of 0.5), spin projection quantum number of reference state without spin-orbit coupling
+    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
+    verbose(int): print out level.
+
+    OUTPUT:
+    en_soc(np.array,n_micro_states): SOC energy
+    evec_soc(np.array, n_micro_states*n_micro_states): SOC wavefunction
+    '''
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
@@ -60,7 +79,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     rdm_wigner = np.zeros((nstate,nstate,nmo,nmo), dtype='complex')
     for I in range(nstate):
         for J in range(nstate):
-            cg = CG(S[J], ms[J], 1, 0, S[I], ms[I]).doit()
+            cg = CG(S[J], ms, 1, 0, S[I], ms).doit()
             cg = float(cg)
             if np.abs(cg) > 1e-5:               
                 T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
@@ -131,7 +150,22 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc = "breit-pauli", v
     
     return en_soc, evec_soc
 
-def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_plus, soc = "breit-pauli", verbose = 4):
+def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, verbose = 4):
+    '''
+    Calculate ms=0 SOC energy(en_soc) and wavefunction(evec_soc) by employing state_interaction 
+    ********
+    INPUT:
+    rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): ms=0 spin alpha-alpha and beta-beta 1st rdm for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    rdm_aabb_plus(np.array, 2*nstate*nstate*nmo*nmo): ms=1 spin alpha-alpha and beta-beta 1st rdm for same spin coupling
+    en (np.array, n): reference energy
+    S (list), spin quantum number of each state without spin-orbit coupling
+    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
+    verbose(int): print out level.
+
+    OUTPUT:
+    en_soc(np.array,n_micro_states): SOC energy
+    evec_soc(np.array, n_micro_states*n_micro_states): SOC wavefunction
+    '''
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
     nmo = interface.nmo
@@ -158,14 +192,14 @@ def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_
     for I in range(nstate):
         for J in range(nstate):
             if S[I] == S[J]:
-                cg = CG(S[J], ms_plus[J], 1, 0, S[I], ms_plus[I]).doit()
+                cg = CG(S[J], 1, 1, 0, S[I], 1).doit() #ms_plus should be 1
                 cg = float(cg)
                 if np.abs(cg) > 1e-5:               
                     T_z = 1/np.sqrt(2) * (rdm_aabb_plus[0,I,J] - rdm_aabb_plus[1,I,J]) / cg
                     rdm_wigner[I,J] = T_z 
             
             else:
-                cg = CG(S[J], ms[J], 1, 0, S[I], ms[I]).doit()
+                cg = CG(S[J], 0, 1, 0, S[I], 0).doit() #ms should be 0
                 cg = float(cg)
                 if np.abs(cg) > 1e-5:               
                     T_z = 1/np.sqrt(2) * (rdm_aabb[0,I,J] - rdm_aabb[1,I,J]) / cg
@@ -237,6 +271,17 @@ def state_interaction_soc_ms1(interface, en, rdm_aabb, S, ms, rdm_aabb_plus, ms_
 
 
 def get_soc_integrals(interface, soc, rdm1ao):
+    '''
+    Calculate SOC MO Hamiltionian (hsoc)  
+    ********
+    INPUT:
+    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
+    rdm1ao(np.array, nmo*nmo): spin-free 1st rdm in atomic orbital basis, can be obtained by (rdm_aabb[0,I,I] + rdm_aabb[1,I,I]) / nstate 
+    verbose(int): print out level.
+
+    OUTPUT:
+    hsoc(p.array, 3*nmo*nmo): SOC MO Hamiltionian
+    '''
     mo = interface.mo
     nmo = interface.nmo
     nao = interface.mo.shape[1]

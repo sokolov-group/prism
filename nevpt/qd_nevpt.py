@@ -347,8 +347,9 @@ def compute_properties(method):
         # Call make_rdm1 function directly to bypass including SOC effects
         rdm_sf = make_rdm1(method)
 
-        # Compute g-values
-        soc.compute_magnetic_properties(method, rdm_sf)
+        # Compute compute_magnetic_properties
+        properties_mag = soc.compute_magnetic_properties(method, rdm_sf)
+        method.properties.update(properties_mag)
 
 
 def determine_spin_mult(method):

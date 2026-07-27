@@ -27,6 +27,7 @@ import pyscf.scf
 import pyscf.mcscf
 import prism.interface
 import prism.nevpt
+from pathlib import Path
 
 np.set_printoptions(suppress=True)
 
@@ -69,7 +70,7 @@ nevpt.soc = "Breit-Pauli" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 nevpt.verbose = 1
 nevpt.gtensor = True
 nevpt.gtensor_target_state = 1
-nevpt.gtensor_origin_type = 'GIAO' 
+nevpt.magnetic_origin_type = 'GIAO' 
 
 
 class KnownValues(unittest.TestCase):
@@ -79,7 +80,10 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(mc.e_cas,  -2.02048893196798, 5)
 
     def test_prism(self):
-
+        socutils_dir = Path(prism.__file__).parent / "socutils"
+        if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
+            print("\nsocutilis is not available. Skip soc test")
+            self.skipTest('socutilis is not available')
         e_tot, e_corr, osc = nevpt.kernel()
 
         #Prism
