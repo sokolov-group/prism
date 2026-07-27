@@ -22,6 +22,7 @@
 import numpy as np
 from prism.nevpt import integrals
 from prism.tools import trans_prop
+from prism.solvent import pol_embed
 import prism.lib.logger as logger
 
 def kernel(nevpt):
@@ -174,11 +175,19 @@ def print_results(nevpt):
         if not nevpt.soc:
             deg = nevpt.spin_mult[p]
         de = nevpt.e_tot[p] - e_gs
+        
+        if nevpt.pe is not None and p > 0 and nevpt.pe_method == "pert":
+            ptss = nevpt.properties["ptss_corrections"]
+            ptlr = nevpt.properties["ptlr_corrections"]
+
+            de += (ptss[p - 1] + ptlr[p - 1]) 
+        
         de_ev = de * h2ev
+    
         de_cm = de * h2cm
         if p == 0 or abs(de) < 1e-5:
             nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
-        else:
+        else: 
             de_nm = 10000000 / de_cm
             nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
 
@@ -186,11 +195,17 @@ def print_results(nevpt):
 
     if "osc_strengths_full" in nevpt.properties:
         trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full"])
-
+        
+    if "osc_strengths_full_uncorrected" in nevpt.properties:
+        nevpt.log.info('\nUncorrected (no ptSS and no ptLR) Oscillator Strengths below:')
+        trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full_uncorrected"])
+        
+    if "ptss_corrections" and "ptlr_corrections" in nevpt.properties and nevpt.verbose >= 5:
+        pol_embed.print_pe_results(nevpt, nevpt.properties["ptss_corrections"], nevpt.properties["ptlr_corrections"])
+        
     if "magnetic_properties" in nevpt.properties:
         from prism.libsoc import magnetic
         magnetic.print_mag_properties(nevpt.interface, nevpt.properties,  method = nevpt)
-
 
 def analyze(nevpt, weight_cutoff=0.01):
 
@@ -207,3 +222,5 @@ def analyze(nevpt, weight_cutoff=0.01):
     if nevpt.method_type == "qd":
         from prism.nevpt import qd_nevpt
         qd_nevpt.analyze_eigenvectors(nevpt, weight_cutoff=weight_cutoff)
+            
+    

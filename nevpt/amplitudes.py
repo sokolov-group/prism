@@ -131,7 +131,7 @@ def compute_t1_p1(nevpt, rdms):
     ## V tensor: - < Psi_0 | a^{\dag}_I a^{\dag}_J a_X a_A V | Psi_0>
     V1_p1 =- einsum('JXIA->IJAX', v_cace, optimize = einsum_type).copy()
     V1_p1 += 1/2 * einsum('JxIA,Xx->IJAX', v_cace, rdm_ca, optimize = einsum_type)
-
+    
     ## Compute denominators
     d_ap = (e_extern[:,None] + evals).reshape(-1)
     d_ij = (e_core[:,None] + e_core).reshape(-1)

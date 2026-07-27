@@ -208,24 +208,62 @@ def compute_properties(method):
         # Calculate oscillator strengths for transitions from the first state
         osc_str_full=[]
         osc_str = np.zeros(len(method.e_tot)-1)
+        
+        # Get perturbative energy contributions if needed
+        if (method.pe is not None and method.pe_method == 'pert'):
+            from prism.solvent import pol_embed
+            
+            osc_str_full_uncorrected = []
+            ptss, ptlr = pol_embed.get_pert_pe_corrections(method, rdms = rdm_mo)
+            method.properties["ptss_corrections"] = ptss
+            method.properties["ptlr_corrections"] = ptlr
+            
+        # Uncorrected PE data
+        if (method.pe is not None and method.pe_method == 'pert' and method.verbose >= 5):
+                osc_str_full_uncorrected = []
+            
         for gs_index in range(deg_gs):
             e_diff = method.e_tot - method.e_tot[gs_index]
             e_diff = e_diff[gs_index+1:]
-            osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[ gs_index, gs_index+1:])
+        
+            if (method.pe is not None and method.pe_method == 'pert'):
+                e_diff_uncorrected = e_diff
+                    
+                ptss, ptlr = pol_embed.get_pert_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                e_diff = [e_diff[i] + (ptss[i]) + (ptlr[i]) for i in range(len(ptss))]
+                
+                if method.verbose >= 5:
+                    osc_uncorrected = trans_prop.osc_strength(method.interface, e_diff_uncorrected, rdm_mo[gs_index, gs_index+1:])
+                    osc_str_full_uncorrected.append(osc_uncorrected)
+                
+            osc = trans_prop.osc_strength(method.interface, e_diff, rdm_mo[gs_index, gs_index+1:])
+            
             osc_str_full.append(osc)
             osc_str[gs_index:] += osc 
 
         method.properties["osc_strengths"] = osc_str
-
+    
         # Compute oscillator strengths starting from each state
         if method.verbose >= 5:
+                
             for gs_index in range(deg_gs, len(method.e_tot)):  
                 e_diff = method.e_tot - method.e_tot[gs_index]
                 e_diff = e_diff[gs_index+1:]
+                
+                if (method.pe is not None and method.pe_method == 'pert'):
+                    
+                    e_diff_uncorrected = e_diff
+                    
+                    ptss, ptlr = pol_embed.get_pert_pe_corrections(method, state = gs_index, rdms = rdm_mo)
+                    e_diff = [e_diff[i] + (ptss[i]) + (ptlr[i]) for i in range(len(ptss))]
+                    
+                    osc_uncorrected = trans_prop.osc_strength(method.interface, e_diff_uncorrected, rdm_mo[gs_index, gs_index+1:])
+                    osc_str_full_uncorrected.append(osc_uncorrected)
+ 
                 osc_str_full.append(trans_prop.osc_strength(method.interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
 
             method.properties["osc_strengths_full"] = osc_str_full
-
+            
     # Compute magnetic properties
     if (method.gtensor or method.mag_av or  method.sus_av or  method.mag_vec or  method.sus_tensor) and method.soc:
         from prism.nevpt import soc
@@ -305,7 +343,7 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None):
         L_t1_ccae = t1[I].ccae
         L_t1_ccaa = t1[I].ccaa
         L_t1_caee = t1[I].caee 
-        L_t1_aaee = t1[I].aaee
+        L_t1_aaee = t1[I].aaee 
             
         for ind_J, J in enumerate(R_list): 
             

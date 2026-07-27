@@ -282,6 +282,28 @@ class PYSCF:
         self.contr_coeff = None
 
         self.reference_df = getattr(mc, "with_df", None)
+            
+        # Solvent potential
+        if hasattr(mf, "with_solvent"):
+            self.log.info("Solvent method detected in mf object...")
+            
+            solvent_obj = mf.with_solvent
+            solvent_name = solvent_obj.__class__.__name__.lower()
+            
+            ### TODO: Look into solvent_name for other solvent 
+            
+            if solvent_name == 'polembed':
+                self.log.info("Polarizable Embedding detected in mf object...")
+            
+            if hasattr(mf.with_solvent, "eef"):
+                if mf.with_solvent.eef == True:
+                    self.log.info("EEF enabled in solvent object, updating dipole moments...")
+                    self.dip_mom_ao = np.array(mf.with_solvent.effective_dipole_operator())
+            
+        if getattr(mc, 'with_df', None):
+            self.reference_df = mc.with_df
+        else:
+            self.reference_df = None
 
         # Compute state-averaged 1-RDM with respect to the reference manifold
         ref_rdm1 = np.zeros((mc.ncas, mc.ncas))

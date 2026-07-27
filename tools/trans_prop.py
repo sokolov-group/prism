@@ -53,7 +53,7 @@ def osc_strength(interface, e_diff, trdm_mo):
         osc_x = (2/3)*(e_diff[state])*(np.conj(dip_evec_x) * dip_evec_x)
         osc_y = (2/3)*(e_diff[state])*(np.conj(dip_evec_y) * dip_evec_y)
         osc_z = (2/3)*(e_diff[state])*(np.conj(dip_evec_z) * dip_evec_z)
-
+        
         osc_total.append((osc_x + osc_y + osc_z).real)
         
     return (np.array(osc_total))
@@ -85,6 +85,8 @@ def print_osc_strength(interface, osc_str):
     # Print header and transitions
     separator = "-" * total_line_width
     interface.log.info("\n\nOscillator Strengths: state i -> state f")
+    if hasattr(interface, "v_pe"):
+        interface.log.info("including PE ptSS and ptLR corrections...")
     interface.log.info(separator)
 
     # Final print

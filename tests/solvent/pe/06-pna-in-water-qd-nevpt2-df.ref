@@ -1,0 +1,448 @@
+#INFO: **** input file is /users/PAS0291/jdserna22/repos/prism/tests/solvent/pe/global_test.py ****
+#!/usr/bin/env python
+
+import numpy as np
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import pyscf.solvent
+from pyscf.tools import molden
+import prism.interface
+import prism.nevpt
+import sys
+
+from pyscf.solvent.pol_embed import PolEmbed
+
+mol = pyscf.gto.Mole()
+mol.atom = '''
+N     29.660000    27.490000    28.690000
+C     29.850000    28.660000    29.350000
+C     31.000000    28.870000    30.210000
+C     31.170000    30.170000    30.870000
+C     30.170000    31.240000    30.650000
+C     29.000000    31.020000    29.780000
+C     28.840000    29.750000    29.140000
+N     30.340000    32.580000    31.300000
+O     31.300000    32.810000    32.020000
+O     29.510000    33.460000    31.110000
+H     30.320000    26.750000    28.790000
+H     28.860000    27.380000    28.090000
+H     31.730000    28.090000    30.370000
+H     32.020000    30.340000    31.520000
+H     28.260000    31.810000    29.640000
+H     27.980000    29.580000    28.490000
+'''
+mol.basis = "cc-pVDZ"
+mol.verbose = 4
+mol.build()
+
+# Polarizable Embedding
+pe_options = {"potfile": "potential_files/pna-water-3.5-angstrom.pot"} # Given .pot file
+pe = PolEmbed(mol, pe_options)
+pe.verbose = 3
+
+# RHF calculation as guess for CASSCF
+mf = pyscf.scf.RHF(mol)
+mf = pyscf.solvent.PE(mf, pe).density_fit('cc-pvdz-jkfit')
+
+mf.kernel()
+
+# CAS
+n_states = 4
+weights = np.ones(n_states)/n_states
+
+mc = pyscf.mcscf.CASSCF(mf, 4,4).state_average_(weights).density_fit('cc-pvdz-jkfit')
+mc = pyscf.solvent.PE(mc, pe)
+
+mc.kernel(mf.mo_coeff)
+
+# QD-NEVPT2
+interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum').density_fit('cc-pvdz-ri')
+nevpt = prism.nevpt.NEVPT(interface)
+
+nevpt.method_type = "qd"
+nevpt.pe = pe  # Needed to compute ptss and ptlr
+
+nevpt.s_thresh_singles = 1e-6
+nevpt.s_thresh_doubles = 1e-6
+nevpt.verbose = 4
+
+nevpt.keep_amplitudes = True
+
+e_tot, e_corr, osc = nevpt.kernel()
+
+print('QD-NEVPT2 Correlation Energies: ')
+print(e_corr)#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='pitzer-login01.hpc.osc.edu', release='5.14.0-570.119.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Mon Jun 1 07:14:38 EDT 2026', machine='x86_64')  Threads 12
+Python 3.10.13 (main, Sep 11 2023, 13:44:35) [GCC 11.2.0]
+numpy 2.2.6  scipy 1.15.3  h5py 3.16.0
+Date: Fri Jul 17 13:43:25 2026
+PySCF version 2.9.0
+PySCF path  /users/PAS0291/jdserna22/repos/pyscf
+GIT ORIG_HEAD f9a3aced519f6fdfdb86988da6498f6fcd315d6d
+GIT HEAD (branch pe_2025) d5098975b073556328b35f39858c4e352b8b3da6
+
+[ENV] PYSCF_TMPDIR /fs/scratch/PAS1963/jserna
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 16
+[INPUT] num. electrons = 72
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 N     29.660000000000  27.490000000000  28.690000000000 AA   56.049276854600  51.948571164294  54.216242513772 Bohr   0.0
+[INPUT]  2 C     29.850000000000  28.660000000000  29.350000000000 AA   56.408324818267  54.159550730035  55.463461755985 Bohr   0.0
+[INPUT]  3 C     31.000000000000  28.870000000000  30.210000000000 AA   58.581509861517  54.556393216193  57.088626223111 Bohr   0.0
+[INPUT]  4 C     31.170000000000  30.170000000000  30.870000000000 AA   58.902763302693  57.013037178128  58.335845465323 Bohr   0.0
+[INPUT]  5 C     30.170000000000  31.240000000000  30.650000000000 AA   57.013037178128  59.035044131413  57.920105717919 Bohr   0.0
+[INPUT]  6 C     29.000000000000  31.020000000000  29.780000000000 AA   54.802057612387  58.619304384008  56.276043989548 Bohr   0.0
+[INPUT]  7 C     28.840000000000  29.750000000000  29.140000000000 AA   54.499701432456  56.219352205811  55.066619269826 Bohr   0.0
+[INPUT]  8 N     30.340000000000  32.580000000000  31.300000000000 AA   57.334290619304  61.567277138330  59.148427698886 Bohr   0.0
+[INPUT]  9 O     31.300000000000  32.810000000000  32.020000000000 AA   59.148427698886  62.001914146980  60.509030508573 Bohr   0.0
+[INPUT] 10 O     29.510000000000  33.460000000000  31.110000000000 AA   55.765817935915  63.230236127947  58.789379735219 Bohr   0.0
+[INPUT] 11 H     30.320000000000  26.750000000000  28.790000000000 AA   57.296496096813  50.550173832115  54.405215126228 Bohr   0.0
+[INPUT] 12 H     28.860000000000  27.380000000000  28.090000000000 AA   54.537495954948  51.740701290591  53.082406839033 Bohr   0.0
+[INPUT] 13 H     31.730000000000  28.090000000000  30.370000000000 AA   59.961009932449  53.082406839033  57.390982403041 Bohr   0.0
+[INPUT] 14 H     32.020000000000  30.340000000000  31.520000000000 AA   60.509030508573  57.334290619304  59.564167446291 Bohr   0.0
+[INPUT] 15 H     28.260000000000  31.810000000000  29.640000000000 AA   53.403660280209  60.112188022415  56.011482332108 Bohr   0.0
+[INPUT] 16 H     27.980000000000  29.580000000000  28.490000000000 AA   52.874536965330  55.898098764635  53.838297288859 Bohr   0.0
+
+nuclear repulsion = 481.337584962475
+number of shells = 68
+number of NR pGTOs = 302
+number of NR cGTOs = 170
+basis = cc-pVDZ
+ecp = {}
+CPU time:         2.73
+
+
+******** <class 'pyscf.df.df_jk.DFPolEmbedRHF'> ********
+method = DFPolEmbedRHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = False
+chkfile to save SCF result = /fs/scratch/PAS1963/jserna/tmpc6_j53_4
+max_memory 4000 MB (current use 116 MB)
+Set gradient conv threshold to 3.16228e-05
+Initial guess from minao.
+******** <class 'pyscf.df.df.DF'> ********
+auxbasis = cc-pvdz-jkfit
+max_memory = 4000
+Solvent Energy = 4.2171552807001e-05
+init E= -491.410307939549
+  HOMO = -0.16515481256748  LUMO = -0.0329964068710874
+Solvent Energy = -0.00371761891953654
+cycle= 1 E= -488.868563234665  delta_E= 2.54  |g|= 1.18  |ddm|= 4.26
+  HOMO = -0.340837404491411  LUMO = -0.0159916658750502
+Solvent Energy = -0.000122727666384194
+cycle= 2 E= -489.041009093237  delta_E= -0.172  |g|= 0.952  |ddm|= 1.54
+  HOMO = -0.306744823510131  LUMO = 0.0476340551893329
+Solvent Energy = -0.000587516695696382
+cycle= 3 E= -489.201403184862  delta_E= -0.16  |g|= 0.114  |ddm|= 0.691
+  HOMO = -0.299977684560288  LUMO = 0.0616705971507708
+Solvent Energy = -0.000786220898661264
+cycle= 4 E= -489.206495118281  delta_E= -0.00509  |g|= 0.0483  |ddm|= 0.218
+  HOMO = -0.305777989164454  LUMO = 0.0632926729760238
+Solvent Energy = -0.000474373069336067
+cycle= 5 E= -489.207391588918  delta_E= -0.000896  |g|= 0.0155  |ddm|= 0.0639
+  HOMO = -0.3068731796653  LUMO = 0.0634374687266322
+Solvent Energy = -0.000478954309031785
+cycle= 6 E= -489.207547597846  delta_E= -0.000156  |g|= 0.00554  |ddm|= 0.0331
+  HOMO = -0.30680000449925  LUMO = 0.0644003593136101
+Solvent Energy = -0.000448719088320034
+cycle= 7 E= -489.207576407353  delta_E= -2.88e-05  |g|= 0.00255  |ddm|= 0.0148
+  HOMO = -0.307094257060482  LUMO = 0.0646194414772243
+Solvent Energy = -0.000441023842485481
+cycle= 8 E= -489.207581182663  delta_E= -4.78e-06  |g|= 0.000737  |ddm|= 0.00596
+  HOMO = -0.307167577232618  LUMO = 0.0646488190003855
+Solvent Energy = -0.000438367729861848
+cycle= 9 E= -489.207581809807  delta_E= -6.27e-07  |g|= 0.000351  |ddm|= 0.00211
+  HOMO = -0.307172257521407  LUMO = 0.0646712861001154
+Solvent Energy = -0.000436559989962018
+cycle= 10 E= -489.207581926553  delta_E= -1.17e-07  |g|= 0.000192  |ddm|= 0.000834
+  HOMO = -0.307176831571865  LUMO = 0.0646771213312236
+Solvent Energy = -0.000436339408782434
+cycle= 11 E= -489.207581964426  delta_E= -3.79e-08  |g|= 8.84e-05  |ddm|= 0.000509
+  HOMO = -0.307182066006698  LUMO = 0.064674169281876
+Solvent Energy = -0.000435861315322944
+cycle= 12 E= -489.207581973802  delta_E= -9.38e-09  |g|= 3.99e-05  |ddm|= 0.000262
+  HOMO = -0.307182466986036  LUMO = 0.0646755643368226
+Solvent Energy = -0.000435795876517939
+cycle= 13 E= -489.207581975817  delta_E= -2.01e-09  |g|= 1.59e-05  |ddm|= 0.000139
+  HOMO = -0.307182266980154  LUMO = 0.0646771873239925
+Solvent Energy = -0.000435722825925935
+cycle= 14 E= -489.207581976064  delta_E= -2.47e-10  |g|= 5.58e-06  |ddm|= 5.64e-05
+  HOMO = -0.307182738350288  LUMO = 0.0646763764273355
+Solvent Energy = -0.00043574759580868
+Extra cycle  E= -489.207581976081  delta_E= -1.72e-11  |g|= 3.48e-06  |ddm|= 8.69e-06
+converged SCF energy = -489.207581976081
+
+******** <class 'pyscf.solvent._attach_solvent.PolEmbedStateAverageDFCASSCF'> ********
+CAS (2e+2e, 4o), ncore = 34, nvir = 132
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-07
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /fs/scratch/PAS1963/jserna/tmpc6_j53_4
+max_memory 4000 MB (current use 343 MB)
+internal_rotation = False
+******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 4
+pspace_size = 400
+spin = None
+State-average over 4 states with weights [0.25 0.25 0.25 0.25]
+DFCASCI/DFCASSCF: density fitting for JK matrix and 2e integral transformation
+CASCI E = -488.983214836344  S^2 = 1.5000000
+Removing duplication 0.113255878711906, adding E(solvent) = -0.00043574759580868 to total energy:
+    E(CASSCF+solvent) = -489.096906462652
+Set conv_tol_grad to 0.000316228
+macro iter   1 ( 21 JK    4 micro), CASSCF E = -489.002272662550  dE = -1.90578262e-02  S^2 = 1.5000000
+               |grad[o]|=0.102  |ddm|=0.053  |maxRot[o]|=0.313
+Removing duplication 0.108741142053941, adding E(solvent) = -0.00250427364958638 to total energy:
+    E(CASSCF+solvent) = -489.113518078253
+macro iter   2 ( 20 JK    4 micro), CASSCF E = -489.006240652578  dE = -3.96799003e-03  S^2 = 1.5000000
+               |grad[o]|=0.0345  |ddm|=0.156  |maxRot[o]|=0.144
+Removing duplication 0.110344440093223, adding E(solvent) = -0.00198831913377811 to total energy:
+    E(CASSCF+solvent) = -489.118573411805
+macro iter   3 ( 19 JK    4 micro), CASSCF E = -489.007092766487  dE = -8.52113909e-04  S^2 = 1.5000000
+               |grad[o]|=0.0154  |ddm|=0.0544  |maxRot[o]|=0.159
+Removing duplication 0.113720732722114, adding E(solvent) = -0.00159257189449516 to total energy:
+    E(CASSCF+solvent) = -489.122406071104
+macro iter   4 ( 13 JK    4 micro), CASSCF E = -489.003505194585  dE =  3.58757190e-03  S^2 = 1.5000000
+               |grad[o]|=0.00823  |ddm|=0.0177  |maxRot[o]|=0.058
+Removing duplication 0.117868047972043, adding E(solvent) = -0.00133578839070989 to total energy:
+    E(CASSCF+solvent) = -489.122709030948
+macro iter   5 ( 13 JK    4 micro), CASSCF E = -489.002487732299  dE =  1.01746229e-03  S^2 = 1.5000000
+               |grad[o]|=0.00156  |ddm|=0.00294  |maxRot[o]|=0.0131
+Removing duplication 0.118913364102474, adding E(solvent) = -0.00130492135151705 to total energy:
+    E(CASSCF+solvent) = -489.122706017753
+macro iter   6 (  9 JK    3 micro), CASSCF E = -489.002250233518  dE =  2.37498781e-04  S^2 = 1.5000000
+               |grad[o]|=0.000124  |ddm|=0.000181  |maxRot[o]|=0.000859
+Removing duplication 0.119151636521818, adding E(solvent) = -0.00129474265723867 to total energy:
+    E(CASSCF+solvent) = -489.122696612697
+macro iter   7 (  3 JK    1 micro), CASSCF E = -489.002263612326  dE = -1.33788080e-05  S^2 = 1.5000000
+               |grad[o]|=7.49e-05  |ddm|=0.00046  |maxRot[o]|=6.48e-05
+Removing duplication 0.119138386841865, adding E(solvent) = -0.00129769358438508 to total energy:
+    E(CASSCF+solvent) = -489.122699692752
+macro iter   8 (  1 JK    1 micro), CASSCF E = -489.002266568981  dE = -2.95665495e-06  S^2 = 1.5000000
+               |grad[o]|=2.05e-05  |ddm|=0.000504  |maxRot[o]|=    0
+Removing duplication 0.119135415899135, adding E(solvent) = -0.00129802266291943 to total energy:
+    E(CASSCF+solvent) = -489.122700007543
+macro iter   9 (  1 JK    1 micro), CASSCF E = -489.002266586057  dE = -1.70758767e-08  S^2 = 1.5000000
+               |grad[o]|=2.01e-05  |ddm|=0.000503  |maxRot[o]|=    0
+Removing duplication 0.119135398426263, adding E(solvent) = -0.00129802493022129 to total energy:
+    E(CASSCF+solvent) = -489.122700009413
+1-step CASSCF converged in   9 macro (100 JK  26 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.6028941  1.50156417 0.46837862 0.42716311]
+CASSCF energy = -489.122700009413
+CASCI E = -489.122700009413  E(CI) = -2.92151347576964  S^2 = 1.5000000
+CASCI state-averaged energy = -489.002266586057
+CASCI energy for each state
+  State 0 weight 0.25  E = -489.11968682833 S^2 = 0.0000000
+  State 1 weight 0.25  E = -488.993986599874 S^2 = 2.0000000
+  State 2 weight 0.25  E = -488.949826705568 S^2 = 2.0000000
+  State 3 weight 0.25  E = -488.945566210456 S^2 = 2.0000000
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: sa-casscf
+Solvent method detected in mf object...
+Polarizable Embedding detected in mf object...
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 4
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.00000     0.0        1     -489.119686828330      -2.918500294687
+    2       2.00000     1.0        3     -488.993986599874      -2.792800066230
+    3       2.00000     1.0        3     -488.949826705568      -2.748640171924
+    4       2.00000     1.0        3     -488.945566210456      -2.744379676812
+-----------------------------------------------------------------------------------
+
+Importing Pyscf density-fitting objects...
+Initializing fully internally contracted NEVPT...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       qd
+Nuclear repulsion energy:                        481.337584962475
+Number of electrons:                               72
+Number of basis functions:                         170
+Reference wavefunction type:                       sa-casscf
+Number of reference states:                        4
+Number of reference microstates:                   4
+Number of frozen orbitals:                         0
+Number of core orbitals:                           34
+Number of active orbitals:                         4
+Number of external orbitals:                       132
+Number of active electrons:                        [(2, 2), (2, 2), (2, 2), (2, 2)]
+Spin–orbit coupling:                               None
+G-tensor:                                          False
+Reference density fitting?                         True
+Correlation density fitting?                       True
+Temporary directory path:                          /fs/scratch/PAS1963/jserna
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-06
+Overlap truncation parameter (doubles):            1.00e-06
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+******** <class 'pyscf.df.df.DF'> ********
+auxbasis = cc-pvdz-ri
+max_memory = 4000
+Correlation energy [0]:                           -1.160079318254
+
+Computing energy of state #1...
+Reference state active-space energy:              -2.918500294687
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(2, 2)]
+Correlation energy [0']:                          -0.080775550969
+Correlation energy [+1']:                         -0.002097534645
+Correlation energy [-1']:                         -0.008435443341
+Correlation energy [+1]:                          -0.077407723794
+Correlation energy [-1]:                          -0.154977551044
+Correlation energy [+2]:                          -0.003424015000
+Correlation energy [-2]:                          -0.011510045871
+Correlation energy [0]:                           -1.160079318254
+SA-CASSCF reference state total energy:         -489.119686828330
+NEVPT2 correlation energy:                        -1.498707182919
+Total NEVPT2 energy:                            -490.618394011249
+
+Computing energy of state #2...
+Reference state active-space energy:              -2.792800066230
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(2, 2)]
+Correlation energy [0']:                          -0.068734218694
+Correlation energy [+1']:                         -0.002624786899
+Correlation energy [-1']:                         -0.008336970169
+Correlation energy [+1]:                          -0.079898404804
+Correlation energy [-1]:                          -0.166441938059
+Correlation energy [+2]:                          -0.002075113028
+Correlation energy [-2]:                          -0.007494839624
+Correlation energy [0]:                           -1.160079318254
+SA-CASSCF reference state total energy:         -488.993986599874
+NEVPT2 correlation energy:                        -1.495685589532
+Total NEVPT2 energy:                            -490.489672189405
+
+Computing energy of state #3...
+Reference state active-space energy:              -2.748640171924
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(2, 2)]
+Correlation energy [0']:                          -0.067608504693
+Correlation energy [+1']:                         -0.003720753541
+Correlation energy [-1']:                         -0.012399268785
+Correlation energy [+1]:                          -0.084889727442
+Correlation energy [-1]:                          -0.163793385407
+Correlation energy [+2]:                          -0.003060485151
+Correlation energy [-2]:                          -0.009315816713
+Correlation energy [0]:                           -1.160079318254
+SA-CASSCF reference state total energy:         -488.949826705568
+NEVPT2 correlation energy:                        -1.504867259986
+Total NEVPT2 energy:                            -490.454693965555
+
+Computing energy of state #4...
+Reference state active-space energy:              -2.744379676812
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(2, 2)]
+Correlation energy [0']:                          -0.065179727537
+Correlation energy [+1']:                         -0.003134251055
+Correlation energy [-1']:                         -0.009587934421
+Correlation energy [+1]:                          -0.076333070213
+Correlation energy [-1]:                          -0.168855381384
+Correlation energy [+2]:                          -0.002791476237
+Correlation energy [-2]:                          -0.008710155830
+Correlation energy [0]:                           -1.160079318254
+SA-CASSCF reference state total energy:         -488.945566210456
+NEVPT2 correlation energy:                        -1.494671314931
+Total NEVPT2 energy:                            -490.440237525386
+
+Computing the QD-NEVPT2 effective Hamiltonian...
+
+Summary of results for the QD-NEVPT2 calculation with the SA-CASSCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1         -490.618394011249     0.00000000       0.0000                      0.0000               
+    2        3         -490.490814346064     0.12756782       3.4713     357.1696     27997.9010     0.00000000
+    3        3         -490.454267845287     0.16411505       4.4658     277.6305     36019.0910     0.00000000
+    4        3         -490.439521488995     0.17883886       4.8665     254.7732     39250.5929     0.00000000
+----------------------------------------------------------------------------------------------------------------
+> CPU time for total NEVPT2 calculation     49.84 sec, wall time      8.30 sec
+QD-NEVPT2 Correlation Energies: 
+[np.float64(-1.4987071829185652), np.float64(-1.4968277461907178), np.float64(-1.504441139718324), np.float64(-1.493955278539488)]

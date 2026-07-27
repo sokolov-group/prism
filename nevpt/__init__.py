@@ -25,7 +25,6 @@ from prism.nevpt import qd_nevpt
 
 class NEVPT:
     def __init__(self, interface):
-
         # General info
         self.interface = interface
         self.log = interface.log
@@ -118,7 +117,12 @@ class NEVPT:
        
         self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
         self.h_evec_soc = None
-
+        
+        # Solvent methods
+        # For PE
+        self.pe = None                             # Required for PE use if pe_method = "pert"
+        self.pe_method = "pert"                    # pertuabtive corrections
+        
         # For magnetic susceptibility
         self.mag_av = False
         self.sus_av = False
@@ -256,6 +260,7 @@ class QDNEVPT(NEVPT):
 
     def _init_method(self):
         self.method_type = "qd"
+        self.h_evec = None # Eigenvectors of effective Hamiltonian
 
     def compute_energy(self):
 
