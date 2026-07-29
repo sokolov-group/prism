@@ -39,6 +39,29 @@ def kernel(nevpt):
     # Transform one- and two-electron integrals
     integrals.transform_integrals(nevpt)
 
+    # For soc_2nd
+    if nevpt.soc_order == 2: 
+        #raise Exception("The 2nd SOC implementation in Prism is still incomplete.")  
+        from prism.nevpt import soc
+        h_soc = soc.h_soc_mo(nevpt)
+        h1_plus = (h_soc[0] + (1j*h_soc[1])) 
+        h1_minus = (h_soc[0] - (1j*h_soc[1])) 
+        h1_zero = h_soc[2]
+
+        h_soc_sph = np.zeros((3, len(h1_zero), len(h1_zero)), dtype='complex')
+        h_soc_sph[0] = h1_plus
+        h_soc_sph[1] = h1_minus
+        h_soc_sph[2] = h1_zero
+        nevpt.h_soc_sph = h_soc_sph
+
+        h_soc_so = np.zeros((2*nevpt.nmo, 2*nevpt.nmo), dtype = 'complex')
+        h_soc_so[::2,::2]   = 0.5 * h_soc[2]
+        h_soc_so[1::2,1::2] = - 0.5 * h_soc[2]
+        h_soc_so[::2,1::2]  = 0.5 * (h_soc[0]-1j*h_soc[1])
+        h_soc_so[1::2,::2]  = np.conj(h_soc_so[::2,1::2]).T
+        nevpt.h_soc_so = h_soc_so
+
+
     # Compute state-specific or quasidegenerate NEVPT energy
     nevpt.compute_energy()
 

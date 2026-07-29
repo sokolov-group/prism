@@ -23,6 +23,7 @@ import numpy as np
 
 from prism.nevpt import rdms
 from prism.nevpt import amplitudes
+from prism.nevpt import amplitudes_soc
 from prism.tools import trans_prop
 
 
@@ -61,6 +62,12 @@ def compute_energy(method):
         # Compute amplitudes and correlation energy
         e_corr_state, t1_state = compute_energy_state(method, rdms_ref, e_0)
         e_tot_state = method.e_ref[state] + e_corr_state
+
+        if method.soc_order == 2:
+            method.log.info("Compute SOC amplitude...")
+            # Compute rdm1s and rdm12s for a specific state
+            rdms_1s_ref = rdms.compute_reference_rdms_1s(method, method.ref_wfn[mstate:(mstate+deg)], method.ref_nelecas[mstate:(mstate+deg)])
+            e_corr_state_soc, t1_state_soc = compute_energy_state_soc(method, rdms_ref, rdms_1s_ref, e_0)
 
         ref_name = method.interface.reference.upper()
         method_name = method.method.upper()
@@ -182,6 +189,46 @@ def compute_energy_state(method, rdms, e_0 = None):
         method.log.info("Correlation energy [0]:                      %20.12f" % e_0)
 
     e_corr = e_0p + e_p1p + e_m1p + e_0 + e_p1 + e_m1 + e_p2 + e_m2
+
+    return e_corr, t1
+
+def compute_energy_state_soc(method, rdms, rdms_1s, e_0 = None):
+
+    ncore = method.ncore - method.nfrozen
+    ncas = method.ncas
+    nelecas = method.ref_nelecas
+    nextern = method.nextern
+
+    e_0p, e_p1p, e_m1p, e_p1, e_m1, e_p2, e_m2 = (0.0,) * 7
+
+    t1 = lambda:None
+
+    # First-order amplitudes
+    # With singles
+    if method.compute_singles_amplitudes:
+        raise Exception("Not consider about With singles in 2nd soc")
+
+    # Without singles
+    else:
+        if ncore > 0 and nextern > 0 and ncas > 0:
+            e_0p,  t1.caea, t1.caae = amplitudes_soc.compute_t1_0p_no_singles_soc(method, rdms, rdms_1s)
+        else:
+            t1.caea = np.zeros((ncore, ncas, nextern, ncas))
+            t1.caae = np.zeros((ncore, ncas, ncas, nextern))
+
+        if ncore > 0 and ncas > 0:
+            e_p1p,  t1.caaa = amplitudes_soc.compute_t1_p1p_no_singles_soc(method, rdms, rdms_1s)
+        else:
+            t1.caaa = np.zeros((ncore, ncas, ncas, ncas))
+
+        if nextern > 0 and ncas > 0:
+            e_m1p,  t1.aaae = amplitudes_soc.compute_t1_m1p_no_singles_soc(method, rdms, rdms_1s)
+        else:
+            t1.aaae = np.zeros((ncas, ncas, ncas, nextern))
+
+
+
+    e_corr = e_0p + e_p1p + e_m1p 
 
     return e_corr, t1
 
