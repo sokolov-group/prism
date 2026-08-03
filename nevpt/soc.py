@@ -118,7 +118,7 @@ def state_interaction_soc(method):
     return en_soc, e_corr_soc
     
 
-def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
+def transform_rdm1(method, rdm_sf, L = None, R = None, rdm_type = 'all'):
     '''
     Transform rdm_sf into n_micro_states basis
     '''
@@ -193,7 +193,7 @@ def transform_rdm1(method, rdm_sf, L = None, R = None, type = 'all'):
         rdm_final = rdm_final[:, 0, :, :]
 
     # State-specific
-    if type in ("ss", "state-specific"):
+    if rdm_type in ("ss", "state-specific"):
         rdm_final = np.diagonal(rdm_final, axis1=0, axis2=1)
         rdm_final = np.moveaxis(rdm_final, -1, 0)
 

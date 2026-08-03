@@ -82,17 +82,17 @@ class KnownValues(unittest.TestCase):
     
         # Using L,R
         # Ground state
-        gs_1rdm = nevpt.make_rdm1(L = 0, R = 0)
+        gs_1rdm = nevpt.make_rdm1(L = 1, R = 1)
 
         # Excited States
-        es1_1rdm = nevpt.make_rdm1(L = 1, R = 1)
-        es2_1rdm = nevpt.make_rdm1(L = 2, R = 2)
-        es3_1rdm = nevpt.make_rdm1(L = 3, R = 3)
+        es1_1rdm = nevpt.make_rdm1(L = 2, R = 2)
+        es2_1rdm = nevpt.make_rdm1(L = 3, R = 3)
+        es3_1rdm = nevpt.make_rdm1(L = 4, R = 4)
 
         # Transition 1RDMS
-        tr1_1rdm = nevpt.make_rdm1(L = 0, R = 1)
-        tr2_1rdm = nevpt.make_rdm1(L = 0, R = 2)
-        tr3_1rdm = nevpt.make_rdm1(L = 0, R = 3)
+        tr1_1rdm = nevpt.make_rdm1(L = 1, R = 2)
+        tr2_1rdm = nevpt.make_rdm1(L = 1, R = 3)
+        tr3_1rdm = nevpt.make_rdm1(L = 1, R = 4)
         
         # Store norms for different type check
         tr1_norm = np.linalg.norm(tr1_1rdm)
@@ -115,7 +115,7 @@ class KnownValues(unittest.TestCase):
         
         # Using 'all' flag
         # Ground state
-        rdms = nevpt.make_rdm1(type = 'all')
+        rdms = nevpt.make_rdm1(rdm_type = 'all')
         
         # Ground state
         gs_1rdm = rdms[0,0]
@@ -150,7 +150,7 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(rdms_test(es3_1rdm), 39.05984123370054, 6)
         
         # Using ss flag
-        rdms = nevpt.make_rdm1(type = 'ss')
+        rdms = nevpt.make_rdm1(rdm_type = 'ss')
         
         # Ground state
         gs_1rdm = rdms[0]
