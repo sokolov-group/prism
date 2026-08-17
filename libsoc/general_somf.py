@@ -25,6 +25,8 @@ from functools import reduce
 from sympy.physics.quantum.cg import CG
 import prism.lib.logger as logger
 from pathlib import Path
+import time
+
 socutils_dir = Path(__file__).resolve().parent.parent / "socutils"
 if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
     raise Exception('socutilis is not available. Use "git submodule update --init --recursive" to install it')
@@ -55,6 +57,8 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     '''
 
     cput0 = (logger.process_clock(), logger.perf_counter())
+    time_0 = time.time()
+
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
     nmo = interface.nmo
     mo = interface.mo
@@ -147,6 +151,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
 
     sys.stdout.flush()
     interface.log.timer0("total %s calculation" % interface.soc, *cput0)
+    print ("Total HSOC time:   %f sec\n" % (time.time() - time_0))
     
     return en_soc, evec_soc
 

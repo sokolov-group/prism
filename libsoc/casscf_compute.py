@@ -149,7 +149,7 @@ def compute_somf_soc(interface):
 
 
     # Print results obtained from soc-sa-casscf
-    print_result_casscf(interface, en_soc, osc_str_soc)
+    print_result_casscf(interface, en_soc, evec_soc, S, osc_str_soc)
     
     if "osc_strengths_full" in interface.properties_cas:
         trans_prop.print_osc_strength(interface, interface.properties_cas["osc_strengths_full"])
@@ -162,25 +162,38 @@ def compute_somf_soc(interface):
     return  en_soc, osc_str_soc
 
 
-def print_result_casscf(interface, en_soc, osc_str_soc):
+def print_result_casscf(interface, en_soc, evec_soc, S, osc_str_soc):
     '''
-    Print energy of SOC-CASSCF
+    Print energy of SOC Energy
     '''
     
     cput0 = (logger.process_clock(), logger.perf_counter())
     h2ev = interface.hartree_to_ev
     h2cm = interface.hartree_to_inv_cm
+
+
+    S_total = []
+    ms_total = []
+    for i in range(len(S)):
+        s = S[i]
+        n = int(s*2+1)
+        for j in range(n):
+            S_total.append(s)
+            m = s-j
+            ms_total.append(m)
+
+    S_soc   = np.einsum('ai,ib,bj->aj',np.conj(evec_soc).T , np.diag(S_total) , evec_soc)
+    ms_soc  = np.einsum('ai,ib,bj->aj',np.conj(evec_soc).T , np.diag(ms_total), evec_soc)
+    S_soc   = np.diag(np.real(S_soc))
+    ms_soc  = np.diag(np.real(ms_soc))
     
-    interface.log.info("\nSummary of SOC-SA-CASSCF:")
 
-    if interface.soc:
-        interface.log.info("\nSummary of results for the %s calculation with the %s reference:" % (interface.soc.upper(), interface.reference.upper()))
-    else:
-        interface.log.info("\nSummary of results for the %s calculation with the %s reference:" % (interface.reference.upper()))
-
-    interface.log.info("------------------------------------------------------------------------------------------------------------------")
-    interface.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
-    interface.log.info("------------------------------------------------------------------------------------------------------------------")
+    interface.log.info("\nSummary of results for the %s calculation:" % (interface.soc.upper()+"-"+interface.reference.upper()))
+    
+    interface.log.info("Note that S and ms are expected values.")
+    interface.log.info("-------------------------------------------------------------------------------------------------------------------- ")
+    interface.log.info("  State    S     ms           E(total)          dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)         Osc Str.   ")
+    interface.log.info("-------------------------------------------------------------------------------------------------------------------- ")
 
     e_gs  = en_soc[0]
     e_tot = en_soc
@@ -195,14 +208,14 @@ def print_result_casscf(interface, en_soc, osc_str_soc):
         de_ev = de * h2ev
         de_cm = de * h2cm
         if p == 0 or abs(de) < 1e-5:
-            interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
+            interface.log.info("%5d  %6.1f  %5.1f  %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), S_soc[p], ms_soc[p], e_tot[p], de, de_ev, " ", de_cm, " "))
         else:
             de_nm = 10000000 / de_cm
-            interface.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
+            interface.log.info("%5d  %6.1f  %5.1f  %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), S_soc[p], ms_soc[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
 
     interface.log.info("----------------------------------------------------------------------------------------------------------------")
     
     sys.stdout.flush()
     
 
-    return
+

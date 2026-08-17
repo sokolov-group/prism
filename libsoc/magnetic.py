@@ -19,6 +19,8 @@
 #
 
 import numpy as np
+import prism.lib.logger as logger
+import time
 
 def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None):
     '''
@@ -35,7 +37,6 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
     OUTPUT:
     properties_mag(dictionary): All magnetic properties
     '''
-
     if method is None:
         method = interface
 
@@ -229,6 +230,9 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     Mu_sf (np.array, n_micro_states*n_micro_states): magnetic dipole moment matrix
     '''
 
+    cput0 = (logger.process_clock(), logger.perf_counter())
+    time_0 = time.time()
+
     interface.log.info("Calculating magnetic dipole moment...")
     mf = interface.mf
     mo = interface.mo
@@ -281,6 +285,8 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
 
         A += multiplicity[I]
 
+    time_1 = time.time()
+
     ###L part########
     if isinstance(origin_type, str):
         origin_type = origin_type.lower()
@@ -313,24 +319,34 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     # AO -> MO basis:
     l1_mo = np.einsum('xpq,pi,qj->xij',l1_ao,mo,mo) 
     l_mat = np.zeros((3,n_micro_states,n_micro_states), dtype='complex')
-    for I in range(n_micro_states):
-        for J in range(n_micro_states):
-            if J>=I:
-                if  (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
-                    i = I_total[I]
-                    j = I_total[J]
-  
-                    rdm_mo = rdm_sf[i,j]
-                    l_mat[0,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[0])
-                    l_mat[1,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[1])
-                    l_mat[2,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[2])
 
-                    l_mat[0,J,I] = np.conj(l_mat[0,I,J]).T
-                    l_mat[1,J,I] = np.conj(l_mat[1,I,J]).T
-                    l_mat[2,J,I] = np.conj(l_mat[2,I,J]).T
+    time_2 = time.time()
+    
+
+    I_tri, J_tri = np.triu_indices(n_micro_states)
+    for I, J in zip(I_tri, J_tri):
+        if  (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
+            i = I_total[I]
+            j = I_total[J]
+            rdm_mo = rdm_sf[i,j]
+            l_mat[0,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[0])
+            l_mat[1,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[1])
+            l_mat[2,I,J] = np.einsum('ij,ij',rdm_mo,l1_mo[2])
+
+            l_mat[0,J,I] = np.conj(l_mat[0,I,J]).T
+            l_mat[1,J,I] = np.conj(l_mat[1,I,J]).T
+            l_mat[2,J,I] = np.conj(l_mat[2,I,J]).T
+
+    time_3 = time.time()
 
     #calculate magnetic dipole moment (without spin-orbit coupling)
     Mu_sf = l_mat + s_mat * interface.g_free_elec 
+    #interface.log.timer0("total magnetic dipole calculation", *cput0)
+
+    print ("   Total magnetic dipole calculation:   %f sec" % (time.time() - time_0))
+    print ("   S part:   %f sec" % (time_1 - time_0))
+    print ("   l_mo part:   %f sec" % (time_2 - time_1))
+    print ("   L_mo part:   %f sec" % (time_3 - time_2))
 
     return Mu_sf
 
