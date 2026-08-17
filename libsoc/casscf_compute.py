@@ -191,6 +191,7 @@ def print_result_casscf(interface, en_soc, evec_soc, S, osc_str_soc):
     interface.log.info("\nSummary of results for the %s calculation:" % (interface.soc.upper()+"-"+interface.reference.upper()))
     
     interface.log.info("Note that S and ms are expected values.")
+    interface.log.info("Note that S and ms are expected values.")
     interface.log.info("-------------------------------------------------------------------------------------------------------------------- ")
     interface.log.info("  State    S     ms           E(total)          dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)         Osc Str.   ")
     interface.log.info("-------------------------------------------------------------------------------------------------------------------- ")

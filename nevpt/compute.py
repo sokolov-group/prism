@@ -173,6 +173,7 @@ def print_results(nevpt):
         ms_soc  = np.diag(np.real(ms_soc))
 
         nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.soc.upper()+"-"+nevpt.method_type.upper()+"-"+nevpt.method.upper(), nevpt.interface.reference.upper()))
+        interface.log.info("Note that S and ms are expected values.")
         nevpt.log.info("-------------------------------------------------------------------------------------------------------------------- ")
         nevpt.log.info("  State    S     ms           E(total)          dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)         Osc Str.   ")
         nevpt.log.info("-------------------------------------------------------------------------------------------------------------------- ")
