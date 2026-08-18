@@ -181,18 +181,27 @@ def print_result_casscf(interface, en_soc, evec_soc, S, osc_str_soc):
             S_total.append(s)
             m = s-j
             ms_total.append(m)
+    
+    weight_soc = evec_soc.T * np.conj(evec_soc).T 
+    weight_soc = np.real(weight_soc)
+    weight_soc_max = np.max(weight_soc, axis=1)
+    weight_soc_max_index = np.argmax(weight_soc, axis=1)
+
+    ms_soc_max = []
+    for i in range(len(weight_soc_max_index)):
+        ms_soc_max.append(ms_total[weight_soc_max_index[i]])
+    ms_soc_max = np.array(ms_soc_max)
 
     S_soc   = np.einsum('ai,ib,bj->aj',np.conj(evec_soc).T , np.diag(S_total) , evec_soc)
-    ms_soc  = np.einsum('ai,ib,bj->aj',np.conj(evec_soc).T , np.diag(ms_total), evec_soc)
     S_soc   = np.diag(np.real(S_soc))
-    ms_soc  = np.diag(np.real(ms_soc))
     
 
     interface.log.info("\nSummary of results for the %s calculation:" % (interface.soc.upper()+"-"+interface.reference.upper()))
-    interface.log.info("Note that S and ms are expected values.")
-    interface.log.info("-------------------------------------------------------------------------------------------------------------------- ")
-    interface.log.info("  State    S     ms           E(total)          dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)         Osc Str.   ")
-    interface.log.info("-------------------------------------------------------------------------------------------------------------------- ")
+    
+    interface.log.info("Note that S is expected values. ms is is determined from the maximum-weight state.")
+    interface.log.info("-------------------------------------------------------------------------------------------------------------------------- ")
+    interface.log.info("  State    S    ms(weight)         E(total)           dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)         Osc Str.   ")
+    interface.log.info("-------------------------------------------------------------------------------------------------------------------------- ")
 
     e_gs  = en_soc[0]
     e_tot = en_soc
@@ -207,10 +216,10 @@ def print_result_casscf(interface, en_soc, evec_soc, S, osc_str_soc):
         de_ev = de * h2ev
         de_cm = de * h2cm
         if p == 0 or abs(de) < 1e-5:
-            interface.log.info("%5d  %6.1f  %5.1f  %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), S_soc[p], ms_soc[p], e_tot[p], de, de_ev, " ", de_cm, " "))
+            interface.log.info("%5d  %6.1f  %5.1f(%0.2f)  %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), S_soc[p], ms_soc_max[p], weight_soc_max[p], e_tot[p], de, de_ev, " ", de_cm, " "))
         else:
             de_nm = 10000000 / de_cm
-            interface.log.info("%5d  %6.1f  %5.1f  %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), S_soc[p], ms_soc[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
+            interface.log.info("%5d  %6.1f  %5.1f(%0.2f)  %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), S_soc[p], ms_soc_max[p], weight_soc_max[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
 
     interface.log.info("----------------------------------------------------------------------------------------------------------------")
     
