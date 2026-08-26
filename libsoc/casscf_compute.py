@@ -150,6 +150,44 @@ def compute_somf_soc(interface):
 
     # Print results obtained from soc-sa-casscf
     print_result_casscf(interface, en_soc, evec_soc, S, osc_str_soc)
+
+    ####Eigenvector analyze########
+    S_ref = S
+    population = evec_soc * np.conj(evec_soc)
+    population = np.real(population)
+    I = 0
+    population_state = np.zeros((len(S_ref), len(evec_soc)))
+    for i in range(len(S_ref)):
+        multicity = int(S_ref[i]*2 +1)
+        for j in range(multicity):
+            J = I + j
+            population_state[i] += population[J]
+        I += multicity
+    #deg_list = self.degeneracy_list(E_ref
+    #print(population_state
+    if len(population_state[:,0]) < 5:
+        k = len(population_state[:,0])
+    else:
+        k = 5
+
+    # Step 1: each column find large row index
+    row_idx = np.argpartition(population_state, -k, axis=0)[-k:, :]
+    # Step 2: value according to row index
+    values = population_state[row_idx, np.arange(population_state.shape[1])]
+    # Step 3: large to small order 
+    order = np.argsort(-values, axis=0)
+    # Step 4: after order row index
+    sorted_row_idx = np.take_along_axis(row_idx, order, axis=0)
+    values_sort = population_state[sorted_row_idx, np.arange(population_state.shape[1])]
+    #print(values_sort
+    #print(sorted_row_idx)
+    print("\nSOC index = [sf-ADC index]")
+    for i in range(len(sorted_row_idx[0])):
+        index_value = np.zeros((2,len(sorted_row_idx[:,i])))
+        index_value[0] = sorted_row_idx[:,i] + 1
+        index_value[1] = np.round(values_sort[:,i],2)
+        print(i+1, "=", index_value[0], index_value[1])
+    ####Eigenvector analyze########
     
     if "osc_strengths_full" in interface.properties_cas:
         trans_prop.print_osc_strength(interface, interface.properties_cas["osc_strengths_full"])
