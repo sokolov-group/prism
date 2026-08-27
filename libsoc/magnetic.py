@@ -47,6 +47,13 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
     Mu_sf = mag_dip(interface, rdm_sf, S, origin_type = method.magnetic_origin_type)
     Mu    = np.einsum('ai,kib,bj->kaj',np.conj(h_evec_soc).T, Mu_sf, h_evec_soc)
 
+    #For g_minus calcculation in NW2140
+    if  hasattr(method, "g_minus") and method.g_minus is True:
+        import NW2140.st_transition
+        method.log.info("\nCalculating g_minus-tensor...")
+        NW2140.st_transition.g_minus(interface, S, Mu)
+
+
 
     #g-tensor
     if method.gtensor:
