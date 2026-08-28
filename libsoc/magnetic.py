@@ -51,7 +51,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
     if  hasattr(method, "g_minus") and method.g_minus is True:
         import NW2140.st_transition
         method.log.info("\nCalculating g_minus-tensor...")
-        NW2140.st_transition.g_minus(interface, S, Mu)
+        NW2140.st_transition.g_minus(interface, S, Mu, en_soc)
 
 
 
@@ -408,7 +408,12 @@ def gtensor(interface, S, Mu, target_index = 1):
     z_en, z_evec = np.linalg.eigh(Hab_old[2])
     Hab_new = np.einsum('ai,kib,bj->kaj',np.conj(z_evec).T ,Hab_old, z_evec)
     Hab = Hab_new
- 
+    #print(Hab[0])
+    #print("#######")
+    #print(Hab[1])
+    #print("#######")
+    #print(Hab[2])
+    #print("#######")
     g=np.zeros([3,3])
     for i in range(3):
       g[i,0] = np.real(Hab[i,0,1]) *2/np.sqrt(S_target*2)
@@ -416,10 +421,10 @@ def gtensor(interface, S, Mu, target_index = 1):
       g[i,2] = np.real(Hab[i,0,0])/S_target
     
     G = np.einsum('km,lm->kl',g,g)
-    interface.log.extra("g=")
-    interface.log.extra("%s", np.array2string(g, precision=6, suppress_small=True))
-    interface.log.extra("G=")
-    interface.log.extra("%s", np.array2string(G, precision=6, suppress_small=True))
+    interface.log.info("g=")
+    interface.log.info("%s", np.array2string(g, precision=6, suppress_small=True))
+    interface.log.info("G=")
+    interface.log.info("%s", np.array2string(G, precision=6, suppress_small=True))
 
     G_en, G_evec = np.linalg.eigh(G)
     G_sq_en = np.sqrt(G_en)
