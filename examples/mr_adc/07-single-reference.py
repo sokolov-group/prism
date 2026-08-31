@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 CVS-IP-SR-ADC(2) calculations for H2O

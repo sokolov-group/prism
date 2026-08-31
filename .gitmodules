@@ -1,9 +1,3 @@
-[submodule "external"]
-	path = external
+[submodule "prism/socutils"]
+	path = prism/socutils
 	url = https://github.com/xubwa/socutils.git
-[submodule "socutils"]
-	path = socutils
-	url = https://github.com/xubwa/socutils.git
-[submodule "cppe"]
-	path = cppe
-	url = https://github.com/maxscheurer/cppe.git

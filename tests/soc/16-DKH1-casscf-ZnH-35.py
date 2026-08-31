@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 SOC CASSCF calculation for B
 '''

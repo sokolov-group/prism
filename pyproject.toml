@@ -1,0 +1,69 @@
+[build-system]
+requires = ['setuptools>=61.0']
+build-backend = 'setuptools.build_meta'
+
+
+[project]
+name = 'prism'
+version = '0.9.0'
+readme = 'README.md'
+description='A Quan. Chem. Package'
+classifiers = [
+  'Development Status :: 5 - Production/Stable',
+  'Intended Audience :: Science/Research',
+  'Intended Audience :: Developers',
+  'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+  'Programming Language :: Python',
+  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.7',
+  'Programming Language :: Python :: 3.8',
+  'Programming Language :: Python :: 3.9',
+  'Programming Language :: Python :: 3.10',
+  'Programming Language :: Python :: 3.11',
+  'Programming Language :: Python :: 3.12',
+  'Programming Language :: Python :: 3.13',
+  'Programming Language :: Python :: 3.14',
+  'Topic :: Software Development',
+  'Topic :: Scientific/Engineering',
+  'Operating System :: POSIX',
+  'Operating System :: Unix',
+  'Operating System :: MacOS',
+]
+requires-python = '>=3.7'
+
+maintainers = [{ name = 'Alexander Y. Sokolov', email = 'sokolov.8@osu.edu' }]
+
+authors = [{ name = 'Alexander Y. Sokolov', email = 'sokolov.8@osu.edu' }]
+
+license = { text = 'GPL-3.0' }
+
+dependencies = [
+  'numpy>=1.13,!=1.16,!=1.17',
+  'scipy>=1.6.0',
+  'pyscf',
+  'h5py>=2.7',
+  'setuptools',
+  'psutil'
+]
+
+[project.urls]
+# Homepage = 'http://www.prism.org'
+Repository = 'https://github.com/sokolov-group/prism'
+# Documentation = 'http://www.prism.org'
+
+[project.optional-dependencies]
+
+# Fast Tensor Contractions
+opt_einsum = ['opt_einsum']
+pytblis = ['pytblis']
+# Plotting spectra
+spectra = ['matplotlib>=3.9']
+# Spin Orbit Coupling
+soc = ['sympy >= 1.12']
+# Polarizable Embedding
+pe = ['cppe']
+
+all = ['prism[opt_einsum, pytblis, spectra, soc, pe]']
+
+# extras which should not be installed by 'all' components
+# Fast Tensor Contractions

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 QD-NEVPT2 dipole moment calculations for H2O

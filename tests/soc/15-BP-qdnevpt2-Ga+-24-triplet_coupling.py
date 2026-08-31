@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2025 Prism Developers. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v3.0;

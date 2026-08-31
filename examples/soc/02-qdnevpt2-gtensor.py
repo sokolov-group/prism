@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 SOC QD-NEVPT2 calculation for ZnH g-tensor

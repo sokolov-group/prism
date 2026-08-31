@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# 04-nevpt2_sc_vs_fic.py
+# Modified by Ziqiu Wang < sgwzq0810@gmail.com >
 
 '''
 Comparing the results of FIC-NEVPT2 and SC-NEVPT2 for N2

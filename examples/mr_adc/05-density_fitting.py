@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 DF-CVS-IP-MR-ADC(2)-X calculations for N2

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 BASIC QD-NEVPT2 + PE calculation for thymine + 3.5 angstrom water shell

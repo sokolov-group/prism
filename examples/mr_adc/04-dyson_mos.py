@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 CVS-IP-MR-ADC(2) Dyson orbitals calculation for N2O
