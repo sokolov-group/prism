@@ -143,6 +143,7 @@ def compute_somf_soc(interface):
         interface.properties_cas["osc_strengths_full"] = osc_str_soc_full
 
 
+    #Compute magnetic properties
     if (interface.gtensor or interface.mag_av or  interface.sus_av or  interface.mag_vec or  interface.sus_tensor):
         properties_mag = magnetic.compute_properties(interface, rdm_sf, en_soc, evec_soc, S,  method = None)
         interface.properties_cas.update(properties_mag)
@@ -150,6 +151,10 @@ def compute_somf_soc(interface):
 
     # Print results obtained from soc-sa-casscf
     print_result_casscf(interface, en_soc, osc_str_soc)
+
+        #compute ISC
+    if interface.isc:
+        general_somf.isc_rate(interface, S, interface.isc_index_i, interface.isc_index_j)
     
     if "osc_strengths_full" in interface.properties_cas:
         trans_prop.print_osc_strength(interface, interface.properties_cas["osc_strengths_full"])
