@@ -52,6 +52,11 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
         import NW2140.st_transition
         method.log.info("\nCalculating g_minus-tensor...")
         NW2140.st_transition.g_minus(interface, S, Mu, en_soc)
+        #For g_minus calcculation in NW2140
+    if  hasattr(method, "g_minus_general") and method.g_minus_general is True:
+        import NW2140.st_transition
+        method.log.info("\nCalculating g_minus-tensor in general...")
+        NW2140.st_transition.g_minus_general(interface, S, Mu, en_soc, h_evec_soc)
 
 
 
