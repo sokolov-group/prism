@@ -270,23 +270,20 @@ def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, ve
 
     return en_soc, evec_soc
 
-def isc_rate(interface, S, initial_index, final_index):
+def isc_rate(interface, S, initial_index=None, final_index=None):
 
     HSOC = interface.HSOC
 
     interface.log.info("\nCalculating Inter-system crossing...")
-    if initial_index < 1 or initial_index > len(S):
-        raise ValueError("Initial index must be between 1 and the number of states")
 
-    if final_index < 1 or final_index > len(S):
-        raise ValueError("Final index must be between 1 and the number of states")
+    if initial_index is not None:
+        if initial_index < 1 or initial_index > len(S):
+            raise ValueError("Initial index must be between 1 and the number of states")
 
-    initial_index -= 1
-    final_index -= 1
+    if final_index is not None:
+        if final_index < 1 or final_index > len(S):
+            raise ValueError("Final index must be between 1 and the number of states")
 
-
-
-    # Calculate quantum number 
     S_total = []
     ms_total = []
     multiplicity = []
@@ -305,53 +302,83 @@ def isc_rate(interface, S, initial_index, final_index):
     print("ms_total=",ms_total)
     print("multiplicity=",multiplicity)
 
-    #HSOC_target = {}
-    #for I in range(len(initial_index)):
-        #for J in range(len(final_index)):
+    if initial_index is not None and final_index is not None:
+        I = initial_index - 1
+        J = final_index - 1
+        pairs = [(I, J)]
 
+    else:
+        pairs = []
 
-    I_index = int(np.sum(multiplicity[:initial_index]))
-    print("I_index=",I_index)
-    I_multiplicity = multiplicity[initial_index]
-    I_S = int(S[initial_index])
-    I_ms = ms_total[I_index:I_index+I_multiplicity]
+        for I in range(len(S)):
 
-    J_index = int(np.sum(multiplicity[:final_index]))
-    J_multiplicity = multiplicity[final_index]
-    J_S = int(S[final_index+1])
-    J_ms = ms_total[J_index:J_index+J_multiplicity]
-    print("I_index=", I_index)
-    print("I_multiplicity=", I_multiplicity)
-    print("I_S=", I_S)
-    print("I_ms=", I_ms)
-    print("########")
-    print("J_index=", J_index)
-    print("J_multiplicity=", J_multiplicity)
-    print("J_S=", J_S)
-    print("J_ms=", J_ms)
-    #print(multiplicity[:initial_index])
+            if multiplicity[I] == 1:
 
-    HSOC_target = HSOC[I_index:I_index+I_multiplicity,J_index:J_index+J_multiplicity]
+                for J in range(I + 1, len(S)):
 
-    print(HSOC_target)
+                    if multiplicity[J] == 3:
 
+                        pairs.append((I, J))
 
-    print("\nCoupling Elements(<ISM|Hso|JS'M'>) in HSOC")
-    print("------------------------------------------------------------------------------------------------------------------")
-    print("  I    J    S_I    Ms_I    S_J    Ms_J   Coupling(Hartree)    Coupling(cm-1)")
-    print("------------------------------------------------------------------------------------------------------------------")
-    h2cm = 219474.63136314#interface.hartree_to_inv_cm
-    #for I in range(len(initial_index)):
-    #    for J in range(len(final_index)):
-    for i in range(len(HSOC_target)):
-        for j in range(len(HSOC_target[0])):
-            print("%3d  %3d  %4d  %6.1f  %5d %7.1f %10.4f+%0.4fi %11.4f+%0.4fi" % (initial_index+1, final_index +1, I_S, I_ms[i], J_S, J_ms[j],  np.real(HSOC_target[i,j]), np.imag(HSOC_target[i,j]) , np.real(HSOC_target[i,j]*h2cm),  np.imag(HSOC_target[i,j]*h2cm) ))
+        print("pairs =", [(I + 1, J + 1) for I, J in pairs])
+    print(pairs)
+    h2cm = 219474.63136314
 
+    for I, J in pairs:
 
-    
+        I_index = int(np.sum(multiplicity[:I]))
+        J_index = int(np.sum(multiplicity[:J]))
 
-    
+        I_multiplicity = multiplicity[I]
+        J_multiplicity = multiplicity[J]
 
+        I_S = S[I]
+        J_S = S[J]
+
+        I_ms = ms_total[I_index:I_index + I_multiplicity]
+        J_ms = ms_total[J_index:J_index + J_multiplicity]
+
+        HSOC_target = HSOC[I_index:I_index + I_multiplicity,
+                           J_index:J_index + J_multiplicity]
+
+        print("\n")
+        print("==============================================================")
+        print(
+            "State %d (S = %.1f) -> State %d (S = %.1f)"
+            % (I + 1, I_S, J + 1, J_S)
+        )
+        print("==============================================================")
+
+        print("\nCoupling Elements <ISM|Hso|JSM'>")
+        print("----------------------------------------------------------------------------------------")
+        print(
+            " I    J    S_I    Ms_I    S_J    Ms_J       "
+            "Coupling(Hartree)       Coupling(cm-1)"
+        )
+        print("----------------------------------------------------------------------------------------")
+
+        for i in range(I_multiplicity):
+            for j in range(J_multiplicity):
+                coupling = HSOC_target[i, j]
+                coupling_cm = coupling * h2cm
+
+                print(
+                    "%3d  %3d  %4.1f  %6.1f  %4.1f  %6.1f   "
+                    "%10.6f + %10.6fi   "
+                    "%10.4f + %10.4fi"
+                    % (
+                        I + 1,
+                        J + 1,
+                        I_S,
+                        I_ms[i],
+                        J_S,
+                        J_ms[j],
+                        np.real(coupling),
+                        np.imag(coupling),
+                        np.real(coupling_cm),
+                        np.imag(coupling_cm)
+                    )
+                )
 
 
 
