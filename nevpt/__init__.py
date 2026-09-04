@@ -108,6 +108,10 @@ class NEVPT:
 
         # For SOC
         self.soc = None                            # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+        # For ISC
+        self.isc = interface.isc
+        self.isc_index_i = interface.isc_index_i
+        self.isc_index_j = interface.isc_index_j 
 
         # For magnetic properties
         self.magnetic_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)

@@ -193,6 +193,14 @@ def print_results(nevpt):
 
     nevpt.log.info("----------------------------------------------------------------------------------------------------------------")
 
+    #compute ISC
+    if nevpt.soc and nevpt.isc:
+        from prism.libsoc import general_somf
+        S = []
+        for i in range(len(nevpt.spin_mult)):
+            S.append(float((nevpt.spin_mult[i] - 1) / 2))
+        general_somf.isc_rate(nevpt.interface, S, nevpt.isc_index_i, nevpt.isc_index_j)
+
     if "osc_strengths_full" in nevpt.properties:
         trans_prop.print_osc_strength(nevpt.interface, nevpt.properties["osc_strengths_full"])
         
