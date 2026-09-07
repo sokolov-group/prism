@@ -61,8 +61,8 @@ def _build_pmol_with_ghosts(mol, minao=None):
     pmol.pseudo = getattr(mol, 'pseudo', None)
     pmol.ecp = {}
     pmol.charge = 0
-    # This mol supplies reference basis functions only, so its spin need only agree with
-    # its own electron count; None lets the build choose it.
+    # This mol only supplies reference basis functions. None lets the build pick a spin
+    # that matches its own electron count.
     pmol.spin = None
     pmol.verbose = 0
     pmol.build(dump_input=False, parse_arg=False, basis=minao)

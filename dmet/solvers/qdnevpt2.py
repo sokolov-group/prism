@@ -47,7 +47,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           embed_level_shift=0.0, scf_stability=False,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
-          deg_tol=1e-3, casci_conv_tol=1e-10, dip_mom_ao=None, soc_data=None,
+          deg_tol=1e-3, casci_conv_tol=1e-10, dip_mom_ao=None, embedding_data=None,
           embedded_ref=None, no_kernel=False):
     import prism.interface
     import prism.nevpt
@@ -158,11 +158,11 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
         # Dipole integrals over the molecule, supplied by the driver.
         if dip_mom_ao is not None:
             interface.dip_mom_ao = dip_mom_ao
-        # Molecule and orbitals for spin-orbit integrals.
-        if soc_data is not None:
-            interface.soc_mol = soc_data['mol']
-            interface.soc_ao2emb = soc_data['ao2emb']
-            interface.soc_core_dm_ao = soc_data['core_dm_ao']
+        # Molecule and orbitals for spin-orbit integrals and NTO output.
+        if embedding_data is not None:
+            interface.emb_mol = embedding_data['mol']
+            interface.emb_ao2emb = embedding_data['ao2emb']
+            interface.emb_core_dm_ao = embedding_data['core_dm_ao']
 
         nevpt_obj = prism.nevpt.QDNEVPT(interface)
         nevpt_obj.compute_singles_amplitudes = compute_singles
@@ -227,7 +227,7 @@ def execute(task):
         deg_tol=task.get('deg_tol', 1e-3),
         casci_conv_tol=task.get('casci_conv_tol', 1e-10),
         dip_mom_ao=task.get('dip_mom_ao'),
-        soc_data=task.get('soc_data'),
+        embedding_data=task.get('embedding_data'),
         embedded_ref=task.get('embedded_ref'),
         no_kernel=task.get('no_kernel', False),
     )

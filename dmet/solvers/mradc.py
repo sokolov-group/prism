@@ -40,7 +40,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           embed_level_shift=0.0, scf_stability=False,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
-          deg_tol=1e-3, casci_conv_tol=1e-10,
+          deg_tol=1e-3, casci_conv_tol=1e-10, embedding_data=None,
           embedded_ref=None, no_kernel=False):
     import prism.interface
     import prism.mr_adc
@@ -133,6 +133,12 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             backend=prism_backend,
             select_reference=select_reference,
         )
+        # Molecule and orbitals for Dyson orbital output.
+        if embedding_data is not None:
+            interface.emb_mol = embedding_data['mol']
+            interface.emb_ao2emb = embedding_data['ao2emb']
+            interface.emb_core_dm_ao = embedding_data['core_dm_ao']
+
         mradc_obj = prism.mr_adc.MRADC(interface)
         mradc_obj.verbose = 4 if printoutput else 0
         for key, val in mradc_kwargs.items():
@@ -143,7 +149,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         log.info("\nMR-ADC %s energies:" % mradc_obj.method_type.upper())
         for i, e in enumerate(e_exc):
-            log.info("  Root %d: %.10f Ha" % (i, e))
+            log.info("  Root %d: %.6f eV" % (i, e))
 
     return mc, mradc_obj, e_exc, spec_factors
 
@@ -172,13 +178,14 @@ def execute(task):
         natorb_max_superset=task.get('natorb_max_superset'),
         deg_tol=task.get('deg_tol', 1e-3),
         casci_conv_tol=task.get('casci_conv_tol', 1e-10),
+        embedding_data=task.get('embedding_data'),
         embedded_ref=task.get('embedded_ref'),
         no_kernel=task.get('no_kernel', False),
     )
 
     rdm1 = mc.make_rdm1()
     mradc_res = {
-        'e_exc': e_exc,
+        'e_exc': e_exc,   # eV, as returned by the Prism MR-ADC kernel
         'spec_factors': spec_factors,
         'e_cas': mc.e_tot,
         'mc': mc,

@@ -195,8 +195,9 @@ class LocalIntegrals:
             dip_mom_emb[d] = transfo.T @ dip_mom_ao[d] @ transfo
         return dip_mom_emb
 
-    def dmet_soc_data(self, loc_2_dmet, num_active, core_1rdm_loc):
-        # Molecule, embedded orbitals and frozen density for spin-orbit integrals.
+    def dmet_embedding_data(self, loc_2_dmet, num_active, core_1rdm_loc):
+        # Molecule, embedded orbitals and frozen density, for the parts of Prism
+        # that work in the AO basis of the molecule.
         ao2emb = self.ao2loc @ loc_2_dmet[:, :num_active]
         core_dm_ao = self.ao2loc @ core_1rdm_loc @ self.ao2loc.T
         return {'mol': self.mol, 'ao2emb': ao2emb, 'core_dm_ao': core_dm_ao}

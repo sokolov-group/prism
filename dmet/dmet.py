@@ -412,8 +412,11 @@ class DMET:
         _frag_tasks = []
         _frag_meta = []
 
-        _needs_soc = bool((self.qdnevpt2_kwargs or {}).get('soc')
-                          or (self.pcnevpt2_kwargs or {}).get('soc'))
+        # Spin-orbit coupling, NTOs and Dyson orbitals all need the full molecule.
+        _nevpt_kwargs = {**(self.qdnevpt2_kwargs or {}), **(self.pcnevpt2_kwargs or {})}
+        _needs_embedding_data = bool(
+            _nevpt_kwargs.get('soc') or _nevpt_kwargs.get('compute_ntos')
+            or (self.mradc_kwargs or {}).get('compute_dyson'))
 
         _builder = FragmentBuilder(
             ints = self.ints,
@@ -426,7 +429,7 @@ class DMET:
             core_occ_tol = self.core_occ_tol,
             keep_degenerate = self.keep_degenerate,
             deg_rtol = self.deg_rtol,
-            needs_soc = _needs_soc,
+            needs_embedding_data = _needs_embedding_data,
             embedded_ref_dm = self.embedded_ref_dm,
         )
 
@@ -509,7 +512,7 @@ class DMET:
                 frag_idx, _method_key, dmet_oei, dmet_fock, dmet_tei,
                 norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                 dm_guess_rhf, mo_guess=_mo_guess, ci_guess=_ci_guess,
-                dip_mom_ao=dip_mom_ao, soc_data=frag['soc_data'],
+                dip_mom_ao=dip_mom_ao, embedding_data=frag['embedding_data'],
                 embedded_ref=frag['embedded_ref'])
 
             _is_parallel_eligible = (
@@ -634,7 +637,7 @@ class DMET:
     def _build_task(self, frag_idx, method_key, dmet_oei, dmet_fock, dmet_tei,
                     norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                     dm_guess_rhf, mo_guess=None, ci_guess=None, dip_mom_ao=None,
-                    soc_data=None, embedded_ref=None):
+                    embedding_data=None, embedded_ref=None):
         return {
             'counter': frag_idx,
             'method': method_key,
@@ -643,7 +646,7 @@ class DMET:
             'dmet_fock': dmet_fock,
             'dmet_tei': dmet_tei,
             'dip_mom_ao': dip_mom_ao,
-            'soc_data': soc_data,
+            'embedding_data': embedding_data,
             'embedded_ref': embedded_ref,
             'no_kernel': self.no_kernel,
             'norb': norb_in_imp,
@@ -995,7 +998,7 @@ class DMET:
                              spectrum['entropy'][i], "bath" if i < nkeep else "core/virt"))
 
     def to_ao(self, mat_emb, impnumber=0):
-        # Transform an embedded-basis matrix to the AO basis of the parent molecule.
+        # Transform an embedded-basis matrix to the AO basis of the full molecule.
         coeff = self.ints.ao2loc @ self.dmet_orbs[impnumber]
         if mat_emb.shape[-1] != coeff.shape[1]:
             raise ValueError(

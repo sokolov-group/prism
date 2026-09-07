@@ -232,9 +232,9 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     interface.log.info("Calculating magnetic dipole moment...")
     mf = interface.mf
     mo = interface.mo
-    # An embedded calculation supplies the real molecule and its orbitals in the AO basis.
-    ao2emb = getattr(interface, 'soc_ao2emb', None)
-    mol = interface.soc_mol if ao2emb is not None else mf.mol
+    # An embedded calculation supplies the full molecule and its orbitals in the AO basis.
+    ao2emb = getattr(interface, 'emb_ao2emb', None)
+    mol = interface.emb_mol if ao2emb is not None else mf.mol
     n_states = len(rdm_sf[0])
     
     # Calculate spin-free multiplicity
