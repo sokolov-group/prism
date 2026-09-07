@@ -18,7 +18,6 @@
 #
 
 import os
-import time
 import warnings
 import concurrent.futures
 
@@ -27,7 +26,8 @@ from scipy import optimize
 
 import prism.lib.logger as logger
 from prism.dmet import helper as dmet_helper
-from prism.dmet.solvers import SolverDispatcher, PARALLEL_ELIGIBLE
+from prism.dmet import solvers
+from prism.dmet.solvers import PARALLEL_ELIGIBLE
 from prism.dmet.fragment_builder import FragmentBuilder
 
 
@@ -36,8 +36,7 @@ def _fragment_worker(task):
     os.environ['MKL_NUM_THREADS'] = '1'
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
-    from prism.dmet.solvers import SolverDispatcher
-    return SolverDispatcher.execute(task)
+    return solvers.execute(task)
 
 
 class DMET:
@@ -108,14 +107,14 @@ class DMET:
         self.no_rotation = None
         self.alt_cost_func = use_constrained_optimization
         self.fragment_methods = dict(fragment_methods) if fragment_methods else {}
-        for _idx, _m in self.fragment_methods.items():
-            if not (0 <= _idx < len(fragments)):
+        for frag_idx, frag_method in self.fragment_methods.items():
+            if not (0 <= frag_idx < len(fragments)):
                 raise ValueError(
-                    f"Invalid fragment_methods index {_idx}: out of range "
+                    f"Invalid fragment_methods index {frag_idx}: out of range "
                     f"(have {len(fragments)} fragments).")
-            if _m != 'RHF':
+            if frag_method != 'RHF':
                 raise ValueError(
-                    f"Invalid fragment_methods value '{_m}' for fragment {_idx}: "
+                    f"Invalid fragment_methods value '{frag_method}' for fragment {frag_idx}: "
                     f"only 'RHF' is supported per fragment.")
         self.bath_tol = bath_tol
         self.parallel = parallel
@@ -172,16 +171,12 @@ class DMET:
         self.energy = 0.0
         self.imp_rdm1 = []
         self.dmet_orbs = []
+        self.frag_energies = []
         self.imp_size = self.make_imp_size()
         self.mu_imp = 0.0
         self.mask = self.make_mask()
         self.helper = dmet_helper.DMETHelper(
             self.ints, self.make_h1_terms(), self.alt_cost_func, self.min_func, log=self.log)
-
-        self.time_ed = 0.0
-        self.time_cf = 0.0
-        self.time_func = 0.0
-        self.time_grad = 0.0
 
     def _warn_inert_params(self):
         _cas_methods = {'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'}
@@ -233,20 +228,20 @@ class DMET:
                 f"CASSCF and Prism objects needed for analysis, and those cannot be sent "
                 f"back from a worker process. Use parallel=False.")
 
-        for _i in range(len(self.fragments)):
-            if np.any(np.asarray(self.fragments[_i]) < 0):
+        for frag_idx, fragment in enumerate(self.fragments):
+            if np.any(np.asarray(fragment) < 0):
                 raise ValueError(
-                    f"Fragment {_i} has a negative orbital mask. Negative masks are "
-                    f"not supported; pass fragment_methods={{{_i}: 'RHF'}} to solve a "
+                    f"Fragment {frag_idx} has a negative orbital mask. Negative masks are "
+                    f"not supported; pass fragment_methods={{{frag_idx}: 'RHF'}} to solve a "
                     f"fragment at the RHF level.")
 
     def _check_complete_tiling(self):
-        quicktest = np.zeros((self.norb,), dtype=int)
-        for item in self.fragments:
-            quicktest += np.abs(item)
-        if np.any(quicktest > 1):
+        covered = np.zeros((self.norb,), dtype=int)
+        for fragment in self.fragments:
+            covered += np.abs(fragment)
+        if np.any(covered > 1):
             raise ValueError("Fragments overlap: an orbital belongs to more than one fragment.")
-        all_one = np.all(quicktest == 1)
+        all_one = np.all(covered == 1)
         return all_one
 
     def _auto_detect_symmetry(self):
@@ -499,6 +494,7 @@ class DMET:
                 self.cas_results.append(res['cas_res'])
             if 'qdnevpt2_res' in res:
                 self.qdnevpt2_results.append(res['qdnevpt2_res'])
+                self._attach_spin_pop_transform(res['qdnevpt2_res'], frag_idx)
             if 'pcnevpt2_res' in res:
                 self.pcnevpt2_results.append(res['pcnevpt2_res'])
 
@@ -550,6 +546,15 @@ class DMET:
         self.energy += self.ints.const()
         return n_electrons
 
+    def _attach_spin_pop_transform(self, qdnevpt2_res, frag_idx):
+        # Real-AO hook so nevpt.analyze() partitions the embedded spin density
+        # over the physical atoms; exact for a single all-encompassing fragment.
+        nevpt = qdnevpt2_res['nevpt']
+        mo_emb = qdnevpt2_res['mc'].mo_coeff
+        nevpt.spin_pop_mo = self.ints.ao2loc @ self.dmet_orbs[frag_idx] @ mo_emb
+        nevpt.spin_pop_ovlp = self.ints.ovlp
+        nevpt.spin_pop_mol = self.ints.mol
+
     def _build_task(self, frag_idx, method_key, dmet_oei, dmet_fock, dmet_tei,
                     norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                     dm_guess_rhf, mo_guess=None, ci_guess=None, dip_mom_ao=None):
@@ -590,7 +595,7 @@ class DMET:
         }
 
     def _run_fragment_sequential(self, task):
-        result = SolverDispatcher.execute(task)
+        result = solvers.execute(task)
         if 'cas_res' in result:
             cas_res = result['cas_res']
             self.frag_caches[task['counter']] = {
@@ -644,8 +649,6 @@ class DMET:
         return -errors
 
     def rdm_differences(self, umat_flat):
-        start_func = time.time()
-
         umat_square_loc = self.flat2square(umat_flat)
         one_rdm_loc = self.helper.construct_1rdm_loc(umat_square_loc)
 
@@ -685,14 +688,9 @@ class DMET:
         if jump != n_cluster_orbs:
             raise RuntimeError("U-matrix fitting: cluster-orbital count mismatch.")
 
-        stop_func = time.time()
-        self.time_func += (stop_func - start_func)
-
         return errors
 
     def rdm_differences_masked(self, umat_flat):
-        start_func = time.time()
-
         umat_square_loc = self.flat2square(umat_flat)
         one_rdm_loc = self.helper.construct_1rdm_loc(umat_square_loc)
 
@@ -720,14 +718,9 @@ class DMET:
         if jump != n_cluster_orbs:
             raise RuntimeError("U-matrix fitting: cluster-orbital count mismatch.")
 
-        stop_func = time.time()
-        self.time_func += (stop_func - start_func)
-
         return errors
 
     def rdm_differences_derivative(self, umat_flat):
-        start_grad = time.time()
-
         umat_square_loc = self.flat2square(umat_flat)
         rdm_derivs_rot = self.helper.construct_1rdm_response(umat_square_loc, self.no_rotation)
 
@@ -772,25 +765,7 @@ class DMET:
             gradient.append(error_deriv)
         gradient = np.array(gradient).T
 
-        stop_grad = time.time()
-        self.time_grad += (stop_grad - start_grad)
-
         return gradient
-
-    def hessian_eigenvalues(self, umat_flat):
-        stepsize = 1e-7
-        gradient_reference = self.cost_function_derivative(umat_flat)
-        hessian = np.zeros((len(umat_flat), len(umat_flat)), dtype=float)
-        for elem_idx in range(len(umat_flat)):
-            umat_perturbed = umat_flat.copy()
-            umat_perturbed[elem_idx] += stepsize
-            gradient = self.cost_function_derivative(umat_perturbed)
-            hessian[:, elem_idx] = (gradient - gradient_reference) / stepsize
-        hessian = 0.5 * (hessian + hessian.T)
-        eigvals, eigvecs = np.linalg.eigh(hessian)
-        idx = eigvals.argsort()
-        eigvals = eigvals[idx]
-        self.log.info("Hessian eigenvalues: %s" % eigvals)
 
     def flat2square(self, umat_flat):
         umat_square = np.zeros((self.norb, self.norb), dtype=float)
@@ -850,21 +825,18 @@ class DMET:
             rdm_old = self.transform_ed_1rdm()  # Zero at the very first iteration
 
             # Find the chemical potential for the correlated impurity problem.
-            start_ed = time.time()
+            cput_ed = (logger.process_clock(), logger.perf_counter())
             try:
                 self.mu_imp = optimize.newton(self.num_elec_cost_function, self.mu_imp)
             except RuntimeError:
                 self.log.warn("Newton solver for chemical potential did not perfectly "
                               "converge. Proceeding with last evaluated chemical potential.")
             self.log.note("   Chemical potential: %s" % self.mu_imp)
-            stop_ed = time.time()
-            self.time_ed += (stop_ed - start_ed)
+            self.log.timer("embedding", *cput_ed)
             self.log.note("   Energy: %s" % self.energy)
-            if self.sc_method != 'NONE' and not self.alt_cost_func:
-                self.hessian_eigenvalues(self.square2flat(self.umat))
 
             # Optimize the u-matrix.
-            start_cf = time.time()
+            cput_cf = (logger.process_clock(), logger.perf_counter())
             if self.alt_cost_func and self.sc_method == 'BFGS':
                 result = optimize.minimize(self.alt_cost_function, self.square2flat(self.umat),
                                            jac=self.alt_cost_function_derivative, options={'disp': False})
@@ -884,8 +856,7 @@ class DMET:
             else:
                 self.log.info("   Cost function after convergence: %s"
                               % self.cost_function(self.square2flat(self.umat)))
-            stop_cf = time.time()
-            self.time_cf += (stop_cf - start_cf)
+            self.log.timer("u-matrix optimization", *cput_cf)
 
             if self.print_u:
                 self.print_umat()
@@ -901,11 +872,6 @@ class DMET:
 
             if self.sc_method == 'NONE':
                 u_diff = 0.1 * convergence_threshold  # Do only 1 iteration
-
-        self.log.info("Time in cost function: %s" % self.time_func)
-        self.log.info("Time in cost gradient: %s" % self.time_grad)
-        self.log.info("Time in embedding: %s" % self.time_ed)
-        self.log.info("Time in self-consistency: %s" % self.time_cf)
 
         return self.energy
 

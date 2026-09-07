@@ -25,29 +25,8 @@ from pyscf import fci as pyscf_fci
 
 import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
-from prism.dmet.cas_selectors import natorb_active_space, fix_cas_spin, multiseed_casscf
-
-
-def _stabilize_rohf(mf, max_iter=5, tag='', log=None):
-    # Part C determinism fix: follow ROHF instabilities until stable; no-op for RHF.
-    from pyscf import scf as _scf
-    if log is None:
-        log = logger.Logger(sys.stdout, logger.INFO)
-    if not isinstance(mf, _scf.rohf.ROHF):
-        return
-    for i in range(max_iter):
-        mo_i, _, stable_i, _ = mf.stability(return_status=True)
-        if stable_i:
-            if i > 0:
-                log.info("%s: ROHF stable after %d stability follow(s)  E=%.10f" % (tag, i, mf.e_tot))
-            else:
-                log.info("%s: ROHF internally stable  E=%.10f" % (tag, mf.e_tot))
-            return
-        log.info("%s: ROHF internal instability (iter %d), reconverging along unstable mode"
-                 % (tag, i + 1))
-        mf.scf(mf.make_rdm1(mo_i, mf.mo_occ))
-    log.warn("%s: ROHF stability not reached after %d reconverges  E=%.10f"
-             % (tag, max_iter, mf.e_tot))
+from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin, multiseed_casscf,
+                                      stabilize_rohf)
 
 
 def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
@@ -137,23 +116,12 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
             e_shifted = mf.e_tot
             mf.level_shift = 0.0
             mf.scf(dm_loc)
-            dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
             log.info("level-shift verification: E(shift=%s)=%.10f  "
                      "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
                      % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
 
         if rohf_stability and _use_rohf:
-            _stabilize_rohf(mf, tag='casscf::solve', log=log)
-            # mf.make_rdm1() is spin-resolved (2,norb,norb) for ROHF; the einsum below needs 2D.
-            dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
-
-        num_pairs = nel // 2
-        fock_loc = (fock_copy
-                    + np.einsum('ijkl,ij->kl', tei, dm_loc)
-                    - 0.5 * np.einsum('ijkl,ik->jl', tei, dm_loc))
-        eigvals = np.linalg.eigvalsh(fock_loc)
-        eigvals.sort()
-        log.info("RHF HOMO-LUMO gap: %s" % (eigvals[num_pairs] - eigvals[num_pairs - 1]))
+            stabilize_rohf(mf, log=log)
 
         # Skip selection with a warm-restart guess: mc.kernel would overwrite mo_coeff.
         mo_natorb = None

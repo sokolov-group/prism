@@ -50,7 +50,7 @@ def orthogonalize_iao(coeff, ovlp):
 
 
 def _build_pmol_with_ghosts(mol, minao=None):
-    # Like reference_mol() but keeps ghost vacancy atoms; GTH basis for pseudo mols.
+    # Like reference_mol() but keeps ghost atoms; GTH basis for pseudo mols.
     import pyscf.gto
     if minao is None:
         minao = 'gth-szv-molopt-sr' if getattr(mol, 'pseudo', None) else 'minao'

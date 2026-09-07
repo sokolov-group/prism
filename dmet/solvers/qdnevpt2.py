@@ -24,8 +24,8 @@ from pyscf import ao2mo, gto, scf, mcscf
 
 import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
-from prism.dmet.cas_selectors import natorb_active_space, fix_cas_spin, multiseed_casscf
-from prism.dmet.solvers.casscf import _stabilize_rohf
+from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin, multiseed_casscf,
+                                      stabilize_rohf)
 
 _eV = 27.21138602
 
@@ -110,7 +110,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
                      "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
                      % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
         if rohf_stability and _use_rohf:
-            _stabilize_rohf(mf, tag='qdnevpt2::solve', log=log)
+            stabilize_rohf(mf, log=log)
         if _use_rohf:
             log.info("embedded ROHF (spin=%d, nel=%d, norb=%d)"
                      % (_spin, nel, norb))

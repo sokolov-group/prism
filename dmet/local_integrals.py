@@ -39,19 +39,19 @@ class LocalIntegrals:
         self.e_hf = mf.e_tot
         _dm = mf.make_rdm1()
         _hcore = mf.get_hcore()
-        _S = self.mol.intor_symmetric('int1e_ovlp')
+        self.ovlp = self.mol.intor_symmetric('int1e_ovlp')
         if _dm.ndim == 3:  # UHF/UKS
             self.full_dm_ao = _dm[0] + _dm[1]
             # F = S C eps C.T S: rotation-invariant, avoids BLAS noise in get_veff.
-            SC_a = np.dot(_S, mf.mo_coeff[0])
-            SC_b = np.dot(_S, mf.mo_coeff[1])
+            SC_a = np.dot(self.ovlp, mf.mo_coeff[0])
+            SC_b = np.dot(self.ovlp, mf.mo_coeff[1])
             fock_a = SC_a @ np.diag(mf.mo_energy[0]) @ SC_a.T
             fock_b = SC_b @ np.diag(mf.mo_energy[1]) @ SC_b.T
             self.full_fock_ao = 0.5 * (fock_a + fock_b)
             self.full_jk_ao = self.full_fock_ao - _hcore
         else:  # RHF/RKS
             self.full_dm_ao = _dm
-            SC = np.dot(_S, mf.mo_coeff)
+            SC = np.dot(self.ovlp, mf.mo_coeff)
             self.full_fock_ao = SC @ np.diag(mf.mo_energy) @ SC.T
             self.full_jk_ao = self.full_fock_ao - _hcore
 
@@ -109,8 +109,7 @@ class LocalIntegrals:
                 raise ValueError(
                     "Invalid active_orbs for lowdin: this localization "
                     "requires the full active space.")
-            ovlp = self.mol.intor_symmetric('int1e_ovlp')
-            ovlp_eigs, ovlp_vecs = np.linalg.eigh(ovlp)
+            ovlp_eigs, ovlp_vecs = np.linalg.eigh(self.ovlp)
             self.ao2loc = ovlp_vecs @ np.diag(np.power(ovlp_eigs, -0.5)) @ ovlp_vecs.T
             self.ti_ok = False
         if self._which == 'iao':
@@ -155,8 +154,7 @@ class LocalIntegrals:
             molden.orbital_coeff(self.mol, the_file, self.ao2loc)
 
     def loc_ortho(self):
-        S = self.mol.intor_symmetric('int1e_ovlp')
-        return np.linalg.norm(self.ao2loc.T @ S @ self.ao2loc - np.eye(self.norb))
+        return np.linalg.norm(self.ao2loc.T @ self.ovlp @ self.ao2loc - np.eye(self.norb))
 
     def const(self):
         return self.active_const
