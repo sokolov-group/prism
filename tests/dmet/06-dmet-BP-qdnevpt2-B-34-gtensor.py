@@ -30,7 +30,6 @@ mol = pyscf.gto.Mole()
 mol.atom = [['B', (0.0, 0.0, 0.0)]]
 mol.basis = 'sto-3g'
 mol.spin = 1
-mol.verbose = 4
 mol.build()
 
 # ROHF calculation

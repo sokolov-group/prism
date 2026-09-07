@@ -31,7 +31,6 @@ mol.atom = [['O', (0.0,  0.0,   0.0)],
             ['H', (0.0,  0.757, 0.587)],
             ['H', (0.0, -0.757, 0.587)]]
 mol.basis = 'sto-3g'
-mol.verbose = 4
 mol.build()
 
 # RHF calculation
