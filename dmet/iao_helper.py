@@ -43,7 +43,7 @@ def construct_p_list(mol, pmol):
 
 
 def orthogonalize_iao(coeff, ovlp):
-    # Knizia, JCTC 9, 4834-4843, 2013 -- appendix C, third equation
+    # Knizia, JCTC 9, 4834-4843, 2013, appendix C, third equation
     eigs, vecs = scipy.linalg.eigh(coeff.T @ ovlp @ coeff)
     coeff = coeff @ vecs @ np.diag(np.power(eigs, -0.5)) @ vecs.T
     return coeff
@@ -123,7 +123,7 @@ def resort_orbitals(mol, ao2loc):
 
 
 def construct_iao(mol, mf):
-    # Knizia, JCTC 9, 4834-4843, 2013 -- appendix C
+    # Knizia, JCTC 9, 4834-4843, 2013, appendix C
     # UKS/UHF: spin-average the density, take its occupied natural orbitals.
     if np.ndim(mf.mo_coeff) == 3:
         mo_a, mo_b = mf.mo_coeff[0], mf.mo_coeff[1]
