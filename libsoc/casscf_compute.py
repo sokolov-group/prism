@@ -89,6 +89,12 @@ def compute_somf_soc(interface):
 
         en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb,  rdm_aabb_plus, S, interface.soc, interface.verbose)
 
+    #For dAB in NW2140
+    if  hasattr(interface, "dAB") and interface.dAB is True:
+        import NW2140.st_transition
+        interface.log.info("\nCalculating Single-Triplet HSOC coupling...")
+        NW2140.st_transition.dAB(interface, S, interface.HSOC, interface.en_sf)
+
     #compute osc
     #compute soc rdm
     rdm_sf = rdm_aabb[0] + rdm_aabb[1]

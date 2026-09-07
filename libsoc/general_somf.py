@@ -269,7 +269,8 @@ def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, ve
     H_sf = np.diag(E_spinstate).astype('complex')
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
     interface.HSOC = HSOC
-    
+    interface.en_sf = en
+
     sys.stdout.flush()
     interface.log.timer0("total %s calculation" % soc_name, *cput0)
 
