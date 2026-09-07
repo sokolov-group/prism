@@ -42,7 +42,8 @@ def _fragment_worker(task):
 class DMET:
 
     def __init__(self, integrals, fragments, is_translation_invariant, method='ED',
-                 sc_method='LSTSQ', fit_impurity_and_bath=True, use_constrained_optimization=False,
+                 sc_method='LSTSQ', conv_tol=1e-5, max_cycle=200,
+                 fit_impurity_and_bath=True, use_constrained_optimization=False,
                  use_density_embedding=False, use_density_embedding_no=False,
                  print_u=True, print_rdm=True,
                  ncas=None, nelecas=None, sa_nstates=1, sa_weights=None,
@@ -70,6 +71,8 @@ class DMET:
         self.method = method
         self.is_translation_invariant = is_translation_invariant
         self.sc_method = sc_method
+        self.conv_tol = conv_tol        # u-matrix convergence for selfconsistent()
+        self.max_cycle = max_cycle      # cap on selfconsistent() iterations
         self.ncas = ncas
         self.nelecas = nelecas
         self.sa_nstates = sa_nstates
@@ -814,10 +817,9 @@ class DMET:
 
         iteration = 0
         u_diff = 1.0
-        convergence_threshold = 1e-5
         self.log.note("Reference RHF energy: %s" % self.ints.e_hf)
 
-        while u_diff > convergence_threshold:
+        while u_diff > self.conv_tol and iteration < self.max_cycle:
 
             iteration += 1
             self.log.note("DMET iteration %d" % iteration)
@@ -871,7 +873,11 @@ class DMET:
             self.log.note("   1-RDM change (2-norm): %s" % rdm_diff)
 
             if self.sc_method == 'NONE':
-                u_diff = 0.1 * convergence_threshold  # Do only 1 iteration
+                u_diff = 0.1 * self.conv_tol  # Do only 1 iteration
+
+        if u_diff > self.conv_tol:
+            self.log.warn("Self-consistency not converged in %d cycles: u-matrix change "
+                          "%s exceeds conv_tol %s." % (self.max_cycle, u_diff, self.conv_tol))
 
         return self.energy
 
