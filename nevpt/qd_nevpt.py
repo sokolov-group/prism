@@ -721,7 +721,7 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
         # For open-shell systems, compute atomic Mulliken spin populations in the AO basis
         if n_alpha_elec != n_beta_elec:
             rdm1s = make_rdm1s(method, L=n, R=n)
-            # Use the embedded real-AO transform (DMET) when the reference supplies one
+            # An embedded calculation supplies the full molecule and its orbitals in the AO basis.
             mo_s = getattr(method, 'spin_pop_mo', None)
             if mo_s is not None:
                 ovlp_s, mol = method.spin_pop_ovlp, method.spin_pop_mol
