@@ -201,6 +201,11 @@ class LocalIntegrals:
         core_dm_ao = self.ao2loc @ core_1rdm_loc @ self.ao2loc.T
         return {'mol': self.mol, 'ao2emb': ao2emb, 'core_dm_ao': core_dm_ao}
 
+    def dmet_embedded_ref(self, loc_2_dmet, num_active, ref_dm_ao):
+        # Reference density in the embedded basis, for use in place of the embedded SCF.
+        sc = self.ovlp @ (self.ao2loc @ loc_2_dmet[:, :num_active])
+        return sc.T @ ref_dm_ao @ sc
+
     def dmet_init_guess_rhf(self, loc_2_dmet, num_active, num_pairs, nimp, chempot_imp):
         fock_emb = loc_2_dmet[:, :num_active].T @ self.active_fock @ loc_2_dmet[:, :num_active]
         if chempot_imp != 0.0:

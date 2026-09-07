@@ -31,7 +31,7 @@ frags = make_fragments(mol, ints, [[0], [1]])
 # One-shot DMET; natorb picks the active space from a 4-orbital superset window
 dmet = DMET(ints, frags, False, method='PC-NEVPT2',
             ncas=4, nelecas=4, sa_nstates=2, cas_select='natorb',
-            rohf_stability=True, cas_multiseed=True)
+            scf_stability=True)
 dmet.oneshot()
 
 res = dmet.pcnevpt2_results[0]

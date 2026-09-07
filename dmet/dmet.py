@@ -52,9 +52,10 @@ class DMET:
                  use_symmetry=False, symmetry_map=None,
                  parallel=False, max_workers=None, bath_tol=1e-13, n_bath_orbs=None,
                  bath_1rdm=None, core_occ_tol=None,
+                 embedded_ref_dm=None, no_kernel=False,
                  keep_degenerate=False, deg_rtol=1e-6, print_bath_spectrum=False,
                  cas_select='energy',
-                 embed_level_shift=0.0, rohf_stability=False,
+                 embed_level_shift=0.0, scf_stability=False,
                  cas_spin=None, cas_spin_shift=0.2,
                  fragment_methods=None,
                  natorb_occ_thresh=0.02, natorb_max_superset=None,
@@ -82,7 +83,7 @@ class DMET:
         self.casscf_kwargs = casscf_kwargs or {}
         self.cas_select = cas_select
         self.embed_level_shift = embed_level_shift   # static level shift on the embedded post-HF reference
-        self.rohf_stability = rohf_stability
+        self.scf_stability = scf_stability
         self.cas_spin = cas_spin        # target 2S for CAS states; None disables the spin penalty
         self.cas_spin_shift = cas_spin_shift  # fix_spin_ penalty strength for off-target spins
         self.natorb_occ_thresh = natorb_occ_thresh    # natorb core-vs-active occupation cutoff
@@ -137,6 +138,25 @@ class DMET:
                     f"bath_1rdm trace {trace:.6f} != nelec {self.ints.nelec}. It must be "
                     f"in the orthonormal local basis: ao2loc.T @ S @ dm_ao @ S @ ao2loc.")
         self.bath_1rdm = bath_1rdm
+        # Reference density in the AO basis, projected per fragment and used as the
+        # embedded reference when no_kernel is set.
+        if embedded_ref_dm is not None:
+            if sc_method != 'NONE':
+                raise ValueError(
+                    f"embedded_ref_dm requires sc_method='NONE', got '{sc_method}'. The "
+                    f"correlation-potential fit requires a reference that varies with umat.")
+            nelec_ref = np.trace(embedded_ref_dm @ self.ints.ovlp)
+            if abs(nelec_ref - self.ints.nelec) > 1e-6:
+                raise ValueError(
+                    f"embedded_ref_dm holds {nelec_ref:.6f} electrons, expected "
+                    f"{self.ints.nelec}. It must be in the AO basis, so that "
+                    f"Tr(dm @ S) is the electron count.")
+            if not no_kernel:
+                raise ValueError(
+                    "embedded_ref_dm requires no_kernel=True. An SCF started from it "
+                    "refills the orbitals by aufbau and discards the supplied reference.")
+        self.embedded_ref_dm = embedded_ref_dm
+        self.no_kernel = no_kernel
         self.parallel = parallel
 
         self._validate_config()
@@ -202,6 +222,15 @@ class DMET:
 
     def _warn_inert_params(self):
         _cas_methods = {'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'}
+        if self.no_kernel:
+            if self.method not in _cas_methods:
+                warnings.warn(
+                    f"no_kernel is inert for method='{self.method}' "
+                    f"(only {sorted(_cas_methods)} build an embedded SCF).", UserWarning)
+            elif self.scf_stability:
+                warnings.warn(
+                    "scf_stability is skipped when no_kernel=True; no embedded SCF "
+                    "solution is produced to test.", UserWarning)
         if self.method in _cas_methods and self.cas_select == 'energy':
             warnings.warn(
                 "cas_select='energy' (the default) selects the active space by "
@@ -389,6 +418,7 @@ class DMET:
             keep_degenerate = self.keep_degenerate,
             deg_rtol = self.deg_rtol,
             needs_soc = _needs_soc,
+            embedded_ref_dm = self.embedded_ref_dm,
         )
 
         for frag_idx in range(maxiter):
@@ -470,7 +500,8 @@ class DMET:
                 frag_idx, _method_key, dmet_oei, dmet_fock, dmet_tei,
                 norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                 dm_guess_rhf, mo_guess=_mo_guess, ci_guess=_ci_guess,
-                dip_mom_ao=dip_mom_ao, soc_data=frag['soc_data'])
+                dip_mom_ao=dip_mom_ao, soc_data=frag['soc_data'],
+                embedded_ref=frag['embedded_ref'])
 
             _is_parallel_eligible = (
                 self.parallel
@@ -592,7 +623,7 @@ class DMET:
     def _build_task(self, frag_idx, method_key, dmet_oei, dmet_fock, dmet_tei,
                     norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                     dm_guess_rhf, mo_guess=None, ci_guess=None, dip_mom_ao=None,
-                    soc_data=None):
+                    soc_data=None, embedded_ref=None):
         return {
             'counter': frag_idx,
             'method': method_key,
@@ -602,6 +633,8 @@ class DMET:
             'dmet_tei': dmet_tei,
             'dip_mom_ao': dip_mom_ao,
             'soc_data': soc_data,
+            'embedded_ref': embedded_ref,
+            'no_kernel': self.no_kernel,
             'norb': norb_in_imp,
             'nel': nelec_in_imp,
             'nimp': num_imp_orbs,
@@ -617,7 +650,7 @@ class DMET:
             'deg_tol': self.deg_tol,
             'casci_conv_tol': self.casci_conv_tol,
             'embed_level_shift': self.embed_level_shift,
-            'rohf_stability': self.rohf_stability,
+            'scf_stability': self.scf_stability,
             'cas_spin': self.cas_spin,
             'cas_spin_shift': self.cas_spin_shift,
             'casscf_kwargs': self.casscf_kwargs,

@@ -27,7 +27,8 @@ class FragmentBuilder:
 
     def __init__(self, ints, helper, fragments, method, num_bath_orbs, bath_tol,
                  fragment_methods=None, core_occ_tol=None,
-                 keep_degenerate=False, deg_rtol=1e-6, needs_soc=False):
+                 keep_degenerate=False, deg_rtol=1e-6, needs_soc=False,
+                 embedded_ref_dm=None):
         self._ints = ints
         self._helper = helper
         self._fragments = fragments
@@ -39,6 +40,7 @@ class FragmentBuilder:
         self._keep_degenerate = keep_degenerate
         self._deg_rtol = deg_rtol
         self._needs_soc = needs_soc
+        self._embedded_ref_dm = embedded_ref_dm
 
     def build(self, counter, one_rdm, chempot_imp):
         fragment_mask = self._fragments[counter]
@@ -96,6 +98,11 @@ class FragmentBuilder:
         if self._needs_soc:
             soc_data = self._ints.dmet_soc_data(loc_2_dmet, norb_in_imp, core_1rdm_loc)
 
+        embedded_ref = None
+        if self._embedded_ref_dm is not None:
+            embedded_ref = self._ints.dmet_embedded_ref(
+                loc_2_dmet, norb_in_imp, self._embedded_ref_dm)
+
         return {
             'counter': counter,
             'flag_rhf': flag_rhf,
@@ -112,6 +119,7 @@ class FragmentBuilder:
             'dm_guess_rhf': dm_guess_rhf,
             'dip_mom_ao': dip_mom_ao,
             'soc_data': soc_data,
+            'embedded_ref': embedded_ref,
             'bath_spectrum': bath_spectrum,
             'method_key': method_key,
         }

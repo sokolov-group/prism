@@ -26,7 +26,7 @@ from pyscf import fci as pyscf_fci
 import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
 from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
-                                      stabilize_rohf)
+                                      stabilize_scf, set_reference_no_scf)
 
 
 def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
@@ -37,10 +37,11 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
           mo_guess=None, ci_guess=None,
           spin=None,
           cas_select='energy',
-          embed_level_shift=0.0, rohf_stability=False,
+          embed_level_shift=0.0, scf_stability=False,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
           deg_tol=1e-3, casci_conv_tol=1e-10,
+          embedded_ref=None, no_kernel=False,
           **casscf_kwargs):
     if ncas is None:
         ncas = norb
@@ -104,24 +105,29 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         mf._eri = ao2mo.restore(8, tei, norb)
         # Level shift opens the near-degenerate trap gap for a deterministic embedded SCF.
         mf.level_shift = embed_level_shift
-        mf.scf(dm_guess_rhf)
-        dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
-        if not mf.converged:
-            mf.max_cycle = 300
-            mf.diis_space = 12
-            mf.scf(dm_loc)
+        if no_kernel:
+            set_reference_no_scf(
+                mf, embedded_ref if embedded_ref is not None else dm_guess_rhf,
+                nel, _spin, log=log)
+        else:
+            mf.scf(dm_guess_rhf)
             dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
-        if embed_level_shift != 0.0:
-            # Check the shifted fixed point is stationary for the real H; motion = masked instability.
-            e_shifted = mf.e_tot
-            mf.level_shift = 0.0
-            mf.scf(dm_loc)
-            log.info("level-shift verification: E(shift=%s)=%.10f  "
-                     "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
-                     % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
-
-        if rohf_stability and _use_rohf:
-            stabilize_rohf(mf, log=log)
+            if not mf.converged:
+                mf.max_cycle = 300
+                mf.diis_space = 12
+                mf.scf(dm_loc)
+                dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
+            if embed_level_shift != 0.0:
+                # The shifted fixed point should be stationary for the real H;
+                # motion indicates a masked instability.
+                e_shifted = mf.e_tot
+                mf.level_shift = 0.0
+                mf.scf(dm_loc)
+                log.info("level-shift verification: E(shift=%s)=%.10f  "
+                         "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
+                         % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
+            if scf_stability:
+                stabilize_scf(mf, log=log)
 
         # Skip selection with a warm-restart guess: mc.kernel would overwrite mo_coeff.
         mo_natorb = None
@@ -260,12 +266,14 @@ def execute(task):
         spin=task.get('spin'),
         cas_select=task.get('cas_select', 'energy'),
         embed_level_shift=task.get('embed_level_shift', 0.0),
-        rohf_stability=task.get('rohf_stability', False),
+        scf_stability=task.get('scf_stability', False),
         cas_spin=task.get('cas_spin'),
         cas_spin_shift=task.get('cas_spin_shift', 0.2),
         natorb_occ_thresh=task.get('natorb_occ_thresh', 0.02),
         natorb_max_superset=task.get('natorb_max_superset'),
         deg_tol=task.get('deg_tol', 1e-3),
         casci_conv_tol=task.get('casci_conv_tol', 1e-10),
+        embedded_ref=task.get('embedded_ref'),
+        no_kernel=task.get('no_kernel', False),
         **task.get('casscf_kwargs', {}),
     )
