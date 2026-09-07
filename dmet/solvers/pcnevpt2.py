@@ -80,9 +80,11 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
     ctx = silent_stdout() if not printoutput else nullcontext()
 
     with ctx:
+        # Placeholder Mole: the embedded Hamiltonian arrives through get_hcore/get_ovlp/_eri
+        # below, so this carries no atoms and no basis. Anything needing real AO integrals
+        # must go through LocalIntegrals (see dmet_dip_mom), never through this object.
         mol = gto.Mole()
         mol.build(verbose=0)
-        mol.atom.append(('C', (0, 0, 0)))
         mol.nelectron = nel
         mol.spin = _spin
         mol.incore_anyway = True
@@ -168,6 +170,12 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
                 nevpt_obj.properties["osc_strengths"] = np.zeros(_n - 1) if _n > 1 else None
             nevpt_obj.compute_properties = _skip_osc
         if nfrozen is not None:
+            # nfrozen counts orbitals frozen in the EMBEDDED problem, not the parent cluster.
+            if nfrozen >= nel // 2:
+                raise ValueError(
+                    f"nfrozen={nfrozen} must be smaller than the embedded doubly occupied "
+                    f"count {nel // 2} (nelec={nel}). It is sized to the embedded problem, "
+                    f"not to the parent cluster.")
             nevpt_obj.nfrozen = nfrozen
         for key, val in nevpt_kwargs.items():
             setattr(nevpt_obj, key, val)
@@ -229,4 +237,7 @@ def execute(task):
         'mc': mc,
         'nevpt': nevpt_obj,
     }
+    # Embedded CASSCF, before the PT2. Only state-averaged runs carry e_states.
+    if task.get('sa_nstates', 1) > 1:
+        pcnevpt2_res['e_cas_states'] = np.asarray(mc.e_states)
     return e_tot[0], rdm1, pcnevpt2_res

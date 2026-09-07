@@ -116,9 +116,17 @@ class DMETHelper:
         eigenvals, eigenvecs = np.linalg.eigh(embedding_rdm1)
         idx = np.maximum(-eigenvals, eigenvals - 2.0).argsort()
         to_keep = np.sum(-np.maximum(-eigenvals, eigenvals - 2.0)[idx] > threshold)
+        # The two regimes are exclusive: to_keep < request undersizes the bath, while
+        # to_keep > request cuts by count and can split a degenerate pair.
+        self.log.info("Bath: %d entangled environment orbitals, %d requested."
+                      % (int(to_keep), num_bath_orbs))
         if to_keep < num_bath_orbs:
             self.log.info("Throwing out %d orbitals within %s of 0 or 2."
                           % (num_bath_orbs - to_keep, threshold))
+        elif to_keep > num_bath_orbs:
+            self.log.warn("Bath capped at %d; %d entangled orbitals discarded. Degenerate "
+                          "partners may be split; pass n_bath_orbs to raise the cap."
+                          % (num_bath_orbs, int(to_keep) - num_bath_orbs))
         num_bath_orbs = min(int(to_keep), num_bath_orbs)
 
         eigenvals = eigenvals[idx]
