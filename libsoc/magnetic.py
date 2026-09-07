@@ -248,6 +248,9 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     interface.log.info("Calculating magnetic dipole moment...")
     mf = interface.mf
     mo = interface.mo
+    # An embedded calculation supplies the real molecule and its orbitals in the AO basis.
+    ao2emb = getattr(interface, 'soc_ao2emb', None)
+    mol = interface.soc_mol if ao2emb is not None else mf.mol
     n_states = len(rdm_sf[0])
     
     # Calculate spin-free multiplicity
@@ -306,28 +309,31 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     if origin_type == 'charge':
         origin = [ 0, 0 ,0]
         total_charge = 0
-        for atm in range(mf.mol.natm):
-            origin += mf.mol.atom_coord(atm) * mf.mol.atom_charge(atm)
-            total_charge += mf.mol.atom_charge(atm)
+        for atm in range(mol.natm):
+            origin += mol.atom_coord(atm) * mol.atom_charge(atm)
+            total_charge += mol.atom_charge(atm)
         origin = origin / total_charge
         interface.log.info("Coordinate system origin (charge, Bohr) = %s", origin) 
-        mf.mol.set_common_orig(origin)
-        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
+        mol.set_common_orig(origin)
+        l1_ao = -1j * mol.intor('cint1e_cg_irxp_sph', comp=3)
 
     elif origin_type == 'atom1':
-        interface.log.info("Coordinate system origin (atom1, Bohr) = %s", mf.mol.atom_coord(0))
-        mf.mol.set_common_orig(mf.mol.atom_coord(0))
-        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
+        interface.log.info("Coordinate system origin (atom1, Bohr) = %s", mol.atom_coord(0))
+        mol.set_common_orig(mol.atom_coord(0))
+        l1_ao = -1j * mol.intor('cint1e_cg_irxp_sph', comp=3)
     
     elif origin_type == 'giao':
         interface.log.info("Using GIAO to compute gauge-invariant g-tensor...")
-        l1_ao = -1j * mf.mol.intor('int1e_giao_irjxp_sph', comp=3)
+        l1_ao = -1j * mol.intor('int1e_giao_irjxp_sph', comp=3)
 
     else:
         interface.log.info("Coordinate system origin (Bohr) = %s", origin_type)
-        mf.mol.set_common_orig(origin_type)
-        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
+        mol.set_common_orig(origin_type)
+        l1_ao = -1j * mol.intor('cint1e_cg_irxp_sph', comp=3)
     
+    if ao2emb is not None:
+        l1_ao = np.einsum('pi,xpq,qj->xij', ao2emb, l1_ao, ao2emb)
+
     # AO -> MO basis:
     l1_mo = np.einsum('xpq,pi,qj->xij',l1_ao,mo,mo) 
     l_mat = np.zeros((3,n_micro_states,n_micro_states), dtype='complex')
