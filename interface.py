@@ -228,6 +228,7 @@ class PYSCF:
         self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.unc = None
         self.properties_cas = {}
+        self.HSOC = None
 
         # For magnetic properties
         self.magnetic_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)
