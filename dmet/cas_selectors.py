@@ -27,25 +27,57 @@ def _get_log(log):
     return log if log is not None else logger.Logger(sys.stdout, logger.INFO)
 
 
-def stabilize_rohf(mf, max_iter=5, log=None):
-    # Follow ROHF instabilities until the solution is stable.
-    from pyscf import scf
+def stabilize_scf(mf, max_iter=5, log=None):
+    # Follow internal instabilities until the solution is stable.
     log = _get_log(log)
-    if not isinstance(mf, scf.rohf.ROHF):
-        return
     for i in range(max_iter):
         mo_i, _, stable_i, _ = mf.stability(return_status=True)
         if stable_i:
             if i > 0:
-                log.info("ROHF stable after %d stability follow(s), E=%.10f" % (i, mf.e_tot))
+                log.info("SCF stable after %d stability follow(s), E=%.10f" % (i, mf.e_tot))
             else:
-                log.info("ROHF internally stable, E=%.10f" % mf.e_tot)
+                log.info("SCF internally stable, E=%.10f" % mf.e_tot)
             return
-        log.info("ROHF internal instability (iteration %d), reconverging along the unstable mode"
+        log.info("SCF internal instability (iteration %d), reconverging along the unstable mode"
                  % (i + 1))
         mf.scf(mf.make_rdm1(mo_i, mf.mo_occ))
-    log.warn("ROHF stability not reached after %d reconverges, E=%.10f"
+    log.warn("SCF stability not reached after %d reconverges, E=%.10f"
              % (max_iter, mf.e_tot))
+
+
+def set_reference_no_scf(mf, dm, nelec, spin, log=None):
+    # Reference from the natural orbitals of dm, taken without an SCF iteration. dm is in
+    # the orthonormal embedded basis, so eigh gives the natural orbitals directly.
+    log = _get_log(log)
+    occ, mo = np.linalg.eigh(dm)
+    idx = occ.argsort()[::-1]
+    occ, mo = occ[idx], mo[:, idx]
+    ndocc = (nelec - spin) // 2
+    nocc = ndocc + spin
+    mo_occ = np.zeros(mo.shape[1])
+    mo_occ[:ndocc] = 2.0
+    mo_occ[ndocc:nocc] = 1.0
+
+    dm_ref = mf.make_rdm1(mo, mo_occ)
+    fock = np.asarray(mf.get_fock(dm=dm_ref))
+
+    # A mean-field density is degenerate within each occupation block, so diagonalize the
+    # Fock there to fix the ordering. The density is invariant under these rotations.
+    mo_energy = np.zeros(mo.shape[1])
+    for start, stop in ((0, ndocc), (ndocc, nocc), (nocc, mo.shape[1])):
+        if stop <= start:
+            continue
+        block = mo[:, start:stop]
+        e_block, rot = np.linalg.eigh(block.T @ fock @ block)
+        mo[:, start:stop] = block @ rot
+        mo_energy[start:stop] = e_block
+
+    mf.mo_coeff, mf.mo_occ, mf.mo_energy = mo, mo_occ, mo_energy
+    mf.e_tot = mf.energy_tot(dm_ref)
+    mf.converged = True
+    gap = ("%.6e" % (occ[nocc - 1] - occ[nocc])) if 0 < nocc < len(occ) else "n/a"
+    log.info("Embedded reference from the guess density, no SCF: E=%.10f, "
+             "natural-occupation gap at the %d-orbital cut %s" % (mf.e_tot, nocc, gap))
 
 
 def canonicalize_degenerate_active_nos(cas_no, act_idx, no_occ, f_emb, deg_tol=1e-3):

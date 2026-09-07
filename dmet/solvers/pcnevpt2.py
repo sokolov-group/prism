@@ -25,7 +25,7 @@ from pyscf import ao2mo, gto, scf, mcscf
 import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
 from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
-                                      stabilize_rohf)
+                                      stabilize_scf, set_reference_no_scf)
 
 _eV = 27.21138602
 
@@ -44,10 +44,11 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           nevpt_kwargs=None,
           spin=None,
           cas_select='energy',
-          embed_level_shift=0.0, rohf_stability=False,
+          embed_level_shift=0.0, scf_stability=False,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
-          deg_tol=1e-3, casci_conv_tol=1e-10, dip_mom_ao=None, soc_data=None):
+          deg_tol=1e-3, casci_conv_tol=1e-10, dip_mom_ao=None, soc_data=None,
+          embedded_ref=None, no_kernel=False):
     import prism.interface
     import prism.nevpt
 
@@ -94,21 +95,27 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
         mf.verbose = 4 if printoutput else 0
         # Level shift opens the near-degenerate gap so the embedded SCF is deterministic.
         mf.level_shift = embed_level_shift
-        mf.scf(dm_guess_rhf)
-        if not mf.converged:
-            mf.max_cycle = 300
-            mf.diis_space = 12
-            mf.scf(mf.make_rdm1())
-        if embed_level_shift != 0.0:
-            # Check the shifted fixed point is stationary for the real H; motion = masked instability.
-            e_shifted = mf.e_tot
-            mf.level_shift = 0.0
-            mf.scf(mf.make_rdm1())
-            log.info("level-shift verification: E(shift=%s)=%.10f  "
-                     "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
-                     % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
-        if rohf_stability and _use_rohf:
-            stabilize_rohf(mf, log=log)
+        if no_kernel:
+            set_reference_no_scf(
+                mf, embedded_ref if embedded_ref is not None else dm_guess_rhf,
+                nel, _spin, log=log)
+        else:
+            mf.scf(dm_guess_rhf)
+            if not mf.converged:
+                mf.max_cycle = 300
+                mf.diis_space = 12
+                mf.scf(mf.make_rdm1())
+            if embed_level_shift != 0.0:
+                # The shifted fixed point should be stationary for the real H;
+                # motion indicates a masked instability.
+                e_shifted = mf.e_tot
+                mf.level_shift = 0.0
+                mf.scf(mf.make_rdm1())
+                log.info("level-shift verification: E(shift=%s)=%.10f  "
+                         "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
+                         % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
+            if scf_stability:
+                stabilize_scf(mf, log=log)
         if _use_rohf:
             log.info("embedded ROHF (spin=%d, nel=%d, norb=%d)"
                      % (_spin, nel, norb))
@@ -217,7 +224,7 @@ def execute(task):
         spin=task.get('spin'),
         cas_select=task.get('cas_select', 'energy'),
         embed_level_shift=task.get('embed_level_shift', 0.0),
-        rohf_stability=task.get('rohf_stability', False),
+        scf_stability=task.get('scf_stability', False),
         cas_spin=task.get('cas_spin'),
         cas_spin_shift=task.get('cas_spin_shift', 0.2),
         natorb_occ_thresh=task.get('natorb_occ_thresh', 0.02),
@@ -226,6 +233,8 @@ def execute(task):
         casci_conv_tol=task.get('casci_conv_tol', 1e-10),
         dip_mom_ao=task.get('dip_mom_ao'),
         soc_data=task.get('soc_data'),
+        embedded_ref=task.get('embedded_ref'),
+        no_kernel=task.get('no_kernel', False),
     )
 
     rdm1 = mc.make_rdm1()
