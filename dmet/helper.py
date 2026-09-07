@@ -24,8 +24,7 @@ import prism.lib.logger as logger
 
 
 def rhf_response(norb, num_pairs, h1_start, h1_row, h1_col, oei):
-    # Idempotent-RDM response dD/du_k by first-order perturbation theory over
-    # occupied-virtual pairs (NumPy reimplementation of the former C rhf_response kernel).
+    # Idempotent-RDM response dD/du_k by first-order PT (NumPy port of the C rhf_response).
     evals, evecs = np.linalg.eigh(oei)
     occ, virt = evecs[:, :num_pairs], evecs[:, num_pairs:]
     denom = -1.0 / (evals[num_pairs:, None] - evals[None, :num_pairs])  # (nvir, nocc)

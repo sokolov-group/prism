@@ -92,8 +92,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
         mf.get_ovlp = lambda *args: np.eye(norb)
         mf._eri = ao2mo.restore(8, tei, norb)
         mf.verbose = 4 if printoutput else 0
-        # Level shift opens the near-degenerate trap gap so the embedded SCF lands in
-        # one basin deterministically rather than tipping on BLAS noise (default 0 = off).
+        # Level shift opens the near-degenerate gap so the embedded SCF is deterministic.
         mf.level_shift = embed_level_shift
         mf.scf(dm_guess_rhf)
         if not mf.converged:
@@ -101,8 +100,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             mf.diis_space = 12
             mf.scf(mf.make_rdm1())
         if embed_level_shift != 0.0:
-            # Confirm the shifted fixed point is also a stationary point of the real
-            # (unshifted) Hamiltonian; if it moves, the shift masked the instability.
+            # Check the shifted fixed point is stationary for the real H; motion = masked instability.
             e_shifted = mf.e_tot
             mf.level_shift = 0.0
             mf.scf(mf.make_rdm1())
@@ -155,15 +153,11 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             backend=prism_backend,
             select_reference=select_reference,
         )
-        # The dummy mol carries no real geometry, so its dipole integrals are
-        # meaningless. When the driver supplies real-frame dipole integrals in the
-        # embedded basis, use them so native oscillator strengths are physical;
-        # otherwise stub them to zero so print_results does not crash.
+        # Dummy mol dipoles are meaningless; use the driver's real-frame ones if given.
         if dip_mom_ao is not None:
             interface.dip_mom_ao = dip_mom_ao
 
-        # prism.nevpt.NEVPT with method_type 'ss' is fully internally contracted
-        # NEVPT2, equivalent to partially contracted NEVPT2 (PC-NEVPT2).
+        # prism.nevpt.NEVPT ('ss') is FIC-NEVPT2, equivalent to PC-NEVPT2.
         nevpt_obj = prism.nevpt.NEVPT(interface)
         nevpt_obj.compute_singles_amplitudes = compute_singles
         nevpt_obj.s_thresh_singles = s_thresh_singles
@@ -191,8 +185,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
 
 
 def execute(task):
-    # Named solver params are popped from pcnevpt2_kwargs; the remainder is
-    # forwarded to the Prism NEVPT object via setattr.
+    # Named params are popped; the rest is forwarded to the Prism NEVPT via setattr.
     _kw = dict(task.get('pcnevpt2_kwargs', {}))
     e_tot, e_corr, mc, nevpt_obj = solve(
         task['dmet_fock'],

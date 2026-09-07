@@ -42,8 +42,7 @@ class LocalIntegrals:
         _S = self.mol.intor_symmetric('int1e_ovlp')
         if _dm.ndim == 3:  # UHF/UKS
             self.full_dm_ao = _dm[0] + _dm[1]
-            # F = S C eps C.T S: invariant to degenerate-subspace eigenvector
-            # rotation; avoids BLAS non-determinism in get_veff ERI contraction.
+            # F = S C eps C.T S: rotation-invariant, avoids BLAS noise in get_veff.
             SC_a = np.dot(_S, mf.mo_coeff[0])
             SC_b = np.dot(_S, mf.mo_coeff[1])
             fock_a = SC_a @ np.diag(mf.mo_energy[0]) @ SC_a.T
@@ -87,9 +86,8 @@ class LocalIntegrals:
                     )
                 self.ao2loc = mf.mo_coeff[:, self.active == 1]
             if self.norb == self.mol.nao_nr():
-                # Be (Z=4) needs an explicit valence-shell entry for meta_lowdin to span
-                # the minimal basis; only touch the global table when Be is present, and
-                # restore it after so other molecules in the same process are unaffected.
+                # Be (Z=4) needs an explicit valence shell for meta_lowdin to span the minimal
+                # basis; touch the global table only for Be and restore it after.
                 has_be = 4 in self.mol.atom_charges()
                 if has_be:
                     _aoshell_be_saved = nao.AOSHELL[4]
@@ -120,8 +118,7 @@ class LocalIntegrals:
                 raise ValueError(
                     "Invalid active_orbs for iao: this localization "
                     "requires the full active space.")
-            # ao2loc is non-deterministic when BLAS swaps near-degenerate HOMO/LUMO;
-            # pin num_threads before mf.kernel() to suppress (not guaranteed for very tight gaps).
+            # ao2loc is BLAS-order sensitive for near-degenerate HOMO/LUMO; pin num_threads.
             self.ao2loc = iao_helper.localize_iao(self.mol, mf)
             if ao_rotation is not None:
                 self.ao2loc = np.dot(self.ao2loc, ao_rotation.T)
@@ -192,8 +189,7 @@ class LocalIntegrals:
         return loc_2_dmet[:, :num_active].T @ self.loc_fock(core_dm_loc) @ loc_2_dmet[:, :num_active]
 
     def dmet_dip_mom(self, loc_2_dmet, num_active):
-        # Real-frame dipole integrals in the embedded basis, for oscillator
-        # strengths (the embedded solver's dummy mol has no real geometry).
+        # Real-frame dipole integrals in the embedded basis, for oscillator strengths.
         transfo = self.ao2loc @ loc_2_dmet[:, :num_active]
         dip_mom_ao = self.mol.intor_symmetric('int1e_r', comp=3)
         dip_mom_emb = np.zeros((dip_mom_ao.shape[0], num_active, num_active))
