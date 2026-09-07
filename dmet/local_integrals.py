@@ -40,20 +40,20 @@ class LocalIntegrals:
         _dm = mf.make_rdm1()
         _hcore = mf.get_hcore()
         self.ovlp = self.mol.intor_symmetric('int1e_ovlp')
-        if _dm.ndim == 3:  # UHF/UKS
-            self.full_dm_ao = _dm[0] + _dm[1]
+        # ROHF is spin-resolved in the density but keeps one set of orbitals, so the
+        # density and the Fock build are selected on different quantities.
+        self.full_dm_ao = _dm[0] + _dm[1] if _dm.ndim == 3 else _dm
+        if np.asarray(mf.mo_coeff).ndim == 3:  # UHF/UKS
             # F = S C eps C.T S: rotation-invariant, avoids BLAS noise in get_veff.
             SC_a = np.dot(self.ovlp, mf.mo_coeff[0])
             SC_b = np.dot(self.ovlp, mf.mo_coeff[1])
             fock_a = SC_a @ np.diag(mf.mo_energy[0]) @ SC_a.T
             fock_b = SC_b @ np.diag(mf.mo_energy[1]) @ SC_b.T
             self.full_fock_ao = 0.5 * (fock_a + fock_b)
-            self.full_jk_ao = self.full_fock_ao - _hcore
-        else:  # RHF/RKS
-            self.full_dm_ao = _dm
+        else:  # RHF/ROHF/RKS
             SC = np.dot(self.ovlp, mf.mo_coeff)
             self.full_fock_ao = SC @ np.diag(mf.mo_energy) @ SC.T
-            self.full_jk_ao = self.full_fock_ao - _hcore
+        self.full_jk_ao = self.full_fock_ao - _hcore
 
         self._which = localization_type
         self.active = np.zeros((self.mol.nao_nr(),), dtype=int)
