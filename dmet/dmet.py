@@ -51,6 +51,7 @@ class DMET:
                  pcnevpt2_kwargs=None,
                  use_symmetry=False, symmetry_map=None,
                  parallel=False, max_workers=None, bath_tol=1e-13, n_bath_orbs=None,
+                 bath_1rdm=None, core_occ_tol=None,
                  cas_select='energy',
                  embed_level_shift=0.0, rohf_stability=False, cas_multiseed=False,
                  cas_spin=None, cas_spin_shift=0.2,
@@ -120,6 +121,22 @@ class DMET:
                     f"Invalid fragment_methods value '{frag_method}' for fragment {frag_idx}: "
                     f"only 'RHF' is supported per fragment.")
         self.bath_tol = bath_tol
+        self.core_occ_tol = core_occ_tol
+        # Externally supplied bath density, consumed only by do_exact(). A fixed density does
+        # not respond to umat, so the correlation-potential fit loses its gradient and stops
+        # at the initial umat without reporting anything.
+        if bath_1rdm is not None:
+            if sc_method != 'NONE':
+                raise ValueError(
+                    f"bath_1rdm requires sc_method='NONE', got '{sc_method}'. The "
+                    f"correlation-potential fit needs a density that responds to umat, and "
+                    f"construct_1rdm_response assumes an idempotent one.")
+            trace = np.trace(bath_1rdm)
+            if abs(trace - self.ints.nelec) > 1e-6:
+                raise ValueError(
+                    f"bath_1rdm trace {trace:.6f} != nelec {self.ints.nelec}. It must be "
+                    f"in the orthonormal local basis: ao2loc.T @ S @ dm_ao @ S @ ao2loc.")
+        self.bath_1rdm = bath_1rdm
         self.parallel = parallel
 
         self._validate_config()
@@ -335,7 +352,8 @@ class DMET:
         return mask
 
     def do_exact(self, chempot_imp=0.0):
-        one_rdm = self.helper.construct_1rdm_loc(self.umat)
+        one_rdm = (self.bath_1rdm if self.bath_1rdm is not None
+                   else self.helper.construct_1rdm_loc(self.umat))
         self.energy = 0.0
         self.imp_rdm1 = []
         self.dmet_orbs = []
@@ -364,6 +382,7 @@ class DMET:
             num_bath_orbs = self.num_bath_orbs,
             bath_tol = self.bath_tol,
             fragment_methods = self.fragment_methods,
+            core_occ_tol = self.core_occ_tol,
         )
 
         for frag_idx in range(maxiter):

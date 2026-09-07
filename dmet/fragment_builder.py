@@ -23,10 +23,12 @@ import numpy as np
 class FragmentBuilder:
 
     _NEEDS_DM_METHODS = frozenset({'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'})
+    # CASSCF is absent by design: its solver computes no transition properties, so the
+    # dipole integrals would be built and then discarded.
     _NEEDS_DIP_METHODS = frozenset({'QD-NEVPT2', 'PC-NEVPT2'})
 
     def __init__(self, ints, helper, fragments, method, num_bath_orbs, bath_tol,
-                 fragment_methods=None):
+                 fragment_methods=None, core_occ_tol=None):
         self._ints = ints
         self._helper = helper
         self._fragments = fragments
@@ -34,6 +36,7 @@ class FragmentBuilder:
         self._num_bath_orbs = num_bath_orbs
         self._bath_tol = bath_tol
         self._fragment_methods = fragment_methods or {}
+        self._core_occ_tol = core_occ_tol
 
     def build(self, counter, one_rdm, chempot_imp):
         fragment_mask = self._fragments[counter]
@@ -46,7 +49,9 @@ class FragmentBuilder:
             one_rdm, impurity_orbs, bath_request, threshold=self._bath_tol)
 
         # Loose core-occupation cutoff when the bath is auto-sized, tight when fixed.
-        core_cutoff = 0.01 if self._num_bath_orbs is None else 0.5
+        # core_occ_tol overrides that coupling so bath sizing can be varied on its own.
+        core_cutoff = (self._core_occ_tol if self._core_occ_tol is not None
+                       else (0.01 if self._num_bath_orbs is None else 0.5))
         for idx, occ in enumerate(core_1rdm_dmet):
             if occ < core_cutoff:
                 core_1rdm_dmet[idx] = 0.0
