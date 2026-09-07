@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
 '''
-DMET + QD-NEVPT2 for H2O: excitation energies, oscillator strengths, and
-eigenvector analysis, checked against a direct (non-embedded) QD-NEVPT2.
+DMET + QD-NEVPT2 for H2O, checked against a direct QD-NEVPT2
 
-The whole molecule is one fragment, so the embedding is exact and DMET
-reproduces the direct result; both are printed side by side. Embedded total
-energies lack nuclear repulsion, but excitations and oscillator strengths are
-unaffected.
+Excitation energies, oscillator strengths and eigenvector analysis. The whole
+molecule is one fragment, so the embedding is exact and DMET reproduces the
+direct result; both are printed side by side. Embedded total energies lack
+nuclear repulsion, but excitations and oscillator strengths are unaffected.
 '''
 
 import pyscf.gto

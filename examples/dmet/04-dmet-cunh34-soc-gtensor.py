@@ -8,12 +8,15 @@ bath, and the part of the ligand density left outside the cluster is frozen into
 the core. The spin-orbit and magnetic integrals are built over the whole
 molecule, and the spin-orbit mean field adds that frozen density back, so the
 g-tensor, the powder magnetization and the powder susceptibility are in the
-molecular frame.
+molecular frame. The g-tensor is also computed on the whole molecule.
 '''
 
 import numpy as np
 import pyscf.gto
 import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.nevpt
 from prism.dmet import DMET, LocalIntegrals, make_fragments
 
 np.set_printoptions(suppress=True)
@@ -68,8 +71,22 @@ dmet = DMET(ints, frags, False, method='QD-NEVPT2',
                              's_thresh_doubles': 1e-10})
 dmet.oneshot()
 
+# The same active space and method on the whole molecule, for comparison
+mc_ref = pyscf.mcscf.CASSCF(mf, 5, 9).state_average_([0.2] * 5)
+mc_ref.verbose = 0
+mc_ref.kernel()
+nevpt_ref = prism.nevpt.QDNEVPT(prism.interface.PYSCF(mf, mc_ref, backend='opt_einsum'))
+nevpt_ref.verbose = 0
+nevpt_ref.soc = 'breit-pauli'
+nevpt_ref.gtensor = True
+nevpt_ref.s_thresh_singles = 1e-10
+nevpt_ref.s_thresh_doubles = 1e-10
+nevpt_ref.kernel()
+
 props = dmet.qdnevpt2_results[0]['nevpt'].properties
-print("\ng-factors of the lowest Kramers doublet: %s" % np.round(props['g-factors'][0], 6))
+print("\ng-factors of the lowest Kramers doublet")
+print("  DMET:          %s" % np.round(props['g-factors'][0], 6))
+print("  full molecule: %s" % np.round(nevpt_ref.properties['g-factors'][0], 6))
 print("Powder magnetization at 1.8 K, 0.5/1.0/2.0 T (Bohr magneton): %s"
       % np.round(props['M_av'][0], 6))
 print("Powder susceptibility at 0.1 T, 5/100/300 K (cm3/mol): %s"
