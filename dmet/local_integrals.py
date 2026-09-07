@@ -140,13 +140,21 @@ class LocalIntegrals:
             'ij,ij->', self.frozen_oei_ao - 0.5 * self.frozen_jk_ao, self.frozen_dm_ao)
         self.active_oei = self.ao2loc.T @ self.frozen_oei_ao @ self.ao2loc
         self.active_fock = self.ao2loc.T @ self.full_fock_ao @ self.ao2loc
-        if self.norb <= 150:
-            self.eri_in_mem = True
-            self.active_eri = ao2mo.outcore.full_iofree(self.mol, self.ao2loc, compact=False).reshape(
+        # Two-electron integrals, cheapest source first. Only a density-fitted mean field
+        # carries with_df, and it builds its tensor on demand, so dmet_tei uses it there.
+        self.with_df = getattr(mf, 'with_df', None)
+        self.eri_in_mem = False
+        self.active_eri = None
+        if self.with_df is None and self.norb <= 150:
+            if getattr(mf, '_eri', None) is not None:
+                # Reuse the AO integrals the mean field already holds.
+                self.active_eri = ao2mo.incore.full(mf._eri, self.ao2loc, compact=False)
+            else:
+                self.active_eri = ao2mo.outcore.full_iofree(
+                    self.mol, self.ao2loc, compact=False)
+            self.active_eri = self.active_eri.reshape(
                 self.norb, self.norb, self.norb, self.norb)
-        else:
-            self.eri_in_mem = False
-            self.active_eri = None
+            self.eri_in_mem = True
 
     def molden(self, filename):
         with open(filename, 'w') as the_file:
@@ -176,6 +184,10 @@ class LocalIntegrals:
         return self.active_oei + jk_loc
 
     def loc_tei(self):
+        if self.with_df is not None:
+            raise RuntimeError(
+                "Integrals over all localized orbitals are not built for a density-fitted "
+                "mean field; only cluster integrals are, through dmet_tei.")
         if not self.eri_in_mem:
             raise RuntimeError("ERIs are not stored in memory.")
         return self.active_eri
@@ -217,8 +229,17 @@ class LocalIntegrals:
         return 2 * np.dot(eigvecs[:, :num_pairs], eigvecs[:, :num_pairs].T)
 
     def dmet_tei(self, loc_2_dmet, num_active):
+        if self.with_df is not None:
+            # Cluster integrals from the three-index tensor, so the AO integrals are
+            # never rebuilt. They carry the fitting error of the mean field.
+            ao2emb = np.dot(self.ao2loc, loc_2_dmet[:, :num_active])
+            return self.with_df.ao2mo(ao2emb, compact=False).reshape(
+                num_active, num_active, num_active, num_active)
         if not self.eri_in_mem:
             transfo = np.dot(self.ao2loc, loc_2_dmet[:, :num_active])
+            if getattr(self.mf, '_eri', None) is not None:
+                return ao2mo.incore.full(self.mf._eri, transfo, compact=False).reshape(
+                    num_active, num_active, num_active, num_active)
             return ao2mo.outcore.full_iofree(self.mol, transfo, compact=False).reshape(
                 num_active, num_active, num_active, num_active)
         return ao2mo.incore.full(
