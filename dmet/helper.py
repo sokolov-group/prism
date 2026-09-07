@@ -145,10 +145,12 @@ class DMETHelper:
         num_bath_orbs = min(to_keep, num_bath_orbs)
 
         # Symmetry partners share an occupation and enter the bath as a set.
+        # The window is the same near 0 and near 2.
         if keep_degenerate and 0 < num_bath_orbs < to_keep:
             while (num_bath_orbs < to_keep and
                    abs(eigenvals[num_bath_orbs] - eigenvals[num_bath_orbs - 1])
-                   <= deg_rtol * abs(eigenvals[num_bath_orbs - 1])):
+                   <= deg_rtol * max(abs(eigenvals[num_bath_orbs - 1]),
+                                     abs(2.0 - eigenvals[num_bath_orbs - 1]))):
                 num_bath_orbs += 1
             if num_bath_orbs > requested:
                 self.log.info("Bath extended to %d to complete a degenerate set."
