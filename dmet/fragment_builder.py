@@ -47,8 +47,7 @@ class FragmentBuilder:
 
         # Loose core-occupation cutoff when the bath is auto-sized, tight when fixed.
         core_cutoff = 0.01 if self._num_bath_orbs is None else 0.5
-        for idx in range(len(core_1rdm_dmet)):
-            occ = core_1rdm_dmet[idx]
+        for idx, occ in enumerate(core_1rdm_dmet):
             if occ < core_cutoff:
                 core_1rdm_dmet[idx] = 0.0
             elif occ > 2.0 - core_cutoff:

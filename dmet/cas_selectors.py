@@ -27,6 +27,27 @@ def _get_log(log):
     return log if log is not None else logger.Logger(sys.stdout, logger.INFO)
 
 
+def stabilize_rohf(mf, max_iter=5, log=None):
+    # Part C determinism fix: follow ROHF instabilities until stable; no-op for RHF.
+    from pyscf import scf
+    log = _get_log(log)
+    if not isinstance(mf, scf.rohf.ROHF):
+        return
+    for i in range(max_iter):
+        mo_i, _, stable_i, _ = mf.stability(return_status=True)
+        if stable_i:
+            if i > 0:
+                log.info("ROHF stable after %d stability follow(s), E=%.10f" % (i, mf.e_tot))
+            else:
+                log.info("ROHF internally stable, E=%.10f" % mf.e_tot)
+            return
+        log.info("ROHF internal instability (iteration %d), reconverging along the unstable mode"
+                 % (i + 1))
+        mf.scf(mf.make_rdm1(mo_i, mf.mo_occ))
+    log.warn("ROHF stability not reached after %d reconverges, E=%.10f"
+             % (max_iter, mf.e_tot))
+
+
 def canonicalize_degenerate_active_nos(cas_no, act_idx, no_occ, f_emb, deg_tol=1e-3):
     # Part A determinism fix: diagonalize the projected embedded Fock in each degenerate block.
     act_cols = cas_no[:, act_idx].copy()

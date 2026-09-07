@@ -22,10 +22,14 @@ from contextlib import nullcontext
 import numpy as np
 from pyscf import fci
 
+import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
 
 
-def solve(const, oei, fock, tei, norb, nel, nimp, chempot_imp=0.0, printoutput=False):
+def solve(const, oei, fock, tei, norb, nel, nimp, chempot_imp=0.0,
+          verbose=logger.INFO):
+
+    printoutput = verbose >= logger.INFO
 
     fock_copy = fock.copy()
     if chempot_imp != 0.0:
@@ -65,4 +69,5 @@ def execute(task):
         task['nel'],
         task['nimp'],
         task.get('chempot_imp', 0.0),
+        verbose=task.get('verbose', logger.INFO),
     )
