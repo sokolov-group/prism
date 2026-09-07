@@ -24,7 +24,7 @@ from pyscf import ao2mo, gto, scf, mcscf
 
 import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
-from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin, multiseed_casscf,
+from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
                                       stabilize_rohf)
 
 _eV = 27.21138602
@@ -44,10 +44,10 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           nevpt_kwargs=None,
           spin=None,
           cas_select='energy',
-          embed_level_shift=0.0, rohf_stability=False, cas_multiseed=False,
+          embed_level_shift=0.0, rohf_stability=False,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
-          deg_tol=1e-3, casci_conv_tol=1e-10, dip_mom_ao=None):
+          deg_tol=1e-3, casci_conv_tol=1e-10, dip_mom_ao=None, soc_data=None):
     import prism.interface
     import prism.nevpt
 
@@ -82,9 +82,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
     ctx = silent_stdout() if not printoutput else nullcontext()
 
     with ctx:
-        # Placeholder Mole: the embedded Hamiltonian arrives through get_hcore/get_ovlp/_eri
-        # below, so this carries no atoms and no basis. Anything needing real AO integrals
-        # must go through LocalIntegrals (see dmet_dip_mom), never through this object.
+        # Container for the embedded Hamiltonian, supplied through get_hcore/get_ovlp/_eri.
         mol = gto.Mole()
         mol.build(verbose=0)
         mol.nelectron = nel
@@ -137,10 +135,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             log.info("CAS selection by %s, CAS(%d,%d)"
                      % (cas_select, nelecas, ncas))
 
-        if cas_multiseed:
-            multiseed_casscf(mc, mc.mo_coeff, log=log)
-        else:
-            mc.kernel()
+        mc.kernel()
 
         log.info("\nembedded SA-CASSCF (%d states, ncas=%d, nelecas=%d)"
                  % (sa_nstates, ncas, nelecas))
@@ -153,9 +148,14 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             backend=prism_backend,
             select_reference=select_reference,
         )
-        # Dummy mol dipoles are meaningless; use the driver's real-frame ones if given.
+        # Dipole integrals over the molecule, supplied by the driver.
         if dip_mom_ao is not None:
             interface.dip_mom_ao = dip_mom_ao
+        # Molecule and orbitals for spin-orbit integrals.
+        if soc_data is not None:
+            interface.soc_mol = soc_data['mol']
+            interface.soc_ao2emb = soc_data['ao2emb']
+            interface.soc_core_dm_ao = soc_data['core_dm_ao']
 
         nevpt_obj = prism.nevpt.QDNEVPT(interface)
         nevpt_obj.compute_singles_amplitudes = compute_singles
@@ -167,12 +167,10 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
                 nevpt_obj.properties["osc_strengths"] = np.zeros(_n - 1) if _n > 1 else None
             nevpt_obj.compute_properties = _skip_osc
         if nfrozen is not None:
-            # nfrozen counts orbitals frozen in the EMBEDDED problem, not the parent cluster.
             if nfrozen >= nel // 2:
                 raise ValueError(
                     f"nfrozen={nfrozen} must be smaller than the embedded doubly occupied "
-                    f"count {nel // 2} (nelec={nel}). It is sized to the embedded problem, "
-                    f"not to the parent cluster.")
+                    f"count {nel // 2} (nelec={nel}). It is sized to the embedded problem.")
             nevpt_obj.nfrozen = nfrozen
         for key, val in nevpt_kwargs.items():
             setattr(nevpt_obj, key, val)
@@ -215,7 +213,6 @@ def execute(task):
         cas_select=task.get('cas_select', 'energy'),
         embed_level_shift=task.get('embed_level_shift', 0.0),
         rohf_stability=task.get('rohf_stability', False),
-        cas_multiseed=task.get('cas_multiseed', False),
         cas_spin=task.get('cas_spin'),
         cas_spin_shift=task.get('cas_spin_shift', 0.2),
         natorb_occ_thresh=task.get('natorb_occ_thresh', 0.02),
@@ -223,6 +220,7 @@ def execute(task):
         deg_tol=task.get('deg_tol', 1e-3),
         casci_conv_tol=task.get('casci_conv_tol', 1e-10),
         dip_mom_ao=task.get('dip_mom_ao'),
+        soc_data=task.get('soc_data'),
     )
 
     rdm1 = mc.make_rdm1()

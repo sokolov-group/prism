@@ -290,6 +290,12 @@ def get_soc_integrals(interface, soc, rdm1ao):
     xmol = interface.xmol
     contr_coeff = interface.contr_coeff
 
+    # An embedded calculation supplies the real molecule and its orbitals in the AO basis.
+    ao2emb = getattr(interface, 'soc_ao2emb', None)
+    if ao2emb is not None:
+        mol = interface.soc_mol
+        rdm1ao = ao2emb @ rdm1ao @ ao2emb.T + interface.soc_core_dm_ao
+
     soc = soc.lower()
     if (soc=="breit-pauli" or soc=="bp"):
         nbasis = mol.nao_nr()
@@ -315,6 +321,9 @@ def get_soc_integrals(interface, soc, rdm1ao):
        
     else:
         raise Exception("Incorrect SOC flag in input file!!")
+
+    if ao2emb is not None:
+        hsocint = np.einsum('pi,xpq,qj->xij', ao2emb, hsocint, ao2emb)
 
     ### Convert to MO basis:
     hsoc_mo = np.einsum('xpq,pi,qj->xij', hsocint, mo, mo)

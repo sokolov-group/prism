@@ -500,7 +500,9 @@ class PYSCF:
     # X2C set up:
     def x2c_setup(self):
         from pyscf.x2c import x2c
-        self.xmol, self.contr_coeff = x2c.X2C(self.mf.mol).get_xmol()
+        # An embedded calculation supplies the real molecule.
+        mol = self.soc_mol if getattr(self, 'soc_mol', None) is not None else self.mf.mol
+        self.xmol, self.contr_coeff = x2c.X2C(mol).get_xmol()
 
     # Apply S+ (spin raising) operator
     def apply_S_plus(self, psi, ncas, nelecas):

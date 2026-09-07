@@ -23,6 +23,16 @@ import numpy as np
 import prism.lib.logger as logger
 
 
+def orbital_entropy(occupations):
+    # Single-orbital entropy in nats for a determinant at occupation n, p = n/2.
+    p = np.clip(np.asarray(occupations, dtype=float) / 2.0, 0.0, 1.0)
+    interior = (p > 0.0) & (p < 1.0)
+    terms = np.zeros_like(p)
+    terms[interior] = -(p[interior] * np.log(p[interior])
+                        + (1.0 - p[interior]) * np.log(1.0 - p[interior]))
+    return 2.0 * terms
+
+
 def rhf_response(norb, num_pairs, h1_start, h1_row, h1_col, oei):
     # Idempotent-RDM response dD/du_k by first-order PT (NumPy port of the C rhf_response).
     evals, evecs = np.linalg.eigh(oei)
@@ -60,6 +70,7 @@ class DMETHelper:
 
         self.h1_terms = h1_terms
         self.h1_start, self.h1_row, self.h1_col = self._convert_h1_sparse()
+        self.bath_spectrum = None
 
     def _convert_h1_sparse(self):
         h1_start, h1_row, h1_col = [0], [], []
@@ -102,7 +113,8 @@ class DMETHelper:
         else:
             return 2 * np.dot(eigenvecs[:, idx[:num_pairs]], eigenvecs[:, idx[:num_pairs]].T)
 
-    def construct_bath(self, one_rdm, impurity_orbs, num_bath_orbs, threshold=1e-13):
+    def construct_bath(self, one_rdm, impurity_orbs, num_bath_orbs, threshold=1e-13,
+                       keep_degenerate=False, deg_rtol=1e-6):
         embedding_orbs = np.array(1 - impurity_orbs, dtype=float)
         if embedding_orbs.ndim == 1:
             embedding_orbs = embedding_orbs[:, np.newaxis]  # (norb, 1)
@@ -114,23 +126,56 @@ class DMETHelper:
         num_total_orbs = len(impurity_orbs)
 
         eigenvals, eigenvecs = np.linalg.eigh(embedding_rdm1)
-        idx = np.maximum(-eigenvals, eigenvals - 2.0).argsort()
-        to_keep = np.sum(-np.maximum(-eigenvals, eigenvals - 2.0)[idx] > threshold)
-        # The two regimes are exclusive: to_keep < request undersizes the bath, while
-        # to_keep > request cuts by count and can split a degenerate pair.
+        # Rank by distance from 0 or 2, breaking ties on occupation to keep symmetry
+        # partners adjacent.
+        idx = np.lexsort((eigenvals, np.maximum(-eigenvals, eigenvals - 2.0)))
+        eigenvals = eigenvals[idx]
+        eigenvecs = eigenvecs[:, idx]
+
+        # Distance from 0 or 2, largest first; orbitals at 0 or 2 decouple from the impurity.
+        occ_deviation = np.minimum(eigenvals, 2.0 - eigenvals)
+        to_keep = int(np.sum(occ_deviation > threshold))
+
         self.log.info("Bath: %d entangled environment orbitals, %d requested."
-                      % (int(to_keep), num_bath_orbs))
+                      % (to_keep, num_bath_orbs))
         if to_keep < num_bath_orbs:
             self.log.info("Throwing out %d orbitals within %s of 0 or 2."
                           % (num_bath_orbs - to_keep, threshold))
-        elif to_keep > num_bath_orbs:
-            self.log.warn("Bath capped at %d; %d entangled orbitals discarded. Degenerate "
-                          "partners may be split; pass n_bath_orbs to raise the cap."
-                          % (num_bath_orbs, int(to_keep) - num_bath_orbs))
-        num_bath_orbs = min(int(to_keep), num_bath_orbs)
+        requested = num_bath_orbs
+        num_bath_orbs = min(to_keep, num_bath_orbs)
 
-        eigenvals = eigenvals[idx]
-        eigenvecs = eigenvecs[:, idx]
+        # Symmetry partners share an occupation and enter the bath as a set.
+        if keep_degenerate and 0 < num_bath_orbs < to_keep:
+            while (num_bath_orbs < to_keep and
+                   abs(eigenvals[num_bath_orbs] - eigenvals[num_bath_orbs - 1])
+                   <= deg_rtol * abs(eigenvals[num_bath_orbs - 1])):
+                num_bath_orbs += 1
+            if num_bath_orbs > requested:
+                self.log.info("Bath extended to %d to complete a degenerate set."
+                              % num_bath_orbs)
+
+        if to_keep > num_bath_orbs:
+            msg = ("Bath capped at %d; %d entangled orbitals discarded."
+                   % (num_bath_orbs, to_keep - num_bath_orbs))
+            if not keep_degenerate:
+                msg += (" Degenerate partners may be split; set keep_degenerate=True "
+                        "or raise n_bath_orbs.")
+            self.log.warn(msg)
+
+        entropy = orbital_entropy(eigenvals)
+        if 0 < num_bath_orbs < len(occ_deviation):
+            self.log.info("At the cut: last kept dev %.3e (S %.3e), "
+                          "first discarded dev %.3e (S %.3e)."
+                          % (occ_deviation[num_bath_orbs - 1], entropy[num_bath_orbs - 1],
+                             occ_deviation[num_bath_orbs], entropy[num_bath_orbs]))
+
+        self.bath_spectrum = {
+            'occupation': eigenvals.copy(),
+            'occ_deviation': occ_deviation.copy(),
+            'entropy': entropy,
+            'num_bath_orbs': num_bath_orbs,
+            'num_entangled': to_keep,
+        }
 
         pure_env_vals = -eigenvals[num_bath_orbs:]
         pure_env_vecs = eigenvecs[:, num_bath_orbs:]

@@ -25,7 +25,7 @@ from pyscf import fci as pyscf_fci
 
 import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
-from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin, multiseed_casscf,
+from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
                                       stabilize_rohf)
 
 
@@ -37,7 +37,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
           mo_guess=None, ci_guess=None,
           spin=None,
           cas_select='energy',
-          embed_level_shift=0.0, rohf_stability=False, cas_multiseed=False,
+          embed_level_shift=0.0, rohf_stability=False,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
           deg_tol=1e-3, casci_conv_tol=1e-10,
@@ -150,10 +150,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         _mo0 = mo_guess if mo_guess is not None else None
         _ci0 = ci_guess if ci_guess is not None else None
-        if cas_multiseed and _mo0 is None:
-            multiseed_casscf(mc, mc.mo_coeff, log=log)
-        else:
-            mc.kernel(_mo0, _ci0)
+        mc.kernel(_mo0, _ci0)
 
         ncore = mc.ncore
         if _use_rohf:
@@ -264,7 +261,6 @@ def execute(task):
         cas_select=task.get('cas_select', 'energy'),
         embed_level_shift=task.get('embed_level_shift', 0.0),
         rohf_stability=task.get('rohf_stability', False),
-        cas_multiseed=task.get('cas_multiseed', False),
         cas_spin=task.get('cas_spin'),
         cas_spin_shift=task.get('cas_spin_shift', 0.2),
         natorb_occ_thresh=task.get('natorb_occ_thresh', 0.02),
