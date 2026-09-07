@@ -17,18 +17,20 @@
 #
 
 import sys
+from contextlib import nullcontext
+
 import numpy as np
 from pyscf import ao2mo, gto, scf, mcscf, mrpt
 
 import prism.lib.logger as logger
-from prism.dmet.utils import silent_stdout, nullcontext
+from prism.dmet.utils import silent_stdout
 from prism.dmet.cas_selectors import natorb_active_space, fix_cas_spin, multiseed_casscf
 from prism.dmet.solvers.casscf import _stabilize_rohf
 
 _eV = 27.21138602
 
 
-def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
+def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           ncas, nelecas,
           nstates=1, sa_weights=None,
           chempot_imp=0.0, verbose=logger.INFO,
@@ -43,7 +45,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
     nevpt2_kwargs = nevpt2_kwargs or {}
     if cas_select not in ('energy', 'natorb'):
         raise ValueError(
-            f"nevpt2::solve: unknown cas_select='{cas_select}'. Valid: ['energy', 'natorb']")
+            f"Invalid cas_select='{cas_select}'. Valid: ['energy', 'natorb']")
 
     log = logger.Logger(sys.stdout, verbose)
     printoutput = verbose >= logger.INFO
@@ -68,8 +70,8 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         mf = scf.ROHF(mol) if _use_rohf else scf.RHF(mol)
         mf.get_hcore = lambda *args: fock_copy
-        mf.get_ovlp  = lambda *args: np.eye(norb)
-        mf._eri      = ao2mo.restore(8, tei, norb)
+        mf.get_ovlp = lambda *args: np.eye(norb)
+        mf._eri = ao2mo.restore(8, tei, norb)
         # Level shift opens the near-degenerate trap gap for a deterministic embedded SCF.
         mf.level_shift = embed_level_shift
         mf.scf(dm_guess_rhf)
@@ -83,13 +85,13 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
             e_shifted = mf.e_tot
             mf.level_shift = 0.0
             mf.scf(mf.make_rdm1())
-            log.info("nevpt2::solve : level-shift verification: E(shift=%s)=%.10f  "
+            log.info("level-shift verification: E(shift=%s)=%.10f  "
                      "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
                      % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
         if rohf_stability and _use_rohf:
             _stabilize_rohf(mf, tag='nevpt2::solve', log=log)
         if _use_rohf:
-            log.info("nevpt2::solve : embedded ROHF (spin=%d, nel=%d, norb=%d)"
+            log.info("embedded ROHF (spin=%d, nel=%d, norb=%d)"
                      % (_spin, nel, norb))
 
         if nstates == 1:
@@ -110,7 +112,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
             if mo_natorb is not None:
                 mc.mo_coeff = mo_natorb
-                log.info("nevpt2::solve : CAS selection by %s, CAS(%d,%d)"
+                log.info("CAS selection by %s, CAS(%d,%d)"
                          % (cas_select, nelecas, ncas))
 
             if cas_multiseed:
@@ -118,7 +120,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
             else:
                 mc.kernel()
 
-            log.info("\nnevpt2::solve : embedded CASSCF energy = %.10f Ha" % mc.e_tot)
+            log.info("\nembedded CASSCF energy: %.10f Ha" % mc.e_tot)
 
             nevpt_obj = mrpt.NEVPT(mc, root=0)
             nevpt_obj.verbose = 5 if printoutput else 0
@@ -133,7 +135,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
                 _mc_ref.canonicalize(mo, ci, eris, sort, False, casdm1, verbose)
             e_c = nevpt_obj.kernel()
 
-            e_tot  = np.array([nevpt_obj.e_tot])
+            e_tot = np.array([nevpt_obj.e_tot])
             e_corr = np.array([e_c])
             nevpt_objs = [nevpt_obj]
 
@@ -160,7 +162,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
             if mo_natorb is not None:
                 mc_sa.mo_coeff = mo_natorb
-                log.info("nevpt2::solve : CAS selection by %s (SA), CAS(%d,%d)"
+                log.info("CAS selection by %s (SA), CAS(%d,%d)"
                          % (cas_select, nelecas, ncas))
 
             if cas_multiseed:
@@ -169,7 +171,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
                 mc_sa.kernel()
             sa_mo = mc_sa.mo_coeff
 
-            log.info("\nnevpt2::solve : embedded SA-CASSCF (%d states) done." % nstates)
+            log.info("\nembedded SA-CASSCF (%d states) done." % nstates)
             for i, e in enumerate(mc_sa.e_states):
                 log.info("  State %d: %.10f Ha  (weight=%.4f)" % (i, e, sa_weights[i]))
 
@@ -183,11 +185,11 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
             mc.kernel(sa_mo)
 
-            log.info("\nnevpt2::solve : Multi-root CASCI energies:")
+            log.info("\nMulti-root CASCI energies:")
             for i, e in enumerate(mc.e_tot):
                 log.info("  State %d: %.10f Ha" % (i, e))
 
-            e_tot  = np.zeros(nstates)
+            e_tot = np.zeros(nstates)
             e_corr = np.zeros(nstates)
             nevpt_objs = []
             _mc_ref = mc
@@ -201,11 +203,11 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
                 e_c_i = nevpt_i.kernel()
                 # mc.e_tot is the full multi-root CASCI array; nevpt_i.e_tot would
                 # broadcast (e_corr + array). Take the scalar total for root i.
-                e_tot[i]  = mc.e_tot[i] + e_c_i
+                e_tot[i] = mc.e_tot[i] + e_c_i
                 e_corr[i] = e_c_i
                 nevpt_objs.append(nevpt_i)
 
-        log.info("\nnevpt2::solve : NEVPT2 results:")
+        log.info("\nNEVPT2 results:")
         log.info("  %5s  %16s  %14s  %16s" % ('State', 'E_tot (Ha)', 'E_corr (Ha)', 'dE from GS (eV)'))
         log.info("  " + "-" * 56)
         for i, (et, ec) in enumerate(zip(e_tot, e_corr)):
@@ -217,8 +219,6 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
 def execute(task):
     e_tot, e_corr, mc, nevpt_objs = solve(
-        task['const'],
-        task['dmet_oei'],
         task['dmet_fock'],
         task['dmet_tei'],
         task['norb'],
@@ -255,9 +255,9 @@ def execute(task):
         rdm1 = mc.make_rdm1()
 
     nevpt2_res = {
-        'e_tot'      : e_tot,
-        'e_corr'     : e_corr,
-        'mc'         : mc,
-        'nevpt_objs' : nevpt_objs,
+        'e_tot': e_tot,
+        'e_corr': e_corr,
+        'mc': mc,
+        'nevpt_objs': nevpt_objs,
     }
     return e_tot[0], rdm1, nevpt2_res

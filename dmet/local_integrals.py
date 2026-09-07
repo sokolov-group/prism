@@ -18,7 +18,7 @@
 #
 
 import numpy as np
-from pyscf import gto, scf, ao2mo, lo
+from pyscf import ao2mo, lo
 from pyscf.lo import nao, orth
 from pyscf.tools import molden
 
@@ -27,48 +27,40 @@ from prism.dmet import iao_helper
 
 class LocalIntegrals:
 
-    def __init__(self, the_mf, active_orbs, localizationtype,
-                 ao_rotation=None, use_full_hessian=True,
-                 localization_threshold=1e-6):
-        assert localizationtype in ('meta_lowdin', 'boys', 'lowdin', 'iao')
+    def __init__(self, mf, active_orbs, localization_type,
+                 ao_rotation=None, localization_threshold=1e-6):
+        if localization_type not in ('meta_lowdin', 'boys', 'lowdin', 'iao'):
+            raise ValueError(
+                f"Unknown localization_type='{localization_type}'. "
+                f"Valid: 'meta_lowdin', 'boys', 'lowdin', 'iao'")
 
-        self.mol     = the_mf.mol
-        self.the_mf  = the_mf
-        self.fullEhf = the_mf.e_tot
-        _dm = the_mf.make_rdm1()
-        _hcore = the_mf.get_hcore()
+        self.mol = mf.mol
+        self.mf = mf
+        self.e_hf = mf.e_tot
+        _dm = mf.make_rdm1()
+        _hcore = mf.get_hcore()
         _S = self.mol.intor_symmetric('int1e_ovlp')
         if _dm.ndim == 3:  # UHF/UKS
-            self.fullDMao       = _dm[0] + _dm[1]
-            self.fullDMao_alpha = _dm[0]
-            self.fullDMao_beta  = _dm[1]
+            self.full_dm_ao = _dm[0] + _dm[1]
             # F = S C eps C.T S: invariant to degenerate-subspace eigenvector
             # rotation; avoids BLAS non-determinism in get_veff ERI contraction.
-            SC_a = _S @ the_mf.mo_coeff[0]
-            SC_b = _S @ the_mf.mo_coeff[1]
-            self.fullFOCKao_alpha = SC_a @ np.diag(the_mf.mo_energy[0]) @ SC_a.T
-            self.fullFOCKao_beta  = SC_b @ np.diag(the_mf.mo_energy[1]) @ SC_b.T
-            self.fullFOCKao = 0.5 * (self.fullFOCKao_alpha + self.fullFOCKao_beta)
-            self.fullJKao   = self.fullFOCKao - _hcore
+            SC_a = np.dot(_S, mf.mo_coeff[0])
+            SC_b = np.dot(_S, mf.mo_coeff[1])
+            fock_a = SC_a @ np.diag(mf.mo_energy[0]) @ SC_a.T
+            fock_b = SC_b @ np.diag(mf.mo_energy[1]) @ SC_b.T
+            self.full_fock_ao = 0.5 * (fock_a + fock_b)
+            self.full_jk_ao = self.full_fock_ao - _hcore
         else:  # RHF/RKS
-            self.fullDMao       = _dm
-            self.fullDMao_alpha = _dm / 2.0
-            self.fullDMao_beta  = _dm / 2.0
-            SC = _S @ the_mf.mo_coeff
-            self.fullFOCKao = SC @ np.diag(the_mf.mo_energy) @ SC.T
-            self.fullJKao   = self.fullFOCKao - _hcore
-            self.fullFOCKao_alpha = self.fullFOCKao
-            self.fullFOCKao_beta  = self.fullFOCKao
+            self.full_dm_ao = _dm
+            SC = np.dot(_S, mf.mo_coeff)
+            self.full_fock_ao = SC @ np.diag(mf.mo_energy) @ SC.T
+            self.full_jk_ao = self.full_fock_ao - _hcore
 
-        _with_df = getattr(the_mf, 'with_df', None)
-        self.use_density_fit = _with_df is not None
-        self.df_auxbasis     = getattr(_with_df, 'auxbasis', None)
-
-        self._which  = localizationtype
-        self.active  = np.zeros([self.mol.nao_nr()], dtype=int)
+        self._which = localization_type
+        self.active = np.zeros((self.mol.nao_nr(),), dtype=int)
         self.active[active_orbs] = 1
-        self.Norbs   = np.sum(self.active)
-        _mo_occ = the_mf.mo_occ
+        self.norb = np.sum(self.active)
+        _mo_occ = mf.mo_occ
         _frozen_mask = self.active == 0
         if _mo_occ.ndim == 2:  # UHF: sum frozen electrons from both spin channels
             if np.any(_frozen_mask):
@@ -79,19 +71,22 @@ class LocalIntegrals:
             _frozen_elec = 0.0
         else:
             _frozen_elec = np.sum(_mo_occ[_frozen_mask])
-        self.Nelec = int(np.rint(self.mol.nelectron - _frozen_elec))
+        self.nelec = int(np.rint(self.mol.nelectron - _frozen_elec))
 
         if self._which in ('meta_lowdin', 'boys'):
             if self._which == 'meta_lowdin':
-                assert self.Norbs == self.mol.nao_nr(), "meta_lowdin requires full active space"
+                if self.norb != self.mol.nao_nr():
+                    raise ValueError(
+                        "Invalid active_orbs for meta_lowdin: this localization "
+                        "requires the full active space.")
             if self._which == 'boys':
-                if the_mf.mo_coeff.ndim == 3:
+                if mf.mo_coeff.ndim == 3:
                     raise NotImplementedError(
                         "Boys localization requires a single set of spatial orbitals. "
                         "Use 'meta_lowdin' or 'iao' for UHF references."
                     )
-                self.ao2loc = the_mf.mo_coeff[:, self.active == 1]
-            if self.Norbs == self.mol.nao_nr():
+                self.ao2loc = mf.mo_coeff[:, self.active == 1]
+            if self.norb == self.mol.nao_nr():
                 # Be (Z=4) needs an explicit valence-shell entry for meta_lowdin to span
                 # the minimal basis; only touch the global table when Be is present, and
                 # restore it after so other molecules in the same process are unaffected.
@@ -113,98 +108,106 @@ class LocalIntegrals:
                 loc.conv_tol = localization_threshold
                 self.mol.verbose = old_verbose
                 self.ao2loc = loc.kernel()
-            self.TI_OK = False
+            self.ti_ok = False
         if self._which == 'lowdin':
-            assert self.Norbs == self.mol.nao_nr(), "lowdin requires full active space"
+            if self.norb != self.mol.nao_nr():
+                raise ValueError(
+                    "Invalid active_orbs for lowdin: this localization "
+                    "requires the full active space.")
             ovlp = self.mol.intor_symmetric('int1e_ovlp')
             ovlp_eigs, ovlp_vecs = np.linalg.eigh(ovlp)
-            self.ao2loc = np.dot(np.dot(ovlp_vecs, np.diag(np.power(ovlp_eigs, -0.5))), ovlp_vecs.T)
-            self.TI_OK  = False
+            self.ao2loc = ovlp_vecs @ np.diag(np.power(ovlp_eigs, -0.5)) @ ovlp_vecs.T
+            self.ti_ok = False
         if self._which == 'iao':
-            assert self.Norbs == self.mol.nao_nr(), "iao requires full active space"
+            if self.norb != self.mol.nao_nr():
+                raise ValueError(
+                    "Invalid active_orbs for iao: this localization "
+                    "requires the full active space.")
             # ao2loc is non-deterministic when BLAS swaps near-degenerate HOMO/LUMO;
             # pin num_threads before mf.kernel() to suppress (not guaranteed for very tight gaps).
-            self.ao2loc = iao_helper.localize_iao(self.mol, the_mf)
+            self.ao2loc = iao_helper.localize_iao(self.mol, mf)
             if ao_rotation is not None:
                 self.ao2loc = np.dot(self.ao2loc, ao_rotation.T)
-            self.TI_OK = False
-        assert self.loc_ortho() < 1e-8, "LMO basis is not orthonormal"
+            self.ti_ok = False
+        if self.loc_ortho() >= 1e-8:
+            raise RuntimeError("LMO basis is not orthonormal")
 
         if _mo_occ.ndim == 2:
-            self.frozenDMao = np.zeros_like(self.fullDMao)
-            self.frozenJKao = np.zeros_like(self.fullJKao)
+            self.frozen_dm_ao = np.zeros_like(self.full_dm_ao)
+            self.frozen_jk_ao = np.zeros_like(self.full_jk_ao)
         else:
-            self.frozenDMmo  = _mo_occ.copy()
-            self.frozenDMmo[self.active == 1] = 0
-            self.frozenDMao  = the_mf.mo_coeff @ np.diag(self.frozenDMmo) @ the_mf.mo_coeff.T
-            _v_frozen        = the_mf.get_veff(self.mol, self.frozenDMao)
-            self.frozenJKao  = _v_frozen[0] if _v_frozen.ndim == 3 else _v_frozen
-        self.frozenOEIao = self.fullFOCKao - self.fullJKao + self.frozenJKao
+            self.frozen_dm_mo = _mo_occ.copy()
+            self.frozen_dm_mo[self.active == 1] = 0
+            self.frozen_dm_ao = mf.mo_coeff @ np.diag(self.frozen_dm_mo) @ mf.mo_coeff.T
+            _v_frozen = mf.get_veff(self.mol, self.frozen_dm_ao)
+            self.frozen_jk_ao = _v_frozen[0] if _v_frozen.ndim == 3 else _v_frozen
+        self.frozen_oei_ao = self.full_fock_ao - self.full_jk_ao + self.frozen_jk_ao
 
-        self.activeCONST = the_mf.energy_nuc() + np.einsum(
-            'ij,ij->', self.frozenOEIao - 0.5 * self.frozenJKao, self.frozenDMao)
-        self.activeOEI  = np.dot(np.dot(self.ao2loc.T, self.frozenOEIao), self.ao2loc)
-        self.activeFOCK = np.dot(np.dot(self.ao2loc.T, self.fullFOCKao), self.ao2loc)
-        if self.Norbs <= 150:
-            self.ERIinMEM  = True
-            self.activeERI = ao2mo.outcore.full_iofree(self.mol, self.ao2loc, compact=False).reshape(
-                self.Norbs, self.Norbs, self.Norbs, self.Norbs)
+        self.active_const = mf.energy_nuc() + np.einsum(
+            'ij,ij->', self.frozen_oei_ao - 0.5 * self.frozen_jk_ao, self.frozen_dm_ao)
+        self.active_oei = self.ao2loc.T @ self.frozen_oei_ao @ self.ao2loc
+        self.active_fock = self.ao2loc.T @ self.full_fock_ao @ self.ao2loc
+        if self.norb <= 150:
+            self.eri_in_mem = True
+            self.active_eri = ao2mo.outcore.full_iofree(self.mol, self.ao2loc, compact=False).reshape(
+                self.norb, self.norb, self.norb, self.norb)
         else:
-            self.ERIinMEM  = False
-            self.activeERI = None
+            self.eri_in_mem = False
+            self.active_eri = None
 
     def molden(self, filename):
-        with open(filename, 'w') as thefile:
-            molden.header(self.mol, thefile)
-            molden.orbital_coeff(self.mol, thefile, self.ao2loc)
+        with open(filename, 'w') as the_file:
+            molden.header(self.mol, the_file)
+            molden.orbital_coeff(self.mol, the_file, self.ao2loc)
 
     def loc_ortho(self):
         S = self.mol.intor_symmetric('int1e_ovlp')
-        return np.linalg.norm(np.dot(np.dot(self.ao2loc.T, S), self.ao2loc) - np.eye(self.Norbs))
+        return np.linalg.norm(self.ao2loc.T @ S @ self.ao2loc - np.eye(self.norb))
 
     def const(self):
-        return self.activeCONST
+        return self.active_const
 
     def loc_oei(self):
-        return self.activeOEI
+        return self.active_oei
 
     def loc_fock(self, dm_loc=None):
         if dm_loc is None:
-            return self.activeFOCK
-        if not self.ERIinMEM:
-            DM_ao  = np.dot(np.dot(self.ao2loc, dm_loc), self.ao2loc.T)
-            _v_ao  = self.the_mf.get_veff(self.mol, DM_ao)
-            JK_ao  = _v_ao[0] if _v_ao.ndim == 3 else _v_ao
-            JK_loc = np.dot(np.dot(self.ao2loc.T, JK_ao), self.ao2loc)
+            return self.active_fock
+        if not self.eri_in_mem:
+            dm_ao = self.ao2loc @ dm_loc @ self.ao2loc.T
+            _v_ao = self.mf.get_veff(self.mol, dm_ao)
+            jk_ao = _v_ao[0] if _v_ao.ndim == 3 else _v_ao
+            jk_loc = self.ao2loc.T @ jk_ao @ self.ao2loc
         else:
-            JK_loc = (np.einsum('ijkl,ij->kl', self.activeERI, dm_loc)
-                      - 0.5 * np.einsum('ijkl,ik->jl', self.activeERI, dm_loc))
-        return self.activeOEI + JK_loc
+            jk_loc = (np.einsum('ijkl,ij->kl', self.active_eri, dm_loc)
+                      - 0.5 * np.einsum('ijkl,ik->jl', self.active_eri, dm_loc))
+        return self.active_oei + jk_loc
 
     def loc_tei(self):
-        assert self.ERIinMEM, "local_integrals::loc_tei: ERIs not stored in memory."
-        return self.activeERI
+        if not self.eri_in_mem:
+            raise RuntimeError("ERIs are not stored in memory.")
+        return self.active_eri
 
-    def dmet_oei(self, loc_2_dmet, numActive):
-        return np.dot(np.dot(loc_2_dmet[:, :numActive].T, self.activeOEI), loc_2_dmet[:, :numActive])
+    def dmet_oei(self, loc_2_dmet, num_active):
+        return loc_2_dmet[:, :num_active].T @ self.active_oei @ loc_2_dmet[:, :num_active]
 
-    def dmet_fock(self, loc_2_dmet, numActive, coreDMloc):
-        return np.dot(np.dot(loc_2_dmet[:, :numActive].T, self.loc_fock(coreDMloc)), loc_2_dmet[:, :numActive])
+    def dmet_fock(self, loc_2_dmet, num_active, core_dm_loc):
+        return loc_2_dmet[:, :num_active].T @ self.loc_fock(core_dm_loc) @ loc_2_dmet[:, :num_active]
 
-    def dmet_init_guess_rhf(self, loc_2_dmet, numActive, numPairs, nimp, chempot_imp):
-        Fock_emb = np.dot(np.dot(loc_2_dmet[:, :numActive].T, self.activeFOCK), loc_2_dmet[:, :numActive])
+    def dmet_init_guess_rhf(self, loc_2_dmet, num_active, num_pairs, nimp, chempot_imp):
+        fock_emb = loc_2_dmet[:, :num_active].T @ self.active_fock @ loc_2_dmet[:, :num_active]
         if chempot_imp != 0.0:
             for orb in range(nimp):
-                Fock_emb[orb, orb] -= chempot_imp
-        eigvals, eigvecs = np.linalg.eigh(Fock_emb)
+                fock_emb[orb, orb] -= chempot_imp
+        eigvals, eigvecs = np.linalg.eigh(fock_emb)
         eigvecs = eigvecs[:, eigvals.argsort()]
-        return 2 * np.dot(eigvecs[:, :numPairs], eigvecs[:, :numPairs].T)
+        return 2 * np.dot(eigvecs[:, :num_pairs], eigvecs[:, :num_pairs].T)
 
-    def dmet_tei(self, loc_2_dmet, numAct):
-        if not self.ERIinMEM:
-            transfo = np.dot(self.ao2loc, loc_2_dmet[:, :numAct])
+    def dmet_tei(self, loc_2_dmet, num_active):
+        if not self.eri_in_mem:
+            transfo = np.dot(self.ao2loc, loc_2_dmet[:, :num_active])
             return ao2mo.outcore.full_iofree(self.mol, transfo, compact=False).reshape(
-                numAct, numAct, numAct, numAct)
+                num_active, num_active, num_active, num_active)
         return ao2mo.incore.full(
-            ao2mo.restore(8, self.activeERI, self.Norbs), loc_2_dmet[:, :numAct], compact=False
-        ).reshape(numAct, numAct, numAct, numAct)
+            ao2mo.restore(8, self.active_eri, self.norb), loc_2_dmet[:, :num_active], compact=False
+        ).reshape(num_active, num_active, num_active, num_active)

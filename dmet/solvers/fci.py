@@ -17,10 +17,12 @@
 # Authors: Bryce Pickett <pickettosu@gmail.com>
 #
 
+from contextlib import nullcontext
+
 import numpy as np
 from pyscf import fci
 
-from prism.dmet.utils import silent_stdout, nullcontext
+from prism.dmet.utils import silent_stdout
 
 
 def solve(const, oei, fock, tei, norb, nel, nimp, chempot_imp=0.0, printoutput=False):
@@ -41,8 +43,8 @@ def solve(const, oei, fock, tei, norb, nel, nimp, chempot_imp=0.0, printoutput=F
         cisolver.verbose = 0
         cisolver.max_cycle = 200
         cisolver.conv_tol = 1e-12
-        EnergyFCI, FCIvector = cisolver.kernel(fock_copy, tei, norb, fci_nel, ecore=const)
-        two_rdm = cisolver.make_rdm2(FCIvector, norb, fci_nel)
+        _, fci_vector = cisolver.kernel(fock_copy, tei, norb, fci_nel, ecore=const)
+        two_rdm = cisolver.make_rdm2(fci_vector, norb, fci_nel)
 
     one_rdm = np.einsum('ijkk->ij', two_rdm) / (nel - 1)
 
@@ -51,7 +53,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, chempot_imp=0.0, printoutput=F
     impurity_energy = const
     impurity_energy += 0.5 * np.einsum('ij,ij->', one_rdm[:nimp, :], oei[:nimp, :] + fock[:nimp, :])
     impurity_energy += 0.5 * np.einsum('ijkl,ijkl->', two_rdm[:nimp, :, :, :], tei[:nimp, :, :, :])
-    return (impurity_energy, one_rdm)
+    return impurity_energy, one_rdm
 
 
 def execute(task):
