@@ -23,6 +23,7 @@ import numpy as np
 class FragmentBuilder:
 
     _NEEDS_DM_METHODS = frozenset({'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'})
+    _NEEDS_DIP_METHODS = frozenset({'QD-NEVPT2', 'PC-NEVPT2'})
 
     def __init__(self, ints, helper, fragments, method, num_bath_orbs, bath_tol,
                  fragment_methods=None):
@@ -80,6 +81,10 @@ class FragmentBuilder:
 
         method_key = 'flag_rhf' if flag_rhf else self._method
 
+        dip_mom_ao = None
+        if self._method in self._NEEDS_DIP_METHODS:
+            dip_mom_ao = self._ints.dmet_dip_mom(loc_2_dmet, norb_in_imp)
+
         return {
             'counter': counter,
             'flag_rhf': flag_rhf,
@@ -94,6 +99,7 @@ class FragmentBuilder:
             'dmet_fock': dmet_fock,
             'dmet_tei': dmet_tei,
             'dm_guess_rhf': dm_guess_rhf,
+            'dip_mom_ao': dip_mom_ao,
             'method_key': method_key,
         }
 

@@ -47,14 +47,14 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           embed_level_shift=0.0, rohf_stability=False, cas_multiseed=False,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
-          deg_tol=1e-3, casci_conv_tol=1e-10):
+          deg_tol=1e-3, casci_conv_tol=1e-10, dip_mom_ao=None):
     import prism.interface
     import prism.nevpt
 
     if sa_nstates < 2:
         raise ValueError(
             "QD-NEVPT2 requires sa_nstates >= 2. "
-            "For single-state NEVPT2 use method='NEVPT2' or method='PC-NEVPT2'."
+            "For single-state NEVPT2 use method='PC-NEVPT2'."
         )
     if cas_select not in ('energy', 'natorb'):
         raise ValueError(
@@ -153,17 +153,22 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             backend=prism_backend,
             select_reference=select_reference,
         )
+        # The dummy mol carries no real geometry, so its dipole integrals are
+        # meaningless. When the driver supplies real-frame dipole integrals in the
+        # embedded basis, use them so native oscillator strengths are physical;
+        # otherwise stub them to zero so print_results does not crash.
+        if dip_mom_ao is not None:
+            interface.dip_mom_ao = dip_mom_ao
 
         nevpt_obj = prism.nevpt.QDNEVPT(interface)
         nevpt_obj.compute_singles_amplitudes = compute_singles
         nevpt_obj.s_thresh_singles = s_thresh_singles
         nevpt_obj.s_thresh_doubles = s_thresh_doubles
-        # Dummy mol has no real AO basis; stub out osc_strengths so print_results
-        # does not crash. All reported oscillator strengths are zero.
-        _n = sa_nstates
-        def _skip_osc():
-            nevpt_obj.properties["osc_strengths"] = np.zeros(_n - 1) if _n > 1 else None
-        nevpt_obj.compute_properties = _skip_osc
+        if dip_mom_ao is None:
+            _n = sa_nstates
+            def _skip_osc():
+                nevpt_obj.properties["osc_strengths"] = np.zeros(_n - 1) if _n > 1 else None
+            nevpt_obj.compute_properties = _skip_osc
         if nfrozen is not None:
             nevpt_obj.nfrozen = nfrozen
         for key, val in nevpt_kwargs.items():
@@ -215,6 +220,7 @@ def execute(task):
         natorb_max_superset=task.get('natorb_max_superset'),
         deg_tol=task.get('deg_tol', 1e-3),
         casci_conv_tol=task.get('casci_conv_tol', 1e-10),
+        dip_mom_ao=task.get('dip_mom_ao'),
     )
 
     rdm1 = mc.make_rdm1()

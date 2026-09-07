@@ -386,6 +386,7 @@ class DMET:
             dmet_fock = frag['dmet_fock']
             dmet_tei = frag['dmet_tei']
             dm_guess_rhf = frag['dm_guess_rhf']
+            dip_mom_ao = frag['dip_mom_ao']
             _method_key = frag['method_key']
 
             # Populate dmet_orbs for bath-dump and cost-function use.
@@ -430,7 +431,8 @@ class DMET:
             task = self._build_task(
                 frag_idx, _method_key, dmet_oei, dmet_fock, dmet_tei,
                 norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
-                dm_guess_rhf, mo_guess=_mo_guess, ci_guess=_ci_guess)
+                dm_guess_rhf, mo_guess=_mo_guess, ci_guess=_ci_guess,
+                dip_mom_ao=dip_mom_ao)
 
             _is_parallel_eligible = (
                 self.parallel
@@ -542,7 +544,7 @@ class DMET:
 
     def _build_task(self, frag_idx, method_key, dmet_oei, dmet_fock, dmet_tei,
                     norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
-                    dm_guess_rhf, mo_guess=None, ci_guess=None):
+                    dm_guess_rhf, mo_guess=None, ci_guess=None, dip_mom_ao=None):
         return {
             'counter': frag_idx,
             'method': method_key,
@@ -550,6 +552,7 @@ class DMET:
             'dmet_oei': dmet_oei,
             'dmet_fock': dmet_fock,
             'dmet_tei': dmet_tei,
+            'dip_mom_ao': dip_mom_ao,
             'norb': norb_in_imp,
             'nel': nelec_in_imp,
             'nimp': num_imp_orbs,

@@ -191,6 +191,16 @@ class LocalIntegrals:
     def dmet_fock(self, loc_2_dmet, num_active, core_dm_loc):
         return loc_2_dmet[:, :num_active].T @ self.loc_fock(core_dm_loc) @ loc_2_dmet[:, :num_active]
 
+    def dmet_dip_mom(self, loc_2_dmet, num_active):
+        # Real-frame dipole integrals in the embedded basis, for oscillator
+        # strengths (the embedded solver's dummy mol has no real geometry).
+        transfo = self.ao2loc @ loc_2_dmet[:, :num_active]
+        dip_mom_ao = self.mol.intor_symmetric('int1e_r', comp=3)
+        dip_mom_emb = np.zeros((dip_mom_ao.shape[0], num_active, num_active))
+        for d in range(dip_mom_ao.shape[0]):
+            dip_mom_emb[d] = transfo.T @ dip_mom_ao[d] @ transfo
+        return dip_mom_emb
+
     def dmet_init_guess_rhf(self, loc_2_dmet, num_active, num_pairs, nimp, chempot_imp):
         fock_emb = loc_2_dmet[:, :num_active].T @ self.active_fock @ loc_2_dmet[:, :num_active]
         if chempot_imp != 0.0:
