@@ -84,7 +84,7 @@ if __name__ == "__main__":
 System: uname_result(system='Linux', node='c0326.ten.osc.edu', release='5.14.0-570.128.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Tue Jul 14 08:36:30 EDT 2026', machine='x86_64')  Threads 1
 Python 3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]
 numpy 2.2.6  scipy 1.15.3  h5py 3.16.0
-Date: Mon Sep  7 01:08:03 2026
+Date: Mon Sep  7 11:13:39 2026
 PySCF version 2.11.0
 PySCF path  /users/PAS1583/bpickett/programs/pyscf
 GIT HEAD (branch embedding) d13645e4865deb1e73a6e2fe23f8fa4de76606fe
@@ -108,7 +108,7 @@ number of NR pGTOs = 18
 number of NR cGTOs = 6
 basis = sto-3g
 ecp = {}
-CPU time:         0.42
+CPU time:         0.37
 
 
 ******** <class 'pyscf.scf.hf.RHF'> ********
@@ -125,8 +125,8 @@ SCF conv_tol_grad = None
 SCF max_cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpmwi_oq71
-max_memory 4000 MB (current use 122 MB)
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpcfsbbs2l
+max_memory 4000 MB (current use 123 MB)
 Set gradient conv threshold to 3.16228e-05
 Initial guess from minao.
 init E= -98.3593158896732
@@ -172,8 +172,8 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /fs/scratch/PAS1583/bpickett/tmpmwi_oq71
-max_memory 4000 MB (current use 133 MB)
+chkfile = /fs/scratch/PAS1583/bpickett/tmpcfsbbs2l
+max_memory 4000 MB (current use 132 MB)
 internal_rotation = False
 ******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
 max. cycles = 50
@@ -249,7 +249,7 @@ Total number of reference states: 1
 
 
 Initializing MR-ADC...
-/fs/scratch/PAS1583/bpickett/claude-45604/-users-PAS1583-bpickett/a04f1f42-c187-44da-9ea3-283b9611fc50/scratchpad/wtpath/prism/dmet/dmet.py:237: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+/users/PAS1583/bpickett/programs/prism_env/.dmet_import/prism/dmet/dmet.py:238: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
   warnings.warn(
 DMET-CVS-IP-MR-ADC test
 
@@ -325,7 +325,7 @@ Summary of results for the CVS-IP-MR-ADC(2) calculation with the CASSCF referenc
     3        26.34222969      716.8086     1.7297    5781451.1508      0.000000
     4        26.40590718      718.5413     1.7255    5795426.7431      0.000000
 ------------------------------------------------------------------------------------------------
-> CPU time for total CVS-IP-MR-ADC(2) calculation      0.35 sec, wall time      0.36 sec
+> CPU time for total CVS-IP-MR-ADC(2) calculation      0.33 sec, wall time      0.33 sec
 Bath: 0 entangled environment orbitals, 6 requested.
 Throwing out 6 orbitals within 1e-13 of 0 or 2.
 Embedding a 6-orbital, 10-electron fragment cluster.
@@ -345,9 +345,9 @@ SCF conv_tol_grad = None
 SCF max_cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpybdk0ifq
-max_memory 4000 MB (current use 153 MB)
-Overwritten attributes  get_hcore get_ovlp  of <class 'pyscf.scf.hf.RHF'>
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpqnauwe8w
+max_memory 4000 MB (current use 152 MB)
+Overwritten attributes  get_ovlp get_hcore  of <class 'pyscf.scf.hf.RHF'>
 Set gradient conv threshold to 3.16228e-05
 init E= -103.764449449787
   HOMO = -0.464163642832268  LUMO = 0.629028991648074
@@ -380,8 +380,8 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /fs/scratch/PAS1583/bpickett/tmpybdk0ifq
-max_memory 4000 MB (current use 154 MB)
+chkfile = /fs/scratch/PAS1583/bpickett/tmpqnauwe8w
+max_memory 4000 MB (current use 153 MB)
 internal_rotation = False
 ******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
 max. cycles = 50
@@ -483,7 +483,7 @@ i = 3  <i|F|i> =  -0.58561092
 i = 4  <i|F|i> =  -0.46485215
 i = 5  <i|F|i> =  -0.46444791
 i = 6  <i|F|i> =   0.62863187
-    CPU time for 1-step CASSCF      0.03 sec, wall time      0.03 sec
+    CPU time for 1-step CASSCF      0.02 sec, wall time      0.02 sec
 CASSCF energy = -103.765198217505
 CASCI E = -103.765198217505  E(CI) = -1.92746742545940  S^2 = 0.0000000
 
@@ -612,23 +612,15 @@ Summary of results for the CVS-IP-MR-ADC(2) calculation with the CASSCF referenc
     3        26.34222969      716.8086     1.7297    5781451.1508      0.000000
     4        26.40590718      718.5413     1.7255    5795426.7431      0.000000
 ------------------------------------------------------------------------------------------------
-> CPU time for total CVS-IP-MR-ADC(2) calculation      0.44 sec, wall time      0.44 sec
+> CPU time for total CVS-IP-MR-ADC(2) calculation      0.40 sec, wall time      0.40 sec
 
 MR-ADC CVS-IP energies:
-  Root 0: 699.586108 eV
-  Root 1: 717.525395 eV
-  Root 2: 717.525395 eV
-  Root 3: 719.259881 eV
-F.
-======================================================================
-FAIL: test_prism (__main__.KnownValues)
+  Root 0: 698.887221 eV
+  Root 1: 716.808587 eV
+  Root 2: 716.808587 eV
+  Root 3: 718.541339 eV
+..
 ----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/users/PAS1583/bpickett/programs/prism_env/prism_dmet_wt/tests/dmet/05-dmet-cvs-ip-mr-adc-hf-22.py", line 72, in test_prism
-    self.assertAlmostEqual(e_dmet[0],   698.887221032595, 5)
-AssertionError: np.float64(699.5861082536272) != 698.887221032595 within 5 places (np.float64(0.698887221032237) difference)
+Ran 2 tests in 0.770s
 
-----------------------------------------------------------------------
-Ran 2 tests in 0.857s
-
-FAILED (failures=1)
+OK

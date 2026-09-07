@@ -72,7 +72,7 @@ if __name__ == "__main__":
 System: uname_result(system='Linux', node='c0326.ten.osc.edu', release='5.14.0-570.128.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Tue Jul 14 08:36:30 EDT 2026', machine='x86_64')  Threads 1
 Python 3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]
 numpy 2.2.6  scipy 1.15.3  h5py 3.16.0
-Date: Mon Sep  7 01:07:57 2026
+Date: Mon Sep  7 11:13:33 2026
 PySCF version 2.11.0
 PySCF path  /users/PAS1583/bpickett/programs/pyscf
 GIT HEAD (branch embedding) d13645e4865deb1e73a6e2fe23f8fa4de76606fe
@@ -96,7 +96,7 @@ number of NR pGTOs = 30
 number of NR cGTOs = 10
 basis = sto-3g
 ecp = {}
-CPU time:         0.40
+CPU time:         0.35
 
 
 ******** <class 'pyscf.scf.hf.RHF'> ********
@@ -113,7 +113,7 @@ SCF conv_tol_grad = None
 SCF max_cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpvzvvv1fo
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmp9slocxyn
 max_memory 4000 MB (current use 119 MB)
 Set gradient conv threshold to 3.16228e-05
 Initial guess from minao.
@@ -158,7 +158,7 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /fs/scratch/PAS1583/bpickett/tmpvzvvv1fo
+chkfile = /fs/scratch/PAS1583/bpickett/tmp9slocxyn
 max_memory 4000 MB (current use 130 MB)
 internal_rotation = False
 ******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
@@ -187,7 +187,7 @@ CASSCF energy = -107.500321551571
 CASCI E = -107.500321551571  E(CI) = -4.69867660660884  S^2 = 0.0000000
 CASSCF energy: -107.500322
 
-/fs/scratch/PAS1583/bpickett/claude-45604/-users-PAS1583-bpickett/a04f1f42-c187-44da-9ea3-283b9611fc50/scratchpad/wtpath/prism/dmet/dmet.py:237: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+/users/PAS1583/bpickett/programs/prism_env/.dmet_import/prism/dmet/dmet.py:238: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
   warnings.warn(
 DMET-CASSCF test
 Bath: 3 entangled environment orbitals, 5 requested.
@@ -219,7 +219,7 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /fs/scratch/PAS1583/bpickett/tmp4yvrfkcv
+chkfile = /fs/scratch/PAS1583/bpickett/tmpbizk7h73
 max_memory 4000 MB (current use 143 MB)
 internal_rotation = False
 ******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
@@ -405,7 +405,7 @@ i = 5  <i|F|i> =  -0.30984181
 i = 6  <i|F|i> =   0.10251822
 i = 7  <i|F|i> =   0.10251822
 i = 8  <i|F|i> =   0.51081053
-    CPU time for 1-step CASSCF      0.07 sec, wall time      0.07 sec
+    CPU time for 1-step CASSCF      0.06 sec, wall time      0.06 sec
 CASSCF energy = -65.5165679091975
 CASCI E = -65.5165679091975  E(CI) = -4.70046291289910  S^2 = 0.0000000
 
@@ -441,7 +441,7 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /fs/scratch/PAS1583/bpickett/tmpi2tfvi1e
+chkfile = /fs/scratch/PAS1583/bpickett/tmpkrog1idl
 max_memory 4000 MB (current use 144 MB)
 internal_rotation = False
 ******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
@@ -627,7 +627,7 @@ i = 5  <i|F|i> =  -0.30984180
 i = 6  <i|F|i> =   0.10251822
 i = 7  <i|F|i> =   0.10251822
 i = 8  <i|F|i> =   0.51081054
-    CPU time for 1-step CASSCF      0.07 sec, wall time      0.07 sec
+    CPU time for 1-step CASSCF      0.06 sec, wall time      0.06 sec
 CASSCF energy = -65.5165679091979
 CASCI E = -65.5165679091979  E(CI) = -4.70046291122190  S^2 = 0.0000000
 
@@ -636,6 +636,6 @@ CASSCF energy: -65.5165679092 Ha
 Full-space 1-RDM trace: 10.000000
 ..
 ----------------------------------------------------------------------
-Ran 2 tests in 0.167s
+Ran 2 tests in 0.150s
 
 OK

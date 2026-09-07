@@ -85,7 +85,7 @@ if __name__ == "__main__":
 System: uname_result(system='Linux', node='c0326.ten.osc.edu', release='5.14.0-570.128.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Tue Jul 14 08:36:30 EDT 2026', machine='x86_64')  Threads 1
 Python 3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]
 numpy 2.2.6  scipy 1.15.3  h5py 3.16.0
-Date: Mon Sep  7 01:08:00 2026
+Date: Mon Sep  7 11:13:36 2026
 PySCF version 2.11.0
 PySCF path  /users/PAS1583/bpickett/programs/pyscf
 GIT HEAD (branch embedding) d13645e4865deb1e73a6e2fe23f8fa4de76606fe
@@ -110,7 +110,7 @@ number of NR pGTOs = 21
 number of NR cGTOs = 7
 basis = sto-3g
 ecp = {}
-CPU time:         0.43
+CPU time:         0.37
 
 
 ******** <class 'pyscf.scf.hf.RHF'> ********
@@ -127,7 +127,7 @@ SCF conv_tol_grad = None
 SCF max_cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmp3w5eluv4
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpgv5l5pzi
 max_memory 4000 MB (current use 122 MB)
 Set gradient conv threshold to 3.16228e-05
 Initial guess from minao.
@@ -174,8 +174,8 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /fs/scratch/PAS1583/bpickett/tmp3w5eluv4
-max_memory 4000 MB (current use 137 MB)
+chkfile = /fs/scratch/PAS1583/bpickett/tmpgv5l5pzi
+max_memory 4000 MB (current use 132 MB)
 internal_rotation = False
 ******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
 max. cycles = 50
@@ -312,7 +312,7 @@ Total number of reference states: 4
 -----------------------------------------------------------------------------------
 
 Initializing fully internally contracted NEVPT...
-/fs/scratch/PAS1583/bpickett/claude-45604/-users-PAS1583-bpickett/a04f1f42-c187-44da-9ea3-283b9611fc50/scratchpad/wtpath/prism/dmet/dmet.py:237: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+/users/PAS1583/bpickett/programs/prism_env/.dmet_import/prism/dmet/dmet.py:238: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
   warnings.warn(
 DMET-QD-NEVPT2 test
 
@@ -401,7 +401,7 @@ Summary of results for the QD-NEVPT2 calculation with the SA-CASSCF reference:
     3        1          -74.547817043390     0.45194784      12.2981     100.8155     99191.0855     0.00260396
     4        3          -74.499307940926     0.50045694      13.6181      91.0435    109837.6029     0.00000000
 ----------------------------------------------------------------------------------------------------------------
-> CPU time for total NEVPT2 calculation      0.27 sec, wall time      0.27 sec
+> CPU time for total NEVPT2 calculation      0.26 sec, wall time      0.34 sec
 Bath: 0 entangled environment orbitals, 7 requested.
 Throwing out 7 orbitals within 1e-13 of 0 or 2.
 Embedding a 7-orbital, 10-electron fragment cluster.
@@ -421,9 +421,9 @@ SCF conv_tol_grad = None
 SCF max_cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmp67fh2m8b
-max_memory 4000 MB (current use 158 MB)
-Overwritten attributes  get_ovlp get_hcore  of <class 'pyscf.scf.hf.RHF'>
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpi52dasnj
+max_memory 4000 MB (current use 152 MB)
+Overwritten attributes  get_hcore get_ovlp  of <class 'pyscf.scf.hf.RHF'>
 Set gradient conv threshold to 3.16228e-05
 init E= -84.1513215474737
   HOMO = -0.391274157143423  LUMO = 0.605135892191181
@@ -456,8 +456,8 @@ natorb = False
 canonicalization = True
 sorting_mo_energy = False
 ao2mo_level = 2
-chkfile = /fs/scratch/PAS1583/bpickett/tmp67fh2m8b
-max_memory 4000 MB (current use 158 MB)
+chkfile = /fs/scratch/PAS1583/bpickett/tmpi52dasnj
+max_memory 4000 MB (current use 152 MB)
 internal_rotation = False
 ******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
 max. cycles = 50
@@ -554,7 +554,7 @@ macro iter   1 ( 15 JK    4 micro), CASSCF E = -83.8199196990553  dE = -6.901143
     imic  3( 5)  |g[o]|=0.00765  |dxi|= 0.02  max(|x|)=0.372  |dr|=0.0601  eig=-0.00175  seig=0.00222
     imic  4( 6)  |g[o]|=0.00724  |dxi|= 0.02  max(|x|)=0.359  |dr|=0.0801  eig=-0.00161  seig=0.00222
     CPU time for aug_hess in  4 inner iters      0.00 sec, wall time      0.00 sec
-    CPU time for orbital rotation      0.01 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
     CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  1  |u-1|=0.113  |g[o]|=0.0089  |g[c]|=None  |ddm|=0.00291
     CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
@@ -607,7 +607,7 @@ CAS space CI energy = -5.59011989692752
 macro iter   2 ( 15 JK    4 micro), CASSCF E = -83.8226078597989  dE = -2.68816074e-03  S^2 = 1.0000000
                |grad[o]|=0.0089  |ddm|=0.0194  |maxRot[o]|=0.256
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter  2      0.04 sec, wall time      0.04 sec
+    CPU time for macro iter  2      0.03 sec, wall time      0.03 sec
     |g|=0.00652
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 3)  |g[o]|=0.00602  |dxi|= 0.02  max(|x|)=0.254  |dr|= 0.02  eig=-0.00125  seig=0.00275
@@ -615,7 +615,7 @@ macro iter   2 ( 15 JK    4 micro), CASSCF E = -83.8226078597989  dE = -2.688160
     imic  3( 5)  |g[o]|=0.00504  |dxi|= 0.02  max(|x|)= 0.22  |dr|=0.0601  eig=-0.000927  seig=0.00145
     imic  4( 6)  |g[o]|=0.00456  |dxi|= 0.02  max(|x|)=0.203  |dr|=0.0801  eig=-0.000779  seig=0.00145
     CPU time for aug_hess in  4 inner iters      0.00 sec, wall time      0.00 sec
-    CPU time for orbital rotation      0.01 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.01 sec
     CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  1  |u-1|=0.113  |g[o]|=0.00652  |g[c]|=None  |ddm|=0.00165
     CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
@@ -669,7 +669,7 @@ CAS space CI energy = -5.61124081439108
 macro iter   3 ( 15 JK    4 micro), CASSCF E = -83.8219965382414  dE =  6.11321557e-04  S^2 = 1.0000000
                |grad[o]|=0.00652  |ddm|=0.00818  |maxRot[o]|=0.0624
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter  3      0.04 sec, wall time      0.04 sec
+    CPU time for macro iter  3      0.03 sec, wall time      0.03 sec
 set max_stepsize to 0.006
     |g|=0.00571
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
@@ -731,7 +731,7 @@ CAS space CI energy = -5.58687965507573
 macro iter   4 ( 15 JK    4 micro), CASSCF E = -83.8236997102390  dE = -1.70317200e-03  S^2 = 1.0000000
                |grad[o]|=0.00571  |ddm|=0.0172  |maxRot[o]|=0.184
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter  4      0.04 sec, wall time      0.04 sec
+    CPU time for macro iter  4      0.03 sec, wall time      0.03 sec
     |g|=0.00388
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 3)  |g[o]|=0.00365  |dxi|=0.011  max(|x|)=0.176  |dr|=0.011  eig=-0.00066  seig=0.0132
@@ -798,7 +798,7 @@ macro iter   5 ( 15 JK    4 micro), CASSCF E = -83.8239299845068  dE = -2.302742
     imic  3( 5)  |g[o]|=0.0026  |dxi|=0.0148  max(|x|)=0.128  |dr|=0.0444  eig=-0.00035  seig=0.000254
     imic  4( 6)  |g[o]|=0.00227  |dxi|=0.0148  max(|x|)=0.114  |dr|=0.0592  eig=-0.000276  seig=0.00022
     CPU time for aug_hess in  4 inner iters      0.00 sec, wall time      0.00 sec
-    CPU time for orbital rotation      0.01 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.01 sec
     CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  1  |u-1|=0.0838  |g[o]|=0.00361  |g[c]|=None  |ddm|=0.00147
     CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
@@ -843,7 +843,7 @@ state 0  E = -84.1538255632634 S^2 = 0.0000000
 state 1  E = -83.7709711639507 S^2 = 2.0000000
 state 2  E = -83.7006254147302 S^2 = 0.0000000
 state 3  E = -83.6699874238682 S^2 = 2.0000000
-    CPU time for FCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
 CAS space CI energy = -5.59468863234603
 macro iter   6 ( 15 JK    4 micro), CASSCF E = -83.8238523914531  dE =  7.75930537e-05  S^2 = 1.0000000
                |grad[o]|=0.00361  |ddm|=0.000212  |maxRot[o]|=0.0112
@@ -934,7 +934,7 @@ micro  2  |u-1|=0.103  |g[o]|=0.00147  |g[c]|=None  |ddm|=0.00474
     imic 10(12)  |g[o]|=0.000132  |dxi|=0.252  max(|x|)=0.252  |dr|=0.261  eig=-0.000525  seig=0.00189
     CPU time for aug_hess in 10 inner iters      0.00 sec, wall time      0.00 sec
     CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
-    CPU time for update CAS DM      0.01 sec, wall time      0.01 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  3  |u-1|=0.446  |g[o]|=0.00304  |g[c]|=None  |ddm|=0.051
     CPU time for micro iter  3      0.00 sec, wall time      0.00 sec
     |g|=0.0451 (keyframe), |g-correction|=0.0452
@@ -1038,7 +1038,7 @@ macro iter   9 ( 15 JK    4 micro), CASSCF E = -83.8291369726577  dE = -3.535463
     imic  3( 5)  |g[o]|=0.00701  |dxi|=0.0166  max(|x|)=0.309  |dr|=0.0498  eig=-0.00203  seig= 0.03
     imic  4( 6)  |g[o]|=0.00665  |dxi|=0.0166  max(|x|)=0.296  |dr|=0.0664  eig=-0.00185  seig=0.0285
     CPU time for aug_hess in  4 inner iters      0.00 sec, wall time      0.00 sec
-    CPU time for orbital rotation      0.01 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.01 sec
     CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  1  |u-1|=0.0938  |g[o]|=0.00809  |g[c]|=None  |ddm|=0.0037
     CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
@@ -1152,7 +1152,7 @@ macro iter  11 ( 15 JK    4 micro), CASSCF E = -83.8312851435658  dE = -3.308345
     imic  3( 5)  |g[o]|=0.0055  |dxi|=0.0191  max(|x|)=0.224  |dr|=0.0574  eig=-0.00123  seig=0.00207
     imic  4( 6)  |g[o]|=0.00502  |dxi|=0.0191  max(|x|)=0.208  |dr|=0.0765  eig=-0.00104  seig=0.00207
     CPU time for aug_hess in  4 inner iters      0.00 sec, wall time      0.00 sec
-    CPU time for orbital rotation      0.01 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.01 sec
     CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  1  |u-1|=0.108  |g[o]|=0.00697  |g[c]|=None  |ddm|=0.00271
     CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
@@ -1267,7 +1267,7 @@ CAS space CI energy = -5.75200571437517
 macro iter  13 ( 15 JK    4 micro), CASSCF E = -83.8329855918190  dE = -1.79533768e-03  S^2 = 1.0000000
                |grad[o]|=0.0072  |ddm|=0.0183  |maxRot[o]|=0.162
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter 13      0.04 sec, wall time      0.04 sec
+    CPU time for macro iter 13      0.03 sec, wall time      0.03 sec
     |g|=0.00471
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 3)  |g[o]|=0.00442  |dxi|=0.0108  max(|x|)=0.171  |dr|=0.0108  eig=-0.000763  seig=0.0106
@@ -1275,7 +1275,7 @@ macro iter  13 ( 15 JK    4 micro), CASSCF E = -83.8329855918190  dE = -1.795337
     imic  3( 5)  |g[o]|=0.00385  |dxi|=0.0108  max(|x|)=0.152  |dr|=0.0323  eig=-0.000593  seig=0.00922
     imic  4( 6)  |g[o]|=0.00357  |dxi|=0.0108  max(|x|)=0.142  |dr|=0.0431  eig=-0.000516  seig=0.0092
     CPU time for aug_hess in  4 inner iters      0.00 sec, wall time      0.00 sec
-    CPU time for orbital rotation      0.01 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.01 sec
     CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  1  |u-1|=0.0609  |g[o]|=0.00471  |g[c]|=None  |ddm|=0.00103
     CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
@@ -1329,7 +1329,7 @@ CAS space CI energy = -5.71172124218458
 macro iter  14 ( 15 JK    4 micro), CASSCF E = -83.8340113973221  dE = -1.02580550e-03  S^2 = 1.0000000
                |grad[o]|=0.00471  |ddm|=0.00498  |maxRot[o]|= 0.15
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter 14      0.04 sec, wall time      0.04 sec
+    CPU time for macro iter 14      0.03 sec, wall time      0.03 sec
     |g|=0.00274
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 3)  |g[o]|=0.00234  |dxi|=0.015  max(|x|)=0.0917  |dr|=0.015  eig=-0.000217  seig=0.00218
@@ -1337,7 +1337,7 @@ macro iter  14 ( 15 JK    4 micro), CASSCF E = -83.8340113973221  dE = -1.025805
     imic  3( 5)  |g[o]|=0.00146  |dxi|=0.015  max(|x|)=0.063  |dr|=0.0449  eig=-0.000102  seig=0.000482
     imic  4( 6)  |g[o]|=0.00102  |dxi|=0.015  max(|x|)=0.0485  |dr|=0.0599  eig=-6.06e-05  seig=0.000481
     CPU time for aug_hess in  4 inner iters      0.00 sec, wall time      0.00 sec
-    CPU time for orbital rotation      0.01 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.01 sec
     CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  1  |u-1|=0.0847  |g[o]|=0.00274  |g[c]|=None  |ddm|=0.00135
     CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
@@ -1389,7 +1389,7 @@ CAS space CI energy = -5.67770671547824
 macro iter  15 ( 13 JK    4 micro), CASSCF E = -83.8343489321197  dE = -3.37534798e-04  S^2 = 1.0000000
                |grad[o]|=0.00274  |ddm|=0.00276  |maxRot[o]|=0.101
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter 15      0.03 sec, wall time      0.04 sec
+    CPU time for macro iter 15      0.03 sec, wall time      0.03 sec
     |g|=0.00156
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 3)  |g[o]|=0.000971  |dxi|=0.0188  max(|x|)=0.0453  |dr|=0.0188  eig=-5.77e-05  seig=8.28e-05
@@ -1564,7 +1564,7 @@ macro iter  18 ( 11 JK    4 micro), CASSCF E = -83.8344689092891  dE = -2.014280
     imic  1( 3)  |g[o]|=1.39e-05  |dxi|=0.00124  max(|x|)=0.00117  |dr|=0.00124  eig=-3.45e-08  seig=8.53e-07
     imic  2( 4)  |g[o]|=1.86e-06  |dxi|=1.25e-05  max(|x|)=1.07e-05  |dr|=0.00124  eig=-1.63e-10  seig=2.02e-07
     CPU time for aug_hess in  2 inner iters      0.00 sec, wall time      0.00 sec
-    CPU time for orbital rotation      0.00 sec, wall time      0.01 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
     CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
 micro  1  |u-1|=0.00176  |g[o]|=4.17e-05  |g[c]|=None  |ddm|=5.75e-05
     CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
@@ -1607,7 +1607,7 @@ state 0  E = -84.1663105941636 S^2 = 0.0000000
 state 1  E = -83.7836926069922 S^2 = 2.0000000
 state 2  E = -83.7185973834916 S^2 = 0.0000000
 state 3  E = -83.6692754134482 S^2 = 2.0000000
-    CPU time for FCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
 CAS space CI energy = -5.65635885551391
 macro iter  19 ( 10 JK    4 micro), CASSCF E = -83.8344689995239  dE = -9.02348063e-08  S^2 = 1.0000000
                |grad[o]|=4.17e-05  |ddm|=0.000118  |maxRot[o]|=0.00267
@@ -1660,7 +1660,7 @@ state 0  E = -84.1663023888923 S^2 = 0.0000000
 state 1  E = -83.7836975498907 S^2 = 2.0000000
 state 2  E = -83.7186060744792 S^2 = 0.0000000
 state 3  E = -83.6692700024104 S^2 = 2.0000000
-    CPU time for FCI solver      0.00 sec, wall time      0.01 sec
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
 CAS space CI energy = -5.65614744662162
 macro iter  20 ( 10 JK    4 micro), CASSCF E = -83.8344690039181  dE = -4.39425207e-09  S^2 = 1.0000000
                |grad[o]|=7.36e-06  |ddm|=3.15e-05  |maxRot[o]|=0.00058
@@ -1691,7 +1691,7 @@ CAS space CI energy = -5.65612764455146
 macro iter  21 (  2 JK    1 micro), CASSCF E = -83.8344690040490  dE = -1.30896183e-10  S^2 = 1.0000000
                |grad[o]|=1.69e-06  |ddm|=2.78e-06  |maxRot[o]|=5.31e-05
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter 21      0.02 sec, wall time      0.02 sec
+    CPU time for macro iter 21      0.01 sec, wall time      0.01 sec
     |g|=1.27e-06
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 2)  |g[o]|=8.65e-08  |dxi|=3.77e-05  max(|x|)=3.75e-05  |dr|=3.77e-05  eig=-3.78e-11  seig=1.94e-09
@@ -1717,7 +1717,7 @@ CAS space CI energy = -5.65611326173061
 macro iter  22 (  2 JK    1 micro), CASSCF E = -83.8344690041132  dE = -6.41335873e-11  S^2 = 1.0000000
                |grad[o]|=1.27e-06  |ddm|=1.87e-06  |maxRot[o]|=3.75e-05
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter 22      0.02 sec, wall time      0.02 sec
+    CPU time for macro iter 22      0.01 sec, wall time      0.01 sec
     |g|=8.81e-07
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 2)  |g[o]|=2.22e-08  |dxi|=2.6e-05  max(|x|)=2.59e-05  |dr|=2.6e-05  eig=-1.8e-11  seig=1.34e-09
@@ -1743,7 +1743,7 @@ CAS space CI energy = -5.65610333371666
 macro iter  23 (  2 JK    1 micro), CASSCF E = -83.8344690041446  dE = -3.14628323e-11  S^2 = 1.0000000
                |grad[o]|=8.81e-07  |ddm|=1.47e-06  |maxRot[o]|=2.59e-05
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter 23      0.02 sec, wall time      0.02 sec
+    CPU time for macro iter 23      0.01 sec, wall time      0.01 sec
     |g|=6.34e-07
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 2)  |g[o]|=1.64e-08  |dxi|=1.86e-05  max(|x|)=1.85e-05  |dr|=1.86e-05  eig=-9.19e-12  seig=3.48e-10
@@ -1769,7 +1769,7 @@ CAS space CI energy = -5.65609628447359
 macro iter  24 (  2 JK    1 micro), CASSCF E = -83.8344690041605  dE = -1.58593139e-11  S^2 = 1.0000000
                |grad[o]|=6.34e-07  |ddm|=1.34e-06  |maxRot[o]|=1.85e-05
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter 24      0.02 sec, wall time      0.02 sec
+    CPU time for macro iter 24      0.01 sec, wall time      0.01 sec
     |g|=4.98e-07
     CPU time for gen h_op      0.00 sec, wall time      0.00 sec
     imic  1( 2)  |g[o]|=2.58e-08  |dxi|=1.3e-05  max(|x|)=1.29e-05  |dr|=1.3e-05  eig=-4.53e-12  seig=1.57e-10
@@ -1795,7 +1795,7 @@ CAS space CI energy = -5.65609116378647
 macro iter  25 (  2 JK    1 micro), CASSCF E = -83.8344690041684  dE = -7.92965693e-12  S^2 = 1.0000000
                |grad[o]|=4.98e-07  |ddm|=9.96e-07  |maxRot[o]|=1.29e-05
     CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
-    CPU time for macro iter 25      0.02 sec, wall time      0.02 sec
+    CPU time for macro iter 25      0.01 sec, wall time      0.01 sec
 1-step CASSCF converged in  25 macro (282 JK  83 micro) steps
 CASSCF canonicalization
 Density matrix diagonal elements [1.97240295 1.24949252 0.51246854 0.26563599]
@@ -1806,7 +1806,7 @@ i = 4  <i|F|i> =  -0.65839967
 i = 5  <i|F|i> =  -0.22845267
 i = 6  <i|F|i> =   0.47137952
 i = 7  <i|F|i> =   0.63647315
-    CPU time for 1-step CASSCF      0.77 sec, wall time      0.78 sec
+    CPU time for 1-step CASSCF      0.71 sec, wall time      0.72 sec
 CASSCF energy = -83.8344690041684
 CASCI E = -83.8344690041684  E(CI) = -5.65609116378647  S^2 = 1.0000000
 CASCI state-averaged energy = -83.8344690041684
@@ -1946,7 +1946,7 @@ Dimension of the [+1'] orthonormalized subspace:   48
 Smallest eigenvalue of the [+1'] overlap metric:   1.717124e-06
 Norm of T[+1']^(1):                                0.074949399206
 Correlation energy [+1']:                         -0.009719785821
-> CPU time for computing T[+1']^(1) amplitudes      0.03 sec, wall time      0.03 sec
+> CPU time for computing T[+1']^(1) amplitudes      0.02 sec, wall time      0.02 sec
 
 Computing T[+2]^(1) amplitudes...
 Dimension of the [+2] orthonormalized subspace:    12
@@ -1971,7 +1971,7 @@ Dimension of the [+1'] orthonormalized subspace:   24
 Smallest eigenvalue of the [+1'] overlap metric:   6.765738e-03
 Norm of T[+1']^(1):                                0.068445875351
 Correlation energy [+1']:                         -0.014021586213
-> CPU time for computing T[+1']^(1) amplitudes      0.03 sec, wall time      0.03 sec
+> CPU time for computing T[+1']^(1) amplitudes      0.02 sec, wall time      0.02 sec
 
 Computing T[+2]^(1) amplitudes...
 Dimension of the [+2] orthonormalized subspace:    12
@@ -1996,7 +1996,7 @@ Dimension of the [+1'] orthonormalized subspace:   48
 Smallest eigenvalue of the [+1'] overlap metric:   7.084523e-08
 Norm of T[+1']^(1):                                0.086621678914
 Correlation energy [+1']:                         -0.012311007611
-> CPU time for computing T[+1']^(1) amplitudes      0.03 sec, wall time      0.03 sec
+> CPU time for computing T[+1']^(1) amplitudes      0.02 sec, wall time      0.02 sec
 
 Computing T[+2]^(1) amplitudes...
 Dimension of the [+2] orthonormalized subspace:    12
@@ -2028,7 +2028,7 @@ Oscillator Strengths: state i -> state f
 1 -> 3: 0.00260397    2 -> 4: 0.07356747                                            
 1 -> 4: 0.00000000                                                                  
 ----------------------------------------------------------------------------------------
-> CPU time for total NEVPT2 calculation      0.22 sec, wall time      0.22 sec
+> CPU time for total NEVPT2 calculation      0.20 sec, wall time      0.20 sec
 
 QD-NEVPT2 state energies (excitation = state - state 0):
   State 0: E_tot -84.1880233112 Ha, dE +0.0000 eV
@@ -2037,6 +2037,6 @@ QD-NEVPT2 state energies (excitation = state - state 0):
   State 3: E_tot -83.6875663612 Ha, dE +13.6181 eV
 ..
 ----------------------------------------------------------------------
-Ran 2 tests in 1.290s
+Ran 2 tests in 1.280s
 
 OK
