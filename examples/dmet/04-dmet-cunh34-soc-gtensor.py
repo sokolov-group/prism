@@ -6,8 +6,9 @@ DMET + QD-NEVPT2 with spin-orbit coupling for [Cu(NH3)4]2+
 The Cu atom is the only fragment. The ammonia ligands enter through the Schmidt
 bath, and the part of the ligand density left outside the cluster is frozen into
 the core. The spin-orbit and magnetic integrals are built over the whole
-molecule and use that frozen density, so the g-tensor, the powder magnetization
-and the powder susceptibility are in the molecular frame.
+molecule, and the spin-orbit mean field adds that frozen density back, so the
+g-tensor, the powder magnetization and the powder susceptibility are in the
+molecular frame.
 '''
 
 import numpy as np

@@ -102,8 +102,8 @@ def print_osc_strength(interface, osc_str):
     interface.log.info(separator)
 
 def _molden_basis(interface):
-    # Molecule to write orbitals for, and the orbitals in its AO basis.
-    # An embedded calculation supplies the full molecule and the transform to its AOs.
+    # Molecule to write orbitals for, and those orbitals in its AO basis.
+    # An embedded calculation supplies the full molecule and the map to its AOs.
     ao2emb = getattr(interface, 'emb_ao2emb', None)
     if ao2emb is None:
         return interface.mol, interface.mo

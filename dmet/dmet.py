@@ -126,7 +126,7 @@ class DMET:
         self.bath_tol = bath_tol
         self.core_occ_tol = core_occ_tol
         self.keep_degenerate = keep_degenerate
-        self.deg_rtol = deg_rtol
+        self.deg_rtol = deg_rtol         # bath occupation degeneracy tolerance
         self.print_bath_spectrum = print_bath_spectrum
         # Externally supplied bath density in the local basis, consumed by do_exact().
         if bath_1rdm is not None:
@@ -443,6 +443,8 @@ class DMET:
                 self.dmet_orbs.append(sym_desc['loc_2_dmet'][:, :sym_desc['norb_in_imp']])
                 self.core_1rdm_loc.append(None)
                 self.bath_spectrum.append(self.helper.bath_spectrum)
+                if self.print_bath_spectrum:
+                    self._dump_bath_spectrum(frag_idx, self.helper.bath_spectrum)
                 _frag_meta.append({
                     'counter': frag_idx,
                     'sym_parent': sym_desc['sym_parent'],
