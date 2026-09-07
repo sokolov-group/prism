@@ -28,7 +28,7 @@ def _get_log(log):
 
 
 def stabilize_rohf(mf, max_iter=5, log=None):
-    # Part C determinism fix: follow ROHF instabilities until stable; no-op for RHF.
+    # Follow ROHF instabilities until the solution is stable.
     from pyscf import scf
     log = _get_log(log)
     if not isinstance(mf, scf.rohf.ROHF):
@@ -49,7 +49,7 @@ def stabilize_rohf(mf, max_iter=5, log=None):
 
 
 def canonicalize_degenerate_active_nos(cas_no, act_idx, no_occ, f_emb, deg_tol=1e-3):
-    # Part A determinism fix: diagonalize the projected embedded Fock in each degenerate block.
+    # Diagonalize the projected embedded Fock within each degenerate block.
     act_cols = cas_no[:, act_idx].copy()
     occ_vals = no_occ[act_idx]
     i = 0
@@ -153,7 +153,7 @@ def natorb_active_space(mf, n_superset, occ_thresh=0.02, deg_tol=1e-3, max_super
             f"No fractionally occupied NOs in the CAS({na+nb},{ncas_s}) "
             f"superset (occupations {np.round(no_occ, 3).tolist()}). Increase n_superset.")
 
-    # Part A determinism fix: pin degenerate active-NO orientation.
+    # Pin the orientation of degenerate active natural orbitals.
     f_emb = np.dot(mf.mo_coeff * mf.mo_energy, mf.mo_coeff.T)
     act_idx = np.where(is_act)[0]
     if len(act_idx) > 1:
@@ -178,65 +178,6 @@ def natorb_active_space(mf, n_superset, occ_thresh=0.02, deg_tol=1e-3, max_super
     log.info("natorb CAS from CASCI(%d,%d) superset -> CAS(%d,%d); active NO occupations %s."
              % (na + nb, ncas_s, nelecas, ncas, np.round(no_occ[is_act], 4).tolist()))
     return mo, ncas, nelecas
-
-
-def multiseed_casscf(mc, mo_seed, deg_tol=1e-3, angles=(0, 30, 60, 90), log=None):
-    # Part B determinism fix: CASSCF from rotated seeds in degenerate pairs; keep the lowest.
-    from pyscf import mcscf as _mcscf
-    log = _get_log(log)
-
-    ncore = mc.ncore
-    ncas = mc.ncas
-    nelecas = mc.nelecas
-    nroots = len(mc.weights) if hasattr(mc, 'weights') else 1
-
-    # Single CASCI to measure active-NO occupations and detect degenerate pairs.
-    ci_det = _mcscf.CASCI(mc._scf, ncas, nelecas)
-    ci_det.verbose = 0
-    if nroots > 1:
-        ci_det.fcisolver.nroots = nroots
-    ci_det.kernel(mo_seed)
-    if nroots > 1 and isinstance(ci_det.ci, list):
-        dm1 = sum(ci_det.fcisolver.make_rdm1(ci, ncas, nelecas)
-                  for ci in ci_det.ci) / nroots
-    else:
-        dm1 = ci_det.fcisolver.make_rdm1(ci_det.ci, ncas, nelecas)
-    occ = np.sort(np.linalg.eigvalsh(dm1))[::-1]
-    deg_pairs = [(i, i + 1) for i in range(ncas - 1)
-                 if abs(occ[i] - occ[i + 1]) < deg_tol]
-
-    if not deg_pairs:
-        log.info("No degenerate active pairs (min occupation gap %.2e); "
-                 "single kernel call." % np.min(np.abs(np.diff(occ))))
-        mc.kernel(mo_seed)
-        return mc
-
-    log.info("Found %d degenerate active pair(s) %s; running %d multi-seed CASSCF calculations."
-             % (len(deg_pairs), deg_pairs, len(angles)))
-
-    best_e = np.inf
-    best_mo = None
-
-    for angle in angles:
-        mo = mo_seed.copy()
-        th = np.deg2rad(angle)
-        c_r, s_r = np.cos(th), np.sin(th)
-        for i, j in deg_pairs:
-            col_i = mo[:, ncore + i].copy()
-            col_j = mo[:, ncore + j].copy()
-            mo[:, ncore + i] =  c_r * col_i + s_r * col_j
-            mo[:, ncore + j] = -s_r * col_i + c_r * col_j
-        mc.kernel(mo)
-        log.info("  seed %3d deg: e_tot=%.10f  converged=%s" % (angle, mc.e_tot, mc.converged))
-        if mc.e_tot < best_e:
-            best_e = mc.e_tot
-            best_mo = mc.mo_coeff.copy()
-
-    # Re-run from the best seed so mc is fully consistent at that solution.
-    if abs(mc.e_tot - best_e) > 1e-10:
-        mc.kernel(best_mo)
-    log.info("Multi-seed CASSCF best SA-energy: %.10f Ha" % best_e)
-    return mc
 
 
 def project_amo_manually(old_mo_coeff, ncas, ncore, new_fock, norb, log=None):

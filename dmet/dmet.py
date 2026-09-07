@@ -52,8 +52,9 @@ class DMET:
                  use_symmetry=False, symmetry_map=None,
                  parallel=False, max_workers=None, bath_tol=1e-13, n_bath_orbs=None,
                  bath_1rdm=None, core_occ_tol=None,
+                 keep_degenerate=False, deg_rtol=1e-6, print_bath_spectrum=False,
                  cas_select='energy',
-                 embed_level_shift=0.0, rohf_stability=False, cas_multiseed=False,
+                 embed_level_shift=0.0, rohf_stability=False,
                  cas_spin=None, cas_spin_shift=0.2,
                  fragment_methods=None,
                  natorb_occ_thresh=0.02, natorb_max_superset=None,
@@ -82,7 +83,6 @@ class DMET:
         self.cas_select = cas_select
         self.embed_level_shift = embed_level_shift   # static level shift on the embedded post-HF reference
         self.rohf_stability = rohf_stability
-        self.cas_multiseed = cas_multiseed
         self.cas_spin = cas_spin        # target 2S for CAS states; None disables the spin penalty
         self.cas_spin_shift = cas_spin_shift  # fix_spin_ penalty strength for off-target spins
         self.natorb_occ_thresh = natorb_occ_thresh    # natorb core-vs-active occupation cutoff
@@ -122,15 +122,15 @@ class DMET:
                     f"only 'RHF' is supported per fragment.")
         self.bath_tol = bath_tol
         self.core_occ_tol = core_occ_tol
-        # Externally supplied bath density, consumed only by do_exact(). A fixed density does
-        # not respond to umat, so the correlation-potential fit loses its gradient and stops
-        # at the initial umat without reporting anything.
+        self.keep_degenerate = keep_degenerate
+        self.deg_rtol = deg_rtol
+        self.print_bath_spectrum = print_bath_spectrum
+        # Externally supplied bath density in the local basis, consumed by do_exact().
         if bath_1rdm is not None:
             if sc_method != 'NONE':
                 raise ValueError(
                     f"bath_1rdm requires sc_method='NONE', got '{sc_method}'. The "
-                    f"correlation-potential fit needs a density that responds to umat, and "
-                    f"construct_1rdm_response assumes an idempotent one.")
+                    f"correlation-potential fit requires a density that varies with umat.")
             trace = np.trace(bath_1rdm)
             if abs(trace - self.ints.nelec) > 1e-6:
                 raise ValueError(
@@ -191,6 +191,8 @@ class DMET:
         self.energy = 0.0
         self.imp_rdm1 = []
         self.dmet_orbs = []
+        self.core_1rdm_loc = []
+        self.bath_spectrum = []
         self.frag_energies = []
         self.imp_size = self.make_imp_size()
         self.mu_imp = 0.0
@@ -200,10 +202,6 @@ class DMET:
 
     def _warn_inert_params(self):
         _cas_methods = {'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'}
-        if self.cas_multiseed and self.method not in _cas_methods:
-            warnings.warn(
-                f"cas_multiseed=True is inert for method='{self.method}' "
-                f"(only {sorted(_cas_methods)} use it).", UserWarning)
         if self.method in _cas_methods and self.cas_select == 'energy':
             warnings.warn(
                 "cas_select='energy' (the default) selects the active space by "
@@ -357,6 +355,8 @@ class DMET:
         self.energy = 0.0
         self.imp_rdm1 = []
         self.dmet_orbs = []
+        self.core_1rdm_loc = []
+        self.bath_spectrum = []
         self.frag_energies = []
         self.cas_results = []
         self.qdnevpt2_results = []
@@ -374,6 +374,9 @@ class DMET:
         _frag_tasks = []
         _frag_meta = []
 
+        _needs_soc = bool((self.qdnevpt2_kwargs or {}).get('soc')
+                          or (self.pcnevpt2_kwargs or {}).get('soc'))
+
         _builder = FragmentBuilder(
             ints = self.ints,
             helper = self.helper,
@@ -383,6 +386,9 @@ class DMET:
             bath_tol = self.bath_tol,
             fragment_methods = self.fragment_methods,
             core_occ_tol = self.core_occ_tol,
+            keep_degenerate = self.keep_degenerate,
+            deg_rtol = self.deg_rtol,
+            needs_soc = _needs_soc,
         )
 
         for frag_idx in range(maxiter):
@@ -393,6 +399,8 @@ class DMET:
                 sym_desc = _builder.build_symmetry_bath(
                     frag_idx, one_rdm, self.symmetry_map[frag_idx])
                 self.dmet_orbs.append(sym_desc['loc_2_dmet'][:, :sym_desc['norb_in_imp']])
+                self.core_1rdm_loc.append(None)
+                self.bath_spectrum.append(self.helper.bath_spectrum)
                 _frag_meta.append({
                     'counter': frag_idx,
                     'sym_parent': sym_desc['sym_parent'],
@@ -417,6 +425,10 @@ class DMET:
 
             # Populate dmet_orbs for bath-dump and cost-function use.
             self.dmet_orbs.append(loc_2_dmet[:, :norb_in_imp])
+            self.core_1rdm_loc.append(core_1rdm_loc)
+            self.bath_spectrum.append(frag['bath_spectrum'])
+            if self.print_bath_spectrum:
+                self._dump_bath_spectrum(frag_idx, frag['bath_spectrum'])
 
             self.log.note("Embedding a %d-orbital, %d-electron fragment cluster."
                           % (norb_in_imp, nelec_in_imp))
@@ -458,7 +470,7 @@ class DMET:
                 frag_idx, _method_key, dmet_oei, dmet_fock, dmet_tei,
                 norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                 dm_guess_rhf, mo_guess=_mo_guess, ci_guess=_ci_guess,
-                dip_mom_ao=dip_mom_ao)
+                dip_mom_ao=dip_mom_ao, soc_data=frag['soc_data'])
 
             _is_parallel_eligible = (
                 self.parallel
@@ -569,8 +581,8 @@ class DMET:
         return n_electrons
 
     def _attach_spin_pop_transform(self, qdnevpt2_res, frag_idx):
-        # Real-AO hook so nevpt.analyze() partitions the embedded spin density
-        # over the physical atoms; exact for a single all-encompassing fragment.
+        # AO-basis data so nevpt.analyze() partitions the embedded spin density
+        # over the atoms. Exact for a single fragment spanning every orbital.
         nevpt = qdnevpt2_res['nevpt']
         mo_emb = qdnevpt2_res['mc'].mo_coeff
         nevpt.spin_pop_mo = self.ints.ao2loc @ self.dmet_orbs[frag_idx] @ mo_emb
@@ -579,7 +591,8 @@ class DMET:
 
     def _build_task(self, frag_idx, method_key, dmet_oei, dmet_fock, dmet_tei,
                     norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
-                    dm_guess_rhf, mo_guess=None, ci_guess=None, dip_mom_ao=None):
+                    dm_guess_rhf, mo_guess=None, ci_guess=None, dip_mom_ao=None,
+                    soc_data=None):
         return {
             'counter': frag_idx,
             'method': method_key,
@@ -588,6 +601,7 @@ class DMET:
             'dmet_fock': dmet_fock,
             'dmet_tei': dmet_tei,
             'dip_mom_ao': dip_mom_ao,
+            'soc_data': soc_data,
             'norb': norb_in_imp,
             'nel': nelec_in_imp,
             'nimp': num_imp_orbs,
@@ -604,7 +618,6 @@ class DMET:
             'casci_conv_tol': self.casci_conv_tol,
             'embed_level_shift': self.embed_level_shift,
             'rohf_stability': self.rohf_stability,
-            'cas_multiseed': self.cas_multiseed,
             'cas_spin': self.cas_spin,
             'cas_spin_shift': self.cas_spin_shift,
             'casscf_kwargs': self.casscf_kwargs,
@@ -923,6 +936,35 @@ class DMET:
                 self.imp_rdm1[frag_idx][:local_size, :local_size]
             square_jumper += local_size
         return result
+
+    def _dump_bath_spectrum(self, frag_idx, spectrum, ndisplay=10):
+        nkeep = spectrum['num_bath_orbs']
+        lo = max(0, nkeep - ndisplay)
+        hi = min(len(spectrum['occupation']), nkeep + ndisplay)
+        self.log.info("\nBath spectrum, fragment %d (kept %d of %d entangled):"
+                      % (frag_idx, nkeep, spectrum['num_entangled']))
+        self.log.info("   idx    occupation    dev. from 0/2      entropy   status")
+        for i in range(lo, hi):
+            self.log.info("  %4d  %12.8f     %12.6e  %11.6e   %s"
+                          % (i, spectrum['occupation'][i], spectrum['occ_deviation'][i],
+                             spectrum['entropy'][i], "bath" if i < nkeep else "core/virt"))
+
+    def to_ao(self, mat_emb, impnumber=0):
+        # Transform an embedded-basis matrix to the AO basis of the parent molecule.
+        coeff = self.ints.ao2loc @ self.dmet_orbs[impnumber]
+        if mat_emb.shape[-1] != coeff.shape[1]:
+            raise ValueError(
+                f"Matrix dimension {mat_emb.shape[-1]} does not match the "
+                f"{coeff.shape[1]}-orbital embedded basis of fragment {impnumber}.")
+        return coeff @ mat_emb @ coeff.T
+
+    def core_dm_ao(self, impnumber=0):
+        # AO-basis density of the orbitals frozen out of a fragment's embedded problem.
+        core = self.core_1rdm_loc[impnumber]
+        if core is None:
+            raise ValueError(f"Fragment {impnumber} was solved by symmetry and has no core "
+                             f"density; use its symmetry parent instead.")
+        return self.ints.ao2loc @ core @ self.ints.ao2loc.T
 
     def dump_bath_orbs(self, filename, impnumber=0):
         from pyscf.tools import molden

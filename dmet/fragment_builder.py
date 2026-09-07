@@ -23,12 +23,11 @@ import numpy as np
 class FragmentBuilder:
 
     _NEEDS_DM_METHODS = frozenset({'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'})
-    # CASSCF is absent by design: its solver computes no transition properties, so the
-    # dipole integrals would be built and then discarded.
     _NEEDS_DIP_METHODS = frozenset({'QD-NEVPT2', 'PC-NEVPT2'})
 
     def __init__(self, ints, helper, fragments, method, num_bath_orbs, bath_tol,
-                 fragment_methods=None, core_occ_tol=None):
+                 fragment_methods=None, core_occ_tol=None,
+                 keep_degenerate=False, deg_rtol=1e-6, needs_soc=False):
         self._ints = ints
         self._helper = helper
         self._fragments = fragments
@@ -37,6 +36,9 @@ class FragmentBuilder:
         self._bath_tol = bath_tol
         self._fragment_methods = fragment_methods or {}
         self._core_occ_tol = core_occ_tol
+        self._keep_degenerate = keep_degenerate
+        self._deg_rtol = deg_rtol
+        self._needs_soc = needs_soc
 
     def build(self, counter, one_rdm, chempot_imp):
         fragment_mask = self._fragments[counter]
@@ -46,10 +48,11 @@ class FragmentBuilder:
         bath_request = num_imp_orbs if self._num_bath_orbs is None else self._num_bath_orbs[counter]
 
         num_bath_orbs, loc_2_dmet, core_1rdm_dmet = self._helper.construct_bath(
-            one_rdm, impurity_orbs, bath_request, threshold=self._bath_tol)
+            one_rdm, impurity_orbs, bath_request, threshold=self._bath_tol,
+            keep_degenerate=self._keep_degenerate, deg_rtol=self._deg_rtol)
+        bath_spectrum = self._helper.bath_spectrum
 
         # Loose core-occupation cutoff when the bath is auto-sized, tight when fixed.
-        # core_occ_tol overrides that coupling so bath sizing can be varied on its own.
         core_cutoff = (self._core_occ_tol if self._core_occ_tol is not None
                        else (0.01 if self._num_bath_orbs is None else 0.5))
         for idx, occ in enumerate(core_1rdm_dmet):
@@ -89,6 +92,10 @@ class FragmentBuilder:
         if self._method in self._NEEDS_DIP_METHODS:
             dip_mom_ao = self._ints.dmet_dip_mom(loc_2_dmet, norb_in_imp)
 
+        soc_data = None
+        if self._needs_soc:
+            soc_data = self._ints.dmet_soc_data(loc_2_dmet, norb_in_imp, core_1rdm_loc)
+
         return {
             'counter': counter,
             'flag_rhf': flag_rhf,
@@ -104,6 +111,8 @@ class FragmentBuilder:
             'dmet_tei': dmet_tei,
             'dm_guess_rhf': dm_guess_rhf,
             'dip_mom_ao': dip_mom_ao,
+            'soc_data': soc_data,
+            'bath_spectrum': bath_spectrum,
             'method_key': method_key,
         }
 
@@ -112,7 +121,8 @@ class FragmentBuilder:
         num_imp_orbs = int(np.sum(impurity_orbs))
         bath_request = num_imp_orbs if self._num_bath_orbs is None else self._num_bath_orbs[counter]
         num_bath_orbs, loc_2_dmet, _ = self._helper.construct_bath(
-            one_rdm, impurity_orbs, bath_request, threshold=self._bath_tol)
+            one_rdm, impurity_orbs, bath_request, threshold=self._bath_tol,
+            keep_degenerate=self._keep_degenerate, deg_rtol=self._deg_rtol)
         norb_in_imp = num_imp_orbs + num_bath_orbs
         return {
             'counter': counter,
