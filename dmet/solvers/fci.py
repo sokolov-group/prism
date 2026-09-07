@@ -48,8 +48,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, chempot_imp=0.0, printoutput=F
 
     one_rdm = np.einsum('ijkk->ij', two_rdm) / (nel - 1)
 
-    # FCI impurity-energy convention (0.5/0.5) differs from the CASSCF/NEVPT2
-    # half-projector (0.25/0.125); identical for exact wavefunctions only.
+    # FCI uses 0.5/0.5 vs CASSCF/NEVPT2 0.25/0.125; identical only for exact wfns.
     impurity_energy = const
     impurity_energy += 0.5 * np.einsum('ij,ij->', one_rdm[:nimp, :], oei[:nimp, :] + fock[:nimp, :])
     impurity_energy += 0.5 * np.einsum('ijkl,ijkl->', two_rdm[:nimp, :, :, :], tei[:nimp, :, :, :])

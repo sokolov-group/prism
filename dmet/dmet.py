@@ -118,6 +118,7 @@ class DMET:
                     f"Invalid fragment_methods value '{_m}' for fragment {_idx}: "
                     f"only 'RHF' is supported per fragment.")
         self.bath_tol = bath_tol
+        self.parallel = parallel
 
         self._validate_config()
         self._warn_inert_params()
@@ -127,7 +128,6 @@ class DMET:
         if self.use_symmetry and self.symmetry_map is None and not is_translation_invariant:
             self.symmetry_map = self._auto_detect_symmetry()
 
-        self.parallel = parallel
         if max_workers is not None:
             self.max_workers = max_workers
         else:
@@ -196,6 +196,9 @@ class DMET:
 
     def _validate_config(self):
         # Fail fast at construction on user-reachable misconfiguration.
+        if len(self.fragments) == 0:
+            raise ValueError("At least one fragment is required; got an empty list.")
+
         if self.is_translation_invariant and not self.ints.ti_ok:
             raise ValueError(
                 "Translation-invariant DMET requires a TI-capable LocalIntegrals "
@@ -223,6 +226,12 @@ class DMET:
         if self.method == 'QD-NEVPT2' and self.sa_nstates < 2:
             raise ValueError(
                 "Method 'QD-NEVPT2' requires sa_nstates >= 2 for state-averaging.")
+
+        if self.parallel and self.method in ('QD-NEVPT2', 'PC-NEVPT2'):
+            raise ValueError(
+                f"Method '{self.method}' does not support parallel=True: it returns the "
+                f"CASSCF and Prism objects needed for analysis, and those cannot be sent "
+                f"back from a worker process. Use parallel=False.")
 
         for _i in range(len(self.fragments)):
             if np.any(np.asarray(self.fragments[_i]) < 0):
@@ -516,9 +525,8 @@ class DMET:
             self.energy = self.energy * len(self.fragments)
             remaining_orbs[:] = 0
 
-        # Augment energy with the mean-field contribution of orbitals no fragment
-        # covers (as in libDMET/Vayesta/mrh). active_oei and active_fock already carry
-        # any QM/MM potential and mean-field veff, so no environment SCF is needed.
+        # Mean-field energy of orbitals no fragment covers (as in libDMET/Vayesta/mrh);
+        # active_oei/active_fock already carry QM/MM and veff, so no environment SCF.
         if np.sum(remaining_orbs) != 0:
             if not np.array_equal(self.ints.active,
                                   np.ones((self.ints.mol.nao_nr(),), dtype=int)):
@@ -805,9 +813,7 @@ class DMET:
         umat_flat = umat_square_copy[self.mask]
         return umat_flat
 
-    # Maximum physically reasonable chemical potential (Eh). Newton steps beyond
-    # this indicate the optimizer has lost contact with the electron-count
-    # response surface.
+    # Max physically reasonable chemical potential (Eh); beyond this Newton has diverged.
     _MU_MAX = 10.0
 
     def num_elec_cost_function(self, chempot_imp):

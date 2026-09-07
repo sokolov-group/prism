@@ -17,9 +17,10 @@
 #
 
 
+# QD/PC-NEVPT2 excluded: their result objects cannot be pickled back from a worker.
 PARALLEL_ELIGIBLE = frozenset({
     'ED', 'FCI', 'flag_rhf',
-    'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2',
+    'CASSCF',
 })
 
 

@@ -1,55 +1,63 @@
 #!/usr/bin/env python
 
 '''
-DMET + QD-NEVPT2 excitation energies for H2O
+DMET + QD-NEVPT2 for H2O: excitation energies, oscillator strengths, and
+eigenvector analysis, checked against a direct (non-embedded) QD-NEVPT2.
 
-The water molecule is embedded as a single fragment (impurity = whole
-molecule) and solved with an embedded SA-CASSCF reference followed by
-Prism QD-NEVPT2. The natorb selector picks the active space from the
-natural-orbital occupations of a superset CASCI.
-
-Note: total energies from the embedded QD-NEVPT2 lack nuclear repulsion
-(the embedded cluster carries no real molecule); excitation energies are
-unaffected. Oscillator strengths are reported as zero for the same reason.
+The whole molecule is one fragment, so the embedding is exact and DMET
+reproduces the direct result; both are printed side by side. Embedded total
+energies lack nuclear repulsion, but excitations and oscillator strengths are
+unaffected.
 '''
 
-import math
 import pyscf.gto
 import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.nevpt
 from prism.dmet import DMET, LocalIntegrals, make_fragments
 
-r = 0.96
-x = r * math.sin(104.5 * math.pi / (2 * 180.0))
-y = r * math.cos(104.5 * math.pi / (2 * 180.0))
-
 mol = pyscf.gto.Mole()
-mol.atom = [
-    ['O', (0.0, 0.0, 0.0)],
-    ['H', (0.0,  -x,   y)],
-    ['H', (0.0,   x,   y)]]
-mol.basis = 'aug-cc-pvdz'
-mol.verbose = 4
+mol.atom = [['O', (0.0, 0.0, 0.0)],
+            ['H', (0.0, 0.757, 0.587)],
+            ['H', (0.0, -0.757, 0.587)]]
+mol.basis = 'cc-pvdz'
+mol.verbose = 0
 mol.build()
 
 # RHF calculation
 mf = pyscf.scf.RHF(mol)
-mf.conv_tol = 1e-12
 ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
-# Localized integrals; the whole molecule is one fragment
+# Direct QD-NEVPT2 on the whole molecule (no embedding), for reference
+mc = pyscf.mcscf.CASSCF(mf, 6, 6).state_average_([0.25, 0.25, 0.25, 0.25])
+mc.verbose = 0
+mc.kernel()
+qd = prism.nevpt.QDNEVPT(prism.interface.PYSCF(mf, mc))
+qd.verbose = 0
+e_direct = qd.kernel()[0]
+qd.compute_properties()
+osc_direct = qd.properties['osc_strengths']
+
+# DMET with the whole molecule as one fragment, same active space
 ints = LocalIntegrals(mf, list(range(mol.nao_nr())), 'meta_lowdin')
 frags = make_fragments(mol, ints, [[0, 1, 2]])
-
-# One-shot DMET with embedded SA-CASSCF(6,6) -> QD-NEVPT2 over 6 states.
-# rohf_stability/cas_multiseed activate the determinism safeguards.
 dmet = DMET(ints, frags, False, method='QD-NEVPT2',
-            ncas=6, nelecas=6, sa_nstates=6, cas_select='natorb',
-            rohf_stability=True, cas_multiseed=True,
-            qdnevpt2_kwargs={'nfrozen': 1})
+            ncas=6, nelecas=6, sa_nstates=4, cas_select='energy')
 dmet.oneshot()
-
 res = dmet.qdnevpt2_results[0]
-print("\nQD-NEVPT2 excitation energies (eV):")
-for i, e in enumerate(res['e_tot']):
-    print("  State %d: %+.4f" % (i, (e - res['e_tot'][0]) * 27.21138602))
+e_dmet = res['e_tot']
+osc_dmet = res['nevpt'].properties['osc_strengths']
+
+# Excitation energies (eV) and oscillator strengths: DMET vs direct
+print("\n  transition   dE_direct  dE_DMET   f_direct  f_DMET")
+for i in range(1, 4):
+    print("  0 -> %d      %8.4f  %8.4f  %8.5f  %8.5f"
+          % (i, (e_direct[i] - e_direct[0]) * 27.21138602,
+                (e_dmet[i] - e_dmet[0]) * 27.21138602,
+                osc_direct[i - 1], osc_dmet[i - 1]))
+
+# Dominant CI configurations and active natural occupations of the DMET states
+res['nevpt'].verbose = 4
+res['nevpt'].analyze()

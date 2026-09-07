@@ -25,11 +25,7 @@ import prism.lib.logger as logger
 
 
 def construct_p_list(mol, pmol):
-    # Mark each working-basis AO that also belongs to the minimal reference (pmol):
-    # 1 if the AO matches a reference function, 0 if it is an extra orbital handled
-    # by the complement space. pmol drops zero-width (ghost/ECP) atoms, so map its
-    # atoms back to the parent index and match on (atom, shell, m), not on a shifted
-    # atom index.
+    # 1 = AO in the pmol reference, 0 = complement space; pmol drops zero-width atoms.
     kept_atoms = [ia for ia, (_, _, ao_start, ao_stop) in enumerate(mol.aoslice_by_atom())
                   if ao_stop > ao_start]
     ref = set()
@@ -54,8 +50,7 @@ def orthogonalize_iao(coeff, ovlp):
 
 
 def _build_pmol_with_ghosts(mol, minao=None):
-    # Like reference_mol() but includes ghost vacancy atoms; auto-selects GTH
-    # basis for pseudopotential molecules.
+    # Like reference_mol() but keeps ghost vacancy atoms; GTH basis for pseudo mols.
     import pyscf.gto
     if minao is None:
         minao = 'gth-szv-molopt-sr' if getattr(mol, 'pseudo', None) else 'minao'
@@ -127,8 +122,7 @@ def resort_orbitals(mol, ao2loc):
 
 def construct_iao(mol, mf):
     # Knizia, JCTC 9, 4834-4843, 2013 -- appendix C
-    # For UKS/UHF (mo_coeff shape (2, nao, nmo)), build the spin-averaged
-    # density matrix and extract its effectively-occupied natural orbitals.
+    # UKS/UHF: spin-average the density, take its occupied natural orbitals.
     if np.ndim(mf.mo_coeff) == 3:
         mo_a, mo_b = mf.mo_coeff[0], mf.mo_coeff[1]
         occ_a, occ_b = mf.mo_occ[0], mf.mo_occ[1]

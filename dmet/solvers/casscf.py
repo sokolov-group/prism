@@ -29,8 +29,7 @@ from prism.dmet.cas_selectors import natorb_active_space, fix_cas_spin, multisee
 
 
 def _stabilize_rohf(mf, max_iter=5, tag='', log=None):
-    # Part C determinism fix: follow ROHF internal instabilities and reconverge
-    # until stable. No-op for RHF.
+    # Part C determinism fix: follow ROHF instabilities until stable; no-op for RHF.
     from pyscf import scf as _scf
     if log is None:
         log = logger.Logger(sys.stdout, logger.INFO)
@@ -134,8 +133,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
             mf.scf(dm_loc)
             dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
         if embed_level_shift != 0.0:
-            # Confirm the shifted fixed point is also a stationary point of the real
-            # (unshifted) Hamiltonian; if it moves, the shift masked the instability.
+            # Check the shifted fixed point is stationary for the real H; motion = masked instability.
             e_shifted = mf.e_tot
             mf.level_shift = 0.0
             mf.scf(dm_loc)
@@ -157,8 +155,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         eigvals.sort()
         log.info("RHF HOMO-LUMO gap: %s" % (eigvals[num_pairs] - eigvals[num_pairs - 1]))
 
-        # Skip selection when a warm-restart MO guess is supplied: mc.kernel(mo_guess)
-        # would overwrite the reordered mo_coeff anyway.
+        # Skip selection with a warm-restart guess: mc.kernel would overwrite mo_coeff.
         mo_natorb = None
         if cas_select == 'natorb' and mo_guess is None:
             mo_natorb, ncas, nelecas = natorb_active_space(

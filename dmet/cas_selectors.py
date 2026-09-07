@@ -28,8 +28,7 @@ def _get_log(log):
 
 
 def canonicalize_degenerate_active_nos(cas_no, act_idx, no_occ, f_emb, deg_tol=1e-3):
-    # Part A determinism fix: pin degenerate active-NO orientation by diagonalizing
-    # the projected embedded Fock within each degenerate block. Modifies cas_no in place.
+    # Part A determinism fix: diagonalize the projected embedded Fock in each degenerate block.
     act_cols = cas_no[:, act_idx].copy()
     occ_vals = no_occ[act_idx]
     i = 0
@@ -91,8 +90,7 @@ def natorb_active_space(mf, n_superset, occ_thresh=0.02, deg_tol=1e-3, max_super
     na = int(np.sum(np.rint(win) >= 1))   # alpha occupied in window
     nb = int(np.sum(np.rint(win) >= 2))   # beta (doubly) occupied in window
 
-    # Optionally restrict the superset CASCI to a chosen spin (2S = na - nb):
-    # re-split the electrons and constrain S^2 via fix_spin_ (pyscf-style).
+    # Restrict the superset CASCI to spin 2S = na - nb via fix_spin_.
     if cas_spin is not None:
         ne_win = na + nb
         if cas_spin < 0 or cas_spin > ne_win or (ne_win - cas_spin) % 2 != 0:
@@ -162,8 +160,7 @@ def natorb_active_space(mf, n_superset, occ_thresh=0.02, deg_tol=1e-3, max_super
 
 
 def multiseed_casscf(mc, mo_seed, deg_tol=1e-3, angles=(0, 30, 60, 90), log=None):
-    # Part B determinism fix: run CASSCF from deterministic rotated seeds within
-    # degenerate active pairs; keep the lowest-energy solution.
+    # Part B determinism fix: CASSCF from rotated seeds in degenerate pairs; keep the lowest.
     from pyscf import mcscf as _mcscf
     log = _get_log(log)
 
@@ -222,8 +219,7 @@ def multiseed_casscf(mc, mo_seed, deg_tol=1e-3, angles=(0, 30, 60, 90), log=None
 
 
 def project_amo_manually(old_mo_coeff, ncas, ncore, new_fock, norb, log=None):
-    # Project old CASSCF active MOs onto the current embedding basis; fidelity
-    # eigenvalues near 1 mean the active space survived the u-matrix update.
+    # Project old active MOs onto the new basis; fidelity ~1 means the CAS survived.
     log = _get_log(log)
     if old_mo_coeff.shape != (norb, norb):
         raise ValueError(
