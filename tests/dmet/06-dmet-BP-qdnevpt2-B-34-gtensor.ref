@@ -1,0 +1,790 @@
+#INFO: **** input file is /users/PAS1583/bpickett/programs/prism_env/prism_dmet_wt/tests/dmet/06-dmet-BP-qdnevpt2-B-34-gtensor.py ****
+# Copyright 2026 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Bryce Pickett <pickettosu@gmail.com>
+
+import unittest
+import numpy as np
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.nevpt
+from prism.dmet import DMET, LocalIntegrals, make_fragments
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [['B', (0.0, 0.0, 0.0)]]
+mol.basis = 'sto-3g'
+mol.spin = 1
+mol.verbose = 4
+mol.build()
+
+# ROHF calculation
+mf = pyscf.scf.ROHF(mol)
+ehf = mf.scf()
+print("SCF energy: %f\n" % ehf)
+
+# Direct SA-CASSCF and QD-NEVPT2 with spin-orbit coupling on the whole atom
+mc = pyscf.mcscf.CASSCF(mf, 4, 3).state_average_([1/3., 1/3., 1/3.])
+mc.conv_tol = 1e-11
+emc = mc.mc1step()[0]
+print("CASSCF energy: %f\n" % emc)
+
+nevpt = prism.nevpt.QDNEVPT(prism.interface.PYSCF(mf, mc))
+nevpt.soc = "breit-pauli"
+nevpt.gtensor = True
+
+# DMET with every orbital in the impurity, which makes the embedding exact.
+# The spin-orbit integrals are built over the molecule, not over the cluster.
+ints = LocalIntegrals(mf, list(range(mol.nao_nr())), 'meta_lowdin')
+frags = make_fragments(mol, ints, [[0]])
+dmet = DMET(ints, frags, False, method='QD-NEVPT2', ncas=4, nelecas=3,
+            sa_nstates=3, sc_method='NONE', casscf_kwargs={'conv_tol': 1e-11},
+            qdnevpt2_kwargs={'soc': 'breit-pauli', 'gtensor': True})
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mf.e_tot, -24.148988598854, 5)
+        self.assertAlmostEqual(mc.e_tot, -24.189236636954, 5)
+
+    def test_prism(self):
+
+        e_direct = nevpt.kernel()[0]
+        g_direct = nevpt.properties['g-factors'][0]
+
+        dmet.oneshot()
+        e_dmet = dmet.qdnevpt2_results[0]['e_tot']
+        g_dmet = dmet.qdnevpt2_results[0]['nevpt'].properties['g-factors'][0]
+
+        self.assertAlmostEqual(e_direct[0], -24.189316763795, 5)
+        self.assertAlmostEqual(e_dmet[0],   -24.189316763795, 5)
+
+        self.assertAlmostEqual(g_direct[0], 0.665893666529, 5)
+        self.assertAlmostEqual(g_dmet[0],   0.665893666413, 5)
+
+        for state in range(6):
+            self.assertAlmostEqual(e_dmet[state], e_direct[state], 8)
+        for axis in range(3):
+            self.assertAlmostEqual(g_dmet[axis], g_direct[axis], 8)
+
+if __name__ == "__main__":
+    print("DMET-SOC-QD-NEVPT2 test")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='c0326.ten.osc.edu', release='5.14.0-570.128.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Tue Jul 14 08:36:30 EDT 2026', machine='x86_64')  Threads 1
+Python 3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]
+numpy 2.2.6  scipy 1.15.3  h5py 3.16.0
+Date: Mon Sep  7 01:08:05 2026
+PySCF version 2.11.0
+PySCF path  /users/PAS1583/bpickett/programs/pyscf
+GIT HEAD (branch embedding) d13645e4865deb1e73a6e2fe23f8fa4de76606fe
+
+[ENV] PYSCF_TMPDIR /fs/scratch/PAS1583/bpickett
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 1
+[INPUT] num. electrons = 5
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 1
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 B      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+
+nuclear repulsion = 0
+number of shells = 3
+number of NR pGTOs = 15
+number of NR cGTOs = 5
+basis = sto-3g
+ecp = {}
+CPU time:         0.43
+
+
+******** <class 'pyscf.scf.rohf.ROHF'> ********
+method = ROHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmp3phxf9sm
+max_memory 4000 MB (current use 121 MB)
+num. doubly occ = 2  num. singly occ = 1
+Set gradient conv threshold to 3.16228e-05
+init E= -23.9245780263925
+
+WARN: HOMO 0.199687352674594 >= LUMO 0.199687352674594
+
+cycle= 1 E= -24.1489885988536  delta_E= -0.224  |g|=    0  |ddm|= 0.913
+  HOMO = 0.0928681395438579  LUMO = 0.307180433394273
+cycle= 2 E= -24.1489885988536  delta_E=    0  |g|=    0  |ddm|=    0
+  HOMO = 0.0928681395438579  LUMO = 0.307180433394273
+Extra cycle  E= -24.1489885988536  delta_E=    0  |g|=    0  |ddm|=    0
+converged SCF energy = -24.1489885988536
+SCF energy: -24.148989
+
+
+******** <class 'pyscf.mcscf.addons.StateAverageCASSCF'> ********
+CAS (2e+1e, 4o), ncore = 1, nvir = 0
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /fs/scratch/PAS1583/bpickett/tmp3phxf9sm
+max_memory 4000 MB (current use 132 MB)
+internal_rotation = False
+******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 3
+pspace_size = 400
+spin = None
+State-average over 3 states with weights [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
+CASCI E = -24.1889838292693  S^2 = 0.7500000
+Set conv_tol_grad to 3.16228e-06
+macro iter   1 (  3 JK    2 micro), CASSCF E = -24.1892366321943  dE = -2.52802925e-04  S^2 = 0.7500000
+               |grad[o]|=0.0147  |ddm|=0.000742  |maxRot[o]|=0.0171
+macro iter   2 (  2 JK    1 micro), CASSCF E = -24.1892366369533  dE = -4.75898787e-09  S^2 = 0.7500000
+               |grad[o]|=6.34e-05  |ddm|=8.82e-06  |maxRot[o]|=7.44e-05
+macro iter   3 (  1 JK    1 micro), CASSCF E = -24.1892366369537  dE = -4.29878355e-13  S^2 = 0.7500000
+               |grad[o]|=6.01e-07  |ddm|=2.86e-16  |maxRot[o]|=7.06e-07
+1-step CASSCF converged in   3 macro (  6 JK   4 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.88169027 0.37276991 0.37276991 0.37276991]
+CASSCF energy = -24.1892366369537
+CASCI E = -24.1892366369537  E(CI) = -2.46689226962434  S^2 = 0.7500000
+CASCI state-averaged energy = -24.1892366369537
+CASCI energy for each state
+  State 0 weight 0.333333  E = -24.1892366369537 S^2 = 0.7500000
+  State 1 weight 0.333333  E = -24.1892366369537 S^2 = 0.7500000
+  State 2 weight 0.333333  E = -24.1892366369537 S^2 = 0.7500000
+CASSCF energy: -24.189237
+
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: sa-casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 3
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.75000     0.5        2      -24.189236636954      -2.466892269624
+    2       0.75000     0.5        2      -24.189236636954      -2.466892269624
+    3       0.75000     0.5        2      -24.189236636954      -2.466892269624
+-----------------------------------------------------------------------------------
+
+Initializing fully internally contracted NEVPT...
+/fs/scratch/PAS1583/bpickett/claude-45604/-users-PAS1583-bpickett/a04f1f42-c187-44da-9ea3-283b9611fc50/scratchpad/wtpath/prism/dmet/dmet.py:237: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+  warnings.warn(
+DMET-SOC-QD-NEVPT2 test
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       qd
+Nuclear repulsion energy:                          0.000000000000
+Number of electrons:                               5
+Number of basis functions:                         5
+Reference wavefunction type:                       sa-casscf
+Number of reference states:                        3
+Number of reference microstates:                   3
+Number of frozen orbitals:                         0
+Number of core orbitals:                           1
+Number of active orbitals:                         4
+Number of external orbitals:                       0
+Number of active electrons:                        [(2, 1), (2, 1), (2, 1)]
+Spin–orbit coupling:                               breit-pauli
+G-tensor:                                          True
+G-tensor origin:                                   charge
+G-tensor target state:                             1
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /fs/scratch/PAS1583/bpickett
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-08
+Overlap truncation parameter (doubles):            1.00e-08
+
+Einsum Backend:                                    pytblis
+
+Transforming integrals to MO basis...
+
+Computing energy of state #1...
+Reference state active-space energy:              -2.466892269624
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(2, 1)]
+Correlation energy [+1']:                         -0.000007583740
+Correlation energy [+2]:                          -0.000019953419
+Correlation energy [0]:                            0.000000000000
+SA-CASSCF reference state total energy:          -24.189236636954
+NEVPT2 correlation energy:                        -0.000027537158
+Total NEVPT2 energy:                             -24.189264174112
+
+Computing energy of state #2...
+Reference state active-space energy:              -2.466892269624
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(2, 1)]
+Correlation energy [+1']:                         -0.000007583740
+Correlation energy [+2]:                          -0.000019953419
+Correlation energy [0]:                            0.000000000000
+SA-CASSCF reference state total energy:          -24.189236636954
+NEVPT2 correlation energy:                        -0.000027537158
+Total NEVPT2 energy:                             -24.189264174112
+
+Computing energy of state #3...
+Reference state active-space energy:              -2.466892269624
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(2, 1)]
+Correlation energy [+1']:                         -0.000007583740
+Correlation energy [+2]:                          -0.000019953419
+Correlation energy [0]:                            0.000000000000
+SA-CASSCF reference state total energy:          -24.189236636954
+NEVPT2 correlation energy:                        -0.000027537158
+Total NEVPT2 energy:                             -24.189264174112
+
+Computing the QD-NEVPT2 effective Hamiltonian...
+
+Initializing state-interaction spin–orbit coupling program...
+Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+Calculating Wigner 1-RDM...
+> CPU time for total None calculation      0.02 sec, wall time      0.02 sec
+Calculating magnetic dipole moment...
+Coordinate system origin (charge, Bohr) = [0. 0. 0.]
+
+Calculating g-tensor...
+
+Target State index = 1
+Micro state index: 1 to 2
+Calculating g-tensor for multiplicity = 2
+
+Summary of results for the BREIT-PAULI-QD-NEVPT2 calculation with the SA-CASSCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1          -24.189316763795     0.00000000       0.0000                      0.0000               
+    2        1          -24.189316763795     0.00000000       0.0000                      0.0000               
+    3        1          -24.189237879271     0.00007888       0.0021  577595.5783        17.3132     0.00000000
+    4        1          -24.189237879271     0.00007888       0.0021  577595.5783        17.3132     0.00000000
+    5        1          -24.189237879271     0.00007888       0.0021  577595.5783        17.3132     0.00000000
+    6        1          -24.189237879271     0.00007888       0.0021  577595.5781        17.3132     0.00000000
+----------------------------------------------------------------------------------------------------------------
+
+Magnetic g-tensor principal axes:
+[[ 0.96426   0.224695 -0.140408]
+ [-0.05025   0.675396  0.735741]
+ [ 0.260148 -0.702391  0.662548]]
+
+Magnetic g-factors (ge = 2.002319):
+      0.665894,       0.665894,       0.665894
+     -1.336425,      -1.336425,      -1.336425 (g-shift)
+     -1336.425,      -1336.425,      -1336.425 (g-shift, ppt)
+> CPU time for total SOC-NEVPT2 calculation      0.61 sec, wall time      0.85 sec
+Bath: 0 entangled environment orbitals, 5 requested.
+Throwing out 5 orbitals within 1e-13 of 0 or 2.
+Embedding a 5-orbital, 5-electron fragment cluster.
+
+
+******** <class 'pyscf.scf.rohf.ROHF'> ********
+method = ROHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0.0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpj2e4g2zm
+max_memory 4000 MB (current use 183 MB)
+num. doubly occ = 2  num. singly occ = 1
+Overwritten attributes  get_hcore get_ovlp  of <class 'pyscf.scf.rohf.ROHF'>
+Set gradient conv threshold to 3.16228e-05
+init E= -23.948470366408
+
+WARN: HOMO -0.200518232445609 >= LUMO -0.200518232445609
+
+cycle= 1 E= -24.1489885988536  delta_E= -0.201  |g|=    0  |ddm|= 2.24
+  HOMO = 0.0928681395438564  LUMO = 0.307180433394272
+cycle= 2 E= -24.1489885988536  delta_E=    0  |g|=    0  |ddm|= 7.85e-16
+  HOMO = 0.0928681395438571  LUMO = 0.307180433394272
+Extra cycle  E= -24.1489885988536  delta_E=    0  |g|=    0  |ddm|= 5.74e-21
+converged SCF energy = -24.1489885988536
+embedded ROHF (spin=1, nel=5, norb=5)
+
+******** <class 'pyscf.mcscf.addons.StateAverageCASSCF'> ********
+CAS (2e+1e, 4o), ncore = 1, nvir = 0
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /fs/scratch/PAS1583/bpickett/tmpj2e4g2zm
+max_memory 4000 MB (current use 184 MB)
+internal_rotation = False
+******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 3
+pspace_size = 400
+spin = None
+State-average over 3 states with weights [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
+Start 1-step CASSCF
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -21.7236083786212
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+state 0  E = -24.1889838292693 S^2 = 0.7500000
+state 1  E = -24.1889838292693 S^2 = 0.7500000
+state 2  E = -24.1889838292693 S^2 = 0.7500000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -2.46537545064812
+CASCI E = -24.1889838292693  S^2 = 0.7500000
+Set conv_tol_grad to 3.16228e-06
+    CPU time for Initializing 1-step CASSCF      0.01 sec, wall time      0.01 sec
+    CPU time for CAS DM      0.00 sec, wall time      0.00 sec
+    |g|=0.0147
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=4.33e-06  |dxi|=0.0171  max(|x|)=0.0171  |dr|=0.0171  eig=-0.000252  seig=0.000216
+    CPU time for aug_hess in  1 inner iters      0.00 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=0.0242  |g[o]|=0.0147  |g[c]|=None  |ddm|=0.000742
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+    |g|=0.000459 (keyframe), |g-correction|=0.000463
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  2  |u-1|=0.0242  |g[o]|=0.000459  |g[c]|=None  |ddm|=0.000742
+    CPU time for micro iter  2      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1.         1.         1.         0.99985302]
+Active space overlap to last step, SVD = [1.         1.         1.         0.99985302]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -21.7223690757675
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 3  |r|= 0.000158  e= [-2.46686752 -2.46686752 -2.46686752]  max|de|= -2.47  lindep= 0.488
+Old state -> New state
+    1     ->     0 
+    0     ->     1 
+davidson 1 6  |r|= 2.72e-15  e= [-2.46686756 -2.46686756 -2.46686756]  max|de|= -3.66e-08  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0. 0. 0.]
+state 0  E = -24.1892366321943 S^2 = 0.7500000
+state 1  E = -24.1892366321943 S^2 = 0.7500000
+state 2  E = -24.1892366321943 S^2 = 0.7500000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -2.46686755642678
+macro iter   1 (  3 JK    2 micro), CASSCF E = -24.1892366321943  dE = -2.52802925e-04  S^2 = 0.7500000
+               |grad[o]|=0.0147  |ddm|=0.000742  |maxRot[o]|=0.0171
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  1      0.01 sec, wall time      0.01 sec
+    |g|=6.34e-05
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=3.51e-13  |dxi|=7.44e-05  max(|x|)=7.44e-05  |dr|=7.44e-05  eig=-4.71e-09  seig=0.000294
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=0.000105  |g[o]|=6.34e-05  |g[c]|=None  |ddm|=8.82e-06
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1.         1.         1.         0.99985175]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -21.7223446003064
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 3  |r|= 3.05e-09  e= [-2.46689204 -2.46689204 -2.46689204]  max|de|= -2.47  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0. 0. 0.]
+state 0  E = -24.1892366369533 S^2 = 0.7500000
+state 1  E = -24.1892366369533 S^2 = 0.7500000
+state 2  E = -24.1892366369532 S^2 = 0.7500000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -2.46689203664681
+macro iter   2 (  2 JK    1 micro), CASSCF E = -24.1892366369533  dE = -4.75898787e-09  S^2 = 0.7500000
+               |grad[o]|=6.34e-05  |ddm|=8.82e-06  |maxRot[o]|=7.44e-05
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  2      0.01 sec, wall time      0.01 sec
+    |g|=6.01e-07
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 1)  |g[o]|=3.68e-16  |dxi|=7.06e-07  max(|x|)=7.06e-07  |dr|=7.06e-07  eig=-4.24e-13  seig=5.53e-09
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=9.98e-07  |g[o]|=6.01e-07  |g[c]|=None  |ddm|=2.82e-16
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1.         1.         1.         0.99985173]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -21.7223443673293
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 3  |r|= 4.93e-08  e= [-2.46689227 -2.46689227 -2.46689227]  max|de|= -2.47  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000005 0.00000005 0.00000005]
+state 0  E = -24.1892366369537 S^2 = 0.7500000
+state 1  E = -24.1892366369537 S^2 = 0.7500000
+state 2  E = -24.1892366369537 S^2 = 0.7500000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -2.46689226962435
+macro iter   3 (  1 JK    1 micro), CASSCF E = -24.1892366369537  dE = -4.26325641e-13  S^2 = 0.7500000
+               |grad[o]|=6.01e-07  |ddm|=2.82e-16  |maxRot[o]|=7.06e-07
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  3      0.01 sec, wall time      0.01 sec
+1-step CASSCF converged in   3 macro (  6 JK   4 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.88169027 0.37276991 0.37276991 0.37276991]
+i = 1  <i|F|i> =  -7.25030009
+i = 2  <i|F|i> =  -0.34874383
+i = 3  <i|F|i> =   0.23098235
+i = 4  <i|F|i> =   0.23098235
+i = 5  <i|F|i> =   0.23098235
+    CPU time for 1-step CASSCF      0.05 sec, wall time      0.06 sec
+CASSCF energy = -24.1892366369537
+CASCI E = -24.1892366369537  E(CI) = -2.46689226962435  S^2 = 0.7500000
+CASCI state-averaged energy = -24.1892366369537
+CASCI energy for each state
+  State 0 weight 0.333333  E = -24.1892366369537 S^2 = 0.7500000
+  State 1 weight 0.333333  E = -24.1892366369537 S^2 = 0.7500000
+  State 2 weight 0.333333  E = -24.1892366369537 S^2 = 0.7500000
+
+embedded SA-CASSCF (3 states, ncas=4, nelecas=3)
+  State 0: -24.1892366370 Ha  (weight=0.3333)
+  State 1: -24.1892366370 Ha  (weight=0.3333)
+  State 2: -24.1892366370 Ha  (weight=0.3333)
+  SA-weighted e_tot: -24.1892366370 Ha
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: sa-casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 3
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.75000     0.5        2      -24.189236636954      -2.466892269624
+    2       0.75000     0.5        2      -24.189236636954      -2.466892269624
+    3       0.75000     0.5        2      -24.189236636954      -2.466892269624
+-----------------------------------------------------------------------------------
+
+Initializing fully internally contracted NEVPT...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       qd
+Nuclear repulsion energy:                          0.000000000000
+Number of electrons:                               5
+Number of basis functions:                         5
+Reference wavefunction type:                       sa-casscf
+Number of reference states:                        3
+Number of reference microstates:                   3
+Number of frozen orbitals:                         0
+Number of core orbitals:                           1
+Number of active orbitals:                         4
+Number of external orbitals:                       0
+Number of active electrons:                        [(2, 1), (2, 1), (2, 1)]
+Spin–orbit coupling:                               breit-pauli
+G-tensor:                                          True
+G-tensor origin:                                   charge
+G-tensor target state:                             1
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /fs/scratch/PAS1583/bpickett
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-08
+Overlap truncation parameter (doubles):            1.00e-08
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+
+Transforming 1e integrals to MO basis...
+> CPU time for transforming 1e integrals      0.00 sec, wall time      0.00 sec
+
+Transforming 2e integrals to MO basis (in-core)...
+> CPU time for transforming 1e integrals      0.00 sec, wall time      0.00 sec
+
+Computing energy of state #1...
+Reference state active-space energy:              -2.466892269624
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(2, 1)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.01 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   39
+Smallest eigenvalue of the [+1'] overlap metric:   1.657115e-03
+Norm of T[+1']^(1):                                0.003641045051
+Correlation energy [+1']:                         -0.000007583740
+> CPU time for computing T[+1']^(1) amplitudes      0.04 sec, wall time      0.04 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    15
+Smallest eigenvalue of the [+2] overlap metric:    3.314229e-03
+Norm of T[+2]^(1):                                 0.003519720352
+Correlation energy [+2]:                          -0.000019953419
+> CPU time for computing T[+2]^(1) amplitudes      0.05 sec, wall time      0.05 sec
+Correlation energy [0]:                            0.000000000000
+SA-CASSCF reference state total energy:          -24.189236636954
+NEVPT2 correlation energy:                        -0.000027537158
+Total NEVPT2 energy:                             -24.189264174112
+
+Computing energy of state #2...
+Reference state active-space energy:              -2.466892269624
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(2, 1)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.01 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   39
+Smallest eigenvalue of the [+1'] overlap metric:   1.657115e-03
+Norm of T[+1']^(1):                                0.003641045051
+Correlation energy [+1']:                         -0.000007583740
+> CPU time for computing T[+1']^(1) amplitudes      0.02 sec, wall time      0.02 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    15
+Smallest eigenvalue of the [+2] overlap metric:    3.314229e-03
+Norm of T[+2]^(1):                                 0.003519720352
+Correlation energy [+2]:                          -0.000019953419
+> CPU time for computing T[+2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+Correlation energy [0]:                            0.000000000000
+SA-CASSCF reference state total energy:          -24.189236636954
+NEVPT2 correlation energy:                        -0.000027537158
+Total NEVPT2 energy:                             -24.189264174112
+
+Computing energy of state #3...
+Reference state active-space energy:              -2.466892269624
+Reference state spin multiplicity:                 2
+Number of active electrons:                        [(2, 1)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.01 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   39
+Smallest eigenvalue of the [+1'] overlap metric:   1.657115e-03
+Norm of T[+1']^(1):                                0.003641045051
+Correlation energy [+1']:                         -0.000007583740
+> CPU time for computing T[+1']^(1) amplitudes      0.02 sec, wall time      0.02 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    15
+Smallest eigenvalue of the [+2] overlap metric:    3.314229e-03
+Norm of T[+2]^(1):                                 0.003519720352
+Correlation energy [+2]:                          -0.000019953419
+> CPU time for computing T[+2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+Correlation energy [0]:                            0.000000000000
+SA-CASSCF reference state total energy:          -24.189236636954
+NEVPT2 correlation energy:                        -0.000027537158
+Total NEVPT2 energy:                             -24.189264174112
+
+Computing the QD-NEVPT2 effective Hamiltonian...
+
+Initializing state-interaction spin–orbit coupling program...
+Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+Calculating Wigner 1-RDM...
+> CPU time for total None calculation      0.02 sec, wall time      0.02 sec
+Calculating magnetic dipole moment...
+Coordinate system origin (charge, Bohr) = [0. 0. 0.]
+
+Calculating g-tensor...
+
+Target State index = 1
+Micro state index: 1 to 2
+Calculating g-tensor for multiplicity = 2
+g=
+[[-0.661171 -0.079163 -0.      ]
+ [-0.079163  0.661171  0.      ]
+ [-0.       -0.       -0.665894]]
+G=
+[[ 0.443414  0.        0.      ]
+ [ 0.        0.443414 -0.      ]
+ [ 0.       -0.        0.443414]]
+
+Summary of results for the BREIT-PAULI-QD-NEVPT2 calculation with the SA-CASSCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1          -24.189316763795     0.00000000       0.0000                      0.0000               
+    2        1          -24.189316763795     0.00000000       0.0000                      0.0000               
+    3        1          -24.189237879271     0.00007888       0.0021  577595.5784        17.3132     0.00000000
+    4        1          -24.189237879271     0.00007888       0.0021  577595.5782        17.3132     0.00000000
+    5        1          -24.189237879271     0.00007888       0.0021  577595.5782        17.3132     0.00000000
+    6        1          -24.189237879271     0.00007888       0.0021  577595.5781        17.3132     0.00000000
+----------------------------------------------------------------------------------------------------------------
+
+
+Oscillator Strengths: state i -> state f
+------------------------------------------------------------------------------------------------------------------------------------
+1 -> 2: 0.00000000    2 -> 3: 0.00000000    3 -> 4: 0.00000000    4 -> 5: 0.00000000    5 -> 6: 0.00000000                      
+1 -> 3: 0.00000000    2 -> 4: 0.00000000    3 -> 5: 0.00000000    4 -> 6: 0.00000000                                            
+1 -> 4: 0.00000000    2 -> 5: 0.00000000    3 -> 6: 0.00000000                                                                  
+1 -> 5: 0.00000000    2 -> 6: 0.00000000                                                                                        
+1 -> 6: 0.00000000                                                                                                              
+------------------------------------------------------------------------------------------------------------------------------------
+
+Magnetic g-tensor principal axes:
+[[-0.338334  0.85533   0.392353]
+ [ 0.451094  0.51333  -0.730072]
+ [ 0.825859  0.07002   0.559512]]
+
+Magnetic g-factors (ge = 2.002319):
+      0.665894,       0.665894,       0.665894
+     -1.336425,      -1.336425,      -1.336425 (g-shift)
+     -1336.425,      -1336.425,      -1336.425 (g-shift, ppt)
+> CPU time for total SOC-NEVPT2 calculation      0.23 sec, wall time      0.23 sec
+
+QD-NEVPT2 state energies (excitation = state - state 0):
+  State 0: E_tot -24.1893167638 Ha, dE +0.0000 eV
+  State 1: E_tot -24.1893167638 Ha, dE +0.0000 eV
+  State 2: E_tot -24.1892378793 Ha, dE +0.0021 eV
+..
+----------------------------------------------------------------------
+Ran 2 tests in 1.164s
+
+OK

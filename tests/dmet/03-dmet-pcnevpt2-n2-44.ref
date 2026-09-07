@@ -1,0 +1,1106 @@
+#INFO: **** input file is /users/PAS1583/bpickett/programs/prism_env/prism_dmet_wt/tests/dmet/03-dmet-pcnevpt2-n2-44.py ****
+# Copyright 2026 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Bryce Pickett <pickettosu@gmail.com>
+
+import unittest
+import numpy as np
+import pyscf.gto
+import pyscf.scf
+from prism.dmet import DMET, LocalIntegrals, make_fragments
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [['N', (0, 0, 0)], ['N', (0, 0, 1.5)]]
+mol.basis = 'sto-3g'
+mol.verbose = 4
+mol.build()
+
+# RHF calculation
+mf = pyscf.scf.RHF(mol)
+ehf = mf.scf()
+print("SCF energy: %f\n" % ehf)
+
+# DMET with one N atom per fragment, PC-NEVPT2 on a two-state reference.
+# The state energies are for the embedded cluster and leave out the nuclear repulsion.
+ints = LocalIntegrals(mf, list(range(mol.nao_nr())), 'meta_lowdin')
+frags = make_fragments(mol, ints, [[0], [1]])
+dmet = DMET(ints, frags, False, method='PC-NEVPT2', ncas=4, nelecas=4,
+            sa_nstates=2, sc_method='NONE', casscf_kwargs={'conv_tol': 1e-11})
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mf.e_tot, -107.272448501206, 5)
+
+    def test_prism(self):
+
+        dmet.oneshot()
+        res = dmet.pcnevpt2_results[0]
+
+        self.assertAlmostEqual(res['e_tot'][0],  -65.569537575318, 5)
+        self.assertAlmostEqual(res['e_tot'][1],  -65.492655224603, 5)
+        self.assertAlmostEqual(res['e_corr'][0],  -0.052986669482, 5)
+        self.assertAlmostEqual(res['e_corr'][1],  -0.039576578599, 5)
+
+if __name__ == "__main__":
+    print("DMET-PC-NEVPT2 test")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='c0326.ten.osc.edu', release='5.14.0-570.128.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Tue Jul 14 08:36:30 EDT 2026', machine='x86_64')  Threads 1
+Python 3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]
+numpy 2.2.6  scipy 1.15.3  h5py 3.16.0
+Date: Mon Sep  7 01:07:58 2026
+PySCF version 2.11.0
+PySCF path  /users/PAS1583/bpickett/programs/pyscf
+GIT HEAD (branch embedding) d13645e4865deb1e73a6e2fe23f8fa4de76606fe
+
+[ENV] PYSCF_TMPDIR /fs/scratch/PAS1583/bpickett
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 14
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 N      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 N      0.000000000000   0.000000000000   1.500000000000 AA    0.000000000000   0.000000000000   2.834589186848 Bohr   0.0
+
+nuclear repulsion = 17.28645555672
+number of shells = 6
+number of NR pGTOs = 30
+number of NR cGTOs = 10
+basis = sto-3g
+ecp = {}
+CPU time:         0.40
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmp4sv6eoxg
+max_memory 4000 MB (current use 117 MB)
+Set gradient conv threshold to 3.16228e-05
+Initial guess from minao.
+init E= -106.653584572216
+  HOMO = -0.228669314840687  LUMO = 0.0220003681590751
+cycle= 1 E= -107.272284891411  delta_E= -0.619  |g|= 0.0352  |ddm|= 2.24
+  HOMO = -0.364316446624659  LUMO = 0.150671803311761
+cycle= 2 E= -107.272439256444  delta_E= -0.000154  |g|= 0.00468  |ddm|= 0.0304
+  HOMO = -0.365203007969949  LUMO = 0.150075963914735
+cycle= 3 E= -107.272448216376  delta_E= -8.96e-06  |g|= 0.000743  |ddm|= 0.00867
+  HOMO = -0.365397118548069  LUMO = 0.149949696884426
+cycle= 4 E= -107.272448501206  delta_E= -2.85e-07  |g|= 2.67e-08  |ddm|= 0.00185
+  HOMO = -0.365397101262708  LUMO = 0.149949716778208
+cycle= 5 E= -107.272448501206  delta_E= 7.11e-14  |g|= 2.35e-12  |ddm|= 6.62e-08
+  HOMO = -0.365397101264361  LUMO = 0.149949716776575
+Extra cycle  E= -107.272448501206  delta_E= 2.84e-14  |g|= 5.97e-13  |ddm|= 4.26e-12
+converged SCF energy = -107.272448501206
+SCF energy: -107.272449
+
+/fs/scratch/PAS1583/bpickett/claude-45604/-users-PAS1583-bpickett/a04f1f42-c187-44da-9ea3-283b9611fc50/scratchpad/wtpath/prism/dmet/dmet.py:237: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+  warnings.warn(
+DMET-PC-NEVPT2 test
+Bath: 3 entangled environment orbitals, 5 requested.
+Throwing out 2 orbitals within 1e-13 of 0 or 2.
+At the cut: last kept dev 1.000e+00 (S 1.386e+00), first discarded dev 4.441e-16 (S 1.645e-14).
+Embedding a 8-orbital, 10-electron fragment cluster.
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0.0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpg0jaag2j
+max_memory 4000 MB (current use 145 MB)
+Overwritten attributes  get_ovlp get_hcore  of <class 'pyscf.scf.hf.RHF'>
+Set gradient conv threshold to 3.16228e-05
+init E= -65.2887478573491
+  HOMO = -0.365397101264242  LUMO = 0.149949716776655
+cycle= 1 E= -65.288747857349  delta_E= 1.42e-14  |g|= 2.53e-13  |ddm|= 5.12e-13
+  HOMO = -0.365397101264231  LUMO = 0.149949716776661
+Extra cycle  E= -65.2887478573491  delta_E= -1.42e-14  |g|= 5.21e-13  |ddm|= 5.97e-13
+converged SCF energy = -65.2887478573491
+
+******** <class 'pyscf.mcscf.addons.StateAverageCASSCF'> ********
+CAS (2e+2e, 4o), ncore = 3, nvir = 1
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /fs/scratch/PAS1583/bpickett/tmpg0jaag2j
+max_memory 4000 MB (current use 147 MB)
+internal_rotation = False
+******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 2
+pspace_size = 400
+spin = None
+State-average over 2 states with weights [0.5, 0.5]
+Start 1-step CASSCF
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8140671055624
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+state 0  E = -65.5165091812982 S^2 = 0.0000000
+state 1  E = -65.4528401404801 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.67060755532681
+CASCI E = -65.4846746608892  S^2 = 1.0000000
+Set conv_tol_grad to 3.16228e-06
+    CPU time for Initializing 1-step CASSCF      0.01 sec, wall time      0.01 sec
+    CPU time for CAS DM      0.00 sec, wall time      0.00 sec
+    |g|=0.0167
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=1.16e-06  |dxi|=0.00854  max(|x|)=0.00645  |dr|=0.00854  eig=-0.000136  seig=6.94e-05
+    CPU time for aug_hess in  1 inner iters      0.00 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=0.0121  |g[o]|=0.0167  |g[c]|=None  |ddm|=0.0019
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+    |g|=0.00104 (keyframe), |g-correction|=0.00104
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  2( 4)  |g[o]|=2.61e-10  |dxi|=0.000505  max(|x|)=0.000474  |dr|=0.000505  eig=-5.17e-07  seig=6.94e-05
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  2  |u-1|=0.0124  |g[o]|=0.00104  |g[c]|=None  |ddm|=0.0026
+    CPU time for micro iter  2      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171314785034
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 4.24e-05  e= [-4.69942017 -4.63594621]  max|de|= -4.7  lindep= 0.97
+root 0 converged  |r|= 9.49e-06  e= -4.699420168086174  max|de|= -1.11e-09
+root 1 converged  |r|= 1.45e-06  e= -4.635946211009244  max|de|= -2.96e-11
+converged 1 4  |r|= 9.49e-06  e= [-4.69942017 -4.63594621]  max|de|= -1.11e-09
+state 0  E = -65.5165516465896 S^2 = 0.0000000
+state 1  E = -65.4530776895127 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66768318954771
+macro iter   1 (  5 JK    2 micro), CASSCF E = -65.4848146680511  dE = -1.40007162e-04  S^2 = 1.0000000
+               |grad[o]|=0.0167  |ddm|=0.0026  |maxRot[o]|=0.00692
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  1      0.02 sec, wall time      0.02 sec
+    |g|=0.00042
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=1.74e-11  |dxi|=0.000205  max(|x|)=0.000194  |dr|=0.000205  eig=-8.47e-08  seig=2.52e-07
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=0.00029  |g[o]|=0.00042  |g[c]|=None  |ddm|=0.000146
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171569852056
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 6.85e-06  e= [-4.6993941  -4.63592147]  max|de|= -4.7  lindep= 0.998
+root 0 converged  |r|= 6.5e-06  e= -4.699394098513576  max|de|= -1.85e-10
+root 1 converged  |r|= 7.73e-07  e= -4.635921473020231  max|de|= -8.88e-16
+converged 1 3  |r|= 6.5e-06  e= [-4.6993941  -4.63592147]  max|de|= -1.85e-10
+state 0  E = -65.5165510837192 S^2 = 0.0000000
+state 1  E = -65.4530784582258 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765778576691
+macro iter   2 (  3 JK    1 micro), CASSCF E = -65.4848147709725  dE = -1.02921362e-07  S^2 = 1.0000000
+               |grad[o]|=0.00042  |ddm|=0.000146  |maxRot[o]|=0.000194
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  2      0.01 sec, wall time      0.01 sec
+    |g|=8.93e-05
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=3.83e-08  |dxi|=4.37e-05  max(|x|)=4.14e-05  |dr|=4.37e-05  eig=-3.84e-09  seig=4.16e-08
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=6.18e-05  |g[o]|=8.93e-05  |g[c]|=None  |ddm|=3.19e-05
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171625100206
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 1.59e-06  e= [-4.69938843 -4.6359161 ]  max|de|= -4.7  lindep= 0.999
+root 0 converged  |r|= 1.62e-06  e= -4.699388434252071  max|de|= -1.39e-11
+root 1 converged  |r|= 2.41e-07  e= -4.6359160970818065  max|de|=    0
+converged 1 3  |r|= 1.62e-06  e= [-4.69938843 -4.6359161 ]  max|de|= -1.39e-11
+state 0  E = -65.5165509442726 S^2 = 0.0000000
+state 1  E = -65.4530786071024 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765226566694
+macro iter   3 (  2 JK    1 micro), CASSCF E = -65.4848147756875  dE = -4.71503370e-09  S^2 = 1.0000000
+               |grad[o]|=8.93e-05  |ddm|=3.19e-05  |maxRot[o]|=4.14e-05
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  3      0.01 sec, wall time      0.01 sec
+    |g|=1.94e-05
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=3.62e-09  |dxi|=9.5e-06  max(|x|)=9e-06  |dr|=9.5e-06  eig=-1.81e-10  seig=1.89e-09
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=1.34e-05  |g[o]|=1.94e-05  |g[c]|=None  |ddm|=7.02e-06
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.81716370615
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 2.62e-07  e= [-4.69938721 -4.63591493]  max|de|= -4.7  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000026 0.00000014]
+state 0  E = -65.5165509133529 S^2 = 0.0000000
+state 1  E = -65.4530786384672 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765106976013
+macro iter   4 (  2 JK    1 micro), CASSCF E = -65.4848147759101  dE = -2.22570407e-10  S^2 = 1.0000000
+               |grad[o]|=1.94e-05  |ddm|=7.02e-06  |maxRot[o]|=9e-06
+    CPU time for CASCI solver      0.00 sec, wall time      0.01 sec
+    CPU time for macro iter  4      0.01 sec, wall time      0.01 sec
+    |g|=4.24e-06
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=2.95e-11  |dxi|=2.07e-06  max(|x|)=1.96e-06  |dr|=2.07e-06  eig=-8.63e-12  seig=8.99e-11
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=2.93e-06  |g[o]|=4.24e-06  |g[c]|=None  |ddm|=7.47e-07
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171639672416
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 9.51e-07  e= [-4.69938694 -4.63591468]  max|de|= -4.7  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000095 0.00000084]
+state 0  E = -65.5165509065644 S^2 = 0.0000000
+state 1  E = -65.4530786452749 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765080867803
+macro iter   5 (  2 JK    1 micro), CASSCF E = -65.4848147759197  dE = -9.57811608e-12  S^2 = 1.0000000
+               |grad[o]|=4.24e-06  |ddm|=7.47e-07  |maxRot[o]|=1.96e-06
+    CPU time for CASCI solver      0.00 sec, wall time      0.01 sec
+    CPU time for macro iter  5      0.01 sec, wall time      0.01 sec
+set max_stepsize to 0.006
+    |g|=4.54e-07
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 1)  |g[o]|=7.46e-10  |dxi|=2.22e-07  max(|x|)=2.1e-07  |dr|=2.22e-07  eig=-9.91e-14  seig=4.29e-12
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=3.14e-07  |g[o]|=4.54e-07  |g[c]|=None  |ddm|=2.48e-16
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171639952251
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 9.9e-07  e= [-4.69938691 -4.63591465]  max|de|= -4.7  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000099 0.00000093]
+state 0  E = -65.516550905836 S^2 = 0.0000000
+state 1  E = -65.4530786460035 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765078069464
+macro iter   6 (  1 JK    1 micro), CASSCF E = -65.4848147759198  dE = -1.13686838e-13  S^2 = 1.0000000
+               |grad[o]|=4.54e-07  |ddm|=2.48e-16  |maxRot[o]|=2.1e-07
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  6      0.01 sec, wall time      0.01 sec
+1-step CASSCF converged in   6 macro ( 15 JK   7 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.49603106 1.49603106 0.50396894 0.50396894]
+i = 1  <i|F|i> = -15.40744353
+i = 2  <i|F|i> =  -1.01583506
+i = 3  <i|F|i> =  -0.51817024
+i = 4  <i|F|i> =  -0.27915340
+i = 5  <i|F|i> =  -0.27915340
+i = 6  <i|F|i> =   0.07631196
+i = 7  <i|F|i> =   0.07631196
+i = 8  <i|F|i> =   0.51127697
+    CPU time for 1-step CASSCF      0.09 sec, wall time      0.09 sec
+CASSCF energy = -65.4848147759198
+CASCI E = -65.4848147759198  E(CI) = -4.66765078069464  S^2 = 1.0000000
+CASCI state-averaged energy = -65.4848147759198
+CASCI energy for each state
+  State 0 weight 0.5  E = -65.516550905836 S^2 = 0.0000000
+  State 1 weight 0.5  E = -65.4530786460035 S^2 = 2.0000000
+
+embedded SA-CASSCF (2 states, ncas=4, nelecas=4)
+  State 0: -65.5165509058 Ha  (weight=0.5000)
+  State 1: -65.4530786460 Ha  (weight=0.5000)
+  SA-weighted e_tot: -65.4848147759 Ha
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: sa-casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 2
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.00000     0.0        1      -65.516550905836      -4.699386910611
+    2       2.00000     1.0        3      -65.453078646004      -4.635914650778
+-----------------------------------------------------------------------------------
+
+Initializing fully internally contracted NEVPT...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       ss
+Nuclear repulsion energy:                          0.000000000000
+Number of electrons:                               10
+Number of basis functions:                         8
+Reference wavefunction type:                       sa-casscf
+Number of reference states:                        2
+Number of reference microstates:                   2
+Number of frozen orbitals:                         0
+Number of core orbitals:                           3
+Number of active orbitals:                         4
+Number of external orbitals:                       1
+Number of active electrons:                        [(2, 2), (2, 2)]
+Spin–orbit coupling:                               None
+G-tensor:                                          False
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /fs/scratch/PAS1583/bpickett
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-08
+Overlap truncation parameter (doubles):            1.00e-08
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+
+Transforming 1e integrals to MO basis...
+> CPU time for transforming 1e integrals      0.00 sec, wall time      0.00 sec
+
+Transforming 2e integrals to MO basis (in-core)...
+> CPU time for transforming 1e integrals      0.01 sec, wall time      0.01 sec
+
+Computing T[0]^(1) amplitudes...
+Norm of T[0]^(1):                                  0.086634313580
+Correlation energy [0]:                           -0.017108907823
+> CPU time for computing T[0]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing energy of state #1...
+Reference state active-space energy:              -4.699386910611
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(2, 2)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.01 sec, wall time      0.01 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    30
+Smallest eigenvalue of the [0'] overlap metric:    1.752360e-04
+Norm of T[0']^(1):                                 0.236827378369
+Correlation energy [0']:                          -0.034271890161
+> CPU time for computing T[0']^(1) amplitudes      0.01 sec, wall time      0.01 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   24
+Smallest eigenvalue of the [+1'] overlap metric:   9.980403e-02
+Norm of T[+1']^(1):                                0.000000000000
+Correlation energy [+1']:                         -0.000000000000
+> CPU time for computing T[+1']^(1) amplitudes      0.04 sec, wall time      0.04 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   24
+Smallest eigenvalue of the [-1'] overlap metric:   9.735577e-02
+Norm of T[-1']^(1):                                0.000000000000
+Correlation energy [-1']:                         -0.000000000000
+> CPU time for computing T[-1']^(1) amplitudes      0.02 sec, wall time      0.02 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.000000000000
+Correlation energy [+1]:                          -0.000000000000
+> CPU time for computing T[+1]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.000000000000
+Correlation energy [-1]:                          -0.000000000000
+> CPU time for computing T[-1]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    16
+Smallest eigenvalue of the [+2] overlap metric:    2.130556e-03
+Norm of T[+2]^(1):                                 0.065381811341
+Correlation energy [+2]:                          -0.001473906716
+> CPU time for computing T[+2]^(1) amplitudes      0.01 sec, wall time      0.01 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    16
+Smallest eigenvalue of the [-2] overlap metric:    2.130556e-03
+Norm of T[-2]^(1):                                 0.019037639525
+Correlation energy [-2]:                          -0.000131964782
+> CPU time for computing T[-2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+Correlation energy [0]:                           -0.017108907823
+SA-CASSCF reference state total energy:          -65.516550905836
+NEVPT2 correlation energy:                        -0.052986669482
+Total NEVPT2 energy:                             -65.569537575318
+
+Computing energy of state #2...
+Reference state active-space energy:              -4.635914650778
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(2, 2)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.01 sec, wall time      0.01 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    25
+Smallest eigenvalue of the [0'] overlap metric:    7.894049e-02
+Norm of T[0']^(1):                                 0.070733119546
+Correlation energy [0']:                          -0.021777311436
+> CPU time for computing T[0']^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   48
+Smallest eigenvalue of the [+1'] overlap metric:   1.563025e-02
+Norm of T[+1']^(1):                                0.000000000000
+Correlation energy [+1']:                         -0.000000000000
+> CPU time for computing T[+1']^(1) amplitudes      0.02 sec, wall time      0.03 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   48
+Smallest eigenvalue of the [-1'] overlap metric:   1.563025e-02
+Norm of T[-1']^(1):                                0.000000000000
+Correlation energy [-1']:                         -0.000000000000
+> CPU time for computing T[-1']^(1) amplitudes      0.01 sec, wall time      0.01 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.000000000000
+Correlation energy [+1]:                          -0.000000000000
+> CPU time for computing T[+1]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.000000000000
+Correlation energy [-1]:                          -0.000000000000
+> CPU time for computing T[-1]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    10
+Smallest eigenvalue of the [+2] overlap metric:    7.894049e-02
+Norm of T[+2]^(1):                                 0.022594938767
+Correlation energy [+2]:                          -0.000640728222
+> CPU time for computing T[+2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    10
+Smallest eigenvalue of the [-2] overlap metric:    7.894049e-02
+Norm of T[-2]^(1):                                 0.006411081363
+Correlation energy [-2]:                          -0.000049631119
+> CPU time for computing T[-2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+Correlation energy [0]:                           -0.017108907823
+SA-CASSCF reference state total energy:          -65.453078646004
+NEVPT2 correlation energy:                        -0.039576578599
+Total NEVPT2 energy:                             -65.492655224603
+
+Summary of results for the SS-NEVPT2 calculation with the SA-CASSCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1          -65.569537575318     0.00000000       0.0000                      0.0000               
+    2        3          -65.492655224603     0.07688235       2.0921     592.6373     16873.7256     0.00000000
+----------------------------------------------------------------------------------------------------------------
+
+
+Oscillator Strengths: state i -> state f
+--------------------------------------------
+1 -> 2: 0.00000000                      
+--------------------------------------------
+> CPU time for total NEVPT2 calculation      0.17 sec, wall time      0.17 sec
+
+PC-NEVPT2 state energies (excitation = state - state 0):
+  State 0: E_tot -65.5695375753 Ha, dE +0.0000 eV
+  State 1: E_tot -65.4926552246 Ha, dE +2.0921 eV
+Bath: 3 entangled environment orbitals, 5 requested.
+Throwing out 2 orbitals within 1e-13 of 0 or 2.
+At the cut: last kept dev 1.000e+00 (S 1.386e+00), first discarded dev 8.882e-16 (S 3.229e-14).
+Embedding a 8-orbital, 10-electron fragment cluster.
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0.0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpc0ng8pyw
+max_memory 4000 MB (current use 153 MB)
+Set gradient conv threshold to 3.16228e-05
+init E= -65.2887478573491
+  HOMO = -0.365397101264244  LUMO = 0.149949716776654
+cycle= 1 E= -65.288747857349  delta_E= 4.26e-14  |g|= 1.32e-13  |ddm|= 4.67e-13
+  HOMO = -0.365397101264228  LUMO = 0.149949716776664
+Extra cycle  E= -65.2887478573491  delta_E= -2.84e-14  |g|= 6.28e-14  |ddm|= 1.73e-13
+converged SCF energy = -65.2887478573491
+
+******** <class 'pyscf.mcscf.addons.StateAverageCASSCF'> ********
+CAS (2e+2e, 4o), ncore = 3, nvir = 1
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /fs/scratch/PAS1583/bpickett/tmpc0ng8pyw
+max_memory 4000 MB (current use 153 MB)
+internal_rotation = False
+******** <class 'pyscf.mcscf.addons.StateAverageFCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 2
+pspace_size = 400
+spin = None
+State-average over 2 states with weights [0.5, 0.5]
+Start 1-step CASSCF
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8140671055624
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+state 0  E = -65.5165091812982 S^2 = 0.0000000
+state 1  E = -65.4528401404801 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.67060755532679
+CASCI E = -65.4846746608892  S^2 = 1.0000000
+Set conv_tol_grad to 3.16228e-06
+    CPU time for Initializing 1-step CASSCF      0.01 sec, wall time      0.01 sec
+    CPU time for CAS DM      0.00 sec, wall time      0.00 sec
+    |g|=0.0167
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=1.16e-06  |dxi|=0.00854  max(|x|)=0.00645  |dr|=0.00854  eig=-0.000136  seig=6.94e-05
+    CPU time for aug_hess in  1 inner iters      0.00 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=0.0121  |g[o]|=0.0167  |g[c]|=None  |ddm|=0.00195
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+    |g|=0.00107 (keyframe), |g-correction|=0.00107
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  2( 4)  |g[o]|=2.8e-10  |dxi|=0.000517  max(|x|)=0.000485  |dr|=0.000517  eig=-5.42e-07  seig=6.94e-05
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  2  |u-1|=0.0124  |g[o]|=0.00107  |g[c]|=None  |ddm|=0.0026
+    CPU time for micro iter  2      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171331194552
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 4.04e-05  e= [-4.69941849 -4.63594462]  max|de|= -4.7  lindep= 0.934
+root 0 converged  |r|= 1.58e-05  e= -4.699418491814661  max|de|= -1.18e-09
+root 1 converged  |r|= 7.39e-07  e= -4.635944623847432  max|de|= -1.2e-11
+converged 1 4  |r|= 1.58e-05  e= [-4.69941849 -4.63594462]  max|de|= -1.18e-09
+state 0  E = -65.5165516112698 S^2 = 0.0000000
+state 1  E = -65.4530777433026 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66768155783104
+macro iter   1 (  5 JK    2 micro), CASSCF E = -65.4848146772862  dE = -1.40016397e-04  S^2 = 1.0000000
+               |grad[o]|=0.0167  |ddm|=0.0026  |maxRot[o]|=0.00693
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  1      0.02 sec, wall time      0.02 sec
+    |g|=0.000402
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=1.51e-11  |dxi|=0.000196  max(|x|)=0.000185  |dr|=0.000196  eig=-7.73e-08  seig=2.64e-07
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=0.000277  |g[o]|=0.000402  |g[c]|=None  |ddm|=0.00014
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171572878767
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 8.27e-06  e= [-4.69939379 -4.63592118]  max|de|= -4.7  lindep= 0.986
+root 0 converged  |r|= 6.76e-06  e= -4.699393788638158  max|de|= -2.75e-10
+root 1 converged  |r|= 7.19e-07  e= -4.6359211784510235  max|de|=    0
+converged 1 3  |r|= 6.76e-06  e= [-4.69939379 -4.63592118]  max|de|= -2.75e-10
+state 0  E = -65.5165510765149 S^2 = 0.0000000
+state 1  E = -65.4530784663277 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765748354459
+macro iter   2 (  3 JK    1 micro), CASSCF E = -65.4848147714213  dE = -9.41350891e-08  S^2 = 1.0000000
+               |grad[o]|=0.000402  |ddm|=0.00014  |maxRot[o]|=0.000185
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  2      0.01 sec, wall time      0.01 sec
+    |g|=8.47e-05
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=7.38e-08  |dxi|=4.15e-05  max(|x|)=3.94e-05  |dr|=4.15e-05  eig=-3.46e-09  seig=3.79e-08
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=5.87e-05  |g[o]|=8.47e-05  |g[c]|=None  |ddm|=3.09e-05
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171625655055
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 1.89e-06  e= [-4.69938838 -4.63591604]  max|de|= -4.7  lindep= 0.999
+root 0 converged  |r|= 2.05e-06  e= -4.6993883773460015  max|de|= -1.91e-11
+root 1 converged  |r|= 1.78e-07  e= -4.635916043051326  max|de|=    0
+converged 1 3  |r|= 2.05e-06  e= [-4.69938838 -4.63591604]  max|de|= -1.91e-11
+state 0  E = -65.5165509428515 S^2 = 0.0000000
+state 1  E = -65.4530786085568 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765221019867
+macro iter   3 (  2 JK    1 micro), CASSCF E = -65.4848147757042  dE = -4.28286739e-09  S^2 = 1.0000000
+               |grad[o]|=8.47e-05  |ddm|=3.09e-05  |maxRot[o]|=3.94e-05
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  3      0.01 sec, wall time      0.01 sec
+    |g|=1.86e-05
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=1.08e-08  |dxi|=9.11e-06  max(|x|)=8.63e-06  |dr|=9.11e-06  eig=-1.67e-10  seig=1.71e-09
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=1.29e-05  |g[o]|=1.86e-05  |g[c]|=None  |ddm|=6.87e-06
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171637117935
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 2.94e-07  e= [-4.6993872  -4.63591493]  max|de|= -4.7  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000029 0.00000008]
+state 0  E = -65.5165509132249 S^2 = 0.0000000
+state 1  E = -65.4530786385963 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765106411712
+macro iter   4 (  2 JK    1 micro), CASSCF E = -65.4848147759106  dE = -2.06441086e-10  S^2 = 1.0000000
+               |grad[o]|=1.86e-05  |ddm|=6.87e-06  |maxRot[o]|=8.63e-06
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  4      0.01 sec, wall time      0.01 sec
+    |g|=4.13e-06
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=2.44e-09  |dxi|=2.02e-06  max(|x|)=1.92e-06  |dr|=2.02e-06  eig=-8.19e-12  seig=8.21e-11
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=2.86e-06  |g[o]|=4.13e-06  |g[c]|=None  |ddm|=7.81e-07
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171639683112
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 8.98e-07  e= [-4.69938694 -4.63591468]  max|de|= -4.7  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.0000009  0.00000082]
+state 0  E = -65.5165509065383 S^2 = 0.0000000
+state 1  E = -65.4530786453013 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765080760857
+macro iter   5 (  2 JK    1 micro), CASSCF E = -65.4848147759198  dE = -9.18021215e-12  S^2 = 1.0000000
+               |grad[o]|=4.13e-06  |ddm|=7.81e-07  |maxRot[o]|=1.92e-06
+    CPU time for CASCI solver      0.00 sec, wall time      0.00 sec
+    CPU time for macro iter  5      0.01 sec, wall time      0.01 sec
+set max_stepsize to 0.006
+    |g|=4.66e-07
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 1)  |g[o]|=3.96e-09  |dxi|=2.28e-07  max(|x|)=2.16e-07  |dr|=2.28e-07  eig=-1.04e-13  seig=4.08e-12
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=3.23e-07  |g[o]|=4.66e-07  |g[c]|=None  |ddm|=5.42e-20
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1. 1. 1. 1.]
+Active space overlap to last step, SVD = [1. 1. 1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -60.8171639972834
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 2  |r|= 9.34e-07  e= [-4.69938691 -4.63591465]  max|de|= -4.7  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000093 0.00000091]
+state 0  E = -65.5165509057822 S^2 = 0.0000000
+state 1  E = -65.4530786460575 S^2 = 2.0000000
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -4.66765077863644
+macro iter   6 (  1 JK    1 micro), CASSCF E = -65.4848147759199  dE = -9.94759830e-14  S^2 = 1.0000000
+               |grad[o]|=4.66e-07  |ddm|=5.42e-20  |maxRot[o]|=2.16e-07
+    CPU time for CASCI solver      0.01 sec, wall time      0.01 sec
+    CPU time for macro iter  6      0.01 sec, wall time      0.01 sec
+1-step CASSCF converged in   6 macro ( 15 JK   7 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.49603107 1.49603107 0.50396893 0.50396893]
+i = 1  <i|F|i> = -15.40744351
+i = 2  <i|F|i> =  -1.01583505
+i = 3  <i|F|i> =  -0.51817023
+i = 4  <i|F|i> =  -0.27915340
+i = 5  <i|F|i> =  -0.27915340
+i = 6  <i|F|i> =   0.07631196
+i = 7  <i|F|i> =   0.07631196
+i = 8  <i|F|i> =   0.51127697
+    CPU time for 1-step CASSCF      0.09 sec, wall time      0.09 sec
+CASSCF energy = -65.4848147759199
+CASCI E = -65.4848147759199  E(CI) = -4.66765077863644  S^2 = 1.0000000
+CASCI state-averaged energy = -65.4848147759199
+CASCI energy for each state
+  State 0 weight 0.5  E = -65.5165509057822 S^2 = 0.0000000
+  State 1 weight 0.5  E = -65.4530786460575 S^2 = 2.0000000
+
+embedded SA-CASSCF (2 states, ncas=4, nelecas=4)
+  State 0: -65.5165509058 Ha  (weight=0.5000)
+  State 1: -65.4530786461 Ha  (weight=0.5000)
+  SA-weighted e_tot: -65.4848147759 Ha
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: sa-casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 2
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.00000     0.0        1      -65.516550905782      -4.699386908499
+    2       2.00000     1.0        3      -65.453078646058      -4.635914648774
+-----------------------------------------------------------------------------------
+
+Initializing fully internally contracted NEVPT...
+
+Computing NEVPT energies...
+
+Method:                                            nevpt2
+Method type:                                       ss
+Nuclear repulsion energy:                          0.000000000000
+Number of electrons:                               10
+Number of basis functions:                         8
+Reference wavefunction type:                       sa-casscf
+Number of reference states:                        2
+Number of reference microstates:                   2
+Number of frozen orbitals:                         0
+Number of core orbitals:                           3
+Number of active orbitals:                         4
+Number of external orbitals:                       1
+Number of active electrons:                        [(2, 2), (2, 2)]
+Spin–orbit coupling:                               None
+G-tensor:                                          False
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /fs/scratch/PAS1583/bpickett
+
+Internal contraction:                              Full (= Partial)
+Compute singles amplitudes?                        False
+Overlap truncation parameter (singles):            1.00e-08
+Overlap truncation parameter (doubles):            1.00e-08
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+
+Transforming 1e integrals to MO basis...
+> CPU time for transforming 1e integrals      0.00 sec, wall time      0.00 sec
+
+Transforming 2e integrals to MO basis (in-core)...
+> CPU time for transforming 1e integrals      0.01 sec, wall time      0.01 sec
+
+Computing T[0]^(1) amplitudes...
+Norm of T[0]^(1):                                  0.086634314267
+Correlation energy [0]:                           -0.017108908026
+> CPU time for computing T[0]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing energy of state #1...
+Reference state active-space energy:              -4.699386908499
+Reference state spin multiplicity:                 1
+Number of active electrons:                        [(2, 2)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.01 sec, wall time      0.01 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    30
+Smallest eigenvalue of the [0'] overlap metric:    1.752391e-04
+Norm of T[0']^(1):                                 0.236826968008
+Correlation energy [0']:                          -0.034271888071
+> CPU time for computing T[0']^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   24
+Smallest eigenvalue of the [+1'] overlap metric:   9.980403e-02
+Norm of T[+1']^(1):                                0.000000000000
+Correlation energy [+1']:                         -0.000000000000
+> CPU time for computing T[+1']^(1) amplitudes      0.02 sec, wall time      0.02 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   24
+Smallest eigenvalue of the [-1'] overlap metric:   9.735577e-02
+Norm of T[-1']^(1):                                0.000000000000
+Correlation energy [-1']:                         -0.000000000000
+> CPU time for computing T[-1']^(1) amplitudes      0.01 sec, wall time      0.01 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.000000000000
+Correlation energy [+1]:                          -0.000000000000
+> CPU time for computing T[+1]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.000000000000
+Correlation energy [-1]:                          -0.000000000000
+> CPU time for computing T[-1]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    16
+Smallest eigenvalue of the [+2] overlap metric:    2.130556e-03
+Norm of T[+2]^(1):                                 0.065381758559
+Correlation energy [+2]:                          -0.001473906376
+> CPU time for computing T[+2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    16
+Smallest eigenvalue of the [-2] overlap metric:    2.130556e-03
+Norm of T[-2]^(1):                                 0.019037624172
+Correlation energy [-2]:                          -0.000131964780
+> CPU time for computing T[-2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+Correlation energy [0]:                           -0.017108908026
+SA-CASSCF reference state total energy:          -65.516550905782
+NEVPT2 correlation energy:                        -0.052986667253
+Total NEVPT2 energy:                             -65.569537573035
+
+Computing energy of state #2...
+Reference state active-space energy:              -4.635914648774
+Reference state spin multiplicity:                 3
+Number of active electrons:                        [(2, 2)]
+Computing reference wavefunction RDMs...
+> CPU time for transforming RDMs      0.01 sec, wall time      0.01 sec
+
+Computing T[0']^(1) amplitudes...
+Dimension of the [0'] orthonormalized subspace:    25
+Smallest eigenvalue of the [0'] overlap metric:    7.894050e-02
+Norm of T[0']^(1):                                 0.070733116010
+Correlation energy [0']:                          -0.021777309984
+> CPU time for computing T[0']^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[+1']^(1) amplitudes...
+Dimension of the [+1'] orthonormalized subspace:   48
+Smallest eigenvalue of the [+1'] overlap metric:   1.563025e-02
+Norm of T[+1']^(1):                                0.000000000000
+Correlation energy [+1']:                         -0.000000000000
+> CPU time for computing T[+1']^(1) amplitudes      0.02 sec, wall time      0.02 sec
+
+Computing T[-1']^(1) amplitudes...
+Dimension of the [-1'] orthonormalized subspace:   48
+Smallest eigenvalue of the [-1'] overlap metric:   1.563025e-02
+Norm of T[-1']^(1):                                0.000000000000
+Correlation energy [-1']:                         -0.000000000000
+> CPU time for computing T[-1']^(1) amplitudes      0.01 sec, wall time      0.01 sec
+
+Computing T[+1]^(1) amplitudes...
+Norm of T[+1]^(1):                                 0.000000000000
+Correlation energy [+1]:                          -0.000000000000
+> CPU time for computing T[+1]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[-1]^(1) amplitudes...
+Norm of T[-1]^(1):                                 0.000000000000
+Correlation energy [-1]:                          -0.000000000000
+> CPU time for computing T[-1]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[+2]^(1) amplitudes...
+Dimension of the [+2] orthonormalized subspace:    10
+Smallest eigenvalue of the [+2] overlap metric:    7.894050e-02
+Norm of T[+2]^(1):                                 0.022594936486
+Correlation energy [+2]:                          -0.000640728079
+> CPU time for computing T[+2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+
+Computing T[-2]^(1) amplitudes...
+Dimension of the [-2] orthonormalized subspace:    10
+Smallest eigenvalue of the [-2] overlap metric:    7.894050e-02
+Norm of T[-2]^(1):                                 0.006411080794
+Correlation energy [-2]:                          -0.000049631110
+> CPU time for computing T[-2]^(1) amplitudes      0.00 sec, wall time      0.00 sec
+Correlation energy [0]:                           -0.017108908026
+SA-CASSCF reference state total energy:          -65.453078646058
+NEVPT2 correlation energy:                        -0.039576577199
+Total NEVPT2 energy:                             -65.492655223257
+
+Summary of results for the SS-NEVPT2 calculation with the SA-CASSCF reference:
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1          -65.569537573035     0.00000000       0.0000                      0.0000               
+    2        3          -65.492655223257     0.07688235       2.0921     592.6374     16873.7254     0.00000000
+----------------------------------------------------------------------------------------------------------------
+
+
+Oscillator Strengths: state i -> state f
+--------------------------------------------
+1 -> 2: 0.00000000                      
+--------------------------------------------
+> CPU time for total NEVPT2 calculation      0.13 sec, wall time      0.13 sec
+
+PC-NEVPT2 state energies (excitation = state - state 0):
+  State 0: E_tot -65.5695375730 Ha, dE +0.0000 eV
+  State 1: E_tot -65.4926552233 Ha, dE +2.0921 eV
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.566s
+
+OK

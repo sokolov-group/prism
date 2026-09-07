@@ -1,0 +1,634 @@
+#INFO: **** input file is /users/PAS1583/bpickett/programs/prism_env/prism_dmet_wt/tests/dmet/05-dmet-cvs-ip-mr-adc-hf-22.py ****
+# Copyright 2026 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Bryce Pickett <pickettosu@gmail.com>
+
+import unittest
+import numpy as np
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.mr_adc
+from prism.dmet import DMET, LocalIntegrals, make_fragments
+
+np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [['H', (0, 0, 0)], ['F', (0, 0, 0.917)]]
+mol.basis = 'sto-3g'
+mol.verbose = 4
+mol.build()
+
+# RHF calculation
+mf = pyscf.scf.RHF(mol)
+ehf = mf.scf()
+print("SCF energy: %f\n" % ehf)
+
+# Direct CVS-IP-MR-ADC on the whole molecule
+mc = pyscf.mcscf.CASSCF(mf, 2, 2)
+mc.conv_tol = 1e-11
+emc = mc.mc1step()[0]
+print("CASSCF energy: %f\n" % emc)
+
+mr_adc = prism.mr_adc.MRADC(prism.interface.PYSCF(mf, mc))
+mr_adc.method_type = "cvs-ip"
+mr_adc.ncvs = 1
+mr_adc.nroots = 4
+
+# DMET with the whole molecule in the impurity, which makes the embedding exact
+ints = LocalIntegrals(mf, list(range(mol.nao_nr())), 'lowdin')
+frags = make_fragments(mol, ints, [[0, 1]])
+dmet = DMET(ints, frags, False, method='MR-ADC', ncas=2, nelecas=2,
+            sc_method='NONE', casscf_kwargs={'conv_tol': 1e-11},
+            mradc_kwargs={'method_type': 'cvs-ip', 'ncvs': 1, 'nroots': 4})
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(mf.e_tot, -98.570779986014, 5)
+        self.assertAlmostEqual(mc.e_tot, -98.571528753732, 5)
+
+    def test_prism(self):
+
+        e_direct = np.atleast_1d(mr_adc.kernel()[0])
+        dmet.oneshot()
+        e_dmet = np.atleast_1d(dmet.mradc_results[0]['e_exc'])
+
+        # Ionization energies in eV, as returned by the Prism MR-ADC kernel.
+        self.assertAlmostEqual(e_direct[0], 698.887221032596, 5)
+        self.assertAlmostEqual(e_dmet[0],   698.887221032595, 5)
+
+        for root in range(4):
+            self.assertAlmostEqual(e_dmet[root], e_direct[root], 8)
+
+if __name__ == "__main__":
+    print("DMET-CVS-IP-MR-ADC test")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='c0326.ten.osc.edu', release='5.14.0-570.128.1.el9_6.x86_64', version='#1 SMP PREEMPT_DYNAMIC Tue Jul 14 08:36:30 EDT 2026', machine='x86_64')  Threads 1
+Python 3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]
+numpy 2.2.6  scipy 1.15.3  h5py 3.16.0
+Date: Mon Sep  7 01:08:03 2026
+PySCF version 2.11.0
+PySCF path  /users/PAS1583/bpickett/programs/pyscf
+GIT HEAD (branch embedding) d13645e4865deb1e73a6e2fe23f8fa4de76606fe
+
+[ENV] PYSCF_TMPDIR /fs/scratch/PAS1583/bpickett
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 10
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 H      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 F      0.000000000000   0.000000000000   0.917000000000 AA    0.000000000000   0.000000000000   1.732878856226 Bohr   0.0
+
+nuclear repulsion = 5.19366946377317
+number of shells = 4
+number of NR pGTOs = 18
+number of NR cGTOs = 6
+basis = sto-3g
+ecp = {}
+CPU time:         0.42
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpmwi_oq71
+max_memory 4000 MB (current use 122 MB)
+Set gradient conv threshold to 3.16228e-05
+Initial guess from minao.
+init E= -98.3593158896732
+  HOMO = -0.572608425541574  LUMO = 0.415559056690275
+cycle= 1 E= -98.526041499462  delta_E= -0.167  |g|= 0.306  |ddm|= 1.19
+  HOMO = -0.355952004331238  LUMO = 0.625166370787601
+cycle= 2 E= -98.5699261291636  delta_E= -0.0439  |g|= 0.0422  |ddm|= 0.497
+  HOMO = -0.463204927483732  LUMO = 0.629375663074464
+cycle= 3 E= -98.5707710862212  delta_E= -0.000845  |g|= 0.00529  |ddm|= 0.0826
+  HOMO = -0.464219107231468  LUMO = 0.628723702036991
+cycle= 4 E= -98.5707799656479  delta_E= -8.88e-06  |g|= 0.000216  |ddm|= 0.0082
+  HOMO = -0.464164964289587  LUMO = 0.629040363594623
+cycle= 5 E= -98.5707799859972  delta_E= -2.03e-08  |g|= 6.21e-06  |ddm|= 0.000461
+  HOMO = -0.464163644026162  LUMO = 0.629028954118096
+cycle= 6 E= -98.5707799860143  delta_E= -1.71e-11  |g|= 3.46e-08  |ddm|= 1.1e-05
+  HOMO = -0.464163632074685  LUMO = 0.629028992142369
+Extra cycle  E= -98.5707799860142  delta_E= 4.26e-14  |g|= 4.79e-09  |ddm|= 5.73e-08
+converged SCF energy = -98.5707799860142
+SCF energy: -98.570780
+
+
+******** <class 'pyscf.mcscf.mc1step.CASSCF'> ********
+CAS (1e+1e, 2o), ncore = 4, nvir = 0
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /fs/scratch/PAS1583/bpickett/tmpmwi_oq71
+max_memory 4000 MB (current use 133 MB)
+internal_rotation = False
+******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 1
+pspace_size = 400
+spin = None
+CASCI E = -98.5715273933561  S^2 = 0.0000000
+Set conv_tol_grad to 3.16228e-06
+macro iter   1 (  3 JK    1 micro), CASSCF E = -98.5715287537282  dE = -1.36037204e-06  S^2 = 0.0000000
+               |grad[o]|=0.0022  |grad[c]|=5.78e-05  |ddm|=5.69e-06  |maxRot[o]|=0.000585
+macro iter   2 (  2 JK    1 micro), CASSCF E = -98.5715287537321  dE = -3.90798505e-12  S^2 = 0.0000000
+               |grad[o]|=3.77e-06  |grad[c]|=8.79e-08  |ddm|=    0  |maxRot[o]|=9.96e-07
+macro iter   3 (  1 JK    1 micro), CASSCF E = -98.5715287537321  dE =  0.00000000e+00  S^2 = 0.0000000
+               |grad[o]|=1.69e-10  |grad[c]|=8.79e-08  |ddm|=    0  |maxRot[o]|=    0
+1-step CASSCF converged in   3 macro (  6 JK   3 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.99889044 0.00110956]
+CASSCF energy = -98.5715287537321
+CASCI E = -98.5715287537321  E(CI) = -1.92746742545957  S^2 = 0.0000000
+CASSCF energy: -98.571529
+
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 1
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.00000     0.0        1      -98.571528753732      -1.927467425460
+-----------------------------------------------------------------------------------
+
+
+Initializing MR-ADC...
+/fs/scratch/PAS1583/bpickett/claude-45604/-users-PAS1583-bpickett/a04f1f42-c187-44da-9ea3-283b9611fc50/scratchpad/wtpath/prism/dmet/dmet.py:237: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+  warnings.warn(
+DMET-CVS-IP-MR-ADC test
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)
+Nuclear repulsion energy:                          5.193669463773
+Number of electrons:                               10
+Number of basis functions:                         6
+Reference wavefunction type:                       casscf
+Number of core orbitals:                           4
+Number of active orbitals:                         2
+Number of external orbitals:                       0
+Number of active electrons:                        [(1, 1)]
+Reference state active-space energy:              -1.927467425460
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  4
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              3
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /fs/scratch/PAS1583/bpickett
+
+Internal contraction:                              Full
+Overlap truncation parameter (singles):            1.00e-05
+Overlap truncation parameter (doubles):            1.00e-10
+Projector for the semi-internal amplitudes:        gno
+
+Einsum Backend:                                    pytblis
+
+Transforming integrals to MO basis...
+
+Computing reference wavefunction RDMs...
+
+Computing NEVPT2 amplitudes...
+Correlation energy [+1']:                         -0.000000000000
+Correlation energy [+2]:                          -0.013057038225
+
+Reference energy:                                -98.571528753732
+NEVPT2 correlation energy:                        -0.013057038225
+Total NEVPT2 energy:                             -98.584585791957
+
+Transforming integrals for the CVS calculation...
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       32
+Total dimension of the excitation manifold:                33
+Dimension of the orthogonalized excitation manifold:       25
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 112  max_memory 4000  incore True
+Drop eigenvector 1, norm=4.67e-14
+Drop eigenvector 2, norm=6.16e-14
+Drop eigenvector 3, norm=7.63e-14
+davidson 0 4  |r|= 0.62  e= [25.9013601  26.34222969 26.34222969 26.40590718]  max|de|= 26.4  lindep=    1
+root 1 converged  |r|= 4.14e-14  e= 26.342229691498787  max|de|= 1.07e-14
+root 2 converged  |r|= 6.38e-14  e= 26.342229691498787  max|de|= -7.11e-15
+root 3 converged  |r|= 7.64e-14  e= 26.40590717542776  max|de|= -1.42e-14
+davidson 1 5  |r|= 0.0274  e= [25.68378889 26.34222969 26.34222969 26.40590718]  max|de|= -0.218  lindep= 0.977
+davidson 2 6  |r|= 6.92e-06  e= [25.68363165 26.34222969 26.34222969 26.40590718]  max|de|= -0.000157  lindep= 0.706
+Old state -> New state
+    2     ->     1 
+    1     ->     2 
+root 0 converged  |r|= 2.61e-11  e= 25.683631650181013  max|de|= -2e-12
+converged 3 7  |r|= 2.61e-11  e= [25.68363165 26.34222969 26.34222969 26.40590718]  max|de|= -2e-12
+
+Summary of results for the CVS-IP-MR-ADC(2) calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        25.68363165      698.8872     1.7740    5636905.5885      1.757498
+    2        26.34222969      716.8086     1.7297    5781451.1508      0.000000
+    3        26.34222969      716.8086     1.7297    5781451.1508      0.000000
+    4        26.40590718      718.5413     1.7255    5795426.7431      0.000000
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2) calculation      0.35 sec, wall time      0.36 sec
+Bath: 0 entangled environment orbitals, 6 requested.
+Throwing out 6 orbitals within 1e-13 of 0 or 2.
+Embedding a 6-orbital, 10-electron fragment cluster.
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0.0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /fs/scratch/PAS1583/bpickett/tmpybdk0ifq
+max_memory 4000 MB (current use 153 MB)
+Overwritten attributes  get_hcore get_ovlp  of <class 'pyscf.scf.hf.RHF'>
+Set gradient conv threshold to 3.16228e-05
+init E= -103.764449449787
+  HOMO = -0.464163642832268  LUMO = 0.629028991648074
+cycle= 1 E= -103.764449449787  delta_E=    0  |g|= 1.02e-09  |ddm|= 5.11e-09
+  HOMO = -0.46416364388555  LUMO = 0.62902899167104
+Extra cycle  E= -103.764449449787  delta_E= 4.26e-14  |g|= 2.35e-10  |ddm|= 9.1e-10
+converged SCF energy = -103.764449449787
+
+******** <class 'pyscf.mcscf.mc1step.CASSCF'> ********
+CAS (1e+1e, 2o), ncore = 4, nvir = 0
+max_cycle_macro = 50
+max_cycle_micro = 4
+conv_tol = 1e-11
+conv_tol_grad = None
+orbital rotation max_stepsize = 0.02
+orbital rotation threshold for CI restart = 0.01
+augmented hessian ah_max_cycle = 30
+augmented hessian ah_conv_tol = 1e-12
+augmented hessian ah_linear dependence = 1e-14
+augmented hessian ah_level shift = 1e-08
+augmented hessian ah_start_tol = 2.5
+augmented hessian ah_start_cycle = 3
+augmented hessian ah_grad_trust_region = 3
+kf_trust_region = 3
+kf_interval = 4
+ci_response_space = 4
+ci_grad_trust_region = 3
+with_dep4 0
+natorb = False
+canonicalization = True
+sorting_mo_energy = False
+ao2mo_level = 2
+chkfile = /fs/scratch/PAS1583/bpickett/tmpybdk0ifq
+max_memory 4000 MB (current use 154 MB)
+internal_rotation = False
+******** <class 'pyscf.fci.direct_spin1.FCISolver'> ********
+max. cycles = 50
+conv_tol = 1e-08
+davidson only = False
+linear dependence = 1e-12
+level shift = 0.001
+max iter space = 12
+max_memory 4000 MB
+nroots = 1
+pspace_size = 400
+spin = None
+Start 1-step CASSCF
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -101.838608535851
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -1.92658832127805
+CASCI E = -103.765196857129  S^2 = 0.0000000
+Set conv_tol_grad to 3.16228e-06
+    CPU time for Initializing 1-step CASSCF      0.00 sec, wall time      0.00 sec
+    CPU time for CAS DM      0.00 sec, wall time      0.00 sec
+    |g|=0.0022
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 3)  |g[o]|=8.62e-10  |dxi|=0.000635  max(|x|)=0.000585  |dr|=0.000635  eig=-1.36e-06  seig=1.1e-06
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+CI step by full response
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=0.000898  |g[o]|=0.0022  |g[c]|=5.78e-05  |ddm|=5.69e-06
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1.        0.9999998]
+Active space overlap to last step, SVD = [1.        0.9999998]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -101.837732285209
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 1  |r|= 1.07e-08  e= [-1.92746593]  max|de|= -1.93  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000001]
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -1.92746593229187
+macro iter   1 (  3 JK    1 micro), CASSCF E = -103.765198217501  dE = -1.36037229e-06  S^2 = 0.0000000
+               |grad[o]|=0.0022  |grad[c]|=5.78e-05  |ddm|=5.69e-06  |maxRot[o]|=0.000585
+    CPU time for CASCI solver      0.00 sec, wall time      0.00 sec
+    CPU time for macro iter  1      0.01 sec, wall time      0.01 sec
+    |g|=3.77e-06
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    imic  1( 2)  |g[o]|=1.69e-10  |dxi|=1.09e-06  max(|x|)=9.96e-07  |dr|=1.09e-06  eig=-3.94e-12  seig=4.03e-07
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+CI step by full response
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=1.54e-06  |g[o]|=3.77e-06  |g[c]|=8.79e-08  |ddm|=    0
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1.        0.9999998]
+Active space overlap to last step, SVD = [1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -101.837730792046
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 1  |r|= 8.79e-08  e= [-1.92746743]  max|de|= -1.93  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000009]
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -1.92746742545940
+macro iter   2 (  2 JK    1 micro), CASSCF E = -103.765198217505  dE = -3.97903932e-12  S^2 = 0.0000000
+               |grad[o]|=3.77e-06  |grad[c]|=8.79e-08  |ddm|=    0  |maxRot[o]|=9.96e-07
+    CPU time for CASCI solver      0.00 sec, wall time      0.00 sec
+    CPU time for macro iter  2      0.01 sec, wall time      0.01 sec
+set max_stepsize to 0.006
+    |g|=1.69e-10
+    CPU time for gen h_op      0.00 sec, wall time      0.00 sec
+    CPU time for orbital rotation      0.00 sec, wall time      0.00 sec
+CI step by full response
+    CPU time for update CAS DM      0.00 sec, wall time      0.00 sec
+micro  1  |u-1|=    0  |g[o]|=1.69e-10  |g[c]|=8.79e-08  |ddm|=    0
+    CPU time for micro iter  1      0.00 sec, wall time      0.00 sec
+Active space overlap to initial guess, SVD = [1.        0.9999998]
+Active space overlap to last step, SVD = [1. 1.]
+    CPU time for update eri      0.00 sec, wall time      0.00 sec
+Start CASCI
+    CPU time for integral transformation to CAS space      0.00 sec, wall time      0.00 sec
+core energy = -101.837730792046
+    CPU time for effective h1e in CAS space      0.00 sec, wall time      0.00 sec
+davidson 0 1  |r|= 8.79e-08  e= [-1.92746743]  max|de|= -1.93  lindep=    1
+Linear dependency in trial subspace. |r| for each state [0.00000009]
+    CPU time for FCI solver      0.00 sec, wall time      0.00 sec
+CAS space CI energy = -1.92746742545940
+macro iter   3 (  1 JK    1 micro), CASSCF E = -103.765198217505  dE =  0.00000000e+00  S^2 = 0.0000000
+               |grad[o]|=1.69e-10  |grad[c]|=8.79e-08  |ddm|=    0  |maxRot[o]|=    0
+    CPU time for CASCI solver      0.00 sec, wall time      0.00 sec
+    CPU time for macro iter  3      0.01 sec, wall time      0.01 sec
+1-step CASSCF converged in   3 macro (  6 JK   3 micro) steps
+CASSCF canonicalization
+Density matrix diagonal elements [1.99889044 0.00110956]
+i = 1  <i|F|i> = -25.90133933
+i = 2  <i|F|i> =  -1.47165949
+i = 3  <i|F|i> =  -0.58561092
+i = 4  <i|F|i> =  -0.46485215
+i = 5  <i|F|i> =  -0.46444791
+i = 6  <i|F|i> =   0.62863187
+    CPU time for 1-step CASSCF      0.03 sec, wall time      0.03 sec
+CASSCF energy = -103.765198217505
+CASCI E = -103.765198217505  E(CI) = -1.92746742545940  S^2 = 0.0000000
+
+embedded CASSCF energy: -103.7651982175 Ha
+
+
+------------------------------------------------------------------------------
+
+            PRISM: Open-Source implementation of ab initio methods
+                    for excited states and spectroscopy
+
+                               Version 0.9
+
+                   Copyright (C) 2026 Prism Developers
+                   Contributors: Nicholas Yiching Chiang
+                                 Carlos E. V. de Moura
+                                 Nishshanka M. Lakshan
+                                 Rajat S. Majumder
+                                 Ilia M. Mazin
+                                 Donna H. Odhiambo
+                                 Bryce Pickett
+                                 James D. Serna
+                                 Alexander Yu. Sokolov
+
+            Unless required by applicable law or agreed to in
+            writing, software distributed under the GNU General
+            Public License v3.0 and is distributed on an "AS IS"
+            BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+            either express or implied.
+
+            See the License for the specific language governing
+            permissions and limitations.
+
+            Available at https://github.com/sokolov-group/prism
+
+------------------------------------------------------------------------------
+
+Importing Pyscf objects...
+
+Collecting reference wavefunction information...
+Reference wavefunction: casscf
+Canonicalizing molecular orbitals using reference wavefunction manifold...
+
+Summary of reference wavefunction manifold:
+Total number of reference states: 1
+  State       S^2        S      (2S+1)        E(total)              E(CAS)
+-----------------------------------------------------------------------------------
+    1       0.00000     0.0        1     -103.765198217505      -1.927467425459
+-----------------------------------------------------------------------------------
+
+
+Initializing MR-ADC...
+
+Computing MR-ADC excitation energies...
+
+Method:                                            cvs-ip-mr-adc(2)
+Nuclear repulsion energy:                          0.000000000000
+Number of electrons:                               10
+Number of basis functions:                         6
+Reference wavefunction type:                       casscf
+Number of core orbitals:                           4
+Number of active orbitals:                         2
+Number of external orbitals:                       0
+Number of active electrons:                        [(1, 1)]
+Reference state active-space energy:              -1.927467425459
+Reference state spin multiplicity:                 [1]
+Number of MR-ADC roots requested:                  4
+Number of CVS orbitals:                            1
+Number of valence (non-CVS) orbitals:              3
+Reference density fitting?                         False
+Correlation density fitting?                       False
+Temporary directory path:                          /fs/scratch/PAS1583/bpickett
+
+Internal contraction:                              Full
+Overlap truncation parameter (singles):            1.00e-05
+Overlap truncation parameter (doubles):            1.00e-10
+Projector for the semi-internal amplitudes:        gno
+
+Einsum Backend:                                    opt_einsum
+
+Transforming integrals to MO basis...
+
+Computing reference wavefunction RDMs...
+
+Computing NEVPT2 amplitudes...
+Correlation energy [+1']:                         -0.000000000000
+Correlation energy [+2]:                          -0.013057038225
+
+Reference energy:                               -103.765198217505
+NEVPT2 correlation energy:                        -0.013057038225
+Total NEVPT2 energy:                            -103.778255255731
+
+Transforming integrals for the CVS calculation...
+
+Dimension of h0 excitation manifold:                       1
+Dimension of h1 excitation manifold:                       32
+Total dimension of the excitation manifold:                33
+Dimension of the orthogonalized excitation manifold:       25
+
+tol 1e-08  toloose 1e-05
+max_cycle 50  max_space 112  max_memory 4000  incore True
+Drop eigenvector 1, norm=1.28e-14
+Drop eigenvector 2, norm=1.41e-14
+Drop eigenvector 3, norm=1.81e-14
+davidson 0 4  |r|= 0.62  e= [25.9013601  26.34222969 26.34222969 26.40590718]  max|de|= 26.4  lindep=    1
+Old state -> New state
+    2     ->     1 
+    1     ->     2 
+root 1 converged  |r|= 1.4e-14  e= 26.342229691498552  max|de|= 3.55e-15
+root 2 converged  |r|= 2.41e-14  e= 26.34222969149857  max|de|= 2.49e-14
+root 3 converged  |r|= 2.03e-14  e= 26.405907175427533  max|de|= 7.11e-15
+davidson 1 5  |r|= 0.0274  e= [25.68378889 26.34222969 26.34222969 26.40590718]  max|de|= -0.218  lindep= 0.977
+Old state -> New state
+    2     ->     1 
+    1     ->     2 
+davidson 2 6  |r|= 6.92e-06  e= [25.68363165 26.34222969 26.34222969 26.40590718]  max|de|= -0.000157  lindep= 0.706
+root 0 converged  |r|= 2.61e-11  e= 25.68363165018097  max|de|= -2e-12
+converged 3 7  |r|= 2.61e-11  e= [25.68363165 26.34222969 26.34222969 26.40590718]  max|de|= -2e-12
+
+Summary of results for the CVS-IP-MR-ADC(2) calculation with the CASSCF reference:
+------------------------------------------------------------------------------------------------
+  State        dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)       Intensity
+------------------------------------------------------------------------------------------------
+    1        25.68363165      698.8872     1.7740    5636905.5885      1.757498
+    2        26.34222969      716.8086     1.7297    5781451.1508      0.000000
+    3        26.34222969      716.8086     1.7297    5781451.1508      0.000000
+    4        26.40590718      718.5413     1.7255    5795426.7431      0.000000
+------------------------------------------------------------------------------------------------
+> CPU time for total CVS-IP-MR-ADC(2) calculation      0.44 sec, wall time      0.44 sec
+
+MR-ADC CVS-IP energies:
+  Root 0: 699.586108 eV
+  Root 1: 717.525395 eV
+  Root 2: 717.525395 eV
+  Root 3: 719.259881 eV
+F.
+======================================================================
+FAIL: test_prism (__main__.KnownValues)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/users/PAS1583/bpickett/programs/prism_env/prism_dmet_wt/tests/dmet/05-dmet-cvs-ip-mr-adc-hf-22.py", line 72, in test_prism
+    self.assertAlmostEqual(e_dmet[0],   698.887221032595, 5)
+AssertionError: np.float64(699.5861082536272) != 698.887221032595 within 5 places (np.float64(0.698887221032237) difference)
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.857s
+
+FAILED (failures=1)
