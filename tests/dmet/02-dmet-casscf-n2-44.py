@@ -27,7 +27,6 @@ np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 mol = pyscf.gto.Mole()
 mol.atom = [['N', (0, 0, 0)], ['N', (0, 0, 1.5)]]
 mol.basis = 'sto-3g'
-mol.verbose = 4
 mol.build()
 
 # RHF calculation
