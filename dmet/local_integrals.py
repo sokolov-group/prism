@@ -27,12 +27,14 @@ from prism.dmet import iao_helper
 
 class LocalIntegrals:
 
-    def __init__(self, mf, active_orbs, localization_type,
+    def __init__(self, mf, active_orbs=None, localization_type='meta_lowdin',
                  ao_rotation=None, localization_threshold=1e-6):
         if localization_type not in ('meta_lowdin', 'boys', 'lowdin', 'iao'):
             raise ValueError(
                 f"Unknown localization_type='{localization_type}'. "
                 f"Valid: 'meta_lowdin', 'boys', 'lowdin', 'iao'")
+        if active_orbs is None:
+            active_orbs = list(range(mf.mol.nao_nr()))
 
         self.mol = mf.mol
         self.mf = mf

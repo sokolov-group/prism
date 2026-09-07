@@ -3,36 +3,24 @@
 This module runs density matrix embedding theory (DMET) inside Prism.
 
 DMET lets you treat one part of a molecule with an expensive method while the rest
-of the molecule is held at the mean-field level. You pick the atoms you care about.
-The module builds a small problem around them and hands it to a solver. Every Prism
-solver works this way, so you can get NEVPT2 energies, MR-ADC core ionization
-energies, spin-orbit coupling, g-tensors, magnetization and susceptibility from an
-embedded calculation.
+of the molecule is held at the mean-field level.
 
-## What the code does
-
-Start with a mean-field calculation on the whole molecule. The orbitals from that
-calculation are spread over every atom, so the first step is to localize them. Each
-localized orbital then belongs to one atom.
-
-Pick a set of atoms. Their orbitals are the impurity.
-
-The code then looks at the mean-field density and asks which of the remaining
-orbitals are entangled with the impurity. Those orbitals are the bath. There are
-never more bath orbitals than impurity orbitals. Everything left over is the core.
-It is frozen at its mean-field density and enters the calculation only as a
-potential.
-
+First, run a mean-field calculation on the whole molecule. The molecular orbitals
+from that calculation are then localized to each atom. Then, pick a set of atoms
+whose orbitals form the impurity. Next, the mean-field density decides which of the
+remaining orbitals are entangled with the impurity, through a Schmidt decomposition
+of the mean-field wavefunction. Those orbitals form the bath, and by default there
+are no more bath orbitals than impurity orbitals. The remaining orbitals form a
+frozen core, which enters the correlated calculation as a mean-field potential.
 Impurity plus bath is the cluster. The code builds a one-electron matrix and a
 two-electron integral tensor for the cluster and gives them to the solver. The
 cluster is much smaller than the molecule, so the solver is much cheaper.
 
-This split comes from a Schmidt decomposition of the mean-field wavefunction. The
-original papers are Knizia and Chan, Phys. Rev. Lett. 109, 186404 (2012) and
+The original papers are Knizia and Chan, Phys. Rev. Lett. 109, 186404 (2012) and
 J. Chem. Theory Comput. 9, 1428 (2013). A practical guide is Wouters,
 Jimenez-Hoyos, Sun and Chan, J. Chem. Theory Comput. 12, 2706 (2016).
 
-## A first calculation
+## How to run a calculation
 
 ```python
 import pyscf.gto
@@ -45,7 +33,7 @@ mol = pyscf.gto.M(atom='H 0 0 0; H 0 0 0.74; H 0 0 1.48; H 0 0 2.22',
 mf = pyscf.scf.RHF(mol)
 mf.kernel()
 
-ints = LocalIntegrals(mf, list(range(mol.nao_nr())), 'meta_lowdin')
+ints = LocalIntegrals(mf)
 frags = make_fragments(mol, ints, [[0, 1], [2, 3]])
 
 dmet = DMET(ints, frags, False, method='FCI')
@@ -53,43 +41,46 @@ energy = dmet.oneshot()
 print("DMET energy: %.10f" % energy)
 ```
 
-That is the whole pattern. Four objects, in order: a mean field, a LocalIntegrals,
-a fragment list, and a DMET.
+Four objects, in order: the full molecule mean field (`mf`), the local integrals
+(`ints`), the fragments of interest (`frags`), and the DMET object (`dmet`).
 
-## Step 1, the mean field
+### Full Molecule Mean Field (mf)
 
-Run any PySCF mean field on the whole molecule. RHF, ROHF, RKS and UKS all work.
-You can add `.density_fit()` and `.x2c()`.
+Run any PySCF mean field on the whole molecule. The mean field supplies the orbitals
+that get localized and the density that decides which orbitals become bath. RHF,
+ROHF, RKS and UKS all work. You can add `.density_fit()` and `.x2c()`.
 
-The mean field does two jobs. It supplies the orbitals that get localized, and it
-supplies the density that decides which orbitals become bath. If the mean-field
-solution is wrong, the bath is wrong, so it is worth checking that it converged to
-the state you wanted.
+If the mean field is density fitted, the cluster integrals are taken from its
+three-index tensor instead of rebuilding the atomic-orbital integrals. The cluster
+integrals then carry the fitting error of the mean field.
 
-## Step 2, LocalIntegrals
+### Local Integrals (ints)
 
 ```python
-ints = LocalIntegrals(mf, active_orbs, localization_type,
+ints = LocalIntegrals(mf, active_orbs=None, localization_type='meta_lowdin',
                       ao_rotation=None, localization_threshold=1e-6)
 ```
 
-`active_orbs` is the list of orbital indices to use. Pass
-`list(range(mol.nao_nr()))` to use all of them, which is the normal choice.
+Both defaults are the normal choice, so `LocalIntegrals(mf)` is the usual call.
+
+`active_orbs` is the list of orbital indices to use. `None` means every orbital in
+the molecule, and is the default. Only `boys` accepts a smaller set. `meta_lowdin`,
+`lowdin` and `iao` need every orbital.
 
 `localization_type` is one of:
 
-- `meta_lowdin`, a good default and the one used in every example
-- `lowdin`, plain symmetric orthogonalization, needs all orbitals
-- `iao`, intrinsic atomic orbitals, needs all orbitals
+- `meta_lowdin`, the default choice, used in every example
+- `lowdin`, plain symmetric orthogonalization
+- `iao`, intrinsic atomic orbitals
 - `boys`, Boys localization, slower and can be sensitive to the starting point
 
 `ao_rotation` is an optional extra rotation applied after localizing.
 `localization_threshold` only affects `boys`.
 
-This object holds the integrals for the whole molecule in the localized basis. It
-is reusable. You can build one LocalIntegrals and hand it to several DMET objects.
+The `LocalIntegrals` object holds the integrals for the whole molecule in the
+localized basis. It can be passed to several `DMET` objects.
 
-## Step 3, fragments
+### Fragments of Interest (frags)
 
 ```python
 frags = make_fragments(mol, ints, atom_groups)
@@ -99,13 +90,25 @@ frags = make_fragments(mol, ints, atom_groups)
 `[[0, 1], [2, 3]]` means two fragments, the first holding atoms 0 and 1 and the
 second holding atoms 2 and 3.
 
-Every orbital must belong to exactly one fragment. If you leave atoms out, the code
-raises an error.
+Fragments cannot overlap. They do not have to cover the whole molecule. Each
+fragment is solved in turn, and for that one fragment every orbital outside it
+becomes bath or core.
 
-A fragment can be a single atom. `[[0]]` on a metal complex gives you an embedding
-around the metal, with the ligands in the bath and the core.
+How much of the molecule to cover depends on the goal.
 
-## Step 4, the DMET object
+Cover the whole molecule when you want a total energy. Every region then gets its
+own bath and its own solve, and the fragment energies sum to the molecular energy.
+Examples 01 and 03 do this.
+
+Cover only the region you care about when you want a local property, such as an
+excitation energy, an ionization energy or a g-tensor. `[[0]]` on a metal complex
+embeds the metal alone, with the ligands in the bath and the core. Example 04 does
+this on Cu(NH3)4: one fragment on the copper, sixteen atoms left out.
+
+Full coverage is required when `is_translation_invariant=True`, and leaving orbitals
+out needs a full `active_orbs`.
+
+### Density Matrix Embedding Method (dmet)
 
 ```python
 dmet = DMET(ints, frags, is_translation_invariant, method='FCI')
@@ -116,12 +119,12 @@ The first three arguments are positional. `is_translation_invariant` should be
 `False` for molecules. Set it to `True` only when every fragment is a copy of the
 first one, in which case the code solves one fragment and reuses the answer.
 
-## Running a calculation
+### One-Shot and Self-Consistent Runs (oneshot, selfconsistent)
 
 There are two ways to run.
 
 `dmet.oneshot()` builds the bath from the mean-field density, solves every fragment
-once, and returns the total energy. This is what you want most of the time.
+once, and returns the total energy. This is the usual choice.
 
 `dmet.selfconsistent()` adds an outer loop. It fits a one-body potential, called the
 correlation potential or u-matrix, so that the mean-field density of each cluster
@@ -132,20 +135,14 @@ Self-consistency costs much more. The solver runs once per chemical-potential
 evaluation, and there can be many of those per iteration. With QD-NEVPT2, PC-NEVPT2
 or MR-ADC the code prints a warning about this, but it will run.
 
-One thing to know about self-consistency. The energy it produces is stable, but the
-u-matrix itself is not well determined. On small test systems the same run repeated
-can give a u-matrix with a very different size while the energy moves by less than
-1e-5 Ha. Treat the energy as the result and do not read much into the potential.
-
 ## The solvers
 
 Pick one with `method=`.
 
-### ED and FCI
+### FCI
 
-`method='FCI'` runs a full configuration interaction on the cluster. `method='ED'`
-is the same solver under a different name. Use it for small clusters. It needs no
-active space.
+`method='FCI'` runs a full configuration interaction on the cluster. Use it for
+small clusters. It needs no active space.
 
 ### CASSCF
 
@@ -160,8 +157,8 @@ embedded CASSCF. This is equivalent to partially contracted NEVPT2. Results land
 
 ### QD-NEVPT2
 
-`method='QD-NEVPT2'` runs the quasidegenerate variant. It needs `sa_nstates` of 2 or
-more. Results land in `dmet.qdnevpt2_results`.
+`method='QD-NEVPT2'` runs the quasidegenerate variant of NEVPT2. It needs
+`sa_nstates` of 2 or more. Results land in `dmet.qdnevpt2_results`.
 
 ### MR-ADC
 
@@ -176,8 +173,16 @@ dmet = DMET(ints, frags, False, method='MR-ADC', ncas=4, nelecas=4,
 
 ### One fragment at a lower level
 
-`fragment_methods={1: 'RHF'}` solves fragment 1 with plain RHF instead of the main
-method. Only `'RHF'` is accepted.
+Fragments do not all have to use the same solver. `method` sets what every fragment
+uses, and `fragment_methods` overrides it for the fragments you name.
+
+```python
+dmet = DMET(ints, frags, False, method='CASSCF', ncas=4, nelecas=4,
+            fragment_methods={1: 'RHF'})
+```
+
+Here fragment 0 gets CASSCF and fragment 1 gets plain RHF. `'RHF'` is the only
+override accepted.
 
 ## Reading the results
 
@@ -196,16 +201,15 @@ Each solver fills a list, one entry per fragment.
 objects. You can call their methods directly, for example
 `dmet.qdnevpt2_results[0]['nevpt'].analyze()`.
 
-Two unit notes. The MR-ADC `e_exc` values are in eV, because that is what the Prism
-MR-ADC kernel returns. The NEVPT2 `e_tot` values are cluster energies and do not
-include the nuclear repulsion, so compare excitation energies rather than totals.
-The energy returned by `oneshot` and `selfconsistent` is a proper total energy and
-does include nuclear repulsion.
+The MR-ADC `e_exc` values are in eV, because that is what the Prism MR-ADC
+kernel returns. The NEVPT2 `e_tot` values are cluster energies without the nuclear
+repulsion, so compare excitation energies rather than totals. The energy returned by
+`oneshot` and `selfconsistent` is a total energy and includes nuclear repulsion.
 
 `dmet.imp_rdm1[i]` holds the correlated one-particle density matrix of cluster `i`
 in the embedded basis, for any solver.
 
-## The keywords
+## Keywords
 
 All of these are optional keywords on `DMET`.
 
@@ -213,7 +217,7 @@ All of these are optional keywords on `DMET`.
 
 | keyword | default | what it does |
 |---|---|---|
-| `method` | `'ED'` | which solver to run |
+| `method` | `'FCI'` | which solver to run |
 | `fragment_methods` | `None` | dict of fragment index to `'RHF'` |
 
 ### The active space
@@ -248,9 +252,12 @@ the size of the search window rather than the final active space.
 | `core_occ_tol` | `None` | how far a core orbital may sit from 0 or 2 |
 | `bath_1rdm` | `None` | build the bath from a density you supply |
 
-By default the bath is as large as it can be, which is the number of impurity
+By default the number of bath orbitals is the same as the number of impurity
 orbitals. `n_bath_orbs` makes it smaller and cheaper, at the cost of throwing away
-some entanglement.
+some entanglement. `keep_degenerate=True` extends the bath to finish a degenerate
+set. Two orbitals with the same occupation belong in the bath together, so if the
+cut falls between them the bath is extended to take both. The code reports this as
+"Bath extended to N to complete a degenerate set."
 
 ### The embedded mean field
 
@@ -261,15 +268,12 @@ some entanglement.
 | `no_kernel` | `False` | skip the embedded SCF and take the reference from a density |
 | `embedded_ref_dm` | `None` | AO-basis density to use as that reference |
 
-Normally the code runs a small SCF on the cluster before the correlated solver. That
-SCF starts from the projected mean-field density and reconverges. Every DMET code
-does this.
-
-`no_kernel=True` skips it. The reference is built from the natural orbitals of the
-guess density instead. This exists for cases where reconverging is unstable, for
-example when a hard-won UKS solution is destroyed by an ROHF reconvergence.
-`embedded_ref_dm` lets you supply that density yourself. It needs `no_kernel=True`
-and `sc_method='NONE'`, and the density must be in the AO basis.
+By default a small SCF runs on the cluster before the correlated solver. It starts
+from the projected mean-field density and reconverges.
+`no_kernel=True` skips it and builds the reference from the natural orbitals of the
+guess density. Use it where reconverging is unstable. `embedded_ref_dm` supplies
+that density directly. It needs `no_kernel=True` and `sc_method='NONE'`, and the
+density must be in the AO basis.
 
 ### Self-consistency
 
@@ -278,7 +282,7 @@ and `sc_method='NONE'`, and the density must be in the AO basis.
 | `sc_method` | `'LSTSQ'` | how to fit the potential, `'LSTSQ'`, `'BFGS'` or `'NONE'` |
 | `conv_tol` | `1e-5` | when the potential has stopped changing |
 | `max_cycle` | `200` | cap on outer iterations |
-| `fit_impurity_and_bath` | `True` | fit the whole cluster density, not just the impurity block |
+| `fit_impurity_and_bath` | `True` | fit the cluster density, not the impurity block alone |
 | `use_constrained_optimization` | `False` | use the alternative cost function with BFGS |
 | `use_density_embedding` | `False` | fit only the diagonal, which is density embedding |
 | `use_density_embedding_no` | `False` | do that in the natural orbital basis |
@@ -308,10 +312,10 @@ coupling and the magnetic properties.
 | `max_workers` | `None` | how many workers |
 
 With `use_symmetry=True` and no map, fragments with the same number of orbitals are
-treated as copies of the first one. That is a crude test, so pass `symmetry_map`
-yourself when it matters.
+treated as copies of the first one. That test is crude, so pass `symmetry_map` when
+it matters.
 
-`parallel=True` works with ED, FCI, CASSCF and per-fragment RHF. It raises for
+`parallel=True` works with FCI, CASSCF and per-fragment RHF. It raises for
 QD-NEVPT2, PC-NEVPT2 and MR-ADC, because their result objects cannot be sent back
 from a worker process.
 
@@ -324,65 +328,13 @@ from a worker process.
 | `print_bath_spectrum` | `False` | print the bath orbitals on either side of the cut |
 | `verbose` | `None` | print level, taken from the molecule if not given |
 
-## Looking at the bath
+## Properties and analysis
 
-Set `print_bath_spectrum=True` to see what the bath kept and what it dropped.
+Prism's properties and analysis all work with DMET. Spin-orbit coupling and the
+magnetic properties are requested through the solver kwargs before the run.
+Everything else here is read off a finished calculation.
 
-```
-Bath spectrum, fragment 0 (kept 3 of 3 entangled):
-   idx    occupation    dev. from 0/2      entropy   status
-     0    1.00000000     1.000000e+00  1.386294e+00   bath
-     1    1.00000000     1.000000e+00  1.386294e+00   bath
-     2    1.00000000     1.000000e+00  1.386294e+00   bath
-     3    2.00000000    -8.881784e-16  0.000000e+00   core/virt
-```
-
-The columns are the occupation of the bath orbital, its distance from 0 or 2, and
-its single-orbital entropy. An orbital at 0 or 2 is not entangled with the impurity
-and does not need to be in the cluster. An orbital at 1 is as entangled as it can
-be, and its entropy is ln 4, which is 1.386294.
-
-The same numbers are available in code as `dmet.bath_spectrum[i]`, a dict with
-`occupation`, `occ_deviation`, `entropy`, `num_bath_orbs` and `num_entangled`.
-
-This is the diagnostic to look at when deciding whether `n_bath_orbs` is safe. If
-the entanglement has already fallen to 1e-9 at the cut, little is being lost.
-
-## Getting densities back in the AO basis
-
-The cluster has its own orbitals, which are not atomic orbitals. Two methods map
-back to the molecule.
-
-```python
-dm_ao = dmet.to_ao(dmet.imp_rdm1[0]) + dmet.core_dm_ao(0)
-```
-
-`to_ao(matrix, impnumber=0)` takes anything in the embedded basis and returns it in
-the AO basis of the molecule. `core_dm_ao(impnumber=0)` returns the frozen core
-density in the same basis. Adding them gives the full density of that cluster's
-solution, and its trace against the overlap matrix is the electron count of the
-whole molecule.
-
-`core_dm_ao` raises for a fragment that was solved by symmetry, because such a
-fragment has no core density of its own.
-
-## Writing orbital files
-
-Three methods write files you can open in a viewer.
-
-- `dump_bath_orbs(filename, impnumber=0)` writes the cluster orbitals. Molden only.
-- `dump_natural_orbitals(filename, impnumber=0, fmt='molden', orbital_indices=None)`
-  writes the natural orbitals of the correlated density
-- `dump_ntos(filename, impnumber=0, initial_state=0, target_state=1, fmt='molden',
-  n_pairs=None, nx=60, ny=60, nz=60)` writes natural transition orbitals
-
-Where there is a `fmt`, it accepts `'molden'` or `'cube'`. `dump_ntos` also lets you
-set the cube grid with `nx`, `ny` and `nz`.
-
-Prism's own orbital output also works. Setting `compute_ntos` on the NEVPT object or
-`compute_dyson` on the MR-ADC object writes molden files over the whole molecule.
-
-## Spin-orbit coupling and magnetic properties
+### Spin-orbit coupling and magnetic properties
 
 These are Prism options, so you reach them through the solver kwargs.
 
@@ -401,67 +353,100 @@ print(props['g-factors'][0])
 ```
 
 `soc` accepts `'breit-pauli'` or `'bp'` for the Breit-Pauli operator, and `'dkh1'`,
-`'x2c-1'` or `'x2c1'` for the one-electron exact two-component operator. When you
-ask for spin-orbit coupling, the code notices and passes the real molecule and the
-frozen core density through to the integral routines, so the integrals are built
-over the whole molecule and not over
-the cluster alone. The frozen core matters here. Leaving it out changes the answer.
+`'x2c-1'` or `'x2c1'` for the one-electron exact two-component operator. With
+spin-orbit coupling requested, the real molecule and the frozen core density are
+passed to the integral routines, so the integrals are built over the whole molecule.
+The frozen core contributes to the answer.
 
-Results come back in the `properties` dict of the Prism object. `g-factors`,
-`g-eigenvectors`, `M_av`, `chi_av`, `M_xyz_all` and `chi_T_eval_all` are all
-available depending on what you asked for.
+Results come back in the `properties` dict of the Prism object: `g-factors`,
+`g-eigenvectors`, `M_av`, `chi_av`, `M_xyz_all` and `chi_T_eval_all`, depending on
+what was requested.
 
-One practical note on susceptibility. It is a second derivative taken by finite
-differences, so how closely it matches an unembedded run depends on `step_h_s`. The
-magnetization, a first derivative, does not have this sensitivity.
+Susceptibility is a second derivative taken by finite differences, so how closely it
+matches an unembedded run depends on `step_h_s`. The magnetization is a first
+derivative and is not sensitive.
 
-## Density fitting
+### Oscillator strengths and state analysis
 
-If the mean field is density fitted, the cluster integrals are taken from its
-three-index tensor instead of rebuilding the atomic-orbital integrals. Nothing extra
-is needed. Just build the mean field with `.density_fit()`.
+`sa_nstates` of 2 or more gives excitation energies between the state-averaged
+roots. QD-NEVPT2 and PC-NEVPT2 also return oscillator strengths for them. The dipole
+integrals are taken over the real molecule and transformed into the embedded basis,
+so the values are comparable with an unembedded run.
 
 ```python
-mf = pyscf.scf.RHF(mol).density_fit()
-mf.kernel()
-ints = LocalIntegrals(mf, list(range(mol.nao_nr())), 'meta_lowdin')
+res = dmet.qdnevpt2_results[0]
+print(res['nevpt'].properties['osc_strengths'])
+res['nevpt'].analyze()
 ```
 
-This saves the most on large systems, where rebuilding the atomic-orbital integrals
-for every fragment is the slowest part. The cluster integrals then carry the fitting
-error of the mean field. On N2 in cc-pVDZ that error is about 3e-4 Ha in the DMET
-energy. Whether that matters is your call.
+`analyze()` prints the composition of each root: the alpha and beta occupations of
+the leading determinants with their coefficients and weights, the natural
+occupations of the active space, and, for an open-shell reference, Mulliken spin
+populations over the atoms of the real molecule.
 
-If the mean field is not density fitted, the code reuses the atomic-orbital
-integrals the mean field already holds when it can, and only rebuilds them when it
-must.
+### Orbital files
 
-## Limits and things to watch
+Three methods write files you can open in a viewer.
 
-The cluster is built on an empty PySCF molecule with the integrals supplied
-directly. This is the standard PySCF pattern for a custom Hamiltonian. It means
-anything that asks the cluster about atoms would fail, so the code passes the real
-molecule through for spin-orbit coupling, magnetic properties and orbital output.
-Any new Prism feature that needs atom positions will need the same treatment.
+- `dump_bath_orbs(filename, impnumber=0)` writes the cluster orbitals. Molden only.
+- `dump_natural_orbitals(filename, impnumber=0, fmt='molden', orbital_indices=None)`
+  writes the natural orbitals of the correlated density
+- `dump_ntos(filename, impnumber=0, initial_state=0, target_state=1, fmt='molden',
+  n_pairs=None, nx=60, ny=60, nz=60)` writes natural transition orbitals
 
-Polarizable embedding is not integrated with DMET.
+Where there is a `fmt`, it accepts `'molden'` or `'cube'`. `dump_ntos` also lets you
+set the cube grid with `nx`, `ny` and `nz`.
 
-The energies reported by the NEVPT2 solvers are cluster energies without nuclear
-repulsion. Excitation energies are unaffected.
+Prism's default orbital output also works. Set `compute_ntos` on the NEVPT object or
+`compute_dyson` on the MR-ADC object to write molden files over the whole molecule.
 
-The correlation potential from a self-consistent run is not a well determined
-quantity. The energy is.
+### Densities in the AO basis
 
-Density fitting changes the answer by the size of the fitting error. It is a
-different calculation, not a cheaper route to the same numbers.
+The cluster has its own orbitals, which are not atomic orbitals. Two methods map
+back to the molecule.
+
+```python
+dm_ao = dmet.to_ao(dmet.imp_rdm1[0]) + dmet.core_dm_ao(0)
+```
+
+`to_ao(matrix, impnumber=0)` takes anything in the embedded basis and returns it in
+the AO basis of the molecule. `core_dm_ao(impnumber=0)` returns the frozen core
+density in the same basis. Adding them gives the full density of that cluster's
+solution, and its trace against the overlap matrix is the electron count of the
+whole molecule.
+
+`core_dm_ao` raises for a fragment that was solved by symmetry, because such a
+fragment has no core density of its own.
+
+### The bath spectrum
+
+Set `print_bath_spectrum=True` to see what orbitals the bath kept and what it
+dropped.
+
+```
+Bath spectrum, fragment 0 (kept 3 of 3 entangled):
+   idx    occupation    dev. from 0/2      entropy   status
+     0    1.00000000     1.000000e+00  1.386294e+00   bath
+     1    1.00000000     1.000000e+00  1.386294e+00   bath
+     2    1.00000000     1.000000e+00  1.386294e+00   bath
+     3    2.00000000    -8.881784e-16  0.000000e+00   core/virt
+```
+
+The columns are the occupation of the bath orbital, its distance from 0 or 2, and
+its single-orbital entropy. An orbital at 0 or 2 is not entangled with the impurity
+and does not need to be in the cluster. An orbital at 1 is as entangled as it can
+be, and its entropy is ln 4, which is 1.386294.
+
+The same numbers are available in code as `dmet.bath_spectrum[i]`, a dict with
+`occupation`, `occ_deviation`, `entropy`, `num_bath_orbs` and `num_entangled`.
 
 ## Examples
 
-The `examples/dmet` folder has four scripts. Every one of them runs the same
-calculation on the whole molecule as well, so you can see what the embedding costs.
+The `examples/dmet` folder has four scripts. Each also runs the same calculation on
+the whole molecule, so the error from the embedding is visible.
 
-- `01-dmet-h4-fci.py`, the smallest working example. One-shot DMET, self-consistent
-  DMET and a density-fitted run, all checked against full-molecule FCI.
+- `01-dmet-h4-fci.py`, the smallest example. One-shot DMET, self-consistent DMET and
+  a density-fitted run, all checked against full-molecule FCI.
 - `02-dmet-h2o-qdnevpt2.py`, excitation energies and oscillator strengths, checked
   against a direct QD-NEVPT2.
 - `03-dmet-n2-solvers.py`, CASSCF, PC-NEVPT2 and CVS-IP-MR-ADC on the same system,
@@ -471,12 +456,16 @@ calculation on the whole molecule as well, so you can see what the embedding cos
 
 ## Tests
 
-The test suite lives in `dmet/tests` and runs with pytest.
+The tests are in `tests/dmet`. Each one is a plain script, and can be run on its
+own.
 
 ```
-python -m pytest dmet/tests -q
+python tests/dmet/01-dmet-fci-h4.py
 ```
 
-Many of the tests are identity tests. They put the whole molecule in the impurity,
-which makes the embedding exact, and then check that the embedded answer matches the
-unembedded one. That is the check to copy when adding a feature.
+To run the whole suite, use the runner from the `tests` folder and enter `dmet` when
+it asks which folders to scan.
+
+```
+cd tests && python run_tests.py
+```
