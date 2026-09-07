@@ -890,12 +890,9 @@ class DMET:
 
     def selfconsistent(self):
         if self.method in ('QD-NEVPT2', 'PC-NEVPT2', 'MR-ADC'):
-            raise RuntimeError(
-                f"Method '{self.method}' is only compatible with one-shot DMET (oneshot()). "
-                f"Self-consistent dmet is not supported: {self.method} is a perturbative "
-                f"correction on a fixed CASSCF reference, so a self-consistent u-matrix "
-                f"iteration is not defined for it."
-            )
+            self.log.warn(
+                "Self-consistent DMET repeats %s at every chemical-potential evaluation, "
+                "which costs far more than oneshot()." % self.method)
 
         iteration = 0
         u_diff = 1.0
