@@ -47,7 +47,7 @@ class DMET:
                  use_density_embedding=False, use_density_embedding_no=False,
                  print_u=True, print_rdm=True,
                  ncas=None, nelecas=None, sa_nstates=1, sa_weights=None,
-                 casscf_kwargs=None, nevpt2_kwargs=None, qdnevpt2_kwargs=None,
+                 casscf_kwargs=None, qdnevpt2_kwargs=None,
                  pcnevpt2_kwargs=None,
                  use_symmetry=False, symmetry_map=None,
                  parallel=False, max_workers=None, bath_tol=1e-13, n_bath_orbs=None,
@@ -87,8 +87,6 @@ class DMET:
         self.deg_tol = deg_tol              # near-degenerate orbital energy tolerance
         self.casci_conv_tol = casci_conv_tol       # natorb superset CASCI fcisolver.conv_tol
         self.cas_results = []   # populated by do_exact() when method='CASSCF'
-        self.nevpt2_kwargs = nevpt2_kwargs or {}
-        self.nevpt2_results = []   # populated by do_exact() when method='NEVPT2'
         self.qdnevpt2_kwargs = qdnevpt2_kwargs or {}
         self.qdnevpt2_results = []   # populated by do_exact() when method='QD-NEVPT2'
         self.pcnevpt2_kwargs = pcnevpt2_kwargs or {}
@@ -186,7 +184,7 @@ class DMET:
         self.time_grad = 0.0
 
     def _warn_inert_params(self):
-        _cas_methods = {'CASSCF', 'NEVPT2', 'QD-NEVPT2', 'PC-NEVPT2'}
+        _cas_methods = {'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'}
         if self.cas_multiseed and self.method not in _cas_methods:
             warnings.warn(
                 f"cas_multiseed=True is inert for method='{self.method}' "
@@ -203,7 +201,7 @@ class DMET:
                 "Translation-invariant DMET requires a TI-capable LocalIntegrals "
                 "(ti_ok=True); the chosen localization sets ti_ok=False.")
 
-        _valid_methods = {'ED', 'FCI', 'CASSCF', 'NEVPT2', 'QD-NEVPT2', 'PC-NEVPT2'}
+        _valid_methods = {'ED', 'FCI', 'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'}
         if self.method not in _valid_methods:
             raise ValueError(
                 f"Unknown method='{self.method}'. Valid: {sorted(_valid_methods)}")
@@ -217,7 +215,7 @@ class DMET:
             raise ValueError(
                 f"Unknown cas_select='{self.cas_select}'. Valid: {sorted(_valid_cas)}")
 
-        if self.method in ('QD-NEVPT2', 'NEVPT2', 'PC-NEVPT2') \
+        if self.method in ('QD-NEVPT2', 'PC-NEVPT2') \
                 and (self.ncas is None or self.nelecas is None):
             raise ValueError(
                 f"Method '{self.method}' requires ncas and nelecas (active space size).")
@@ -336,7 +334,6 @@ class DMET:
         self.dmet_orbs = []
         self.frag_energies = []
         self.cas_results = []
-        self.nevpt2_results = []
         self.qdnevpt2_results = []
         self.pcnevpt2_results = []
         if self.do_det and self.do_det_no:
@@ -489,8 +486,6 @@ class DMET:
                     'ci': res['cas_res']['ci'],
                 }
                 self.cas_results.append(res['cas_res'])
-            if 'nevpt2_res' in res:
-                self.nevpt2_results.append(res['nevpt2_res'])
             if 'qdnevpt2_res' in res:
                 self.qdnevpt2_results.append(res['qdnevpt2_res'])
             if 'pcnevpt2_res' in res:
@@ -577,7 +572,6 @@ class DMET:
             'casscf_kwargs': self.casscf_kwargs,
             'mo_guess': mo_guess,
             'ci_guess': ci_guess,
-            'nevpt2_kwargs': self.nevpt2_kwargs,
             'qdnevpt2_kwargs': self.qdnevpt2_kwargs,
             'pcnevpt2_kwargs': self.pcnevpt2_kwargs,
             'spin': self.ints.mol.spin,
@@ -826,7 +820,7 @@ class DMET:
         return nelec_dmet - nelec_target
 
     def selfconsistent(self):
-        if self.method in ('QD-NEVPT2', 'NEVPT2', 'PC-NEVPT2'):
+        if self.method in ('QD-NEVPT2', 'PC-NEVPT2'):
             raise RuntimeError(
                 f"Method '{self.method}' is only compatible with one-shot DMET (oneshot()). "
                 f"Self-consistent dmet is not supported: {self.method} is a perturbative "

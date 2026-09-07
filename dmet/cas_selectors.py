@@ -27,29 +27,6 @@ def _get_log(log):
     return log if log is not None else logger.Logger(sys.stdout, logger.INFO)
 
 
-def close_degenerate_manifolds(selected, mo_energy, tol=1e-3):
-    e = np.asarray(mo_energy)
-    if e.ndim == 2:
-        e = e.mean(axis=0)
-    order = np.argsort(e, kind='stable')
-    manifolds = []
-    current = [int(order[0])]
-    for k in range(1, len(order)):
-        if e[order[k]] - e[order[k - 1]] < tol:
-            current.append(int(order[k]))
-        else:
-            manifolds.append(current)
-            current = [int(order[k])]
-    manifolds.append(current)
-
-    sel = set(int(i) for i in selected)
-    closed = set(sel)
-    for manifold in manifolds:
-        if sel.intersection(manifold):
-            closed.update(manifold)
-    return sorted(closed)
-
-
 def canonicalize_degenerate_active_nos(cas_no, act_idx, no_occ, f_emb, deg_tol=1e-3):
     # Part A determinism fix: pin degenerate active-NO orientation by diagonalizing
     # the projected embedded Fock within each degenerate block. Modifies cas_no in place.
