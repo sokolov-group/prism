@@ -60,8 +60,10 @@ def _build_pmol_with_ghosts(mol, minao=None):
     pmol.atom = [mol._atom[ia] for ia, (_, _, s, e) in enumerate(aoslice) if e > s]
     pmol.pseudo = getattr(mol, 'pseudo', None)
     pmol.ecp = {}
-    pmol.spin = 0
     pmol.charge = 0
+    # This mol supplies reference basis functions only, so its spin need only agree with
+    # its own electron count; None lets the build choose it.
+    pmol.spin = None
     pmol.verbose = 0
     pmol.build(dump_input=False, parse_arg=False, basis=minao)
     return pmol

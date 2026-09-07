@@ -48,7 +48,7 @@ class DMET:
                  print_u=True, print_rdm=True,
                  ncas=None, nelecas=None, sa_nstates=1, sa_weights=None,
                  casscf_kwargs=None, qdnevpt2_kwargs=None,
-                 pcnevpt2_kwargs=None,
+                 pcnevpt2_kwargs=None, mradc_kwargs=None,
                  use_symmetry=False, symmetry_map=None,
                  parallel=False, max_workers=None, bath_tol=1e-13, n_bath_orbs=None,
                  bath_1rdm=None, core_occ_tol=None,
@@ -95,6 +95,8 @@ class DMET:
         self.qdnevpt2_results = []   # populated by do_exact() when method='QD-NEVPT2'
         self.pcnevpt2_kwargs = pcnevpt2_kwargs or {}
         self.pcnevpt2_results = []   # populated by do_exact() when method='PC-NEVPT2'
+        self.mradc_kwargs = mradc_kwargs or {}
+        self.mradc_results = []      # populated by do_exact() when method='MR-ADC'
         # Bath truncation: None = full symmetric bath; int = keep at most that many per fragment.
         if n_bath_orbs is None:
             self.num_bath_orbs = None
@@ -221,7 +223,7 @@ class DMET:
             self.ints, self.make_h1_terms(), self.alt_cost_func, self.min_func, log=self.log)
 
     def _warn_inert_params(self):
-        _cas_methods = {'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'}
+        _cas_methods = {'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2', 'MR-ADC'}
         if self.no_kernel:
             if self.method not in _cas_methods:
                 warnings.warn(
@@ -246,7 +248,7 @@ class DMET:
                 "Translation-invariant DMET requires a TI-capable LocalIntegrals "
                 "(ti_ok=True); the chosen localization sets ti_ok=False.")
 
-        _valid_methods = {'ED', 'FCI', 'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'}
+        _valid_methods = {'ED', 'FCI', 'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2', 'MR-ADC'}
         if self.method not in _valid_methods:
             raise ValueError(
                 f"Unknown method='{self.method}'. Valid: {sorted(_valid_methods)}")
@@ -260,7 +262,7 @@ class DMET:
             raise ValueError(
                 f"Unknown cas_select='{self.cas_select}'. Valid: {sorted(_valid_cas)}")
 
-        if self.method in ('QD-NEVPT2', 'PC-NEVPT2') \
+        if self.method in ('QD-NEVPT2', 'PC-NEVPT2', 'MR-ADC') \
                 and (self.ncas is None or self.nelecas is None):
             raise ValueError(
                 f"Method '{self.method}' requires ncas and nelecas (active space size).")
@@ -269,7 +271,13 @@ class DMET:
             raise ValueError(
                 "Method 'QD-NEVPT2' requires sa_nstates >= 2 for state-averaging.")
 
-        if self.parallel and self.method in ('QD-NEVPT2', 'PC-NEVPT2'):
+        if self.method == 'MR-ADC' and self.sa_nstates > 1:
+            raise ValueError(
+                "Method 'MR-ADC' requires sa_nstates=1. Prism MR-ADC takes a casscf or "
+                "casci reference; a state-averaged CASSCF is reported as sa-casscf and "
+                "is rejected. Request roots with mradc_kwargs={'nroots': n}.")
+
+        if self.parallel and self.method in ('QD-NEVPT2', 'PC-NEVPT2', 'MR-ADC'):
             raise ValueError(
                 f"Method '{self.method}' does not support parallel=True: it returns the "
                 f"CASSCF and Prism objects needed for analysis, and those cannot be sent "
@@ -390,6 +398,7 @@ class DMET:
         self.cas_results = []
         self.qdnevpt2_results = []
         self.pcnevpt2_results = []
+        self.mradc_results = []
         if self.do_det and self.do_det_no:
             self.no_vecs = []
             self.no_diag = []
@@ -560,6 +569,8 @@ class DMET:
             if 'qdnevpt2_res' in res:
                 self.qdnevpt2_results.append(res['qdnevpt2_res'])
                 self._attach_spin_pop_transform(res['qdnevpt2_res'], frag_idx)
+            if 'mradc_res' in res:
+                self.mradc_results.append(res['mradc_res'])
             if 'pcnevpt2_res' in res:
                 self.pcnevpt2_results.append(res['pcnevpt2_res'])
 
@@ -658,6 +669,7 @@ class DMET:
             'ci_guess': ci_guess,
             'qdnevpt2_kwargs': self.qdnevpt2_kwargs,
             'pcnevpt2_kwargs': self.pcnevpt2_kwargs,
+            'mradc_kwargs': self.mradc_kwargs,
             'spin': self.ints.mol.spin,
             'verbose': self.verbose,
         }
@@ -872,7 +884,7 @@ class DMET:
         return nelec_dmet - nelec_target
 
     def selfconsistent(self):
-        if self.method in ('QD-NEVPT2', 'PC-NEVPT2'):
+        if self.method in ('QD-NEVPT2', 'PC-NEVPT2', 'MR-ADC'):
             raise RuntimeError(
                 f"Method '{self.method}' is only compatible with one-shot DMET (oneshot()). "
                 f"Self-consistent dmet is not supported: {self.method} is a perturbative "

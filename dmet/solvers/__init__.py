@@ -50,6 +50,13 @@ def _run_qdnevpt2(task):
             'rdm1': rdm1, 'qdnevpt2_res': qdnevpt2_res}
 
 
+def _run_mradc(task):
+    from prism.dmet.solvers import mradc
+    energy, rdm1, mradc_res = mradc.execute(task)
+    return {'counter': task['counter'], 'energy': energy,
+            'rdm1': rdm1, 'mradc_res': mradc_res}
+
+
 def _run_pcnevpt2(task):
     from prism.dmet.solvers import pcnevpt2
     energy, rdm1, pcnevpt2_res = pcnevpt2.execute(task)
@@ -64,6 +71,7 @@ SOLVERS = {
     'CASSCF': _run_casscf,
     'QD-NEVPT2': _run_qdnevpt2,
     'PC-NEVPT2': _run_pcnevpt2,
+    'MR-ADC': _run_mradc,
 }
 
 
