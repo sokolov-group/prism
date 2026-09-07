@@ -22,7 +22,7 @@ import numpy as np
 
 class FragmentBuilder:
 
-    _NEEDS_DM_METHODS = frozenset({'CASSCF', 'NEVPT2', 'QD-NEVPT2', 'PC-NEVPT2'})
+    _NEEDS_DM_METHODS = frozenset({'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2'})
 
     def __init__(self, ints, helper, fragments, method, num_bath_orbs, bath_tol,
                  fragment_methods=None):

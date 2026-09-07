@@ -25,13 +25,24 @@ import prism.lib.logger as logger
 
 
 def construct_p_list(mol, pmol):
-    norb = mol.nao_nr()
-    p_list = np.zeros((norb,), dtype=int)
-    for ia, (_, _, ao_start, ao_stop) in enumerate(mol.aoslice_by_atom()):
-        if ao_stop > ao_start:
-            p_list[ao_start:ao_stop] = 1
+    # Mark each working-basis AO that also belongs to the minimal reference (pmol):
+    # 1 if the AO matches a reference function, 0 if it is an extra orbital handled
+    # by the complement space. pmol drops zero-width (ghost/ECP) atoms, so map its
+    # atoms back to the parent index and match on (atom, shell, m), not on a shifted
+    # atom index.
+    kept_atoms = [ia for ia, (_, _, ao_start, ao_stop) in enumerate(mol.aoslice_by_atom())
+                  if ao_stop > ao_start]
+    ref = set()
+    for atom_id, _, nl, m in pmol.ao_labels(fmt=None):
+        ref.add((kept_atoms[atom_id], nl, m))
+    p_list = np.zeros((mol.nao_nr(),), dtype=int)
+    for i, (atom_id, _, nl, m) in enumerate(mol.ao_labels(fmt=None)):
+        if (atom_id, nl, m) in ref:
+            p_list[i] = 1
     if np.sum(p_list) != pmol.nao_nr():
-        raise RuntimeError("Projector orbital count mismatch.")
+        raise RuntimeError(
+            f"Reference-basis orbital count mismatch: matched {int(np.sum(p_list))} "
+            f"of {pmol.nao_nr()} reference functions.")
     return p_list
 
 

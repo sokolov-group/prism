@@ -102,11 +102,8 @@ class LocalIntegrals:
                 if ao_rotation is not None:
                     self.ao2loc = np.dot(self.ao2loc, ao_rotation.T)
             if self._which == 'boys':
-                old_verbose = self.mol.verbose
-                self.mol.verbose = 5
                 loc = lo.Boys(self.mol, self.ao2loc)
                 loc.conv_tol = localization_threshold
-                self.mol.verbose = old_verbose
                 self.ao2loc = loc.kernel()
             self.ti_ok = False
         if self._which == 'lowdin':

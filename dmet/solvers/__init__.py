@@ -19,7 +19,7 @@
 
 PARALLEL_ELIGIBLE = frozenset({
     'ED', 'FCI', 'flag_rhf',
-    'CASSCF', 'NEVPT2', 'QD-NEVPT2', 'PC-NEVPT2',
+    'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2',
 })
 
 
@@ -34,7 +34,6 @@ class SolverDispatcher:
             'ED': SolverDispatcher._run_fci,
             'FCI': SolverDispatcher._run_fci,
             'CASSCF': SolverDispatcher._run_casscf,
-            'NEVPT2': SolverDispatcher._run_nevpt2,
             'QD-NEVPT2': SolverDispatcher._run_qdnevpt2,
             'PC-NEVPT2': SolverDispatcher._run_pcnevpt2,
         }
@@ -65,13 +64,6 @@ class SolverDispatcher:
         energy, rdm1, cas_res = casscf.execute(task)
         return {'counter': task['counter'], 'energy': energy,
                 'rdm1': rdm1, 'cas_res': cas_res}
-
-    @staticmethod
-    def _run_nevpt2(task):
-        from prism.dmet.solvers import nevpt2
-        energy, rdm1, nevpt2_res = nevpt2.execute(task)
-        return {'counter': task['counter'], 'energy': energy,
-                'rdm1': rdm1, 'nevpt2_res': nevpt2_res}
 
     @staticmethod
     def _run_qdnevpt2(task):
