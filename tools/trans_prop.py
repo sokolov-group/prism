@@ -101,17 +101,26 @@ def print_osc_strength(interface, osc_str):
 
     interface.log.info(separator)
 
+def _molden_basis(interface):
+    # Molecule to write orbitals for, and the orbitals in its AO basis.
+    # An embedded calculation supplies the full molecule and the transform to its AOs.
+    ao2emb = getattr(interface, 'emb_ao2emb', None)
+    if ao2emb is None:
+        return interface.mol, interface.mo
+    return interface.emb_mol, ao2emb @ interface.mo
+
 def compute_dyson(interface, X):
     '''
     Computes Dyson orbitals given an interface object (source of MO coefficients
     and PySCF mol object), and an array of spectroscopic amplitudes.
     '''
     interface.log.note("\nComputing Dyson orbitals...")
-    dyson_mos = np.dot(interface.mo, X)
+    mol, mo = _molden_basis(interface)
+    dyson_mos = np.dot(mo, X)
 
     filename = os.path.basename(sys.argv[0])
     name = os.path.splitext(filename)[0]
-    interface.molden.from_mo(interface.mol, f'{name}_dyson.molden', dyson_mos)
+    interface.molden.from_mo(mol, f'{name}_dyson.molden', dyson_mos)
 
     interface.log.note(f"Dyson orbitals written to {name}_dyson.molden")
 
@@ -149,8 +158,9 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1):
     interface.log.info(f"   Renormalized S_HE/Z_HE:  {S/Z:.6f} / {1.0: .6f}")
 
     # MO to AO
-    C_hole = interface.mo @ U
-    C_particle = interface.mo @ V
+    mol, mo = _molden_basis(interface)
+    C_hole = mo @ U
+    C_particle = mo @ V
     n_nto = C_hole.shape[1]
 
     # phase consistency (relative to largest-magnitude AO coefficient)
@@ -170,8 +180,8 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1):
     input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
     filename = f"{input_file}_nto_S{initial_state}_S{target_state}.molden"
     with open(filename, "w") as f:
-        interface.molden.header(interface.mol, f)
-        interface.molden.orbital_coeff(interface.mol, f, C_nto, occ=occ_nto)
+        interface.molden.header(mol, f)
+        interface.molden.orbital_coeff(mol, f, C_nto, occ=occ_nto)
 
     interface.log.note(f"NTOs written to {filename}")
 

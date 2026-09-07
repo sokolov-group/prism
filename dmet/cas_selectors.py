@@ -62,7 +62,7 @@ def set_reference_no_scf(mf, dm, nelec, spin, log=None):
     fock = np.asarray(mf.get_fock(dm=dm_ref))
 
     # A mean-field density is degenerate within each occupation block, so diagonalize the
-    # Fock there to fix the ordering. The density is invariant under these rotations.
+    # Fock there to set the ordering. The density is unchanged by these rotations.
     mo_energy = np.zeros(mo.shape[1])
     for start, stop in ((0, ndocc), (ndocc, nocc), (nocc, mo.shape[1])):
         if stop <= start:

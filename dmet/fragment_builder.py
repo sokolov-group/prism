@@ -27,7 +27,7 @@ class FragmentBuilder:
 
     def __init__(self, ints, helper, fragments, method, num_bath_orbs, bath_tol,
                  fragment_methods=None, core_occ_tol=None,
-                 keep_degenerate=False, deg_rtol=1e-6, needs_soc=False,
+                 keep_degenerate=False, deg_rtol=1e-6, needs_embedding_data=False,
                  embedded_ref_dm=None):
         self._ints = ints
         self._helper = helper
@@ -39,7 +39,7 @@ class FragmentBuilder:
         self._core_occ_tol = core_occ_tol
         self._keep_degenerate = keep_degenerate
         self._deg_rtol = deg_rtol
-        self._needs_soc = needs_soc
+        self._needs_embedding_data = needs_embedding_data
         self._embedded_ref_dm = embedded_ref_dm
 
     def build(self, counter, one_rdm, chempot_imp):
@@ -94,9 +94,9 @@ class FragmentBuilder:
         if self._method in self._NEEDS_DIP_METHODS:
             dip_mom_ao = self._ints.dmet_dip_mom(loc_2_dmet, norb_in_imp)
 
-        soc_data = None
-        if self._needs_soc:
-            soc_data = self._ints.dmet_soc_data(loc_2_dmet, norb_in_imp, core_1rdm_loc)
+        embedding_data = None
+        if self._needs_embedding_data:
+            embedding_data = self._ints.dmet_embedding_data(loc_2_dmet, norb_in_imp, core_1rdm_loc)
 
         embedded_ref = None
         if self._embedded_ref_dm is not None:
@@ -118,7 +118,7 @@ class FragmentBuilder:
             'dmet_tei': dmet_tei,
             'dm_guess_rhf': dm_guess_rhf,
             'dip_mom_ao': dip_mom_ao,
-            'soc_data': soc_data,
+            'embedding_data': embedding_data,
             'embedded_ref': embedded_ref,
             'bath_spectrum': bath_spectrum,
             'method_key': method_key,
