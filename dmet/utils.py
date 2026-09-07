@@ -19,7 +19,7 @@
 
 import os
 import sys
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 
 
 @contextmanager

@@ -30,13 +30,13 @@ class SolverDispatcher:
         method = task['method']
 
         dispatch = {
-            'flag_rhf'  : SolverDispatcher._run_rhf,
-            'ED'        : SolverDispatcher._run_fci,
-            'FCI'       : SolverDispatcher._run_fci,
-            'CASSCF'    : SolverDispatcher._run_casscf,
-            'NEVPT2'    : SolverDispatcher._run_nevpt2,
-            'QD-NEVPT2' : SolverDispatcher._run_qdnevpt2,
-            'PC-NEVPT2' : SolverDispatcher._run_pcnevpt2,
+            'flag_rhf': SolverDispatcher._run_rhf,
+            'ED': SolverDispatcher._run_fci,
+            'FCI': SolverDispatcher._run_fci,
+            'CASSCF': SolverDispatcher._run_casscf,
+            'NEVPT2': SolverDispatcher._run_nevpt2,
+            'QD-NEVPT2': SolverDispatcher._run_qdnevpt2,
+            'PC-NEVPT2': SolverDispatcher._run_pcnevpt2,
         }
 
         if method not in dispatch:

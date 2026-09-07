@@ -17,12 +17,14 @@
 #
 
 import sys
+from contextlib import nullcontext
+
 import numpy as np
 from pyscf import ao2mo, gto, scf, mcscf
 from pyscf import fci as pyscf_fci
 
 import prism.lib.logger as logger
-from prism.dmet.utils import silent_stdout, nullcontext
+from prism.dmet.utils import silent_stdout
 from prism.dmet.cas_selectors import natorb_active_space, fix_cas_spin, multiseed_casscf
 
 
@@ -68,7 +70,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         nelecas = nel
     if cas_select not in ('energy', 'natorb'):
         raise ValueError(
-            f"casscf::solve: unknown cas_select='{cas_select}'. Valid: ['energy', 'natorb']")
+            f"Invalid cas_select='{cas_select}'. Valid: ['energy', 'natorb']")
 
     log = logger.Logger(sys.stdout, verbose)
     printoutput = verbose >= logger.INFO
@@ -76,18 +78,23 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
     _spin = spin if spin is not None else (nel % 2)
     _use_rohf = (_spin != 0)
 
-    assert ncas <= norb, f"casscf::solve: ncas ({ncas}) cannot exceed norb ({norb})"
-    assert nelecas <= nel, f"casscf::solve: nelecas ({nelecas}) cannot exceed nel ({nel})"
+    if ncas > norb:
+        raise ValueError(f"Invalid ncas={ncas}: cannot exceed norb={norb}.")
+    if nelecas > nel:
+        raise ValueError(f"Invalid nelecas={nelecas}: cannot exceed nel={nel}.")
     if not _use_rohf:
-        assert nel % 2 == 0, "casscf::solve: nel must be even (RHF reference required)"
-        assert (nel - nelecas) % 2 == 0, \
-            "casscf::solve: (nel - nelecas) must be even (frozen core must be closed-shell)"
+        if nel % 2 != 0:
+            raise ValueError(f"Invalid nel={nel}: must be even (RHF reference required).")
+        if (nel - nelecas) % 2 != 0:
+            raise ValueError(
+                "Invalid nel/nelecas parity: (nel - nelecas) must be even "
+                "(frozen core must be closed-shell).")
 
     if sa_nstates > 1:
         if sa_weights is None:
             sa_weights = [1.0 / sa_nstates] * sa_nstates
-        assert len(sa_weights) == sa_nstates, \
-            "casscf::solve: len(sa_weights) must equal sa_nstates"
+        if len(sa_weights) != sa_nstates:
+            raise ValueError("Invalid sa_weights: length must equal sa_nstates.")
         sa_weights = np.array(sa_weights, dtype=float)
         sa_weights /= sa_weights.sum()
     else:
@@ -110,45 +117,45 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         if _use_rohf:
             mf = scf.ROHF(mol)
-            log.info("casscf::solve : Using ROHF reference (spin=%d, nel=%d)" % (_spin, nel))
+            log.info("Using ROHF reference (spin=%d, nel=%d)" % (_spin, nel))
         else:
             mf = scf.RHF(mol)
 
         mf.get_hcore = lambda *args: fock_copy
-        mf.get_ovlp  = lambda *args: np.eye(norb)
-        mf._eri      = ao2mo.restore(8, tei, norb)
+        mf.get_ovlp = lambda *args: np.eye(norb)
+        mf._eri = ao2mo.restore(8, tei, norb)
         # Level shift opens the near-degenerate trap gap for a deterministic embedded SCF.
         mf.level_shift = embed_level_shift
         mf.scf(dm_guess_rhf)
-        dm_loc = np.dot(np.dot(mf.mo_coeff, np.diag(mf.mo_occ)), mf.mo_coeff.T)
+        dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
         if not mf.converged:
             mf.max_cycle = 300
             mf.diis_space = 12
             mf.scf(dm_loc)
-            dm_loc = np.dot(np.dot(mf.mo_coeff, np.diag(mf.mo_occ)), mf.mo_coeff.T)
+            dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
         if embed_level_shift != 0.0:
             # Confirm the shifted fixed point is also a stationary point of the real
             # (unshifted) Hamiltonian; if it moves, the shift masked the instability.
             e_shifted = mf.e_tot
             mf.level_shift = 0.0
             mf.scf(dm_loc)
-            dm_loc = np.dot(np.dot(mf.mo_coeff, np.diag(mf.mo_occ)), mf.mo_coeff.T)
-            log.info("casscf::solve : level-shift verification: E(shift=%s)=%.10f  "
+            dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
+            log.info("level-shift verification: E(shift=%s)=%.10f  "
                      "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
                      % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
 
         if rohf_stability and _use_rohf:
             _stabilize_rohf(mf, tag='casscf::solve', log=log)
             # mf.make_rdm1() is spin-resolved (2,norb,norb) for ROHF; the einsum below needs 2D.
-            dm_loc = np.dot(np.dot(mf.mo_coeff, np.diag(mf.mo_occ)), mf.mo_coeff.T)
+            dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
 
-        numPairs = nel // 2
+        num_pairs = nel // 2
         fock_loc = (fock_copy
                     + np.einsum('ijkl,ij->kl', tei, dm_loc)
                     - 0.5 * np.einsum('ijkl,ik->jl', tei, dm_loc))
         eigvals = np.linalg.eigvalsh(fock_loc)
         eigvals.sort()
-        log.info("casscf::solve : RHF homo-lumo gap = %s" % (eigvals[numPairs] - eigvals[numPairs - 1]))
+        log.info("RHF HOMO-LUMO gap: %s" % (eigvals[num_pairs] - eigvals[num_pairs - 1]))
 
         # Skip selection when a warm-restart MO guess is supplied: mc.kernel(mo_guess)
         # would overwrite the reordered mo_coeff anyway.
@@ -174,7 +181,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         if mo_natorb is not None:
             mc.mo_coeff = mo_natorb
-            log.info("casscf::solve : CAS selection by %s, CAS(%d,%d)" % (cas_select, nelecas, ncas))
+            log.info("CAS selection by %s, CAS(%d,%d)" % (cas_select, nelecas, ncas))
 
         _mo0 = mo_guess if mo_guess is not None else None
         _ci0 = ci_guess if ci_guess is not None else None
@@ -201,16 +208,16 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
                 rdm1_cas += w * r1
                 rdm2_cas += w * r2
             e_states = np.array(mc.e_states)
-            e_tot    = mc.e_tot   # weighted average
-            log.info("\ncasscf::solve : SA-CASSCF state energies:")
+            e_tot = mc.e_tot   # weighted average
+            log.info("\nSA-CASSCF state energies:")
             for i, e in enumerate(e_states):
                 log.info("  State %d: %.10f Ha  (weight=%.4f)" % (i, e, sa_weights[i]))
             log.info("  Weighted average: %.10f Ha" % e_tot)
         else:
             rdm1_cas, rdm2_cas = ci_solver_base.make_rdm12(mc.ci, ncas, _nelecas_fci)
             e_states = None
-            e_tot    = mc.e_tot
-            log.info("\ncasscf::solve : CASSCF energy = %.10f Ha" % e_tot)
+            e_tot = mc.e_tot
+            log.info("\nCASSCF energy: %.10f Ha" % e_tot)
             log.info("  ncore=%d, ncas=%d, nelecas=%d" % (ncore, ncas, nelecas))
 
         nmo = mf.mo_coeff.shape[1]
@@ -233,7 +240,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         dm2_mo[ncore:ncore+ncas, ncore:ncore+ncas,
                ncore:ncore+ncas, ncore:ncore+ncas] = rdm2_cas
 
-        log.info("casscf::solve : Full-space 1-RDM trace = %.6f" % np.trace(dm1_mo))
+        log.info("Full-space 1-RDM trace: %.6f" % np.trace(dm1_mo))
 
         # Rotate from MO basis to local dmet orbital basis.
         C = mc.mo_coeff
@@ -254,17 +261,17 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         )
 
     cas_results = {
-        'e_tot'      : e_tot,
-        'e_states'   : e_states,
-        'e_imp'      : impurity_energy,
-        'ncas'       : ncas,
-        'nelecas'    : nelecas,
-        'ncore'      : mc.ncore,
-        'nstates'    : sa_nstates,
-        'weights'    : sa_weights,
-        'ci'         : mc.ci,
-        'mo_coeff'   : mc.mo_coeff,
-        'cas_select' : cas_select,
+        'e_tot': e_tot,
+        'e_states': e_states,
+        'e_imp': impurity_energy,
+        'ncas': ncas,
+        'nelecas': nelecas,
+        'ncore': mc.ncore,
+        'nstates': sa_nstates,
+        'weights': sa_weights,
+        'ci': mc.ci,
+        'mo_coeff': mc.mo_coeff,
+        'cas_select': cas_select,
     }
 
     return impurity_energy, pyscf_rdm1, cas_results

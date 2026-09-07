@@ -17,18 +17,20 @@
 #
 
 import sys
+from contextlib import nullcontext
+
 import numpy as np
 from pyscf import ao2mo, gto, scf, mcscf
 
 import prism.lib.logger as logger
-from prism.dmet.utils import silent_stdout, nullcontext
+from prism.dmet.utils import silent_stdout
 from prism.dmet.cas_selectors import natorb_active_space, fix_cas_spin, multiseed_casscf
 from prism.dmet.solvers.casscf import _stabilize_rohf
 
 _eV = 27.21138602
 
 
-def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
+def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           ncas, nelecas,
           sa_nstates=3, sa_weights=None,
           chempot_imp=0.0, verbose=logger.INFO,
@@ -56,7 +58,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         )
     if cas_select not in ('energy', 'natorb'):
         raise ValueError(
-            f"qdnevpt2::solve: unknown cas_select='{cas_select}'. Valid: ['energy', 'natorb']")
+            f"Invalid cas_select='{cas_select}'. Valid: ['energy', 'natorb']")
 
     if sa_weights is None:
         sa_weights = [1.0 / sa_nstates] * sa_nstates
@@ -64,7 +66,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
     sa_weights /= sa_weights.sum()
 
     casscf_kwargs = casscf_kwargs or {}
-    nevpt_kwargs  = nevpt_kwargs  or {}
+    nevpt_kwargs = nevpt_kwargs  or {}
 
     log = logger.Logger(sys.stdout, verbose)
     printoutput = verbose >= logger.INFO
@@ -89,9 +91,9 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         mf = scf.ROHF(mol) if _use_rohf else scf.RHF(mol)
         mf.get_hcore = lambda *args: fock_copy
-        mf.get_ovlp  = lambda *args: np.eye(norb)
-        mf._eri      = ao2mo.restore(8, tei, norb)
-        mf.verbose   = 4 if printoutput else 0
+        mf.get_ovlp = lambda *args: np.eye(norb)
+        mf._eri = ao2mo.restore(8, tei, norb)
+        mf.verbose = 4 if printoutput else 0
         # Level shift opens the near-degenerate trap gap so the embedded SCF lands in
         # one basin deterministically rather than tipping on BLAS noise (default 0 = off).
         mf.level_shift = embed_level_shift
@@ -106,13 +108,13 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
             e_shifted = mf.e_tot
             mf.level_shift = 0.0
             mf.scf(mf.make_rdm1())
-            log.info("qdnevpt2::solve : level-shift verification: E(shift=%s)=%.10f  "
+            log.info("level-shift verification: E(shift=%s)=%.10f  "
                      "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
                      % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
         if rohf_stability and _use_rohf:
             _stabilize_rohf(mf, tag='qdnevpt2::solve', log=log)
         if _use_rohf:
-            log.info("qdnevpt2::solve : embedded ROHF (spin=%d, nel=%d, norb=%d)"
+            log.info("embedded ROHF (spin=%d, nel=%d, norb=%d)"
                      % (_spin, nel, norb))
 
         mo_natorb = None
@@ -132,7 +134,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         if mo_natorb is not None:
             mc.mo_coeff = mo_natorb
-            log.info("qdnevpt2::solve : CAS selection by %s, CAS(%d,%d)"
+            log.info("CAS selection by %s, CAS(%d,%d)"
                      % (cas_select, nelecas, ncas))
 
         if cas_multiseed:
@@ -140,7 +142,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         else:
             mc.kernel()
 
-        log.info("\nqdnevpt2::solve : embedded SA-CASSCF (%d states, ncas=%d, nelecas=%d)"
+        log.info("\nembedded SA-CASSCF (%d states, ncas=%d, nelecas=%d)"
                  % (sa_nstates, ncas, nelecas))
         for i, e in enumerate(mc.e_states):
             log.info("  State %d: %.10f Ha  (weight=%.4f)" % (i, e, sa_weights[i]))
@@ -169,10 +171,10 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         e_tot, e_corr, _ = nevpt_obj.kernel()
 
-        log.info("\nqdnevpt2::solve : QD-NEVPT2 state energies (excitation = state - state 0):")
+        log.info("\nQD-NEVPT2 state energies (excitation = state - state 0):")
         for i, (et, ec) in enumerate(zip(e_tot, e_corr)):
             de_ev = (et - e_tot[0]) * _eV
-            log.info("  State %d: E_tot = %.10f Ha  dE = %+.4f eV" % (i, et, de_ev))
+            log.info("  State %d: E_tot %.10f Ha, dE %+.4f eV" % (i, et, de_ev))
 
     return e_tot, e_corr, mc, nevpt_obj
 
@@ -182,8 +184,6 @@ def execute(task):
     # forwarded to the Prism NEVPT object via setattr.
     _kw = dict(task.get('qdnevpt2_kwargs', {}))
     e_tot, e_corr, mc, nevpt_obj = solve(
-        task['const'],
-        task['dmet_oei'],
         task['dmet_fock'],
         task['dmet_tei'],
         task['norb'],
@@ -219,9 +219,9 @@ def execute(task):
 
     rdm1 = mc.make_rdm1()
     qdnevpt2_res = {
-        'e_tot' : e_tot,
+        'e_tot': e_tot,
         'e_corr': e_corr,
-        'mc'    : mc,
-        'nevpt' : nevpt_obj,
+        'mc': mc,
+        'nevpt': nevpt_obj,
     }
     return e_tot[0], rdm1, qdnevpt2_res

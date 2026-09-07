@@ -38,23 +38,23 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf, chempot_imp=0.0)
     mf.get_ovlp = lambda *args: np.eye(norb)
     mf._eri = ao2mo.restore(8, tei, norb)
     mf.scf(dm_guess_rhf)
-    dm_loc = np.dot(np.dot(mf.mo_coeff, np.diag(mf.mo_occ)), mf.mo_coeff.T)
+    dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
     if not mf.converged:
         mf.max_cycle = 300
         mf.diis_space = 12
         mf.scf(dm_loc)
 
-    RDM1 = mf.make_rdm1()
-    JK   = mf.get_veff(None, dm=RDM1)
+    rdm1 = mf.make_rdm1()
+    veff = mf.get_veff(None, dm=rdm1)
 
-    # Half-projector: 0.5*(oei + fock) avoids double-counting JK.
+    # Half-projector: 0.5*(oei + fock) avoids double-counting veff.
     impurity_energy = const \
-        + 0.25 * np.einsum('ji,ij->', RDM1[:, :nimp], fock[:nimp, :] + oei[:nimp, :]) \
-        + 0.25 * np.einsum('ji,ij->', RDM1[:nimp, :], fock[:, :nimp] + oei[:, :nimp]) \
-        + 0.25 * np.einsum('ji,ij->', RDM1[:, :nimp], JK[:nimp, :]) \
-        + 0.25 * np.einsum('ji,ij->', RDM1[:nimp, :], JK[:, :nimp])
+        + 0.25 * np.einsum('ji,ij->', rdm1[:, :nimp], fock[:nimp, :] + oei[:nimp, :]) \
+        + 0.25 * np.einsum('ji,ij->', rdm1[:nimp, :], fock[:, :nimp] + oei[:, :nimp]) \
+        + 0.25 * np.einsum('ji,ij->', rdm1[:, :nimp], veff[:nimp, :]) \
+        + 0.25 * np.einsum('ji,ij->', rdm1[:nimp, :], veff[:, :nimp])
 
-    return (impurity_energy, RDM1)
+    return impurity_energy, rdm1
 
 
 def execute(task):
