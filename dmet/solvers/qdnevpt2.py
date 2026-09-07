@@ -1,0 +1,227 @@
+# Copyright 2026 Prism Developers. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+#
+# See the License file for the specific language governing
+# permissions and limitations.
+#
+# Available at https://github.com/sokolov-group/prism
+#
+# Authors: Bryce Pickett <pickettosu@gmail.com>
+#
+
+import sys
+import numpy as np
+from pyscf import ao2mo, gto, scf, mcscf
+
+import prism.lib.logger as logger
+from prism.dmet.utils import silent_stdout, nullcontext
+from prism.dmet.cas_selectors import natorb_active_space, fix_cas_spin, multiseed_casscf
+from prism.dmet.solvers.casscf import _stabilize_rohf
+
+_eV = 27.21138602
+
+
+def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
+          ncas, nelecas,
+          sa_nstates=3, sa_weights=None,
+          chempot_imp=0.0, verbose=logger.INFO,
+          prism_backend='opt_einsum',
+          nfrozen=None,
+          compute_singles=False,
+          s_thresh_singles=1e-8,
+          s_thresh_doubles=1e-8,
+          select_reference=None,
+          casscf_kwargs=None,
+          nevpt_kwargs=None,
+          spin=None,
+          cas_select='energy',
+          embed_level_shift=0.0, rohf_stability=False, cas_multiseed=False,
+          cas_spin=None, cas_spin_shift=0.2,
+          natorb_occ_thresh=0.02, natorb_max_superset=None,
+          deg_tol=1e-3, casci_conv_tol=1e-10):
+    import prism.interface
+    import prism.nevpt
+
+    if sa_nstates < 2:
+        raise ValueError(
+            "QD-NEVPT2 requires sa_nstates >= 2. "
+            "For single-state NEVPT2 use method='NEVPT2' or method='PC-NEVPT2'."
+        )
+    if cas_select not in ('energy', 'natorb'):
+        raise ValueError(
+            f"qdnevpt2::solve: unknown cas_select='{cas_select}'. Valid: ['energy', 'natorb']")
+
+    if sa_weights is None:
+        sa_weights = [1.0 / sa_nstates] * sa_nstates
+    sa_weights = np.array(sa_weights, dtype=float)
+    sa_weights /= sa_weights.sum()
+
+    casscf_kwargs = casscf_kwargs or {}
+    nevpt_kwargs  = nevpt_kwargs  or {}
+
+    log = logger.Logger(sys.stdout, verbose)
+    printoutput = verbose >= logger.INFO
+
+    _spin = spin if spin is not None else (nel % 2)
+    _use_rohf = (_spin != 0)
+
+    fock_copy = fock.copy()
+    if chempot_imp != 0.0:
+        for orb in range(nimp):
+            fock_copy[orb, orb] -= chempot_imp
+
+    ctx = silent_stdout() if not printoutput else nullcontext()
+
+    with ctx:
+        mol = gto.Mole()
+        mol.build(verbose=0)
+        mol.atom.append(('C', (0, 0, 0)))
+        mol.nelectron = nel
+        mol.spin = _spin
+        mol.incore_anyway = True
+
+        mf = scf.ROHF(mol) if _use_rohf else scf.RHF(mol)
+        mf.get_hcore = lambda *args: fock_copy
+        mf.get_ovlp  = lambda *args: np.eye(norb)
+        mf._eri      = ao2mo.restore(8, tei, norb)
+        mf.verbose   = 4 if printoutput else 0
+        # Level shift opens the near-degenerate trap gap so the embedded SCF lands in
+        # one basin deterministically rather than tipping on BLAS noise (default 0 = off).
+        mf.level_shift = embed_level_shift
+        mf.scf(dm_guess_rhf)
+        if not mf.converged:
+            mf.max_cycle = 300
+            mf.diis_space = 12
+            mf.scf(mf.make_rdm1())
+        if embed_level_shift != 0.0:
+            # Confirm the shifted fixed point is also a stationary point of the real
+            # (unshifted) Hamiltonian; if it moves, the shift masked the instability.
+            e_shifted = mf.e_tot
+            mf.level_shift = 0.0
+            mf.scf(mf.make_rdm1())
+            log.info("qdnevpt2::solve : level-shift verification: E(shift=%s)=%.10f  "
+                     "E(shift removed, reconverged)=%.10f  dE=%.2e Ha"
+                     % (embed_level_shift, e_shifted, mf.e_tot, abs(mf.e_tot - e_shifted)))
+        if rohf_stability and _use_rohf:
+            _stabilize_rohf(mf, tag='qdnevpt2::solve', log=log)
+        if _use_rohf:
+            log.info("qdnevpt2::solve : embedded ROHF (spin=%d, nel=%d, norb=%d)"
+                     % (_spin, nel, norb))
+
+        mo_natorb = None
+        if cas_select == 'natorb':
+            mo_natorb, ncas, nelecas = natorb_active_space(
+                mf, ncas, occ_thresh=natorb_occ_thresh, max_superset=natorb_max_superset,
+                sa_nstates=sa_nstates, cas_spin=cas_spin, cas_spin_shift=cas_spin_shift,
+                deg_tol=deg_tol, conv_tol=casci_conv_tol, log=log)
+
+        mc = mcscf.CASSCF(mf, ncas, nelecas)
+        mc = mcscf.state_average_(mc, weights=sa_weights.tolist())
+        mc.verbose = 5 if printoutput else 0
+        for key, val in casscf_kwargs.items():
+            setattr(mc, key, val)
+        if cas_spin is not None:
+            fix_cas_spin(mc.fcisolver, cas_spin, cas_spin_shift)
+
+        if mo_natorb is not None:
+            mc.mo_coeff = mo_natorb
+            log.info("qdnevpt2::solve : CAS selection by %s, CAS(%d,%d)"
+                     % (cas_select, nelecas, ncas))
+
+        if cas_multiseed:
+            multiseed_casscf(mc, mc.mo_coeff, log=log)
+        else:
+            mc.kernel()
+
+        log.info("\nqdnevpt2::solve : embedded SA-CASSCF (%d states, ncas=%d, nelecas=%d)"
+                 % (sa_nstates, ncas, nelecas))
+        for i, e in enumerate(mc.e_states):
+            log.info("  State %d: %.10f Ha  (weight=%.4f)" % (i, e, sa_weights[i]))
+        log.info("  SA-weighted e_tot: %.10f Ha" % mc.e_tot)
+
+        interface = prism.interface.PYSCF(
+            mf, mc,
+            backend=prism_backend,
+            select_reference=select_reference,
+        )
+
+        nevpt_obj = prism.nevpt.QDNEVPT(interface)
+        nevpt_obj.compute_singles_amplitudes = compute_singles
+        nevpt_obj.s_thresh_singles = s_thresh_singles
+        nevpt_obj.s_thresh_doubles = s_thresh_doubles
+        # Dummy mol has no real AO basis; stub out osc_strengths so print_results
+        # does not crash. All reported oscillator strengths are zero.
+        _n = sa_nstates
+        def _skip_osc():
+            nevpt_obj.properties["osc_strengths"] = np.zeros(_n - 1) if _n > 1 else None
+        nevpt_obj.compute_properties = _skip_osc
+        if nfrozen is not None:
+            nevpt_obj.nfrozen = nfrozen
+        for key, val in nevpt_kwargs.items():
+            setattr(nevpt_obj, key, val)
+
+        e_tot, e_corr, _ = nevpt_obj.kernel()
+
+        log.info("\nqdnevpt2::solve : QD-NEVPT2 state energies (excitation = state - state 0):")
+        for i, (et, ec) in enumerate(zip(e_tot, e_corr)):
+            de_ev = (et - e_tot[0]) * _eV
+            log.info("  State %d: E_tot = %.10f Ha  dE = %+.4f eV" % (i, et, de_ev))
+
+    return e_tot, e_corr, mc, nevpt_obj
+
+
+def execute(task):
+    # Named solver params are popped from qdnevpt2_kwargs; the remainder is
+    # forwarded to the Prism NEVPT object via setattr.
+    _kw = dict(task.get('qdnevpt2_kwargs', {}))
+    e_tot, e_corr, mc, nevpt_obj = solve(
+        task['const'],
+        task['dmet_oei'],
+        task['dmet_fock'],
+        task['dmet_tei'],
+        task['norb'],
+        task['nel'],
+        task['nimp'],
+        task.get('dm_guess_rhf'),
+        ncas=task.get('ncas'),
+        nelecas=task.get('nelecas'),
+        sa_nstates=task.get('sa_nstates', 3),
+        sa_weights=task.get('sa_weights'),
+        chempot_imp=task.get('chempot_imp', 0.0),
+        verbose=task.get('verbose', logger.INFO),
+        prism_backend=_kw.pop('prism_backend', 'opt_einsum'),
+        nfrozen=_kw.pop('nfrozen', None),
+        compute_singles=_kw.pop('compute_singles', False),
+        s_thresh_singles=_kw.pop('s_thresh_singles', 1e-8),
+        s_thresh_doubles=_kw.pop('s_thresh_doubles', 1e-8),
+        select_reference=_kw.pop('select_reference', None),
+        casscf_kwargs=task.get('casscf_kwargs', {}),
+        nevpt_kwargs=_kw,
+        spin=task.get('spin'),
+        cas_select=task.get('cas_select', 'energy'),
+        embed_level_shift=task.get('embed_level_shift', 0.0),
+        rohf_stability=task.get('rohf_stability', False),
+        cas_multiseed=task.get('cas_multiseed', False),
+        cas_spin=task.get('cas_spin'),
+        cas_spin_shift=task.get('cas_spin_shift', 0.2),
+        natorb_occ_thresh=task.get('natorb_occ_thresh', 0.02),
+        natorb_max_superset=task.get('natorb_max_superset'),
+        deg_tol=task.get('deg_tol', 1e-3),
+        casci_conv_tol=task.get('casci_conv_tol', 1e-10),
+    )
+
+    rdm1 = mc.make_rdm1()
+    qdnevpt2_res = {
+        'e_tot' : e_tot,
+        'e_corr': e_corr,
+        'mc'    : mc,
+        'nevpt' : nevpt_obj,
+    }
+    return e_tot[0], rdm1, qdnevpt2_res
