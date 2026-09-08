@@ -20,7 +20,7 @@
 from contextlib import nullcontext
 
 import numpy as np
-from pyscf import fci
+from pyscf import ao2mo, fci
 
 import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
@@ -51,6 +51,9 @@ def solve(const, oei, fock, tei, norb, nel, nimp, chempot_imp=0.0,
         two_rdm = cisolver.make_rdm2(fci_vector, norb, fci_nel)
 
     one_rdm = np.einsum('ijkk->ij', two_rdm) / (nel - 1)
+
+    # dmet_tei is eightfold-packed; the impurity energy contracts over all four indices.
+    tei = ao2mo.restore(1, tei, norb)
 
     # FCI uses 0.5/0.5 vs CASSCF/NEVPT2 0.25/0.125; identical only for exact wfns.
     impurity_energy = const

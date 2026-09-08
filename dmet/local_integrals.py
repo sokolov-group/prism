@@ -231,19 +231,21 @@ class LocalIntegrals:
         return 2 * np.dot(eigvecs[:, :num_pairs], eigvecs[:, :num_pairs].T)
 
     def dmet_tei(self, loc_2_dmet, num_active):
+        # Eightfold-packed, which is what the solvers hand to mf._eri. The full
+        # (n,n,n,n) form is eight times larger; solvers that need it unpack with
+        # ao2mo.restore(1, ...) for the contraction that needs it.
         if self.with_df is not None:
             # Cluster integrals from the three-index tensor, so the AO integrals are
             # never rebuilt. They carry the fitting error of the mean field.
             ao2emb = np.dot(self.ao2loc, loc_2_dmet[:, :num_active])
-            return self.with_df.ao2mo(ao2emb, compact=False).reshape(
-                num_active, num_active, num_active, num_active)
+            return ao2mo.restore(8, self.with_df.ao2mo(ao2emb, compact=True), num_active)
         if not self.eri_in_mem:
             transfo = np.dot(self.ao2loc, loc_2_dmet[:, :num_active])
             if getattr(self.mf, '_eri', None) is not None:
-                return ao2mo.incore.full(self.mf._eri, transfo, compact=False).reshape(
-                    num_active, num_active, num_active, num_active)
-            return ao2mo.outcore.full_iofree(self.mol, transfo, compact=False).reshape(
-                num_active, num_active, num_active, num_active)
-        return ao2mo.incore.full(
-            ao2mo.restore(8, self.active_eri, self.norb), loc_2_dmet[:, :num_active], compact=False
-        ).reshape(num_active, num_active, num_active, num_active)
+                return ao2mo.restore(
+                    8, ao2mo.incore.full(self.mf._eri, transfo, compact=True), num_active)
+            return ao2mo.restore(
+                8, ao2mo.outcore.full_iofree(self.mol, transfo, compact=True), num_active)
+        return ao2mo.restore(8, ao2mo.incore.full(
+            ao2mo.restore(8, self.active_eri, self.norb), loc_2_dmet[:, :num_active],
+            compact=True), num_active)

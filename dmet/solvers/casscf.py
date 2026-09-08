@@ -218,6 +218,8 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         pyscf_rdm2 = np.einsum('ck,abkl->abcl', C, pyscf_rdm2)
         pyscf_rdm2 = np.einsum('dl,abcl->abcd', C, pyscf_rdm2)
 
+        # dmet_tei is eightfold-packed; the impurity energy contracts over all four indices.
+        tei = ao2mo.restore(1, tei, norb)
         impurity_energy = (
             const
             + 0.25  * np.einsum('ij,ij->', pyscf_rdm1[:nimp, :],     fock[:nimp, :] + oei[:nimp, :])
