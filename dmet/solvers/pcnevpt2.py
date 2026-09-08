@@ -23,7 +23,7 @@ import numpy as np
 from pyscf import ao2mo, gto, scf, mcscf
 
 import prism.lib.logger as logger
-from prism.dmet.utils import silent_stdout
+from prism.dmet.utils import silent_stdout, auto_nfrozen
 from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
                                       stabilize_scf, set_reference_no_scf)
 
@@ -35,7 +35,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           sa_nstates=1, sa_weights=None,
           chempot_imp=0.0, verbose=logger.INFO,
           prism_backend='opt_einsum',
-          nfrozen=None,
+          nfrozen=None, nfrozen_cutoff=-2.0,
           compute_singles=False,
           s_thresh_singles=1e-8,
           s_thresh_doubles=1e-8,
@@ -176,6 +176,10 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             def _skip_osc():
                 nevpt_obj.properties["osc_strengths"] = np.zeros(_n - 1) if _n > 1 else None
             nevpt_obj.compute_properties = _skip_osc
+        if nfrozen == 'auto':
+            nfrozen = auto_nfrozen(mf, nfrozen_cutoff)
+            log.info("nfrozen='auto': %d embedded orbitals below %s Ha"
+                     % (nfrozen, nfrozen_cutoff))
         if nfrozen is not None:
             if nfrozen >= nel // 2:
                 raise ValueError(
@@ -215,6 +219,7 @@ def execute(task):
         verbose=task.get('verbose', logger.INFO),
         prism_backend=_kw.pop('prism_backend', 'opt_einsum'),
         nfrozen=_kw.pop('nfrozen', None),
+        nfrozen_cutoff=_kw.pop('nfrozen_cutoff', -2.0),
         compute_singles=_kw.pop('compute_singles', False),
         s_thresh_singles=_kw.pop('s_thresh_singles', 1e-8),
         s_thresh_doubles=_kw.pop('s_thresh_doubles', 1e-8),

@@ -21,6 +21,8 @@ import os
 import sys
 from contextlib import contextmanager
 
+import numpy as np
+
 
 @contextmanager
 def silent_stdout():
@@ -36,3 +38,16 @@ def silent_stdout():
         os.dup2(old_fd, sys.stdout.fileno())
         os.close(old_fd)
         os.close(devnull)
+
+
+def auto_nfrozen(mf, cutoff=-2.0):
+    """Frozen-core count for an embedded problem, from the orbital energies.
+
+    The embedded orbitals are impurity and bath orbitals, not atomic ones, so a
+    per-atom core count does not apply to them. Orbitals below the cutoff are core.
+    The default sits in the gap between the shallowest core and the deepest valence
+    orbital for main-group elements: C 1s -11.3 against 2s -0.71, O 1s -20.7 against
+    2s -1.24, Mg 2p -2.28 against 3s -0.25.
+    """
+    occupied = np.asarray(mf.mo_occ) > 0
+    return int(np.sum(np.asarray(mf.mo_energy)[occupied] < cutoff))
