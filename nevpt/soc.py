@@ -99,7 +99,12 @@ def state_interaction_soc(method):
         en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.soc, method.verbose)
 
 
-
+        #For dAB in NW2140
+        if  hasattr(method, "dAB") and method.dAB is True:
+            import NW2140.st_transition
+            method.log.info("\n\n\nCalculating Single-Triplet HSOC coupling...")
+            NW2140.st_transition.dAB(method.interface, S, method.interface.HSOC, method.interface.en_sf)
+            
     
 
 
