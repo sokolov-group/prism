@@ -323,6 +323,9 @@ it matters.
 QD-NEVPT2, PC-NEVPT2 and MR-ADC, because their result objects cannot be sent back
 from a worker process.
 
+The cluster integrals are stored eightfold-packed, which is eight times smaller than
+the full four-index array. A cluster of 600 orbitals holds them in 133 GiB.
+
 ### Printing
 
 | keyword | default | what it does |
