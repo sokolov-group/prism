@@ -302,6 +302,10 @@ Anything you put in these dicts is set as an attribute on the matching object. T
 is how you reach Prism options that DMET does not wrap, including spin-orbit
 coupling and the magnetic properties.
 
+The NEVPT2 solvers also take `nfrozen`, the frozen core of the embedded problem. It
+is sized to that problem, not to the whole cluster. `nfrozen='auto'` counts the
+embedded orbitals below `nfrozen_cutoff`, which defaults to -2.0 Ha.
+
 ### Symmetry and speed
 
 | keyword | default | what it does |
