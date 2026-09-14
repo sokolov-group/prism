@@ -271,19 +271,19 @@ def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, ve
     return en_soc, evec_soc
 
 def isc_rate(interface, S, initial_index=None, final_index=None):
-
+    '''
+    print HSOC matrix element(Coupling) from interface.HSOC
+    ********
+    INPUT:
+    S (list), spin quantum number of each state without spin-orbit coupling
+    initial_index (int or list): Initial state index, ground state should be 1
+    final_index (int or list): Final state index, ground state should be 1
+    '''
     HSOC = interface.HSOC
+    h2cm = interface.hartree_to_inv_cm  #219474.63136314
 
     interface.log.info("\nCalculating Inter-system crossing...")
-
-    if initial_index is not None:
-        if initial_index < 1 or initial_index > len(S):
-            raise ValueError("Initial index must be between 1 and the number of states")
-
-    if final_index is not None:
-        if final_index < 1 or final_index > len(S):
-            raise ValueError("Final index must be between 1 and the number of states")
-
+   
     S_total = []
     ms_total = []
     multiplicity = []
@@ -299,16 +299,29 @@ def isc_rate(interface, S, initial_index=None, final_index=None):
             ms_total.append(m)
             I_total.append(i)
 
-    print("ms_total=",ms_total)
-    print("multiplicity=",multiplicity)
 
+    pairs = []
     if initial_index is not None and final_index is not None:
-        I = initial_index - 1
-        J = final_index - 1
-        pairs = [(I, J)]
+        if not isinstance(initial_index, np.ndarray):
+            initial_index = np.array([initial_index])
+        if not isinstance(final_index, np.ndarray):
+            final_index = np.array([final_index])
+        
+        if np.any((initial_index < 1) | (initial_index > len(S))):
+            raise ValueError("Initial index must be between 1 and the number of states")
+
+        if np.any((final_index < 1) | (final_index > len(S))):
+            raise ValueError("Final index must be between 1 and the number of states")
+
+        initial_index = initial_index.flatten() -1
+        final_index   = final_index.flatten()   -1
+
+        for I in initial_index:
+            for J in final_index:
+                pairs.append((I,J))
 
     else:
-        pairs = []
+
 
         for I in range(len(S)):
 
@@ -320,9 +333,8 @@ def isc_rate(interface, S, initial_index=None, final_index=None):
 
                         pairs.append((I, J))
 
-        print("pairs =", [(I + 1, J + 1) for I, J in pairs])
-    print(pairs)
-    h2cm = 219474.63136314
+    interface.log.info("Pairs: %s", [(int(a+1), int(b+1)) for a, b in pairs])
+    interface.log.info("")
 
     for I, J in pairs:
 
@@ -341,28 +353,28 @@ def isc_rate(interface, S, initial_index=None, final_index=None):
         HSOC_target = HSOC[I_index:I_index + I_multiplicity,
                            J_index:J_index + J_multiplicity]
 
-        print("\n")
-        print("==============================================================")
-        print(
+
+        interface.log.info("======================================")
+        interface.log.info(
             "State %d (S = %.1f) -> State %d (S = %.1f)"
             % (I + 1, I_S, J + 1, J_S)
         )
-        print("==============================================================")
+        interface.log.info("======================================")
 
-        print("\nCoupling Elements <ISM|Hso|JSM'>")
-        print("----------------------------------------------------------------------------------------")
-        print(
-            " I    J    S_I    Ms_I    S_J    Ms_J       "
-            "Coupling(Hartree)       Coupling(cm-1)"
+        interface.log.info("Coupling Elements <ISM|Hso|JSM'>")
+        interface.log.info("--------------------------------------------------------------------------------------------")
+        interface.log.info(
+            "  I    J   S_I    Ms_I    S_J    Ms_J     "
+            " Coupling(Hartree)           Coupling(cm-1)"
         )
-        print("----------------------------------------------------------------------------------------")
+        interface.log.info("--------------------------------------------------------------------------------------------")
 
         for i in range(I_multiplicity):
             for j in range(J_multiplicity):
                 coupling = HSOC_target[i, j]
                 coupling_cm = coupling * h2cm
 
-                print(
+                interface.log.info(
                     "%3d  %3d  %4.1f  %6.1f  %4.1f  %6.1f   "
                     "%10.6f + %10.6fi   "
                     "%10.4f + %10.4fi"
@@ -379,6 +391,7 @@ def isc_rate(interface, S, initial_index=None, final_index=None):
                         np.imag(coupling_cm)
                     )
                 )
+        interface.log.info("\n")
 
 
 

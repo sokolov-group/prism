@@ -153,13 +153,46 @@ def print_results(nevpt):
     h2cm = nevpt.interface.hartree_to_inv_cm
 
     if nevpt.soc:
+
+        evec_soc    = nevpt.h_evec_soc
+        S = [round((spin_mult-1)/2,2) for spin_mult in nevpt.spin_mult]
+        S_total = []
+        ms_total = []
+
+        for i in range(len(S)):
+            s = S[i]
+            n = int(s*2+1)
+            for j in range(n):
+                S_total.append(s)
+                m = s-j
+                ms_total.append(m)
+
+        weight_soc = evec_soc.T * np.conj(evec_soc).T 
+        weight_soc = np.real(weight_soc)
+        weight_soc_max = np.max(weight_soc, axis=1)
+        weight_soc_max_index = np.argmax(weight_soc, axis=1)
+
+        ms_soc_max = []
+        for i in range(len(weight_soc_max_index)):
+            ms_soc_max.append(ms_total[weight_soc_max_index[i]])
+        ms_soc_max = np.array(ms_soc_max)
+
+        S_soc   = np.einsum('ai,ib,bj->aj',np.conj(evec_soc).T , np.diag(S_total) , evec_soc)
+        S_soc   = np.diag(np.real(S_soc))
+
+
         nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.soc.upper()+"-"+nevpt.method_type.upper()+"-"+nevpt.method.upper(), nevpt.interface.reference.upper()))
+        nevpt.log.info("Note that S is expected values. ms is is determined from the maximum-weight state.")
+        nevpt.log.info("-------------------------------------------------------------------------------------------------------------------------- ")
+        nevpt.log.info("  State    S    ms(weight)         E(total)           dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)         Osc Str.   ")
+        nevpt.log.info("-------------------------------------------------------------------------------------------------------------------------- ")
+
     else:
         nevpt.log.info("\nSummary of results for the %s calculation with the %s reference:" % (nevpt.method_type.upper()+"-"+nevpt.method.upper(), nevpt.interface.reference.upper()))
 
-    nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
-    nevpt.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
-    nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
+        nevpt.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
+        nevpt.log.info("------------------------------------------------------------------------------------------------------------------")
 
     e_gs = nevpt.e_tot[0]
     e_tot = nevpt.e_tot
@@ -186,10 +219,16 @@ def print_results(nevpt):
     
         de_cm = de * h2cm
         if p == 0 or abs(de) < 1e-5:
-            nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
+            if nevpt.soc:
+                nevpt.log.info("%5d  %6.1f  %5.1f(%0.2f)  %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), S_soc[p], ms_soc_max[p], weight_soc_max[p], e_tot[p], de, de_ev, " ", de_cm, " "))
+            else:
+                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
         else: 
             de_nm = 10000000 / de_cm
-            nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+            if nevpt.soc:
+                nevpt.log.info("%5d  %6.1f  %5.1f(%0.2f)  %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), S_soc[p], ms_soc_max[p], weight_soc_max[p], e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
+            else:
+                nevpt.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str[p-1]))
 
     nevpt.log.info("----------------------------------------------------------------------------------------------------------------")
 
