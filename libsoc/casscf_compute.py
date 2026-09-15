@@ -88,7 +88,10 @@ def compute_somf_soc(interface):
                         rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)  
 
         en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb,  rdm_aabb_plus, S, interface.soc, interface.verbose)
-
+    
+    #For NW2140
+    interface.en_soc = en_soc
+    
     #For dAB in NW2140
     if  hasattr(interface, "dAB") and interface.dAB is True:
         import NW2140.st_transition

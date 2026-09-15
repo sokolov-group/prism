@@ -423,6 +423,22 @@ def gtensor(interface, S, Mu, target_index = 1):
     # Define old J
     Hab_old = Mu[:,target_index_soc:target_index_soc+target_multiplicity,target_index_soc:target_index_soc+target_multiplicity]
  
+    #For 2nd qd in NW2140
+    if  hasattr(interface, "g_qd") and interface.g_qd is True:
+        import NW2140.st_transition
+        interface.log.info("\nApplying QDPT2 in g-tensor...")
+        index_qd = np.arange(target_index_soc, target_index_soc + target_multiplicity)
+        print("index_qd=",index_qd)
+        Mu_qd_all
+        Hab_old[0], H1, Hab_old[0] = NW2140.st_transition.h_qd_2nd(Mu[0], interface.en_soc, index_qd)
+        Hab_old[1], H1, Hab_old[1] = NW2140.st_transition.h_qd_2nd(Mu[1], interface.en_soc, index_qd)
+        Hab_old[2], H1, Hab_old[2] = NW2140.st_transition.h_qd_2nd(Mu[2], interface.en_soc, index_qd)
+        
+        Hab_old[0] = (Hab_old[0] + np.conj(Hab_old[0]).T)/2
+        Hab_old[1] = (Hab_old[1] + np.conj(Hab_old[1]).T)/2
+        Hab_old[2] = (Hab_old[2] + np.conj(Hab_old[2]).T)/2
+
+
     # J in new Kramer_pair basis (Use Jz to transform...)
     z_en, z_evec = np.linalg.eigh(Hab_old[2])
     Hab_new = np.einsum('ai,kib,bj->kaj',np.conj(z_evec).T ,Hab_old, z_evec)
