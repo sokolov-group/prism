@@ -13,6 +13,10 @@ def real_time_prop(nevpt, evec, etot):
 
     # Eigenvectors 
     evec = np.array(evec)
+    print("print eigen vectors = ", evec)
+    print("shape of the eigen vectors = ", evec.shape)
+    print("print eigen vector 0 = ", evec[0])
+    print("shape of the eigen vector 0 = ", evec[0].shape)
     #evec_shape = evec.shape[0]
     evec_shape = etot.shape[0]
     
@@ -43,7 +47,9 @@ def real_time_prop(nevpt, evec, etot):
 
     # wavefunction at t=0
     wfn0 = wfn.copy()
-
+    print()
+    print("wfn0 = ", wfn0)
+    print()
 
     with open('auto_correlation.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
@@ -85,7 +91,7 @@ def real_time_prop(nevpt, evec, etot):
         if nevpt.density and any(abs(t - target_time) <= time_step / 2 for target_time in nevpt.density_plot):
 
             # Time-dependent RDM for hole density
-            td_rdm1(nevpt, wfn, t)
+            td_rdm1(nevpt, wfn, evec[0], t)
             #td_rdm1_spin(nevpt, wfn, t)
 
             # Time-dependent dipole moment
@@ -151,7 +157,7 @@ def exact_propagator(nevpt, wfn, H_eff):
 
     return wfn
 
-def td_rdm1(nevpt, coeff_t, t):
+def td_rdm1(nevpt, coeff_t, evec0, t):
 
     mc = nevpt.interface.mc
     mf = nevpt.interface.mf
@@ -161,28 +167,64 @@ def td_rdm1(nevpt, coeff_t, t):
     # Compute all 1-RDMs
     rdms = nevpt.make_rdm1()
 
+    print("RDM dimension =", rdms.shape[-1])
+    print("Number of MO columns =", mo_coeff.shape[1])
     print("norm of the rdms = ", np.linalg.norm(rdms))
-    
+    print()
+
+    print()
+    print("coeff_t = ", coeff_t)
+    print()
+
     # Ground state RDM
-    rdm_init = rdms[0,0].copy().real
-    
+    #rdm_init = rdms[0,0].copy().real
+       
+    print("initial wavefunction evec0 = ", evec0)
+    print("initial wavefunction evec0 norm = ", np.linalg.norm(evec0))
+    print("shape of the evec0 = ", evec0.shape)
+    print("shape of the rdms = ", rdms.shape)
+    print()
+
+    rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms).real
+   
+    non_init, no_init = np.linalg.eigh(rdm_init)
+    rdm_init_diagonal = no_init.conj().T @ rdm_init @ no_init
+
+    print()
+    print("type of no_init = ", no_init.dtype)
+    print("shape of the no_init = ", no_init.shape)
+    print("eigen values of rdm_init = ", non_init)
+    print()
+
+    print("shape of the rdm_init = ", rdm_init.shape)
     print("mo_coeff rt= ", mo_coeff)
     print("dtype of rdm_init =", rdm_init.dtype)
     print("rdm_init = ", rdm_init)
     print("shape of the mo_coeff = ", mo_coeff.shape)
+    print("dtype of the mo_coeff = ", mo_coeff.dtype)
     print("shape of the rdms = ", rdms.shape)
+    print()
 
     # Time dependent RDM
-    #td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdms).real
+    td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdms).real
+
+    non_td, no_td = np.linalg.eigh(td_rdms)
+    td_rdms_diagonal = no_td.conj().T @ td_rdms @ no_td
+
+    print()
+    print("type of no_td = ", no_td.dtype)
+    print("shape of the no_td = ", no_td.shape)
+    print("eigen values of rdm_td = ", non_td)
+    print()
 
     # Without einsum
-    n_states = coeff_t.shape[0]
-    td_rdms = np.zeros(rdms.shape[2:], dtype=complex)
-
-    for I in range(n_states):
-        for J in range(n_states):
-            td_rdms += np.conj(coeff_t[I]) * rdms[I, J] * coeff_t[J] 
-            #td_rdms += np.conj(coeff_t[I]).T * rdms[I, I] * coeff_t[I] 
+#    n_states = coeff_t.shape[0]
+#    td_rdms = np.zeros(rdms.shape[2:], dtype=complex)
+#
+#    for I in range(n_states):
+#        for J in range(n_states):
+#            td_rdms += np.conj(coeff_t[I]) * rdms[I, J] * coeff_t[J] 
+#            #td_rdms += np.conj(coeff_t[I]).T * rdms[I, I] * coeff_t[I] 
 
 
     relative_error = (np.linalg.norm(td_rdms - td_rdms.conj().T))
@@ -191,25 +233,31 @@ def td_rdm1(nevpt, coeff_t, t):
     print("Relative Hermiticity error =", relative_error)
     print("Relative Hermiticity error1 =", relative_error1)
    
-    print("norm of the rdms = ", np.linalg.norm(td_rdms))
-
-    td_rdms = td_rdms.real
+    print("norm of the td_rdms = ", np.linalg.norm(td_rdms))
+    print()
+    #td_rdms = td_rdms.real
 
     print("dtype of td_rdms =", td_rdms.dtype)
     print("shape of the coeff_t = ", coeff_t.shape)
     print("shape of the td_rdms = ", td_rdms.shape)
-
+    print()
 
     rdm_diff = td_rdms - rdm_init 
     rdm_diff = mo_coeff @ rdm_diff @ mo_coeff.T
 
-    # density difference
-    cubegen.density(mol, f"density_rt_{t:010.6f}.cube", rdm_diff, nx=100, ny=100, nz=100)
+    rdm_diff_dia = td_rdms_diagonal - rdm_init_diagonal
+    rdm_diff_dia = mo_coeff @ rdm_diff_dia @ mo_coeff.T
 
+
+    print()
     print("rdmf_dif = ", rdm_diff)
 
     # diagonalize the time-dependent rdm
     non, no = np.linalg.eigh(rdm_diff)
+   
+    print()
+    mask = np.abs(non) > 1.0e-8 
+    print("occupation numbers (|non| > 1e-8) = ", non[mask])
 
     # print Hole density
     hole_dm = np.zeros_like(rdm_diff)
@@ -228,8 +276,12 @@ def td_rdm1(nevpt, coeff_t, t):
 
     # Transform densities to the AO basis for cube generation
     hole_dm = mo_coeff @ hole_dm @ mo_coeff.T
+    particle_dm = mo_coeff @ particle_dm @ mo_coeff.T
 
+    # cube file generations
+    cubegen.density(mol, f"density_rt_{t:010.6f}.cube", rdm_diff, nx=100, ny=100, nz=100)
     cubegen.density(mol, f"hole_density_rt_{t:010.6f}.cube", hole_dm, nx=100, ny=100, nz=100)
+    cubegen.density(mol, f"particle_density_rt_{t:010.6f}.cube", particle_dm, nx=100, ny=100, nz=100)
 
     return td_rdms
 
