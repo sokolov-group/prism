@@ -219,6 +219,12 @@ def analyze(nevpt, weight_cutoff=0.01):
             for state, trdm_state in enumerate(trdm):
                 trans_prop.compute_ntos(nevpt.interface, trdm_state, initial_state=0, target_state=state+1)
 
+    if nevpt.ad_density:
+        # GS -> ES only
+        trdm = nevpt.make_rdm1(L=0)[1:]
+        for state, trdm_state in enumerate(trdm):
+            trans_prop.compute_ad_density(nevpt.interface, trdm_state, initial_state=0, target_state=state+1)
+
     if nevpt.method_type == "qd":
         from prism.nevpt import qd_nevpt
         qd_nevpt.analyze_eigenvectors(nevpt, weight_cutoff=weight_cutoff)

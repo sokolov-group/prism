@@ -176,3 +176,50 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1):
     interface.log.note(f"NTOs written to {filename}")
 
     return weights, U, Vh
+
+def compute_ad_density(interface, trdm, initial_state=0, target_state=1):
+    '''
+    Computes attachemenr and detachment densities between two given states
+    given an interface object (source of MO coefficients
+    and PySCF mol object) and a transition density matrix.
+    '''
+
+    interface.log.info(f"\nComputing Attachement-Detachment Densities...")
+
+    # Diagonalize the density matrix
+    occ, U = np.linalg.eigh(trdm)
+
+    print()
+    print("shape of occ = ", occ.shape)
+    print("shape of U = ", U.shape)
+    print("type of occ = ", occ.dtype)
+    print("type of U = ", U.dtype)
+    print()
+
+    interface.log.info(f"State {initial_state} -> State {target_state}:")
+    #interface.log.info(f"   Occupation number (occ):               {occ: .6f}")
+
+    # Magnitudes of the negative eigenvalues
+    de_occ = np.maximum(-occ, 0.0)
+
+    # Magnitudes of the negative eigenvalues
+    at_occ = np.maximum(occ, 0.0)
+
+    print()
+    print("de_occ = ", de_occ)
+    print("at_occ = ", at_occ)
+    print("shape of de_occ = ", de_occ.dtype)
+    print("type of de _occ = ", de_occ.shape)
+    print()
+
+    # D = U @ diag(detachment_occ) @ U^\dagger
+    de_density = (U * de_occ[np.newaxis, :]) @ U.conj().T
+    at_density = (U * at_occ[np.newaxis, :]) @ U.conj().T
+
+    print("occupation numbers = ", occ)
+    print()    
+    print("Reconstruction error =", np.linalg.norm(trdm - (at_density - de_density)))
+    print("Reconstruction error =", np.linalg.norm(trdm) - np.linalg.norm(at_density - de_density))
+    print()
+
+    return 

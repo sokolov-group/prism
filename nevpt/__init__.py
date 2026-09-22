@@ -91,6 +91,7 @@ class NEVPT:
         self.spin_mult = self.ref_wfn_spin_mult   # Spin multiplicities
         self.properties = {}                      # Dictionary to store computed properties
         self.compute_ntos = False                 # Option for NTO computation
+        self.ad_density = False                   # Option for attachment-detachment densities
 
         # Integrals
         self.mo_energy = lambda:None
