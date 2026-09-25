@@ -220,10 +220,14 @@ def analyze(nevpt, weight_cutoff=0.01):
                 trans_prop.compute_ntos(nevpt.interface, trdm_state, initial_state=0, target_state=state+1)
 
     if nevpt.ad_density:
-        # GS -> ES only
-        trdm = nevpt.make_rdm1(L=0)[1:]
-        for state, trdm_state in enumerate(trdm):
-            trans_prop.compute_ad_density(nevpt.interface, trdm_state, initial_state=0, target_state=state+1)
+        if n_micro_states == 1:
+            nevpt.log.warn('Only one state provided for Atachment-Detachment analysis.')
+        else:
+            # GS -> ES only
+            trdm = nevpt.make_rdm1()
+            nevpt.log.info("\n ** Attachment and Detachment density analyssis (cutoff > 0.1) **\n")
+            for state in range(1, trdm.shape[0]):
+                trans_prop.compute_ad_density1(nevpt.interface, trdm, state)
 
     if nevpt.method_type == "qd":
         from prism.nevpt import qd_nevpt

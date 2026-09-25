@@ -177,49 +177,49 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1):
 
     return weights, U, Vh
 
-def compute_ad_density(interface, trdm, initial_state=0, target_state=1):
+def compute_ad_density1(interface, trdm, state):
     '''
-    Computes attachemenr and detachment densities between two given states
+    Computes attachement and detachment densities between two given states
     given an interface object (source of MO coefficients
     and PySCF mol object) and a transition density matrix.
     '''
+    
+    # Initial density
+    p1 = trdm[0,0]
 
-    interface.log.info(f"\nComputing Attachement-Detachment Densities...")
+    p2 = trdm[state, state]
+    delta = p1 - p2
 
     # Diagonalize the density matrix
-    occ, U = np.linalg.eigh(trdm)
+    occ, U = np.linalg.eigh(delta)
 
-    print()
-    print("shape of occ = ", occ.shape)
-    print("shape of U = ", U.shape)
-    print("type of occ = ", occ.dtype)
-    print("type of U = ", U.dtype)
-    print()
-
-    interface.log.info(f"State {initial_state} -> State {target_state}:")
-    #interface.log.info(f"   Occupation number (occ):               {occ: .6f}")
-
-    # Magnitudes of the negative eigenvalues
-    de_occ = np.maximum(-occ, 0.0)
-
-    # Magnitudes of the negative eigenvalues
+    # Detachment and attachment eigen valuess
+    de_occ = -1 * np.minimum(occ, 0.0)
     at_occ = np.maximum(occ, 0.0)
 
-    print()
-    print("de_occ = ", de_occ)
-    print("at_occ = ", at_occ)
-    print("shape of de_occ = ", de_occ.dtype)
-    print("type of de _occ = ", de_occ.shape)
-    print()
+    # Detachment and attachment densities
+    de_density = U @ np.diag(de_occ) @ U.conj().T
+    at_density = U @ np.diag(at_occ) @ U.conj().T
 
-    # D = U @ diag(detachment_occ) @ U^\dagger
-    de_density = (U * de_occ[np.newaxis, :]) @ U.conj().T
-    at_density = (U * at_occ[np.newaxis, :]) @ U.conj().T
+    # Eigen values of atachment and detachment densities
+    de_occ, U1 = np.linalg.eigh(de_density)
+    at_occ, U2 = np.linalg.eigh(at_density)
+    
+    # MO to AO
+    de = interface.mo @ de_density
+    at = interface.mo @ at_density
 
-    print("occupation numbers = ", occ)
-    print()    
-    print("Reconstruction error =", np.linalg.norm(trdm - (at_density - de_density)))
-    print("Reconstruction error =", np.linalg.norm(trdm) - np.linalg.norm(at_density - de_density))
-    print()
+    interface.log.info(f"  State {0} -> State {state}:")
+    interface.log.info("     Detachment eigenvalues : " + " ".join(f"{x:.3f}" for x in de_occ if x > 0.1))
+    interface.log.info("     Attachment eigenvalues : " + " ".join(f"{x:.3f}" for x in at_occ if x > 0.1))
 
-    return 
+    # Save to cube
+    from pyscf.tools import cubegen
+    input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+    dename = f"{input_file}_de_S{0}_S{state}.cube"
+    atname = f"{input_file}_at_S{0}_S{state}.cube"
+    cubegen.density(interface.mol, dename, de, nx=80, ny=80, nz=80)
+    cubegen.density(interface.mol, atname, at, nx=80, ny=80, nz=80)
+
+
+    return
