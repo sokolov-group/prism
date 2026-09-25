@@ -229,6 +229,7 @@ class PYSCF:
         self.unc = None
         self.properties_cas = {}
         self.HSOC = None
+        self.E_sf_spinstate = None
 
         #For ISC
         self.isc = False

@@ -144,6 +144,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     H_sf = np.diag(E_spinstate).astype('complex')
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
     interface.HSOC = HSOC
+    interface.E_sf_spinstate = E_spinstate
 
     sys.stdout.flush()
     interface.log.timer0("total %s calculation" % interface.soc, *cput0)
@@ -264,6 +265,7 @@ def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, ve
     H_sf = np.diag(E_spinstate).astype('complex')
     en_soc, evec_soc = np.linalg.eigh(HSOC+H_sf)
     interface.HSOC = HSOC
+    interface.E_sf_spinstate = E_spinstate
 
     sys.stdout.flush()
     interface.log.timer0("total %s calculation" % soc_name, *cput0)
@@ -279,8 +281,9 @@ def isc_rate(interface, S, initial_index=None, final_index=None):
     initial_index (int or list): Initial state index, ground state should be 1
     final_index (int or list): Final state index, ground state should be 1
     '''
-    HSOC = interface.HSOC
-    h2cm = interface.hartree_to_inv_cm  #219474.63136314
+    HSOC  = interface.HSOC
+    h2cm  = interface.hartree_to_inv_cm  #219474.63136314
+    en_sf = interface.E_sf_spinstate
 
     interface.log.info("\nCalculating Inter-system crossing...")
    
@@ -350,8 +353,16 @@ def isc_rate(interface, S, initial_index=None, final_index=None):
         I_ms = ms_total[I_index:I_index + I_multiplicity]
         J_ms = ms_total[J_index:J_index + J_multiplicity]
 
-        HSOC_target = HSOC[I_index:I_index + I_multiplicity,
-                           J_index:J_index + J_multiplicity]
+        indices_I = list(range(I_index, I_index + I_multiplicity))
+        indices_J = list(range(J_index, J_index + J_multiplicity))
+        H1, H2    = h_qd_2nd(HSOC, en_sf, indices_I + indices_J)
+
+        HSOC_1_target = H1[0:I_multiplicity, I_multiplicity:I_multiplicity+J_multiplicity]
+        HSOC_2_target = H2[0:I_multiplicity, I_multiplicity:I_multiplicity+J_multiplicity]
+        HSOC_tot_target = HSOC_1_target + HSOC_2_target 
+
+        #HSOC_target = HSOC[I_index:I_index + I_multiplicity,
+        #                   J_index:J_index + J_multiplicity]
 
 
         interface.log.info("======================================")
@@ -362,34 +373,47 @@ def isc_rate(interface, S, initial_index=None, final_index=None):
         interface.log.info("======================================")
 
         interface.log.info("Coupling Elements <ISM|Hso|JSM'>")
-        interface.log.info("--------------------------------------------------------------------------------------------")
+        interface.log.info("----------------------------------------------------------------------------------------------------------------------------")
         interface.log.info(
-            "  I    J   S_I    Ms_I    S_J    Ms_J     "
-            " Coupling(Hartree)           Coupling(cm-1)"
+            "  I    J   S_I    Ms_I    S_J    Ms_J   "
+            " Total Coupling(cm-1)    1st Coupling(cm-1)      2nd Coupling(cm-1)"
         )
-        interface.log.info("--------------------------------------------------------------------------------------------")
+        interface.log.info("----------------------------------------------------------------------------------------------------------------------------")
 
         for i in range(I_multiplicity):
             for j in range(J_multiplicity):
-                coupling = HSOC_target[i, j]
-                coupling_cm = coupling * h2cm
+                coupling_1    = HSOC_1_target[i, j]
+                coupling_2    = HSOC_2_target[i, j]
+                coupling_tot  = HSOC_tot_target[i, j]
+                coupling_1_cm = coupling_1   * h2cm
+                coupling_2_cm = coupling_2   * h2cm
+                coupling_tot_cm  = coupling_tot * h2cm
 
                 interface.log.info(
-                    "%3d  %3d  %4.1f  %6.1f  %4.1f  %6.1f   "
-                    "%10.6f + %10.6fi   "
-                    "%10.4f + %10.4fi"
-                    % (
-                        I + 1,
-                        J + 1,
-                        I_S,
-                        I_ms[i],
-                        J_S,
-                        J_ms[j],
-                        np.real(coupling),
-                        np.imag(coupling),
-                        np.real(coupling_cm),
-                        np.imag(coupling_cm)
-                    )
+                   "%3d  %3d  %4.1f  %6.1f  %4.1f  %6.1f   "
+                   "%10.4f %s %7.4fi  "
+                   "%10.4f %s %7.4fi  "
+                   "%10.4f %s %7.4fi"
+                   % (
+                       I + 1,
+                       J + 1,
+                       I_S,
+                       I_ms[i],
+                       J_S,
+                       J_ms[j],
+
+                       np.real(coupling_tot_cm),
+                       "+" if np.imag(coupling_tot_cm) >= 0 else "-",
+                       abs(np.imag(coupling_tot_cm)),
+
+                       np.real(coupling_1_cm),
+                       "+" if np.imag(coupling_1_cm) >= 0 else "-",
+                       abs(np.imag(coupling_1_cm)),
+
+                       np.real(coupling_2_cm),
+                       "+" if np.imag(coupling_2_cm) >= 0 else "-",
+                       abs(np.imag(coupling_2_cm)),
+                   )
                 )
         interface.log.info("\n")
 
@@ -448,6 +472,31 @@ def get_soc_integrals(interface, soc, rdm1ao):
         hsoc[comp] = -1j*(hsoc_mo[comp].astype('complex'))
 
     return hsoc 
+
+
+## Apply QDPT2 frame works to energy matrix Note that H_2 may not hermitian.
+def h_qd_2nd(Hall, en_rf, I_eff):
+
+    nstate_eff = len(I_eff)
+
+    #First-order
+    H_1 = Hall[ I_eff, :][ :, I_eff]
+
+    #Second-order
+    H_2 = np.zeros((nstate_eff,nstate_eff), dtype='complex')
+    Index_Q = np.arange(len(Hall))
+    Index_Q  = Index_Q[~np.isin(Index_Q , I_eff)]
+    for i in range(nstate_eff):
+        for j in range(nstate_eff):
+            I = I_eff[i]
+            J = I_eff[j]
+            for K in Index_Q:
+                H_2[i,j] +=  Hall[K,I] * Hall[J,K] / (en_rf[J] - en_rf[K])
+
+
+    #Heff_sym = H_1 + H_2 + H_2.T
+
+    return H_1, H_2
 
 
 ## DKH-2 specific functionalities:
