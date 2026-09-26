@@ -185,9 +185,9 @@ def compute_ad_density1(interface, trdm, state):
     '''
     
     # Initial density
-    p1 = trdm[0,0]
+    p1 = trdm[0,0].real
 
-    p2 = trdm[state, state]
+    p2 = trdm[state, state].real
     delta = p1 - p2
 
     # Diagonalize the density matrix
@@ -206,20 +206,23 @@ def compute_ad_density1(interface, trdm, state):
     at_occ, U2 = np.linalg.eigh(at_density)
     
     # MO to AO
-    de = interface.mo @ de_density
-    at = interface.mo @ at_density
+    de = interface.mo @ de_density @ interface.mo.conj().T
+    at = interface.mo @ at_density @ interface.mo.conj().T
 
     interface.log.info(f"  State {0} -> State {state}:")
-    interface.log.info("     Detachment eigenvalues : " + " ".join(f"{x:.3f}" for x in de_occ if x > 0.1))
-    interface.log.info("     Attachment eigenvalues : " + " ".join(f"{x:.3f}" for x in at_occ if x > 0.1))
+    interface.log.info("     Detachment eigenvalues : " + " ".join(f"{x:.4f}" for x in de_occ if x > 0.1))
+    interface.log.info("     Attachment eigenvalues : " + " ".join(f"{x:.4f}" for x in at_occ if x > 0.1))
+    interface.log.info("     P1 - P2 eigenvalues    : " + " ".join(f"{x:.4f}" for x in occ if np.abs(x) > 10e-8))
 
     # Save to cube
+    import os
     from pyscf.tools import cubegen
-    input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-    dename = f"{input_file}_de_S{0}_S{state}.cube"
-    atname = f"{input_file}_at_S{0}_S{state}.cube"
-    cubegen.density(interface.mol, dename, de, nx=80, ny=80, nz=80)
-    cubegen.density(interface.mol, atname, at, nx=80, ny=80, nz=80)
-
+    plot_dir = "test.plot"
+    os.makedirs(plot_dir, exist_ok=True)
+    dename = os.path.join(plot_dir, f"detach_S0_S{state}.cube")
+    atname = os.path.join(plot_dir, f"attach_S0_S{state}.cube")
+    cubegen.density(interface.mol, dename, de, nx=40, ny=40, nz=40)
+    cubegen.density(interface.mol, atname, at, nx=40, ny=40, nz=40)
 
     return
+
