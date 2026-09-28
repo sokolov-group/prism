@@ -221,8 +221,8 @@ def compute_ad_density1(interface, trdm, state):
     os.makedirs(plot_dir, exist_ok=True)
     dename = os.path.join(plot_dir, f"detach_S0_S{state}.cube")
     atname = os.path.join(plot_dir, f"attach_S0_S{state}.cube")
-    cubegen.density(interface.mol, dename, de, nx=40, ny=40, nz=40)
-    cubegen.density(interface.mol, atname, at, nx=40, ny=40, nz=40)
+    cubegen.density(interface.mol, dename, de, nx=160, ny=160, nz=1000)
+    cubegen.density(interface.mol, atname, at, nx=160, ny=160, nz=1000)
 
     return
 
