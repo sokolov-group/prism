@@ -52,7 +52,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
     if  hasattr(method, "save_Mu") and method.save_Mu is True:
         import NW2140.load
         method.log.info("\nSaving Mu...")
-        NW2140.load.collect_mu(interface, Mu, rdm_sf, en_soc, h_evec_soc, S)
+        NW2140.load.collect_mu(interface, Mu_sf, rdm_sf, en_soc, h_evec_soc, S)
 
     #For g_minus calculation in NW2140
     if  hasattr(method, "g_minus") and method.g_minus is True:

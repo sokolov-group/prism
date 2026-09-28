@@ -91,6 +91,12 @@ def compute_somf_soc(interface):
     
     #For NW2140
     interface.en_soc = en_soc
+
+    #Safe after SOC calculations 
+    if  hasattr(interface, "save_soc") and interface.save_soc is True:
+        import NW2140.load
+        interface.log.info("\nSaving Mu...")
+        NW2140.load.collect_after_soc(interface, rdm_aabb[0] + rdm_aabb[1], en_soc, evec_soc, S)
     
     #For dAB in NW2140
     if  hasattr(interface, "dAB") and interface.dAB is True:
