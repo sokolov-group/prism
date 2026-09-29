@@ -70,7 +70,7 @@ coords  = nevpt.interface.mol.atom_coords()
 nucl_dip = nevpt.interface.einsum('i,ix->x', charges, coords)
 
 # Compute all QD-NEVPT2 1RDMS
-rdms = nevpt.make_rdm1(type = 'ss')
+rdms = nevpt.make_rdm1(rdm_type = 'ss')
 
 # Extract GS 1RDM
 gs_1rdm = rdms[0]
@@ -81,7 +81,7 @@ es2_1rdm = rdms[2]
 es3_1rdm = rdms[3]
 
 # Transition 1RDM 1 -> 3
-tr_1rdm = nevpt.make_rdm1(L = 0, R = 2) #Root 0 indexing
+tr_1rdm = nevpt.make_rdm1(L = 1, R = 3) #Root 1 indexing
 
 # Compute dipoles
 ref_dip = nevpt.interface.einsum("xqr,qr->x", dip_mom_mo, gs_1rdm) + nucl_dip

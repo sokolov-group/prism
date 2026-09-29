@@ -58,7 +58,6 @@ def diagonalize_eff_H(method):
 
     e_diag = method.e_tot
     t1 = method.t1
-    t1_0 = method.t1_0
 
     # Einsum definition from kernel
     einsum = method.interface.einsum
@@ -70,8 +69,6 @@ def diagonalize_eff_H(method):
 
     h_eff = np.diag(e_diag)
     dim = h_eff.shape[0]
-
-    t1_ccee = t1_0
 
     ## One-electron integrals
     h_ca = method.h1eff.ca
@@ -366,60 +363,46 @@ def determine_spin_mult(method):
     return spin_mult_new
 
 
-def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None, evec = None):
+def make_rdm1(method, L = None, R = None, rdm_type = 'all', evec = None):
 
     if evec is None: 
         evec = method.h_evec
 
-    nmo = method.nmo
     n_micro_states = sum(method.ref_wfn_deg)
 
     einsum = method.interface.einsum
     einsum_type = method.interface.einsum_type
 
-    if t1 is None:
-        t1 = method.t1
-    
-    if t1_0 is None:
-        t1_0 = method.t1_0
-
-    L_states = 0
-    R_states = 0
-    L_list = None
-    R_list = None
-
+    avail_types = ["all", "ss", "state-specific"]
+    if rdm_type not in avail_types:
+        raise ValueError(f"Invalid type: {rdm_type}. Allowed types are {avail_types}.")
+ 
     if L is None:
-        L_states = n_micro_states
-        L_list = np.arange(L_states)
+        L_list = np.arange(n_micro_states)
     elif isinstance(L, int):
-        L_list = np.array([L])
-        if L > n_micro_states:
-            raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
+        if not (1 <= L <= n_micro_states):
+            raise ValueError(f"Invalid index: L={L}. Valid range is [1, {n_micro_states}].")
+        L_list = np.array([L - 1])
     else:
-         raise ValueError(f"Value L={L} not supported")
+        raise ValueError(f"Value L={L} not supported. Must be an int or None.")
 
     if R is None:
-        R_states = n_micro_states
-        R_list = np.arange(R_states)
+        R_list = np.arange(n_micro_states)
     elif isinstance(R, int):
-        R_list = np.array([R])
-        if R > n_micro_states:
-            raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
+        if not (1 <= R <= n_micro_states):
+            raise ValueError(f"Invalid index: R={R}. Valid range is [1, {n_micro_states}].")
+        R_list = np.array([R - 1])
     else:
-         raise ValueError(f"Value R={R} not supported")
-        
-    avail_types = ["all", "ss", "state-specific"]
-    if type not in avail_types:
-        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
-    
+        raise ValueError(f"Value R={R} not supported. Must be an int or None.")
+
     # Compute model state 1RDM
     rdm_casci = nevpt.make_rdm1(method)
     
     # Compute qdnevpt2 1RDMS
     rdm_qd = einsum('Im,IJpq,Jn->mnpq', evec, rdm_casci, evec, optimize = einsum_type)
-    
+
     # Initial rdm array
-    rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], nmo, nmo))
+    rdm_final = np.zeros((L_list.shape[0], R_list.shape[0], method.nmo, method.nmo))
 
     # Loop structure
     for ind_I, I in enumerate(L_list):
@@ -438,61 +421,50 @@ def make_rdm1(method, L = None, R = None, type = 'all', t1 = None, t1_0 = None, 
         rdm_final = rdm_final[:, 0, :, :]
 
     # State-specific
-    if type in ("ss", "state-specific"):
+    if rdm_type in ("ss", "state-specific"):
         rdm_final = np.diagonal(rdm_final, axis1=0, axis2=1)
         rdm_final = np.moveaxis(rdm_final, -1, 0)
 
     return rdm_final
 
 
-def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type = 'all'):
+def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, rdm_type = 'all'):
+
     ncore = method.ncore
     ncas = method.ncas
     n_micro_states = sum(method.ref_wfn_deg)
-    einsum = method.interface.einsum   
-    einsum_type = method.interface.einsum_type
-    nmo = method.nmo
 
-    L_states = 0
-    R_states = 0
-    L_list = None
-    R_list = None
+    einsum = method.interface.einsum
+    einsum_type = method.interface.einsum_type
 
     if method.rdm_order == 2:
-        raise ValueError(f"Invalid type: corelation not implement in spin-orbital RDM. ")
-
-    if L is None:
-        L_states = n_micro_states
-        L_list = np.arange(L_states)
-    elif isinstance(L, int):
-        L_list = np.array([L])
-        if L > n_micro_states:
-            raise ValueError(f"Invalid indices: L={L}. "f"Maximum allowed index is {n_micro_states - 1}.")
-    else:
-         raise ValueError(f"Value L={L} not supported")
-
-    if R is None:
-        R_states = n_micro_states
-        R_list = np.arange(R_states)
-    elif isinstance(R, int):
-        R_list = np.array([R])
-        if R > n_micro_states:
-            raise ValueError(f"Invalid indices: R={R}. "f"Maximum allowed index is {n_micro_states - 1}.")
-    else:
-         raise ValueError(f"Value R={R} not supported")
-
-    error_msg = (
-        f"Instability detected in correlated 1RDM. "
-        "Consider loosening truncation thresholds."
-    )
+        raise ValueError("Invalid type: correlated RDMs not implemented for spin-orbital RDMs.")
 
     avail_types = ["all", "ss", "state-specific"]
-    if type not in avail_types:
-        raise ValueError(f"Invalid type: {type}. "f"Allowed types are {avail_types}.")
-        
+    if rdm_type not in avail_types:
+        raise ValueError(f"Invalid type: {rdm_type}. Allowed types are {avail_types}.")
+
+    if L is None:
+        L_list = np.arange(n_micro_states)
+    elif isinstance(L, int):
+        if not (1 <= L <= n_micro_states):
+            raise ValueError(f"Invalid index: L={L}. Valid range is [1, {n_micro_states}].")
+        L_list = np.array([L - 1])
+    else:
+        raise ValueError(f"Value L={L} not supported. Must be an int or None.")
+
+    if R is None:
+        R_list = np.arange(n_micro_states)
+    elif isinstance(R, int):
+        if not (1 <= R <= n_micro_states):
+            raise ValueError(f"Invalid index: R={R}. Valid range is [1, {n_micro_states}].")
+        R_list = np.array([R - 1])
+    else:
+        raise ValueError(f"Value R={R} not supported. Must be an int or None.")
+
     # Initial rdm array
-    rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], nmo, nmo))
-    
+    rdm_final = np.zeros((2, L_list.shape[0], R_list.shape[0], method.nmo, method.nmo))
+
     #method's wfn
     if wfn is None:
         wfn = einsum('ij,iab->jab', method.h_evec, method.ref_wfn, optimize = einsum_type)
@@ -506,41 +478,40 @@ def make_rdm1s(method, wfn=None, wfn_ref_nelecas=None , L = None, R = None, type
     for ind_I, I in enumerate(L_list):
         for ind_J, J in enumerate(R_list): 
 
-            if type in ("ss", "state-specific") and I != J:
+            if rdm_type in ("ss", "state-specific") and I != J:
                 continue
-            
-            if (wfn_ref_nelecas[I] == wfn_ref_nelecas[J]):
-                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], ncas, wfn_ref_nelecas[ind_I])
+
+            if wfn_ref_nelecas[I] == wfn_ref_nelecas[J]:
+                tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], ncas, wfn_ref_nelecas[I])
                 rdm_final[0, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[0]
                 rdm_final[1, ind_I, ind_J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[1]
 
                 if I == J:
                     #uncorrelated diagonal terms
-                    rdm_final[:,ind_I, ind_J, :ncore, :ncore] =   np.identity(ncore)    
+                    rdm_final[:, ind_I, ind_J, :ncore, :ncore] = np.identity(ncore)
 
     # Single pair of states
     if L is not None and R is not None:
-        rdm_final = rdm_final[:,0,0]
+        rdm_final = rdm_final[:, 0, 0]
 
     # One state on the left or right
     if L_list.shape[0] == 1 and R_list.shape[0] > 1:
-        rdm_final[0] = rdm_final[0, 0, :, :]
-        rdm_final[1] = rdm_final[1, 0, :, :]
+        rdm_final = rdm_final[:, 0, :]
 
     if L_list.shape[0] > 1 and R_list.shape[0] == 1:
-        rdm_final = rdm_final[:, 0, :, :]
+        rdm_final = rdm_final[:, :, 0]
 
     # State-specific
-    if type in ("ss", "state-specific"):
+    if rdm_type in ("ss", "state-specific"):
         rdm_final[0] = np.diagonal(rdm_final[0], axis1=0, axis2=1)
         rdm_final[0] = np.moveaxis(rdm_final[0], -1, 0)
 
         rdm_final[1] = np.diagonal(rdm_final[1], axis1=0, axis2=1)
         rdm_final[1] = np.moveaxis(rdm_final[1], -1, 0)
-        
+
     return rdm_final
 
-  
+
 def check_intruder_states(method, dim, h_eff, t1):
 
     #Compute the coupling elements of h_eff > %cutoff_intruder Eh give warnings
@@ -711,7 +682,7 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
                                     % (alpha_occs, beta_occs, coeff, weight))
 
         # Compute Natural Occupations by diagonalizing the 1RDM
-        rdm_mo = make_rdm1(method, L=n, R=n)
+        rdm_mo = make_rdm1(method, L=n+1, R=n+1)
         nat_occ_global, nat_orb_global = np.linalg.eigh(rdm_mo)
         active_weights = np.sum(nat_orb_global[ncore:ncore+ncas, :]**2, axis=0)
         active_no_indices = np.argsort(active_weights)[-ncas:]
@@ -720,7 +691,7 @@ def analyze_eigenvectors(method, weight_cutoff=0.01):
 
         # For open-shell systems, compute atomic Mulliken spin populations in the AO basis
         if n_alpha_elec != n_beta_elec:
-            rdm1s = make_rdm1s(method, L=n, R=n)
+            rdm1s = make_rdm1s(method, L=n+1, R=n+1)
             d_ao_a = mo @ rdm1s[0] @ mo.T
             d_ao_b = mo @ rdm1s[1] @ mo.T
             spin_dm_ao = d_ao_a - d_ao_b
