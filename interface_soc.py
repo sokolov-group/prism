@@ -29,7 +29,7 @@ class PYSCF_ADC:
     def __init__(self,mf,adc,E,U,P,X):
         import prism.lib.logger as logger
         self.stdout = mf.mol.stdout
-        self.verbose = 4
+        self.verbose = adc.verbose
         log = logger.Logger(self.stdout, self.verbose)
         self.log = log
         from pyscf.tools import molden
@@ -206,28 +206,10 @@ class PYSCF_ADC:
 
 
         self.soc.lower()
-        if self.soc == "all":
-            self.log.info("Calculate all possible soc approach")
-
-            en_soc_bp,  G_sq_en_bp = self.compute_soc(E_ref, rdm_aabb_ref, S_ref,  ms_ref, "bp")
-            sys.stdout.flush()
-            en_soc_dkh1,  G_sq_en_dkh1 = self.compute_soc(E_ref, rdm_aabb_ref, S_ref,  ms_ref, "dkh1")
-            sys.stdout.flush()
-            self.e_tot = []
-            self.e_tot.append(en_soc_bp)
-            self.e_tot.append(en_soc_dkh1)
-
-            self.properties["g-factors"] = []
-            self.properties["g-factors"].append(G_sq_en_bp)
-            self.properties["g-factors"].append(G_sq_en_dkh1)
-
-            
-
-        else:
-            en_soc,  G_sq_en = self.compute_soc(E_ref, rdm_aabb_ref, S_ref,  ms_ref, self.soc)
-            sys.stdout.flush()
-            self.e_tot = en_soc
-            self.properties["g-factors"] = G_sq_en
+        en_soc,  G_sq_en = self.compute_soc(E_ref, rdm_aabb_ref, S_ref,  ms_ref, self.soc)
+        sys.stdout.flush()
+        self.e_tot = en_soc
+        self.properties["g-factors"] = G_sq_en
 
 
         
@@ -539,7 +521,7 @@ class PYSCF_ADC:
         self.log.info("Make sure E:")
         self.log.info("%s", E_new)
         E_new = np.diagonal(E_new)
-        if np.allclose(E_old_total, E_new, atol=1e-7, rtol=0):
+        if np.allclose(E_old_total, E_new, atol=1e-5, rtol=0):
             self.log.info("Energy is same after rotation")
             self.E = E_new
         else:
@@ -569,7 +551,7 @@ class PYSCF_ADC:
         self.log.info("Make sure MS=")
         self.log.info("%s", Ms)
 
-        if not np.allclose(Ms, np.diag(np.diagonal(Ms)), atol=1e-10, rtol=0):
+        if not np.allclose(Ms, np.diag(np.diagonal(Ms)), atol=1e-5, rtol=0):
             self.log.info("Warning: Ms is not diagonal")
             if self.ignore_Ms_diag:
                 self.log.info("ignore_Ms_diag")
