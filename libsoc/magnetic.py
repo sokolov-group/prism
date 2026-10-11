@@ -230,7 +230,7 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     '''
 
     interface.log.info("Calculating magnetic dipole moment...")
-    mf = interface.mf
+    mol = interface.mol
     mo = interface.mo
     n_states = len(rdm_sf[0])
     
@@ -288,27 +288,27 @@ def mag_dip(interface, rdm_sf, S, origin_type = 'charge'):
     if origin_type == 'charge':
         origin = [ 0, 0 ,0]
         total_charge = 0
-        for atm in range(mf.mol.natm):
-            origin += mf.mol.atom_coord(atm) * mf.mol.atom_charge(atm)
-            total_charge += mf.mol.atom_charge(atm)
+        for atm in range(mol.natm):
+            origin += mol.atom_coord(atm) * mol.atom_charge(atm)
+            total_charge += mol.atom_charge(atm)
         origin = origin / total_charge
         interface.log.info("Coordinate system origin (charge, Bohr) = %s", origin) 
-        mf.mol.set_common_orig(origin)
-        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
+        mol.set_common_orig(origin)
+        l1_ao = -1j * mol.intor('cint1e_cg_irxp_sph', comp=3)
 
     elif origin_type == 'atom1':
-        interface.log.info("Coordinate system origin (atom1, Bohr) = %s", mf.mol.atom_coord(0))
-        mf.mol.set_common_orig(mf.mol.atom_coord(0))
-        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
+        interface.log.info("Coordinate system origin (atom1, Bohr) = %s", mol.atom_coord(0))
+        mol.set_common_orig(mol.atom_coord(0))
+        l1_ao = -1j * mol.intor('cint1e_cg_irxp_sph', comp=3)
     
     elif origin_type == 'giao':
         interface.log.info("Using GIAO to compute gauge-invariant g-tensor...")
-        l1_ao = -1j * mf.mol.intor('int1e_giao_irjxp_sph', comp=3)
+        l1_ao = -1j * mol.intor('int1e_giao_irjxp_sph', comp=3)
 
     else:
         interface.log.info("Coordinate system origin (Bohr) = %s", origin_type)
-        mf.mol.set_common_orig(origin_type)
-        l1_ao = -1j * mf.mol.intor('cint1e_cg_irxp_sph', comp=3)
+        mol.set_common_orig(origin_type)
+        l1_ao = -1j * mol.intor('cint1e_cg_irxp_sph', comp=3)
     
     # AO -> MO basis:
     l1_mo = np.einsum('xpq,pi,qj->xij',l1_ao,mo,mo) 
@@ -385,7 +385,6 @@ def gtensor(interface, S, Mu, target_index = 1):
     z_en, z_evec = np.linalg.eigh(Hab_old[2])
     z_en, z_evec = z_en[::-1], z_evec[:, ::-1] #Define -J, -J+1, ... J-1, J
     Hab_new = np.einsum('ai,kib,bj->kaj',np.conj(z_evec).T ,Hab_old, z_evec)
-    print(Hab_new[2])
     Hab = Hab_new
  
     g=np.zeros([3,3])

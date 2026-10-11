@@ -314,7 +314,7 @@ class PYSCF_ADC:
                 index_value[0] = sorted_row_idx[:,i] + 1
                 index_value[1] = np.round(values_sort[:,i],2)
                 self.log.info("%d = %s %s", i + 1, index_value[0], index_value[1])
-
+            self.log.info("")
         
 
         if (self.gtensor or self.mag_av or  self.sus_av or  self.mag_vec or self.sus_tensor):
@@ -334,6 +334,9 @@ class PYSCF_ADC:
 
 
     def make_rdm1s_ee(self):
+        '''
+        Obtain rdm_1s for ADC-EE
+        '''
         #TO DO: make sure nmo_b is always equal nmo_a
         self.log.info("\n*****make_rdm1s_ee*****")
         self.log.info("Condsidering Ref state in rdm...")
@@ -427,6 +430,9 @@ class PYSCF_ADC:
 
     
     def make_rdm1s_general(self):
+        '''
+        Obtain rdm_1s for ADC-IP, EA and CVS-ADC-IP
+        '''
         self.log.info("\n*****make_rdm1s_general*****")
         #TO DO: make sure nmo_b is always equal nmo_a
         n_state = len(self.E)
@@ -515,6 +521,9 @@ class PYSCF_ADC:
     
 
     def rotate_rdm1s_to_ms(self):
+        '''
+        Obtain Ms egienvector and their rdm_1s
+        '''
         self.log.info("\n*****rotate_rdm1s_to_ms*****")
         #TO DO: make sure nmo_b is always equal nmo_a
         rdm_aabb = self.rdm_aabb
@@ -581,6 +590,9 @@ class PYSCF_ADC:
     
 
     def get_sf_ref(self):
+        '''
+        select specifc Ms state for state-interaction calculation
+        '''
         self.log.info("\n*****get_sf_ref*****")
         rdm_aabb = self.rdm_aabb
         E = self.E
@@ -695,7 +707,9 @@ class PYSCF_ADC:
 
 
     def collect_sf(self, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo):
-
+        '''
+        Save spin-free information for state-interaction calculation
+        '''
         self.log.info("\nSave E_ref, rdm_aabb_ref, S_ref, ms_ref... as csv file...")
         input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         self.log.info("file name:"+input_file+ ".h5\n")
@@ -709,7 +723,9 @@ class PYSCF_ADC:
 
 
     def degeneracy_list(self,en, atol= 1e-5):
-
+        '''
+        determine degeneracy based on energy in list
+        '''
         self.log.info("degeneracy_atol =%s", atol)
 
         deg = []
@@ -728,12 +744,14 @@ class PYSCF_ADC:
 
 
     def print_results(self,en_soc,soc, osc_str_soc):
-
+        '''
+        Print SI-ADC energy
+        '''
         h2ev = self.hartree_to_ev
         h2cm = self.hartree_to_inv_cm
 
 
-        self.log.info("\nSummary of SOC results for %s", soc.upper())
+        self.log.info("\nSummary of SI-ADC results for %s", soc.upper())
 
 
         self.log.info("------------------------------------------------------------------------------------------------------------------")
@@ -763,10 +781,10 @@ class PYSCF_ADC:
 
 
 class SF_OBJECT:
-    def __init__(self,mf, E_ref, rdm_aabb_ref, S_ref,  ms_ref, mo):
+    def __init__(self, mol, E_ref, rdm_aabb_ref, S_ref,  ms_ref, mo):
         self.log.info("\nImporting spin-free object...")
         import prism.lib.logger as logger
-        self.stdout = mf.mol.stdout
+        self.stdout = mol.stdout
         self.verbose = 4
         log = logger.Logger(self.stdout, self.verbose)
         self.log = log
@@ -797,37 +815,11 @@ class SF_OBJECT:
         self.contr_coeff = None
 
 
-        self.nmo = mf.mo_coeff.shape[1]  
-        self.mol = mf.mol
-        self.mf = mf
+        self.nmo = len(mo)  
+        self.mol = mol
 
-        #ADC information
-        #self.adc = adc
-        #self.method_type = adc.method_type.lower()
-        #self.adc.U = U #For uadc_ee.get_spin_square(self.adc) 
-        #self.U = U
-        #self.E = E
-        #self.P = P
-        #self.X = X
+        #spin-free information
         self.roots = len(E_ref)
-        #self.nocc_a = adc.nocc_a
-        #self.nocc_b = adc.nocc_b
-        #self.nvir_a = adc.nvir_a
-        #self.nvir_b = adc.nvir_b
-        #self.nmo_a = adc.nocc_a + adc.nvir_a
-        #self.nmo_b = adc.nocc_b + adc.nvir_b
-        #self.mo_a = adc.mo_coeff[0]
-        #self.mo_b = adc.mo_coeff[1]
-        #self.ncvs = adc.ncvs
-        #MPn ref information
-        #self.e_corr_MPn = adc.e_corr
-        #self.scf_energy = adc.scf_energy
-        #self.E_ref_abs= self.e_corr_MPn + self.scf_energy
-        #print("e_corr_MPn=",self.e_corr_MPn)
-        #print("scf_energy=",self.scf_energy)
-        #print("E_ref_abs=" ,self.E_ref_abs)
-
-        #SOC:
         self.nmo = len(rdm_aabb_ref[0,0,0,0])
         self.mo = mo
         self.E_ref = E_ref
@@ -844,99 +836,9 @@ class SF_OBJECT:
         self.xmol, self.contr_coeff = x2c.X2C(self.mol).get_xmol()
 
         
-        #if self.ncvs:
-        #    print("Importing uadc_ip_cvs instead of uadc_ip...")
-        #    from pyscf.adc import uadc_ip_cvs
-        #    self.make_rdm1_eigenvectors = uadc_ip_cvs.make_rdm1_eigenvectors
-        #else:
-        #    if self.method_type == "ea" :
-        #        print("Importing uadc_ea...")
-        #        from pyscf.adc import uadc_ea
-        #        self.make_rdm1_eigenvectors = uadc_ea.make_rdm1_eigenvectors
-        #    elif self.method_type == "ip" :
-        #        from pyscf.adc import uadc_ip
-        #        print("Importing uadc_ip...")
-        #        self.make_rdm1_eigenvectors = uadc_ip.make_rdm1_eigenvectors
-        #    elif self.method_type == "ee":
-        #        from pyscf.adc import uadc_ee
-        #        print("Importing uadc_ee...")
-        #        self.make_rdm1_eigenvectors = uadc_ee.make_rdm1_eigenvectors
-
-        #determine number of unpair electron in ADC
-        #pin = self.mol.spin
-        #f self.method_type in ("ea", "ip") :
-        #   if spin == 0:
-        #       self.spin_adc = spin+1
-        #   else:
-        #       #if unpair electon larger than zeoro, ea will add beta electron?
-        #       self.spin_adc = spin-1
-
-        #lif self.method_type == "ee" :
-        #   self.spin_adc = spin
-
-        #flag
-        #if self.method_type == "ee":
-        #    self.add_ref_ee = True
-        #else:
-        #    self.add_ref_ee = False
-        #self.use_P = True
-        #self.P_thresh =  1e-6
-        #self.deg_atol = 1e-5
-        #self.soc = "bp"
-        #self.save_sf = False
-        #self.analyze_evec_soc = False
-        #self.gtensor = False
-        #self.origin_type = 'charge'
-        #self.target_index = 1
-        #self.ms_ref_select = None
-        #self.ignore_Ms_diag = False
-
-        ## For magnetic susceptibility
-        #self.mag_av = False
-        #self.sus_av = False
-        #self.mag_vec = False
-        #self.sus_tensor = False
-
-        #self.step_h_s = 0.001 
-
-        ####Powder magnetization
-        #Bs_list = []
-        #for i in range(15):
-        #    H = i * 0.5
-        #    Bs_list.append(H)
-
-        #self.Bs_powder_M = Bs_list 
-        #self.T_powder_M = [1.8]
-        ####Powder susceptibility
-        #T_list = []
-        #for i in range(21):
-        #    T = 14.75 * i + 5
-        #    T_list.append(T)
-        #self.T_powder_chi = T_list
-        #self.Bs_powder_chi = [0.1]
-        ####Vector magnetization
-        #self.B_vec_M = [0,0,1]
-        #self.Bs_vec_M = Bs_list 
-        #self.T_vec_M = [1.8]
-        ####Tensor  susceptibility
-        #self.B_vec_chi = [0,0,1]
-        #self.Bs_vec_chi = [0.1]
-        #self.T_vec_chi = [5,100,200,250]
-
-
-        ##Calculating result
-        #self.rdm_aabb = None
-        #self.e_tot = None
-        #self.S_total = None
-        #self.properties = {}  
-
     def kernel(self):
         self.compute_soc(self.E_ref, self.rdm_aabb_ref, self.S_ref,  self.ms_ref, self.soc)
         return
-
-
-
-
 
 
     def compute_soc(self,E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc):
@@ -952,9 +854,8 @@ class SF_OBJECT:
                     J = I + j
                     population_state[i] += population[J]
                 I += multicity
-            #deg_list = self.degeneracy_list(E_ref)
 
-            #print(population_state)
+
             if len(population_state[:,0]) < 5:
                 k = len(population_state[:,0])
             else:
@@ -968,15 +869,15 @@ class SF_OBJECT:
             # Step 4: after order row index
             sorted_row_idx = np.take_along_axis(row_idx, order, axis=0)
             values_sort = population_state[sorted_row_idx, np.arange(population_state.shape[1])]
-            #print(values_sort)
-            #print(sorted_row_idx)
-            print("\nSOC index = [sf-ADC index]")
+
+            self.log.info("\nSOC index = [sf-index index]")
             for i in range(len(sorted_row_idx[0])):
                 index_value = np.zeros((2,len(sorted_row_idx[:,i])))
                 index_value[0] = sorted_row_idx[:,i] + 1
                 index_value[1] = np.round(values_sort[:,i],2)
-                print(i+1, "=", index_value[0], index_value[1])
-        self.print_results_ref(en_soc,soc)
+                self.log.info("%d = %s %s", i + 1, index_value[0], index_value[1])
+            self.log.info("")
+
         self.print_results(en_soc,soc)
 
 
@@ -1012,36 +913,6 @@ class SF_OBJECT:
         self.log.info("----------------------------------------------------------------------------------------------------------------")
 
 
-    def print_results_ref(self,en_soc,soc):
-
-        h2ev = self.hartree_to_ev
-        h2cm = self.hartree_to_inv_cm
-
-
-        self.log.info("\nSummary of SOC results for", soc.upper())
-
-
-        self.log.info("------------------------------------------------------------------------------------------------------------------")
-        self.log.info("  State    Degen.        E(total)             E(a.u.)         E(eV)         E(nm)       E(cm-1)        Osc Str.  ")
-        self.log.info("------------------------------------------------------------------------------------------------------------------")
-
-        e_gs = en_soc[0]
-        e_tot = en_soc
-
-        n_states = len(e_tot)
-
-        for p in range(n_states):
-            deg = 1
-            de = e_tot[p] 
-            de_ev = de * h2ev
-            de_cm = de * h2cm
-            if p == 0 or abs(de) < 1e-5:
-                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
-            else:
-                de_nm = 10000000 / de_cm
-                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, "  "))
-
-        self.log.info("----------------------------------------------------------------------------------------------------------------")
 
 
 

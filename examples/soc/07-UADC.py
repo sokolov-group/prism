@@ -36,6 +36,7 @@ myadc.method_type = "ea" #Can be ea, ip, ee
 E,U,P,X = myadc.kernel(nroots=6)
 
 interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface.analyze_evec_soc = True
 interface.gtensor = True
 interface.mag_av =     True
 interface.sus_av =     True

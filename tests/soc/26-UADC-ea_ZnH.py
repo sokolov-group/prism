@@ -72,7 +72,8 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(en_soc[8],  -0.011769333715, 5)
         self.assertAlmostEqual(en_soc[9],  -0.011769333715, 5)
 
-        g_factor = properties["g-factors"]
+        g_factor_all = interface.properties["g-factors"]
+        g_factor = g_factor_all[0]
         self.assertAlmostEqual(g_factor[0], 1.985757, 5)
         self.assertAlmostEqual(g_factor[1], 1.985757, 5)
         self.assertAlmostEqual(g_factor[2], 2.002204, 5)
