@@ -1,8 +1,9 @@
 import sys
 import os
 import numpy as np
-import prism.libsoc.general_somf
-import prism.libsoc.magnetic
+from prism.libsoc import general_somf
+from prism.libsoc import magnetic
+from prism.tools import trans_prop
 import pyscf.dft.LebedevGrid
 import csv
 import pickle
@@ -35,7 +36,7 @@ class PYSCF_ADC:
         from pyscf.tools import molden
         self.molden = molden
 
-        log.info("\nImport ADC in PYSCF...")
+        log.info("\nImporting ADC in PYSCF...")
 
         # General info
         # Unit conversions
@@ -50,6 +51,9 @@ class PYSCF_ADC:
         self.mu_B_erg = 9.27401549e-21
         self.T_to_G = 10000
         self.NA = 6.0221367e23 # Avogadro constant
+
+        # Dipole moments
+        self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
         #For SOC
         self.max_memory_soc = mf.mol.max_memory
@@ -132,13 +136,19 @@ class PYSCF_ADC:
         self.P_thresh =  1e-6
         self.deg_atol = 1e-5
         self.soc = "bp"
-        self.save_sf = False
-        self.analyze_evec_soc = False
-        self.gtensor = False
-        self.origin_type = 'charge'
-        self.target_index = 1
         self.ms_ref_select = None
         self.ignore_Ms_diag = False
+        self.save_sf = False
+        self.analyze_evec_soc = False
+
+        #For g-tensor
+        self.gtensor = False
+        self.magnetic_origin_type = 'charge'
+        self.gtensor_target_state = 1
+
+        # For powder properties
+        import pyscf.dft.LebedevGrid
+        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
 
         # For magnetic susceptibility
         self.mag_av = False
@@ -146,7 +156,7 @@ class PYSCF_ADC:
         self.mag_vec = False
         self.sus_tensor = False
 
-        self.step_h_s = 0.001 
+        self.step_h_s = 0.001 #Magnetic field step size used for numerical differentiation (Unit:T)
 
         ###Powder magnetization
         Bs_list = []
@@ -156,17 +166,21 @@ class PYSCF_ADC:
 
         self.Bs_powder_M = Bs_list 
         self.T_powder_M = [1.8]
+
         ###Powder susceptibility
         T_list = []
         for i in range(21):
             T = 14.75 * i + 5
             T_list.append(T)
+
         self.T_powder_chi = T_list
         self.Bs_powder_chi = [0.1]
+
         ###Vector magnetization
         self.B_vec_M = [0,0,1]
         self.Bs_vec_M = Bs_list 
         self.T_vec_M = [1.8]
+
         ###Tensor  susceptibility
         self.B_vec_chi = [0,0,1]
         self.Bs_vec_chi = [0.1]
@@ -180,36 +194,28 @@ class PYSCF_ADC:
         self.properties = {}  
 
     def kernel(self):
-        self.log.info("Collect necessary information for SOC")
+        self.log.info("Collecting necessary information for SOC")
         if self.add_ref_ee is True:
-            self.log.info("employ make_rdm1s_ee")
+            self.log.info("Employing make_rdm1s_ee")
             self.make_rdm1s_ee()
         else:
-            self.log.info("employ make_rdm1s_general")
+            self.log.info("Employing make_rdm1s_general")
             self.make_rdm1s_general()
 
         sys.stdout.flush()
-
         self.rotate_rdm1s_to_ms()
-
         sys.stdout.flush()
-
-
         E_ref, rdm_aabb_ref, S_ref,  ms_ref = self.get_sf_ref()
-
         sys.stdout.flush()
-
-        self.log.info(" ")
 
         if self.save_sf:
             self.collect_sf(E_ref, rdm_aabb_ref, S_ref, ms_ref, self.mo)
 
-
         self.soc.lower()
-        en_soc,  G_sq_en = self.compute_soc(E_ref, rdm_aabb_ref, S_ref,  ms_ref, self.soc)
+        en_soc = self.compute_soc(E_ref, rdm_aabb_ref, S_ref,  ms_ref, self.soc)
         sys.stdout.flush()
         self.e_tot = en_soc
-        self.properties["g-factors"] = G_sq_en
+        
 
 
         
@@ -217,8 +223,60 @@ class PYSCF_ADC:
 
 
     def compute_soc(self,E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc):
-        import prism.libsoc.general_somf
-        en_soc, evec_soc = prism.libsoc.general_somf.state_interaction_soc(self, E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc)
+        en_soc, evec_soc = general_somf.state_interaction_soc(self, E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc)
+
+        #Compute OSC
+        #compute soc rdm
+        rdm_sf = rdm_aabb_ref[0] + rdm_aabb_ref[1]
+        I_total = []
+        S_total = []
+        ms_total = []
+        for i in range(len(S_ref)):
+            s = S_ref[i]
+            n = int(2*s+1)
+            for j in range(n):
+                I_total.append(i)
+                S_total.append(s)
+                m = s-j
+                ms_total.append(m)
+    
+        nstate_total = len(S_total)
+        rdm_mo = np.zeros((nstate_total, nstate_total, self.nmo, self.nmo),dtype='complex')
+        for I in range(nstate_total):
+            for J in  range(nstate_total):
+                if (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
+                    rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
+        rdm_soc = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
+
+        # Calculate ground state degeneracy:
+        deg_gs = 1
+        for i in range(len(en_soc)-1):
+            if (np.abs(en_soc[i+1] - en_soc[0])) < 1e-5:
+                deg_gs += 1
+            else:
+                break
+    
+
+        # Calculate oscillator strengths for transitions from the first state
+        osc_str_soc_full=[]
+        osc_str_soc = np.zeros(len(en_soc)-1)
+        for gs_index in range(deg_gs):
+            e_diff = en_soc - en_soc[gs_index]
+            e_diff = e_diff[gs_index+1:]
+            osc = trans_prop.osc_strength(self, e_diff, rdm_soc[ gs_index, gs_index+1:])
+            osc_str_soc_full.append(osc)
+            osc_str_soc[gs_index:] += osc 
+
+        self.properties["osc_strengths"] = osc_str_soc
+
+        # Compute oscillator strengths starting from each state
+        if self.verbose >= 5:
+            for gs_index in range(deg_gs, len(en_soc)):  
+                e_diff = en_soc - en_soc[gs_index]
+                e_diff = e_diff[gs_index+1:]
+                osc_str_soc_full.append(trans_prop.osc_strength(self, e_diff, rdm_mo[  gs_index, gs_index+1:]))
+
+            self.properties["osc_strengths_full"] = osc_str_soc_full
 
         if self.analyze_evec_soc:
             population = evec_soc * np.conj(evec_soc)
@@ -231,7 +289,6 @@ class PYSCF_ADC:
                     J = I + j
                     population_state[i] += population[J]
                 I += multicity
-
 
             if len(population_state[:,0]) < 5:
                 k = len(population_state[:,0])
@@ -251,9 +308,6 @@ class PYSCF_ADC:
             sorted_row_idx = np.take_along_axis(row_idx, order, axis=0)
 
             values_sort = population_state[sorted_row_idx, np.arange(population_state.shape[1])]
-            #print(values_sort)
-
-            #print(sorted_row_idx)
             self.log.info("\nSOC index = [sf-ADC index]")
             for i in range(len(sorted_row_idx[0])):
                 index_value = np.zeros((2,len(sorted_row_idx[:,i])))
@@ -261,35 +315,28 @@ class PYSCF_ADC:
                 index_value[1] = np.round(values_sort[:,i],2)
                 self.log.info("%d = %s %s", i + 1, index_value[0], index_value[1])
 
-
-        self.print_results_ref(en_soc,soc)
-        self.print_results(en_soc,soc)
-
-        if self.gtensor is True:
-            import prism.libsoc.magnetic
-            rdm_sf = rdm_aabb_ref[0] + rdm_aabb_ref[1]
-            Mu_sf = prism.libsoc.magnetic.mag_dip(self,rdm_sf,S_ref, origin_type = self.origin_type)
-            Mu = np.einsum('ai,kib,bj->kaj',np.conj(evec_soc).T, Mu_sf, evec_soc)
-            G_sq_en, G_evec = prism.libsoc.magnetic.gtensor(self, S_ref, Mu, target_index = self.target_index)
-
-            ge = self.g_free_elec
-            self.log.info("\nMagnetic g-factors (ge = %s):" % ge)
-            self.log.info("%14.6f, %14.6f, %14.6f" % (G_sq_en[0], G_sq_en[1], G_sq_en[2]))
-            self.log.info("%14.6f, %14.6f, %14.6f (g-shift)" % (G_sq_en[0] - ge, G_sq_en[1] - ge, G_sq_en[2] - ge))
-            self.log.info("%14.3f, %14.3f, %14.3f (g-shift, ppt)" % (1000 * (G_sq_en[0] - ge), 1000 * (G_sq_en[1] - ge), 1000 * (G_sq_en[2] - ge)))
-            #self.properties["g-factors"] = G_sq_en
-        else:
-            G_sq_en = 0
         
 
+        if (self.gtensor or self.mag_av or  self.sus_av or  self.mag_vec or self.sus_tensor):
+            properties_mag = magnetic.compute_properties(self, rdm_sf, en_soc, evec_soc, S_ref,  method = None)
+            self.properties.update(properties_mag)
+        
+        # Print results obtained from ADC
+        self.print_results(en_soc,soc, osc_str_soc)
 
-        return en_soc,  G_sq_en
+        if "osc_strengths_full" in self.properties:
+            trans_prop.print_osc_strength(self, self.properties["osc_strengths_full"])
+
+        if "magnetic_properties" in self.properties:
+            magnetic.print_mag_properties(self, self.properties,  method = None)
+
+        return en_soc
 
 
     def make_rdm1s_ee(self):
         #TO DO: make sure nmo_b is always equal nmo_a
         self.log.info("\n*****make_rdm1s_ee*****")
-        self.log.info("Condsider Ref state in rdm...")
+        self.log.info("Condsidering Ref state in rdm...")
         n_state = len(self.E)
         n_state += 1
         nmo_a = self.nmo_a
@@ -364,7 +411,7 @@ class PYSCF_ADC:
 
 
         #Transform rdm_bb in mo_a basis
-        self.log.info("Transform rdm_bb in mo_a basis")
+        self.log.info("Transforming rdm_bb in mo_a basis")
         rdm_bb_ao = np.einsum('ai,IJib,bj->IJaj',mo_b,rdm_bb,mo_b.T)
         CTS = mo_a.T @ ovlp
         SC =  ovlp @ mo_a
@@ -415,7 +462,7 @@ class PYSCF_ADC:
 
 
         #Transform rdm_bb in mo_a basis
-        self.log.info("Transform rdm_bb in mo_a basis")
+        self.log.info("Transforming rdm_bb in mo_a basis")
         rdm_bb_ao = np.einsum('ai,IJib,bj->IJaj',mo_b,rdm_bb,mo_b.T)
         CTS = mo_a.T @ ovlp
         SC =  ovlp @ mo_a
@@ -488,8 +535,8 @@ class PYSCF_ADC:
                 sz = np.trace(rdm_sz)
                 Ms_total[I,J] = sz
 
-        self.log.info("Ms_old_total=")
-        self.log.info("%s", Ms_total)
+        self.log.extra("Ms_old_total=")
+        self.log.extra("%s", Ms_total)
 
         for K in range(len(deg_list)):
             I = int(np.sum(deg_list[0:K]))
@@ -499,27 +546,27 @@ class PYSCF_ADC:
             Sz_evec_total[I:J,I:J] = sz_evec
             Sz_en_tot[I:J] = sz_en
 
-        self.log.info("sz_en_tot=")
-        self.log.info("%s", Sz_en_tot)
+        self.log.extra("sz_en_tot=")
+        self.log.extra("%s", Sz_en_tot)
 
-        self.log.info("Sz_evec_total=")
-        self.log.info("%s", Sz_evec_total)
+        self.log.extra("Sz_evec_total=")
+        self.log.extra("%s", Sz_evec_total)
 
         self.rdm_aabb = np.einsum('ai,KibIJ,bj->KajIJ',np.conj(Sz_evec_total).T , rdm_aabb , Sz_evec_total)
 
         S_total = np.einsum('ai,ib,bj->aj',np.conj(Sz_evec_total).T , np.diag(S_old_total) , Sz_evec_total)
-        self.log.info("Make sure S_total:")
-        self.log.info("%s", S_total)
+        self.log.extra("Make sure S_total:")
+        self.log.extra("%s", S_total)
         if not np.allclose(S_total, np.diag(np.diagonal(S_total)), atol=1e-7, rtol=0):
-            self.log.info("Warning: S_total is not diagonal")
+            self.log.warn("Warning: S_total is not diagonal")
         else:
             self.log.info("S_total is diagonal")
 
         self.S_total = np.diagonal(S_total)
 
         E_new = np.einsum('ai,ib,bj->aj',np.conj(Sz_evec_total).T , np.diag(E_old_total) , Sz_evec_total)
-        self.log.info("Make sure E:")
-        self.log.info("%s", E_new)
+        self.log.extra("Make sure E:")
+        self.log.extra("%s", E_new)
         E_new = np.diagonal(E_new)
         if np.allclose(E_old_total, E_new, atol=1e-5, rtol=0):
             self.log.info("Energy is same after rotation")
@@ -548,13 +595,13 @@ class PYSCF_ADC:
                 sz = np.trace(rdm_sz)
                 Ms[I,J] = sz
 
-        self.log.info("Make sure MS=")
-        self.log.info("%s", Ms)
+        self.log.extra("Make sure MS=")
+        self.log.extra("%s", Ms)
 
         if not np.allclose(Ms, np.diag(np.diagonal(Ms)), atol=1e-5, rtol=0):
-            self.log.info("Warning: Ms is not diagonal")
+            self.log.warn("Warning: Ms is not diagonal")
             if self.ignore_Ms_diag:
-                self.log.info("ignore_Ms_diag")
+                self.log.warn("ignore_Ms_diag")
             else:
                 raise Exception("Ms is not diagonal")
         else:
@@ -571,7 +618,7 @@ class PYSCF_ADC:
 
         #Choice ms as positive minimum
         if self.ms_ref_select is None:
-            self.log.info("Choice ms_ref as positive minimum")
+            self.log.info("Choicing ms_ref as positive minimum")
             ms_ref = min((x for x in sz if x > 0), default=None) #Choice ms as positive minimum
         
             if ms_ref is None:
@@ -589,7 +636,6 @@ class PYSCF_ADC:
                 ref_index.append(i)
 
         #Discard unreasonable spin state 
-        self.log.info("Discard unreasonable spin state ...")
         ref_index_S = []
         #even electron, S sohuld be 0,1,2,3....
         if spin_adc % 2 == 0:
@@ -598,11 +644,11 @@ class PYSCF_ADC:
                 I = ref_index[i]
                 S_check = S_total[I]
                 if abs(S_check % 1 - 0.5) < 1e-8:
-                    self.log.info("discard S=%.1f state" %S_check)
+                    self.log.info("Discarding S=%.1f state" %S_check)
                 elif abs(S_check % 1) < 1e-8:    
                     ref_index_S.append(I)
                 else:
-                    self.log.info("discard no .5 .0  S=%.1f state" %S_check)
+                    self.log.info("Discarding no .5 .0  S=%.1f state" %S_check)
             
         #odd electron, S sohuld be 0.5, 1.5, 2.5, 3.5....
         else:
@@ -613,9 +659,9 @@ class PYSCF_ADC:
                 if abs(S_check % 1 - 0.5) < 1e-8:
                     ref_index_S.append(I)
                 elif abs(S_check % 1) < 1e-8: 
-                    self.log.info("discard S=%.1f state" %S_check)
+                    self.log.info("Discarding S=%.1f state" %S_check)
                 else:
-                    self.log.info("discard no .5 .0 S=%.1f state" %S_check)
+                    self.log.info("Discarding no .5 .0 S=%.1f state" %S_check)
                 
 
         
@@ -646,6 +692,7 @@ class PYSCF_ADC:
         self.xmol, self.contr_coeff = x2c.X2C(self.mol).get_xmol()
 
         return E_ref, rdm_aabb_ref, S_ref, ms_ref
+
 
     def collect_sf(self, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo):
 
@@ -680,7 +727,7 @@ class PYSCF_ADC:
         return deg
 
 
-    def print_results(self,en_soc,soc):
+    def print_results(self,en_soc,soc, osc_str_soc):
 
         h2ev = self.hartree_to_ev
         h2cm = self.hartree_to_inv_cm
@@ -690,7 +737,7 @@ class PYSCF_ADC:
 
 
         self.log.info("------------------------------------------------------------------------------------------------------------------")
-        self.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
+        self.log.info("  State    Degen.            E(total)         E(eV)           dE(eV)     dE(nm)        dE(cm-1)        Osc Str.  ")
         self.log.info("------------------------------------------------------------------------------------------------------------------")
 
         e_gs = en_soc[0]
@@ -701,52 +748,23 @@ class PYSCF_ADC:
         for p in range(n_states):
             deg = 1
             de = e_tot[p] - e_gs
+            e_ev = e_tot[p] * h2ev
             de_ev = de * h2ev
             de_cm = de * h2cm
             if p == 0 or abs(de) < 1e-5:
-                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
+                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], e_ev, de_ev, " ", de_cm, " "))
             else:
                 de_nm = 10000000 / de_cm
-                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, "  "))
+                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), deg, e_tot[p], e_ev, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
 
         self.log.info("----------------------------------------------------------------------------------------------------------------")
 
 
-    def print_results_ref(self,en_soc,soc):
-
-        h2ev = self.hartree_to_ev
-        h2cm = self.hartree_to_inv_cm
-
-
-        self.log.info("\nSummary of SOC results for %s", soc.upper())
-
-
-        self.log.info("------------------------------------------------------------------------------------------------------------------")
-        self.log.info("  State    Degen.        E(total)             E(a.u.)         E(eV)         E(nm)       E(cm-1)        Osc Str.  ")
-        self.log.info("------------------------------------------------------------------------------------------------------------------")
-
-        e_gs = en_soc[0]
-        e_tot = en_soc
-
-        n_states = len(e_tot)
-
-        for p in range(n_states):
-            deg = 1
-            de = e_tot[p] 
-            de_ev = de * h2ev
-            de_cm = de * h2cm
-            if p == 0 or abs(de) < 1e-5:
-                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
-            else:
-                de_nm = 10000000 / de_cm
-                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, "  "))
-
-        self.log.info("----------------------------------------------------------------------------------------------------------------")
 
 
 class SF_OBJECT:
     def __init__(self,mf, E_ref, rdm_aabb_ref, S_ref,  ms_ref, mo):
-        self.log.info("\nImport spin-free object...")
+        self.log.info("\nImporting spin-free object...")
         import prism.lib.logger as logger
         self.stdout = mf.mol.stdout
         self.verbose = 4
@@ -768,6 +786,9 @@ class SF_OBJECT:
         self.mu_B_erg = 9.27401549e-21
         self.T_to_G = 10000
         self.NA = 6.0221367e23 # Avogadro constant
+
+        # Dipole moments
+        self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
 
         #For SOC
         self.max_memory_soc = mf.mol.max_memory
@@ -919,8 +940,7 @@ class SF_OBJECT:
 
 
     def compute_soc(self,E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc):
-        import prism.libsoc.general_somf
-        en_soc, evec_soc = prism.libsoc.general_somf.state_interaction_soc(self, E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc)
+        en_soc, evec_soc = general_somf.state_interaction_soc(self, E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc)
         if self.analyze_evec_soc:
             population = evec_soc * np.conj(evec_soc)
             population = np.real(population)
@@ -987,7 +1007,7 @@ class SF_OBJECT:
                 self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
             else:
                 de_nm = 10000000 / de_cm
-                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, "  "))
+                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f    %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, "  "))
 
         self.log.info("----------------------------------------------------------------------------------------------------------------")
 

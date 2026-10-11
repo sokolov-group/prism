@@ -69,7 +69,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
 
         # Parameter
         h_s =method.step_h_s
-        method.log.info("h_s= %.2f T" %(h_s))
+        method.log.info("h_s= %.4f T" %(h_s))
 
 
         #Powder data information
@@ -383,7 +383,9 @@ def gtensor(interface, S, Mu, target_index = 1):
  
     # J in new Kramer_pair basis (Use Jz to transform...)
     z_en, z_evec = np.linalg.eigh(Hab_old[2])
+    z_en, z_evec = z_en[::-1], z_evec[:, ::-1] #Define -J, -J+1, ... J-1, J
     Hab_new = np.einsum('ai,kib,bj->kaj',np.conj(z_evec).T ,Hab_old, z_evec)
+    print(Hab_new[2])
     Hab = Hab_new
  
     g=np.zeros([3,3])
