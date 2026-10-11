@@ -30,11 +30,11 @@ mf.kernel()
 
 myadc = adc.ADC(mf)
 myadc.method_type = "ip"
-
+myadc.conv_tol = 1e-12
+myadc.tol_residual = 1e-6
 E,U,P,X = myadc.kernel(nroots=12)
 
 interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
-
 
 
 
@@ -61,18 +61,18 @@ class KnownValues(unittest.TestCase):
 
         en_soc, properties = interface.kernel()
 
-        self.assertAlmostEqual(en_soc[0],  0.104604360853   , 5)
-        self.assertAlmostEqual(en_soc[1],  0.104604360853   , 5)
-        self.assertAlmostEqual(en_soc[2],  0.104604756033   , 5)
-        self.assertAlmostEqual(en_soc[3],  0.104604756033   , 5)
-        self.assertAlmostEqual(en_soc[4],  0.107894906036   , 5)
-        self.assertAlmostEqual(en_soc[5],  0.107894906036   , 5)
-        self.assertAlmostEqual(en_soc[6],  0.569626526561   , 5)
-        self.assertAlmostEqual(en_soc[7],  0.569626526561   , 5)
-        self.assertAlmostEqual(en_soc[8],  1.035763307152   , 5)
-        self.assertAlmostEqual(en_soc[9],  1.035763307152   , 5)
-        self.assertAlmostEqual(en_soc[10], 1.036584663603   , 5)
-        self.assertAlmostEqual(en_soc[11], 1.036584663603   , 5)
+        self.assertAlmostEqual(en_soc[0],    0.104604360853   , 5)
+        self.assertAlmostEqual(en_soc[1],    0.104604360853   , 5)
+        self.assertAlmostEqual(en_soc[2],    0.104604756033   , 5)
+        self.assertAlmostEqual(en_soc[3],    0.104604756033   , 5)
+        self.assertAlmostEqual(en_soc[4],    0.107894906036   , 5)
+        self.assertAlmostEqual(en_soc[5],    0.107894906036   , 5)
+        self.assertAlmostEqual(en_soc[6],    0.569626526560   , 5)
+        self.assertAlmostEqual(en_soc[7],    0.569626526560   , 5)
+        self.assertAlmostEqual(en_soc[8],    1.035763307532   , 5)
+        self.assertAlmostEqual(en_soc[9],    1.035763307532   , 5)
+        self.assertAlmostEqual(en_soc[10],   1.036584663219   , 5)
+        self.assertAlmostEqual(en_soc[11],   1.036584663219   , 5)
 
 
 
