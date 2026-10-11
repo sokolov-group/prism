@@ -383,7 +383,8 @@ def gtensor(interface, S, Mu, target_index = 1):
  
     # J in new Kramer_pair basis (Use Jz to transform...)
     z_en, z_evec = np.linalg.eigh(Hab_old[2])
-    z_en, z_evec = z_en[::-1], z_evec[:, ::-1] #Define -J, -J+1, ... J-1, J
+    interface.log.info("Defining J, J-1, ... -J+1, -J")
+    z_en, z_evec = z_en[::-1], z_evec[:, ::-1] #Define J, J-1, ... -J+1, -J
     Hab_new = np.einsum('ai,kib,bj->kaj',np.conj(z_evec).T ,Hab_old, z_evec)
     Hab = Hab_new
  

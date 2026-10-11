@@ -15,8 +15,8 @@ np.set_printoptions(threshold=np.inf, linewidth=200)
 def read_sf(sf_name):
 
     print("\nLoad E_ref, rdm_aabb_ref, S_ref, ms_ref...")
-    print("file name:"+ "_" +sf_name+ ".h5\n")
-    with h5py.File(sf_name + ".h5", "r") as f:
+    print("file name:"+ "_" +sf_name+ "\n")
+    with h5py.File(sf_name, "r") as f:
         E_ref        = f["E_ref"][:]
         rdm_aabb_ref = f["rdm_aabb_ref"][:]
         S_ref        = f["S_ref"][:]
@@ -139,6 +139,7 @@ class PYSCF_ADC:
         self.ms_ref_select = None
         self.ignore_Ms_diag = False
         self.save_sf = False
+        self.name_sf = None
         self.analyze_evec_soc = False
 
         #For g-tensor
@@ -209,7 +210,7 @@ class PYSCF_ADC:
         sys.stdout.flush()
 
         if self.save_sf:
-            self.collect_sf(E_ref, rdm_aabb_ref, S_ref, ms_ref, self.mo)
+            self.collect_sf(E_ref, rdm_aabb_ref, S_ref, ms_ref, self.mo, name=self.name_sf)
 
         self.soc.lower()
         en_soc = self.compute_soc(E_ref, rdm_aabb_ref, S_ref,  ms_ref, self.soc)
@@ -217,8 +218,6 @@ class PYSCF_ADC:
         self.e_tot = en_soc
         
 
-
-        
         return self.e_tot, self.properties
 
 
@@ -316,7 +315,7 @@ class PYSCF_ADC:
                 self.log.info("%d = %s %s", i + 1, index_value[0], index_value[1])
             self.log.info("")
         
-
+        #Compute magnetic properties
         if (self.gtensor or self.mag_av or  self.sus_av or  self.mag_vec or self.sus_tensor):
             properties_mag = magnetic.compute_properties(self, rdm_sf, en_soc, evec_soc, S_ref,  method = None)
             self.properties.update(properties_mag)
@@ -706,12 +705,16 @@ class PYSCF_ADC:
         return E_ref, rdm_aabb_ref, S_ref, ms_ref
 
 
-    def collect_sf(self, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo):
+    def collect_sf(self, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo, name=None):
         '''
         Save spin-free information for state-interaction calculation
         '''
-        self.log.info("\nSave E_ref, rdm_aabb_ref, S_ref, ms_ref... as csv file...")
-        input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        self.log.info("\nSave E_ref, rdm_aabb_ref, S_ref, ms_ref... as h5 file...")
+        if name:
+            input_file = name
+        else:    
+            input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        
         self.log.info("file name:"+input_file+ ".h5\n")
 
         with h5py.File(input_file + ".h5", "w") as f:
@@ -781,13 +784,13 @@ class PYSCF_ADC:
 
 
 class SF_OBJECT:
-    def __init__(self, mol, E_ref, rdm_aabb_ref, S_ref,  ms_ref, mo):
-        self.log.info("\nImporting spin-free object...")
+    def __init__(self, mol, E_ref, rdm_aabb_ref, S_ref, mo, ms_ref=None):
         import prism.lib.logger as logger
         self.stdout = mol.stdout
         self.verbose = 4
         log = logger.Logger(self.stdout, self.verbose)
         self.log = log
+        self.log.info("\nImporting spin-free object...")
         from pyscf.tools import molden
         self.molden = molden
 
@@ -806,10 +809,10 @@ class SF_OBJECT:
         self.NA = 6.0221367e23 # Avogadro constant
 
         # Dipole moments
-        self.dip_mom_ao = mf.mol.intor_symmetric("int1e_r", comp = 3)
+        self.dip_mom_ao = mol.intor_symmetric("int1e_r", comp = 3)
 
         #For SOC
-        self.max_memory_soc = mf.mol.max_memory
+        self.max_memory_soc = mol.max_memory
         #from pyscf.x2c import x2c
         self.xmol = None 
         self.contr_coeff = None
@@ -819,6 +822,7 @@ class SF_OBJECT:
         self.mol = mol
 
         #spin-free information
+        self.deg_atol = 1e-5
         self.roots = len(E_ref)
         self.nmo = len(rdm_aabb_ref[0,0,0,0])
         self.mo = mo
@@ -826,6 +830,7 @@ class SF_OBJECT:
         self.rdm_aabb_ref = rdm_aabb_ref
         self.S_ref = S_ref
         self.ms_ref = ms_ref
+        self.ms_ref_select = None
         self.soc = "bp"
         self.analyze_evec_soc = True
 
@@ -835,14 +840,129 @@ class SF_OBJECT:
         self.mol.max_memory = self.max_memory_soc
         self.xmol, self.contr_coeff = x2c.X2C(self.mol).get_xmol()
 
-        
+        #For g-tensor
+        self.gtensor = False
+        self.magnetic_origin_type = 'charge'
+        self.gtensor_target_state = 1
+
+        # For powder properties
+        import pyscf.dft.LebedevGrid
+        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
+
+        # For magnetic susceptibility
+        self.mag_av = False
+        self.sus_av = False
+        self.mag_vec = False
+        self.sus_tensor = False
+
+        self.step_h_s = 0.001 #Magnetic field step size used for numerical differentiation (Unit:T)
+
+        ###Powder magnetization
+        Bs_list = []
+        for i in range(15):
+            H = i * 0.5
+            Bs_list.append(H)
+
+        self.Bs_powder_M = Bs_list 
+        self.T_powder_M = [1.8]
+
+        ###Powder susceptibility
+        T_list = []
+        for i in range(21):
+            T = 14.75 * i + 5
+            T_list.append(T)
+
+        self.T_powder_chi = T_list
+        self.Bs_powder_chi = [0.1]
+
+        ###Vector magnetization
+        self.B_vec_M = [0,0,1]
+        self.Bs_vec_M = Bs_list 
+        self.T_vec_M = [1.8]
+
+        ###Tensor  susceptibility
+        self.B_vec_chi = [0,0,1]
+        self.Bs_vec_chi = [0.1]
+        self.T_vec_chi = [5,100,200,250]
+
+
+        #Calculating result
+        self.properties = {}  
+
+
+
     def kernel(self):
-        self.compute_soc(self.E_ref, self.rdm_aabb_ref, self.S_ref,  self.ms_ref, self.soc)
-        return
+        
+        if self.ms_ref is None:
+            self.log.info("ms_ref is None. Obtaining ms_ref from rdm_aabb_ref...")
+            self.rotate_rdm1s_to_ms()
+            sys.stdout.flush()
+            self.E_ref, self.rdm_aabb_ref, self.S_ref,  self.ms_ref = self.get_sf_ref()
+            sys.stdout.flush()
+
+        en_soc = self.compute_soc(self.E_ref, self.rdm_aabb_ref, self.S_ref,  self.ms_ref, self.soc)
+
+        return en_soc, self.properties
 
 
     def compute_soc(self,E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc):
+        
         en_soc, evec_soc = general_somf.state_interaction_soc(self, E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc)
+ 
+        #Compute OSC
+        #compute soc rdm
+        rdm_sf = rdm_aabb_ref[0] + rdm_aabb_ref[1]
+        I_total = []
+        S_total = []
+        ms_total = []
+        for i in range(len(S_ref)):
+            s = S_ref[i]
+            n = int(2*s+1)
+            for j in range(n):
+                I_total.append(i)
+                S_total.append(s)
+                m = s-j
+                ms_total.append(m)
+    
+        nstate_total = len(S_total)
+        rdm_mo = np.zeros((nstate_total, nstate_total, self.nmo, self.nmo),dtype='complex')
+        for I in range(nstate_total):
+            for J in  range(nstate_total):
+                if (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
+                    rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
+        rdm_soc = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
+
+        # Calculate ground state degeneracy:
+        deg_gs = 1
+        for i in range(len(en_soc)-1):
+            if (np.abs(en_soc[i+1] - en_soc[0])) < 1e-5:
+                deg_gs += 1
+            else:
+                break
+    
+
+        # Calculate oscillator strengths for transitions from the first state
+        osc_str_soc_full=[]
+        osc_str_soc = np.zeros(len(en_soc)-1)
+        for gs_index in range(deg_gs):
+            e_diff = en_soc - en_soc[gs_index]
+            e_diff = e_diff[gs_index+1:]
+            osc = trans_prop.osc_strength(self, e_diff, rdm_soc[ gs_index, gs_index+1:])
+            osc_str_soc_full.append(osc)
+            osc_str_soc[gs_index:] += osc 
+
+        self.properties["osc_strengths"] = osc_str_soc
+
+        # Compute oscillator strengths starting from each state
+        if self.verbose >= 5:
+            for gs_index in range(deg_gs, len(en_soc)):  
+                e_diff = en_soc - en_soc[gs_index]
+                e_diff = e_diff[gs_index+1:]
+                osc_str_soc_full.append(trans_prop.osc_strength(self, e_diff, rdm_mo[  gs_index, gs_index+1:]))
+
+            self.properties["osc_strengths_full"] = osc_str_soc_full
+
+
         if self.analyze_evec_soc:
             population = evec_soc * np.conj(evec_soc)
             population = np.real(population)
@@ -878,18 +998,29 @@ class SF_OBJECT:
                 self.log.info("%d = %s %s", i + 1, index_value[0], index_value[1])
             self.log.info("")
 
-        self.print_results(en_soc,soc)
+        #Compute magnetic properties
+        if (self.gtensor or self.mag_av or  self.sus_av or  self.mag_vec or self.sus_tensor):
+            properties_mag = magnetic.compute_properties(self, rdm_sf, en_soc, evec_soc, S_ref,  method = None)
+            self.properties.update(properties_mag)
+
+        self.print_results(en_soc,soc, osc_str_soc)
+
+        if "osc_strengths_full" in self.properties:
+            trans_prop.print_osc_strength(self, self.properties["osc_strengths_full"])
+
+        if "magnetic_properties" in self.properties:
+            magnetic.print_mag_properties(self, self.properties,  method = None)
+
+        return en_soc
 
 
-    def print_results(self,en_soc,soc):
+    def print_results(self, en_soc, soc, osc_str_soc):
 
         h2ev = self.hartree_to_ev
         h2cm = self.hartree_to_inv_cm
 
 
-        self.log.info("\nSummary of SOC results for",soc.upper())
-
-
+        self.log.info("\nSummary of SOC results for %s", soc.upper())
         self.log.info("------------------------------------------------------------------------------------------------------------------")
         self.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
         self.log.info("------------------------------------------------------------------------------------------------------------------")
@@ -908,11 +1039,174 @@ class SF_OBJECT:
                 self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12s %14.4f   %12s" % ((p+1), deg, e_tot[p], de, de_ev, " ", de_cm, " "))
             else:
                 de_nm = 10000000 / de_cm
-                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f    %12s" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, "  "))
+                self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
 
         self.log.info("----------------------------------------------------------------------------------------------------------------")
 
+    def rotate_rdm1s_to_ms(self):
+        '''
+        Obtain Ms egienvector and their rdm_1s
+        '''
+        self.log.info("\n*****rotate_rdm1s_to_ms*****")
+        #TO DO: make sure nmo_b is always equal nmo_a
+        rdm_aabb = self.rdm_aabb_ref
+        S_old_total = self.S_ref
+        E_old_total = self.E_ref
+        n_state = len(E_old_total)
 
+        #Calculating ms by using rdm_aabb
+        Sz_en_tot = np.zeros(n_state)
+        Sz_evec_total = np.zeros((n_state,n_state))
+        deg_list = self.degeneracy_list(E_old_total,  atol= self.deg_atol)
+        self.log.info("deg_list=%s",deg_list)
+
+        Ms_total = np.zeros((n_state,n_state))
+        for I in range(n_state):
+            for J in range(n_state):
+                rdm_sz = 1/2 * ( rdm_aabb[0,I,J] - rdm_aabb[1,I,J] )
+                sz = np.trace(rdm_sz)
+                Ms_total[I,J] = sz
+
+        self.log.extra("Ms_old_total=")
+        self.log.extra("%s", Ms_total)
+
+        for K in range(len(deg_list)):
+            I = int(np.sum(deg_list[0:K]))
+            J = I + deg_list[K]
+            Ms = Ms_total[I:J, I:J]
+            sz_en, sz_evec = np.linalg.eigh(Ms)
+            Sz_evec_total[I:J,I:J] = sz_evec
+            Sz_en_tot[I:J] = sz_en
+
+        self.log.extra("sz_en_tot=")
+        self.log.extra("%s", Sz_en_tot)
+
+        self.log.extra("Sz_evec_total=")
+        self.log.extra("%s", Sz_evec_total)
+
+        self.rdm_aabb_ref = np.einsum('ai,KibIJ,bj->KajIJ',np.conj(Sz_evec_total).T , rdm_aabb , Sz_evec_total)
+
+        S_total = np.einsum('ai,ib,bj->aj',np.conj(Sz_evec_total).T , np.diag(S_old_total) , Sz_evec_total)
+        self.log.extra("Make sure S_total:")
+        self.log.extra("%s", S_total)
+        if not np.allclose(S_total, np.diag(np.diagonal(S_total)), atol=1e-7, rtol=0):
+            self.log.warn("Warning: S_total is not diagonal")
+        else:
+            self.log.info("S_total is diagonal")
+
+        self.S_ref = np.diagonal(S_total)
+
+        E_new = np.einsum('ai,ib,bj->aj',np.conj(Sz_evec_total).T , np.diag(E_old_total) , Sz_evec_total)
+        self.log.extra("Make sure E:")
+        self.log.extra("%s", E_new)
+        E_new = np.diagonal(E_new)
+        if np.allclose(E_old_total, E_new, atol=1e-5, rtol=0):
+            self.log.info("Energy is same after rotation")
+            self.E_ref = E_new
+        else:
+            raise Exception("E_new change energy")
+
+        return self.rdm_aabb_ref
+    
+
+    def get_sf_ref(self):
+        '''
+        select specifc Ms state for state-interaction calculation
+        '''
+        self.log.info("\n*****get_sf_ref*****")
+        rdm_aabb = self.rdm_aabb_ref
+        E = self.E_ref
+        n_state = len(E)
+        S_total = self.S_ref
+
+        Ms=np.zeros((n_state,n_state))
+        for I in range(n_state):
+            for J in range(n_state):
+                rdm_sz = 1/2 * ( rdm_aabb[0,I,J] - rdm_aabb[1,I,J] )
+                sz = np.trace(rdm_sz)
+                Ms[I,J] = sz
+
+        self.log.extra("Make sure MS=")
+        self.log.extra("%s", Ms)
+
+        if not np.allclose(Ms, np.diag(np.diagonal(Ms)), atol=1e-5, rtol=0):
+            self.log.warn("Warning: Ms is not diagonal")
+
+        else:
+            self.log.info("Ms is diagonal")
+
+        sz = np.diagonal(Ms)
+        sz = np.round(sz* 2) / 2
+        sz = sz.tolist()
+        sz = [round(elem,2) for elem in sz ]
+
+        S_total = np.round(S_total* 2) / 2
+        S_total = S_total.tolist()
+        S_total = [round(elem,2) for elem in S_total ]
+
+        #Choice ms as positive minimum
+        if self.ms_ref_select is None:
+            self.log.info("Choicing ms_ref as positive minimum")
+            ms_ref = min((x for x in sz if x > 0), default=None) #Choice ms as positive minimum
+        
+            if ms_ref is None:
+                self.log.info("detect ms_ref is None, it should be 0 ")
+                ms_ref = 0
+        else:
+            self.log.info("User define ms_ref")
+            ms_ref = self.ms_ref_select
+
+        self.log.info("ms_ref=%s", ms_ref)
+
+        ref_index = []
+        for i in range(n_state):
+            if (np.abs(sz[i]-ms_ref)) < 1e-5:
+                ref_index.append(i)
+
+        
+        n_state_ref = len(ref_index)
+  
+        rdm_aabb_ref = np.zeros((2,n_state_ref, n_state_ref, len(rdm_aabb[0,0,0]),len(rdm_aabb[0,0,0])))
+        E_ref = []
+        S_ref = []
+        E = E.tolist()
+        for i in range(n_state_ref):
+            I = ref_index[i]
+            E_ref.append(E[I])
+            S_ref.append(S_total[I])
+            for j in range(n_state_ref):
+                J = ref_index[j]
+                rdm_aabb_ref[:,i,j] += rdm_aabb[:,I,J]
+
+        self.log.info("roots_old=%s",n_state)
+        self.log.info("roots_ref=%s",n_state_ref)
+        self.log.info("S_ref=%s",S_ref)
+        self.log.info("ms_ref=%s", ms_ref)
+        self.log.info("E_ref=%s",E_ref)
+
+
+        return E_ref, rdm_aabb_ref, S_ref, ms_ref
+
+
+    def degeneracy_list(self,en, atol= 1e-5):
+        '''
+        determine degeneracy based on energy in list
+        '''
+        self.log.info("degeneracy_atol =%s", atol)
+
+        deg = []
+        count2, total_deg = 0,0
+        for count1 in range(len(en)):
+            if (np.abs(en[count1] - en[count2]) < atol):
+                total_deg +=1
+            else:
+                deg.append(total_deg)
+                total_deg = 1
+                count2 = count1
+        if (total_deg >=1):
+            deg.append(total_deg)
+
+        return deg
 
 
 
