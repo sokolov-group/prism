@@ -91,7 +91,7 @@ def real_time_prop(nevpt, evec, etot):
         if nevpt.density and any(abs(t - target_time) <= time_step / 2 for target_time in nevpt.density_plot):
 
             # Time-dependent RDM for hole density
-            td_rdm1(nevpt, wfn, evec[0], t)
+            td_rdm1(nevpt, wfn, wfn0, t)
             #td_rdm1_spin(nevpt, wfn, t)
 
             # Time-dependent dipole moment
@@ -165,7 +165,7 @@ def td_rdm1(nevpt, coeff_t, evec0, t):
     mo_coeff = mc.mo_coeff
 
     # Compute all 1-RDMs
-    rdms = nevpt.make_rdm1()
+    rdms = nevpt.make_rdm1(rdm_type="all")
 
     print("RDM dimension =", rdms.shape[-1])
     print("Number of MO columns =", mo_coeff.shape[1])
@@ -185,7 +185,8 @@ def td_rdm1(nevpt, coeff_t, evec0, t):
     print("shape of the rdms = ", rdms.shape)
     print()
 
-    rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms).real
+    #rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms).real
+    rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms, optimize=True)
    
     non_init, no_init = np.linalg.eigh(rdm_init)
     rdm_init_diagonal = no_init.conj().T @ rdm_init @ no_init
@@ -206,7 +207,7 @@ def td_rdm1(nevpt, coeff_t, evec0, t):
     print()
 
     # Time dependent RDM
-    td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdms).real
+    td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdms, optimize=True)
 
     non_td, no_td = np.linalg.eigh(td_rdms)
     td_rdms_diagonal = no_td.conj().T @ td_rdms @ no_td
@@ -243,7 +244,7 @@ def td_rdm1(nevpt, coeff_t, evec0, t):
     print()
 
     rdm_diff = td_rdms - rdm_init 
-    rdm_diff = mo_coeff @ rdm_diff @ mo_coeff.T
+    rdm_diff = mo_coeff @ rdm_diff @ mo_coeff.conj().T
 
     rdm_diff_dia = td_rdms_diagonal - rdm_init_diagonal
     rdm_diff_dia = mo_coeff @ rdm_diff_dia @ mo_coeff.T
