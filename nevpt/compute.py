@@ -227,7 +227,7 @@ def analyze(nevpt, weight_cutoff=0.01):
             trdm = nevpt.make_rdm1()
             nevpt.log.info("\n ** Attachment and Detachment density analyssis (cutoff > 0.1) **\n")
             for state in range(1, trdm.shape[0]):
-                trans_prop.compute_ad_density1(nevpt.interface, trdm, state)
+                trans_prop.compute_ad_density(nevpt.interface, trdm, state, cube_grid=nevpt.ad_cube_grid)
 
     if nevpt.method_type == "qd":
         from prism.nevpt import qd_nevpt

@@ -92,6 +92,7 @@ class NEVPT:
         self.properties = {}                      # Dictionary to store computed properties
         self.compute_ntos = False                 # Option for NTO computation
         self.ad_density = False                   # Option for attachment-detachment densities
+        self.ad_cube_grid = (160, 160, 1000)      # Default grid points for attachment-detachment densities
 
         # Integrals
         self.mo_energy = lambda:None

@@ -177,18 +177,19 @@ def compute_ntos(interface, trdm, initial_state=0, target_state=1):
 
     return weights, U, Vh
 
-def compute_ad_density1(interface, trdm, state):
+def compute_ad_density(interface, trdm, state, cube_grid):
     '''
     Computes attachement and detachment densities between two given states
     given an interface object (source of MO coefficients
     and PySCF mol object) and a transition density matrix.
     '''
-    
+
     # Initial density
     p1 = trdm[0,0].real
 
+    # Excited state densities
     p2 = trdm[state, state].real
-    delta = p1 - p2
+    delta = p2 - p1
 
     # Diagonalize the density matrix
     occ, U = np.linalg.eigh(delta)
@@ -197,32 +198,33 @@ def compute_ad_density1(interface, trdm, state):
     de_occ = -1 * np.minimum(occ, 0.0)
     at_occ = np.maximum(occ, 0.0)
 
-    # Detachment and attachment densities
-    de_density = U @ np.diag(de_occ) @ U.conj().T
-    at_density = U @ np.diag(at_occ) @ U.conj().T
-
-    # Eigen values of atachment and detachment densities
-    de_occ, U1 = np.linalg.eigh(de_density)
-    at_occ, U2 = np.linalg.eigh(at_density)
-    
-    # MO to AO
-    de = interface.mo @ de_density @ interface.mo.conj().T
-    at = interface.mo @ at_density @ interface.mo.conj().T
-
     interface.log.info(f"  State {0} -> State {state}:")
     interface.log.info("     Detachment eigenvalues : " + " ".join(f"{x:.4f}" for x in de_occ if x > 0.1))
     interface.log.info("     Attachment eigenvalues : " + " ".join(f"{x:.4f}" for x in at_occ if x > 0.1))
-    interface.log.info("     P1 - P2 eigenvalues    : " + " ".join(f"{x:.4f}" for x in occ if np.abs(x) > 10e-8))
+    interface.log.info("     P2 - P1 eigenvalues    : " + " ".join(f"{x:.4f}" for x in occ if np.abs(x) > 10e-8) + "\n")
+
+    # Visualization: Keep only dominant eigenvalue contributions
+    de_plot_occ = np.zeros_like(de_occ)
+    at_plot_occ = np.zeros_like(at_occ)
+
+    de_plot_occ[np.argmax(de_occ)] = np.max(de_occ)
+    at_plot_occ[np.argmax(at_occ)] = np.max(at_occ)
+
+    de_plot_density = U @ np.diag(de_plot_occ) @ U.conj().T
+    at_plot_density = U @ np.diag(at_plot_occ) @ U.conj().T
+
+    de_plot = interface.mo @ de_plot_density @ interface.mo.conj().T
+    at_plot = interface.mo @ at_plot_density @ interface.mo.conj().T
 
     # Save to cube
     import os
     from pyscf.tools import cubegen
-    plot_dir = "test.plot"
+    nx, ny, nz = cube_grid
+    plot_dir = "ad_density.plot"
     os.makedirs(plot_dir, exist_ok=True)
     dename = os.path.join(plot_dir, f"detach_S0_S{state}.cube")
     atname = os.path.join(plot_dir, f"attach_S0_S{state}.cube")
-    cubegen.density(interface.mol, dename, de, nx=160, ny=160, nz=1000)
-    cubegen.density(interface.mol, atname, at, nx=160, ny=160, nz=1000)
+    cubegen.density(interface.mol, dename, de_plot, nx, ny, nz)
+    cubegen.density(interface.mol, atname, at_plot, nx, ny, nz)
 
     return
-
