@@ -39,6 +39,9 @@ class PYSCF_ADC:
         log.info("\nImporting ADC in PYSCF...")
 
         # General info
+        self.mol = mf.mol
+        self.mf = mf
+
         # Unit conversions
         self.hartree_to_ev = 27.2113862459817
         self.hartree_to_inv_cm = 219474.63136314
@@ -60,11 +63,6 @@ class PYSCF_ADC:
         #from pyscf.x2c import x2c
         self.xmol = None 
         self.contr_coeff = None
-
-
-        self.nmo = mf.mo_coeff.shape[1]  
-        self.mol = mf.mol
-        self.mf = mf
 
         #ADC information
         self.adc = adc
@@ -194,6 +192,7 @@ class PYSCF_ADC:
         self.S_total = None
         self.properties = {}  
 
+
     def kernel(self):
         self.log.info("Collecting necessary information for SOC")
         if self.add_ref_ee is True:
@@ -222,6 +221,8 @@ class PYSCF_ADC:
 
 
     def compute_soc(self,E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc):
+
+        #Compute en_soc
         en_soc, evec_soc = general_somf.state_interaction_soc(self, E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc)
 
         #Compute OSC
@@ -675,9 +676,8 @@ class PYSCF_ADC:
                     self.log.info("Discarding no .5 .0 S=%.1f state" %S_check)
                 
 
-        
         n_state_ref = len(ref_index_S)
-  
+
         rdm_aabb_ref = np.zeros((2,n_state_ref, n_state_ref, len(rdm_aabb[0,0,0]),len(rdm_aabb[0,0,0])))
         E_ref = []
         S_ref = []
@@ -755,8 +755,6 @@ class PYSCF_ADC:
 
 
         self.log.info("\nSummary of SI-ADC results for %s", soc.upper())
-
-
         self.log.info("------------------------------------------------------------------------------------------------------------------")
         self.log.info("  State    Degen.            E(total)         E(eV)           dE(eV)     dE(nm)        dE(cm-1)        Osc Str.  ")
         self.log.info("------------------------------------------------------------------------------------------------------------------")
@@ -781,8 +779,6 @@ class PYSCF_ADC:
         self.log.info("----------------------------------------------------------------------------------------------------------------")
 
 
-
-
 class SF_OBJECT:
     def __init__(self, mol, E_ref, rdm_aabb_ref, S_ref, mo, ms_ref=None):
         import prism.lib.logger as logger
@@ -795,6 +791,8 @@ class SF_OBJECT:
         self.molden = molden
 
         # General info
+        self.nmo = len(mo)  
+        self.mol = mol
         # Unit conversions
         self.hartree_to_ev = 27.2113862459817
         self.hartree_to_inv_cm = 219474.63136314
@@ -816,10 +814,6 @@ class SF_OBJECT:
         #from pyscf.x2c import x2c
         self.xmol = None 
         self.contr_coeff = None
-
-
-        self.nmo = len(mo)  
-        self.mol = mol
 
         #spin-free information
         self.deg_atol = 1e-5
@@ -890,7 +884,6 @@ class SF_OBJECT:
         self.properties = {}  
 
 
-
     def kernel(self):
         
         if self.ms_ref is None:
@@ -906,7 +899,8 @@ class SF_OBJECT:
 
 
     def compute_soc(self,E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc):
-        
+
+        #Compute en_soc
         en_soc, evec_soc = general_somf.state_interaction_soc(self, E_ref, rdm_aabb_ref, S_ref,  ms_ref, soc)
  
         #Compute OSC
@@ -1019,7 +1013,6 @@ class SF_OBJECT:
         h2ev = self.hartree_to_ev
         h2cm = self.hartree_to_inv_cm
 
-
         self.log.info("\nSummary of SOC results for %s", soc.upper())
         self.log.info("------------------------------------------------------------------------------------------------------------------")
         self.log.info("  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  ")
@@ -1042,6 +1035,7 @@ class SF_OBJECT:
                 self.log.info("%5d       %2d      %20.12f %14.8f %12.4f %12.4f %14.4f    %12.8f" % ((p+1), deg, e_tot[p], de, de_ev, de_nm, de_cm, osc_str_soc[p-1]))
 
         self.log.info("----------------------------------------------------------------------------------------------------------------")
+
 
     def rotate_rdm1s_to_ms(self):
         '''
