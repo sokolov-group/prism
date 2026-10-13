@@ -65,6 +65,7 @@ class PYSCF:
         self.mu_B_erg = 9.27401549e-21
         self.T_to_G = 10000
         self.NA = 6.0221367e23 # Avogadro constant
+        self.bohr_to_ang = 0.529177210544
 
         log.info("Collecting reference wavefunction information...")
 
