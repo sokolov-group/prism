@@ -118,14 +118,8 @@ def compute_dyson(interface, X):
     mol, mo = _molden_basis(interface)
     dyson_mos = np.dot(mo, X)
 
-<<<<<<< HEAD
-    filename = os.path.basename(sys.argv[0])
-    name = os.path.splitext(filename)[0]
-    interface.molden.from_mo(mol, f'{name}_dyson.molden', dyson_mos)
-=======
     input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
     filename = f"{input_file}_dyson.molden"
->>>>>>> origin/main
 
     interface.molden.from_mo(interface.mol, filename, dyson_mos)
     interface.log.note("Dyson orbitals written to %s" % filename)
