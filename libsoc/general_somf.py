@@ -55,6 +55,8 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     '''
     if ms == 0:
         interface.log.warn("Warning: ms=0. Cannot consider about same-spin coupling")
+        if len(S) != len(set(S)):
+            raise Exception("Detect same-spin states. State-interaction cannot give reasonable result.")
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")

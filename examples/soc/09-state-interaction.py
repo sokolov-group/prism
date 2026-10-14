@@ -46,7 +46,7 @@ interface.sus_tensor = True
 en_soc, properties = interface.kernel()
 
 
-E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.interface_soc.read_sf("09-state-interaction.h5")
+E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.interface_soc.read_checkpoint("09-state-interaction.h5")
 interface_sf = prism.interface_soc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #, ms_ref=ms_ref)
 interface_sf.gtensor = True
 interface_sf.mag_av =     True

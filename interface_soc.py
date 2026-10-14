@@ -12,7 +12,7 @@ import h5py
 np.set_printoptions(threshold=np.inf, linewidth=200)
 
 
-def read_sf(sf_name):
+def read_checkpoint(sf_name):
 
     print("\nLoad E_ref, rdm_aabb_ref, S_ref, ms_ref...")
     print("file name:"+ "_" +sf_name+ "\n")
