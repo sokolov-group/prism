@@ -144,7 +144,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         mc.kernel()
 
-        log.info("\nembedded SA-CASSCF (%d states, ncas=%d, nelecas=%d)"
+        log.info("\nembedded SA-CASSCF (%d states, ncas=%d, nelecas=%s)"
                  % (sa_nstates, ncas, nelecas))
         for i, e in enumerate(mc.e_states):
             log.info("  State %d: %.10f Ha  (weight=%.4f)" % (i, e, sa_weights[i]))
