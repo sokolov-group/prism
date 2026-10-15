@@ -191,6 +191,13 @@ def td_rdm1(nevpt, coeff_t, evec, t):
     #rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms).real
     evec0 = evec[0]
     print("shape of evec0 = ", evec0.shape)
+    print("initial wavefunction evec0 = ", evec0)
+    print("initial wavefunction evec0 norm = ", np.linalg.norm(evec0))
+    print("shape of the evec0 = ", evec0.shape)
+    print("shape of the rdms = ", rdms.shape)
+    print()
+
+    #rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms).real
     rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms, optimize=True)
    
     non_init, no_init = np.linalg.eigh(rdm_init)
@@ -214,6 +221,7 @@ def td_rdm1(nevpt, coeff_t, evec, t):
     # Time dependent RDM
     coeff_t = evec.T @ coeff_t
     print("shape of coeff_t in td = ", coeff_t.shape)
+    
     td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdms, optimize=True)
 
     non_td, no_td = np.linalg.eigh(td_rdms)
