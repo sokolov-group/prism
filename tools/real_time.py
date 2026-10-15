@@ -91,9 +91,10 @@ def real_time_prop(nevpt, evec, etot):
         if nevpt.density and any(abs(t - target_time) <= time_step / 2 for target_time in nevpt.density_plot):
 
             # Time-dependent RDM for hole density
-            td_rdm1(nevpt, wfn, wfn0, t)
+            #td_rdm1(nevpt, wfn, evec, t)
             #td_rdm1_spin(nevpt, wfn, t)
-
+            td_rdm1_check(nevpt, wfn, evec, t)
+    
             # Time-dependent dipole moment
             dipmom_x, dipmom_y, dipmom_z, td_dip_total = td_dip_mom(nevpt, e_diff, wfn, t)
         
@@ -157,7 +158,7 @@ def exact_propagator(nevpt, wfn, H_eff):
 
     return wfn
 
-def td_rdm1(nevpt, coeff_t, evec0, t):
+def td_rdm1(nevpt, coeff_t, evec, t):
 
     mc = nevpt.interface.mc
     mf = nevpt.interface.mf
@@ -179,13 +180,17 @@ def td_rdm1(nevpt, coeff_t, evec0, t):
     # Ground state RDM
     #rdm_init = rdms[0,0].copy().real
        
-    print("initial wavefunction evec0 = ", evec0)
-    print("initial wavefunction evec0 norm = ", np.linalg.norm(evec0))
-    print("shape of the evec0 = ", evec0.shape)
+    print("initial wavefunction evec = ", evec)
+    print("initial wavefunction evec norm = ", np.linalg.norm(evec))
+    print("shape of the evec = ", evec.shape)
     print("shape of the rdms = ", rdms.shape)
+    print("shape of the coeff_t = ", coeff_t.shape)
+
     print()
 
     #rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms).real
+    evec0 = evec[0]
+    print("shape of evec0 = ", evec0.shape)
     rdm_init = np.einsum("I,J,IJpq->pq", np.conj(evec0), evec0, rdms, optimize=True)
    
     non_init, no_init = np.linalg.eigh(rdm_init)
@@ -207,6 +212,8 @@ def td_rdm1(nevpt, coeff_t, evec0, t):
     print()
 
     # Time dependent RDM
+    coeff_t = evec.T @ coeff_t
+    print("shape of coeff_t in td = ", coeff_t.shape)
     td_rdms = np.einsum("I,J,IJpq->pq", np.conj(coeff_t), coeff_t, rdms, optimize=True)
 
     non_td, no_td = np.linalg.eigh(td_rdms)
@@ -353,3 +360,307 @@ def td_rdm1_spin(nevpt, coeff_t, t):
     cubegen.density(mol, f"density_{t:.3f}.cube", diff_total_ao.real)
 
     return
+
+
+def td_rdm1_check(nevpt, coeff_t, evec, t):
+
+    mc = nevpt.interface.mc
+    mf = nevpt.interface.mf
+    mol = mf.mol
+    mo_coeff = np.asarray(mc.mo_coeff)
+
+    # ============================================================
+    # 1. Get transition 1-RDMs
+    # ============================================================
+
+    rdms = np.asarray(nevpt.make_rdm1(rdm_type="all"))
+
+    coeff_t = np.asarray(coeff_t, dtype=complex).copy()
+    evec = np.asarray(evec, dtype=complex)
+
+    print("\n" + "=" * 75)
+    print(f"TIME-DEPENDENT RDM DEBUGGING, t = {t}")
+    print("=" * 75)
+
+    print("rdms shape       =", rdms.shape)
+    print("evec shape       =", evec.shape)
+    print("coeff_t shape    =", coeff_t.shape)
+    print("MO shape         =", mo_coeff.shape)
+
+    if rdms.ndim != 4:
+        raise ValueError("Expected rdms with shape (nstate,nstate,nmo,nmo)")
+
+    if evec.ndim != 2:
+        raise ValueError("evec must be the FULL eigenvector matrix")
+
+    if coeff_t.ndim != 1:
+        raise ValueError("coeff_t must be a 1D coefficient vector")
+
+    ns = rdms.shape[0]
+
+    if rdms.shape[1] != ns or evec.shape != (ns, ns):
+        raise ValueError("Incompatible state dimensions")
+
+    if coeff_t.size != ns:
+        raise ValueError("Coefficient vector has wrong length")
+
+    if rdms.shape[2:] != (mo_coeff.shape[1],) * 2:
+        raise ValueError("RDM orbital dimensions do not match MO coefficients")
+
+    # ============================================================
+    # 2. Inspect eigenvectors
+    # ============================================================
+
+    print("\n--- EIGENVECTOR DIAGNOSTICS ---")
+
+    print("Eigenvector matrix:")
+    print(evec)
+
+    print("Row 0:")
+    print(evec[0])
+
+    print("Column 0:")
+    print(evec[:, 0])
+
+    print("Row 0 norm =", np.linalg.norm(evec[0]))
+    print("Column 0 norm =", np.linalg.norm(evec[:, 0]))
+
+    print(
+        "Unitarity error =",
+        np.linalg.norm(evec.conj().T @ evec - np.eye(ns))
+    )
+
+    # ============================================================
+    # 3. Original initial RDM, unchanged
+    # ============================================================
+
+    print("\n--- INITIAL RDM ---")
+
+    evec0 = evec[0]
+
+    rdm_init = np.einsum(
+        "I,J,IJpq->pq",
+        evec0.conj(),
+        evec0,
+        rdms,
+        optimize=True
+    )
+
+    eig_init = np.linalg.eigvalsh(rdm_init)
+
+    print("Initial RDM eigenvalues:")
+    print(eig_init)
+
+    print("Initial RDM trace =", np.trace(rdm_init))
+
+    print(
+        "Initial RDM Hermiticity error =",
+        np.linalg.norm(rdm_init - rdm_init.conj().T)
+    )
+
+    # ============================================================
+    # 4. Check propagated coefficients
+    # ============================================================
+
+    print("\n--- PROPAGATED WAVEFUNCTION ---")
+
+    print("Original coeff_t:")
+    print(coeff_t)
+
+    print("Real components:")
+    print(coeff_t.real)
+
+    print("Imaginary components:")
+    print(coeff_t.imag)
+
+    print("Norm before transformation =", np.linalg.norm(coeff_t))
+
+    print(
+        "Imaginary component norm =",
+        np.linalg.norm(coeff_t.imag)
+    )
+
+    # ============================================================
+    # 5. Compare possible basis transformations
+    # ============================================================
+
+    transformations = {
+        "transpose": evec.T @ coeff_t,
+        "direct": evec @ coeff_t,
+        "identity": coeff_t.copy()
+    }
+
+    results = {}
+
+    for name, coeff_ref in transformations.items():
+
+        print("\n" + "-" * 65)
+        print("TRANSFORMATION:", name)
+        print("-" * 65)
+
+        print("Transformed coefficients:")
+        print(coeff_ref)
+
+        print("Coefficient norm =", np.linalg.norm(coeff_ref))
+
+        # Construct time-dependent 1-RDM
+        td_rdms = np.einsum(
+            "I,J,IJpq->pq",
+            coeff_ref.conj(),
+            coeff_ref,
+            rdms,
+            optimize=True
+        )
+
+        # Eigenvalues of TD RDM
+        eig_td = np.linalg.eigvalsh(td_rdms)
+
+        print("\nTD RDM eigenvalues:")
+        print(eig_td)
+
+        print("TD RDM trace =", np.trace(td_rdms))
+
+        print(
+            "TD RDM Hermiticity error =",
+            np.linalg.norm(td_rdms - td_rdms.conj().T)
+        )
+
+        # Density difference relative to original initial RDM
+        rdm_diff = td_rdms - rdm_init
+
+        print(
+            "Density difference norm =",
+            np.linalg.norm(rdm_diff)
+        )
+
+        print(
+            "Density difference trace =",
+            np.trace(rdm_diff)
+        )
+
+        print(
+            "Maximum occupation difference =",
+            np.max(np.abs(eig_td - eig_init))
+        )
+
+        results[name] = {
+            "coeff_ref": coeff_ref,
+            "rdm": td_rdms,
+            "rdm_diff": rdm_diff,
+            "eigenvalues": eig_td
+        }
+
+    # ============================================================
+    # 6. Compare transformations directly
+    # ============================================================
+
+    print("\n--- DIRECT COMPARISON ---")
+
+    print(
+        "Difference between evec.T and evec RDMs =",
+        np.linalg.norm(
+            results["transpose"]["rdm"]
+            - results["direct"]["rdm"]
+        )
+    )
+
+    print(
+        "Difference between transpose and identity RDMs =",
+        np.linalg.norm(
+            results["transpose"]["rdm"]
+            - results["identity"]["rdm"]
+        )
+    )
+
+    print(
+        "Difference between direct and identity RDMs =",
+        np.linalg.norm(
+            results["direct"]["rdm"]
+            - results["identity"]["rdm"]
+        )
+    )
+
+    # ============================================================
+    # 7. Test first eigenstate at t = 0
+    # ============================================================
+
+    print("\n--- FIRST EIGENSTATE TEST ---")
+
+    coeff_test = np.zeros(ns, dtype=complex)
+    coeff_test[0] = 1.0
+
+    coeff_test_T = evec.T @ coeff_test
+    coeff_test_direct = evec @ coeff_test
+
+    print(
+        "Transpose versus evec[0] =",
+        np.linalg.norm(coeff_test_T - evec[0])
+    )
+
+    print(
+        "Direct versus evec[0] =",
+        np.linalg.norm(coeff_test_direct - evec[0])
+    )
+
+    # This only tests consistency with using evec[0]
+    # as a row-stored eigenvector. It does not independently
+    # prove that PRISM stores eigenvectors as rows.
+
+    # ============================================================
+    # 8. Compare eigenvalues
+    # ============================================================
+
+    print("\n--- EIGENVALUE COMPARISON ---")
+
+    print(
+        "Initial       Transpose       Direct       Identity"
+    )
+
+    for i in range(len(eig_init)):
+        print(
+            f"{eig_init[i]:12.8f}  "
+            f"{results['transpose']['eigenvalues'][i]:12.8f}  "
+            f"{results['direct']['eigenvalues'][i]:12.8f}  "
+            f"{results['identity']['eigenvalues'][i]:12.8f}"
+        )
+
+    # ============================================================
+    # 9. Generate AO density differences for each transformation
+    # ============================================================
+
+    for name, result in results.items():
+
+        rdm_diff_mo = result["rdm_diff"]
+
+        # MO to AO transformation, performed only once
+        rdm_diff_ao = (
+            mo_coeff
+            @ rdm_diff_mo
+            @ mo_coeff.conj().T
+        )
+
+        imag_norm = np.linalg.norm(rdm_diff_ao.imag)
+
+        print(
+            f"{name} AO density imaginary norm =",
+            imag_norm
+        )
+
+        # Cube density assumes a suitable real AO representation.
+        cubegen.density(
+            mol,
+            f"density_debug_{name}_{t:010.6f}.cube",
+            rdm_diff_ao.real,
+            nx=100,
+            ny=100,
+            nz=100
+        )
+
+    print("\nDebugging complete.")
+    print("=" * 75)
+
+    # Preserve the original convention provisionally.
+    # This choice must be validated against PRISM's
+    # eigenvector orientation.
+    return results["transpose"]["rdm"]
+
