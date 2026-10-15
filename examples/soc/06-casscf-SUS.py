@@ -42,6 +42,7 @@ mc.analyze()
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
 interface.soc = "bp"
+#Below Key is same in 04-qdnevpt2-SUS.py
 interface.mag_av = True
 interface.sus_av = True
 interface.mag_vec = True

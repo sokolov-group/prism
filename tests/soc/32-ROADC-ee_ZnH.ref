@@ -1,0 +1,417 @@
+#INFO: **** input file is /home/chiang.272/prism/tests/soc/32-ROADC-ee_ZnH.py ****
+import numpy as np
+import math
+import unittest
+import pyscf.gto
+import pyscf.mcscf
+import prism.interface
+import prism.nevpt
+from prism.libsoc import general_somf
+from pyscf import adc
+from pyscf import scf
+import prism.interface_soc
+
+
+np.set_printoptions(suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [ 
+            ['Zn', (0.0, 0.0, 0.0)],
+            ['H', (0.0,  0,  1.595 )]
+]
+mol.basis = 'def2-tzvp' #'6-31g'
+mol.symmetry = False
+mol.spin = 1
+mol.charge = 0
+mol.verbose = 4
+mol.build()
+
+
+mf = scf.RHF(mol).x2c()
+mf.conv_tol = 1e-12
+mf.kernel()
+mf.analyze()
+
+myadc = adc.ADC(mf)
+myadc.method_type = "ee"
+myadc.compute_spin_square = True
+E,U,P,X = myadc.kernel(nroots=2)
+
+
+
+interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface.soc = "bp"
+interface.gtensor=True
+en_soc, properties = interface.kernel()
+exit()
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(E[0],  0.1083915661 , 5)
+        self.assertAlmostEqual(E[1],  0.1083915661 , 5)
+        self.assertAlmostEqual(E[2],  0.1742387987 , 5)
+        self.assertAlmostEqual(E[3],  0.2260147521 , 5)
+        self.assertAlmostEqual(E[4],  0.2260147522 , 5)
+        self.assertAlmostEqual(E[5],  0.2338904159 , 5)
+        self.assertAlmostEqual(E[6],  0.2502417323 , 5)
+        self.assertAlmostEqual(E[7],  0.2502417324 , 5)
+        self.assertAlmostEqual(E[8],  0.2672107529 , 5)
+        self.assertAlmostEqual(E[9],  0.2728717249 , 5)
+
+
+        
+
+    def test_prism(self):
+
+        en_soc, properties = interface.kernel()
+
+        self.assertAlmostEqual(en_soc[0],    -1792.198980907531, 5)
+        self.assertAlmostEqual(en_soc[1],    -1792.198980907530, 5)
+        self.assertAlmostEqual(en_soc[2],    -1792.091243224217, 5)
+        self.assertAlmostEqual(en_soc[3],    -1792.091243224217, 5)
+        self.assertAlmostEqual(en_soc[4],    -1792.089912687065, 5)
+        self.assertAlmostEqual(en_soc[5],    -1792.089912687064, 5)
+        self.assertAlmostEqual(en_soc[6],    -1792.024806575700, 5)
+        self.assertAlmostEqual(en_soc[7],    -1792.024806575700, 5)
+        self.assertAlmostEqual(en_soc[8],    -1791.973157994226, 5)
+        self.assertAlmostEqual(en_soc[9],    -1791.973157994224, 5)
+        self.assertAlmostEqual(en_soc[10],   -1791.973028000745, 5)
+        self.assertAlmostEqual(en_soc[11],   -1791.973028000743, 5)
+        self.assertAlmostEqual(en_soc[12],   -1791.972892648649, 5)
+        self.assertAlmostEqual(en_soc[13],   -1791.972892648649, 5)
+        self.assertAlmostEqual(en_soc[14],   -1791.972752674596, 5)
+        self.assertAlmostEqual(en_soc[15],   -1791.972752674596, 5)
+        self.assertAlmostEqual(en_soc[16],   -1791.965337747333, 5)
+        self.assertAlmostEqual(en_soc[17],   -1791.965337747332, 5)
+        self.assertAlmostEqual(en_soc[18],   -1791.950948342774, 5)
+        self.assertAlmostEqual(en_soc[19],   -1791.950948342772, 5)
+        self.assertAlmostEqual(en_soc[20],   -1791.946602004077, 5)
+        self.assertAlmostEqual(en_soc[21],   -1791.946602004076, 5)
+        self.assertAlmostEqual(en_soc[22],   -1791.931375097001, 5)
+        self.assertAlmostEqual(en_soc[23],   -1791.931375097000, 5)
+        self.assertAlmostEqual(en_soc[24],   -1791.926058610667, 5)
+        self.assertAlmostEqual(en_soc[25],   -1791.926058610667, 5)
+
+
+        g_factor_all = interface.properties["g-factors"]
+        g_factor = g_factor_all[0]
+        self.assertAlmostEqual(g_factor[0], 1.985173, 5)
+        self.assertAlmostEqual(g_factor[1], 1.986004, 5)
+        self.assertAlmostEqual(g_factor[2], 2.002212, 5)
+
+
+        
+
+
+if __name__ == "__main__":
+    print("ADC-ee test")
+    unittest.main()#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc206140.asc.ohio-state.edu', release='4.18.0-553.159.1.el8_10.x86_64', version='#1 SMP Mon Aug 31 12:19:33 EDT 2026', machine='x86_64')  Threads 24
+Python 3.9.25 (main, Nov  3 2025, 22:33:05) 
+[GCC 11.2.0]
+numpy 2.0.1  scipy 1.13.1  h5py 3.14.0
+Date: Thu Oct 15 14:36:15 2026
+PySCF version 2.12.1
+PySCF path  /home/chiang.272/miniconda3/envs/pyscf_2_12/lib/python3.9/site-packages/pyscf
+
+[ENV] PYSCF_EXT_PATH /home/chiang.272:/home/chiang.272/sqa_plus:/home/chiang.272/pyscf
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 31
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 1
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 Zn     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 H      0.000000000000   0.000000000000   1.595000000000 AA    0.000000000000   0.000000000000   3.014113168681 Bohr   0.0
+
+nuclear repulsion = 9.95317638094044
+number of shells = 20
+number of NR pGTOs = 103
+number of NR cGTOs = 54
+basis = def2-tzvp
+ecp = {}
+CPU time:         3.26
+
+
+******** <class 'pyscf.x2c.sfx2c1e.sfX2C1eROHF'> ********
+method = sfX2C1eROHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/tmpc4opebz2
+max_memory 4000 MB (current use 132 MB)
+num. doubly occ = 15  num. singly occ = 1
+
+
+******** <class 'pyscf.x2c.sfx2c1e.SpinFreeX2CHelper'> ********
+approx = 1e
+xuncontract = 1
+Set gradient conv threshold to 1e-06
+init E= -1791.0792869857
+  HOMO = -0.0908671723938365  LUMO = 0.0583944929482939
+cycle= 1 E= -1791.50141494495  delta_E= -0.422  |g|= 0.0859  |ddm|= 0.812
+  HOMO = -0.130802740138587  LUMO = 0.0497314693803097
+cycle= 2 E= -1791.51192957734  delta_E= -0.0105  |g|= 0.0615  |ddm|= 0.26
+  HOMO = -0.121789235723012  LUMO = 0.053095495471011
+cycle= 3 E= -1791.51513040685  delta_E= -0.0032  |g|= 0.0384  |ddm|= 0.0927
+  HOMO = -0.114924124873714  LUMO = 0.0553835727183388
+cycle= 4 E= -1791.51785843161  delta_E= -0.00273  |g|= 0.014  |ddm|= 0.116
+  HOMO = -0.115336511648108  LUMO = 0.0547728053504438
+cycle= 5 E= -1791.51853299619  delta_E= -0.000675  |g|= 0.00331  |ddm|= 0.068
+  HOMO = -0.115650656606285  LUMO = 0.0547844176365173
+cycle= 6 E= -1791.51853640883  delta_E= -3.41e-06  |g|= 0.000715  |ddm|= 0.00693
+  HOMO = -0.115431793920959  LUMO = 0.0548236156418559
+cycle= 7 E= -1791.51853716052  delta_E= -7.52e-07  |g|= 0.000141  |ddm|= 0.00235
+  HOMO = -0.115407601149382  LUMO = 0.0548366241852202
+cycle= 8 E= -1791.51853716903  delta_E= -8.51e-09  |g|= 6.16e-05  |ddm|= 0.000686
+  HOMO = -0.11541569377849  LUMO = 0.0548356192328039
+cycle= 9 E= -1791.518537176  delta_E= -6.97e-09  |g|= 7.09e-06  |ddm|= 0.000278
+  HOMO = -0.115415049211875  LUMO = 0.0548356035112303
+cycle= 10 E= -1791.51853717606  delta_E= -5.59e-11  |g|= 2.05e-06  |ddm|= 2.65e-05
+  HOMO = -0.115415009691075  LUMO = 0.0548355864424139
+cycle= 11 E= -1791.51853717606  delta_E= -4.09e-12  |g|= 3.93e-07  |ddm|= 4.7e-06
+  HOMO = -0.115415028110957  LUMO = 0.0548355780966115
+cycle= 12 E= -1791.51853717606  delta_E= -1.14e-12  |g|= 5.92e-08  |ddm|= 1.4e-06
+  HOMO = -0.115415037040449  LUMO = 0.0548355780151344
+cycle= 13 E= -1791.51853717606  delta_E=    0  |g|= 9.37e-09  |ddm|= 1.12e-07
+  HOMO = -0.115415037604539  LUMO = 0.0548355780540079
+Extra cycle  E= -1791.51853717606  delta_E= 4.55e-13  |g|= 7.04e-09  |ddm|= 1.27e-08
+converged SCF energy = -1791.51853717606
+**** SCF Summaries ****
+Total Energy =                       -1791.518537176061045
+Nuclear Repulsion Energy =               9.953176380940441
+One-electron Energy =                -2518.395762777367963
+Two-electron Energy =                  716.924049220366442
+**** MO energy ****
+                Roothaan           | alpha              | beta
+MO #1   energy= -356.959694210075  | -356.960567279919  | -356.958821140232  occ= 2
+MO #2   energy= -45.2909889068748  | -45.292229210107   | -45.2897486036425  occ= 2
+MO #3   energy= -39.3076377756824  | -39.308124430351   | -39.3071511210139  occ= 2
+MO #4   energy= -39.3076377756794  | -39.308124430348   | -39.307151121011   occ= 2
+MO #5   energy= -39.3051115651413  | -39.306781591526   | -39.3034415387564  occ= 2
+MO #6   energy= -5.80472979628394  | -5.80843893503816  | -5.80102065752968  occ= 2
+MO #7   energy= -3.91775800360768  | -3.91975980735781  | -3.91575619985755  occ= 2
+MO #8   energy= -3.91775800358877  | -3.91975980733885  | -3.91575619983867  occ= 2
+MO #9   energy= -3.91480078476822  | -3.91842837511328  | -3.91117319442398  occ= 2
+MO #10  energy= -0.797710419178674 | -0.799788606952833 | -0.795632231404521 occ= 2
+MO #11  energy= -0.79771041914717  | -0.799788606921331 | -0.795632231373007 occ= 2
+MO #12  energy= -0.792930149021124 | -0.798457339546315 | -0.787402958543424 occ= 2
+MO #13  energy= -0.791711809976662 | -0.794831421488906 | -0.78859219846442  occ= 2
+MO #14  energy= -0.791711809967048 | -0.79483142147939  | -0.788592198454708 occ= 2
+MO #15  energy= -0.435086195804369 | -0.453922609153995 | -0.416249782317055 occ= 2
+MO #16  energy= -0.115415037604539 | -0.281708972277553 | 0.050878896740376  occ= 1
+MO #17  energy= 0.0548355780540079 | 0.0426398691469933 | 0.0670312869610188 occ= 0
+MO #18  energy= 0.0548355780624556 | 0.0426398691558048 | 0.0670312869690999 occ= 0
+MO #19  energy= 0.142058640645677  | 0.136380194283532  | 0.14773708701142   occ= 0
+MO #20  energy= 0.229458969652483  | 0.213955989926797  | 0.244961949538589  occ= 0
+MO #21  energy= 0.312341835454954  | 0.290059455607125  | 0.334624215384379  occ= 0
+MO #22  energy= 0.318428323434648  | 0.307933904271343  | 0.328922742597941  occ= 0
+MO #23  energy= 0.318428323448011  | 0.307933904287015  | 0.328922742609006  occ= 0
+MO #24  energy= 0.344877507658397  | 0.329355771641583  | 0.360399243675207  occ= 0
+MO #25  energy= 0.344877507664519  | 0.32935577164816   | 0.360399243680878  occ= 0
+MO #26  energy= 0.349311885019515  | 0.34288552282305   | 0.35573824721598   occ= 0
+MO #27  energy= 0.349311885022862  | 0.3428855228264    | 0.355738247219324  occ= 0
+MO #28  energy= 0.466379928821314  | 0.456166441615066  | 0.476593416025109  occ= 0
+MO #29  energy= 0.640750983277908  | 0.630321670410042  | 0.651180296134983  occ= 0
+MO #30  energy= 1.40564777808761   | 1.39600137642434   | 1.41529417975087   occ= 0
+MO #31  energy= 1.40564777809228   | 1.39600137642902   | 1.41529417975553   occ= 0
+MO #32  energy= 1.42010559463697   | 1.41397115062066   | 1.42624003865329   occ= 0
+MO #33  energy= 1.42010559464969   | 1.41397115063337   | 1.42624003866601   occ= 0
+MO #34  energy= 1.51773456374941   | 1.50637929578551   | 1.52908983171082   occ= 0
+MO #35  energy= 1.87109636791232   | 1.86289435008564   | 1.879298385739     occ= 0
+MO #36  energy= 1.87109636792442   | 1.86289435009777   | 1.87929838575107   occ= 0
+MO #37  energy= 2.21404758086171   | 2.20440738260963   | 2.2236877791208    occ= 0
+MO #38  energy= 2.66572489825561   | 2.65742025176706   | 2.67402954474473   occ= 0
+MO #39  energy= 2.69727568858893   | 2.69266546715667   | 2.70188591002118   occ= 0
+MO #40  energy= 2.69727568862289   | 2.69266546719061   | 2.70188591005516   occ= 0
+MO #41  energy= 3.07025433004104   | 3.06351787906562   | 3.07699078101781   occ= 0
+MO #42  energy= 3.7342513005469    | 3.7273892827753    | 3.74111331831822   occ= 0
+MO #43  energy= 5.36073237775762   | 5.35908009424585   | 5.36238466126938   occ= 0
+MO #44  energy= 5.36073237777527   | 5.3590800942635    | 5.36238466128703   occ= 0
+MO #45  energy= 5.3783099857751    | 5.37586217119852   | 5.38075780035167   occ= 0
+MO #46  energy= 5.37830998578463   | 5.37586217120806   | 5.38075780036119   occ= 0
+MO #47  energy= 5.48882209324921   | 5.48552628944356   | 5.49211789705505   occ= 0
+MO #48  energy= 7.0560005293198    | 7.05558027273413   | 7.05642078590547   occ= 0
+MO #49  energy= 7.05600052932534   | 7.05558027273966   | 7.056420785911     occ= 0
+MO #50  energy= 7.0615205502358    | 7.06099756216354   | 7.06204353830805   occ= 0
+MO #51  energy= 7.06152055024543   | 7.06099756217318   | 7.06204353831768   occ= 0
+MO #52  energy= 7.06668127357568   | 7.06580850181763   | 7.06755404533371   occ= 0
+MO #53  energy= 7.06668127357635   | 7.0658085018183    | 7.0675540453344    occ= 0
+MO #54  energy= 7.1178746478219    | 7.11682256232171   | 7.11892673332207   occ= 0
+ ** Mulliken pop on meta-lowdin orthogonal AOs  **
+ ** Mulliken pop  **
+pop of  0 Zn 1s           2.00000
+pop of  0 Zn 2s           1.99999
+pop of  0 Zn 3s           1.99996
+pop of  0 Zn 4s           1.24155
+pop of  0 Zn 5s           0.01081
+pop of  0 Zn 6s           0.00034
+pop of  0 Zn 2px          2.00000
+pop of  0 Zn 2py          2.00000
+pop of  0 Zn 2pz          2.00000
+pop of  0 Zn 3px          1.99999
+pop of  0 Zn 3py          1.99999
+pop of  0 Zn 3pz          1.99997
+pop of  0 Zn 4px          0.00000
+pop of  0 Zn 4py          0.00000
+pop of  0 Zn 4pz          0.17152
+pop of  0 Zn 5px          0.00000
+pop of  0 Zn 5py          0.00000
+pop of  0 Zn 5pz          0.00469
+pop of  0 Zn 6px          0.00000
+pop of  0 Zn 6py          0.00000
+pop of  0 Zn 6pz          0.00024
+pop of  0 Zn 3dxy         1.99997
+pop of  0 Zn 3dyz         1.99994
+pop of  0 Zn 3dz^2        1.98894
+pop of  0 Zn 3dxz         1.99994
+pop of  0 Zn 3dx2-y2      1.99997
+pop of  0 Zn 4dxy         0.00000
+pop of  0 Zn 4dyz         0.00000
+pop of  0 Zn 4dz^2        0.00516
+pop of  0 Zn 4dxz         0.00000
+pop of  0 Zn 4dx2-y2      0.00000
+pop of  0 Zn 5dxy         0.00001
+pop of  0 Zn 5dyz         0.00004
+pop of  0 Zn 5dz^2        0.01029
+pop of  0 Zn 5dxz         0.00004
+pop of  0 Zn 5dx2-y2      0.00001
+pop of  0 Zn 6dxy         0.00002
+pop of  0 Zn 6dyz         0.00000
+pop of  0 Zn 6dz^2        0.00451
+pop of  0 Zn 6dxz         0.00000
+pop of  0 Zn 6dx2-y2      0.00002
+pop of  0 Zn 4f-3         0.00000
+pop of  0 Zn 4f-2         0.00000
+pop of  0 Zn 4f-1         0.00000
+pop of  0 Zn 4f+0         0.00000
+pop of  0 Zn 4f+1         0.00000
+pop of  0 Zn 4f+2         0.00000
+pop of  0 Zn 4f+3         0.00000
+pop of  1 H 1s            1.50002
+pop of  1 H 2s            0.03748
+pop of  1 H 3s            0.01452
+pop of  1 H 2px           0.00002
+pop of  1 H 2py           0.00002
+pop of  1 H 2pz           0.01000
+ ** Mulliken atomic charges  **
+charge of    0Zn =      0.56205
+charge of    1H =     -0.56205
+Dipole moment(X, Y, Z, Debye): -0.00000,  0.00000, -0.75313
+
+ROHF reference detected in ADC
+
+Semicanonicalizing the orbitals...
+
+******** <class 'pyscf.adc.uadc.UADC'> ********
+max_memory 4000 MB (current use 276 MB)
+******** ADC Orbital Information ********
+Number of Frozen Occupied Alpha Orbitals: 0
+Number of Frozen Occupied Beta Orbitals: 0
+Number of Frozen Virtual Alpha Orbitals: 0
+Number of Frozen Virtual Beta Orbitals: 0
+Number of Active Occupied Alpha Orbitals: 16
+Number of Active Occupied Beta Orbitals: 15
+Number of Active Virtual Alpha Orbitals: 38
+Number of Active Virtual Beta Orbitals: 39
+*****************************************
+Reference correlation energy (doubles): -0.67780623
+Reference correlation energy (singles): -0.00102718
+MP2 correlation energy of reference state (a.u.) = -0.67883341
+
+******** <class 'pyscf.adc.uadc_ee.UADCEE'> ********
+max_space = 200
+max_cycle = 50
+conv_tol = 1e-08
+tol_residual = 1e-05
+max_memory 4000 MB (current use 497 MB)
+
+*************************************************************
+                   ADC calculation summary
+*************************************************************
+adc(2) root 0  |  Energy (Eh) =   0.1044581335  |  Energy (eV) =   2.84245059  |  Osc. strength = 0.04809059  |  S^2 = 0.75756953  |  conv = True
+adc(2) root 1  |  Energy (Eh) =   0.1044581335  |  Energy (eV) =   2.84245059  |  Osc. strength = 0.04809059  |  S^2 = 0.75756953  |  conv = True
+
+Importing ADC in PYSCF...
+e_corr_MPn=-0.6788334116066473
+scf_energy=-1791.518537176061
+E_ref_abs=-1792.1973705876676
+Importing uadc_ee...
+Collecting necessary information for SOC
+Employing make_rdm1s_ee
+
+*****make_rdm1s_ee*****
+Condsidering Ref state in rdm...
+Take MPn E_ref as ground state energy 
+self.E=[-1792.19737059 -1792.09291245 -1792.09291245]
+S_old_total=
+[0.5        0.50377763 0.50377763]
+Transforming rdm_bb in mo_a basis
+
+*****rotate_rdm1s_to_ms*****
+degeneracy_atol =1e-05
+deg_list=[1, 2]
+S_total is diagonal
+Energy is same after rotation
+
+*****get_sf_ref*****
+Ms is diagonal
+Choicing ms_ref as positive minimum
+ms_ref=0.5
+odds electrons...
+roots_old=3
+roots_ref=3
+S_ref=[0.5, 0.5, 0.5]
+ms_ref=0.5
+E_ref=[-1792.1973705876676, -1792.0929124541797, -1792.0929124541872]
+set up xmol, contr_coeff
+max_memory_soc =4000
+Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+Calculating Wigner 1-RDM...
+> CPU time for total bp calculation      4.86 sec, wall time      4.75 sec
+Calculating magnetic dipole moment...
+Coordinate system origin (charge, Bohr) = [0.         0.         0.09722946]
+
+Calculating g-tensor...
+
+Target State index = 1
+Micro state index: 1 to 2
+Calculating g-tensor for multiplicity = 2
+Defining J, J-1, ... -J+1, -J
+
+Summary of SI-ADC results for BP
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.            E(total)         E(eV)           dE(eV)     dE(nm)        dE(cm-1)        Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1        -1792.197376841653 -48768.17505027       0.0000                      0.0000               
+    2        1        -1792.197376841653 -48768.17505027       0.0000                      0.0000               
+    3        1        -1792.093584007700 -48765.35070338       2.8243     438.9836     22779.8940      0.04778515
+    4        1        -1792.093584007698 -48765.35070338       2.8243     438.9836     22779.8940      0.04778515
+    5        1        -1792.092234646684 -48765.31398540       2.8611     433.3498     23076.0445      0.04840260
+    6        1        -1792.092234646683 -48765.31398540       2.8611     433.3498     23076.0445      0.04840260
+----------------------------------------------------------------------------------------------------------------
+
+Magnetic g-tensor principal axes:
+[[ 0.975492 -0.220035 -0.      ]
+ [-0.220035 -0.975492  0.      ]
+ [ 0.       -0.        1.      ]]
+
+Magnetic g-factors (ge = 2.002319):
+      1.983434,       1.983434,       2.002198
+     -0.018885,      -0.018885,      -0.000121 (g-shift)
+       -18.885,        -18.885,         -0.121 (g-shift, ppt)

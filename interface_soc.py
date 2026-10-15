@@ -120,7 +120,8 @@ class PYSCF_ADC:
                 self.spin_adc = spin+1
             else:
                 #if unpair electon larger than zeoro, ea will add beta electron?
-                self.spin_adc = spin-1
+                #TODO: Make sure again after pyscf updata spinsquare function for IP EA
+                self.spin_adc = spin+1
 
         elif self.method_type == "ee" :
             self.spin_adc = spin
@@ -194,6 +195,8 @@ class PYSCF_ADC:
 
 
     def kernel(self):
+        import prism.lib.logger as logger
+        self.log = logger.Logger(self.stdout, self.verbose)
         self.log.info("Collecting necessary information for SOC")
         if self.add_ref_ee is True:
             self.log.info("Employing make_rdm1s_ee")
@@ -577,7 +580,7 @@ class PYSCF_ADC:
         self.log.extra("Make sure E:")
         self.log.extra("%s", E_new)
         E_new = np.diagonal(E_new)
-        if np.allclose(E_old_total, E_new, atol=1e-5, rtol=0):
+        if np.allclose(E_old_total, E_new, atol=self.deg_atol, rtol=0):
             self.log.info("Energy is same after rotation")
             self.E = E_new
         else:
@@ -729,7 +732,7 @@ class PYSCF_ADC:
         '''
         determine degeneracy based on energy in list
         '''
-        self.log.info("degeneracy_atol =%s", atol)
+        self.log.info("degeneracy_atol=%s", atol)
 
         deg = []
         count2, total_deg = 0,0

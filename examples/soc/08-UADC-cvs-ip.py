@@ -32,12 +32,10 @@ mf.conv_tol = 1e-12
 mf.kernel()
 
 myadc = adc.ADC(mf)
-#myadc.conv_tol = 1e-12
-#myadc.tol_residual = 1e-6
 myadc.method_type = "ip"
 myadc.ncvs = 5
 E,U,P,X = myadc.kernel(nroots=12)
 
 interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
-interface.soc = 'BP'
+interface.soc = 'BP' # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 en_soc, properties = interface.kernel()

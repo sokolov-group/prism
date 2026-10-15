@@ -37,20 +37,20 @@ E,U,P,X = myadc.kernel(nroots=6)
 
 interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
 interface.analyze_evec_soc = True
-interface.save_sf = True
-interface.gtensor = True
-interface.mag_av =     True
-interface.sus_av =     True
-interface.mag_vec =    True
-interface.sus_tensor = True
+interface.save_sf = True #Save inofrmation for SOC calculation
+interface.gtensor =    True #Turn on g-tensor calculation
+interface.mag_av =     True #Turn on powder magnetization calculation
+interface.sus_av =     True #Turn on powder susceptibility calculation
+interface.mag_vec =    True #Turn on magnetization calculation under spectific direction of magnetic field
+interface.sus_tensor = True #Turn on susceptibility calculation under spectific direction of magnetic field
 en_soc, properties = interface.kernel()
 
 
 E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.interface_soc.read_checkpoint("09-state-interaction.h5")
 interface_sf = prism.interface_soc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #, ms_ref=ms_ref)
-interface_sf.gtensor = True
-interface_sf.mag_av =     True
-interface_sf.sus_av =     True
-interface_sf.mag_vec =    True
-interface_sf.sus_tensor = True
+interface_sf.gtensor =    True      #Turn on g-tensor calculation
+interface_sf.mag_av =     True      #Turn on powder magnetization calculation
+interface_sf.sus_av =     True      #Turn on powder susceptibility calculation
+interface_sf.mag_vec =    True      #Turn on magnetization calculation under spectific direction of magnetic field
+interface_sf.sus_tensor = True      #Turn on susceptibility calculation under spectific direction of magnetic field
 interface_sf.kernel()

@@ -41,4 +41,4 @@ mc.analyze()
 
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-interface.run_soc("x2c-1")
+interface.run_soc("x2c-1") # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
