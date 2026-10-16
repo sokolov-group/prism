@@ -1,0 +1,56 @@
+'''
+Loading spin-free information to run state-interaction codes
+'''
+
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+from pyscf import adc
+from pyscf import scf
+from pyscf.adc import uadc_ea
+import prism.interface_soc
+
+
+np.set_printoptions(suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [
+            ['Zn', (0.0, 0.0, 0.0)],
+            ['H', (0.0,  0,  1.595 )]]
+mol.basis = 'def2-tzvp'
+mol.symmetry = False
+mol.spin = 0
+mol.verbose = 4
+mol.charge = +1
+mol.build()
+
+
+mf = scf.UHF(mol).x2c()
+mf.conv_tol = 1e-12
+mf.kernel()
+
+myadc = adc.ADC(mf)
+myadc.method_type = "ea" #Can be ea, ip, ee
+
+E,U,P,X = myadc.kernel(nroots=6)
+
+interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface.analyze_evec_soc = True
+interface.save_sf = True #Save inofrmation for SOC calculation
+interface.gtensor =    True #Turn on g-tensor calculation
+interface.mag_av =     True #Turn on powder magnetization calculation
+interface.sus_av =     True #Turn on powder susceptibility calculation
+interface.mag_vec =    True #Turn on magnetization calculation under spectific direction of magnetic field
+interface.sus_tensor = True #Turn on susceptibility calculation under spectific direction of magnetic field
+en_soc, properties = interface.kernel()
+
+
+E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.interface_soc.read_checkpoint("09-state-interaction.h5")
+interface_sf = prism.interface_soc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #, ms_ref=ms_ref)
+interface_sf.gtensor =    True      #Turn on g-tensor calculation
+interface_sf.mag_av =     True      #Turn on powder magnetization calculation
+interface_sf.sus_av =     True      #Turn on powder susceptibility calculation
+interface_sf.mag_vec =    True      #Turn on magnetization calculation under spectific direction of magnetic field
+interface_sf.sus_tensor = True      #Turn on susceptibility calculation under spectific direction of magnetic field
+interface_sf.kernel()
