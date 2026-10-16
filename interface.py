@@ -85,6 +85,8 @@ class PYSCF:
                 self.mc = casci.run()
                 self.compute_mcscf_reference(select_reference)
 
+        self.create_soc_flag(self)
+
         # Symmetry
         # TODO: [MC OBJ] Check if this is done correctly when canonicalization changes the order of orbitals
         self.symmetry = self.mol.symmetry
@@ -225,64 +227,6 @@ class PYSCF:
         self.pspace_size = mc.fcisolver.pspace_size
         self.enforce_degeneracy = True
 
-        # SOC params:
-        self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-        self.unc = None
-        self.properties_cas = {}
-
-        # For magnetic properties
-        self.magnetic_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)
-
-        #g-tensor
-        self.gtensor = False
-        self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
-
-        # For powder properties
-        import pyscf.dft.LebedevGrid
-        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
-
-        # For magnetic susceptibility
-        self.mag_av = False
-        self.sus_av = False
-        self.mag_vec = False
-        self.sus_tensor = False
-
-        self.step_h_s = 0.001 #Magnetic field step size used for numerical differentiation (Unit:T)
-
-        ###Powder magnetization
-        Bs_list = []
-        for i in range(15):
-            H = i * 0.5
-            Bs_list.append(H)
-
-        self.Bs_powder_M = Bs_list 
-        self.T_powder_M = [1.8]
-
-        ###Powder susceptibility
-        T_list = []
-        for i in range(21):
-            T = 14.75 * i + 5
-            T_list.append(T)
-
-        self.T_powder_chi = T_list
-        self.Bs_powder_chi = [0.1]
-
-        ###Vector magnetization
-        self.B_vec_M = [0,0,1]
-        self.Bs_vec_M = Bs_list 
-        self.T_vec_M = [1.8]
-
-        ###Tensor  susceptibility
-        self.B_vec_chi = [0,0,1]
-        self.Bs_vec_chi = [0.1]
-        self.T_vec_chi = [5,100,200,250]
-
-        # Basis set uncontraction objects: xmol, contraction coefficients.
-        # Use x2c_setup to obtain self.xmol and self.contr_coeff 
-        self.xmol = None
-        self.contr_coeff = None
-
-        self.reference_df = getattr(mc, "with_df", None)
             
         # Solvent potential
         if hasattr(mf, "with_solvent"):
@@ -351,6 +295,62 @@ class PYSCF:
         self.trans_rdm1s = trans_rdm1s
         # If set to a list, can be used to select certain CASCI states during MR-ADC computations
         self.select_casci = None
+
+    @staticmethod
+    def create_soc_flag(self):
+        # SOC params:
+        self.soc = None # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+        self.analyze_evec_soc = False #For soc eigenvector analysis
+        self.unc = None # For DKH2
+        
+        # Basis set uncontraction objects: xmol, contraction coefficients.
+        # prism.libsoc.general_somf.get_soc_integrals obtain self.xmol and self.contr_coeff 
+        self.xmol = None
+        self.contr_coeff = None
+
+        # For magnetic properties
+        self.magnetic_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)
+        
+        #g-tensor
+        self.gtensor = False                       # Enable calculating g-tensors (requires soc)
+        self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
+
+        # For powder properties
+        import pyscf.dft.LebedevGrid
+        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
+
+        # For magnetic susceptibility
+        self.mag_av = False
+        self.sus_av = False
+        self.mag_vec = False
+        self.sus_tensor = False
+        self.step_h_s = 0.001 #Magnetic field step size used for numerical differentiation (Unit:T)
+        ###Powder magnetization
+        Bs_list = []
+        for i in range(15):
+            H = i * 0.5
+            Bs_list.append(H)
+        self.Bs_powder_M = Bs_list 
+        self.T_powder_M = [1.8]
+        ###Powder susceptibility
+        T_list = []
+        for i in range(21):
+            T = 14.75 * i + 5
+            T_list.append(T)
+        self.T_powder_chi = T_list
+        self.Bs_powder_chi = [0.1]
+        ###Vector magnetization
+        self.B_vec_M = [0,0,1]
+        self.Bs_vec_M = Bs_list 
+        self.T_vec_M = [1.8]
+        ###Tensor  susceptibility
+        self.B_vec_chi = [0,0,1]
+        self.Bs_vec_chi = [0.1]
+        self.T_vec_chi = [5,100,200,250]
+
+        self.properties_soc = {} #SI soc result
+
+
 
     @property
     def einsum_backend(self):
@@ -736,8 +736,8 @@ class PYSCF:
         if soc_type:
             self.soc = soc_type
 
-        from prism.libsoc import casscf_compute
-        en_soc, osc_str_soc = casscf_compute.compute_somf_soc(self) 
+        from prism.libsoc import compute
+        en_soc, osc_str_soc = compute.casscf_soc(self) 
 
         return  en_soc, osc_str_soc
 

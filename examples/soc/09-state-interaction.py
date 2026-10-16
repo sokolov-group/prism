@@ -10,7 +10,7 @@ from pyscf import adc
 from pyscf import scf
 from pyscf.adc import uadc_ea
 import prism.interface_soc
-
+import prism.libsoc
 
 np.set_printoptions(suppress=True)
 
@@ -37,6 +37,7 @@ E,U,P,X = myadc.kernel(nroots=6)
 
 interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
 interface.analyze_evec_soc = True
+interface.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 interface.save_sf = True #Save inofrmation for SOC calculation
 interface.gtensor =    True #Turn on g-tensor calculation
 interface.mag_av =     True #Turn on powder magnetization calculation
@@ -47,7 +48,8 @@ en_soc, properties = interface.kernel()
 
 
 E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.interface_soc.read_checkpoint("09-state-interaction.h5")
-interface_sf = prism.interface_soc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #, ms_ref=ms_ref)
+interface_sf = prism.libsoc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #, ms_ref=ms_ref)
+interface_sf.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 interface_sf.gtensor =    True      #Turn on g-tensor calculation
 interface_sf.mag_av =     True      #Turn on powder magnetization calculation
 interface_sf.sus_av =     True      #Turn on powder susceptibility calculation
