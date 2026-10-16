@@ -498,10 +498,6 @@ class PYSCF:
         return spin_multiplet, spin_multiplet_ne
 
 
-    # X2C set up:
-    def x2c_setup(self):
-        from pyscf.x2c import x2c
-        self.xmol, self.contr_coeff = x2c.X2C(self.mf.mol).get_xmol()
 
     # Apply S+ (spin raising) operator
     def apply_S_plus(self, psi, ncas, nelecas):
@@ -736,8 +732,6 @@ class PYSCF:
         return rdm1, rdm2, rdm3, rdm4
 
     def run_soc(self, soc_type=None):
-        
-        self.x2c_setup()
 
         if soc_type:
             self.soc = soc_type

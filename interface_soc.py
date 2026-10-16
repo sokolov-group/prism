@@ -701,9 +701,8 @@ class PYSCF_ADC:
 
         self.log.info("set up xmol, contr_coeff")
         self.log.info("max_memory_soc =%s", self.max_memory_soc)
-        from pyscf.x2c import x2c
         self.mol.max_memory = self.max_memory_soc
-        self.xmol, self.contr_coeff = x2c.X2C(self.mol).get_xmol()
+
 
         return E_ref, rdm_aabb_ref, S_ref, ms_ref
 
@@ -833,9 +832,7 @@ class SF_OBJECT:
 
         self.log.info("set up xmol, contr_coeff")
         self.log.info("max_memory_soc =%s", self.max_memory_soc)
-        from pyscf.x2c import x2c
         self.mol.max_memory = self.max_memory_soc
-        self.xmol, self.contr_coeff = x2c.X2C(self.mol).get_xmol()
 
         #For g-tensor
         self.gtensor = False

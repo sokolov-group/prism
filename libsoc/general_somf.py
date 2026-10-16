@@ -291,8 +291,6 @@ def get_soc_integrals(interface, soc, rdm1ao):
     nao = interface.mo.shape[1]
     prefactor = 0.5 / ((interface.light_speed)**2)
     mol = interface.mol
-    xmol = interface.xmol
-    contr_coeff = interface.contr_coeff
 
     soc = soc.lower()
     if (soc=="breit-pauli" or soc=="bp"):
@@ -302,6 +300,13 @@ def get_soc_integrals(interface, soc, rdm1ao):
         hsocint -= prefactor * somf.get_fso2e_bp(mol, rdm1ao)
 
     elif (soc=="x2c-1" or soc=="x2c1" or soc=="dkh1"):
+
+        #set up xmol and contr_coeff
+        from pyscf.x2c import x2c
+        interface.xmol, interface.contr_coeff = x2c.X2C(mol).get_xmol()
+        xmol = interface.xmol
+        contr_coeff = interface.contr_coeff
+
         nbasis_unc = xmol.nao_nr()
         nbasis = mol.nao_nr()
         hsocint = np.zeros((3, nbasis, nbasis))
