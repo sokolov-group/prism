@@ -54,7 +54,16 @@ e_tot, e_corr, osc = nevpt.kernel()
 # Compute and write NTOs
 nevpt.analyze()
 
-# Compute and write NTOs for a specific transition (S1 -> S2)
+# Compute and write NTOs for a specific transition (S1 -> S3) using different orbital cutoffs
 from prism.tools import trans_prop
-trdm = nevpt.make_rdm1(L=1, R=2)
-trans_prop.compute_ntos(interface, trdm, initial_state=1, target_state=2)
+trdm = nevpt.make_rdm1(L=1, R=3)
+trans_prop.compute_ntos(interface, trdm, initial_state=1, target_state=3, orb_thresh = 1e-4)
+
+# Perform exciton analysis for specific transitions
+nevpt.verbose = 5
+
+trdm = nevpt.make_rdm1(L=1, R=3)
+trans_prop.compute_exciton_analysis(interface, trdm, 1, 3)
+
+trdm = nevpt.make_rdm1(L=1, R=5)
+trans_prop.compute_exciton_analysis(interface, trdm, 1, 5)
