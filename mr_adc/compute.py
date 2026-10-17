@@ -66,6 +66,11 @@ def kernel(mr_adc):
 
     mr_adc.log.timer0("total %s-%s calculation" % (mr_adc.method_type.upper(), mr_adc.method.upper()), *cput0)
 
+    # Initiate the Real-Time calculations
+    if mr_adc.rt == True:
+        from prism.tools import real_time
+        real_time.real_time_prop(mr_adc, evec=mr_adc.h_evec, etot=mr_adc.e_tot)
+
     return de_ev, spec_intensity, X
 
 

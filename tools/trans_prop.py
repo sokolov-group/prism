@@ -108,7 +108,7 @@ def compute_dyson(interface, X):
     '''
     interface.log.note("\nComputing Dyson orbitals...")
     dyson_mos = np.dot(interface.mo, X)
-
+    
     input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
     filename = f"{input_file}_dyson.molden"
 

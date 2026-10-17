@@ -21080,7 +21080,7 @@ def compute_trans_moments(mr_adc):
     X[nocc:, :] = np.dot(T, U.T)
 
     mr_adc.log.timer("computing transition moments matrix", *cput0)
-
+     
     return X
 
 
@@ -21102,7 +21102,7 @@ def analyze_spec_factor(mr_adc):
     # Properties
     X = mr_adc.properties["spec_amplitudes"]
     spec_intensity = mr_adc.properties["spec_probabilities"]
-
+    
     # Get group symmetries if available
     if not mr_adc.symmetry:
         group_repr_symm = np.repeat(['A'], nmo)
