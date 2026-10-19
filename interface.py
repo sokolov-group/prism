@@ -22,13 +22,14 @@
 import os
 import tempfile
 import numpy as np
+from types import MethodType
 
 import prism.lib.logger as logger
 import prism.lib.numpy_helper as np_helper
 
 class PYSCF:
 
-    def __init__(self, mf, mc = None, backend = None, select_reference = None):
+    def __init__(self, mf, mc = None, backend = None, select_reference = None, rohf_mcscf = False ):
 
         self.stdout = mf.stdout
         if mc is None:
@@ -75,16 +76,23 @@ class PYSCF:
             socc = int(np.count_nonzero(mf.mo_occ == 1))
 
             if mf.istype('RHF') and socc == 0:
-                self.compute_scf_reference()
+                self.compute_rhf_reference()
+            
+            elif mf.istype('UHF'):
+                self.compute_uhf_reference()
 
             elif mf.istype('ROHF') and socc > 0:
-                from pyscf.mcscf.casci import CASCI
-                casci = CASCI(mf, socc, socc)
-                if getattr(mf, 'with_df', None):
-                    casci = casci.density_fit()
-                self.mc = casci.run()
-                self.compute_mcscf_reference(select_reference)
+                if rohf_mcscf:
+                    from pyscf.mcscf.casci import CASCI
+                    casci = CASCI(mf, socc, socc)
+                    if getattr(mf, 'with_df', None):
+                        casci = casci.density_fit()
+                    self.mc = casci.run()
+                    self.compute_mcscf_reference(select_reference)
+                else:
+                    self.compute_rhf_reference()
 
+        #Load soc flag to control soc calculation
         self.create_soc_flag(self)
 
         # Symmetry
@@ -140,10 +148,10 @@ class PYSCF:
         self.einsum_type = "greedy"
         self.dot = np.dot
 
-    def compute_scf_reference(self):
+    def compute_rhf_reference(self):
 
         self.reference = "scf"
-        self.log.info("Reference wavefunction: %s\n" % self.reference)
+        self.log.info("Reference wavefunction: %s-%s\n" % (self.reference, "RHF"))
 
         mf = self.mf
         self.max_memory = mf.max_memory
@@ -162,10 +170,47 @@ class PYSCF:
         self.e_ref_cas = [0]
 
         self.ref_wfn = None
-        self.ref_wfn_spin_mult = [1]
-        self.ref_wfn_deg = [1]
+        # Use spin electron:
+        self.ref_wfn_spin_mult =  [int(mf.mol.spin+1)]
+        self.ref_wfn_deg = [int(mf.mol.spin+1)]
 
         self.mo_scf = self.mo
+        self.ovlp = mf.get_ovlp(mf.mol)
+
+        self.reference_df = getattr(mf, "with_df", None)
+
+    def compute_uhf_reference(self):
+
+        self.reference = "scf"
+        self.log.info("Reference wavefunction: %s-%s\n" % (self.reference, "UHF"))
+
+        mf = self.mf
+        self.max_memory = mf.max_memory
+
+        self.mo_a = mf.mo_coeff[0].copy()
+        self.mo_b = mf.mo_coeff[1].copy()
+        self.nmo = self.mo_a.shape[1]
+        self.mo_a_energy = mf.mo_energy[0].copy()
+        self.mo_b_energy = mf.mo_energy[1].copy()
+
+        self.symmetry = mf.mol.symmetry
+        self.e_ref = [mf.e_tot]
+
+        self.ncore = mf.mol.nelectron // 2
+        self.nextern = self.nmo - self.ncore
+        self.ncas = 0
+
+        self.ref_nelecas = [(0,0)]
+        self.e_ref_cas = [0]
+
+        self.ref_wfn = None
+
+        # Use spin electron:
+        self.ref_wfn_spin_mult =  [int(mf.mol.spin+1)]
+        self.ref_wfn_deg = [int(mf.mol.spin+1)]
+        
+
+        self.mo_scf = self.mo_a # Take mo_a
         self.ovlp = mf.get_ovlp(mf.mol)
 
         self.reference_df = getattr(mf, "with_df", None)
@@ -213,7 +258,6 @@ class PYSCF:
             self.log.info("\nReference states selected: %s" % str(select_reference))
 
         self.max_memory = mc.max_memory
-        self.max_memory_soc = mc.max_memory
         self.mo = mc.mo_coeff.copy()
         self.mo_scf = mf.mo_coeff.copy()
         self.ovlp = mf.get_ovlp(mf.mol)
@@ -302,6 +346,7 @@ class PYSCF:
         self.soc = None # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.analyze_evec_soc = False #For soc eigenvector analysis
         self.unc = None # For DKH2
+        self.max_memory_soc = self.max_memory
         
         # Basis set uncontraction objects: xmol, contraction coefficients.
         # prism.libsoc.general_somf.get_soc_integrals obtain self.xmol and self.contr_coeff 
@@ -349,7 +394,6 @@ class PYSCF:
         self.T_vec_chi = [5,100,200,250]
 
         self.properties_soc = {} #SI soc result
-
 
 
     @property
@@ -740,4 +784,102 @@ class PYSCF:
         en_soc, osc_str_soc = compute.casscf_soc(self) 
 
         return  en_soc, osc_str_soc
+
+    def import_adc(self, adc, E, U, P, X):
+
+        self.log.info("\nImporting ADC in PYSCF...")
+
+        #ADC information
+        self.adc = adc
+        self.method_type = adc.method_type.lower()
+        self.adc.U = U #For uadc_ee.get_spin_square(self.adc) 
+        self.U = U
+        self.E_sf = E
+        self.P = P
+        self.X = X
+        self.roots = len(U[0])
+        self.nocc_a = adc.nocc_a
+        self.nocc_b = adc.nocc_b
+        self.nvir_a = adc.nvir_a
+        self.nvir_b = adc.nvir_b
+        self.nmo_a = adc.nocc_a + adc.nvir_a
+        self.nmo_b = adc.nocc_b + adc.nvir_b
+        self.mo_a = adc.mo_coeff[0]
+        self.mo_b = adc.mo_coeff[1]
+
+        self.ncvs = adc.ncvs
+
+        #MPn ref information
+        self.e_corr_MPn = adc.e_corr
+        self.scf_energy = adc.scf_energy
+        self.E_ref_abs= self.e_corr_MPn + self.scf_energy
+        self.log.info("e_corr_MPn=%s",self.e_corr_MPn)
+        self.log.info("scf_energy=%s",self.scf_energy)
+        self.log.info("E_ref_abs=%s", self.E_ref_abs)
+        #Use mo_a:
+        self.nmo = self.nmo_a
+        self.mo = self.mo_a
+
+        if self.ncvs:
+            self.log.info("Importing uadc_ip_cvs instead of uadc_ip...")
+            from pyscf.adc import uadc_ip_cvs
+            self.make_rdm1_eigenvectors = uadc_ip_cvs.make_rdm1_eigenvectors
+        else:
+            if self.method_type == "ea" :
+                self.log.info("Importing uadc_ea...")
+                from pyscf.adc import uadc_ea
+                self.make_rdm1_eigenvectors = uadc_ea.make_rdm1_eigenvectors
+            elif self.method_type == "ip" :
+                from pyscf.adc import uadc_ip
+                self.log.info("Importing uadc_ip...")
+                self.make_rdm1_eigenvectors = uadc_ip.make_rdm1_eigenvectors
+            elif self.method_type == "ee":
+                from pyscf.adc import uadc_ee
+                self.log.info("Importing uadc_ee...")
+                self.make_rdm1_eigenvectors = uadc_ee.make_rdm1_eigenvectors
+
+        #determine number of unpair electron in ADC
+        spin = self.mol.spin
+        if self.method_type in ("ea", "ip") :
+            if spin == 0:
+                self.spin_adc = spin+1
+            else:
+                #if unpair electon larger than zeoro, ea will add beta electron?
+                #TODO: Make sure again after pyscf updata spinsquare function for IP EA
+                self.spin_adc = spin+1
+
+        elif self.method_type == "ee" :
+            self.spin_adc = spin
+
+        #flag
+        if self.method_type == "ee":
+            self.add_ref_ee = True
+        else:
+            self.add_ref_ee = False
+        self.use_P = True
+        self.P_thresh =  1e-6
+        self.deg_atol = 1e-5
+        self.ms_ref_select = None
+        self.ignore_Ms_diag = False
+        self.save_sf = False
+        self.name_sf = None
+        self.analyze_evec_soc = False
+
+        #Calculating result
+        self.rdm_aabb_adc = None
+        self.e_tot_adc = None
+        self.S_total_adc = None
+        self.properties_adc = {} 
+
+        #define function to run siadc
+        def run_soc_sradc(self):
+            
+            import prism.libsoc.sradc
+            en_soc, properties = prism.libsoc.sradc.kernel(self)
+
+            return en_soc, properties
+
+        self.run_soc_sradc = MethodType(run_soc_sradc, self)
+
+        return self
 

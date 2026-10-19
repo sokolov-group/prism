@@ -8,7 +8,7 @@ from pyscf import mcpdft
 from pyscf import adc
 from pyscf import scf
 from pyscf.adc import uadc_ea
-import prism.interface_soc
+import prism.interface
 
 
 np.set_printoptions(suppress=True)
@@ -34,7 +34,9 @@ myadc.conv_tol = 1e-12
 myadc.tol_residual = 1e-6
 E,U,P,X = myadc.kernel(nroots=12)
 
-interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface = prism.interface.PYSCF(mf)
+interface = interface.import_adc(myadc, E,U,P,X)
+interface.soc = "BP"
 
 
 
@@ -59,7 +61,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        en_soc, properties = interface.kernel()
+        en_soc, properties = interface.run_soc_sradc()
 
         self.assertAlmostEqual(en_soc[0],    0.104604360853   , 5)
         self.assertAlmostEqual(en_soc[1],    0.104604360853   , 5)

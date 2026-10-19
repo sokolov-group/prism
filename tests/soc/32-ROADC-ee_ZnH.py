@@ -8,7 +8,7 @@ import prism.nevpt
 from prism.libsoc import general_somf
 from pyscf import adc
 from pyscf import scf
-import prism.interface_soc
+import prism.interface
 
 
 np.set_printoptions(suppress=True)
@@ -38,7 +38,8 @@ E,U,P,X = myadc.kernel(nroots=2)
 
 
 
-interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface = prism.interface.PYSCF(mf)
+interface = interface.import_adc(myadc, E,U,P,X)
 interface.soc = "bp"
 interface.gtensor=True
 
@@ -50,7 +51,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        en_soc, properties = interface.kernel()
+        en_soc, properties = interface.run_soc_sradc()
 
         self.assertAlmostEqual(en_soc[0], -1792.197376841653, 5)
         self.assertAlmostEqual(en_soc[1], -1792.197376841653, 5)
@@ -59,7 +60,7 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(en_soc[4], -1792.092234646684, 5)
         self.assertAlmostEqual(en_soc[5], -1792.092234646683, 5)
 
-        g_factor_all = interface.properties["g-factors"]
+        g_factor_all = interface.properties_soc["g-factors"]
         g_factor = g_factor_all[0]
         self.assertAlmostEqual(g_factor[0], 1.983434, 5)
         self.assertAlmostEqual(g_factor[1], 1.983434, 5)

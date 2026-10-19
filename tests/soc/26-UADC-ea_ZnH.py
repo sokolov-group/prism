@@ -8,7 +8,7 @@ from pyscf import mcpdft
 from pyscf import adc
 from pyscf import scf
 from pyscf.adc import uadc_ea
-import prism.interface_soc
+import prism.interface
 
 
 np.set_printoptions(suppress=True)
@@ -34,7 +34,9 @@ myadc.method_type = "ea"
 
 E,U,P,X = myadc.kernel(nroots=10)
 
-interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface = prism.interface.PYSCF(mf)
+interface = interface.import_adc(myadc, E,U,P,X)
+interface.soc = "BP"
 interface.gtensor = True
 
 
@@ -59,7 +61,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        en_soc, properties = interface.kernel()
+        en_soc, properties = interface.run_soc_sradc()
 
         self.assertAlmostEqual(en_soc[0],  -0.282269864321, 5)
         self.assertAlmostEqual(en_soc[1],  -0.282269864321, 5)
@@ -72,7 +74,7 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(en_soc[8],  -0.011769333715, 5)
         self.assertAlmostEqual(en_soc[9],  -0.011769333715, 5)
 
-        g_factor_all = interface.properties["g-factors"]
+        g_factor_all = interface.properties_soc["g-factors"]
         g_factor = g_factor_all[0]
         self.assertAlmostEqual(g_factor[0], 1.985757, 5)
         self.assertAlmostEqual(g_factor[1], 1.985757, 5)
