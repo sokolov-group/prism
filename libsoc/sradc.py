@@ -29,7 +29,7 @@ def kernel(interface):
     sys.stdout.flush()
 
     if interface.save_sf:
-       before.collect_sf(E_ref, rdm_aabb_ref, S_ref, ms_ref, interface.mo, name=interface.name_sf)
+       before_soc.collect_sf(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, interface.mo, name=interface.name_sf)
 
     #Compute en_soc
     en_soc, evec_soc = general_somf.state_interaction_soc(interface, E_ref, rdm_aabb_ref, S_ref,  ms_ref, interface.soc)
@@ -40,17 +40,18 @@ def kernel(interface):
     # Print results obtained from ADC
     after_soc.print_results(interface, en_soc, interface.soc, "SI-ADC")
     
+    #Print properties
     if "osc_strengths_full" in interface.properties_soc:
         trans_prop.print_osc_strength(interface, interface.properties_soc["osc_strengths_full"])
-    if "magnetic_properties_soc" in interface.properties_soc:
-        magnetic.print_mag_properties_soc(interface, interface.properties_soc,  method = None)
+    if "magnetic_properties" in interface.properties_soc:
+        magnetic.print_mag_properties(interface, interface.properties_soc,  method = None)
 
     sys.stdout.flush()
 
     interface.e_tot = en_soc
         
 
-    return interface.e_tot, interface.properties_soc
+    return interface.e_tot, interface.properties_soc["osc_strengths"]
 
 
 def make_rdm1s_ee(interface):

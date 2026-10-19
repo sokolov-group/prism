@@ -342,11 +342,15 @@ class PYSCF:
 
     @staticmethod
     def create_soc_flag(self):
+        
         # SOC params:
         self.soc = None # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.analyze_evec_soc = False #For soc eigenvector analysis
         self.unc = None # For DKH2
         self.max_memory_soc = self.max_memory
+        self.save_sf = False #saving spin-free information for SOC calculation
+        self.name_sf = None  #file name for saving spin-free information for SOC calculation
+
         
         # Basis set uncontraction objects: xmol, contraction coefficients.
         # prism.libsoc.general_somf.get_soc_integrals obtain self.xmol and self.contr_coeff 
@@ -775,26 +779,21 @@ class PYSCF:
 
         return rdm1, rdm2, rdm3, rdm4
 
-    def run_soc(self, soc_type=None):
-
-        if soc_type:
-            self.soc = soc_type
-
-        from prism.libsoc import compute
-        en_soc, osc_str_soc = compute.casscf_soc(self) 
-
-        return  en_soc, osc_str_soc
 
     def import_adc(self, adc, E, U, P, X):
 
         self.log.info("\nImporting ADC in PYSCF...")
 
+        #If self has mc and adc, run_soc doesn't know should run soc-casscf or si-adc
+        if self.mc:
+            raise Exception('ADC object can not be loaded after loding mc')
+        
         #ADC information
         self.adc = adc
         self.method_type = adc.method_type.lower()
         self.adc.U = U #For uadc_ee.get_spin_square(self.adc) 
         self.U = U
-        self.E_sf = E
+        self.E = E
         self.P = P
         self.X = X
         self.roots = len(U[0])
@@ -860,26 +859,33 @@ class PYSCF:
         self.P_thresh =  1e-6
         self.deg_atol = 1e-5
         self.ms_ref_select = None
-        self.ignore_Ms_diag = False
-        self.save_sf = False
-        self.name_sf = None
-        self.analyze_evec_soc = False
 
-        #Calculating result
-        self.rdm_aabb_adc = None
-        self.e_tot_adc = None
-        self.S_total_adc = None
-        self.properties_adc = {} 
+        #Calculating result for prism.libsoc.general_somf.state_interaction_soc
+        self.rdm_aabb = None
+        self.E_sf = self.E
+        self.S_total = None
 
-        #define function to run siadc
-        def run_soc_sradc(self):
-            
-            import prism.libsoc.sradc
-            en_soc, properties = prism.libsoc.sradc.kernel(self)
-
-            return en_soc, properties
-
-        self.run_soc_sradc = MethodType(run_soc_sradc, self)
+        self.e_tot = None
 
         return self
+
+    def run_soc(self, soc_type=None):
+
+        if soc_type:
+            self.soc = soc_type
+
+        if hasattr(self, "adc"):
+            import prism.libsoc.sradc
+            en_soc, osc_str_soc = prism.libsoc.sradc.kernel(self)
+
+        elif self.mc:
+            import prism.libsoc.casscf
+            en_soc, osc_str_soc = prism.libsoc.casscf.kernel(self)
+        
+        else:
+            raise Exception('Unknow method for SOC calculation')
+
+
+
+        return  en_soc, osc_str_soc
 

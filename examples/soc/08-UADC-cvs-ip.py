@@ -11,7 +11,7 @@ from pyscf import mcpdft
 from pyscf import adc
 from pyscf import scf
 from pyscf.adc import uadc_ea
-import prism.interface_soc
+import prism.interface
 
 
 np.set_printoptions(suppress=True)
@@ -34,8 +34,9 @@ mf.kernel()
 myadc = adc.ADC(mf)
 myadc.method_type = "ip"
 myadc.ncvs = 5
-E,U,P,X = myadc.kernel(nroots=12)
+E,U,P,X = myadc.kernel(nroots=6)
 
-interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
-interface.soc = 'BP' # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-en_soc, properties = interface.kernel()
+interface = prism.interface.PYSCF(mf)
+adc_prism = interface.import_adc(myadc, E,U,P,X)
+adc_prism.soc = 'BP' # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+adc_prism.run_soc()

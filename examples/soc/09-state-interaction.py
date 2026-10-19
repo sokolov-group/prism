@@ -9,7 +9,7 @@ import pyscf.scf
 from pyscf import adc
 from pyscf import scf
 from pyscf.adc import uadc_ea
-import prism.interface_soc
+import prism.interface
 import prism.libsoc
 
 np.set_printoptions(suppress=True)
@@ -35,20 +35,22 @@ myadc.method_type = "ea" #Can be ea, ip, ee
 
 E,U,P,X = myadc.kernel(nroots=6)
 
-interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
-interface.analyze_evec_soc = True
-interface.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-interface.save_sf = True #Save inofrmation for SOC calculation
-interface.gtensor =    True #Turn on g-tensor calculation
-interface.mag_av =     True #Turn on powder magnetization calculation
-interface.sus_av =     True #Turn on powder susceptibility calculation
-interface.mag_vec =    True #Turn on magnetization calculation under spectific direction of magnetic field
-interface.sus_tensor = True #Turn on susceptibility calculation under spectific direction of magnetic field
-en_soc, properties = interface.kernel()
+interface = prism.interface.PYSCF(mf)
+adc_prism = interface.import_adc(myadc, E,U,P,X)
+adc_prism.analyze_evec_soc = True
+adc_prism.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+adc_prism.save_sf = True #Save inofrmation for SOC calculation
+adc_prism.gtensor =    True #Turn on g-tensor calculation
+adc_prism.mag_av =     True #Turn on powder magnetization calculation
+adc_prism.sus_av =     True #Turn on powder susceptibility calculation
+adc_prism.mag_vec =    True #Turn on magnetization calculation under spectific direction of magnetic field
+adc_prism.sus_tensor = True #Turn on susceptibility calculation under spectific direction of magnetic field
+adc_prism.run_soc()
 
 
-E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.interface_soc.read_checkpoint("09-state-interaction.h5")
+E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.libsoc.read_checkpoint("09-state-interaction.h5")
 interface_sf = prism.libsoc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #, ms_ref=ms_ref)
+interface_sf.spin = 1 #Becasue EA-ADC add one electron
 interface_sf.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 interface_sf.gtensor =    True      #Turn on g-tensor calculation
 interface_sf.mag_av =     True      #Turn on powder magnetization calculation

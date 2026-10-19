@@ -12,10 +12,10 @@ import prism.nevpt
 from prism.libsoc import general_somf
 from pyscf import adc
 from pyscf import scf
-import prism.interface_soc
+import prism.interface
 '''
 WARNING: Because for now there is no spinsquare function to get S quantum number for IP EA ADC
-I just assume all state is triplet states and make some unreasonable result.
+I just assume all states are triplet states and make some unreasonable result.
 EE-ROADC should be fine
 '''
 np.set_printoptions(suppress=True)
@@ -45,6 +45,7 @@ E,U,P,X = myadc.kernel(nroots=2)
 
 
 
-interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
-interface.soc = "bp" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-en_soc, properties = interface.kernel()
+interface = prism.interface.PYSCF(mf)
+adc_prism = interface.import_adc(myadc, E,U,P,X)
+adc_prism.soc = "bp" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+adc_prism.run_soc()

@@ -61,7 +61,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        en_soc, properties = interface.run_soc_sradc()
+        en_soc, osc_str_soc = interface.run_soc()
 
         self.assertAlmostEqual(en_soc[0],  -0.282269864321, 5)
         self.assertAlmostEqual(en_soc[1],  -0.282269864321, 5)
