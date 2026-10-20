@@ -197,8 +197,8 @@ def natorb_active_space(mf, n_superset, occ_thresh=0.02, deg_tol=1e-3, max_super
     nelecas = int(round(float(np.sum(no_occ[is_act]))))
 
     if sa_nstates > 1:
-        spin = int(mf.mol.spin)
-        na_sel, nb_sel = (nelecas + spin) // 2, (nelecas - spin) // 2
+        nb_sel = (nelecas - int(mf.mol.spin)) // 2
+        na_sel = nelecas - nb_sel
         if comb(ncas, na_sel) * comb(ncas, nb_sel) < sa_nstates:
             raise ValueError(
                 f"Selected CAS({nelecas},{ncas}) supports fewer than "

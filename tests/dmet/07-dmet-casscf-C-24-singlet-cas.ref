@@ -1,0 +1,20 @@
+converged SCF energy = -37.6768656482831
+SCF energy: -37.676866
+
+CASSCF energy = -37.6197281365383
+CASCI E = -37.6197281365383  E(CI) = -1.28750928641429  S^2 = 0.0000000
+CASCI state-averaged energy = -37.6197281365383
+CASCI energy for each state
+  State 0 weight 0.5  E = -37.6219750616136 S^2 = 0.0000000
+  State 1 weight 0.5  E = -37.6174812114631 S^2 = 0.0000000
+CASSCF energy: -37.619728
+
+/users/PAS1583/bpickett/programs/prism_env/.dmet_import/prism/dmet/dmet.py:238: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+  warnings.warn(
+DMET-CASSCF singlet-CAS test
+Embedding a 9-orbital, 6-electron fragment cluster.
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.118s
+
+OK

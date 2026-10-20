@@ -21,7 +21,6 @@ from contextlib import nullcontext
 
 import numpy as np
 from pyscf import ao2mo, gto, scf, mcscf
-from pyscf import fci as pyscf_fci
 
 import prism.lib.logger as logger
 from prism.dmet.utils import silent_stdout
@@ -159,22 +158,10 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         mc.kernel(_mo0, _ci0)
 
         ncore = mc.ncore
-        if _use_rohf:
-            _nelecas_fci = ((nelecas + _spin) // 2, (nelecas - _spin) // 2)
-            ci_solver_base = pyscf_fci.direct_spin1.FCI()
-        else:
-            _nelecas_fci = nelecas
-            ci_solver_base = pyscf_fci.direct_spin0.FCI()
+        # The solver holds the CAS spin and root weights.
+        rdm1_cas, rdm2_cas = mc.fcisolver.make_rdm12(mc.ci, mc.ncas, mc.nelecas)
 
         if sa_nstates > 1:
-            # SA-CASSCF: per-state CAS RDMs, then take weighted average.
-            ci_vecs = mc.ci
-            rdm1_cas = np.zeros((ncas, ncas))
-            rdm2_cas = np.zeros((ncas, ncas, ncas, ncas))
-            for w, ci_vec in zip(sa_weights, ci_vecs):
-                r1, r2 = ci_solver_base.make_rdm12(ci_vec, ncas, _nelecas_fci)
-                rdm1_cas += w * r1
-                rdm2_cas += w * r2
             e_states = np.array(mc.e_states)
             e_tot = mc.e_tot   # weighted average
             log.info("\nSA-CASSCF state energies:")
@@ -182,7 +169,6 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
                 log.info("  State %d: %.10f Ha  (weight=%.4f)" % (i, e, sa_weights[i]))
             log.info("  Weighted average: %.10f Ha" % e_tot)
         else:
-            rdm1_cas, rdm2_cas = ci_solver_base.make_rdm12(mc.ci, ncas, _nelecas_fci)
             e_states = None
             e_tot = mc.e_tot
             log.info("\nCASSCF energy: %.10f Ha" % e_tot)
