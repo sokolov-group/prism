@@ -101,7 +101,8 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         mf.get_hcore = lambda *args: fock_copy
         mf.get_ovlp = lambda *args: np.eye(norb)
-        mf._eri = ao2mo.restore(8, tei, norb)
+        tei = ao2mo.restore(8, tei, norb)
+        mf._eri = tei
         # Level shift opens the near-degenerate trap gap for a deterministic embedded SCF.
         mf.level_shift = embed_level_shift
         if no_kernel:
@@ -176,44 +177,38 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         nmo = mf.mo_coeff.shape[1]
         dm1_mo = np.zeros((nmo, nmo))
-        dm2_mo = np.zeros((nmo, nmo, nmo, nmo))
-
-        for i in range(ncore):
-            dm1_mo[i, i] = 2.0
-            for j in range(ncore):
-                dm2_mo[i, i, j, j] += 4.0
-                dm2_mo[i, j, j, i] -= 2.0
-            for p in range(ncas):
-                for q in range(ncas):
-                    dm2_mo[i, i, ncore+p, ncore+q] += 2.0 * rdm1_cas[p, q]
-                    dm2_mo[ncore+p, ncore+q, i, i] += 2.0 * rdm1_cas[p, q]
-                    dm2_mo[i, ncore+q, ncore+p, i] -= rdm1_cas[p, q]
-                    dm2_mo[ncore+p, i, i, ncore+q] -= rdm1_cas[p, q]
-
+        dm1_mo[np.diag_indices(ncore)] = 2.0
         dm1_mo[ncore:ncore+ncas, ncore:ncore+ncas] = rdm1_cas
-        dm2_mo[ncore:ncore+ncas, ncore:ncore+ncas,
-               ncore:ncore+ncas, ncore:ncore+ncas] = rdm2_cas
 
         log.info("Full-space 1-RDM trace: %.6f" % np.trace(dm1_mo))
 
         # Rotate from MO basis to local dmet orbital basis.
         C = mc.mo_coeff
         pyscf_rdm1 = C @ dm1_mo @ C.T
-        pyscf_rdm2 = np.einsum('ai,ijkl->ajkl', C, dm2_mo)
-        pyscf_rdm2 = np.einsum('bj,ajkl->abkl', C, pyscf_rdm2)
-        pyscf_rdm2 = np.einsum('ck,abkl->abcl', C, pyscf_rdm2)
-        pyscf_rdm2 = np.einsum('dl,abcl->abcd', C, pyscf_rdm2)
 
-        # dmet_tei is eightfold-packed; the impurity energy contracts over all four indices.
-        tei = ao2mo.restore(1, tei, norb)
+        # The full-space 2-RDM is the mean-field product of pyscf_rdm1 plus a cumulant
+        # confined to the active block. The four impurity projections are equal by
+        # symmetry, giving the 0.5 weights.
+        vj, vk = scf.hf.dot_eri_dm(tei, pyscf_rdm1, hermi=1)
+        veff = vj - 0.5 * vk
+
+        mo_cas = C[:, ncore:ncore+ncas]
+        mo_imp = np.zeros_like(mo_cas)
+        mo_imp[:nimp] = mo_cas[:nimp]
+        v_cas = ao2mo.incore.general(
+            tei, (mo_imp, mo_cas, mo_cas, mo_cas), compact=False).reshape([ncas] * 4)
+        j_cas = np.einsum('pqrs,rs->pq', v_cas, rdm1_cas)
+        k_cas = np.einsum('pqrs,rq->ps', v_cas, rdm1_cas)
+        e_cumulant = (np.einsum('pqrs,pqrs->', rdm2_cas, v_cas)
+                      - np.einsum('pq,pq->', rdm1_cas, j_cas)
+                      + 0.5 * np.einsum('ps,ps->', rdm1_cas, k_cas))
+
         impurity_energy = (
             const
-            + 0.25  * np.einsum('ij,ij->', pyscf_rdm1[:nimp, :],     fock[:nimp, :] + oei[:nimp, :])
-            + 0.25  * np.einsum('ij,ij->', pyscf_rdm1[:, :nimp],     fock[:, :nimp] + oei[:, :nimp])
-            + 0.125 * np.einsum('ijkl,ijkl->', pyscf_rdm2[:nimp, :, :, :], tei[:nimp, :, :, :])
-            + 0.125 * np.einsum('ijkl,ijkl->', pyscf_rdm2[:, :nimp, :, :], tei[:, :nimp, :, :])
-            + 0.125 * np.einsum('ijkl,ijkl->', pyscf_rdm2[:, :, :nimp, :], tei[:, :, :nimp, :])
-            + 0.125 * np.einsum('ijkl,ijkl->', pyscf_rdm2[:, :, :, :nimp], tei[:, :, :, :nimp])
+            + 0.25 * np.einsum('ij,ij->', pyscf_rdm1[:nimp, :], fock[:nimp, :] + oei[:nimp, :])
+            + 0.25 * np.einsum('ij,ij->', pyscf_rdm1[:, :nimp], fock[:, :nimp] + oei[:, :nimp])
+            + 0.5  * np.einsum('ij,ij->', pyscf_rdm1[:nimp, :], veff[:nimp, :])
+            + 0.5  * e_cumulant
         )
 
     cas_results = {
