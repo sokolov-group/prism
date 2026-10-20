@@ -134,7 +134,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
         for key, val in casscf_kwargs.items():
             setattr(mc, key, val)
         if cas_spin is not None:
-            fix_cas_spin(mc.fcisolver, cas_spin, cas_spin_shift)
+            fix_cas_spin(mc, cas_spin, cas_spin_shift)
 
         if mo_natorb is not None:
             mc.mo_coeff = mo_natorb

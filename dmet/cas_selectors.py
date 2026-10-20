@@ -100,12 +100,15 @@ def canonicalize_degenerate_active_nos(cas_no, act_idx, no_occ, f_emb, deg_tol=1
     cas_no[:, act_idx] = act_cols
 
 
-def fix_cas_spin(fcisolver, cas_spin, shift=0.2):
-    # Penalize CAS states outside spin 2S=cas_spin via pyscf fix_spin_ (ss=S(S+1)).
-    from pyscf.fci.addons import fix_spin_
+def fix_cas_spin(mc, cas_spin, shift=0.2):
+    # Penalize CAS states outside spin 2S=cas_spin via pyscf fix_spin_ (ss=S(S+1)),
+    # and repartition mc.nelecas to match.
+    from pyscf.fci.addons import _unpack_nelec, fix_spin_
+    fcisolver = mc.fcisolver
     s = cas_spin / 2.0
     fcisolver.spin = cas_spin
     fix_spin_(fcisolver, shift=shift, ss=s * (s + 1))
+    mc.nelecas = _unpack_nelec(sum(mc.nelecas), cas_spin)
     return fcisolver
 
 
@@ -162,7 +165,7 @@ def natorb_active_space(mf, n_superset, occ_thresh=0.02, deg_tol=1e-3, max_super
     mc.fcisolver.conv_tol = conv_tol
     mc.verbose = 0
     if cas_spin is not None:
-        fix_cas_spin(mc.fcisolver, cas_spin, cas_spin_shift)
+        fix_cas_spin(mc, cas_spin, cas_spin_shift)
     if sa_nstates > 1:
         mc.fcisolver.nroots = sa_nstates
     mc.kernel()
