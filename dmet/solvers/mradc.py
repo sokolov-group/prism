@@ -20,10 +20,10 @@ import sys
 from contextlib import nullcontext
 
 import numpy as np
-from pyscf import ao2mo, gto, scf, mcscf
+from pyscf import gto, scf, mcscf
 
 import prism.lib.logger as logger
-from prism.dmet.utils import silent_stdout
+from prism.dmet.utils import attach_eri, silent_stdout
 from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
                                       stabilize_scf, set_reference_no_scf)
 
@@ -41,7 +41,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
           deg_tol=1e-3, casci_conv_tol=1e-10, embedding_data=None,
-          embedded_ref=None, no_kernel=False):
+          embedded_ref=None, no_kernel=False, cderi=None):
     import prism.interface
     import prism.mr_adc
 
@@ -66,17 +66,16 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
     ctx = silent_stdout() if not printoutput else nullcontext()
 
     with ctx:
-        # Container for the embedded Hamiltonian, supplied through get_hcore/get_ovlp/_eri.
+        # Container for the embedded Hamiltonian, supplied through get_hcore/get_ovlp.
         mol = gto.Mole()
         mol.build(verbose=0)
         mol.nelectron = nel
         mol.spin = _spin
         mol.incore_anyway = True
 
-        mf = scf.ROHF(mol) if _use_rohf else scf.RHF(mol)
+        mf = attach_eri(scf.ROHF(mol) if _use_rohf else scf.RHF(mol), tei, cderi, norb)
         mf.get_hcore = lambda *args: fock_copy
         mf.get_ovlp = lambda *args: np.eye(norb)
-        mf._eri = ao2mo.restore(8, tei, norb)
         mf.verbose = 4 if printoutput else 0
         # Level shift opens the near-degenerate gap so the embedded SCF is deterministic.
         mf.level_shift = embed_level_shift
@@ -133,6 +132,8 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             backend=prism_backend,
             select_reference=select_reference,
         )
+        if cderi is not None:
+            interface.density_fit(with_df=mf.with_df)
         # Molecule and orbitals for Dyson orbital output.
         if embedding_data is not None:
             interface.emb_mol = embedding_data['mol']
@@ -181,6 +182,7 @@ def execute(task):
         embedding_data=task.get('embedding_data'),
         embedded_ref=task.get('embedded_ref'),
         no_kernel=task.get('no_kernel', False),
+        cderi=task.get('dmet_cderi'),
     )
 
     rdm1 = mc.make_rdm1()

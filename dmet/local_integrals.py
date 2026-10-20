@@ -19,6 +19,7 @@
 
 import numpy as np
 from pyscf import ao2mo, lo
+from pyscf.ao2mo import _ao2mo
 from pyscf.lo import nao, orth
 from pyscf.tools import molden
 
@@ -229,6 +230,23 @@ class LocalIntegrals:
         eigvals, eigvecs = np.linalg.eigh(fock_emb)
         eigvecs = eigvecs[:, eigvals.argsort()]
         return 2 * np.dot(eigvecs[:, :num_pairs], eigvecs[:, :num_pairs].T)
+
+    def dmet_cderi(self, loc_2_dmet, num_active):
+        # Three-index cluster integrals, naux x npair against npair^2/2 for dmet_tei.
+        # Filled one auxiliary block at a time, so the mean field's own tensor is
+        # never held whole.
+        if self.with_df is None:
+            raise RuntimeError(
+                "dmet_cderi needs a density-fitted mean field; none carries with_df.")
+        ao2emb = np.dot(self.ao2loc, loc_2_dmet[:, :num_active])
+        mosym, _, moij, ijslice = ao2mo.incore._conc_mos(ao2emb, ao2emb, compact=True)
+        npair = num_active * (num_active + 1) // 2
+        cderi = np.empty((self.with_df.get_naoaux(), npair))
+        p1 = 0
+        for eri in self.with_df.loop():
+            p0, p1 = p1, p1 + eri.shape[0]
+            _ao2mo.nr_e2(eri, moij, ijslice, aosym='s2', mosym=mosym, out=cderi[p0:p1])
+        return cderi
 
     def dmet_tei(self, loc_2_dmet, num_active):
         # Eightfold-packed, which is what the solvers hand to mf._eri. The full

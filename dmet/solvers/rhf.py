@@ -18,10 +18,13 @@
 #
 
 import numpy as np
-from pyscf import ao2mo, gto, scf
+from pyscf import gto, scf
+
+from prism.dmet.utils import attach_eri
 
 
-def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf, chempot_imp=0.0):
+def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf, chempot_imp=0.0,
+          cderi=None):
 
     fock_copy = fock.copy()
     if chempot_imp != 0.0:
@@ -33,10 +36,9 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf, chempot_imp=0.0)
     mol.atom.append(('C', (0, 0, 0)))
     mol.nelectron = nel
     mol.incore_anyway = True
-    mf = scf.RHF(mol)
+    mf = attach_eri(scf.RHF(mol), tei, cderi, norb)
     mf.get_hcore = lambda *args: fock_copy
     mf.get_ovlp = lambda *args: np.eye(norb)
-    mf._eri = ao2mo.restore(8, tei, norb)
     mf.scf(dm_guess_rhf)
     dm_loc = mf.mo_coeff @ np.diag(mf.mo_occ) @ mf.mo_coeff.T
     if not mf.converged:
@@ -68,4 +70,5 @@ def execute(task):
         task['nimp'],
         task.get('dm_guess_rhf'),
         task.get('chempot_imp', 0.0),
+        cderi=task.get('dmet_cderi'),
     )

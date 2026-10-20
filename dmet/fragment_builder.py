@@ -24,6 +24,8 @@ class FragmentBuilder:
 
     _NEEDS_DM_METHODS = frozenset({'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2', 'MR-ADC'})
     _NEEDS_DIP_METHODS = frozenset({'QD-NEVPT2', 'PC-NEVPT2'})
+    # Solvers that take the cluster integrals through with_df.
+    _CDERI_METHODS = frozenset({'flag_rhf', 'CASSCF', 'QD-NEVPT2', 'PC-NEVPT2', 'MR-ADC'})
 
     def __init__(self, ints, helper, fragments, method, num_bath_orbs, bath_tol,
                  fragment_methods=None, core_occ_tol=None,
@@ -79,7 +81,12 @@ class FragmentBuilder:
 
         dmet_oei = self._ints.dmet_oei(loc_2_dmet, norb_in_imp)
         dmet_fock = self._ints.dmet_fock(loc_2_dmet, norb_in_imp, core_1rdm_loc)
-        dmet_tei = self._ints.dmet_tei(loc_2_dmet, norb_in_imp)
+        method_key = 'flag_rhf' if flag_rhf else self._method
+        dmet_tei = dmet_cderi = None
+        if self._ints.with_df is not None and method_key in self._CDERI_METHODS:
+            dmet_cderi = self._ints.dmet_cderi(loc_2_dmet, norb_in_imp)
+        else:
+            dmet_tei = self._ints.dmet_tei(loc_2_dmet, norb_in_imp)
 
         needs_dm = flag_rhf or self._method in self._NEEDS_DM_METHODS
         dm_guess_rhf = None
@@ -87,8 +94,6 @@ class FragmentBuilder:
             dm_guess_rhf = self._ints.dmet_init_guess_rhf(
                 loc_2_dmet, norb_in_imp, nelec_in_imp // 2,
                 num_imp_orbs, chempot_imp)
-
-        method_key = 'flag_rhf' if flag_rhf else self._method
 
         dip_mom_ao = None
         if self._method in self._NEEDS_DIP_METHODS:
@@ -116,6 +121,7 @@ class FragmentBuilder:
             'dmet_oei': dmet_oei,
             'dmet_fock': dmet_fock,
             'dmet_tei': dmet_tei,
+            'dmet_cderi': dmet_cderi,
             'dm_guess_rhf': dm_guess_rhf,
             'dip_mom_ao': dip_mom_ao,
             'embedding_data': embedding_data,

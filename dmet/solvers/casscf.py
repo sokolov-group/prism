@@ -23,7 +23,7 @@ import numpy as np
 from pyscf import ao2mo, gto, scf, mcscf
 
 import prism.lib.logger as logger
-from prism.dmet.utils import silent_stdout
+from prism.dmet.utils import attach_eri, silent_stdout
 from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
                                       stabilize_scf, set_reference_no_scf)
 
@@ -41,6 +41,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
           deg_tol=1e-3, casci_conv_tol=1e-10,
           embedded_ref=None, no_kernel=False,
+          cderi=None,
           **casscf_kwargs):
     if ncas is None:
         ncas = norb
@@ -99,10 +100,9 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         else:
             mf = scf.RHF(mol)
 
+        mf = attach_eri(mf, tei, cderi, norb)
         mf.get_hcore = lambda *args: fock_copy
         mf.get_ovlp = lambda *args: np.eye(norb)
-        tei = ao2mo.restore(8, tei, norb)
-        mf._eri = tei
         # Level shift opens the near-degenerate trap gap for a deterministic embedded SCF.
         mf.level_shift = embed_level_shift
         if no_kernel:
@@ -189,14 +189,18 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         # The full-space 2-RDM is the mean-field product of pyscf_rdm1 plus a cumulant
         # confined to the active block. The four impurity projections are equal by
         # symmetry, giving the 0.5 weights.
-        vj, vk = scf.hf.dot_eri_dm(tei, pyscf_rdm1, hermi=1)
+        vj, vk = mf.get_jk(dm=pyscf_rdm1, hermi=1)
         veff = vj - 0.5 * vk
 
         mo_cas = C[:, ncore:ncore+ncas]
         mo_imp = np.zeros_like(mo_cas)
         mo_imp[:nimp] = mo_cas[:nimp]
-        v_cas = ao2mo.incore.general(
-            tei, (mo_imp, mo_cas, mo_cas, mo_cas), compact=False).reshape([ncas] * 4)
+        mos = [mo_imp, mo_cas, mo_cas, mo_cas]
+        if cderi is not None:
+            v_cas = mf.with_df.ao2mo(mos, compact=False)
+        else:
+            v_cas = ao2mo.incore.general(mf._eri, mos, compact=False)
+        v_cas = v_cas.reshape([ncas] * 4)
         j_cas = np.einsum('pqrs,rs->pq', v_cas, rdm1_cas)
         k_cas = np.einsum('pqrs,rq->ps', v_cas, rdm1_cas)
         e_cumulant = (np.einsum('pqrs,pqrs->', rdm2_cas, v_cas)
@@ -258,5 +262,6 @@ def execute(task):
         casci_conv_tol=task.get('casci_conv_tol', 1e-10),
         embedded_ref=task.get('embedded_ref'),
         no_kernel=task.get('no_kernel', False),
+        cderi=task.get('dmet_cderi'),
         **task.get('casscf_kwargs', {}),
     )

@@ -22,6 +22,7 @@ import sys
 from contextlib import contextmanager
 
 import numpy as np
+from pyscf import ao2mo
 
 
 @contextmanager
@@ -38,6 +39,18 @@ def silent_stdout():
         os.dup2(old_fd, sys.stdout.fileno())
         os.close(old_fd)
         os.close(devnull)
+
+
+def attach_eri(mf, tei, cderi, norb):
+    # Cluster integrals onto the embedded mean field. Three-index integrals go to
+    # with_df, where the cluster orbitals stand in for the atomic ones; density_fit
+    # returns a new object, so callers rebind.
+    if cderi is not None:
+        mf = mf.density_fit()
+        mf.with_df._cderi = cderi
+        return mf
+    mf._eri = ao2mo.restore(8, tei, norb)
+    return mf
 
 
 def auto_nfrozen(mf, cutoff=-2.0):

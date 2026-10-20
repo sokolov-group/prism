@@ -464,6 +464,7 @@ class DMET:
             dmet_oei = frag['dmet_oei']
             dmet_fock = frag['dmet_fock']
             dmet_tei = frag['dmet_tei']
+            dmet_cderi = frag['dmet_cderi']
             dm_guess_rhf = frag['dm_guess_rhf']
             dip_mom_ao = frag['dip_mom_ao']
             _method_key = frag['method_key']
@@ -512,7 +513,7 @@ class DMET:
                     self.log.info("MO shape mismatch, starting fresh.")
 
             task = self._build_task(
-                frag_idx, _method_key, dmet_oei, dmet_fock, dmet_tei,
+                frag_idx, _method_key, dmet_oei, dmet_fock, dmet_tei, dmet_cderi,
                 norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                 dm_guess_rhf, mo_guess=_mo_guess, ci_guess=_ci_guess,
                 dip_mom_ao=dip_mom_ao, embedding_data=frag['embedding_data'],
@@ -638,6 +639,7 @@ class DMET:
         nevpt.spin_pop_mol = self.ints.mol
 
     def _build_task(self, frag_idx, method_key, dmet_oei, dmet_fock, dmet_tei,
+                    dmet_cderi,
                     norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                     dm_guess_rhf, mo_guess=None, ci_guess=None, dip_mom_ao=None,
                     embedding_data=None, embedded_ref=None):
@@ -648,6 +650,7 @@ class DMET:
             'dmet_oei': dmet_oei,
             'dmet_fock': dmet_fock,
             'dmet_tei': dmet_tei,
+            'dmet_cderi': dmet_cderi,
             'dip_mom_ao': dip_mom_ao,
             'embedding_data': embedding_data,
             'embedded_ref': embedded_ref,
