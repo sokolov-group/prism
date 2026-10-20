@@ -37,7 +37,7 @@ E,U,P,X = myadc.kernel(nroots=6)
 
 interface = prism.interface.PYSCF(mf)
 adc_prism = interface.import_adc(myadc, E,U,P,X)
-adc_prism.analyze_evec_soc = True
+adc_prism.analyze_evec_soc = True #For soc eigenvector analysis
 adc_prism.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 adc_prism.save_sf = True #Save inofrmation for SOC calculation
 adc_prism.gtensor =    True #Turn on g-tensor calculation
@@ -50,6 +50,7 @@ adc_prism.run_soc()
 
 E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.libsoc.read_checkpoint("09-state-interaction.h5")
 interface_sf = prism.libsoc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #, ms_ref=ms_ref)
+interface_sf.analyze_evec_soc = True #For soc eigenvector analysis
 interface_sf.spin = 1 #Becasue EA-ADC add one electron
 interface_sf.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 interface_sf.gtensor =    True      #Turn on g-tensor calculation
@@ -57,4 +58,4 @@ interface_sf.mag_av =     True      #Turn on powder magnetization calculation
 interface_sf.sus_av =     True      #Turn on powder susceptibility calculation
 interface_sf.mag_vec =    True      #Turn on magnetization calculation under spectific direction of magnetic field
 interface_sf.sus_tensor = True      #Turn on susceptibility calculation under spectific direction of magnetic field
-interface_sf.kernel()
+interface_sf.run_soc()

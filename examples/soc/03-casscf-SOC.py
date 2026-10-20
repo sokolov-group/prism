@@ -41,4 +41,5 @@ mc.analyze()
 
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
+interface.analyze_evec_soc = True #For soc eigenvector analysis
 interface.run_soc("x2c-1") # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)

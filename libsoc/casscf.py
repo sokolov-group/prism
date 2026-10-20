@@ -54,16 +54,13 @@ def kernel(interface):
 
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
-        
-        if interface.save_sf:
-            before_soc.collect_sf(interface, en, rdm_aabb, S, ms[0], interface.mo, name=interface.name_sf)
 
-        en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm_aabb, S, ms[0], interface.soc, interface.verbose)
+        if interface.save_sf:
+            before_soc.collect_sf(interface, en, rdm_aabb, S,  ms[0], interface.mo, name=interface.name_sf)   
+
+        en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm_aabb, S, ms[0], interface.soc, verbose = interface.verbose)
     
     else:   
-
-        if interface.save_sf:
-            interface.log.warn("does not allow now")
 
         interface.log.info("Apply S_plus due to Ms=0...")
 
@@ -95,15 +92,18 @@ def kernel(interface):
 
                     if I == J:
                         #uncorrelated diagonal terms
-                        rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)  
+                        rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb,  rdm_aabb_plus, S, interface.soc, interface.verbose)
+        if interface.save_sf:
+            before_soc.collect_sf_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, interface.mo, name=interface.name_sf)  
+
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb,  rdm_aabb_plus, S, interface.soc, verbose = interface.verbose)
 
     #Compute properties
     after_soc.compute_properties(interface, en_soc, evec_soc, rdm_aabb, S)
 
     #Print result
-    after_soc.print_results(interface, en_soc, interface.soc, "CASSCF")
+    after_soc.print_results(interface, en_soc, evec_soc, S, interface.soc, "CASSCF")
 
     #Print properties
     if "osc_strengths_full" in interface.properties_soc:

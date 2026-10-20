@@ -240,3 +240,22 @@ def collect_sf(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo, name=None):
         f.create_dataset("S_ref", data=S_ref)
         f.create_dataset("ms_ref", data=ms_ref)
         f.create_dataset("mo", data=mo)
+
+
+def collect_sf_ms0(interface, E_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref, mo, name=None):
+    '''
+    Save spin-free information for state-interaction calculation
+    '''
+    interface.log.info("\nSave E_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref ... as h5 file...")
+    if name:
+        input_file = name
+    else:    
+        input_file = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+    
+    interface.log.info("file name:"+input_file+ "_ms0.h5\n")
+    with h5py.File(input_file + "_ms0.h5", "w") as f:
+        f.create_dataset("E_ref", data=E_ref)
+        f.create_dataset("rdm_aabb_ref", data=rdm_aabb_ref)
+        f.create_dataset("rdm_aabb_plus_ref", data=rdm_aabb_plus_ref)
+        f.create_dataset("S_ref", data=S_ref)
+        f.create_dataset("mo", data=mo)
