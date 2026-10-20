@@ -333,12 +333,9 @@ class DMET:
         return imp_sizes
 
     def make_h1_terms(self):
-        """Unit perturbations of the correlation potential, as (rows, cols) positions.
-
-        One term per fitted matrix element, carrying the positions of its unit entries.
-        A term is symmetric, so an off-diagonal element contributes both orders and a
-        diagonal element one.
-        """
+        # One term per fitted matrix element, as the (rows, cols) positions of its unit
+        # entries. A term is symmetric, so an off-diagonal element contributes both
+        # orders and a diagonal element one.
         h1_terms = []
         if self.do_det:  # DET (density embedding): fit the diagonal density only
             if self.is_translation_invariant:
@@ -738,13 +735,36 @@ class DMET:
         e_cstr = np.sum(umat_square_loc * errors_sq)
         return -e_fun - e_cstr
 
+    def error_matrix(self, errors):
+        # The error vector returned to the lattice basis, in the layout rdm_differences
+        # reads it out of.
+        err = np.zeros((self.norb, self.norb), dtype=float)
+        jump = 0
+        for frag_idx in range(len(self.imp_size)):
+            if self.fit_imp_bath:
+                orbs = self.dmet_orbs[frag_idx]
+                size = orbs.shape[1]
+                block = np.reshape(errors[jump: jump + size * size], (size, size),
+                                   order='F')
+                err += orbs @ block @ orbs.T
+            else:
+                size = self.imp_size[frag_idx]
+                block = np.reshape(errors[jump: jump + size * size], (size, size),
+                                   order='F')
+                imp = np.flatnonzero(self.fragments[frag_idx])
+                err[np.ix_(imp, imp)] += block
+            jump += size * size
+        if jump != len(errors):
+            raise RuntimeError("U-matrix fitting: cluster-orbital count mismatch.")
+        return err
+
     def cost_function_derivative(self, umat_flat):
         errors = self.rdm_differences(umat_flat)
-        error_derivs = self.rdm_differences_derivative(umat_flat)
-        gradient = np.zeros((len(umat_flat),), dtype=float)
-        for elem_idx in range(len(umat_flat)):
-            gradient[elem_idx] = 2 * np.sum(np.multiply(error_derivs[:, elem_idx], errors))
-        return gradient
+        if self.do_det:  # DET (density embedding): fit the diagonal density only
+            error_derivs = self.rdm_differences_derivative(umat_flat)
+            return 2 * (error_derivs.T @ errors)
+        return 2 * self.helper.construct_1rdm_response_trace(
+            self.flat2square(umat_flat), self.no_rotation, self.error_matrix(errors))
 
     def alt_cost_function_derivative(self, umat_flat):
         errors = self.rdm_differences_masked(umat_flat)

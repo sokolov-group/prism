@@ -51,7 +51,7 @@ class KnownValues(unittest.TestCase):
 
     def test_ortho_does_not_grow_with_system_size(self):
         # The largest pair deviation is a per-pair quantity, so it stays flat as the
-        # orbital count rises and the tolerance means the same thing at any size.
+        # orbital count rises.
         _, small = ortho(chain(6))
         _, large = ortho(chain(24))
         self.assertLess(small, 1e-8)

@@ -48,6 +48,17 @@ def rhf_response(norb, num_pairs, h1_start, h1_row, h1_col, oei):
     return rdm_deriv
 
 
+def rhf_response_trace(norb, num_pairs, h1_start, h1_row, h1_col, oei, err):
+    # Trace of err against the idempotent-RDM response, one entry per h1 term. The
+    # chain rule runs through a single matrix, so no response per term is formed.
+    evals, evecs = np.linalg.eigh(oei)
+    occ, virt = evecs[:, :num_pairs], evecs[:, num_pairs:]
+    denom = -1.0 / (evals[num_pairs:, None] - evals[None, :num_pairs])  # (nvir, nocc)
+    err = err + err.T
+    kern = virt @ ((virt.T @ err @ occ) * denom) @ occ.T
+    return 2.0 * np.add.reduceat(kern[h1_row, h1_col], h1_start[:-1])
+
+
 class DMETHelper:
 
     def __init__(self, ints, h1_terms, use_constrained_opt, min_func, log=None):
@@ -89,15 +100,24 @@ class DMETHelper:
             oei = self.ints.loc_fock() + umat_loc
         return self._build_1rdm(oei, self.num_pairs)
 
-    def construct_1rdm_response(self, umat_loc, no_rotation):
+    def _response_oei(self, umat_loc, no_rotation):
         if self._is_open_shell:
             raise NotImplementedError(
                 "DMET chemical-potential optimization requires an even electron count.")
         oei = self.ints.loc_fock() + umat_loc
         if no_rotation is not None:
             oei = no_rotation.T @ oei @ no_rotation
-        return rhf_response(self.ints.norb, self.num_pairs,
-                            self.h1_start, self.h1_row, self.h1_col, oei)
+        return oei
+
+    def construct_1rdm_response(self, umat_loc, no_rotation):
+        return rhf_response(self.ints.norb, self.num_pairs, self.h1_start,
+                            self.h1_row, self.h1_col,
+                            self._response_oei(umat_loc, no_rotation))
+
+    def construct_1rdm_response_trace(self, umat_loc, no_rotation, err):
+        return rhf_response_trace(self.ints.norb, self.num_pairs, self.h1_start,
+                                  self.h1_row, self.h1_col,
+                                  self._response_oei(umat_loc, no_rotation), err)
 
     def _build_1rdm(self, oei, num_pairs):
         eigenvals, eigenvecs = np.linalg.eigh(oei)
@@ -183,8 +203,8 @@ class DMETHelper:
         pure_env_vals = -pure_env_vals[env_idx]
         core_occupations = np.hstack((np.zeros((num_imp_orbs + num_bath_orbs,)), pure_env_vals))
 
-        # Impurity orbitals take the leading columns as a unit block, the environment
-        # eigenvectors the rest.
+        # Impurity orbitals take the leading columns, the environment eigenvectors
+        # the rest.
         imp_rows = np.flatnonzero(impurity_orbs)
         env_rows = np.flatnonzero(np.asarray(impurity_orbs) == 0)
         if len(imp_rows) != num_imp_orbs:
