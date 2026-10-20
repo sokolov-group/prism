@@ -74,13 +74,10 @@ class DMETHelper:
 
     def _convert_h1_sparse(self):
         h1_start, h1_row, h1_col = [0], [], []
-        total = 0
-        for mat in self.h1_terms:
-            rows, cols = np.where(mat == 1)
-            total += len(rows)
-            h1_start.append(total)
+        for rows, cols in self.h1_terms:
             h1_row.extend(rows)
             h1_col.extend(cols)
+            h1_start.append(len(h1_row))
         return (np.array(h1_start, dtype=int),
                 np.array(h1_row, dtype=int),
                 np.array(h1_col, dtype=int))

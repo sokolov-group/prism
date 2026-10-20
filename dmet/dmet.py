@@ -333,44 +333,51 @@ class DMET:
         return imp_sizes
 
     def make_h1_terms(self):
+        """Unit perturbations of the correlation potential, as (rows, cols) positions.
+
+        One term per fitted matrix element, carrying the positions of its unit entries.
+        A term is symmetric, so an off-diagonal element contributes both orders and a
+        diagonal element one.
+        """
         h1_terms = []
         if self.do_det:  # DET (density embedding): fit the diagonal density only
             if self.is_translation_invariant:
                 local_size = self.imp_size[0]
+                jumps = [local_size * j for j in range(self.norb // local_size)]
                 for row in range(local_size):
-                    h1 = np.zeros((self.norb, self.norb), dtype=int)
-                    for jumper in range(self.norb // local_size):
-                        jumpsquare = local_size * jumper
-                        h1[jumpsquare + row, jumpsquare + row] = 1
-                    h1_terms.append(h1)
+                    idx = [j + row for j in jumps]
+                    h1_terms.append((idx, list(idx)))
             else:
                 jumpsquare = 0
                 for local_size in self.imp_size:
                     for row in range(local_size):
-                        h1 = np.zeros((self.norb, self.norb), dtype=int)
-                        h1[jumpsquare + row, jumpsquare + row] = 1
-                        h1_terms.append(h1)
+                        h1_terms.append(([jumpsquare + row], [jumpsquare + row]))
                     jumpsquare += local_size
         else:  # DMET (density-matrix embedding): fit the full density matrix
             if self.is_translation_invariant:
                 local_size = self.imp_size[0]
+                jumps = [local_size * j for j in range(self.norb // local_size)]
                 for row in range(local_size):
                     for col in range(row, local_size):
-                        h1 = np.zeros((self.norb, self.norb), dtype=int)
-                        for jumper in range(self.norb // local_size):
-                            jumpsquare = local_size * jumper
-                            h1[jumpsquare + row, jumpsquare + col] = 1
-                            h1[jumpsquare + col, jumpsquare + row] = 1
-                        h1_terms.append(h1)
+                        if row == col:
+                            idx = [j + row for j in jumps]
+                            h1_terms.append((idx, list(idx)))
+                        else:
+                            h1_terms.append(
+                                ([j + k for j in jumps for k in (row, col)],
+                                 [j + k for j in jumps for k in (col, row)]))
             else:
                 jumpsquare = 0
                 for local_size in self.imp_size:
                     for row in range(local_size):
                         for col in range(row, local_size):
-                            h1 = np.zeros((self.norb, self.norb), dtype=int)
-                            h1[jumpsquare + row, jumpsquare + col] = 1
-                            h1[jumpsquare + col, jumpsquare + row] = 1
-                            h1_terms.append(h1)
+                            if row == col:
+                                h1_terms.append(([jumpsquare + row],
+                                                 [jumpsquare + row]))
+                            else:
+                                h1_terms.append(
+                                    ([jumpsquare + row, jumpsquare + col],
+                                     [jumpsquare + col, jumpsquare + row]))
                     jumpsquare += local_size
         return h1_terms
 
