@@ -186,16 +186,16 @@ class DMETHelper:
         pure_env_vals = -pure_env_vals[env_idx]
         core_occupations = np.hstack((np.zeros((num_imp_orbs + num_bath_orbs,)), pure_env_vals))
 
-        for col_idx in range(num_imp_orbs):
-            eigenvecs = np.insert(eigenvecs, col_idx, 0.0, axis=1)
-        imp_slot = 0
-        for orb_idx in range(num_total_orbs):
-            if impurity_orbs[orb_idx]:
-                eigenvecs = np.insert(eigenvecs, orb_idx, 0.0, axis=0)
-                eigenvecs[orb_idx, imp_slot] = 1.0
-                imp_slot += 1
-        if imp_slot != num_imp_orbs:
+        # Impurity orbitals take the leading columns as a unit block, the environment
+        # eigenvectors the rest.
+        imp_rows = np.flatnonzero(impurity_orbs)
+        env_rows = np.flatnonzero(np.asarray(impurity_orbs) == 0)
+        if len(imp_rows) != num_imp_orbs:
             raise RuntimeError("Impurity orbital count mismatch.")
+        embedding_vecs = np.zeros((num_total_orbs, num_total_orbs))
+        embedding_vecs[imp_rows, np.arange(num_imp_orbs)] = 1.0
+        embedding_vecs[np.ix_(env_rows, np.arange(num_imp_orbs, num_total_orbs))] = eigenvecs
+        eigenvecs = embedding_vecs
 
         if np.linalg.norm(np.dot(eigenvecs.T, eigenvecs) - np.identity(num_total_orbs)) >= 1e-12:
             raise RuntimeError("Embedding orbitals are not orthonormal.")
