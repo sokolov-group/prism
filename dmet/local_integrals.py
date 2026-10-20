@@ -149,8 +149,7 @@ class LocalIntegrals:
         # Two-electron integrals, cheapest source first. Only a density-fitted mean field
         # carries with_df, and it builds its tensor on demand, so dmet_tei uses it there.
         self.with_df = getattr(mf, 'with_df', None)
-        # The embedded solvers build their own Mole and would otherwise take PySCF's
-        # default budget rather than the one set on this mean field.
+        # Memory budget handed to the embedded solvers.
         self.max_memory = getattr(mf, 'max_memory', None)
         self.eri_in_mem = False
         self.active_eri = None

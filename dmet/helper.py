@@ -49,8 +49,7 @@ def rhf_response(norb, num_pairs, h1_start, h1_row, h1_col, oei):
 
 
 def rhf_response_trace(norb, num_pairs, h1_start, h1_row, h1_col, oei, err):
-    # Trace of err against the idempotent-RDM response, one entry per h1 term. The
-    # chain rule runs through a single matrix, so no response per term is formed.
+    # Trace of err against the idempotent-RDM response, one entry per h1 term.
     evals, evecs = np.linalg.eigh(oei)
     occ, virt = evecs[:, :num_pairs], evecs[:, num_pairs:]
     denom = -1.0 / (evals[num_pairs:, None] - evals[None, :num_pairs])  # (nvir, nocc)

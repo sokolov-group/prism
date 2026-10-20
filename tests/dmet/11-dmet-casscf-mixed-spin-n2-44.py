@@ -24,7 +24,7 @@ from prism.dmet import DMET, LocalIntegrals, make_fragments
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
 mol = pyscf.gto.Mole()
-mol.atom = [['N', (0, 0, 0)], ['N', (0, 0, 1.5)]]
+mol.atom = [['N', (0, 0, 0)], ['N', (0, 0, 1.1)]]
 mol.basis = 'sto-3g'
 mol.build()
 
@@ -48,7 +48,7 @@ class KnownValues(unittest.TestCase):
         ss = np.asarray(res['spin_square'])
         e_states = np.asarray(res['e_states'])
 
-        self.assertAlmostEqual(e_dmet, -107.337681835585, 5)
+        self.assertAlmostEqual(e_dmet, -107.244051615, 5)
         self.assertEqual(len(e_states), 9)
 
         # The roots carry the spins that were requested.
@@ -57,7 +57,7 @@ class KnownValues(unittest.TestCase):
         self.assertLess(np.max(ss), 2.1)
 
         gap = (e_states[ss > 1.5].min() - e_states[ss < 0.5].min()) * 27.211386245988
-        self.assertAlmostEqual(gap, 1.725, 2)
+        self.assertAlmostEqual(gap, 8.176, 2)
 
     def test_rejects_a_spin_penalty(self):
 

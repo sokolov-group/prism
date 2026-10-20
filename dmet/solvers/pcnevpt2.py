@@ -88,8 +88,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
         mol.nelectron = nel
         mol.spin = _spin
         mol.incore_anyway = True
-        # The embedded problem carries no Mole of its own, so PySCF's default budget
-        # would otherwise size every downstream block.
+        # Memory budget of the full-system mean field.
         if max_memory is not None:
             mol.max_memory = max_memory
 
@@ -209,7 +208,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
 def execute(task):
     # Named params are popped; the rest is forwarded to the Prism NEVPT via setattr.
     _kw = dict(task.get('pcnevpt2_kwargs', {}))
-    _kw.pop('auxbasis', None)  # applied by the driver
+    _kw.pop('auxbasis', None)
     e_tot, e_corr, mc, nevpt_obj = solve(
         task['dmet_fock'],
         task['dmet_tei'],

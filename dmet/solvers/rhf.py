@@ -36,8 +36,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf, chempot_imp=0.0,
     mol.atom.append(('C', (0, 0, 0)))
     mol.nelectron = nel
     mol.incore_anyway = True
-    # The embedded problem carries no Mole of its own, so PySCF's default budget
-    # would otherwise size every downstream block.
+    # Memory budget of the full-system mean field.
     if max_memory is not None:
         mol.max_memory = max_memory
     mf = attach_eri(scf.RHF(mol), tei, cderi, norb)

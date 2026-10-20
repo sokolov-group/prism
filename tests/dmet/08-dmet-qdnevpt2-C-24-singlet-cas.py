@@ -27,7 +27,7 @@ from prism.dmet.cas_selectors import fix_cas_spin
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
-NCAS, NELECAS, NSTATES, SHIFT = 4, 2, 2, 0.2
+NCAS, NELECAS, NSTATES, SHIFT = 4, 2, 5, 0.2
 
 mol = pyscf.gto.Mole()
 mol.atom = [['C', (0.0, 0.0, 0.0)]]
@@ -63,7 +63,7 @@ class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
         self.assertAlmostEqual(mf.e_tot, -37.676865648283, 5)
-        self.assertAlmostEqual(mc.e_tot, -37.619728136538, 5)
+        self.assertAlmostEqual(mc.e_tot, -37.618379985986, 5)
         self.assertEqual(mc.nelecas, (1, 1))
 
     def test_prism(self):
