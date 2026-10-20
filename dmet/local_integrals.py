@@ -168,7 +168,9 @@ class LocalIntegrals:
             molden.orbital_coeff(self.mol, the_file, self.ao2loc)
 
     def loc_ortho(self):
-        return np.linalg.norm(self.ao2loc.T @ self.ovlp @ self.ao2loc - np.eye(self.norb))
+        # Largest deviation from orthonormality over the orbital pairs.
+        return np.abs(self.ao2loc.T @ self.ovlp @ self.ao2loc
+                      - np.eye(self.norb)).max()
 
     def const(self):
         return self.active_const
