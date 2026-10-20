@@ -41,7 +41,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
           deg_tol=1e-3, casci_conv_tol=1e-10,
           embedded_ref=None, no_kernel=False,
-          cderi=None,
+          cderi=None, max_memory=None,
           **casscf_kwargs):
     if ncas is None:
         ncas = norb
@@ -103,6 +103,10 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         mol.nelectron = nel
         mol.spin = _spin
         mol.incore_anyway = True
+        # The embedded problem carries no Mole of its own, so PySCF's default budget
+        # would otherwise size every downstream block.
+        if max_memory is not None:
+            mol.max_memory = max_memory
 
         if _use_rohf:
             mf = scf.ROHF(mol)
@@ -306,5 +310,6 @@ def execute(task):
         embedded_ref=task.get('embedded_ref'),
         no_kernel=task.get('no_kernel', False),
         cderi=task.get('dmet_cderi'),
+        max_memory=task.get('max_memory'),
         **task.get('casscf_kwargs', {}),
     )

@@ -41,7 +41,8 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
           deg_tol=1e-3, casci_conv_tol=1e-10, embedding_data=None,
-          embedded_ref=None, no_kernel=False, cderi=None):
+          embedded_ref=None, no_kernel=False, cderi=None,
+          max_memory=None):
     import prism.interface
     import prism.mr_adc
 
@@ -72,6 +73,10 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
         mol.nelectron = nel
         mol.spin = _spin
         mol.incore_anyway = True
+        # The embedded problem carries no Mole of its own, so PySCF's default budget
+        # would otherwise size every downstream block.
+        if max_memory is not None:
+            mol.max_memory = max_memory
 
         mf = attach_eri(scf.ROHF(mol) if _use_rohf else scf.RHF(mol), tei, cderi, norb)
         mf.get_hcore = lambda *args: fock_copy
@@ -183,6 +188,7 @@ def execute(task):
         embedded_ref=task.get('embedded_ref'),
         no_kernel=task.get('no_kernel', False),
         cderi=task.get('dmet_cderi'),
+        max_memory=task.get('max_memory'),
     )
 
     rdm1 = mc.make_rdm1()

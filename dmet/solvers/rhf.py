@@ -24,7 +24,7 @@ from prism.dmet.utils import attach_eri
 
 
 def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf, chempot_imp=0.0,
-          cderi=None):
+          cderi=None, max_memory=None):
 
     fock_copy = fock.copy()
     if chempot_imp != 0.0:
@@ -36,6 +36,10 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf, chempot_imp=0.0,
     mol.atom.append(('C', (0, 0, 0)))
     mol.nelectron = nel
     mol.incore_anyway = True
+    # The embedded problem carries no Mole of its own, so PySCF's default budget
+    # would otherwise size every downstream block.
+    if max_memory is not None:
+        mol.max_memory = max_memory
     mf = attach_eri(scf.RHF(mol), tei, cderi, norb)
     mf.get_hcore = lambda *args: fock_copy
     mf.get_ovlp = lambda *args: np.eye(norb)
@@ -71,4 +75,5 @@ def execute(task):
         task.get('dm_guess_rhf'),
         task.get('chempot_imp', 0.0),
         cderi=task.get('dmet_cderi'),
+        max_memory=task.get('max_memory'),
     )

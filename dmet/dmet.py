@@ -48,6 +48,7 @@ class DMET:
                  use_density_embedding=False, use_density_embedding_no=False,
                  print_u=True, print_rdm=True,
                  ncas=None, nelecas=None, sa_nstates=1, sa_weights=None, sa_mix=None,
+                 max_memory=None,
                  casscf_kwargs=None, qdnevpt2_kwargs=None,
                  pcnevpt2_kwargs=None, mradc_kwargs=None,
                  use_symmetry=False, symmetry_map=None,
@@ -82,6 +83,8 @@ class DMET:
         self.sa_nstates = sa_nstates
         self.sa_weights = sa_weights
         self.sa_mix = sa_mix
+        self.max_memory = (max_memory if max_memory is not None
+                           else getattr(integrals, 'max_memory', None))
         self.casscf_kwargs = casscf_kwargs or {}
         self.cas_select = cas_select
         self.embed_level_shift = embed_level_shift   # static level shift on the embedded post-HF reference
@@ -666,6 +669,7 @@ class DMET:
             'sa_nstates': self.sa_nstates,
             'sa_weights': self.sa_weights,
             'sa_mix': self.sa_mix,
+            'max_memory': self.max_memory,
             'cas_select': self.cas_select,
             'natorb_occ_thresh': self.natorb_occ_thresh,
             'natorb_max_superset': self.natorb_max_superset,
