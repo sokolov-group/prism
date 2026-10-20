@@ -43,7 +43,7 @@ class DMET:
 
     # The keyword arguments are grouped by role in dmet/README.md.
     def __init__(self, integrals, fragments, is_translation_invariant, method='FCI',
-                 sc_method='LSTSQ', conv_tol=1e-5, max_cycle=200,
+                 sc_method='BFGS', conv_tol=1e-5, max_cycle=200,
                  fit_impurity_and_bath=True, use_constrained_optimization=False,
                  use_density_embedding=False, use_density_embedding_no=False,
                  print_u=True, print_rdm=True,

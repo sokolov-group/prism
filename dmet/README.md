@@ -279,7 +279,7 @@ density must be in the AO basis.
 
 | keyword | default | what it does |
 |---|---|---|
-| `sc_method` | `'LSTSQ'` | how to fit the potential, `'LSTSQ'`, `'BFGS'` or `'NONE'` |
+| `sc_method` | `'BFGS'` | how to fit the potential, `'BFGS'`, `'LSTSQ'` or `'NONE'` |
 | `conv_tol` | `1e-5` | when the potential has stopped changing |
 | `max_cycle` | `200` | cap on outer iterations |
 | `fit_impurity_and_bath` | `True` | fit the cluster density, not the impurity block alone |
@@ -287,7 +287,10 @@ density must be in the AO basis.
 | `use_density_embedding` | `False` | fit only the diagonal, which is density embedding |
 | `use_density_embedding_no` | `False` | do that in the natural orbital basis |
 
-`sc_method='NONE'` runs a single iteration.
+`sc_method='NONE'` runs a single iteration. `'BFGS'` minimizes the norm of the density
+mismatch and reaches its gradient through one matrix the size of the lattice. `'LSTSQ'`
+hands `scipy.optimize.leastsq` the Jacobian of that mismatch, which holds one entry per
+pair of fitted matrix elements and so grows as the fourth power of the impurity size.
 
 ### Passing options to the solver
 
