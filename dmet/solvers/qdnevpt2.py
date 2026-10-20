@@ -98,7 +98,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
         mf = attach_eri(scf.ROHF(mol) if _use_rohf else scf.RHF(mol), tei, cderi, norb)
         mf.get_hcore = lambda *args: fock_copy
         mf.get_ovlp = lambda *args: np.eye(norb)
-        mf.verbose = 4 if printoutput else 0
+        mf.verbose = verbose if printoutput else 0
         # Level shift opens the near-degenerate gap so the embedded SCF is deterministic.
         mf.level_shift = embed_level_shift
         if no_kernel:
@@ -135,7 +135,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
 
         mc = mcscf.CASSCF(mf, ncas, nelecas)
         mc = mcscf.state_average_(mc, weights=sa_weights.tolist())
-        mc.verbose = 5 if printoutput else 0
+        mc.verbose = verbose if printoutput else 0
         for key, val in casscf_kwargs.items():
             setattr(mc, key, val)
         if cas_spin is not None:

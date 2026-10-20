@@ -152,7 +152,7 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
                 deg_tol=deg_tol, conv_tol=casci_conv_tol, log=log)
 
         mc = mcscf.CASSCF(mf, ncas, nelecas)
-        mc.verbose = 5 if printoutput else 0
+        mc.verbose = verbose if printoutput else 0
         if frozen is not None:
             mc.frozen = frozen
         for key, val in casscf_kwargs.items():
