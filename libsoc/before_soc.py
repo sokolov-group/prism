@@ -84,7 +84,7 @@ def rotate_rdm1s_to_ms(interface):
 
 def get_sf_ref(interface, spin):
     '''
-    select specifc Ms state for state-interaction calculation
+    Select specifc Ms state for state-interaction calculation
     ********
     INPUT:
     spin (int): number of unpair electrons
@@ -207,6 +207,13 @@ def get_sf_ref(interface, spin):
 def degeneracy_list(interface,en, atol= 1e-5):
     '''
     determine degeneracy based on energy in list
+    ********
+    INPUT:
+    en (list, n_states): energy of each state
+    atol (float): Absolute tolerance for determining whether two states have the same energy. 
+
+    OUTPUT:
+    deg (list): list for each state's degeneracy
     '''
     interface.log.info("degeneracy_atol=%s", atol)
     deg = []
@@ -225,7 +232,15 @@ def degeneracy_list(interface,en, atol= 1e-5):
 
 def collect_sf(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo, name=None):
     '''
-    Save spin-free information for state-interaction calculation
+    Save spin-free information for state-interaction calculation(state_interaction_soc)
+    ********
+    INPUT (Can directly plug in prism.libsoc.general_somf.state_interaction_soc):
+    E_ref (np.array, n): reference energy
+    rdm_aabb_ref(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    S_ref (list): spin quantum number of each state without spin-orbit coupling
+    ms_ref (float, should be multiply of 0.5): spin projection quantum number of reference state without spin-orbit coupling
+    mo (np.array): molecular orbitals
+    name (str): name of saving h5 file. Default is inputfile name
     '''
     interface.log.info("\nSave E_ref, rdm_aabb_ref, S_ref, ms_ref... as h5 file...")
     if name:
@@ -244,7 +259,15 @@ def collect_sf(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo, name=None):
 
 def collect_sf_ms0(interface, E_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref, mo, name=None):
     '''
-    Save spin-free information for state-interaction calculation
+    Save spin-free information for Ms=0 state-interaction calculation
+    ********
+    INPUT (Can directly plug in prism.libsoc.general_somf.state_interaction_soc_ms0):
+    E_ref (np.array, n): reference energy
+    rdm_aabb_ref(np.array, 2*nstate*nstate*nmo*nmo):  ms=0 spin alpha-alpha and beta-beta 1st rdm for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    rdm_aabb_plus_ref(np.array, 2*nstate*nstate*nmo*nmo): ms=1 spin alpha-alpha and beta-beta 1st rdm for same spin coupling
+    S_ref (list): spin quantum number of each state without spin-orbit coupling
+    mo (np.array): molecular orbitals
+    name (str): name of saving h5 file. Default is inputfile name
     '''
     interface.log.info("\nSave E_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref ... as h5 file...")
     if name:

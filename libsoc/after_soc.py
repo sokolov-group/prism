@@ -8,6 +8,18 @@ from prism.libsoc import magnetic
 
 
 def compute_properties(interface, en_soc, evec_soc, rdm_aabb_ref, S_ref):
+    '''
+    Compute properties after SOC-calculation
+    ********
+    INPUT:
+    en_soc (np.array, n): spin-orbit coupling energy
+    evec_soc (np.array): spin-orbit coupling eigenvector
+    rdm_aabb_ref:(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta
+    S_ref (list), spin quantum number of each state without spin-orbit coupling
+
+    OUTPUT:
+    osc_str_soc: oscillator strengths after soc calculation
+    '''
 
     #Compute OSC
     #compute soc rdm
@@ -31,6 +43,7 @@ def compute_properties(interface, en_soc, evec_soc, rdm_aabb_ref, S_ref):
             if (np.abs(S_total[I]-S_total[J])<1e-8) and (np.abs(ms_total[I]-ms_total[J])<1e-8):
                 rdm_mo[I,J] = rdm_sf[I_total[I], I_total[J]]
     rdm_soc = np.einsum('ai,ibIJ,bj->ajIJ',np.conj(evec_soc).T , rdm_mo , evec_soc)
+
     # Calculate ground state degeneracy:
     deg_gs = 1
     for i in range(len(en_soc)-1):
@@ -58,7 +71,6 @@ def compute_properties(interface, en_soc, evec_soc, rdm_aabb_ref, S_ref):
             osc_str_soc_full.append(trans_prop.osc_strength(interface, e_diff, rdm_mo[  gs_index, gs_index+1:]))
         interface.properties_soc["osc_strengths_full"] = osc_str_soc_full
     
-    
     #Compute magnetic properties
     if (interface.gtensor or interface.mag_av or  interface.sus_av or  interface.mag_vec or interface.sus_tensor):
         properties_mag = magnetic.compute_properties(interface, rdm_sf, en_soc, evec_soc, S_ref,  method = None)
@@ -67,9 +79,18 @@ def compute_properties(interface, en_soc, evec_soc, rdm_aabb_ref, S_ref):
     return osc_str_soc
 
 
-def print_results(interface, en_soc, evec_soc, S_ref, soc, method):
+def print_results(interface, en_soc, evec_soc, S_ref, soc, method_name):
+    '''
+    Print reuslt including energy, osc and properties
+    ********
+    INPUT:
+    en_soc (np.array, n): spin-orbit coupling energy
+    evec_soc (np.array): spin-orbit coupling eigenvector
+    S_ref (list), spin quantum number of each state without spin-orbit coupling
+    method_name (str): method name to print out. EX: casscf
+    '''
     # Print results obtained from SOC calculation
-    print_soc(interface, en_soc, evec_soc, S_ref, soc, method)
+    print_soc(interface, en_soc, evec_soc, S_ref, soc, method_name)
 
     if "osc_strengths_full" in interface.properties_soc:
         trans_prop.print_osc_strength(interface, interface.properties_soc["osc_strengths_full"])
@@ -77,9 +98,15 @@ def print_results(interface, en_soc, evec_soc, S_ref, soc, method):
         magnetic.print_mag_properties(interface, interface.properties_soc,  method = None)
 
 
-def print_soc(interface, en_soc, evec_soc, S_ref, soc, method):
+def print_soc(interface, en_soc, evec_soc, S_ref, soc, method_name):
     '''
-    Print energy of SOC-CASSCF
+    Print energy of SOC result
+    ********
+    INPUT:
+    en_soc (np.array, n): spin-orbit coupling energy
+    evec_soc (np.array): spin-orbit coupling eigenvector
+    S_ref (list), spin quantum number of each state without spin-orbit coupling
+    method_name (str): method name to print out. EX: casscf
     '''
     
     h2ev = interface.hartree_to_ev
@@ -111,7 +138,7 @@ def print_soc(interface, en_soc, evec_soc, S_ref, soc, method):
     S_soc   = np.einsum('ai,ib,bj->aj',np.conj(evec_soc).T , np.diag(S_total) , evec_soc)
     S_soc   = np.diag(np.real(S_soc))
 
-    interface.log.info("\nSummary of SI-%s-%s", soc.upper(),method.upper())
+    interface.log.info("\nSummary of SI-%s-%s", soc.upper(),method_name.upper())
     interface.log.info("Note that S is expected values. ms is is determined from the maximum-weight state.")
     interface.log.info("-------------------------------------------------------------------------------------------------------------------------- ")
     interface.log.info("  State    S    ms(weight)          E(total)           E(eV)          dE(eV)      dE(nm)       dE(cm-1)        Osc Str.")
@@ -144,6 +171,13 @@ def print_soc(interface, en_soc, evec_soc, S_ref, soc, method):
     return 
 
 def analyze_soc(interface, evec_soc, S_ref):
+    '''
+    Analyze the SOC-state composition in the spin-free state basis.
+    ********
+    INPUT:
+    evec_soc (np.array): spin-orbit coupling eigenvector
+    S_ref (list), spin quantum number of each state without spin-orbit coupling
+    '''
     population = evec_soc * np.conj(evec_soc)
     population = np.real(population)
     I = 0

@@ -10,6 +10,20 @@ import h5py
 
 
 def read_checkpoint(sf_name):
+    '''
+    Read spin-free information for Ms=0 state-interaction calculation
+    ********
+    INPUT:
+    sf_name (str): name of reading file
+
+    OUTPUT (Can directly plug in prism.libsoc.general_somf.state_interaction_soc):
+    E_ref (np.array, n): reference energy
+    rdm_aabb_ref(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    S_ref (list): spin quantum number of each state without spin-orbit coupling
+    ms_ref (float, should be multiply of 0.5): spin projection quantum number of reference state without spin-orbit coupling
+    mo (np.array): molecular orbitals
+    name (str): name of saving h5 file. Default is inputfile name
+    '''
 
     print("\nLoad E_ref, rdm_aabb_ref, S_ref, ms_ref...")
     print("file name:"+sf_name+ "\n")
@@ -23,6 +37,19 @@ def read_checkpoint(sf_name):
     return E_ref, rdm_aabb_ref, S_ref, ms_ref, mo
 
 def read_checkpoint_ms0(sf_name):
+    '''
+    Read spin-free information for Ms=0 state-interaction calculation
+    ********
+    INPUT:
+    sf_name (str): name of reading file
+    
+    OUTPUT (Can directly plug in prism.libsoc.general_somf.state_interaction_soc_ms0):
+    E_ref (np.array, n): reference energy
+    rdm_aabb_ref(np.array, 2*nstate*nstate*nmo*nmo):  ms=0 spin alpha-alpha and beta-beta 1st rdm for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    rdm_aabb_plus_ref(np.array, 2*nstate*nstate*nmo*nmo): ms=1 spin alpha-alpha and beta-beta 1st rdm for same spin coupling
+    S_ref (list): spin quantum number of each state without spin-orbit coupling
+    mo (np.array): molecular orbitals
+    '''
 
     print("\nE_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref...")
     print("file name:"+sf_name+ "\n")

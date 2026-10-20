@@ -6,10 +6,13 @@ from prism.libsoc import magnetic
 from prism.libsoc import before_soc
 from prism.libsoc import after_soc
 from prism.tools import trans_prop
-import h5py
+
 
 
 def kernel(interface):
+    '''
+    Calculate SI-SR-ADC
+    '''
     import prism.lib.logger as logger
     interface.log = logger.Logger(interface.stdout, interface.verbose)
     interface.log.info("Collecting necessary information for SOC")

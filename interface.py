@@ -22,7 +22,6 @@
 import os
 import tempfile
 import numpy as np
-from types import MethodType
 
 import prism.lib.logger as logger
 import prism.lib.numpy_helper as np_helper
@@ -342,12 +341,15 @@ class PYSCF:
 
     @staticmethod
     def create_soc_flag(self):
+        '''
+        Create SOC flag. NEVPT object also uses it.
+        '''
         
         # SOC params:
         self.soc = None # Spin–orbit coupling. Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
         self.analyze_evec_soc = False #For soc eigenvector analysis
         self.unc = None # For DKH2
-        self.max_memory_soc = self.max_memory
+        self.max_memory_soc = self.max_memory #Max_memory for compute soc mo Hamiltionian
         self.save_sf = False #saving spin-free information for SOC calculation
         self.name_sf = None  #file name for saving spin-free information for SOC calculation
 
@@ -369,33 +371,33 @@ class PYSCF:
         self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
 
         # For magnetic susceptibility
-        self.mag_av = False
-        self.sus_av = False
-        self.mag_vec = False
-        self.sus_tensor = False
+        self.mag_av = False # Enable calculating powder magnetization (requires soc)
+        self.sus_av = False # Enable calculating powder magnetic susceptibility (requires soc)
+        self.mag_vec = False # Enable calculating vector magnetization (requires soc)
+        self.sus_tensor = False # Enable calculating tensor magnetic susceptibility (requires soc)
         self.step_h_s = 0.001 #Magnetic field step size used for numerical differentiation (Unit:T)
         ###Powder magnetization
         Bs_list = []
         for i in range(15):
             H = i * 0.5
             Bs_list.append(H)
-        self.Bs_powder_M = Bs_list 
-        self.T_powder_M = [1.8]
+        self.Bs_powder_M = Bs_list  # Magnetic field for calculating powder magnetization (Unit:T)
+        self.T_powder_M = [1.8]     # Temperature for calculating powder magnetization (Unit:K)
         ###Powder susceptibility
         T_list = []
         for i in range(21):
             T = 14.75 * i + 5
             T_list.append(T)
-        self.T_powder_chi = T_list
-        self.Bs_powder_chi = [0.1]
+        self.T_powder_chi = T_list # Temperature for calculating powder magnetic susceptibility (Unit:K)
+        self.Bs_powder_chi = [0.1] # Magnetic field for calculating powder magnetic susceptibility (Unit:T)
         ###Vector magnetization
-        self.B_vec_M = [0,0,1]
-        self.Bs_vec_M = Bs_list 
-        self.T_vec_M = [1.8]
+        self.B_vec_M = [0,0,1]     # Magnetic field direction for calculating vector magnetization
+        self.Bs_vec_M = Bs_list    # Magnetic field strength for calculating vector magnetization (Unit:T)
+        self.T_vec_M = [1.8]       # Temperature for calculating vector magnetization (Unit:K)
         ###Tensor  susceptibility
-        self.B_vec_chi = [0,0,1]
-        self.Bs_vec_chi = [0.1]
-        self.T_vec_chi = [5,100,200,250]
+        self.B_vec_chi = [0,0,1]         # Magnetic field direction for calculating tensor magnetic susceptibility
+        self.Bs_vec_chi = [0.1]          # Magnetic field strength for calculating tensor magnetic susceptibility (Unit:T)
+        self.T_vec_chi = [5,100,200,250] # Temperature for calculating tensor magnetic susceptibility (Unit:K)
 
         self.properties_soc = {} #SI soc result
 
@@ -781,6 +783,9 @@ class PYSCF:
 
 
     def import_adc(self, adc, E, U, P, X):
+        '''
+        Import SRADC from pyscf
+        '''
 
         self.log.info("\nImporting ADC in PYSCF...")
 
@@ -870,6 +875,9 @@ class PYSCF:
         return self
 
     def run_soc(self, soc_type=None):
+        '''
+        Run SOC for SR-ADC or CASSCF
+        '''
 
         if soc_type:
             self.soc = soc_type
