@@ -309,6 +309,18 @@ The NEVPT2 solvers also take `nfrozen`, the frozen core of the embedded problem.
 is sized to that problem, not to the whole cluster. `nfrozen='auto'` counts the
 embedded orbitals below `nfrozen_cutoff`, which defaults to -2.0 Ha.
 
+All three Prism solvers take `auxbasis`, the auxiliary basis for the perturbation
+theory, as in `interface.density_fit(auxbasis)`. The CASSCF reference keeps the
+integrals of the mean field.
+
+```python
+dmet = DMET(ints, frags, False, method='QD-NEVPT2', ncas=4, nelecas=4, sa_nstates=3,
+            qdnevpt2_kwargs={'auxbasis': 'cc-pvdz-ri'})
+```
+
+Without `auxbasis`, a density-fitted mean field supplies the perturbation-theory
+integrals too, and an exact one gives exact integrals.
+
 ### Symmetry and speed
 
 | keyword | default | what it does |

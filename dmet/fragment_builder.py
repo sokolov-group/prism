@@ -30,7 +30,7 @@ class FragmentBuilder:
     def __init__(self, ints, helper, fragments, method, num_bath_orbs, bath_tol,
                  fragment_methods=None, core_occ_tol=None,
                  keep_degenerate=False, deg_rtol=1e-6, needs_embedding_data=False,
-                 embedded_ref_dm=None):
+                 embedded_ref_dm=None, pt_df=None):
         self._ints = ints
         self._helper = helper
         self._fragments = fragments
@@ -43,6 +43,7 @@ class FragmentBuilder:
         self._deg_rtol = deg_rtol
         self._needs_embedding_data = needs_embedding_data
         self._embedded_ref_dm = embedded_ref_dm
+        self._pt_df = pt_df
 
     def build(self, counter, one_rdm, chempot_imp):
         fragment_mask = self._fragments[counter]
@@ -87,6 +88,9 @@ class FragmentBuilder:
             dmet_cderi = self._ints.dmet_cderi(loc_2_dmet, norb_in_imp)
         else:
             dmet_tei = self._ints.dmet_tei(loc_2_dmet, norb_in_imp)
+        dmet_pt_cderi = None
+        if self._pt_df is not None and not flag_rhf:
+            dmet_pt_cderi = self._ints.dmet_cderi(loc_2_dmet, norb_in_imp, self._pt_df)
 
         needs_dm = flag_rhf or self._method in self._NEEDS_DM_METHODS
         dm_guess_rhf = None
@@ -122,6 +126,7 @@ class FragmentBuilder:
             'dmet_fock': dmet_fock,
             'dmet_tei': dmet_tei,
             'dmet_cderi': dmet_cderi,
+            'dmet_pt_cderi': dmet_pt_cderi,
             'dm_guess_rhf': dm_guess_rhf,
             'dip_mom_ao': dip_mom_ao,
             'embedding_data': embedding_data,

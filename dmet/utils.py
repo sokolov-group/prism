@@ -22,7 +22,7 @@ import sys
 from contextlib import contextmanager
 
 import numpy as np
-from pyscf import ao2mo
+from pyscf import ao2mo, df
 
 
 @contextmanager
@@ -51,6 +51,16 @@ def attach_eri(mf, tei, cderi, norb):
         return mf
     mf._eri = ao2mo.restore(8, tei, norb)
     return mf
+
+
+def pt_density_fit(interface, mf, cderi, pt_cderi):
+    # Perturbation-theory integrals from their own fit when given, else the mean field's.
+    if pt_cderi is not None:
+        with_df = df.DF(mf.mol)
+        with_df._cderi = pt_cderi
+        interface.density_fit(with_df=with_df)
+    elif cderi is not None:
+        interface.density_fit(with_df=mf.with_df)
 
 
 def auto_nfrozen(mf, cutoff=-2.0):

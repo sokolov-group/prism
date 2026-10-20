@@ -23,6 +23,7 @@ import concurrent.futures
 
 import numpy as np
 from scipy import optimize
+from pyscf import df
 
 import prism.lib.logger as logger
 from prism.dmet import helper as dmet_helper
@@ -102,6 +103,11 @@ class DMET:
         self.pcnevpt2_results = []   # populated by do_exact() when method='PC-NEVPT2'
         self.mradc_kwargs = mradc_kwargs or {}
         self.mradc_results = []      # populated by do_exact() when method='MR-ADC'
+        # Full-system fit for the perturbation-theory integrals, set by 'auxbasis'.
+        _pt_kwargs = {'QD-NEVPT2': self.qdnevpt2_kwargs, 'PC-NEVPT2': self.pcnevpt2_kwargs,
+                      'MR-ADC': self.mradc_kwargs}.get(method, {})
+        self.pt_df = (df.DF(self.ints.mol, _pt_kwargs['auxbasis'])
+                      if 'auxbasis' in _pt_kwargs else None)
         # Bath truncation: None = full symmetric bath; int = keep at most that many per fragment.
         if n_bath_orbs is None:
             self.num_bath_orbs = None
@@ -440,6 +446,7 @@ class DMET:
             deg_rtol = self.deg_rtol,
             needs_embedding_data = _needs_embedding_data,
             embedded_ref_dm = self.embedded_ref_dm,
+            pt_df = self.pt_df,
         )
 
         for frag_idx in range(maxiter):
@@ -525,7 +532,7 @@ class DMET:
                 norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                 dm_guess_rhf, mo_guess=_mo_guess, ci_guess=_ci_guess,
                 dip_mom_ao=dip_mom_ao, embedding_data=frag['embedding_data'],
-                embedded_ref=frag['embedded_ref'])
+                embedded_ref=frag['embedded_ref'], dmet_pt_cderi=frag['dmet_pt_cderi'])
 
             _is_parallel_eligible = (
                 self.parallel
@@ -650,7 +657,7 @@ class DMET:
                     dmet_cderi,
                     norb_in_imp, nelec_in_imp, num_imp_orbs, chempot_imp,
                     dm_guess_rhf, mo_guess=None, ci_guess=None, dip_mom_ao=None,
-                    embedding_data=None, embedded_ref=None):
+                    embedding_data=None, embedded_ref=None, dmet_pt_cderi=None):
         return {
             'counter': frag_idx,
             'method': method_key,
@@ -659,6 +666,7 @@ class DMET:
             'dmet_fock': dmet_fock,
             'dmet_tei': dmet_tei,
             'dmet_cderi': dmet_cderi,
+            'dmet_pt_cderi': dmet_pt_cderi,
             'dip_mom_ao': dip_mom_ao,
             'embedding_data': embedding_data,
             'embedded_ref': embedded_ref,

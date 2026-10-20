@@ -23,7 +23,7 @@ import numpy as np
 from pyscf import gto, scf, mcscf
 
 import prism.lib.logger as logger
-from prism.dmet.utils import attach_eri, silent_stdout
+from prism.dmet.utils import attach_eri, silent_stdout, pt_density_fit
 from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
                                       stabilize_scf, set_reference_no_scf)
 
@@ -41,7 +41,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
           deg_tol=1e-3, casci_conv_tol=1e-10, embedding_data=None,
-          embedded_ref=None, no_kernel=False, cderi=None,
+          embedded_ref=None, no_kernel=False, cderi=None, pt_cderi=None,
           max_memory=None):
     import prism.interface
     import prism.mr_adc
@@ -137,8 +137,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             backend=prism_backend,
             select_reference=select_reference,
         )
-        if cderi is not None:
-            interface.density_fit(with_df=mf.with_df)
+        pt_density_fit(interface, mf, cderi, pt_cderi)
         # Molecule and orbitals for Dyson orbital output.
         if embedding_data is not None:
             interface.emb_mol = embedding_data['mol']
@@ -173,7 +172,7 @@ def execute(task):
         chempot_imp=task.get('chempot_imp', 0.0),
         verbose=task.get('verbose', logger.INFO),
         casscf_kwargs=task.get('casscf_kwargs', {}),
-        mradc_kwargs=task.get('mradc_kwargs', {}),
+        mradc_kwargs={k: v for k, v in task.get('mradc_kwargs', {}).items() if k != 'auxbasis'},
         spin=task.get('spin'),
         cas_select=task.get('cas_select', 'energy'),
         embed_level_shift=task.get('embed_level_shift', 0.0),
@@ -188,6 +187,7 @@ def execute(task):
         embedded_ref=task.get('embedded_ref'),
         no_kernel=task.get('no_kernel', False),
         cderi=task.get('dmet_cderi'),
+        pt_cderi=task.get('dmet_pt_cderi'),
         max_memory=task.get('max_memory'),
     )
 

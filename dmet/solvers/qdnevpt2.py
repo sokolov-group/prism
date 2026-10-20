@@ -23,7 +23,7 @@ import numpy as np
 from pyscf import gto, scf, mcscf
 
 import prism.lib.logger as logger
-from prism.dmet.utils import attach_eri, silent_stdout, auto_nfrozen
+from prism.dmet.utils import attach_eri, silent_stdout, auto_nfrozen, pt_density_fit
 from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
                                       stabilize_scf, set_reference_no_scf)
 
@@ -48,7 +48,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
           cas_spin=None, cas_spin_shift=0.2,
           natorb_occ_thresh=0.02, natorb_max_superset=None,
           deg_tol=1e-3, casci_conv_tol=1e-10, dip_mom_ao=None, embedding_data=None,
-          embedded_ref=None, no_kernel=False, cderi=None,
+          embedded_ref=None, no_kernel=False, cderi=None, pt_cderi=None,
           max_memory=None):
     import prism.interface
     import prism.nevpt
@@ -159,8 +159,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
             backend=prism_backend,
             select_reference=select_reference,
         )
-        if cderi is not None:
-            interface.density_fit(with_df=mf.with_df)
+        pt_density_fit(interface, mf, cderi, pt_cderi)
         # Dipole integrals over the molecule, supplied by the driver.
         if dip_mom_ao is not None:
             interface.dip_mom_ao = dip_mom_ao
@@ -205,6 +204,7 @@ def solve(fock, tei, norb, nel, nimp, dm_guess_rhf,
 def execute(task):
     # Named params are popped; the rest is forwarded to the Prism NEVPT via setattr.
     _kw = dict(task.get('qdnevpt2_kwargs', {}))
+    _kw.pop('auxbasis', None)  # applied by the driver
     e_tot, e_corr, mc, nevpt_obj = solve(
         task['dmet_fock'],
         task['dmet_tei'],
@@ -242,6 +242,7 @@ def execute(task):
         embedded_ref=task.get('embedded_ref'),
         no_kernel=task.get('no_kernel', False),
         cderi=task.get('dmet_cderi'),
+        pt_cderi=task.get('dmet_pt_cderi'),
         max_memory=task.get('max_memory'),
     )
 
