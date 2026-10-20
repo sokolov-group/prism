@@ -24,7 +24,6 @@ def read_checkpoint(sf_name):
     mo (np.array): molecular orbitals
     name (str): name of saving h5 file. Default is inputfile name
     '''
-
     print("\nLoad E_ref, rdm_aabb_ref, S_ref, ms_ref...")
     print("file name:"+sf_name+ "\n")
     with h5py.File(sf_name, "r") as f:
@@ -42,7 +41,7 @@ def read_checkpoint_ms0(sf_name):
     ********
     INPUT:
     sf_name (str): name of reading file
-    
+
     OUTPUT (Can directly plug in prism.libsoc.general_somf.state_interaction_soc_ms0):
     E_ref (np.array, n): reference energy
     rdm_aabb_ref(np.array, 2*nstate*nstate*nmo*nmo):  ms=0 spin alpha-alpha and beta-beta 1st rdm for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
@@ -50,7 +49,6 @@ def read_checkpoint_ms0(sf_name):
     S_ref (list): spin quantum number of each state without spin-orbit coupling
     mo (np.array): molecular orbitals
     '''
-
     print("\nE_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref...")
     print("file name:"+sf_name+ "\n")
     with h5py.File(sf_name, "r") as f:
@@ -73,7 +71,7 @@ class SF_OBJECT:
 
         import prism.lib.logger as logger
         self.stdout = mol.stdout
-        self.verbose = 4
+        self.verbose = mol.verbose
         log = logger.Logger(self.stdout, self.verbose)
         self.log = log
         self.log.info("\nImporting spin-free object...")
@@ -108,7 +106,6 @@ class SF_OBJECT:
         self.nmo = len(rdm_aabb_ref[0,0,0,0])
         self.mo = mo
 
-  
         self.E_sf = E_ref
         self.rdm_aabb = rdm_aabb_ref
         self.S_total = S_ref
@@ -156,7 +153,7 @@ class SF_OBJECT:
         after_soc.compute_properties(self, en_soc, evec_soc, rdm_aabb_ref, S_ref)
         
         # Print results obtained from ADC
-        after_soc.print_results(self, en_soc, evec_soc, S_ref, self.soc, "sf_object")
+        after_soc.print_result(self, en_soc, evec_soc, S_ref, self.soc, "sf_object")
 
         #Print properties
         if "osc_strengths_full" in self.properties_soc:

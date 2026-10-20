@@ -41,7 +41,7 @@ def kernel(interface):
     after_soc.compute_properties(interface, en_soc, evec_soc, rdm_aabb_ref, S_ref)
         
     # Print results obtained from ADC
-    after_soc.print_results(interface, en_soc, evec_soc, S_ref, interface.soc, "SI-ADC")
+    after_soc.print_result(interface, en_soc, evec_soc, S_ref, interface.soc, "SI-ADC")
     
     #Print properties
     if "osc_strengths_full" in interface.properties_soc:

@@ -79,26 +79,7 @@ def compute_properties(interface, en_soc, evec_soc, rdm_aabb_ref, S_ref):
     return osc_str_soc
 
 
-def print_results(interface, en_soc, evec_soc, S_ref, soc, method_name):
-    '''
-    Print reuslt including energy, osc and properties
-    ********
-    INPUT:
-    en_soc (np.array, n): spin-orbit coupling energy
-    evec_soc (np.array): spin-orbit coupling eigenvector
-    S_ref (list), spin quantum number of each state without spin-orbit coupling
-    method_name (str): method name to print out. EX: casscf
-    '''
-    # Print results obtained from SOC calculation
-    print_soc(interface, en_soc, evec_soc, S_ref, soc, method_name)
-
-    if "osc_strengths_full" in interface.properties_soc:
-        trans_prop.print_osc_strength(interface, interface.properties_soc["osc_strengths_full"])
-    if "magnetic_properties_soc" in interface.properties_soc:
-        magnetic.print_mag_properties(interface, interface.properties_soc,  method = None)
-
-
-def print_soc(interface, en_soc, evec_soc, S_ref, soc, method_name):
+def print_result(interface, en_soc, evec_soc, S_ref, soc, method_name):
     '''
     Print energy of SOC result
     ********

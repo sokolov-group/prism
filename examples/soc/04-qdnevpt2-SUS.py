@@ -53,7 +53,7 @@ nevpt.mag_av = True     #Turn on powder magnetization  calculation
 nevpt.sus_av = True     #Turn on powder susceptibility calculation
 nevpt.mag_vec = True    #Turn on magnetization  calculation under spectific direction of magnetic field
 nevpt.sus_tensor = True #Turn on susceptibility calculation under spectific direction of magnetic field
-nevpt.step_h_s = 0.001 
+nevpt.step_h_s = 0.001  #Magnetic field step size used for numerical differentiation (Unit:T)
 
 Bs_list = []
 for i in range(15):

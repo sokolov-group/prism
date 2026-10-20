@@ -49,7 +49,7 @@ adc_prism.run_soc()
 
 
 E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.libsoc.read_checkpoint("09-state-interaction.h5")
-interface_sf = prism.libsoc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #, ms_ref=ms_ref)
+interface_sf = prism.libsoc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #if ms_ref is not provided, Prism will compute ms_ref based on rdm_aabb_ref
 interface_sf.analyze_evec_soc = True #For soc eigenvector analysis
 interface_sf.spin = 1 #Becasue EA-ADC add one electron
 interface_sf.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)

@@ -103,7 +103,7 @@ def kernel(interface):
     after_soc.compute_properties(interface, en_soc, evec_soc, rdm_aabb, S)
 
     #Print result
-    after_soc.print_results(interface, en_soc, evec_soc, S, interface.soc, "CASSCF")
+    after_soc.print_result(interface, en_soc, evec_soc, S, interface.soc, "CASSCF")
 
     #Print properties
     if "osc_strengths_full" in interface.properties_soc:

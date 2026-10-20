@@ -857,13 +857,13 @@ class PYSCF:
 
         #flag
         if self.method_type == "ee":
-            self.add_ref_ee = True
+            self.add_ref_ee = True  #determine whether add ref state or not in SI-EE-ADC calculation
         else:
             self.add_ref_ee = False
         self.use_P = True
         self.P_thresh =  1e-6
-        self.deg_atol = 1e-5
-        self.ms_ref_select = None
+        self.deg_atol = 1e-5      #Absolute tolerance for determining whether two states have the same energy. 
+        self.ms_ref_select = None #Select ms=ms_ref_select for state-interaction calculation
 
         #Calculating result for prism.libsoc.general_somf.state_interaction_soc
         self.rdm_aabb = None
@@ -892,8 +892,6 @@ class PYSCF:
         
         else:
             raise Exception('Unknow method for SOC calculation')
-
-
 
         return  en_soc, osc_str_soc
 

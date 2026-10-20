@@ -33,7 +33,7 @@ mf.kernel()
 
 myadc = adc.ADC(mf)
 myadc.method_type = "ip"
-myadc.ncvs = 5
+myadc.ncvs = 5  # Activate cvs code in pyscf. ncvs is an integer defining the index of the core orbital that is expected to be ionized first 
 E,U,P,X = myadc.kernel(nroots=6)
 
 interface = prism.interface.PYSCF(mf)
