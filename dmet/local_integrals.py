@@ -46,6 +46,9 @@ class LocalIntegrals:
         # ROHF is spin-resolved in the density but keeps one set of orbitals, so the
         # density and the Fock build are selected on different quantities.
         self.full_dm_ao = _dm[0] + _dm[1] if _dm.ndim == 3 else _dm
+        # 2S of the reference, which sets the occupations of the bath density.
+        self.spin = (int(np.rint(np.einsum('ij,ji->', _dm[0] - _dm[1], self.ovlp)))
+                     if _dm.ndim == 3 else 0)
         if np.asarray(mf.mo_coeff).ndim == 3:  # UHF/UKS
             # F = S C eps C.T S: rotation-invariant, avoids BLAS noise in get_veff.
             SC_a = np.dot(self.ovlp, mf.mo_coeff[0])

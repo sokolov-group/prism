@@ -64,11 +64,11 @@ class DMETHelper:
     def __init__(self, ints, h1_terms, use_constrained_opt, min_func, log=None):
         self.ints = ints
         self.log = log if log is not None else logger.Logger(sys.stdout, logger.INFO)
-        self._is_open_shell = (self.ints.nelec % 2 != 0)
+        self._is_open_shell = (self.ints.spin != 0)
         self.num_pairs = self.ints.nelec // 2
 
-        self.num_alpha = (self.ints.nelec + self.ints.mol.spin) // 2
-        self.num_beta = (self.ints.nelec - self.ints.mol.spin) // 2
+        self.num_alpha = (self.ints.nelec + self.ints.spin) // 2
+        self.num_beta = (self.ints.nelec - self.ints.spin) // 2
         self.altcf = use_constrained_opt
         self.min_func = None
 
@@ -103,7 +103,7 @@ class DMETHelper:
     def _response_oei(self, umat_loc, no_rotation):
         if self._is_open_shell:
             raise NotImplementedError(
-                "DMET chemical-potential optimization requires an even electron count.")
+                "DMET chemical-potential optimization requires a closed-shell reference.")
         oei = self.ints.loc_fock() + umat_loc
         if no_rotation is not None:
             oei = no_rotation.T @ oei @ no_rotation
