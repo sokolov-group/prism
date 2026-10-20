@@ -1,0 +1,16 @@
+converged SCF energy = -107.272448501206
+/users/PAS1583/bpickett/programs/prism_env/.dmet_import/prism/dmet/dmet.py:239: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+  warnings.warn(
+SCF energy: -107.272449
+
+DMET-CASSCF mixed-spin state average test
+Embedding a 8-orbital, 10-electron fragment cluster.
+Embedding a 8-orbital, 10-electron fragment cluster.
+./users/PAS1583/bpickett/programs/prism_env/.dmet_import/prism/dmet/dmet.py:239: UserWarning: cas_select='energy' (the default) selects the active space by orbital energy; for production use cas_select='natorb'.
+  warnings.warn(
+Embedding a 8-orbital, 10-electron fragment cluster.
+.
+----------------------------------------------------------------------
+Ran 2 tests in 0.540s
+
+OK

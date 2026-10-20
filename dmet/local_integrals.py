@@ -233,8 +233,7 @@ class LocalIntegrals:
 
     def dmet_cderi(self, loc_2_dmet, num_active):
         # Three-index cluster integrals, naux x npair against npair^2/2 for dmet_tei.
-        # Filled one auxiliary block at a time, so the mean field's own tensor is
-        # never held whole.
+        # Filled one auxiliary block at a time.
         if self.with_df is None:
             raise RuntimeError(
                 "dmet_cderi needs a density-fitted mean field; none carries with_df.")

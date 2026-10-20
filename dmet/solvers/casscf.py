@@ -20,7 +20,7 @@ import sys
 from contextlib import nullcontext
 
 import numpy as np
-from pyscf import ao2mo, gto, scf, mcscf
+from pyscf import ao2mo, fci, gto, scf, mcscf
 
 import prism.lib.logger as logger
 from prism.dmet.utils import attach_eri, silent_stdout
@@ -31,7 +31,7 @@ from prism.dmet.cas_selectors import (natorb_active_space, fix_cas_spin,
 def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
           ncas=None, nelecas=None,
           chempot_imp=0.0, verbose=logger.INFO,
-          sa_nstates=1, sa_weights=None,
+          sa_nstates=1, sa_weights=None, sa_mix=None,
           frozen=None,
           mo_guess=None, ci_guess=None,
           spin=None,
@@ -68,6 +68,16 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
             raise ValueError(
                 "Invalid nel/nelecas parity: (nel - nelecas) must be even "
                 "(frozen core must be closed-shell).")
+
+    if sa_mix is not None:
+        if cas_spin is not None:
+            raise ValueError(
+                "sa_mix and cas_spin conflict: cas_spin penalizes every state outside "
+                "one spin, including the ones sa_mix averages over. Drop cas_spin.")
+        sa_mix = [(int(spin2), int(nroots)) for spin2, nroots in sa_mix]
+        if any(n < 1 for _, n in sa_mix):
+            raise ValueError("Invalid sa_mix: every entry needs at least one root.")
+        sa_nstates = sum(n for _, n in sa_mix)
 
     if sa_nstates > 1:
         if sa_weights is None:
@@ -147,7 +157,22 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
         if cas_spin is not None:
             fix_cas_spin(mc, cas_spin, cas_spin_shift)
 
-        if sa_nstates > 1:
+        if sa_mix is not None:
+            # One orbital set averaged over several spins, each with its own root
+            # count. Every solver is penalized toward the spin it was asked for.
+            solvers = []
+            for spin2, nroots in sa_mix:
+                solver = (fci.direct_spin0.FCI(mol) if spin2 == 0
+                          else fci.direct_spin1.FCI(mol))
+                solver.spin = spin2
+                solver.nroots = nroots
+                ss = (spin2 / 2.0) * (spin2 / 2.0 + 1.0)
+                fci.addons.fix_spin_(solver, shift=cas_spin_shift, ss=ss)
+                solvers.append(solver)
+            mc = mcscf.state_average_mix_(mc, solvers, sa_weights.tolist())
+            spins = ", ".join("%d roots at 2S=%d" % (n, spin2) for spin2, n in sa_mix)
+            log.info("Mixed-spin state average: %s" % spins)
+        elif sa_nstates > 1:
             mc = mcscf.state_average_(mc, weights=sa_weights.tolist())
 
         if mo_natorb is not None:
@@ -215,9 +240,26 @@ def solve(const, oei, fock, tei, norb, nel, nimp, dm_guess_rhf,
             + 0.5  * e_cumulant
         )
 
+    # The roots carry different spins, so report each one's <S^2> and confirm they
+    # came back with the spins that were requested.
+    spin_square = None
+    if sa_mix is not None:
+        spin_square = np.asarray(
+            mc.fcisolver.states_spin_square(mc.ci, mc.ncas, mc.nelecas)[0])
+        want = [(spin2 / 2.0) * (spin2 / 2.0 + 1.0)
+                for spin2, nroots in sa_mix for _ in range(nroots)]
+        off = [i for i, (w, g) in enumerate(zip(want, spin_square)) if abs(w - g) > 0.1]
+        if off:
+            raise RuntimeError(
+                f"sa_mix asked for <S^2> {want} but got "
+                f"{np.round(spin_square, 3).tolist()}; roots {off} are off. Raise "
+                f"cas_spin_shift, or the requested spins are not the lowest available.")
+
     cas_results = {
         'e_tot': e_tot,
         'e_states': e_states,
+        'spin_square': spin_square,
+        'sa_mix': sa_mix,
         'e_imp': impurity_energy,
         'ncas': ncas,
         'nelecas': nelecas,
@@ -248,6 +290,7 @@ def execute(task):
         verbose=task.get('verbose', logger.INFO),
         sa_nstates=task.get('sa_nstates', 1),
         sa_weights=task.get('sa_weights'),
+        sa_mix=task.get('sa_mix'),
         mo_guess=task.get('mo_guess'),
         ci_guess=task.get('ci_guess'),
         spin=task.get('spin'),

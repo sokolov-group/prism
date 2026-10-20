@@ -47,7 +47,7 @@ class DMET:
                  fit_impurity_and_bath=True, use_constrained_optimization=False,
                  use_density_embedding=False, use_density_embedding_no=False,
                  print_u=True, print_rdm=True,
-                 ncas=None, nelecas=None, sa_nstates=1, sa_weights=None,
+                 ncas=None, nelecas=None, sa_nstates=1, sa_weights=None, sa_mix=None,
                  casscf_kwargs=None, qdnevpt2_kwargs=None,
                  pcnevpt2_kwargs=None, mradc_kwargs=None,
                  use_symmetry=False, symmetry_map=None,
@@ -81,6 +81,7 @@ class DMET:
         self.nelecas = nelecas
         self.sa_nstates = sa_nstates
         self.sa_weights = sa_weights
+        self.sa_mix = sa_mix
         self.casscf_kwargs = casscf_kwargs or {}
         self.cas_select = cas_select
         self.embed_level_shift = embed_level_shift   # static level shift on the embedded post-HF reference
@@ -664,6 +665,7 @@ class DMET:
             'nelecas': self.nelecas,
             'sa_nstates': self.sa_nstates,
             'sa_weights': self.sa_weights,
+            'sa_mix': self.sa_mix,
             'cas_select': self.cas_select,
             'natorb_occ_thresh': self.natorb_occ_thresh,
             'natorb_max_superset': self.natorb_max_superset,
