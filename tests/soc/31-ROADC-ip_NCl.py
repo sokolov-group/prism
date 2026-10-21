@@ -1,10 +1,8 @@
 import unittest
 import numpy as np
-import math
 import pyscf.gto
 from pyscf import adc
 from pyscf import scf
-from pyscf.adc import uadc_ea
 import prism.interface
 
 
@@ -61,7 +59,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        en_soc, properties = interface.run_soc_sradc()
+        en_soc, properties = interface.run_soc()
 
         self.assertAlmostEqual(en_soc[0],    -0.018752216678 , 5)
         self.assertAlmostEqual(en_soc[1],    -0.018751335962 , 5)

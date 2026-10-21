@@ -1,13 +1,9 @@
 import unittest
 import numpy as np
-import math
 import pyscf.gto
 import pyscf.scf
-import pyscf.mcscf
-from pyscf import mcpdft
 from pyscf import adc
 from pyscf import scf
-from pyscf.adc import uadc_ea
 import prism.interface
 
 

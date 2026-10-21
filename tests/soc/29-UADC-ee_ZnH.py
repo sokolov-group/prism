@@ -1,22 +1,12 @@
 import numpy as np
-import math
 import unittest
 import pyscf.gto
 import pyscf.scf
-import pyscf.mcscf
 import prism.interface
-import prism.nevpt
-from pyscf import mcpdft
-from prism.libsoc import general_somf
 from pyscf import adc
 from pyscf import scf
-from pyscf.adc import uadc_ea
-import prism.interface_soc
-from prism.libsoc import general_somf
-from prism.tools import trans_prop
-import os
-import sys
-import basis_set_exchange as bse
+
+
 
 np.set_printoptions(suppress=True)
 
@@ -72,7 +62,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        en_soc, properties = interface.run_soc_sradc()
+        en_soc, properties = interface.run_soc()
 
         self.assertAlmostEqual(en_soc[0],    -1792.198980907531, 5)
         self.assertAlmostEqual(en_soc[1],    -1792.198980907530, 5)
