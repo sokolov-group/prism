@@ -32,7 +32,7 @@ def kernel(interface):
     sys.stdout.flush()
 
     if interface.save_sf:
-       before_soc.collect_sf(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, interface.mo, name=interface.name_sf)
+       before_soc.write_checkpoint(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, interface.mo, name=interface.name_sf)
 
     #Compute en_soc
     en_soc, evec_soc = general_somf.state_interaction_soc(interface, E_ref, rdm_aabb_ref, S_ref,  ms_ref, interface.soc)

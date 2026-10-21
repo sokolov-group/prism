@@ -56,7 +56,7 @@ def kernel(interface):
     if ms[0] != 0:
 
         if interface.save_sf:
-            before_soc.collect_sf(interface, en, rdm_aabb, S,  ms[0], interface.mo, name=interface.name_sf)   
+            before_soc.write_checkpoint(interface, en, rdm_aabb, S,  ms[0], interface.mo, name=interface.name_sf)   
 
         en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm_aabb, S, ms[0], interface.soc, verbose = interface.verbose)
     
@@ -95,7 +95,7 @@ def kernel(interface):
                         rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)
 
         if interface.save_sf:
-            before_soc.collect_sf_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, interface.mo, name=interface.name_sf)  
+            before_soc.write_checkpoint_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, interface.mo, name=interface.name_sf)  
 
         en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb,  rdm_aabb_plus, S, interface.soc, verbose = interface.verbose)
 

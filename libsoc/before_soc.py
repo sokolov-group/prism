@@ -81,7 +81,6 @@ def rotate_rdm1s_to_ms(interface):
         raise Exception("E_new change energy")
 
 
-
 def get_sf_ref(interface, spin):
     '''
     Select specifc Ms state for state-interaction calculation
@@ -230,7 +229,7 @@ def degeneracy_list(interface,en, atol= 1e-5):
     return deg
 
 
-def collect_sf(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo, name=None):
+def write_checkpoint(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo, name=None):
     '''
     Save spin-free information for state-interaction calculation(state_interaction_soc)
     ********
@@ -257,7 +256,7 @@ def collect_sf(interface, E_ref, rdm_aabb_ref, S_ref, ms_ref, mo, name=None):
         f.create_dataset("mo", data=mo)
 
 
-def collect_sf_ms0(interface, E_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref, mo, name=None):
+def write_checkpoint_ms0(interface, E_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref, mo, name=None):
     '''
     Save spin-free information for Ms=0 state-interaction calculation
     ********

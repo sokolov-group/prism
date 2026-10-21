@@ -73,7 +73,7 @@ def state_interaction_soc(method):
     if ms[0] != 0:
 
         if method.save_sf:
-            before_soc.collect_sf(method.interface, method.e_tot, rdm_aabb, S,  ms[0], method.interface.mo, name=method.name_sf)  
+            before_soc.write_checkpoint(method.interface, method.e_tot, rdm_aabb, S,  ms[0], method.interface.mo, name=method.name_sf)  
 
         en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.soc, method.verbose)
     
@@ -101,7 +101,7 @@ def state_interaction_soc(method):
         rdm_aabb_plus = method.make_rdm1s(wfn_plus, wfn_ref_nelecas_plus)
 
         if method.save_sf:
-            before_soc.collect_sf_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.interface.mo, name=method.name_sf)  
+            before_soc.write_checkpoint_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.interface.mo, name=method.name_sf)  
 
         en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.soc, method.verbose)
 
