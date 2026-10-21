@@ -89,16 +89,16 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(e_tot[4], -1778.255009980629  , 5)
         self.assertAlmostEqual(e_tot[5], -1778.255009980629  , 5)
 
-        g_factor_all = interface.properties_cas["g-factors"]
+        g_factor_all = interface.properties_soc["g-factors"]
         g_factor = g_factor_all[0]
         self.assertAlmostEqual(g_factor[0], 1.983961, 5)
         self.assertAlmostEqual(g_factor[1], 1.983961, 5)
         self.assertAlmostEqual(g_factor[2], 2.002193, 5)
 
-        M_av = interface.properties_cas["M_av"]
-        chi_av = interface.properties_cas["chi_av"]
-        M_xyz_all = interface.properties_cas["M_xyz_all"]
-        chi_T_eval_all = interface.properties_cas["chi_T_eval_all"]
+        M_av = interface.properties_soc["M_av"]
+        chi_av = interface.properties_soc["chi_av"]
+        M_xyz_all = interface.properties_soc["M_xyz_all"]
+        chi_T_eval_all = interface.properties_soc["chi_T_eval_all"]
 
         self.assertAlmostEqual(M_av[0,0],   -0.000000  , 5)
         self.assertAlmostEqual(M_av[0,1],    0.082948  , 5)

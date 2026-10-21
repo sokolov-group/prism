@@ -44,8 +44,8 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     INPUT:
     rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
     en (np.array, n): reference energy
-    S (list), spin quantum number of each state without spin-orbit coupling
-    ms (float, should be multiply of 0.5), spin projection quantum number of reference state without spin-orbit coupling
+    S (list): spin quantum number of each state without spin-orbit coupling
+    ms (float, should be multiply of 0.5): spin projection quantum number of reference state without spin-orbit coupling
     soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
     verbose(int): print out level.
 
@@ -53,6 +53,10 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, verbose = 4):
     en_soc(np.array,n_micro_states): SOC energy
     evec_soc(np.array, n_micro_states*n_micro_states): SOC wavefunction
     '''
+    if ms == 0:
+        interface.log.warn("Warning: ms=0. Cannot consider about same-spin coupling")
+        if len(S) != len(set(S)):
+            raise Exception("Detect same-spin states. State-interaction cannot give reasonable result.")
 
     cput0 = (logger.process_clock(), logger.perf_counter())
     interface.log.info("Performing state-interaction spin–orbit coupling calculation within spin-free framework...")
@@ -158,7 +162,7 @@ def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, ve
     rdm_aabb(np.array, 2*nstate*nstate*nmo*nmo): ms=0 spin alpha-alpha and beta-beta 1st rdm for diferent spin coupling,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
     rdm_aabb_plus(np.array, 2*nstate*nstate*nmo*nmo): ms=1 spin alpha-alpha and beta-beta 1st rdm for same spin coupling
     en (np.array, n): reference energy
-    S (list), spin quantum number of each state without spin-orbit coupling
+    S (list): spin quantum number of each state without spin-orbit coupling
     soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
     verbose(int): print out level.
 
@@ -287,8 +291,6 @@ def get_soc_integrals(interface, soc, rdm1ao):
     nao = interface.mo.shape[1]
     prefactor = 0.5 / ((interface.light_speed)**2)
     mol = interface.mol
-    xmol = interface.xmol
-    contr_coeff = interface.contr_coeff
 
     soc = soc.lower()
     if (soc=="breit-pauli" or soc=="bp"):
@@ -298,6 +300,13 @@ def get_soc_integrals(interface, soc, rdm1ao):
         hsocint -= prefactor * somf.get_fso2e_bp(mol, rdm1ao)
 
     elif (soc=="x2c-1" or soc=="x2c1" or soc=="dkh1"):
+
+        #set up xmol and contr_coeff
+        from pyscf.x2c import x2c
+        interface.xmol, interface.contr_coeff = x2c.X2C(mol).get_xmol()
+        xmol = interface.xmol
+        contr_coeff = interface.contr_coeff
+
         nbasis_unc = xmol.nao_nr()
         nbasis = mol.nao_nr()
         hsocint = np.zeros((3, nbasis, nbasis))
