@@ -49,7 +49,7 @@ ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
 # MR-ADC calculation
-interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit('cc-pvdz-ri')
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum', rohf_mcscf = True).density_fit('cc-pvdz-ri')
 mr_adc = prism.mr_adc.MRADC(interface)
 mr_adc.ncvs = 2
 mr_adc.nroots = 12
