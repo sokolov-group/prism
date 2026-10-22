@@ -64,6 +64,10 @@ def real_time_prop(nevpt, evec, etot):
         pop_writer = csv.writer(pop_file)
         #header = ["Time_au"] + "State_{i+1}_Population" for i in requested_states]
         #pop_writer.writerow(header)
+    
+    # Store autocorrelation data
+    time_data = []
+    autocorrelation_data = []
 
     while t < nevpt.rt_tmax:
 
@@ -76,6 +80,9 @@ def real_time_prop(nevpt, evec, etot):
         # Calculate Auto-correlation function => <wfn(t=0)|wfn(t)>
         A = np.dot(np.conj(wfn0.T),wfn)
 
+        time_data.append(t)
+        autocorrelation_data.append(abs(A))
+        
         # Calculate the population in Eigen state basis => |c_i|**2
         p = np.abs(wfn)**2
 
@@ -116,6 +123,9 @@ def real_time_prop(nevpt, evec, etot):
             wfn = exact_propagator(nevpt, wfn, H_eff)
 
         t = t + time_step 
+
+    # Autocorrelation function analysis
+    autocorrelation_analyze(nevpt, etot, np.asarray(time_data), np.asarray(autocorrelation_data))
 
     print ("--------------------------------------------------------\n")
     print ("Total number of time steps taken:       %d\n" % int(t / time_step))
@@ -672,3 +682,266 @@ def td_rdm1_check(nevpt, coeff_t, evec, t):
     # eigenvector orientation.
     return results["transpose"]["rdm"]
 
+def autocorrelation_analyze(nevpt, etot, time_au, autocorrelation):
+
+    import numpy as np
+    from scipy.signal import find_peaks
+    interface = nevpt.interface
+
+    interface.log.info("\n* COMPLEX AUTOCORRELATION ANALYSIS * \n")
+    
+    # 1. Eigenstate energies and initial conditions
+
+    energies = np.asarray(etot, dtype=float).ravel()
+
+    init_cond = np.asarray(nevpt.rt_init_cond, dtype=complex).ravel()
+
+    if len(init_cond) != len(energies):
+        raise ValueError("Initial conditions and energies must have the same number of states.")
+
+    # Select populated eigenstates
+    selected = np.abs(init_cond) > 1e-12
+
+    energies = energies[selected]
+    coefficients = init_cond[selected]
+
+    # Initial populations
+    weights = np.abs(coefficients)**2
+    weights /= np.sum(weights)
+
+    N = len(energies)
+
+    interface.log.info(f"\nNumber of populated eigenstates: {N}")
+    interface.log.info("Selected energies (eV): %s", energies)
+
+    # 2. Use real-time propagation data
+
+    au_to_fs = 0.024188843265857
+
+    time_au = np.asarray(time_au, dtype=float)
+    time_fs = time_au * au_to_fs
+
+    autocorrelation = np.asarray(autocorrelation, dtype=float)
+
+    if len(time_au) != len(autocorrelation):
+        raise ValueError("Time and autocorrelation arrays must have the same length.")
+
+    if len(time_au) < 3:
+        interface.log.info("Not enough time points to detect maxima.")
+        return []
+
+    # 3. Detect maxima from propagated |A(t)|
+
+    dt_fs = np.median(np.diff(time_fs))
+
+    peak_indices, _ = find_peaks(autocorrelation, prominence=0.04, distance=max(1, int(0.35 / dt_fs)))
+
+    interface.log.info("\n" + "-" * 55)
+    interface.log.info("* AUTOCORRELATION MAXIMA * ")
+    interface.log.info("-" * 55)
+
+    for peak_no, idx in enumerate(peak_indices, 1):
+
+        interface.log.info(
+            f"Peak {peak_no}: "
+            f"Time = {time_fs[idx]:.6f} fs | "
+            f"|A(t)| = {autocorrelation[idx]:.6f}"
+        )
+    
+    interface.log.info("-" * 55)
+
+    # 4. Group degenerate energy states
+    # Group energies rounded to 8 decimal places in eV.
+    # This avoids separating numerically near-identical
+    # degenerate states.
+
+    energies_ev = energies 
+
+    unique_energies, inverse = np.unique(np.round(energies_ev, 2), return_inverse=True)
+
+    # 5. Signed contributions at maxima
+
+    results = []
+
+    for peak_no, idx in enumerate(peak_indices, 1):
+
+        # Actual propagation time in atomic units
+        t = time_au[idx]
+
+        # Reconstruct individual complex contributions
+        # at this specific propagated maximum.
+        #
+        # Energies: Hartree
+        # Time: atomic units
+        #
+        # a_n(t) = |c_n(0)|^2 exp(-i E_n t)
+
+        state_amplitudes = (weights * np.exp(-1j * energies * t))
+
+        # Complex total autocorrelation at this time
+        A_peak = np.sum(state_amplitudes)
+
+        A_abs = np.abs(A_peak)
+
+        # Compare with propagated autocorrelation
+        propagated_abs = autocorrelation[idx]
+
+        if not np.isclose(A_abs, propagated_abs, rtol=1e-5, atol=1e-8):
+            interface.log.info(
+                f"Warning at Peak {peak_no}: "
+                f"Propagated |A| = {propagated_abs:.8f}, "
+                f"Reconstructed |A| = {A_abs:.8f}"
+            )
+
+        row = {
+            "Peak": peak_no,
+            "Time (fs)": time_fs[idx],
+            "|A(t)|": propagated_abs
+        }
+
+        # Calculate contributions from each energy group
+        for j, E in enumerate(unique_energies):
+
+            # Sum complex amplitudes of degenerate states
+            pair_amplitude = np.sum(state_amplitudes[inverse == j])
+
+            # Signed phase-projected percentage
+            if A_abs > 1e-12:
+
+                contribution = (100.0 * np.real(pair_amplitude * np.conj(A_peak)) / A_abs**2)
+
+            else:
+                contribution = np.nan
+
+            row[f"{E:.8f} eV (%)"] = contribution
+
+        # Total signed percentage
+        row["Total (%)"] = np.sum([row[f"{E:.8f} eV (%)"] for E in unique_energies])
+
+        results.append(row)
+
+    # 6. Print degenerate pair contributions
+    interface.log.info("\n * DEGENERATE PAIR CONTRIBUTIONS (%%) * \n")
+    interface.log.info("-" * 135)
+
+    headers = (
+        ["Peak", "Time (fs)", "|A(t)|"]
+        + [
+            f"{E:.8f} eV (%)"
+            for E in unique_energies
+        ]
+        + ["Total (%)"]
+    )
+
+    header_line = (
+        f"{headers[0]:>5}"
+        f"{headers[1]:>14}"
+        f"{headers[2]:>12}"
+        + "".join(f"{h:>23}" for h in headers[3:])
+    )
+
+    interface.log.info("%s", header_line)
+    interface.log.info("-" * 135)
+
+    for row in results:
+
+        interface.log.info(
+            f"{row['Peak']:>5d}"
+            f"{row['Time (fs)']:>14.6f}"
+            f"{row['|A(t)|']:>12.6f}"
+            + "".join(
+                f"{row[f'{E:.8f} eV (%)']:>23.6f}"
+                for E in unique_energies
+            )
+            + f"{row['Total (%)']:>23.6f}"
+        )
+
+    # 7. Detailed complex autocorrelation analysis
+
+    for peak_no, idx in enumerate(peak_indices, 1):
+
+        t = time_au[idx]
+        t_fs = time_fs[idx]
+
+        # Individual eigenstate amplitudes
+        # Energies in Hartree, time in atomic units
+        state_amplitudes = (
+            weights * np.exp(-1j * energies * t)
+        )
+
+        # Combine amplitudes of degenerate states
+        pair_amplitudes = np.array([
+            np.sum(state_amplitudes[inverse == j])
+            for j in range(len(unique_energies))
+        ])
+
+        # Total complex autocorrelation
+        A_total = np.sum(pair_amplitudes)
+        A_abs = np.abs(A_total)
+
+        # Individual energy-group properties
+        phase_deg = np.degrees(np.angle(pair_amplitudes))
+        pair_real = pair_amplitudes.real
+        pair_imag = pair_amplitudes.imag
+        pair_abs = np.abs(pair_amplitudes)
+
+        if A_abs > 1e-12:
+
+            abs_percent = 100.0 * pair_abs / A_abs
+
+            signed_percent = (
+                100.0
+                * np.real(pair_amplitudes * np.conj(A_total))
+                / A_abs**2
+            )
+
+            magnitude_contribution = (
+                np.real(pair_amplitudes * np.conj(A_total))
+                / A_abs
+            )
+
+        else:
+            abs_percent = np.full(len(pair_abs), np.nan)
+            signed_percent = np.full(len(pair_abs), np.nan)
+            magnitude_contribution = np.full(len(pair_abs), np.nan)
+
+        interface.log.info("\n" + "-" * 135)
+        interface.log.info(f"Peak {peak_no} | Time = {t_fs:.6f} fs")
+        interface.log.info("-" * 135)
+
+        interface.log.info(
+                "%s",
+            f"{'Energy (eV)':<16}"
+            f"{'Phase (deg)':>14}"
+            f"{'Real':>14}"
+            f"{'Imag':>14}"
+            f"{'Abs':>14}"
+            f"{'Abs (%)':>14}"
+            f"{'Signed (%)':>14}"
+            f"{'Mag. contrib.':>16}"
+        )
+
+        for j, E in enumerate(unique_energies):
+
+            interface.log.info(
+               f"{E:<16.8f}"
+               f"{phase_deg[j]:>14.3f}"
+               f"{pair_real[j]:>14.6f}"
+               f"{pair_imag[j]:>14.6f}"
+               f"{pair_abs[j]:>14.6f}"
+               f"{abs_percent[j]:>14.2f}"
+               f"{signed_percent[j]:>14.2f}"
+               f"{magnitude_contribution[j]:>16.6f}"
+            )
+
+        interface.log.info("-" * 135)
+
+        print(f"{'TOTAL':<30}", f"{A_total.real:>14.6f}", f"{A_total.imag:>14.6f}", f"{A_abs:>14.6f}")
+
+        print(f"\nA(t) = {A_total.real:+.6f}{A_total.imag:+.6f}j")
+        print(f"|A(t)| = {A_abs:.6f}")
+        print(f"Phase A(t) = {np.degrees(np.angle(A_total)):.3f} degrees")
+        print(f"Total signed percentage = {np.sum(signed_percent):.2f}%")
+        print("Sum of magnitude contributions = ", f"{np.sum(magnitude_contribution):.6f}")
+
+    return results
