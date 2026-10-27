@@ -38,9 +38,9 @@ E,U,P,X = myadc.kernel(nroots=10)
 
 
 interface = prism.interface.PYSCF(mf)
-interface = interface.import_adc(myadc, E,U,P,X)
-interface.soc = "BP"
-interface.gtensor=True
+adc_prism = interface.import_adc(myadc)
+adc_prism.soc = "BP"
+adc_prism.gtensor=True
 
 
 class KnownValues(unittest.TestCase):
@@ -62,7 +62,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        en_soc, properties = interface.run_soc()
+        en_soc, properties = adc_prism.run_soc()
 
         self.assertAlmostEqual(en_soc[0],    -1792.198980907531, 5)
         self.assertAlmostEqual(en_soc[1],    -1792.198980907530, 5)
@@ -92,7 +92,7 @@ class KnownValues(unittest.TestCase):
         self.assertAlmostEqual(en_soc[25],   -1791.926058610667, 5)
 
 
-        g_factor_all = interface.properties_soc["g-factors"]
+        g_factor_all = adc_prism.properties_soc["g-factors"]
         g_factor = g_factor_all[0]
         self.assertAlmostEqual(g_factor[0], 1.985173, 5)
         self.assertAlmostEqual(g_factor[1], 1.986004, 5)

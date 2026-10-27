@@ -31,8 +31,8 @@ myadc.tol_residual = 1e-6
 E,U,P,X = myadc.kernel(nroots=12)
 
 interface = prism.interface.PYSCF(mf)
-interface = interface.import_adc(myadc, E,U,P,X)
-interface.soc = "BP"
+adc_prism = interface.import_adc(myadc)
+adc_prism.soc = "BP"
 
 
 
@@ -57,7 +57,7 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        en_soc, properties = interface.run_soc()
+        en_soc, properties = adc_prism.run_soc()
 
         self.assertAlmostEqual(en_soc[0],    0.104604360853   , 5)
         self.assertAlmostEqual(en_soc[1],    0.104604360853   , 5)

@@ -107,7 +107,9 @@ class NEVPT:
         self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
 
         # For SOC
-        interface.create_soc_flag(self)
+        #temporary code please delete it
+        import prism.libsoc.before_soc
+        prism.libsoc.before_soc.create_soc_flag(self)
         
         # Solvent methods
         # For PE

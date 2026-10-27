@@ -32,11 +32,10 @@ mf.kernel()
 
 myadc = adc.ADC(mf)
 myadc.method_type = "ea" #Can be ea, ip, ee
-
-E,U,P,X = myadc.kernel(nroots=6)
+myadc.kernel(nroots=6)
 
 interface = prism.interface.PYSCF(mf)
-adc_prism = interface.import_adc(myadc, E,U,P,X)
+adc_prism = interface.import_adc(myadc)
 adc_prism.analyze_evec_soc = True #For soc eigenvector analysis
 adc_prism.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 adc_prism.save_sf = True #Save inofrmation for SOC calculation

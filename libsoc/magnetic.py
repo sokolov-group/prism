@@ -74,6 +74,7 @@ def compute_properties(interface, rdm_sf, en_soc, h_evec_soc, S,  method = None)
 
         #Powder data information
         method.log.info("Import LebedevGrid in pyscf...")
+        interface.powder_vector_setup()
         Powder_data_xyzw = interface.MakeAngularGrid_266()
         method.log.info("Number of LebedevGrid point: %s" % len(Powder_data_xyzw))
 

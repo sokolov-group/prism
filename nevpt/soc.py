@@ -28,7 +28,7 @@ def state_interaction_soc(method):
     Calculate SOC-NEVPT2 or SOC-QDNEVPT2
     '''
 
-    method.interface.mol.max_memory = method.interface.max_memory_soc
+    method.interface.mol.max_memory = method.max_memory_soc
 
     method.log.info("\nInitializing state-interaction spin–orbit coupling program...")
 
@@ -75,7 +75,7 @@ def state_interaction_soc(method):
         if method.save_sf:
             before_soc.write_checkpoint(method.interface, method.e_tot, rdm_aabb, S,  ms[0], method.interface.mo, name=method.name_sf)  
 
-        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.soc, method.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.soc, method.mo)
     
     else:    
         method.log.info("Apply S_plus due to Ms=0...")
@@ -103,7 +103,7 @@ def state_interaction_soc(method):
         if method.save_sf:
             before_soc.write_checkpoint_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.interface.mo, name=method.name_sf)  
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.soc, method.verbose)
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.soc, method.mo)
 
 
     method.e_tot = en_soc

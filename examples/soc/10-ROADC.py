@@ -40,7 +40,6 @@ mf.analyze()
 
 myadc = adc.ADC(mf)
 myadc.method_type = "ee" #Can be "ip", "ea", "ee"
-myadc.compute_spin_square = True
 E,U,P,X = myadc.kernel(nroots=2)
 
 

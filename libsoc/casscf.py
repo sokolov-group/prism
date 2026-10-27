@@ -8,26 +8,33 @@ from prism.libsoc import before_soc
 from prism.libsoc import after_soc
 from prism.libsoc import magnetic
 
-def kernel(interface):
+def collect_sf(method):
     '''
     Calculate SOC-CASSCF
     '''
-    
-    interface.mol.max_memory = interface.max_memory_soc
-
-    cput0 = (logger.process_clock(), logger.perf_counter())
-    wfn = interface.ref_wfn
+    #Parameter
+    method.interface.mol.max_memory = method.max_memory_soc
+    mc                  = method.mc            
+    nmo                 = method.nmo               
+    ncas                = method.ncas              
+    ncore               = method.ncore             
+    ref_nelecas         = method.ref_nelecas       
+    e_ref               = method.e_ref             
+    mo                  = method.mo                
+    ref_wfn             = method.ref_wfn           
+    ref_wfn_spin_mult   = method.ref_wfn_spin_mult 
+    wfn                 = method.ref_wfn
+    e_ref               = method.e_ref
+    name_sf             = method.name_sf
 
     # Calculate the total spin (S)
-    spin_mult_wfn = interface.ref_wfn_spin_mult
-
-    S = [round((spin_mult-1)/2,2) for spin_mult in spin_mult_wfn]
+    S = [round((spin_mult-1)/2,2) for spin_mult in ref_wfn_spin_mult]
 
     # Calculate the spin projections Ms
     ms = []
     nstate = len(wfn)
     for I in range(nstate):
-        sz = interface.apply_S_z(wfn[I],interface.ncas,interface.ref_nelecas[I])
+        sz = method.interface.apply_S_z(wfn[I], ncas, ref_nelecas[I])
         ms.append(np.dot(wfn[I].ravel(), sz.ravel()))
 
     ms = [round(elem,2) for elem in ms]
@@ -37,40 +44,41 @@ def kernel(interface):
         if (np.abs(ms[I]-ms[0])>1e-8):
             raise Exception("Each state's ms should be same for state_interaction_SOC function")
 
-    rdm_aabb = np.zeros((2, nstate, nstate, interface.nmo, interface.nmo))
+    rdm_aabb = np.zeros((2, nstate, nstate, nmo, nmo))
     for I in range(nstate):
         for J in range(nstate):
-            tmprdm_aabb = interface.trans_rdm1s(wfn[J], wfn[I], interface.ncas, interface.ref_nelecas[I])
-            rdm_aabb[0, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb[0]
-            rdm_aabb[1, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb[1]
+            tmprdm_aabb = method.interface.trans_rdm1s(wfn[J], wfn[I], ncas, ref_nelecas[I])
+            rdm_aabb[0, I, J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[0]
+            rdm_aabb[1, I, J, ncore:ncore+ncas, ncore:ncore+ncas] = tmprdm_aabb[1]
 
             if I == J:
                 #uncorrelated diagonal terms
-                rdm_aabb[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)  
-
-
-    #generalSOC requires spin-free energy...
-    en = interface.e_ref
+                rdm_aabb[:,I, J, :ncore, :ncore] = np.identity(ncore)  
 
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
 
-        if interface.save_sf:
-            before_soc.write_checkpoint(interface, en, rdm_aabb, S,  ms[0], interface.mo, name=interface.name_sf)   
+        if method.save_sf:
+            before_soc.write_checkpoint(method.interface, e_ref, rdm_aabb, S,  ms[0], mo, name=name_sf) 
 
-        en_soc, evec_soc = general_somf.state_interaction_soc(interface, en, rdm_aabb, S, ms[0], interface.soc, verbose = interface.verbose)
+
+        #Save NECESSARY parameter of state-interaction calculations
+        method.E_ref = e_ref
+        method.rdm_aabb_ref = rdm_aabb
+        method.S_ref = S
+        method.ms_ref = ms[0]  
     
     else:   
 
-        interface.log.info("Apply S_plus due to Ms=0...")
+        method.log.info("Apply S_plus due to Ms=0...")
 
         wfn_plus = wfn.copy()
-        wfn_ref_nelecas_plus = interface.ref_nelecas.copy()
+        wfn_ref_nelecas_plus = ref_nelecas.copy()
         ms_plus = ms.copy()
 
         for I in range(nstate):
             if S[I] > 0 :
-                wfn_plus[I], Sp_ne = interface.apply_S_plus(wfn[I],interface.ncas,interface.ref_nelecas[I])
+                wfn_plus[I], Sp_ne = method.interface.apply_S_plus(wfn[I], ncas, ref_nelecas[I])
                 # Upadate ref_nelecas
                 wfn_ref_nelecas_plus[I] = Sp_ne
                 # Normalize the wfn
@@ -82,33 +90,25 @@ def kernel(interface):
 
 
         # Calculate RDM_aabb_plus
-        rdm_aabb_plus = np.zeros((2, nstate, nstate, interface.nmo, interface.nmo))
+        rdm_aabb_plus = np.zeros((2, nstate, nstate, nmo, nmo))
         for I in range(nstate):
             for J in range(nstate):
                 if (wfn_ref_nelecas_plus[I] == wfn_ref_nelecas_plus[J]):
-                    tmprdm_aabb_plus = interface.trans_rdm1s(wfn_plus[J], wfn_plus[I], interface.ncas,  wfn_ref_nelecas_plus[I])
-                    rdm_aabb_plus[0, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb_plus[0]
-                    rdm_aabb_plus[1, I, J, interface.ncore:interface.ncore+interface.ncas, interface.ncore:interface.ncore+interface.ncas] = tmprdm_aabb_plus[1]
+                    tmprdm_aabb_plus = method.interface.trans_rdm1s(wfn_plus[J], wfn_plus[I], ncas,  wfn_ref_nelecas_plus[I])
+                    rdm_aabb_plus[0, I, J, ncore : ncore + ncas, ncore : ncore + ncas] = tmprdm_aabb_plus[0]
+                    rdm_aabb_plus[1, I, J, ncore : ncore + ncas, ncore : ncore + ncas] = tmprdm_aabb_plus[1]
 
                     if I == J:
                         #uncorrelated diagonal terms
-                        rdm_aabb_plus[:,I, J, :interface.ncore, :interface.ncore] = np.identity(interface.ncore)
+                        rdm_aabb_plus[:,I, J, :ncore, :ncore] = np.identity(ncore)
 
-        if interface.save_sf:
-            before_soc.write_checkpoint_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, interface.mo, name=interface.name_sf)  
+        if method.save_sf:
+            before_soc.write_checkpoint_ms0(method.interface, e_ref, rdm_aabb, rdm_aabb_plus, S, mo, name=name_sf)  
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(interface, en, rdm_aabb,  rdm_aabb_plus, S, interface.soc, verbose = interface.verbose)
+        #Save NECESSARY parameter of state-interaction calculations
+        method.E_ref = e_ref
+        method.rdm_aabb_ref = rdm_aabb
+        method.S_ref = S
+        method.rdm_aabb_plus_ref = rdm_aabb_plus  
 
-    #Compute properties
-    after_soc.compute_properties(interface, en_soc, evec_soc, rdm_aabb, S)
 
-    #Print result
-    after_soc.print_result(interface, en_soc, evec_soc, S, interface.soc, "CASSCF")
-
-    #Print properties
-    if "osc_strengths_full" in interface.properties_soc:
-        trans_prop.print_osc_strength(interface, interface.properties_soc["osc_strengths_full"])
-    if "magnetic_properties" in interface.properties_soc:
-        magnetic.print_mag_properties(interface, interface.properties_soc,  method = None)
-
-    return  en_soc, interface.properties_soc["osc_strengths"]

@@ -44,7 +44,7 @@ mc.analyze()
 
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-
+casscf_sf = interface.import_casscf_sf()
 
 class KnownValues(unittest.TestCase):
 
@@ -57,7 +57,7 @@ class KnownValues(unittest.TestCase):
         if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
             print("\nsocutilis is not available. Skip soc test")
             self.skipTest('socutilis is not available')
-        e_tot, osc = interface.run_soc("x2c-1")
+        e_tot, osc = casscf_sf.run_soc("x2c-1")
 
         self.assertAlmostEqual(e_tot[0] , -1938.126199965225 , 5)
         self.assertAlmostEqual(e_tot[1] , -1937.929410775354 , 5)
