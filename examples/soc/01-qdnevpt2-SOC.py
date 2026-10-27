@@ -47,6 +47,7 @@ nevpt = prism.nevpt.NEVPT(interface)
 nevpt.method = "nevpt2"
 nevpt.method_type = "qd"
 nevpt.soc = "DKH1" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+nevpt.analyze_evec_soc = True #For soc eigenvector analysis
 nevpt.verbose = 4
 nevpt.kernel()
 

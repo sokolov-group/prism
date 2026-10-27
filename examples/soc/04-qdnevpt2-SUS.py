@@ -14,10 +14,6 @@ import time
 
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
-r = 0.96
-x = r * math.sin(104.5 * math.pi/(2 * 180.0))
-y = r * math.cos(104.5 * math.pi/(2 * 180.0))
-
 mol = pyscf.gto.Mole()
 mol.atom =[ 
 [ 'Zn',  (0, 0, 0)],
@@ -53,11 +49,11 @@ nevpt.soc = "breit-pauli"
 nevpt.s_thresh_singles = 1e-10
 nevpt.s_thresh_doubles = 1e-10
 
-nevpt.mag_av = True
-nevpt.sus_av = True
-nevpt.mag_vec = True
-nevpt.sus_tensor = True
-nevpt.step_h_s = 0.001 
+nevpt.mag_av = True     #Turn on powder magnetization  calculation
+nevpt.sus_av = True     #Turn on powder susceptibility calculation
+nevpt.mag_vec = True    #Turn on magnetization  calculation under spectific direction of magnetic field
+nevpt.sus_tensor = True #Turn on susceptibility calculation under spectific direction of magnetic field
+nevpt.step_h_s = 0.001  #Magnetic field step size used for numerical differentiation (Unit:T)
 
 Bs_list = []
 for i in range(15):
@@ -69,16 +65,16 @@ for i in range(21):
     T = 14.75 * i + 5
     T_list.append(T)
 
-nevpt.Bs_powder_M = Bs_list 
-nevpt.T_powder_M = [1.8]
-nevpt.T_powder_chi = T_list
-nevpt.Bs_powder_chi = [0.1]
-nevpt.B_vec_M = [0,0,1]
-nevpt.Bs_vec_M = Bs_list 
-nevpt.T_vec_M = [1.8]
-nevpt.B_vec_chi = [0,0,1]
-nevpt.Bs_vec_chi = [0.1]
-nevpt.T_vec_chi = [5,100,200,250]
+nevpt.Bs_powder_M = Bs_list #Magnetic field (Telsa) for powder magnetization calculation
+nevpt.T_powder_M = [1.8]    #Temperature (K) for powder magnetization calculation
+nevpt.T_powder_chi = T_list #Temperature (K) for powder susceptibility calculation
+nevpt.Bs_powder_chi = [0.1] #Magnetic field (Telsa) for powder susceptibility calculation
+nevpt.B_vec_M = [0,0,1]     #Magnetic field direction for magnetization calculation
+nevpt.Bs_vec_M = Bs_list    #Magnetic field (Telsa) for  magnetization calculation under spectific direction of magnetic field
+nevpt.T_vec_M = [1.8]       #Temperature (K) for magnetization calculation under spectific direction of magnetic field
+nevpt.B_vec_chi = [0,0,1]   #Magnetic field direction for susceptibilitycalculation
+nevpt.Bs_vec_chi = [0.1]    #Magnetic field (Telsa) for susceptibility calculation under spectific direction of magnetic field
+nevpt.T_vec_chi = [5,100,200,250] #Temperature (K) for susceptibility calculation under spectific direction of magnetic field
 e_tot, e_corr, osc = nevpt.kernel()
 
 

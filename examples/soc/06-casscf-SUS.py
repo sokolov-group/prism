@@ -41,12 +41,14 @@ mc.analyze()
 
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-interface.soc = "bp"
-interface.mag_av = True
-interface.sus_av = True
-interface.mag_vec = True
-interface.sus_tensor = True
-interface.step_h_s = 0.001 
+casscf_sf = interface.import_casscf_sf() #Load interface in to SF_OBJECT for SOC calculation
+casscf_sf.soc = "bp"
+#Below Key is same in 04-qdnevpt2-SUS.py
+casscf_sf.mag_av = True
+casscf_sf.sus_av = True
+casscf_sf.mag_vec = True
+casscf_sf.sus_tensor = True
+casscf_sf.step_h_s = 0.001 
 
 Bs_list = []
 for i in range(15):
@@ -58,14 +60,14 @@ for i in range(21):
     T = 14.75 * i + 5
     T_list.append(T)
 
-interface.Bs_powder_M = Bs_list 
-interface.T_powder_M = [1.8]
-interface.T_powder_chi = T_list
-interface.Bs_powder_chi = [0.1]
-interface.B_vec_M = [0,0,1]
-interface.Bs_vec_M = Bs_list 
-interface.T_vec_M = [1.8]
-interface.B_vec_chi = [0,0,1]
-interface.Bs_vec_chi = [0.1]
-interface.T_vec_chi = [5,100,200,250]
-interface.run_soc()
+casscf_sf.Bs_powder_M = Bs_list 
+casscf_sf.T_powder_M = [1.8]
+casscf_sf.T_powder_chi = T_list
+casscf_sf.Bs_powder_chi = [0.1]
+casscf_sf.B_vec_M = [0,0,1]
+casscf_sf.Bs_vec_M = Bs_list 
+casscf_sf.T_vec_M = [1.8]
+casscf_sf.B_vec_chi = [0,0,1]
+casscf_sf.Bs_vec_chi = [0.1]
+casscf_sf.T_vec_chi = [5,100,200,250]
+casscf_sf.run_soc()
