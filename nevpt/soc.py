@@ -21,16 +21,16 @@
 import numpy as np
 from prism.libsoc import general_somf
 from prism.libsoc import magnetic
+from prism.libsoc import before_soc
 
 def state_interaction_soc(method):
     '''
     Calculate SOC-NEVPT2 or SOC-QDNEVPT2
     '''
 
-    method.interface.mol.max_memory = method.interface.max_memory_soc
+    method.interface.mol.max_memory = method.max_memory_soc
 
     method.log.info("\nInitializing state-interaction spin–orbit coupling program...")
-    method.interface.x2c_setup()
 
     # Rotate CAS Wavefunction:
     if method.method_type == "qd":
@@ -71,7 +71,11 @@ def state_interaction_soc(method):
 
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
-        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.soc, method.verbose)
+
+        if method.save_sf:
+            before_soc.write_checkpoint(method.interface, method.e_tot, rdm_aabb, S,  ms[0], method.mo, name=method.name_sf)  
+
+        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.mo, method.soc)
     
     else:    
         method.log.info("Apply S_plus due to Ms=0...")
@@ -96,11 +100,10 @@ def state_interaction_soc(method):
         # Calculate RDM_aabb_plus
         rdm_aabb_plus = method.make_rdm1s(wfn_plus, wfn_ref_nelecas_plus)
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.soc, method.verbose)
+        if method.save_sf:
+            before_soc.write_checkpoint_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.mo, name=method.name_sf)  
 
-
-
-    
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.mo, method.soc)
 
 
     method.e_tot = en_soc
