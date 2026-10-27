@@ -36,7 +36,7 @@ myadc.method_type = "ip"
 myadc.ncvs = 5  # Activate cvs code in pyscf. ncvs is an integer defining the index of the core orbital that is expected to be ionized first 
 myadc.kernel(nroots=6)
 
-interface = prism.interface.PYSCF(mf)
-adc_prism = interface.import_adc(myadc)
+interface = prism.interface.PYSCF(mf) 
+adc_prism = interface.import_adc(myadc) #Load interface and myadc into SF_OBJECT for SOC calculation
 adc_prism.soc = 'BP' # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 adc_prism.run_soc()

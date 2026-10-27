@@ -43,7 +43,7 @@ class SF_OBJECT:
         Import casscf from pyscf
         '''
 
-        self.log.info("\nImporting CASSCF in PYSCF...")
+        self.log.info("\nImporting mc in SF_OBJECT...")
 
         #If self has mc and adc, run_soc doesn't know should run soc-casscf or si-adc
         if hasattr(self, "adc"):
@@ -71,7 +71,7 @@ class SF_OBJECT:
         Import SRADC from pyscf
         '''
 
-        self.log.info("\nImporting ADC in PYSCF...")
+        self.log.info("\nImporting ADC in SF_OBJECT...")
 
         #If self has mc and adc, run_soc doesn't know should run soc-casscf or si-adc
         if hasattr(self, "mc"):
@@ -101,9 +101,7 @@ class SF_OBJECT:
         self.e_corr_MPn = adc.e_corr
         self.scf_energy = adc.scf_energy
         self.E_ref_abs= self.e_corr_MPn + self.scf_energy
-        self.log.info("e_corr_MPn=%s",self.e_corr_MPn)
-        self.log.info("scf_energy=%s",self.scf_energy)
-        self.log.info("E_ref_abs=%s", self.E_ref_abs)
+
         #MO:
         self.nmo = None
         self.mo = None
@@ -144,12 +142,15 @@ class SF_OBJECT:
             rdm_aabb_plus_ref = self.rdm_aabb_plus_ref
             S_ref = self.S_ref
 
+            if self.save_sf:
+                before_soc.write_checkpoint_ms0(self.interface, E_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref, self.mo, name = self.name_sf) 
+
             #Compute en_soc
             en_soc, evec_soc = general_somf.state_interaction_soc_ms0(self.interface, E_ref, rdm_aabb_ref,  rdm_aabb_plus_ref, S_ref, self.soc, self.mo)
 
         else:    #Ms is not 0 condition
             if self.ms_ref is None:
-                self.log.info("\n\nms_ref is None. Obtaining ms_ref from rdm_aabb_ref...")
+                self.log.info("\n\nms_ref is None. Obtaining ms_ref from rdm_aabb_ref...\n")
                 before_soc.rotate_rdm1s_to_ms(self)
                 sys.stdout.flush()
                 E_ref, rdm_aabb_ref, S_ref,  ms_ref = before_soc.get_sf_ref(self, self.spin)
@@ -160,6 +161,9 @@ class SF_OBJECT:
                 S_ref = self.S_ref
                 ms_ref = self.ms_ref
 
+            if self.save_sf:
+                before_soc.write_checkpoint(self, E_ref, rdm_aabb_ref, S_ref, ms_ref, self.mo, name=self.name_sf)
+
             #Compute en_soc
             en_soc, evec_soc = general_somf.state_interaction_soc(self.interface, E_ref, rdm_aabb_ref, S_ref,  ms_ref, self.soc, self.mo)
 
@@ -168,7 +172,7 @@ class SF_OBJECT:
         after_soc.compute_properties(self, en_soc, evec_soc, rdm_aabb_ref, S_ref)
         
         # Print results obtained from ADC
-        after_soc.print_result(self, en_soc, evec_soc, S_ref, self.soc, "sf_object")
+        after_soc.print_result(self, en_soc, evec_soc, S_ref, self.soc, "calculation" )
 
         #Print properties
         if "osc_strengths_full" in self.properties_soc:
@@ -186,12 +190,12 @@ class SF_OBJECT:
         if soc_type:
             self.soc = soc_type
 
-        if hasattr(self, "adc"):
+        if hasattr(self, "adc") and self.adc:
             import prism.libsoc.sradc
             #Collect self.E_ref, self.mo, self.rdm_aabb_ref, self.S_ref...
             prism.libsoc.sradc.collect_sf(self) 
 
-        elif self.mc:
+        elif hasattr(self, "mc") and self.mc:
             import prism.libsoc.casscf
             #Collect self.E_ref, self.mo, self.rdm_aabb_ref, self.S_ref...
             prism.libsoc.casscf.collect_sf(self)

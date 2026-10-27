@@ -35,7 +35,7 @@ myadc.method_type = "ea" #Can be ea, ip, ee
 myadc.kernel(nroots=6)
 
 interface = prism.interface.PYSCF(mf)
-adc_prism = interface.import_adc(myadc)
+adc_prism = interface.import_adc(myadc) #Load interface and myadc into SF_OBJECT for SOC calculation
 adc_prism.soc = "BP" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 adc_prism.analyze_evec_soc = True #Print eigenvector analysis based on spin-free wavefunction
 adc_prism.gtensor = True     #Turn on g-tensor calculation

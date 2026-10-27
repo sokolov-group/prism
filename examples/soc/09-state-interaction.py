@@ -10,7 +10,8 @@ from pyscf import adc
 from pyscf import scf
 from pyscf.adc import uadc_ea
 import prism.interface
-import prism.libsoc
+import prism.libsoc.before_soc
+import prism.general_sf
 
 np.set_printoptions(suppress=True)
 
@@ -47,8 +48,8 @@ adc_prism.sus_tensor = True #Turn on susceptibility calculation under spectific 
 adc_prism.run_soc()
 
 
-E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.libsoc.read_checkpoint("09-state-interaction.h5")
-interface_sf = prism.libsoc.SF_OBJECT(mol, E_ref, rdm_aabb_ref, S_ref, mo) #if ms_ref is not provided, Prism will compute ms_ref based on rdm_aabb_ref
+E_ref, rdm_aabb_ref, S_ref, ms_ref, mo = prism.libsoc.before_soc.read_checkpoint("09-state-interaction.h5")
+interface_sf = prism.general_sf.SF_OBJECT(interface, E_ref, rdm_aabb_ref, S_ref, mo) #if ms_ref is not provided, Prism will compute ms_ref based on rdm_aabb_ref
 interface_sf.analyze_evec_soc = True #For soc eigenvector analysis
 interface_sf.spin = 1 #Becasue EA-ADC add one electron
 interface_sf.soc = 'BP'   # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)

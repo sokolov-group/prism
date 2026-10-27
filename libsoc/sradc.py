@@ -29,38 +29,6 @@ def collect_sf(adc_prism):
         collect_sf_general(adc_prism)
     sys.stdout.flush()
 
-    '''
-    before_soc.rotate_rdm1s_to_ms(adc_prism)
-    sys.stdout.flush()
-
-    E_ref, rdm_aabb_ref, S_ref,  ms_ref = before_soc.get_sf_ref(adc_prism, adc_prism.spin_adc)
-    sys.stdout.flush()
-
-    if adc_prism.save_sf:
-       before_soc.write_checkpoint(adc_prism, E_ref, rdm_aabb_ref, S_ref, ms_ref, adc_prism.mo, name=adc_prism.name_sf)
-
-    #Compute en_soc
-    en_soc, evec_soc = general_somf.state_interaction_soc(adc_prism.interface, E_ref, rdm_aabb_ref, S_ref,  ms_ref, adc_prism.soc, adc_prism.mo)
-    
-    #Compute properties
-    after_soc.compute_properties(adc_prism, en_soc, evec_soc, rdm_aabb_ref, S_ref)
-        
-    # Print results obtained from ADC
-    after_soc.print_result(adc_prism, en_soc, evec_soc, S_ref, adc_prism.soc, "SI-ADC")
-    
-    #Print properties
-    if "osc_strengths_full" in adc_prism.properties_soc:
-        trans_prop.print_osc_strength(adc_prism, adc_prism.properties_soc["osc_strengths_full"])
-    if "magnetic_properties" in adc_prism.properties_soc:
-        magnetic.print_mag_properties(adc_prism, adc_prism.properties_soc,  method = None)
-
-    sys.stdout.flush()
-
-    adc_prism.e_tot = en_soc
-    '''    
-
-    #return adc_prism.e_tot, adc_prism.properties_soc["osc_strengths"]
-
 def collect_sf_ee(adc_prism):
     '''
     Obtain rdm_aabb (in MO_a basis), S, E_ref for ADC-EE

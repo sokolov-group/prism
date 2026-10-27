@@ -122,7 +122,7 @@ def print_result(method, en_soc, evec_soc, S_ref, soc, method_name):
     S_soc   = np.einsum('ai,ib,bj->aj',np.conj(evec_soc).T , np.diag(S_total) , evec_soc)
     S_soc   = np.diag(np.real(S_soc))
 
-    method.log.info("\nSummary of SI-%s-%s", soc.upper(),method_name.upper())
+    method.log.info("\nSummary of state-interaction %s %s", soc.upper(),method_name)
     method.log.info("Note that S is expected values. ms is is determined from the maximum-weight state.")
     method.log.info("-------------------------------------------------------------------------------------------------------------------------- ")
     method.log.info("  State    S    ms(weight)          E(total)           E(eV)          dE(eV)      dE(nm)       dE(cm-1)        Osc Str.")

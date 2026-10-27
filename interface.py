@@ -91,10 +91,9 @@ class PYSCF:
                 else:
                     self.compute_rhf_reference()
 
-        #Load soc flag to control soc calculation
-        #temporary code please delete it
-        #import prism.general_sf
-        #prism.general_sf.create_soc_flag(self)
+        # For powder properties
+        import pyscf.dft.LebedevGrid
+        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
 
         # Symmetry
         # TODO: [MC OBJ] Check if this is done correctly when canonicalization changes the order of orbitals
@@ -497,11 +496,6 @@ class PYSCF:
         from pyscf.x2c import x2c
         self.X2C = x2c.X2C
         
-    # For powder properties
-    def powder_vector_setup(self):
-        import pyscf.dft.LebedevGrid
-        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
-
     # Apply S+ (spin raising) operator
     def apply_S_plus(self, psi, ncas, nelecas):
 
@@ -740,7 +734,7 @@ class PYSCF:
         Import SRADC from pyscf
         '''
 
-        self.log.info("\nImporting ADC in PYSCF...")
+        self.log.info("\nImporting ADC from PYSCF...")
 
         #If self has mc and adc, run_soc doesn't know should run soc-casscf or si-adc
         if self.mc:
@@ -786,7 +780,7 @@ class PYSCF:
         Import casscf from pyscf
         '''
 
-        self.log.info("\nImporting CASSCF in PYSCF...")
+        self.log.info("\nImporting CASSCF in SF_OBJECT...")
 
         import prism.general_sf
         casscf_sf = prism.general_sf.SF_OBJECT(self)

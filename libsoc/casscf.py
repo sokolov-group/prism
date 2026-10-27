@@ -12,6 +12,9 @@ def collect_sf(method):
     '''
     Calculate SOC-CASSCF
     '''
+
+    method.log.info("Collecting necessary information for SOC")
+    
     #Parameter
     method.interface.mol.max_memory = method.max_memory_soc
     mc                  = method.mc            
@@ -58,10 +61,6 @@ def collect_sf(method):
     #If Ms=0 , CG coefficent vanish...
     if ms[0] != 0:
 
-        if method.save_sf:
-            before_soc.write_checkpoint(method.interface, e_ref, rdm_aabb, S,  ms[0], mo, name=name_sf) 
-
-
         #Save NECESSARY parameter of state-interaction calculations
         method.E_ref = e_ref
         method.rdm_aabb_ref = rdm_aabb
@@ -102,8 +101,6 @@ def collect_sf(method):
                         #uncorrelated diagonal terms
                         rdm_aabb_plus[:,I, J, :ncore, :ncore] = np.identity(ncore)
 
-        if method.save_sf:
-            before_soc.write_checkpoint_ms0(method.interface, e_ref, rdm_aabb, rdm_aabb_plus, S, mo, name=name_sf)  
 
         #Save NECESSARY parameter of state-interaction calculations
         method.E_ref = e_ref

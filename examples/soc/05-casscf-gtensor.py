@@ -41,6 +41,7 @@ mc.analyze()
 
 
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
-interface.gtensor = True # Turn on g-tensor calculation
-interface.soc = "bp" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-interface.run_soc()
+casscf_sf = interface.import_casscf_sf() #Load interface into SF_OBJECT for SOC calculation
+casscf_sf.gtensor = True # Turn on g-tensor calculation
+casscf_sf.soc = "bp" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
+casscf_sf.run_soc()

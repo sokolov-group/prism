@@ -45,6 +45,6 @@ E,U,P,X = myadc.kernel(nroots=2)
 
 
 interface = prism.interface.PYSCF(mf)
-adc_prism = interface.import_adc(myadc, E,U,P,X)
+adc_prism = interface.import_adc(myadc) #Load interface and myadc into SF_OBJECT for SOC calculation
 adc_prism.soc = "bp" # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
 adc_prism.run_soc()
