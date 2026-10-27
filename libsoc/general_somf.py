@@ -37,7 +37,7 @@ if prism_path not in sys.path:
 # Add socutils module
 from socutils.somf import somf
 
-def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, mo):
+def state_interaction_soc(interface, en, rdm_aabb, S, ms, mo, soc):
     '''
     Calculate ms!=0 SOC energy(en_soc) and wavefunction(evec_soc) by employing state_interaction 
     ********
@@ -47,9 +47,9 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, mo):
     en (np.array, n): reference energy
     S (list): spin quantum number of each state without spin-orbit coupling
     ms (float, should be multiply of 0.5): spin projection quantum number of reference state without spin-orbit coupling
-    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
     mo (np.array, n*n): molecular orbitals in atomic orbitals basis
-
+    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
+    
     OUTPUT:
     en_soc(np.array,n_micro_states): SOC energy
     evec_soc(np.array, n_micro_states*n_micro_states): SOC wavefunction
@@ -154,7 +154,7 @@ def state_interaction_soc(interface, en, rdm_aabb, S, ms, soc, mo):
     
     return en_soc, evec_soc
 
-def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, mo):
+def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, mo, soc):
     '''
     Calculate ms=0 SOC energy(en_soc) and wavefunction(evec_soc) by employing state_interaction 
     ********
@@ -163,8 +163,8 @@ def state_interaction_soc_ms0(interface, en, rdm_aabb, rdm_aabb_plus, S, soc, mo
     rdm_aabb_plus(np.array, 2*nstate*nstate*nmo*nmo): ms=1 spin alpha-alpha and beta-beta 1st rdm for same spin coupling
     en (np.array, n): reference energy
     S (list): spin quantum number of each state without spin-orbit coupling
-    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
     mo (np.array, n*n): molecular orbitals in atomic orbitals basis
+    soc (str): soc types: "dkh1"("x2c-1","x2c1") and "breit-pauli"("bp")
 
     OUTPUT:
     en_soc(np.array,n_micro_states): SOC energy

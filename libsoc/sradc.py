@@ -31,7 +31,7 @@ def collect_sf(adc_prism):
 
 def collect_sf_ee(adc_prism):
     '''
-    Obtain rdm_aabb (in MO_a basis), S, E_ref for ADC-EE
+    Save rdm_aabb (in MO_a basis), S, E_ref in adc_prism for ADC-EE
     '''
 
     #TO DO: make sure nmo_b is always equal nmo_a
@@ -121,7 +121,7 @@ def collect_sf_ee(adc_prism):
     
 def collect_sf_general(adc_prism):
     '''
-    Obtain rdm_aabb (in MO_a basis ), S, E_ref for ADC-IP, EA, CVS-ADC-IP and ADC-EE(witout ref state)
+    Save rdm_aabb (in MO_a basis), S, E_ref in adc_prism for ADC-IP, EA, CVS-ADC-IP and ADC-EE(witout ref state)
     '''
     adc_prism.log.info("\n*****collect_sf_general*****")
     #TO DO: make sure nmo_b is always equal nmo_a

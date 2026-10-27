@@ -65,9 +65,12 @@ def rotate_rdm1s_to_ms(method):
     in Ms basis
     ********
     INPUT:
-    method.rdm_aabb_ref (np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
+    method.rdm_aabb_ref (np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm, rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
     method.S_ref (list), spin quantum number of each state without spin-orbit coupling
     method.E_ref (np.array, n): reference energy
+
+    OUTPUT:
+    Update input parameter (method.rdm_aabb_ref, method.S_ref method.E_ref) into ms basis
     '''
 
     method.log.info("\n*****rotate_rdm1s_to_ms*****")
@@ -149,7 +152,7 @@ def get_sf_ref(method, spin):
     interface.S_ref in Ms Basis (list), spin quantum number of each state without spin-orbit coupling
     interface.E_ref in Ms Basis (np.array, n): reference energy
 
-    OUTPUT (Can directly plug in prism.libsoc.general_somf.state_interaction_soc):
+    OUTPUT (Can directly plug in prism.libsoc.general_somf.state_interaction_soc. They are also saved(updated) in method.):
     rdm_aabb_ref(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta 
     E_ref (np.array, n): reference energy
     S_ref (list), spin quantum number of each state without spin-orbit coupling
@@ -265,7 +268,7 @@ def get_sf_ref(method, spin):
     return method.E_ref, method.rdm_aabb_ref, method.S_ref, method.ms_ref
 
 
-def degeneracy_list(interface,en, atol= 1e-5):
+def degeneracy_list(interface, en, atol= 1e-5):
     '''
     determine degeneracy based on energy in list
     ********

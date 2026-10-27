@@ -493,6 +493,9 @@ class PYSCF:
 
     # X2C set up:
     def x2c_setup(self):
+        '''
+        For DKH(x2c) calculation. It will activate in "create_soc_flag(method)"
+        '''
         from pyscf.x2c import x2c
         self.X2C = x2c.X2C
         

@@ -75,7 +75,7 @@ def state_interaction_soc(method):
         if method.save_sf:
             before_soc.write_checkpoint(method.interface, method.e_tot, rdm_aabb, S,  ms[0], method.mo, name=method.name_sf)  
 
-        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.soc, method.mo)
+        en_soc, evec_soc = general_somf.state_interaction_soc(method.interface, method.e_tot, rdm_aabb, S, ms[0], method.mo, method.soc)
     
     else:    
         method.log.info("Apply S_plus due to Ms=0...")
@@ -103,7 +103,7 @@ def state_interaction_soc(method):
         if method.save_sf:
             before_soc.write_checkpoint_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.mo, name=method.name_sf)  
 
-        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.soc, method.mo)
+        en_soc, evec_soc = general_somf.state_interaction_soc_ms0(method.interface, method.e_tot, rdm_aabb, rdm_aabb_plus, S, method.mo, method.soc)
 
 
     method.e_tot = en_soc

@@ -14,7 +14,7 @@ def compute_properties(method, en_soc, evec_soc, rdm_aabb_ref, S_ref):
     INPUT:
     method: SF_OBJECT
     en_soc (np.array, n): spin-orbit coupling energy
-    evec_soc (np.array): spin-orbit coupling eigenvector
+    evec_soc (np.array, n*n): spin-orbit coupling eigenvector
     rdm_aabb_ref:(np.array, 2*nstate*nstate*nmo*nmo): spin alpha-alpha and beta-beta 1st rdm,  rdm_aabb[0] is alpha-alpha and rdm_aabb[1] is beta-beta
     S_ref (list), spin quantum number of each state without spin-orbit coupling
 
@@ -160,7 +160,7 @@ def analyze_soc(interface, evec_soc, S_ref):
     ********
     INPUT:
     evec_soc (np.array): spin-orbit coupling eigenvector
-    S_ref (list), spin quantum number of each state without spin-orbit coupling
+    S_ref (list), spin quantum number of each spin-free state (without spin-orbit coupling)
     '''
     population = evec_soc * np.conj(evec_soc)
     population = np.real(population)

@@ -146,7 +146,7 @@ class SF_OBJECT:
                 before_soc.write_checkpoint_ms0(self.interface, E_ref, rdm_aabb_ref, rdm_aabb_plus_ref, S_ref, self.mo, name = self.name_sf) 
 
             #Compute en_soc
-            en_soc, evec_soc = general_somf.state_interaction_soc_ms0(self.interface, E_ref, rdm_aabb_ref,  rdm_aabb_plus_ref, S_ref, self.soc, self.mo)
+            en_soc, evec_soc = general_somf.state_interaction_soc_ms0(self.interface, E_ref, rdm_aabb_ref,  rdm_aabb_plus_ref, S_ref, self.mo, self.soc)
 
         else:    #Ms is not 0 condition
             if self.ms_ref is None:
@@ -165,7 +165,7 @@ class SF_OBJECT:
                 before_soc.write_checkpoint(self, E_ref, rdm_aabb_ref, S_ref, ms_ref, self.mo, name=self.name_sf)
 
             #Compute en_soc
-            en_soc, evec_soc = general_somf.state_interaction_soc(self.interface, E_ref, rdm_aabb_ref, S_ref,  ms_ref, self.soc, self.mo)
+            en_soc, evec_soc = general_somf.state_interaction_soc(self.interface, E_ref, rdm_aabb_ref, S_ref,  ms_ref, self.mo, self.soc)
 
         #Compute properties
         self.interface.mo = self.mo #Due to UHF's interface.mo = None. It is only has interface.mo_a and interface.mo_b 

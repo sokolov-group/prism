@@ -106,8 +106,7 @@ class NEVPT:
         # Compute correlated RDMs
         self.rdm_order = 0                         # Default value of 0 (uncorrelated), 2 for correlated
 
-        # For SOC
-        #temporary code please delete it
+        # Create SOC Flag
         import prism.libsoc.before_soc
         prism.libsoc.before_soc.create_soc_flag(self)
         
