@@ -35,8 +35,7 @@ def osc_strength(interface, e_diff, trdm_mo):
     dip_mom_ao = interface.dip_mom_ao
     mo_coeff = interface.mo
 
-    dip_mom_mo = np.zeros_like(dip_mom_ao)
-
+    dip_mom_mo = np.zeros((dip_mom_ao.shape[0], mo_coeff.shape[1], mo_coeff.shape[1]))
     # Transform dipole moments from AO to MO basis
     for d in range(dip_mom_ao.shape[0]):
         dip_mom_mo[d] = mo_coeff.T @ dip_mom_ao[d] @ mo_coeff
