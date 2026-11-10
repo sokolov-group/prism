@@ -113,3 +113,47 @@ def mutual_information(s1, s2):
     imat = 0.5 * (s1[:, None] + s1[None, :] - s2)
     np.fill_diagonal(imat, 0.0)
     return imat
+
+def analyze(interface, npairs = 10):
+    '''
+    Prints orbital entropies and the largest mutual information pairs of the
+    reference wavefunction. A state-averaged reference gives the weighted ensemble.
+    Orbitals are numbered from 1 in the interface MO basis.
+
+    Returns s1, s2 and the mutual information matrix.
+    '''
+    log = interface.log
+
+    if interface.ref_wfn is None:
+        raise ValueError("Orbital entropies require a CASCI/CASSCF reference.")
+    if hasattr(interface.mc.fcisolver, 'fcisolvers'):
+        raise NotImplementedError("Entropies for state_average_mix references are not supported.")
+
+    ci = interface.ref_wfn
+    weights = getattr(interface, 'weights', None)
+    if weights is None or len(weights) != len(ci):
+        if len(ci) > 1:
+            log.warn("Entropies are computed for reference state 1 only.")
+        ci = ci[0]
+        weights = None
+
+    ci_0 = ci[0] if isinstance(ci, list) else ci
+    if not isinstance(ci_0, np.ndarray) or ci_0.ndim != 2:
+        raise ValueError("The reference wavefunction must be an FCI vector.")
+
+    ncore, ncas = interface.ncore, interface.ncas
+    s1, s2 = orbital_entropies(ci, ncas, interface.ref_nelecas[0], weights)
+    mi = mutual_information(s1, s2)
+
+    log.note("\nOrbital entropies")
+    log.note("  Orbital        s1")
+    for i in range(ncas):
+        log.note("  %7d  %9.6f" % (ncore + i + 1, s1[i]))
+
+    p, q = np.triu_indices(ncas, 1)
+    log.note("\nLargest mutual information, I(i,j) = (s1_i + s1_j - s2_ij) / 2")
+    log.note("  Orbital  Orbital          I")
+    for k in np.argsort(-mi[p, q])[:npairs]:
+        log.note("  %7d  %7d  %9.6f" % (ncore + p[k] + 1, ncore + q[k] + 1, mi[p[k], q[k]]))
+
+    return s1, s2, mi

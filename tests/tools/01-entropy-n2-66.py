@@ -21,6 +21,8 @@ import numpy as np
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
+import pyscf.fci
+import prism.interface
 from prism.tools import entropy
 
 np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
@@ -48,6 +50,9 @@ mc.conv_tol_grad = 1e-6
 emc = mc.mc1step()[0]
 print("CASSCF energy: %f\n" % emc)
 
+# PRISM interface
+interface = prism.interface.PYSCF(mf, mc)
+
 class KnownValues(unittest.TestCase):
 
     def test_pyscf(self):
@@ -71,6 +76,16 @@ class KnownValues(unittest.TestCase):
         s1_rdm = entropy.orbital_entropies_from_rdm((dm1a, dm1b), dm2ab)
         for i in range(mc.ncas):
             self.assertAlmostEqual(s1_rdm[i], s1[i], 10)
+
+        s1_an, s2_an, mi_an = entropy.analyze(interface)
+        ref_wfn, nelecas = interface.ref_wfn[0], interface.ref_nelecas[0]
+        s1_wfn, s2_wfn = entropy.orbital_entropies(ref_wfn, interface.ncas, nelecas)
+        self.assertAlmostEqual(abs(s1_an - s1_wfn).max(), 0.0, 10)
+        self.assertAlmostEqual(abs(s2_an - s2_wfn).max(), 0.0, 10)
+
+        (dm1a, dm1b), (dm2aa, dm2ab, dm2bb) = pyscf.fci.direct_spin1.make_rdm12s(ref_wfn, interface.ncas, nelecas)
+        s1_rdm = entropy.orbital_entropies_from_rdm((dm1a, dm1b), dm2ab)
+        self.assertAlmostEqual(abs(s1_an - s1_rdm).max(), 0.0, 10)
 
 if __name__ == "__main__":
     print("Orbital entropy test")
