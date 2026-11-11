@@ -28,7 +28,7 @@ import prism.lib.numpy_helper as np_helper
 
 class PYSCF:
 
-    def __init__(self, mf, mc = None, backend = None, select_reference = None):
+    def __init__(self, mf, mc = None, backend = None, select_reference = None, rohf_mcscf = False ):
 
         self.stdout = mf.stdout
         if mc is None:
@@ -75,15 +75,25 @@ class PYSCF:
             socc = int(np.count_nonzero(mf.mo_occ == 1))
 
             if mf.istype('RHF') and socc == 0:
-                self.compute_scf_reference()
+                self.compute_rhf_reference()
+            
+            elif mf.istype('UHF'):
+                self.compute_uhf_reference()
 
             elif mf.istype('ROHF') and socc > 0:
-                from pyscf.mcscf.casci import CASCI
-                casci = CASCI(mf, socc, socc)
-                if getattr(mf, 'with_df', None):
-                    casci = casci.density_fit()
-                self.mc = casci.run()
-                self.compute_mcscf_reference(select_reference)
+                if rohf_mcscf:
+                    from pyscf.mcscf.casci import CASCI
+                    casci = CASCI(mf, socc, socc)
+                    if getattr(mf, 'with_df', None):
+                        casci = casci.density_fit()
+                    self.mc = casci.run()
+                    self.compute_mcscf_reference(select_reference)
+                else:
+                    self.compute_rhf_reference()
+
+        # For powder properties
+        import pyscf.dft.LebedevGrid
+        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
 
         # Symmetry
         # TODO: [MC OBJ] Check if this is done correctly when canonicalization changes the order of orbitals
@@ -138,10 +148,10 @@ class PYSCF:
         self.einsum_type = "greedy"
         self.dot = np.dot
 
-    def compute_scf_reference(self):
+    def compute_rhf_reference(self):
 
         self.reference = "scf"
-        self.log.info("Reference wavefunction: %s\n" % self.reference)
+        self.log.info("Reference wavefunction: %s-%s\n" % (self.reference, "RHF"))
 
         mf = self.mf
         self.max_memory = mf.max_memory
@@ -160,10 +170,51 @@ class PYSCF:
         self.e_ref_cas = [0]
 
         self.ref_wfn = None
-        self.ref_wfn_spin_mult = [1]
-        self.ref_wfn_deg = [1]
+        # Use spin electron:
+        self.ref_wfn_spin_mult =  [int(mf.mol.spin+1)]
+        self.ref_wfn_deg = [int(mf.mol.spin+1)]
 
         self.mo_scf = self.mo
+        self.ovlp = mf.get_ovlp(mf.mol)
+
+        self.reference_df = getattr(mf, "with_df", None)
+
+    def compute_uhf_reference(self):
+
+        self.reference = "scf"
+        self.log.info("Reference wavefunction: %s-%s\n" % (self.reference, "UHF"))
+
+        mf = self.mf
+        self.max_memory = mf.max_memory
+
+        self.mo_a = mf.mo_coeff[0].copy()
+        self.mo_b = mf.mo_coeff[1].copy()
+
+        self.mo_a_energy = mf.mo_energy[0].copy()
+        self.mo_b_energy = mf.mo_energy[1].copy()
+
+        self.symmetry = mf.mol.symmetry
+        self.e_ref = [mf.e_tot]
+
+        #Need to be defined????
+        self.mo = None
+        self.nmo = self.mo_a.shape[1]#???
+
+        self.ncore = mf.mol.nelectron // 2
+        self.nextern = self.nmo - self.ncore
+        self.ncas = 0
+
+        self.ref_nelecas = [(0,0)]
+        self.e_ref_cas = [0]
+
+        self.ref_wfn = None
+
+        # Use spin electron:
+        self.ref_wfn_spin_mult =  [int(mf.mol.spin+1)]
+        self.ref_wfn_deg = [int(mf.mol.spin+1)]
+        
+
+        self.mo_scf = self.mo_a # Take mo_a
         self.ovlp = mf.get_ovlp(mf.mol)
 
         self.reference_df = getattr(mf, "with_df", None)
@@ -211,7 +262,6 @@ class PYSCF:
             self.log.info("\nReference states selected: %s" % str(select_reference))
 
         self.max_memory = mc.max_memory
-        self.max_memory_soc = mc.max_memory
         self.mo = mc.mo_coeff.copy()
         self.mo_scf = mf.mo_coeff.copy()
         self.ovlp = mf.get_ovlp(mf.mol)
@@ -225,64 +275,6 @@ class PYSCF:
         self.pspace_size = mc.fcisolver.pspace_size
         self.enforce_degeneracy = True
 
-        # SOC params:
-        self.soc = None # Possible methods: Breit-Pauli (BP), DKH1 (x2c-1)
-        self.unc = None
-        self.properties_cas = {}
-
-        # For magnetic properties
-        self.magnetic_origin_type = 'charge'        # Origin of coordinate system for g-tensor calculations. Possible values: charge, GIAO, atom1 or user-defined point (list)
-
-        #g-tensor
-        self.gtensor = False
-        self.gtensor_target_state = 1              # Target state for g-tensor calculation. Default is the ground state (target_state = 1).
-
-        # For powder properties
-        import pyscf.dft.LebedevGrid
-        self.MakeAngularGrid_266 = pyscf.dft.LebedevGrid.MakeAngularGrid_266
-
-        # For magnetic susceptibility
-        self.mag_av = False
-        self.sus_av = False
-        self.mag_vec = False
-        self.sus_tensor = False
-
-        self.step_h_s = 0.001 #Magnetic field step size used for numerical differentiation (Unit:T)
-
-        ###Powder magnetization
-        Bs_list = []
-        for i in range(15):
-            H = i * 0.5
-            Bs_list.append(H)
-
-        self.Bs_powder_M = Bs_list 
-        self.T_powder_M = [1.8]
-
-        ###Powder susceptibility
-        T_list = []
-        for i in range(21):
-            T = 14.75 * i + 5
-            T_list.append(T)
-
-        self.T_powder_chi = T_list
-        self.Bs_powder_chi = [0.1]
-
-        ###Vector magnetization
-        self.B_vec_M = [0,0,1]
-        self.Bs_vec_M = Bs_list 
-        self.T_vec_M = [1.8]
-
-        ###Tensor  susceptibility
-        self.B_vec_chi = [0,0,1]
-        self.Bs_vec_chi = [0.1]
-        self.T_vec_chi = [5,100,200,250]
-
-        # Basis set uncontraction objects: xmol, contraction coefficients.
-        # Use x2c_setup to obtain self.xmol and self.contr_coeff 
-        self.xmol = None
-        self.contr_coeff = None
-
-        self.reference_df = getattr(mc, "with_df", None)
             
         # Solvent potential
         if hasattr(mf, "with_solvent"):
@@ -351,6 +343,8 @@ class PYSCF:
         self.trans_rdm1s = trans_rdm1s
         # If set to a list, can be used to select certain CASCI states during MR-ADC computations
         self.select_casci = None
+
+
 
     @property
     def einsum_backend(self):
@@ -497,12 +491,14 @@ class PYSCF:
 
         return spin_multiplet, spin_multiplet_ne
 
-
     # X2C set up:
     def x2c_setup(self):
+        '''
+        For DKH(x2c) calculation. It will activate in "create_soc_flag(method)"
+        '''
         from pyscf.x2c import x2c
-        self.xmol, self.contr_coeff = x2c.X2C(self.mf.mol).get_xmol()
-
+        self.X2C = x2c.X2C
+        
     # Apply S+ (spin raising) operator
     def apply_S_plus(self, psi, ncas, nelecas):
 
@@ -735,15 +731,65 @@ class PYSCF:
 
         return rdm1, rdm2, rdm3, rdm4
 
-    def run_soc(self, soc_type=None):
+
+    def import_adc(self, adc):
+        '''
+        Import SRADC from pyscf
+        '''
+
+        self.log.info("\nImporting ADC from PYSCF...")
+
+        #If self has mc and adc, run_soc doesn't know should run soc-casscf or si-adc
+        if self.mc:
+            raise Exception('ADC object can not be loaded after loding mc')
+
+        #Define ADC function in interface
+        if adc.ncvs:
+            self.log.info("Importing uadc_ip_cvs instead of uadc_ip...")
+            from pyscf.adc import uadc_ip_cvs
+            self.make_rdm1_eigenvectors = uadc_ip_cvs.make_rdm1_eigenvectors
+            # TODO: Once pyscf has get_spin_square for CVS-IP, change it
+            self.get_spin_square = None
+
+        else:
+            if adc.method_type.lower() == "ea" :
+                self.log.info("Importing uadc_ea...")
+                from pyscf.adc import uadc_ea
+                self.make_rdm1_eigenvectors = uadc_ea.make_rdm1_eigenvectors
+                # TODO: Once pyscf has get_spin_square for EA, change it
+                self.get_spin_square = None
+
+            elif adc.method_type.lower() == "ip" :
+                self.log.info("Importing uadc_ip...")
+                from pyscf.adc import uadc_ip
+                self.make_rdm1_eigenvectors = uadc_ip.make_rdm1_eigenvectors
+                # TODO: Once pyscf has get_spin_square for IP, change it
+                self.get_spin_square = None
+
+            elif adc.method_type.lower() == "ee":
+                self.log.info("Importing uadc_ee...")
+                from pyscf.adc import uadc_ee
+                self.make_rdm1_eigenvectors = uadc_ee.make_rdm1_eigenvectors
+                self.get_spin_square = uadc_ee.get_spin_square
+
+        import prism.general_sf
+        adc_prism = prism.general_sf.SF_OBJECT(self)
+        adc_prism.import_adc(adc)
         
-        self.x2c_setup()
+        return adc_prism
 
-        if soc_type:
-            self.soc = soc_type
+    def import_casscf_sf(self):
+        '''
+        Import casscf from pyscf
+        '''
 
-        from prism.libsoc import casscf_compute
-        en_soc, osc_str_soc = casscf_compute.compute_somf_soc(self) 
+        self.log.info("\nImporting CASSCF in SF_OBJECT...")
 
-        return  en_soc, osc_str_soc
+        import prism.general_sf
+        casscf_sf = prism.general_sf.SF_OBJECT(self)
+        casscf_sf.import_mc()
+        
+        return casscf_sf
+
+
 
