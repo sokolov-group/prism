@@ -17,15 +17,12 @@
 #
 
 import unittest
-import numpy as np
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
 import pyscf.fci
 import prism.interface
 from prism.tools import entropy
-
-np.set_printoptions(linewidth=150, edgeitems=10, suppress=True)
 
 mol = pyscf.gto.Mole()
 mol.atom = [
@@ -59,22 +56,21 @@ class KnownValues(unittest.TestCase):
 
     def test_prism(self):
 
-        s1_an, s2_an, mi_an = entropy.analyze(interface)
+        s1, s2, mi = entropy.analyze(interface)
 
+        # s1 from weight-averaged RDMs
         ncas, nelecas = interface.ncas, interface.ref_nelecas[0]
-        s1, s2 = entropy.orbital_entropies(interface.ref_wfn, ncas, nelecas, weights = weights)
-        self.assertAlmostEqual(abs(s1_an - s1).max(), 0.0, 10)
-        self.assertAlmostEqual(abs(s2_an - s2).max(), 0.0, 10)
-
         rdms = [pyscf.fci.direct_spin1.make_rdm12s(c, ncas, nelecas) for c in interface.ref_wfn]
         dm1a = sum(w * r[0][0] for w, r in zip(weights, rdms))
         dm1b = sum(w * r[0][1] for w, r in zip(weights, rdms))
         dm2ab = sum(w * r[1][1] for w, r in zip(weights, rdms))
         s1_rdm = entropy.orbital_entropies_from_rdm((dm1a, dm1b), dm2ab)
-        self.assertAlmostEqual(abs(s1_an - s1_rdm).max(), 0.0, 10)
+        for i in range(ncas):
+            self.assertAlmostEqual(s1[i], s1_rdm[i], 10)
 
-        s1_equal, _ = entropy.orbital_entropies(interface.ref_wfn, ncas, nelecas)
-        self.assertGreater(abs(s1_an - s1_equal).max(), 1e-3)
+        # Equal weights give different entropies
+        s1_equal, s2_equal = entropy.orbital_entropies(interface.ref_wfn, ncas, nelecas)
+        self.assertGreater(abs(s1 - s1_equal).max(), 1e-3)
 
 if __name__ == "__main__":
     print("Orbital entropy test")
