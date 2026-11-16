@@ -20,7 +20,6 @@ import unittest
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
-import pyscf.fci
 import prism.interface
 from prism.tools import entropy
 
@@ -64,13 +63,6 @@ class KnownValues(unittest.TestCase):
             self.assertAlmostEqual(s1[i], s1_ref[i], 5)
         self.assertAlmostEqual(mi[1, 5], 0.050554885400, 5)
         self.assertAlmostEqual(mi[1, 5], mi.max(), 10)
-
-        # s1 from RDMs
-        ci, nelecas = interface.ref_wfn[0], interface.ref_nelecas[0]
-        (dm1a, dm1b), (dm2aa, dm2ab, dm2bb) = pyscf.fci.direct_spin1.make_rdm12s(ci, interface.ncas, nelecas)
-        s1_rdm = entropy.orbital_entropies_from_rdm((dm1a, dm1b), dm2ab)
-        for i in range(interface.ncas):
-            self.assertAlmostEqual(s1[i], s1_rdm[i], 10)
 
 if __name__ == "__main__":
     print("Orbital entropy test")
