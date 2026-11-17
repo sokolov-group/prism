@@ -114,6 +114,29 @@ def mutual_information(s1, s2):
     np.fill_diagonal(imat, 0.0)
     return imat
 
+def reference_wfn(interface):
+    '''
+    CI vector of the reference, or a list of CI vectors and their weights for a
+    state-averaged reference. Weights are None for a single state.
+    '''
+    if interface.ref_wfn is None:
+        raise ValueError("A CASCI/CASSCF reference is required.")
+    if hasattr(interface.mc.fcisolver, 'fcisolvers'):
+        raise NotImplementedError("state_average_mix references are not supported.")
+
+    ci = interface.ref_wfn
+    weights = getattr(interface, 'weights', None)
+    if weights is None or len(weights) != len(ci):
+        if len(ci) > 1:
+            interface.log.warn("Only reference state 1 is used.")
+        ci = ci[0]
+        weights = None
+
+    ci_0 = ci[0] if isinstance(ci, list) else ci
+    if not isinstance(ci_0, np.ndarray) or ci_0.ndim != 2:
+        raise ValueError("The reference wavefunction must be an FCI vector.")
+    return ci, weights
+
 def analyze(interface, npairs = 10):
     '''
     Prints orbital entropies and the largest mutual information pairs of the
@@ -123,23 +146,7 @@ def analyze(interface, npairs = 10):
     Returns s1, s2 and the mutual information matrix.
     '''
     log = interface.log
-
-    if interface.ref_wfn is None:
-        raise ValueError("Orbital entropies require a CASCI/CASSCF reference.")
-    if hasattr(interface.mc.fcisolver, 'fcisolvers'):
-        raise NotImplementedError("Entropies for state_average_mix references are not supported.")
-
-    ci = interface.ref_wfn
-    weights = getattr(interface, 'weights', None)
-    if weights is None or len(weights) != len(ci):
-        if len(ci) > 1:
-            log.warn("Entropies are computed for reference state 1 only.")
-        ci = ci[0]
-        weights = None
-
-    ci_0 = ci[0] if isinstance(ci, list) else ci
-    if not isinstance(ci_0, np.ndarray) or ci_0.ndim != 2:
-        raise ValueError("The reference wavefunction must be an FCI vector.")
+    ci, weights = reference_wfn(interface)
 
     ncore, ncas = interface.ncore, interface.ncas
     s1, s2 = orbital_entropies(ci, ncas, interface.ref_nelecas[0], weights)

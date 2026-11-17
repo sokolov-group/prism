@@ -1,0 +1,57 @@
+converged SCF energy = -108.451043240343
+SCF energy: -108.451043
+
+CASSCF energy = -108.819172859789
+CASCI E = -108.819172859789  E(CI) = -9.90742634418838  S^2 = 0.0000000
+CASSCF energy: -108.819173
+
+Active space selection test
+
+Ranked-orbital active space selection (criterion = noon)
+  Orbital  Occupation  Importance
+        5    1.786482    0.213518
+        6    1.496815    0.503185
+        7    1.496815    0.503185
+        8    0.495471    0.495471
+        9    0.495471    0.495471
+       10    0.207578    0.207578
+Selected active space: (6, 6), 175 CSFs (maximum 175)
+CASCI E = -108.819172859790  E(CI) = -9.90742634418935  S^2 = 0.0000000
+
+Ranked-orbital active space selection (criterion = noon)
+  Orbital  Occupation  Importance
+        5    1.810485    0.189515
+        6    1.511152    0.488848
+        7    1.511152    0.488848
+        8    0.488818    0.488818
+        9    0.488818    0.488818
+       10    0.189575    0.189575
+Selected active space: (6, 6), 175 CSFs (maximum 1764)
+CASCI E = -108.819172859790  E(CI) = -9.90742634418935  S^2 = 0.0000000
+
+Ranked-orbital active space selection (criterion = noon)
+  Orbital  Occupation  Importance
+        6    1.511152    0.488848
+        7    1.511152    0.488848
+        8    0.488818    0.488818
+        9    0.488818    0.488818
+Selected active space: (4, 4), 20 CSFs (maximum 20)
+CASCI E = -108.723110492682  E(CI) = -4.58680992788085  S^2 = 0.0000000
+
+Ranked-orbital active space selection (criterion = entropy)
+  Orbital  Occupation  Importance
+        6    1.511152    0.947179
+        7    1.511152    0.947179
+        8    0.488818    0.947158
+        9    0.488818    0.947158
+Selected active space: (4, 4), 20 CSFs (maximum 20)
+CASCI E = -108.723110492682  E(CI) = -4.58680992788085  S^2 = 0.0000000
+
+Ranked-orbital active space selection (criterion = mi)
+  Orbital  Occupation  Importance
+        6    1.511152    0.924662
+        7    1.511152    0.924662
+        8    0.488818    0.924641
+        9    0.488818    0.924641
+Selected active space: (4, 4), 20 CSFs (maximum 20)
+CASCI E = -108.723110492682  E(CI) = -4.58680992788085  S^2 = 0.0000000
