@@ -1,57 +1,73 @@
 converged SCF energy = -108.451043240343
 SCF energy: -108.451043
 
-CASSCF energy = -108.819172859789
-CASCI E = -108.819172859789  E(CI) = -9.90742634418838  S^2 = 0.0000000
+CASSCF energy = -108.819172859786
+CASCI E = -108.819172859786  E(CI) = -9.90742605433886  S^2 = 0.0000000
 CASSCF energy: -108.819173
 
 Active space selection test
 
+Ranked-orbital active space selection (criterion = apc)
+  Orbital  Occupation  Importance
+        7    2.000000    0.377982
+        8    0.000000    0.564591
+        9    0.000000    0.564581
+       10    0.000000    0.562591
+Selected active space: (2, 4), 10 CSFs (maximum 20)
+CASCI E = -108.564623243031  E(CI) = -1.42761821265492  S^2 = 0.0000000
+CASCI E = -108.564623243031  E(CI) = -1.42761821265492  S^2 = 0.0000000
+
 Ranked-orbital active space selection (criterion = noon)
   Orbital  Occupation  Importance
-        5    1.786482    0.213518
-        6    1.496815    0.503185
-        7    1.496815    0.503185
-        8    0.495471    0.495471
-        9    0.495471    0.495471
-       10    0.207578    0.207578
+        5    1.786481    0.213519
+        6    1.496813    0.503187
+        7    1.496813    0.503187
+        8    0.495473    0.495473
+        9    0.495473    0.495473
+       10    0.207579    0.207579
 Selected active space: (6, 6), 175 CSFs (maximum 175)
-CASCI E = -108.819172859790  E(CI) = -9.90742634418935  S^2 = 0.0000000
+CASCI E = -108.819172859790  E(CI) = -9.90742605434261  S^2 = 0.0000000
 
 Ranked-orbital active space selection (criterion = noon)
   Orbital  Occupation  Importance
-        5    1.810485    0.189515
-        6    1.511152    0.488848
-        7    1.511152    0.488848
-        8    0.488818    0.488818
-        9    0.488818    0.488818
-       10    0.189575    0.189575
+        5    1.810484    0.189516
+        6    1.511150    0.488850
+        7    1.511150    0.488850
+        8    0.488820    0.488820
+        9    0.488820    0.488820
+       10    0.189576    0.189576
 Selected active space: (6, 6), 175 CSFs (maximum 1764)
-CASCI E = -108.819172859790  E(CI) = -9.90742634418935  S^2 = 0.0000000
+CASCI E = -108.819172859790  E(CI) = -9.90742605434261  S^2 = 0.0000000
 
 Ranked-orbital active space selection (criterion = noon)
   Orbital  Occupation  Importance
-        6    1.511152    0.488848
-        7    1.511152    0.488848
-        8    0.488818    0.488818
-        9    0.488818    0.488818
+        6    1.511150    0.488850
+        7    1.511150    0.488850
+        8    0.488820    0.488820
+        9    0.488820    0.488820
 Selected active space: (4, 4), 20 CSFs (maximum 20)
-CASCI E = -108.723110492682  E(CI) = -4.58680992788085  S^2 = 0.0000000
+CASCI E = -108.723110497570  E(CI) = -4.58680996749757  S^2 = 0.0000000
+
+WARN: Degenerate natural orbitals make entropy rankings depend on their rotation. Use mol.symmetry = True for reproducible rankings.
+
 
 Ranked-orbital active space selection (criterion = entropy)
   Orbital  Occupation  Importance
-        6    1.511152    0.947179
-        7    1.511152    0.947179
-        8    0.488818    0.947158
-        9    0.488818    0.947158
+        6    1.511150    0.947181
+        7    1.511150    0.947181
+        8    0.488820    0.947160
+        9    0.488820    0.947160
 Selected active space: (4, 4), 20 CSFs (maximum 20)
-CASCI E = -108.723110492682  E(CI) = -4.58680992788085  S^2 = 0.0000000
+CASCI E = -108.723110497570  E(CI) = -4.58680996749757  S^2 = 0.0000000
+
+WARN: Degenerate natural orbitals make entropy rankings depend on their rotation. Use mol.symmetry = True for reproducible rankings.
+
 
 Ranked-orbital active space selection (criterion = mi)
   Orbital  Occupation  Importance
-        6    1.511152    0.924662
-        7    1.511152    0.924662
-        8    0.488818    0.924641
-        9    0.488818    0.924641
+        6    1.511150    0.933007
+        7    1.511150    0.933007
+        8    0.488820    0.932987
+        9    0.488820    0.932987
 Selected active space: (4, 4), 20 CSFs (maximum 20)
-CASCI E = -108.723110492682  E(CI) = -4.58680992788085  S^2 = 0.0000000
+CASCI E = -108.723110497570  E(CI) = -4.58680996749757  S^2 = 0.0000000

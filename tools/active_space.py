@@ -28,7 +28,7 @@ from pyscf.fci.addons import transform_ci_for_orbital_rotation
 from pyscf.mcscf import apc
 from prism.tools import entropy
 
-CRITERIA = ('noon', 'entropy', 'mi')
+CRITERIA = ('noon', 'entropy', 'mi', 'apc')
 
 def get_ncsf(nelec, norb):
     '''Number of CSFs at the lowest Sz (Eq. 2 of the reference above).'''
@@ -72,6 +72,9 @@ def _rank_reference(interface, criterion):
     if criterion == 'noon':
         score = np.minimum(noons_cas, 2.0 - noons_cas)
     else:
+        if not interface.mol.symmetry and (np.abs(np.diff(noons_cas)) < 1e-6).any():
+            interface.log.warn("Degenerate natural orbitals make entropy rankings depend on their rotation. "
+                               "Use mol.symmetry = True for reproducible rankings.")
         ci_no = [transform_ci_for_orbital_rotation(c, ncas, nelecas, u) for c in cis]
         s1, s2 = entropy.orbital_entropies(ci_no, ncas, nelecas, weights)
         score = s1 if criterion == 'entropy' else entropy.mutual_information(s1, s2).sum(axis = 1)
@@ -79,6 +82,12 @@ def _rank_reference(interface, criterion):
     importance = np.zeros(mo.shape[1])
     importance[active] = score
     return mo, noons, importance, np.arange(ncore, ncore + ncas)
+
+def _rank_apc(interface):
+    '''Ranks the SCF orbitals by approximate pair coefficient entropies.'''
+    mf = interface.mf
+    importance = apc.APC(mf, verbose = interface.verbose)._calc_apc_entropies(mf)
+    return mf.mo_coeff, np.asarray(mf.mo_occ, dtype = float), importance, np.arange(mf.mo_coeff.shape[1])
 
 def _rank_correlated(method, criterion, state):
     '''Ranks the natural orbitals of a correlated 1-RDM.'''
@@ -100,7 +109,8 @@ def select(obj, max_size, criterion = 'noon', state = 1):
     space) or a NEVPT/QDNEVPT object after kernel() (ranks the natural orbitals of
     its correlated 1-RDM for the given state, numbered from 1).
 
-    criterion is 'noon' (min(n, 2 - n)), 'entropy' (s1) or 'mi' (sum_j I(i,j)).
+    criterion is 'noon' (min(n, 2 - n)), 'entropy' (s1), 'mi' (sum_j I(i,j)) or
+    'apc' (approximate pair coefficient entropies of the SCF orbitals).
     max_size is (nelecas, ncas) or a maximum number of orbitals.
 
     Returns ncas, nelecas and orbitals ordered core | active | external.
@@ -111,6 +121,9 @@ def select(obj, max_size, criterion = 'noon', state = 1):
     if hasattr(obj, 'interface'):
         interface = obj.interface
         mo, noons, importance, candidates = _rank_correlated(obj, criterion, state)
+    elif criterion == 'apc':
+        interface = obj
+        mo, noons, importance, candidates = _rank_apc(obj)
     else:
         interface = obj
         mo, noons, importance, candidates = _rank_reference(obj, criterion)

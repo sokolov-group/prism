@@ -21,6 +21,7 @@ import numpy as np
 import pyscf.gto
 import pyscf.scf
 import pyscf.mcscf
+from pyscf.mcscf import apc
 import prism.interface
 import prism.nevpt
 from prism.tools import active_space
@@ -71,10 +72,17 @@ class KnownValues(unittest.TestCase):
         self.assertEqual((ncas, nelecas), (6, (3, 3)))
         self.assertAlmostEqual(casci_energy(ncas, nelecas, mo), mc.e_tot, 8)
 
-        for criterion in active_space.CRITERIA:
+        for criterion in ('noon', 'entropy', 'mi'):
             ncas, nelecas, mo = active_space.select(interface, (4, 4), criterion)
             self.assertEqual((ncas, nelecas), (4, (2, 2)))
             self.assertAlmostEqual(casci_energy(ncas, nelecas, mo), -108.723110497900, 6)
+
+    def test_apc(self):
+
+        ncas, nelecas, mo = active_space.select(interface, (4, 4), 'apc')
+        ncas_ref, nelecas_ref, mo_ref = apc.APC(mf, (4, 4), verbose = 0).kernel()
+        self.assertEqual((ncas, nelecas), (ncas_ref, nelecas_ref))
+        self.assertAlmostEqual(casci_energy(ncas, nelecas, mo), casci_energy(ncas_ref, nelecas_ref, mo_ref), 8)
 
     def test_nevpt2(self):
 
