@@ -29,6 +29,10 @@ def real_time_prop(mr_adc, evec, etot):
     t = 0.0
 
     time_step = mr_adc.time_step
+    damping_enabled = getattr(mr_adc, "rt_damping", False)
+    if damping_enabled:
+        tau = getattr(mr_adc, "rt_damping_time", None)
+        damping_factor = np.exp(-time_step / tau)
 
     print ("     Time             Norm(wfn)             E, a.u.     ")
     print ("--------------------------------------------------------")
@@ -77,6 +81,10 @@ def real_time_prop(mr_adc, evec, etot):
 
         if mr_adc.rt_prop_method == "exact":
             wfn = exact_propagator(mr_adc, wfn, H_eff)
+
+        if damping_enabled:
+            # Each step contributes exp(-dt/tau), giving exp(-t/tau) overall.
+            wfn = damping_factor * wfn
 
         t = t + time_step 
 
