@@ -59,8 +59,8 @@ def kernel(nevpt):
 
     # Initiate the Real-Time calculations
     if nevpt.rt == True:
-        from prism.tools import real_time
-        real_time.real_time_prop(nevpt, evec=nevpt.h_evec, etot=nevpt.e_tot)
+        from prism.tools import nevpt_rt 
+        nevpt_rt.real_time_prop(nevpt, evec=nevpt.h_evec, etot=nevpt.e_tot)
 
     return nevpt.e_tot, nevpt.e_corr, osc_str
 

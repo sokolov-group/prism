@@ -105,6 +105,16 @@ class MRADC:
         self.h_orth = lambda:None       # Information about orthonormalized excitation manifold
         self.S12 = lambda:None          # Matrices for orthogonalization of excitation spaces
 
+        # Initiate the RT
+        self.rt = True                  # Turn-on real-time dynamics 
+        self.rt_init_cond = None        # Generate the initial condition
+        self.time_step = 0.1            # Required time step
+        self.rt_prop_method = "exact"   # Propagator type  
+        self.rt_max = 500               # How long propagate the wave-function
+        self.print_step = 50            # Necessary printing at each 50 steps
+        self.rt_damping = False         # Enable exp(-t/tau) wavefunction damping     
+        self.rt_damping_time = None     # User-supplied tau in atomic units
+
         self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
 
         # Approximations
