@@ -114,6 +114,7 @@ class MRADC:
         self.print_step = 50            # Necessary printing at each 50 steps
         self.rt_damping = False         # Enable exp(-t/tau) wavefunction damping     
         self.rt_damping_time = None     # User-supplied tau in atomic units
+        self.init_spec = False          # initial condition using X
 
         self.outcore_expensive_tensors = True # Store expensive (ooee) integrals and amplitudes on disk
 

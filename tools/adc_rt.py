@@ -14,18 +14,19 @@ def real_time_prop(mr_adc, evec, etot):
 
     # Eigenvectors 
     evec = np.array(evec)
-    
     evec_shape = etot.shape[0]
     
-    # Energy difference
-    e_diff = etot - etot[0]
+    # Energy difference (check this)
+    e_diff = mr_adc.e_diff
 
     init_cond = None
     if mr_adc.rt_init_cond is not None:
         init_cond = compute_init_cond_eigenstate(mr_adc, evec_shape)
+    elif mr_adc.init_spec: 
+        init_cond = init_cond_spec_amp(mr_adc)
     else:
         raise Exception("Initial conditions are not provided for the Charge Migration!")
-
+    
     t = 0.0
 
     time_step = mr_adc.time_step
@@ -40,7 +41,7 @@ def real_time_prop(mr_adc, evec, etot):
 
     if mr_adc.rt_prop_method == "exact":
         wfn = init_cond.copy()
-        H_eff  = np.diag(etot)
+        H_eff  = np.diag(e_diff)
 
     # wavefunction at t=0
     wfn0 = wfn.copy()
@@ -132,6 +133,27 @@ def exact_propagator(mr_adc, wfn, H_eff):
     wfn = A * wfn
 
     return wfn
+
+def init_cond_spec_amp(mr_adc):
+    
+    from ..mr_adc.compute import compute_properties
+
+    _, X = compute_properties(mr_adc)
+
+    print("X = ", X)
+    print("shape of X = ", X.shape)
+    print("type of X = ", X.dtype)
+    
+    print("=================================================")
+    init_cond = X.sum(axis=0)
+    print("sum X = ", init_cond)
+    print("shape of init_cond = ", init_cond.shape)
+
+    norm = np.linalg.norm(init_cond)
+    init_cond /= norm
+    print("init_cond = ", init_cond)
+
+    return init_cond 
 
 def td_dyson(mr_adc, wfn):
 
