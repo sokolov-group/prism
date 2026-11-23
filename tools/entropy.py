@@ -16,9 +16,9 @@
 # Authors: Bryce Pickett <brycepickett22@outlook.com>
 #
 
+import itertools
 import warnings
 import numpy as np
-from pyscf.fci import cistring
 
 def _entropy(rho):
     '''Von Neumann entropy of a density matrix or probability vector.'''
@@ -26,8 +26,28 @@ def _entropy(rho):
     w = w[w > 1e-14]
     return -np.sum(w * np.log(w))
 
+def _strings(norb, nelec):
+    '''Occupation strings of nelec electrons in norb orbitals, in PySCF CI order.'''
+    strings = [sum(1 << k for k in occ) for occ in itertools.combinations(range(norb), nelec)]
+    return np.array(sorted(strings), dtype = np.int64)
+
 def _occupations(strings, norb):
-    return (np.asarray(strings, dtype=np.int64)[:, None] >> np.arange(norb)) & 1
+    return (strings[:, None] >> np.arange(norb)) & 1
+
+def _natural_orbitals(rdm1, orbsym = None):
+    '''Natural occupations (descending) and the rotation to natural orbitals.
+
+    With orbsym, the 1-RDM is diagonalized within each irrep.
+    '''
+    rdm1 = 0.5 * (rdm1 + rdm1.T)
+    orbsym = np.zeros(len(rdm1), dtype = int) if orbsym is None else np.asarray(orbsym)
+    noons = np.zeros(len(rdm1))
+    u = np.zeros_like(rdm1)
+    for irrep in np.unique(orbsym):
+        idx = np.where(orbsym == irrep)[0]
+        noons[idx], u[np.ix_(idx, idx)] = np.linalg.eigh(rdm1[np.ix_(idx, idx)])
+    order = np.argsort(-noons, kind = 'stable')
+    return noons[order], u[:, order]
 
 def orbital_entropies(ci, norb, nelec, weights = None):
     '''
@@ -47,8 +67,8 @@ def orbital_entropies(ci, norb, nelec, weights = None):
         neleca = nelec - nelecb
     else:
         neleca, nelecb = nelec
-    stra = cistring.make_strings(range(norb), neleca)
-    strb = cistring.make_strings(range(norb), nelecb)
+    stra = _strings(norb, neleca)
+    strb = _strings(norb, nelecb)
     occa = _occupations(stra, norb)
     occb = _occupations(strb, norb)
 
@@ -114,13 +134,39 @@ def mutual_information(s1, s2):
     np.fill_diagonal(imat, 0.0)
     return imat
 
-def analyze(interface, npairs = 10):
-    '''
-    Prints orbital entropies and the largest mutual information pairs of the
-    reference wavefunction. A state-averaged reference gives the weighted ensemble.
-    Orbitals are numbered from 1 in the interface MO basis.
+def analyze(interface, basis = 'casscf', basis_state = 1, ensemble = False, npairs = 10):
+    '''Orbital entropies of the reference wavefunction.
 
-    Returns s1, s2 and the mutual information matrix.
+    Prints the occupation n and single-orbital entropy s1 of every active orbital
+    for each reference state, and the largest mutual information pairs.
+
+    Args:
+        interface : PRISM interface
+            Interface with a CASCI, CASSCF or SA-CASSCF reference.
+
+    Kwargs:
+        basis : str
+            Orbitals: 'casscf' (the CASSCF active orbitals) or 'natural'.
+            Default is 'casscf'.
+        basis_state : int or str
+            Natural orbitals used when basis = 'natural': those of state k
+            (numbered from 1) for every state, 'average' for those of the
+            averaged density, or 'own' for each state's own. Default is 1.
+        ensemble : bool
+            Gives the entropies of the state-averaged ensemble (SA-CASSCF
+            weights, otherwise equal weights) instead of each state.
+            Default is False.
+        npairs : int
+            Number of mutual information pairs printed. Default is 10.
+
+    Returns:
+        A tuple (s1, s2, mi). The first axis runs over states, so s1 has shape
+        (nstates, ncas). With ensemble = True there is no state axis.
+
+    Examples:
+
+    >>> interface = prism.interface.PYSCF(mf, mc)
+    >>> s1, s2, mi = entropy.analyze(interface, basis = 'natural', basis_state = 1)
     '''
     log = interface.log
 
@@ -129,31 +175,74 @@ def analyze(interface, npairs = 10):
     if hasattr(interface.mc.fcisolver, 'fcisolvers'):
         raise NotImplementedError("Entropies for state_average_mix references are not supported.")
 
-    ci = interface.ref_wfn
-    weights = getattr(interface, 'weights', None)
-    if weights is None or len(weights) != len(ci):
-        if len(ci) > 1:
-            log.warn("Entropies are computed for reference state 1 only.")
-        ci = ci[0]
-        weights = None
-
-    ci_0 = ci[0] if isinstance(ci, list) else ci
-    if not isinstance(ci_0, np.ndarray) or ci_0.ndim != 2:
+    ci = list(interface.ref_wfn)
+    nstates = len(ci)
+    if not all(isinstance(c, np.ndarray) and c.ndim == 2 for c in ci):
         raise ValueError("The reference wavefunction must be an FCI vector.")
+    if basis not in ('casscf', 'natural'):
+        raise ValueError(f"Invalid basis: {basis}. Allowed bases are 'casscf' and 'natural'.")
+    if basis_state not in ('average', 'own') and basis_state not in range(1, nstates + 1):
+        raise ValueError(f"Invalid basis_state: {basis_state}. Valid values are 1 to {nstates}, 'average' or 'own'.")
 
     ncore, ncas = interface.ncore, interface.ncas
-    s1, s2 = orbital_entropies(ci, ncas, interface.ref_nelecas[0], weights)
-    mi = mutual_information(s1, s2)
+    nelecas = interface.ref_nelecas[0]
+    weights = getattr(interface, 'weights', None)
+    if weights is None or len(weights) != nstates:
+        weights = np.ones(nstates) / nstates
 
-    log.note("\nOrbital entropies")
-    log.note("  Orbital        s1")
+    rdm1 = [interface.compute_rdm1(c, c, nelecas) for c in ci]
+    rdm1_avg = sum(w * d for w, d in zip(weights, rdm1))
+
+    # Rotation of the active orbitals for each state
+    if basis == 'casscf':
+        name = 'CASSCF active orbitals'
+        u = [np.eye(ncas)] * nstates
+    else:
+        orbsym = getattr(interface.mc.mo_coeff, 'orbsym', None)
+        if orbsym is not None:
+            orbsym = orbsym[ncore:ncore + ncas]
+        if basis_state == 'own' and not ensemble:
+            name = 'natural orbitals of each state'
+            dms = rdm1
+        elif basis_state in ('own', 'average'):
+            name = 'natural orbitals of the averaged density'
+            dms = [rdm1_avg] * nstates
+        else:
+            name = 'natural orbitals of state %d' % basis_state
+            dms = [rdm1[basis_state - 1]] * nstates
+        noons, u = zip(*[_natural_orbitals(dm, orbsym) for dm in dms])
+        if orbsym is None and any((np.abs(np.diff(n)) < 1e-6).any() for n in noons):
+            log.warn("Degenerate natural orbitals make entropies depend on their rotation. "
+                     "Use mol.symmetry = True for reproducible results.")
+        ci = [interface.transform_ci_for_orbital_rotation(c, ncas, nelecas, v) for c, v in zip(ci, u)]
+
+    if ensemble:
+        labels = ['Ensemble']
+        s1, s2 = orbital_entropies(ci, ncas, nelecas, weights)
+        s1, s2 = s1[None], s2[None]
+        occ = [np.diag(u[0].T @ rdm1_avg @ u[0])]
+    else:
+        labels = ['State %d' % (k + 1) for k in range(nstates)]
+        s1 = np.zeros((nstates, ncas))
+        s2 = np.zeros((nstates, ncas, ncas))
+        for k in range(nstates):
+            s1[k], s2[k] = orbital_entropies(ci[k], ncas, nelecas)
+        occ = [np.diag(v.T @ d @ v) for v, d in zip(u, rdm1)]
+    mi = np.array([mutual_information(a, b) for a, b in zip(s1, s2)])
+
+    log.note("\nOrbital occupations n and entropies s1 (%s)" % name)
+    log.note("  Orbital" + "".join("  %16s" % label for label in labels))
+    log.note("         " + "".join("  %7s %8s" % ('n', 's1') for label in labels))
     for i in range(ncas):
-        log.note("  %7d  %9.6f" % (ncore + i + 1, s1[i]))
+        log.note("  %7d" % (ncore + i + 1) + "".join("  %7.4f %8.6f" % (n[i], s[i]) for n, s in zip(occ, s1)))
 
     p, q = np.triu_indices(ncas, 1)
     log.note("\nLargest mutual information, I(i,j) = (s1_i + s1_j - s2_ij) / 2")
-    log.note("  Orbital  Orbital          I")
-    for k in np.argsort(-mi[p, q])[:npairs]:
-        log.note("  %7d  %7d  %9.6f" % (ncore + p[k] + 1, ncore + q[k] + 1, mi[p[k], q[k]]))
+    for label, m in zip(labels, mi):
+        log.note("  %s\n  Orbital  Orbital          I" % label)
+        for k in np.argsort(-m[p, q])[:npairs]:
+            log.note("  %7d  %7d  %9.6f" % (ncore + p[k] + 1, ncore + q[k] + 1, m[p[k], q[k]]))
 
+    if ensemble:
+        return s1[0], s2[0], mi[0]
     return s1, s2, mi
