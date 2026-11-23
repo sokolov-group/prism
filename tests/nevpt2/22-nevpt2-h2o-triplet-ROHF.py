@@ -49,7 +49,7 @@ ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
 # NEVPT2 calculation
-interface = prism.interface.PYSCF(mf, backend = 'opt_einsum')
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum', rohf_mcscf = True)
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.semi_internal_projector = "gno"
@@ -57,7 +57,7 @@ nevpt.s_thresh_singles = 1e-6
 nevpt.s_thresh_doubles = 1e-10
 
 # NEVPT2 calculation
-df_interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit()
+df_interface = prism.interface.PYSCF(mf, backend = 'opt_einsum', rohf_mcscf = True).density_fit()
 df_nevpt = prism.nevpt.NEVPT(df_interface)
 df_nevpt.compute_singles_amplitudes = False
 df_nevpt.semi_internal_projector = "gno"

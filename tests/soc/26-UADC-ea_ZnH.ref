@@ -1,0 +1,365 @@
+#INFO: **** input file is /home/chiang.272/prism/tests/soc/26-UADC-ea_ZnH.py ****
+import unittest
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+from pyscf import mcpdft
+from pyscf import adc
+from pyscf import scf
+from pyscf.adc import uadc_ea
+import prism.interface_soc
+
+
+np.set_printoptions(suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [
+            ['Zn', (0.0, 0.0, 0.0)],
+            ['H', (0.0,  0,  1.595 )]]
+mol.basis = 'def2-tzvp'
+mol.symmetry = False
+mol.spin = 0
+mol.verbose = 4
+mol.charge = +1
+mol.build()
+
+
+mf = scf.UHF(mol).x2c()
+mf.conv_tol = 1e-12
+mf.kernel()
+
+myadc = adc.ADC(mf)
+myadc.method_type = "ea"
+
+E,U,P,X = myadc.kernel(nroots=10)
+
+interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface.gtensor = True
+en_soc, properties = interface.kernel()
+
+exit()
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(E[0],  -0.2822636116, 6)
+        self.assertAlmostEqual(E[1],  -0.2822636074, 6)
+        self.assertAlmostEqual(E[2],  -0.1729205553, 6)
+        self.assertAlmostEqual(E[3],  -0.1729205553, 6)
+        self.assertAlmostEqual(E[4],  -0.1729205541, 6)
+        self.assertAlmostEqual(E[5],  -0.1729205541, 6)
+        self.assertAlmostEqual(E[6],  -0.0508731510, 6)
+        self.assertAlmostEqual(E[7],  -0.0508731493, 6)
+        self.assertAlmostEqual(E[8],  -0.0117694232, 6)
+        self.assertAlmostEqual(E[9],  -0.0117694232, 6)
+
+
+        
+
+    def test_prism(self):
+
+        en_soc, properties = interface.kernel()
+
+        self.assertAlmostEqual(en_soc[0], -0.282269864321, 5)
+        self.assertAlmostEqual(en_soc[1], -0.282269864321, 5)
+        self.assertAlmostEqual(en_soc[2], -0.173599554213, 5)
+        self.assertAlmostEqual(en_soc[3], -0.173599554213, 5)
+        self.assertAlmostEqual(en_soc[4], -0.172235398435, 5)
+        self.assertAlmostEqual(en_soc[5], -0.172235398435, 5)
+        self.assertAlmostEqual(en_soc[6], -0.050873144087, 5)
+        self.assertAlmostEqual(en_soc[7], -0.050873144087, 5)
+        self.assertAlmostEqual(en_soc[8], -0.011769333715, 5)
+        self.assertAlmostEqual(en_soc[9], -0.011769333715, 5)
+
+        g_factor = properties["g-factors"]
+        self.assertAlmostEqual(g_factor[0], 1.985757, 5)
+        self.assertAlmostEqual(g_factor[1], 1.985757, 5)
+        self.assertAlmostEqual(g_factor[2], 2.002204, 5)
+
+
+        
+
+
+if __name__ == "__main__":
+    print("ADC-ea test")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc206140.asc.ohio-state.edu', release='4.18.0-553.159.1.el8_10.x86_64', version='#1 SMP Mon Aug 31 12:19:33 EDT 2026', machine='x86_64')  Threads 24
+Python 3.9.25 (main, Nov  3 2025, 22:33:05) 
+[GCC 11.2.0]
+numpy 2.0.1  scipy 1.13.1  h5py 3.14.0
+Date: Wed Oct  7 14:43:44 2026
+PySCF version 2.12.1
+PySCF path  /home/chiang.272/miniconda3/envs/pyscf_2_12/lib/python3.9/site-packages/pyscf
+
+[ENV] PYSCF_EXT_PATH /home/chiang.272:/home/chiang.272/sqa_plus:/home/chiang.272/pyscf
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 30
+[INPUT] charge = 1
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 Zn     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 H      0.000000000000   0.000000000000   1.595000000000 AA    0.000000000000   0.000000000000   3.014113168681 Bohr   0.0
+
+nuclear repulsion = 9.95317638094044
+number of shells = 20
+number of NR pGTOs = 103
+number of NR cGTOs = 54
+basis = def2-tzvp
+ecp = {}
+CPU time:         3.12
+
+
+******** <class 'pyscf.x2c.sfx2c1e.sfX2C1eUHF'> ********
+method = sfX2C1eUHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/tmp1l3cvfqp
+max_memory 4000 MB (current use 130 MB)
+number electrons alpha = 15  beta = 15
+
+
+******** <class 'pyscf.x2c.sfx2c1e.SpinFreeX2CHelper'> ********
+approx = 1e
+xuncontract = 1
+Set gradient conv threshold to 1e-06
+init E= -1791.06841249057
+  alpha nocc = 15  HOMO = -0.445020190449991  LUMO = -0.0974461126822437
+  beta  nocc = 15  HOMO = -0.436057087216154  LUMO = -0.0952525032262334
+cycle= 1 E= -1791.22374055534  delta_E= -0.155  |g|= 0.138  |ddm|= 0.756
+  alpha nocc = 15  HOMO = -0.715612037919904  LUMO = -0.276534861883347
+  beta  nocc = 15  HOMO = -0.713135920849195  LUMO = -0.277067322517758
+cycle= 2 E= -1791.24649282947  delta_E= -0.0228  |g|= 0.115  |ddm|= 0.228
+  alpha nocc = 15  HOMO = -0.698195243754817  LUMO = -0.26707504740228
+  beta  nocc = 15  HOMO = -0.696016057475698  LUMO = -0.267384081075625
+cycle= 3 E= -1791.24884043089  delta_E= -0.00235  |g|= 0.0357  |ddm|= 0.0398
+  alpha nocc = 15  HOMO = -0.683662512587261  LUMO = -0.259673839764953
+  beta  nocc = 15  HOMO = -0.681840589156374  LUMO = -0.25971197995626
+cycle= 4 E= -1791.2497059383  delta_E= -0.000866  |g|= 0.00633  |ddm|= 0.047
+  alpha nocc = 15  HOMO = -0.685675697383885  LUMO = -0.259548349450661
+  beta  nocc = 15  HOMO = -0.683872879333728  LUMO = -0.259594074086001
+cycle= 5 E= -1791.24976652963  delta_E= -6.06e-05  |g|= 0.00311  |ddm|= 0.00966
+  alpha nocc = 15  HOMO = -0.68514542678397  LUMO = -0.259568444984854
+  beta  nocc = 15  HOMO = -0.683443724695839  LUMO = -0.259589240051374
+cycle= 6 E= -1791.24977790575  delta_E= -1.14e-05  |g|= 0.000636  |ddm|= 0.00501
+  alpha nocc = 15  HOMO = -0.685094278489371  LUMO = -0.259653938229043
+  beta  nocc = 15  HOMO = -0.683490303150515  LUMO = -0.259668255137821
+cycle= 7 E= -1791.24977871977  delta_E= -8.14e-07  |g|= 0.000269  |ddm|= 0.00166
+  alpha nocc = 15  HOMO = -0.68503449315323  LUMO = -0.259656436948403
+  beta  nocc = 15  HOMO = -0.68353697661769  LUMO = -0.25966783622737
+cycle= 8 E= -1791.24977887551  delta_E= -1.56e-07  |g|= 0.000136  |ddm|= 0.000679
+  alpha nocc = 15  HOMO = -0.684971563749565  LUMO = -0.259655124549976
+  beta  nocc = 15  HOMO = -0.683581919359393  LUMO = -0.259665366861975
+cycle= 9 E= -1791.24977896986  delta_E= -9.43e-08  |g|= 0.000121  |ddm|= 0.000476
+  alpha nocc = 15  HOMO = -0.684828785304945  LUMO = -0.259656456288445
+  beta  nocc = 15  HOMO = -0.683718305547403  LUMO = -0.259664445493278
+cycle= 10 E= -1791.24977917743  delta_E= -2.08e-07  |g|= 9.78e-05  |ddm|= 0.00122
+  alpha nocc = 15  HOMO = -0.684409630342948  LUMO = -0.259661265176371
+  beta  nocc = 15  HOMO = -0.684143878130703  LUMO = -0.259663123430356
+cycle= 11 E= -1791.24977952448  delta_E= -3.47e-07  |g|= 3.05e-05  |ddm|= 0.0037
+  alpha nocc = 15  HOMO = -0.684276720877542  LUMO = -0.259662579238898
+  beta  nocc = 15  HOMO = -0.68427041547335  LUMO = -0.259662568297749
+cycle= 12 E= -1791.24977954577  delta_E= -2.13e-08  |g|= 2.54e-06  |ddm|= 0.00114
+  alpha nocc = 15  HOMO = -0.684272930642444  LUMO = -0.259662533927099
+  beta  nocc = 15  HOMO = -0.684272880899652  LUMO = -0.25966249793666
+cycle= 13 E= -1791.24977954579  delta_E= -1.8e-11  |g|= 4.4e-07  |ddm|= 2.87e-05
+  alpha nocc = 15  HOMO = -0.684273025974477  LUMO = -0.259662493602818
+  beta  nocc = 15  HOMO = -0.684273065903877  LUMO = -0.259662481015368
+cycle= 14 E= -1791.24977954579  delta_E= -9.09e-13  |g|= 1.19e-07  |ddm|= 9.03e-07
+  alpha nocc = 15  HOMO = -0.684273049254316  LUMO = -0.25966250120503
+  beta  nocc = 15  HOMO = -0.684273076338322  LUMO = -0.259662493991594
+Extra cycle  E= -1791.24977954579  delta_E= 1.14e-12  |g|= 6.89e-08  |ddm|= 1.36e-07
+converged SCF energy = -1791.24977954579  <S^2> = 3.5527137e-15  2S+1 = 1
+
+******** <class 'pyscf.adc.uadc.UADC'> ********
+max_memory 4000 MB (current use 264 MB)
+******** ADC Orbital Information ********
+Number of Frozen Occupied Alpha Orbitals: 0
+Number of Frozen Occupied Beta Orbitals: 0
+Number of Frozen Virtual Alpha Orbitals: 0
+Number of Frozen Virtual Beta Orbitals: 0
+Number of Active Occupied Alpha Orbitals: 15
+Number of Active Occupied Beta Orbitals: 15
+Number of Active Virtual Alpha Orbitals: 39
+Number of Active Virtual Beta Orbitals: 39
+*****************************************
+Reference correlation energy (doubles): -0.66503745
+MP2 correlation energy of reference state (a.u.) = -0.66503745
+
+******** <class 'pyscf.adc.uadc_ea.UADCEA'> ********
+max_space = 200
+max_cycle = 50
+conv_tol = 1e-08
+tol_residual = 1e-05
+max_memory 4000 MB (current use 435 MB)
+
+*************************************************************
+                   ADC calculation summary
+*************************************************************
+adc(2) root 0  |  Energy (Eh) =  -0.2822636116  |  Energy (eV) =  -7.68078409  |  Spec. factor = 0.97012796  |  conv = True
+adc(2) root 1  |  Energy (Eh) =  -0.2822636074  |  Energy (eV) =  -7.68078398  |  Spec. factor = 0.97012796  |  conv = True
+adc(2) root 2  |  Energy (Eh) =  -0.1729205553  |  Energy (eV) =  -4.70540798  |  Spec. factor = 0.97779161  |  conv = True
+adc(2) root 3  |  Energy (Eh) =  -0.1729205553  |  Energy (eV) =  -4.70540798  |  Spec. factor = 0.97779161  |  conv = True
+adc(2) root 4  |  Energy (Eh) =  -0.1729205541  |  Energy (eV) =  -4.70540795  |  Spec. factor = 0.97779161  |  conv = True
+adc(2) root 5  |  Energy (Eh) =  -0.1729205541  |  Energy (eV) =  -4.70540795  |  Spec. factor = 0.97779161  |  conv = True
+adc(2) root 6  |  Energy (Eh) =  -0.0508731510  |  Energy (eV) =  -1.38432895  |  Spec. factor = 0.97123439  |  conv = True
+adc(2) root 7  |  Energy (Eh) =  -0.0508731493  |  Energy (eV) =  -1.38432890  |  Spec. factor = 0.97123440  |  conv = True
+adc(2) root 8  |  Energy (Eh) =  -0.0117694232  |  Energy (eV) =  -0.32026232  |  Spec. factor = 0.98023286  |  conv = True
+adc(2) root 9  |  Energy (Eh) =  -0.0117694232  |  Energy (eV) =  -0.32026232  |  Spec. factor = 0.98023287  |  conv = True
+
+Import ADC in PYSCF...
+e_corr_MPn=-0.6650374456270488
+scf_energy=-1791.2497795457855
+E_ref_abs=-1791.9148169914126
+Importing uadc_ea...
+Collect necessary information for SOC
+employ make_rdm1s_general
+
+*****make_rdm1s_general*****
+Transform rdm_bb in mo_a basis
+Use P to find S quantum number
+P_thresh=1e-06
+S_old_total=
+[0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+
+*****rotate_rdm1s_to_ms*****
+degeneracy_atol =1e-05
+deg_list=[2, 4, 2, 2]
+Ms_old_total=
+[[ 0.5         0.00000001 -0.          0.         -0.         -0.         -0.          0.         -0.          0.        ]
+ [ 0.00000001 -0.5        -0.          0.          0.         -0.         -0.         -0.          0.          0.        ]
+ [-0.         -0.          0.5        -0.          0.00000006 -0.00000014 -0.          0.          0.         -0.        ]
+ [ 0.          0.         -0.          0.5        -0.00000025 -0.00000015 -0.         -0.          0.         -0.        ]
+ [-0.          0.          0.00000006 -0.00000025 -0.5         0.          0.         -0.          0.          0.        ]
+ [-0.         -0.         -0.00000014 -0.00000015  0.         -0.5         0.         -0.         -0.         -0.        ]
+ [-0.         -0.         -0.         -0.          0.          0.         -0.5        -0.00000004 -0.         -0.        ]
+ [-0.         -0.          0.         -0.         -0.         -0.         -0.00000004  0.5        -0.          0.        ]
+ [-0.          0.          0.          0.          0.         -0.          0.         -0.         -0.5         0.00000137]
+ [ 0.          0.         -0.         -0.          0.         -0.         -0.          0.          0.00000137  0.5       ]]
+sz_en_tot=
+[-0.5  0.5 -0.5 -0.5  0.5  0.5 -0.5  0.5 -0.5  0.5]
+Sz_evec_total=
+[[-0.00000001 -1.          0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 1.         -0.00000001  0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.00000014  0.00000006 -0.02418314 -0.99970755  0.          0.          0.          0.        ]
+ [ 0.          0.         -0.00000007  0.00000028  0.99970755 -0.02418314  0.          0.          0.          0.        ]
+ [ 0.          0.         -0.70849335  0.70571749 -0.00000025 -0.00000006  0.          0.          0.          0.        ]
+ [ 0.          0.          0.70571749  0.70849335 -0.00000015  0.00000014  0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.         -1.         -0.00000004  0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.         -0.00000004  1.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.         -1.          0.00000137]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.          0.00000137  1.        ]]
+Make sure S_total:
+[[ 0.5  0.   0.   0.   0.   0.   0.   0.   0.   0. ]
+ [ 0.   0.5  0.   0.   0.   0.   0.   0.   0.   0. ]
+ [ 0.   0.   0.5  0.   0.  -0.   0.   0.   0.   0. ]
+ [ 0.   0.   0.   0.5 -0.  -0.   0.   0.   0.   0. ]
+ [ 0.   0.   0.  -0.   0.5 -0.   0.   0.   0.   0. ]
+ [ 0.   0.  -0.  -0.  -0.   0.5  0.   0.   0.   0. ]
+ [ 0.   0.   0.   0.   0.   0.   0.5  0.   0.   0. ]
+ [ 0.   0.   0.   0.   0.   0.   0.   0.5  0.   0. ]
+ [ 0.   0.   0.   0.   0.   0.   0.   0.   0.5  0. ]
+ [ 0.   0.   0.   0.   0.   0.   0.   0.   0.   0.5]]
+S_total is diagonal
+Make sure E:
+[[-0.28226361 -0.          0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [-0.         -0.28226361  0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.         -0.17292055  0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.         -0.17292055 -0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.         -0.         -0.17292056 -0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.         -0.         -0.17292056  0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.         -0.05087315 -0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.         -0.         -0.05087315  0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.         -0.01176942  0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.          0.         -0.01176942]]
+Energy is same after rotation
+
+*****get_sf_ref*****
+Make sure MS=
+[[-0.5  0.  -0.  -0.   0.   0.   0.  -0.  -0.   0. ]
+ [-0.   0.5 -0.   0.  -0.  -0.  -0.  -0.  -0.  -0. ]
+ [-0.  -0.  -0.5  0.   0.   0.  -0.   0.   0.  -0. ]
+ [-0.   0.  -0.  -0.5 -0.   0.  -0.  -0.   0.  -0. ]
+ [ 0.  -0.   0.  -0.   0.5 -0.   0.  -0.  -0.  -0. ]
+ [ 0.  -0.   0.   0.   0.   0.5 -0.  -0.   0.   0. ]
+ [ 0.  -0.  -0.  -0.   0.  -0.  -0.5  0.  -0.   0. ]
+ [-0.  -0.   0.  -0.  -0.  -0.   0.   0.5  0.   0. ]
+ [-0.  -0.   0.   0.  -0.   0.   0.   0.  -0.5 -0. ]
+ [ 0.  -0.  -0.  -0.  -0.   0.   0.   0.   0.   0.5]]
+Ms is diagonal
+Choice ms_ref as positive minimum
+ms_ref=0.5
+Discard unreasonable spin state ...
+odds electrons...
+roots_old=10
+roots_ref=5
+S_ref=[0.5, 0.5, 0.5, 0.5, 0.5]
+ms_ref=0.5
+E_ref=[-0.28226361161023167, -0.1729205553155764, -0.17292055532474862, -0.050873149334694064, -0.011769423184465905]
+set up xmol, contr_coeff
+max_memory_soc =4000
+ 
+Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+Calculating Wigner 1-RDM...
+> CPU time for total bp calculation      5.49 sec, wall time      5.19 sec
+
+Summary of SOC results for BP
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)             E(a.u.)         E(eV)         E(nm)       E(cm-1)        Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1           -0.282269864321    -0.28226986      -7.6810                 -61951.0744               
+    2        1           -0.282269864321    -0.28226986      -7.6810    -161.4177    -61951.0744               
+    3        1           -0.173599554213    -0.17359955      -4.7239    -262.4624    -38100.6982               
+    4        1           -0.173599554213    -0.17359955      -4.7239    -262.4624    -38100.6982               
+    5        1           -0.172235398435    -0.17223540      -4.6868    -264.5412    -37801.3006               
+    6        1           -0.172235398435    -0.17223540      -4.6868    -264.5412    -37801.3006               
+    7        1           -0.050873144086    -0.05087314      -1.3843    -895.6268    -11165.3645               
+    8        1           -0.050873144086    -0.05087314      -1.3843    -895.6268    -11165.3645               
+    9        1           -0.011769333715    -0.01176933      -0.3203   -3871.3621     -2583.0702               
+   10        1           -0.011769333715    -0.01176933      -0.3203   -3871.3621     -2583.0702               
+----------------------------------------------------------------------------------------------------------------
+
+Summary of SOC results for BP
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1           -0.282269864321     0.00000000       0.0000                      0.0000               
+    2        1           -0.282269864321     0.00000000       0.0000                      0.0000               
+    3        1           -0.173599554213     0.10867031       2.9571     419.2806     23850.3763               
+    4        1           -0.173599554213     0.10867031       2.9571     419.2806     23850.3763               
+    5        1           -0.172235398435     0.11003447       2.9942     414.0826     24149.7738               
+    6        1           -0.172235398435     0.11003447       2.9942     414.0826     24149.7738               
+    7        1           -0.050873144086     0.23139672       6.2966     196.9058     50785.7099               
+    8        1           -0.050873144086     0.23139672       6.2966     196.9058     50785.7099               
+    9        1           -0.011769333715     0.27050053       7.3607     168.4409     59368.0042               
+   10        1           -0.011769333715     0.27050053       7.3607     168.4409     59368.0042               
+----------------------------------------------------------------------------------------------------------------
+Calculating magnetic dipole moment...
+Coordinate system origin (charge, Bohr) = [0.         0.         0.09722946]
+
+Target State index = 1
+Micro state index: 1 to 2
+Calculating g-tensor for multiplicity = 2
+
+Magnetic g-factors (ge = 2.002319):
+      1.985757,       1.985757,       2.002204
+     -0.016562,      -0.016562,      -0.000115 (g-shift)
+       -16.562,        -16.562,         -0.115 (g-shift, ppt)

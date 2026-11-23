@@ -60,6 +60,7 @@ emc = mc.mc1step()[0]
 
 # NEVPT2 with all electrons correlated
 interface = prism.interface.PYSCF(mf, mc, backend = 'opt_einsum')
+casscf_sf = interface.import_casscf_sf()
 
 class KnownValues(unittest.TestCase):
 
@@ -72,7 +73,7 @@ class KnownValues(unittest.TestCase):
         if (not socutils_dir.exists()) or (not any(socutils_dir.iterdir())):
             print("\nsocutilis is not available. Skip soc test")
             self.skipTest('socutilis is not available')
-        e_tot, osc = interface.run_soc("BP")
+        e_tot, osc = casscf_sf.run_soc("BP")
 
         self.assertAlmostEqual(e_tot[0],       -109.179964168758, 5)
 

@@ -44,7 +44,7 @@ ehf = mf.scf()
 print("SCF energy: %f\n" % ehf)
 
 # NEVPT2 calculation
-interface = prism.interface.PYSCF(mf, backend = 'opt_einsum').density_fit('aug-cc-pvdz-ri')
+interface = prism.interface.PYSCF(mf, backend = 'opt_einsum', rohf_mcscf = True).density_fit('aug-cc-pvdz-ri')
 nevpt = prism.nevpt.NEVPT(interface)
 nevpt.compute_singles_amplitudes = False
 nevpt.keep_amplitudes = True

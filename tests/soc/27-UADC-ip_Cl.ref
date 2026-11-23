@@ -1,0 +1,265 @@
+#INFO: **** input file is /home/chiang.272/prism/tests/soc/27-UADC-ip_Cl.py ****
+import unittest
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+from pyscf import mcpdft
+from pyscf import adc
+from pyscf import scf
+from pyscf.adc import uadc_ea
+import prism.interface_soc
+
+
+np.set_printoptions(suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [
+            ['Cl', (0.0, 0.0, 0.0)]]
+mol.basis = 'def2-tzvp'
+mol.symmetry = False
+mol.spin = 0
+mol.verbose = 4
+mol.charge = -1
+mol.build()
+
+
+mf = scf.UHF(mol).x2c()
+mf.conv_tol = 1e-12
+mf.kernel()
+
+myadc = adc.ADC(mf)
+myadc.method_type = "ip"
+myadc.conv_tol = 1e-12
+myadc.tol_residual = 1e-6
+E,U,P,X = myadc.kernel(nroots=12)
+
+interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+en_soc, properties = interface.kernel()
+exit()
+
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(E[0],   0.104604360853 , 5)
+        self.assertAlmostEqual(E[1],   0.104604360853 , 5)
+        self.assertAlmostEqual(E[2],   0.104604756033 , 5)
+        self.assertAlmostEqual(E[3],   0.104604756033 , 5)
+        self.assertAlmostEqual(E[4],   0.107894906036 , 5)
+        self.assertAlmostEqual(E[5],   0.107894906036 , 5)
+        self.assertAlmostEqual(E[6],   0.569626526560 , 5)
+        self.assertAlmostEqual(E[7],   0.569626526560 , 5)
+        self.assertAlmostEqual(E[8],   1.035763307526 , 5)
+        self.assertAlmostEqual(E[9],   1.035763307526 , 5)
+        self.assertAlmostEqual(E[10],  1.036584663225 , 5)
+        self.assertAlmostEqual(E[11],  1.036584663225 , 5)
+
+
+        
+
+    def test_prism(self):
+
+        en_soc, properties = interface.kernel()
+
+        self.assertAlmostEqual(en_soc[0],   0.104604360851   , 5)
+        self.assertAlmostEqual(en_soc[1],   0.104604360851   , 5)
+        self.assertAlmostEqual(en_soc[2],   0.104604756037   , 5)
+        self.assertAlmostEqual(en_soc[3],   0.104604756037   , 5)
+        self.assertAlmostEqual(en_soc[4],   0.107894906037   , 5)
+        self.assertAlmostEqual(en_soc[5],   0.107894906037   , 5)
+        self.assertAlmostEqual(en_soc[6],   0.569626526560   , 5)
+        self.assertAlmostEqual(en_soc[7],   0.569626526560   , 5)
+        self.assertAlmostEqual(en_soc[8],   1.035763307524   , 5)
+        self.assertAlmostEqual(en_soc[9],   1.035763307524   , 5)
+        self.assertAlmostEqual(en_soc[10],  1.036584663223   , 5)
+        self.assertAlmostEqual(en_soc[11],  1.036584663223   , 5)
+
+
+
+
+
+        
+
+
+if __name__ == "__main__":
+    print("ADC-ip test")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc206140.asc.ohio-state.edu', release='4.18.0-553.159.1.el8_10.x86_64', version='#1 SMP Mon Aug 31 12:19:33 EDT 2026', machine='x86_64')  Threads 24
+Python 3.9.25 (main, Nov  3 2025, 22:33:05) 
+[GCC 11.2.0]
+numpy 2.0.1  scipy 1.13.1  h5py 3.14.0
+Date: Sun Oct 11 17:18:42 2026
+PySCF version 2.12.1
+PySCF path  /home/chiang.272/miniconda3/envs/pyscf_2_12/lib/python3.9/site-packages/pyscf
+
+[ENV] PYSCF_EXT_PATH /home/chiang.272:/home/chiang.272/sqa_plus:/home/chiang.272/pyscf
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 1
+[INPUT] num. electrons = 18
+[INPUT] charge = -1
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 Cl     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+
+nuclear repulsion = 0
+number of shells = 13
+number of NR pGTOs = 63
+number of NR cGTOs = 37
+basis = def2-tzvp
+ecp = {}
+CPU time:         3.26
+
+
+******** <class 'pyscf.x2c.sfx2c1e.sfX2C1eUHF'> ********
+method = sfX2C1eUHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/tmpysmnguqh
+max_memory 4000 MB (current use 132 MB)
+number electrons alpha = 9  beta = 9
+
+
+******** <class 'pyscf.x2c.sfx2c1e.SpinFreeX2CHelper'> ********
+approx = 1e
+xuncontract = 1
+Set gradient conv threshold to 1e-06
+init E= -460.498475112968
+  alpha nocc = 9  HOMO = -0.436170810773389  LUMO = 0.476467327308877
+  beta  nocc = 9  HOMO = -0.436170810773389  LUMO = 0.476467327308877
+cycle= 1 E= -460.766419701519  delta_E= -0.268  |g|= 0.24  |ddm|= 0.265
+  alpha nocc = 9  HOMO = -0.0559373984232899  LUMO = 0.80838463115603
+  beta  nocc = 9  HOMO = -0.0559373984232899  LUMO = 0.80838463115603
+cycle= 2 E= -460.800150446336  delta_E= -0.0337  |g|= 0.114  |ddm|= 0.452
+  alpha nocc = 9  HOMO = -0.12291321385542  LUMO = 0.777989955444133
+  beta  nocc = 9  HOMO = -0.12291321385542  LUMO = 0.777989955444133
+cycle= 3 E= -460.804154184289  delta_E= -0.004  |g|= 0.00731  |ddm|= 0.0875
+  alpha nocc = 9  HOMO = -0.130093783050254  LUMO = 0.775203449066685
+  beta  nocc = 9  HOMO = -0.130093783050254  LUMO = 0.775203449066685
+cycle= 4 E= -460.804170214959  delta_E= -1.6e-05  |g|= 0.000625  |ddm|= 0.00548
+  alpha nocc = 9  HOMO = -0.130591219112382  LUMO = 0.774984875912601
+  beta  nocc = 9  HOMO = -0.130591219112382  LUMO = 0.774984875912601
+cycle= 5 E= -460.804170362733  delta_E= -1.48e-07  |g|= 3.68e-05  |ddm|= 0.000874
+  alpha nocc = 9  HOMO = -0.130604017438033  LUMO = 0.774969006479663
+  beta  nocc = 9  HOMO = -0.130604017438033  LUMO = 0.774969006479663
+cycle= 6 E= -460.804170363283  delta_E= -5.5e-10  |g|= 3.81e-06  |ddm|= 6e-05
+  alpha nocc = 9  HOMO = -0.130605459392243  LUMO = 0.774968718213436
+  beta  nocc = 9  HOMO = -0.130605459392243  LUMO = 0.774968718213436
+cycle= 7 E= -460.804170363293  delta_E= -9.66e-12  |g|= 2.82e-07  |ddm|= 1.02e-05
+  alpha nocc = 9  HOMO = -0.130605458914023  LUMO = 0.774968606107142
+  beta  nocc = 9  HOMO = -0.130605458914023  LUMO = 0.774968606107142
+cycle= 8 E= -460.804170363293  delta_E=    0  |g|= 5.51e-09  |ddm|= 7.16e-07
+  alpha nocc = 9  HOMO = -0.130605463179848  LUMO = 0.774968609836723
+  beta  nocc = 9  HOMO = -0.130605463179848  LUMO = 0.774968609836723
+Extra cycle  E= -460.804170363293  delta_E=    0  |g|= 2.14e-09  |ddm|= 1.2e-08
+converged SCF energy = -460.804170363293  <S^2> = -5.3290705e-15  2S+1 = 1
+
+******** <class 'pyscf.adc.uadc.UADC'> ********
+max_memory 4000 MB (current use 202 MB)
+******** ADC Orbital Information ********
+Number of Frozen Occupied Alpha Orbitals: 0
+Number of Frozen Occupied Beta Orbitals: 0
+Number of Frozen Virtual Alpha Orbitals: 0
+Number of Frozen Virtual Beta Orbitals: 0
+Number of Active Occupied Alpha Orbitals: 9
+Number of Active Occupied Beta Orbitals: 9
+Number of Active Virtual Alpha Orbitals: 28
+Number of Active Virtual Beta Orbitals: 28
+*****************************************
+Reference correlation energy (doubles): -0.29419696
+MP2 correlation energy of reference state (a.u.) = -0.29419696
+
+******** <class 'pyscf.adc.uadc_ip.UADCIP'> ********
+max_space = 200
+max_cycle = 50
+conv_tol = 1e-12
+tol_residual = 1e-06
+max_memory 4000 MB (current use 358 MB)
+
+*************************************************************
+                   ADC calculation summary
+*************************************************************
+adc(2) root 0  |  Energy (Eh) =   0.1057013423  |  Energy (eV) =   2.87628003  |  Spec. factor = 0.91741502  |  conv = True
+adc(2) root 1  |  Energy (Eh) =   0.1057013423  |  Energy (eV) =   2.87628003  |  Spec. factor = 0.91741502  |  conv = True
+adc(2) root 2  |  Energy (Eh) =   0.1057013423  |  Energy (eV) =   2.87628003  |  Spec. factor = 0.91741502  |  conv = True
+adc(2) root 3  |  Energy (Eh) =   0.1057013423  |  Energy (eV) =   2.87628003  |  Spec. factor = 0.91741502  |  conv = True
+adc(2) root 4  |  Energy (Eh) =   0.1057013423  |  Energy (eV) =   2.87628003  |  Spec. factor = 0.91741502  |  conv = True
+adc(2) root 5  |  Energy (Eh) =   0.1057013423  |  Energy (eV) =   2.87628003  |  Spec. factor = 0.91741502  |  conv = True
+adc(2) root 6  |  Energy (Eh) =   0.5696265266  |  Energy (eV) =  15.50032730  |  Spec. factor = 0.81629344  |  conv = True
+adc(2) root 7  |  Energy (Eh) =   0.5696265266  |  Energy (eV) =  15.50032730  |  Spec. factor = 0.81629344  |  conv = True
+adc(2) root 8  |  Energy (Eh) =   1.0361739834  |  Energy (eV) =  28.19573024  |  Spec. factor = 0.00006133  |  conv = True
+adc(2) root 9  |  Energy (Eh) =   1.0361739834  |  Energy (eV) =  28.19573024  |  Spec. factor = 0.00006133  |  conv = True
+adc(2) root 10  |  Energy (Eh) =   1.0361739834  |  Energy (eV) =  28.19573025  |  Spec. factor = 0.00006133  |  conv = True
+adc(2) root 11  |  Energy (Eh) =   1.0361739834  |  Energy (eV) =  28.19573025  |  Spec. factor = 0.00006133  |  conv = True
+
+Importing ADC in PYSCF...
+e_corr_MPn=-0.29419696095873277
+scf_energy=-460.80417036329277
+E_ref_abs=-461.0983673242515
+Importing uadc_ip...
+Collecting necessary information for SOC
+Employing make_rdm1s_general
+
+*****make_rdm1s_general*****
+Transforming rdm_bb in mo_a basis
+Use P to find S quantum number
+P_thresh=1e-06
+S_old_total=
+[0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+
+*****rotate_rdm1s_to_ms*****
+degeneracy_atol =1e-05
+deg_list=[6, 2, 4]
+S_total is diagonal
+Energy is same after rotation
+
+*****get_sf_ref*****
+Ms is diagonal
+Choicing ms_ref as positive minimum
+ms_ref=0.5
+odds electrons...
+roots_old=12
+roots_ref=6
+S_ref=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+ms_ref=0.5
+E_ref=[0.1057013423249119, 0.10570134231044702, 0.10570134232494457, 0.5696265265604876, 1.0361739833601789, 1.0361739833534498]
+set up xmol, contr_coeff
+max_memory_soc =4000
+Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+Calculating Wigner 1-RDM...
+> CPU time for total bp calculation      0.89 sec, wall time      0.79 sec
+
+Summary of SI-ADC results for BP
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.            E(total)         E(eV)           dE(eV)     dE(nm)        dE(cm-1)        Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1            0.104604360853     2.84642967       0.0000                      0.0000               
+    2        1            0.104604360853     2.84642967       0.0000                      0.0000               
+    3        1            0.104604756033     2.84644042       0.0000                      0.0867               
+    4        1            0.104604756033     2.84644042       0.0000                      0.0867               
+    5        1            0.107894906036     2.93596996       0.0895   13846.7488       722.1912      0.00000000
+    6        1            0.107894906036     2.93596996       0.0895   13846.7488       722.1912      0.00000000
+    7        1            0.569626526560    15.50032743      12.6539      97.9810    102060.5684      0.09315279
+    8        1            0.569626526560    15.50032743      12.6539      97.9810    102060.5684      0.09315279
+    9        1            1.035763307532    28.18455542      25.3381      48.9319    204365.7666      0.00000000
+   10        1            1.035763307532    28.18455542      25.3381      48.9319    204365.7666      0.00000000
+   11        1            1.036584663219    28.20690565      25.3605      48.8888    204546.0333      0.00000000
+   12        1            1.036584663219    28.20690565      25.3605      48.8888    204546.0333      0.00000000
+----------------------------------------------------------------------------------------------------------------

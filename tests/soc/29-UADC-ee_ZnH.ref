@@ -1,0 +1,619 @@
+#INFO: **** input file is /home/chiang.272/prism/tests/soc/29-UADC-ee_ZnH.py ****
+import numpy as np
+import math
+import unittest
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+import prism.interface
+import prism.nevpt
+from pyscf import mcpdft
+from prism.libsoc import general_somf
+from pyscf import adc
+from pyscf import scf
+from pyscf.adc import uadc_ea
+import prism.interface_soc
+from prism.libsoc import general_somf
+from prism.tools import trans_prop
+import os
+import sys
+import basis_set_exchange as bse
+
+np.set_printoptions(suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [ 
+            ['Zn', (0.0, 0.0, 0.0)],
+            ['H', (0.0,  0,  1.595 )]
+]
+mol.basis = 'def2-tzvp' #'6-31g'
+#mol.basis = bse.get_basis('ano-rcc-vtzp',fmt='nwchem',header=False) #x2c-tzvpall-2c
+mol.symmetry = False
+mol.spin = 1
+mol.charge = 0
+mol.verbose = 4
+mol.build()
+
+
+mf = scf.UHF(mol).x2c()
+mf.conv_tol = 1e-12
+#mf.max_cycle = 1
+mf.kernel()
+mf.analyze()
+
+myadc = adc.ADC(mf)
+myadc.method_type = "ee"
+myadc.compute_spin_square = True
+E,U,P,X = myadc.kernel(nroots=10)
+
+
+
+interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface.soc = "bp"
+interface.gtensor=True
+en_soc, properties = interface.kernel()
+exit()
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(E[0],  0.1083915612, 6)
+        self.assertAlmostEqual(E[1],  0.1083915612, 6)
+        self.assertAlmostEqual(E[2],  0.1742387868, 6)
+        self.assertAlmostEqual(E[3],  0.2260147508, 6)
+        self.assertAlmostEqual(E[4],  0.2260147508, 6)
+        self.assertAlmostEqual(E[5],  0.2338904156, 6)
+        self.assertAlmostEqual(E[6],  0.2502417501, 6)
+        self.assertAlmostEqual(E[7],  0.2502417501, 6)
+        self.assertAlmostEqual(E[8],  0.2672107547, 6)
+        self.assertAlmostEqual(E[9],  0.2728717307, 6)
+
+
+        
+
+    def test_prism(self):
+
+        en_soc, properties = interface.kernel()
+
+        self.assertAlmostEqual(en_soc[0],    -1792.198980901910, 5)
+        self.assertAlmostEqual(en_soc[1],    -1792.198980901909, 5)
+        self.assertAlmostEqual(en_soc[2],    -1792.091243223571, 5)
+        self.assertAlmostEqual(en_soc[3],    -1792.091243223571, 5)
+        self.assertAlmostEqual(en_soc[4],    -1792.089912686355, 5)
+        self.assertAlmostEqual(en_soc[5],    -1792.089912686355, 5)
+        self.assertAlmostEqual(en_soc[6],    -1792.024806581909, 5)
+        self.assertAlmostEqual(en_soc[7],    -1792.024806581906, 5)
+        self.assertAlmostEqual(en_soc[8],    -1791.973157990515, 5)
+        self.assertAlmostEqual(en_soc[9],    -1791.973157990515, 5)
+        self.assertAlmostEqual(en_soc[10],   -1791.973027996658, 5)
+        self.assertAlmostEqual(en_soc[11],   -1791.973027996657, 5)
+        self.assertAlmostEqual(en_soc[12],   -1791.972892644187, 5)
+        self.assertAlmostEqual(en_soc[13],   -1791.972892644187, 5)
+        self.assertAlmostEqual(en_soc[14],   -1791.972752669756, 5)
+        self.assertAlmostEqual(en_soc[15],   -1791.972752669756, 5)
+        self.assertAlmostEqual(en_soc[16],   -1791.965337741624, 5)
+        self.assertAlmostEqual(en_soc[17],   -1791.965337741622, 5)
+        self.assertAlmostEqual(en_soc[18],   -1791.950948319357, 5)
+        self.assertAlmostEqual(en_soc[19],   -1791.950948319357, 5)
+        self.assertAlmostEqual(en_soc[20],   -1791.946601981287, 5)
+        self.assertAlmostEqual(en_soc[21],   -1791.946601981286, 5)
+        self.assertAlmostEqual(en_soc[22],   -1791.931375089500, 5)
+        self.assertAlmostEqual(en_soc[23],   -1791.931375089499, 5)
+        self.assertAlmostEqual(en_soc[24],   -1791.926058599210, 5)
+        self.assertAlmostEqual(en_soc[25],   -1791.926058599209, 5)
+
+
+        g_factor = properties["g-factors"]
+        self.assertAlmostEqual(g_factor[0], 1.985173, 5)
+        self.assertAlmostEqual(g_factor[1], 1.986004, 5)
+        self.assertAlmostEqual(g_factor[2], 2.002212, 5)
+
+
+        
+
+
+if __name__ == "__main__":
+    print("ADC-ea test")
+    unittest.main()#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc206140.asc.ohio-state.edu', release='4.18.0-553.159.1.el8_10.x86_64', version='#1 SMP Mon Aug 31 12:19:33 EDT 2026', machine='x86_64')  Threads 24
+Python 3.9.25 (main, Nov  3 2025, 22:33:05) 
+[GCC 11.2.0]
+numpy 2.0.1  scipy 1.13.1  h5py 3.14.0
+Date: Wed Oct  7 15:58:07 2026
+PySCF version 2.12.1
+PySCF path  /home/chiang.272/miniconda3/envs/pyscf_2_12/lib/python3.9/site-packages/pyscf
+
+[ENV] PYSCF_EXT_PATH /home/chiang.272:/home/chiang.272/sqa_plus:/home/chiang.272/pyscf
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 31
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 1
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 Zn     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+[INPUT]  2 H      0.000000000000   0.000000000000   1.595000000000 AA    0.000000000000   0.000000000000   3.014113168681 Bohr   0.0
+
+nuclear repulsion = 9.95317638094044
+number of shells = 20
+number of NR pGTOs = 103
+number of NR cGTOs = 54
+basis = def2-tzvp
+ecp = {}
+CPU time:         3.44
+
+
+******** <class 'pyscf.x2c.sfx2c1e.sfX2C1eUHF'> ********
+method = sfX2C1eUHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/tmppod_v004
+max_memory 4000 MB (current use 140 MB)
+number electrons alpha = 16  beta = 15
+
+
+******** <class 'pyscf.x2c.sfx2c1e.SpinFreeX2CHelper'> ********
+approx = 1e
+xuncontract = 1
+Set gradient conv threshold to 1e-06
+init E= -1791.0792869857
+  alpha nocc = 16  HOMO = -0.0908671723938385  LUMO = 0.0583944929482903
+  beta  nocc = 15  HOMO = -0.436659805615815  LUMO = -0.0908671723938385
+
+WARN: system HOMO -0.0908671723938385 >= system LUMO -0.0908671723938385
+
+cycle= 1 E= -1791.50141494495  delta_E= -0.422  |g|= 0.0906  |ddm|= 0.812
+  alpha nocc = 16  HOMO = -0.27036800149097  LUMO = 0.0388994723732213
+  beta  nocc = 15  HOMO = -0.397982291407841  LUMO = 0.0104817714303921
+cycle= 2 E= -1791.51546038199  delta_E= -0.014  |g|= 0.0525  |ddm|= 0.243
+  alpha nocc = 16  HOMO = -0.275384859768208  LUMO = 0.0431161741423765
+  beta  nocc = 15  HOMO = -0.396558746320065  LUMO = 0.024251927405623
+cycle= 3 E= -1791.51905507681  delta_E= -0.00359  |g|= 0.0429  |ddm|= 0.108
+  alpha nocc = 16  HOMO = -0.281967811160678  LUMO = 0.0449588615244423
+  beta  nocc = 15  HOMO = -0.399953524796713  LUMO = 0.0326835158033052
+cycle= 4 E= -1791.52058156885  delta_E= -0.00153  |g|= 0.0105  |ddm|= 0.0805
+  alpha nocc = 16  HOMO = -0.283498741489787  LUMO = 0.0447255614941979
+  beta  nocc = 15  HOMO = -0.402808768519608  LUMO = 0.0332627651488538
+cycle= 5 E= -1791.52093049094  delta_E= -0.000349  |g|= 0.00569  |ddm|= 0.0358
+  alpha nocc = 16  HOMO = -0.283864138462452  LUMO = 0.0444417768830393
+  beta  nocc = 15  HOMO = -0.404934032402265  LUMO = 0.0334315083535423
+cycle= 6 E= -1791.52105785963  delta_E= -0.000127  |g|= 0.00286  |ddm|= 0.0227
+  alpha nocc = 16  HOMO = -0.283593061754692  LUMO = 0.0441495484824076
+  beta  nocc = 15  HOMO = -0.406766673594833  LUMO = 0.0332022979202373
+cycle= 7 E= -1791.52109789224  delta_E= -4e-05  |g|= 0.000832  |ddm|= 0.0175
+  alpha nocc = 16  HOMO = -0.283525988968386  LUMO = 0.044069492800171
+  beta  nocc = 15  HOMO = -0.407079140896555  LUMO = 0.0331632568389011
+cycle= 8 E= -1791.52110011222  delta_E= -2.22e-06  |g|= 0.000203  |ddm|= 0.00431
+  alpha nocc = 16  HOMO = -0.283488602860872  LUMO = 0.0440390162662729
+  beta  nocc = 15  HOMO = -0.407131305247829  LUMO = 0.0331170747676849
+cycle= 9 E= -1791.52110019147  delta_E= -7.93e-08  |g|= 5.9e-05  |ddm|= 0.000626
+  alpha nocc = 16  HOMO = -0.283493333416492  LUMO = 0.0440316904167804
+  beta  nocc = 15  HOMO = -0.407154770800061  LUMO = 0.0331191175911206
+cycle= 10 E= -1791.52110019726  delta_E= -5.78e-09  |g|= 1.16e-05  |ddm|= 0.000186
+  alpha nocc = 16  HOMO = -0.283492162939787  LUMO = 0.0440314038785475
+  beta  nocc = 15  HOMO = -0.407153230297014  LUMO = 0.03311759251067
+cycle= 11 E= -1791.52110019746  delta_E= -1.98e-10  |g|= 2.56e-06  |ddm|= 3.54e-05
+  alpha nocc = 16  HOMO = -0.283492421566895  LUMO = 0.0440314847140488
+  beta  nocc = 15  HOMO = -0.407153146106395  LUMO = 0.0331178748891994
+cycle= 12 E= -1791.52110019747  delta_E= -1.25e-11  |g|= 6.63e-07  |ddm|= 1.08e-05
+  alpha nocc = 16  HOMO = -0.283492354089891  LUMO = 0.0440315376554778
+  beta  nocc = 15  HOMO = -0.407153010038773  LUMO = 0.0331178736423918
+cycle= 13 E= -1791.52110019747  delta_E= -2.96e-12  |g|= 2.78e-07  |ddm|= 2.35e-06
+  alpha nocc = 16  HOMO = -0.283492327117792  LUMO = 0.0440315366647671
+  beta  nocc = 15  HOMO = -0.4071529312631  LUMO = 0.0331178424211418
+cycle= 14 E= -1791.52110019747  delta_E= 9.09e-13  |g|= 1.19e-07  |ddm|= 5.68e-07
+  alpha nocc = 16  HOMO = -0.283492321100236  LUMO = 0.044031531987371
+  beta  nocc = 15  HOMO = -0.407152915864956  LUMO = 0.0331178362949706
+Extra cycle  E= -1791.52110019747  delta_E= -6.82e-13  |g|= 9.92e-08  |ddm|= 2.7e-07
+converged SCF energy = -1791.52110019747  <S^2> = 0.76570598  2S+1 = 2.0156448
+**** SCF Summaries ****
+Total Energy =                       -1791.521100197471242
+Nuclear Repulsion Energy =               9.953176380940441
+One-electron Energy =                -2518.462241999681737
+Two-electron Energy =                  716.987965421270019
+**** MO energy ****
+                             alpha | beta                alpha | beta
+MO #1   energy= -356.957986259453  | -356.956582551808  occ= 1 | 1
+MO #2   energy= -45.2890601968715  | -45.288496487905   occ= 1 | 1
+MO #3   energy= -39.3049679928626  | -39.3056189807992  occ= 1 | 1
+MO #4   energy= -39.3049679928596  | -39.3056189807962  occ= 1 | 1
+MO #5   energy= -39.3034459872906  | -39.3023848636567  occ= 1 | 1
+MO #6   energy= -5.80401404157937  | -5.80073181117953  occ= 1 | 1
+MO #7   energy= -3.91517497199852  | -3.91495451587585  occ= 1 | 1
+MO #8   energy= -3.9151749719795   | -3.91495451585703  occ= 1 | 1
+MO #9   energy= -3.9133792049683   | -3.91148217358121  occ= 1 | 1
+MO #10  energy= -0.79498929470127  | -0.794761513161448 occ= 1 | 1
+MO #11  energy= -0.794989294669709 | -0.794761513130018 occ= 1 | 1
+MO #12  energy= -0.794713032783857 | -0.789346570170633 occ= 1 | 1
+MO #13  energy= -0.789011415911378 | -0.789346570161063 occ= 1 | 1
+MO #14  energy= -0.789011415901671 | -0.787835559642582 occ= 1 | 1
+MO #15  energy= -0.467901044818736 | -0.407152915864956 occ= 1 | 1
+MO #16  energy= -0.283492321100236 | 0.0331178362949706 occ= 1 | 0
+MO #17  energy= 0.044031531987371  | 0.0649153263827535 occ= 0 | 0
+MO #18  energy= 0.0440315319961035 | 0.0649153263908328 occ= 0 | 0
+MO #19  energy= 0.133450664141979  | 0.149791955295478  occ= 0 | 0
+MO #20  energy= 0.215296608787927  | 0.250052982664679  occ= 0 | 0
+MO #21  energy= 0.292452429189443  | 0.325563946031408  occ= 0 | 0
+MO #22  energy= 0.307961298435846  | 0.325563946041843  occ= 0 | 0
+MO #23  energy= 0.307961298449946  | 0.350888147319944  occ= 0 | 0
+MO #24  energy= 0.334829287666403  | 0.355896140263272  occ= 0 | 0
+MO #25  energy= 0.334829287672105  | 0.355896140266619  occ= 0 | 0
+MO #26  energy= 0.345144238581887  | 0.363308729964547  occ= 0 | 0
+MO #27  energy= 0.345144238585244  | 0.363308729970457  occ= 0 | 0
+MO #28  energy= 0.454414015198573  | 0.478809666643338  occ= 0 | 0
+MO #29  energy= 0.623031219005659  | 0.658084746150849  occ= 0 | 0
+MO #30  energy= 1.39883147217839   | 1.4153163582391    occ= 0 | 0
+MO #31  energy= 1.39883147218314   | 1.41531635824372   occ= 0 | 0
+MO #32  energy= 1.41763255358494   | 1.4274558166993    occ= 0 | 0
+MO #33  energy= 1.41763255359764   | 1.42745581671202   occ= 0 | 0
+MO #34  energy= 1.50636214615362   | 1.53069333328473   occ= 0 | 0
+MO #35  energy= 1.85139333169066   | 1.88412199579608   occ= 0 | 0
+MO #36  energy= 1.8513933317031    | 1.88412199580803   occ= 0 | 0
+MO #37  energy= 2.19844601242406   | 2.22669911448439   occ= 0 | 0
+MO #38  energy= 2.65035110860983   | 2.67809290275683   occ= 0 | 0
+MO #39  energy= 2.6961635430503    | 2.70347269427599   occ= 0 | 0
+MO #40  energy= 2.69616354308429   | 2.70347269430998   occ= 0 | 0
+MO #41  energy= 3.05713554495782   | 3.08005434676986   occ= 0 | 0
+MO #42  energy= 3.73095371200441   | 3.74168058053045   occ= 0 | 0
+MO #43  energy= 5.36281013723076   | 5.36439056677261   occ= 0 | 0
+MO #44  energy= 5.36281013724841   | 5.36439056679024   occ= 0 | 0
+MO #45  energy= 5.37950251621723   | 5.38176342980818   occ= 0 | 0
+MO #46  energy= 5.37950251622672   | 5.38176342981768   occ= 0 | 0
+MO #47  energy= 5.48881411882494   | 5.49313149857087   occ= 0 | 0
+MO #48  energy= 7.0593335795169    | 7.05884976696282   occ= 0 | 0
+MO #49  energy= 7.05933357952242   | 7.05884976696835   occ= 0 | 0
+MO #50  energy= 7.06463905247161   | 7.06390841309106   occ= 0 | 0
+MO #51  energy= 7.06463905248126   | 7.0639084131007    occ= 0 | 0
+MO #52  energy= 7.0692626896575    | 7.06914208505246   occ= 0 | 0
+MO #53  energy= 7.06926268965812   | 7.06914208505323   occ= 0 | 0
+MO #54  energy= 7.12012601476114   | 7.12046258053307   occ= 0 | 0
+
+To work with the spin densities directly, `use mulliken_meta_spin()` only printing them here.
+
+ ** Mulliken spin pop alpha/beta on meta-lowdin orthogonal AOs **
+ ** Mulliken Spin Density (per AO)  **
+spin_pop of  0 Zn 1s        0.00000
+spin_pop of  0 Zn 2s       -0.00000
+spin_pop of  0 Zn 3s       -0.00000
+spin_pop of  0 Zn 4s        0.51206
+spin_pop of  0 Zn 5s        0.00668
+spin_pop of  0 Zn 6s        0.00024
+spin_pop of  0 Zn 2px       0.00000
+spin_pop of  0 Zn 2py       0.00000
+spin_pop of  0 Zn 2pz      -0.00000
+spin_pop of  0 Zn 3px       0.00000
+spin_pop of  0 Zn 3py       0.00000
+spin_pop of  0 Zn 3pz       0.00001
+spin_pop of  0 Zn 4px       0.00001
+spin_pop of  0 Zn 4py       0.00001
+spin_pop of  0 Zn 4pz       0.11092
+spin_pop of  0 Zn 5px       0.00001
+spin_pop of  0 Zn 5py       0.00001
+spin_pop of  0 Zn 5pz      -0.00135
+spin_pop of  0 Zn 6px      -0.00000
+spin_pop of  0 Zn 6py      -0.00000
+spin_pop of  0 Zn 6pz      -0.00005
+spin_pop of  0 Zn 3dxy     -0.00001
+spin_pop of  0 Zn 3dyz     -0.00010
+spin_pop of  0 Zn 3dz^2     0.00480
+spin_pop of  0 Zn 3dxz     -0.00010
+spin_pop of  0 Zn 3dx2-y2   -0.00001
+spin_pop of  0 Zn 4dxy      0.00000
+spin_pop of  0 Zn 4dyz      0.00003
+spin_pop of  0 Zn 4dz^2     0.00490
+spin_pop of  0 Zn 4dxz      0.00003
+spin_pop of  0 Zn 4dx2-y2    0.00000
+spin_pop of  0 Zn 5dxy      0.00001
+spin_pop of  0 Zn 5dyz      0.00006
+spin_pop of  0 Zn 5dz^2     0.00871
+spin_pop of  0 Zn 5dxz      0.00006
+spin_pop of  0 Zn 5dx2-y2    0.00001
+spin_pop of  0 Zn 6dxy     -0.00000
+spin_pop of  0 Zn 6dyz     -0.00000
+spin_pop of  0 Zn 6dz^2     0.00318
+spin_pop of  0 Zn 6dxz     -0.00000
+spin_pop of  0 Zn 6dx2-y2   -0.00000
+spin_pop of  0 Zn 4f-3      0.00000
+spin_pop of  0 Zn 4f-2      0.00000
+spin_pop of  0 Zn 4f-1      0.00000
+spin_pop of  0 Zn 4f+0      0.00000
+spin_pop of  0 Zn 4f+1      0.00000
+spin_pop of  0 Zn 4f+2      0.00000
+spin_pop of  0 Zn 4f+3     -0.00000
+spin_pop of  1 H 1s        0.31017
+spin_pop of  1 H 2s        0.02783
+spin_pop of  1 H 3s        0.00937
+spin_pop of  1 H 2px      -0.00000
+spin_pop of  1 H 2py      -0.00000
+spin_pop of  1 H 2pz       0.00256
+ ** Mulliken Spin Density (per atom)  **
+spin density of  0 Zn =      0.65008
+spin density of  1 H =      0.34992
+ ** Mulliken pop alpha/beta on meta-lowdin orthogonal AOs **
+ ** Mulliken pop       alpha | beta **
+pop of  0 Zn 1s        1.00000 | 1.00000   
+pop of  0 Zn 2s        1.00000 | 1.00000   
+pop of  0 Zn 3s        0.99998 | 0.99998   
+pop of  0 Zn 4s        0.89906 | 0.38700   
+pop of  0 Zn 5s        0.00836 | 0.00168   
+pop of  0 Zn 6s        0.00028 | 0.00005   
+pop of  0 Zn 2px       1.00000 | 1.00000   
+pop of  0 Zn 2py       1.00000 | 1.00000   
+pop of  0 Zn 2pz       1.00000 | 1.00000   
+pop of  0 Zn 3px       1.00000 | 1.00000   
+pop of  0 Zn 3py       1.00000 | 1.00000   
+pop of  0 Zn 3pz       0.99999 | 0.99998   
+pop of  0 Zn 4px       0.00011 | 0.00010   
+pop of  0 Zn 4py       0.00011 | 0.00010   
+pop of  0 Zn 4pz       0.13460 | 0.02368   
+pop of  0 Zn 5px       0.00002 | 0.00002   
+pop of  0 Zn 5py       0.00002 | 0.00002   
+pop of  0 Zn 5pz       0.00192 | 0.00327   
+pop of  0 Zn 6px       0.00000 | 0.00001   
+pop of  0 Zn 6py       0.00000 | 0.00001   
+pop of  0 Zn 6pz       0.00010 | 0.00015   
+pop of  0 Zn 3dxy      0.99997 | 0.99998   
+pop of  0 Zn 3dyz      0.99975 | 0.99986   
+pop of  0 Zn 3dz^2     0.99674 | 0.99194   
+pop of  0 Zn 3dxz      0.99975 | 0.99986   
+pop of  0 Zn 3dx2-y2    0.99997 | 0.99998   
+pop of  0 Zn 4dxy      0.00001 | 0.00000   
+pop of  0 Zn 4dyz      0.00003 | 0.00001   
+pop of  0 Zn 4dz^2     0.00492 | 0.00002   
+pop of  0 Zn 4dxz      0.00003 | 0.00001   
+pop of  0 Zn 4dx2-y2    0.00001 | 0.00000   
+pop of  0 Zn 5dxy      0.00001 | 0.00000   
+pop of  0 Zn 5dyz      0.00006 | 0.00000   
+pop of  0 Zn 5dz^2     0.00917 | 0.00046   
+pop of  0 Zn 5dxz      0.00006 | 0.00000   
+pop of  0 Zn 5dx2-y2    0.00001 | 0.00000   
+pop of  0 Zn 6dxy      0.00001 | 0.00001   
+pop of  0 Zn 6dyz      0.00000 | 0.00000   
+pop of  0 Zn 6dz^2     0.00365 | 0.00047   
+pop of  0 Zn 6dxz      0.00000 | 0.00000   
+pop of  0 Zn 6dx2-y2    0.00001 | 0.00001   
+pop of  0 Zn 4f-3      0.00000 | 0.00000   
+pop of  0 Zn 4f-2      0.00000 | 0.00000   
+pop of  0 Zn 4f-1      0.00000 | 0.00000   
+pop of  0 Zn 4f+0      0.00000 | 0.00000   
+pop of  0 Zn 4f+1      0.00000 | 0.00000   
+pop of  0 Zn 4f+2      0.00000 | 0.00000   
+pop of  0 Zn 4f+3      0.00000 | 0.00000   
+pop of  1 H 1s        0.89240 | 0.58223   
+pop of  1 H 2s        0.03125 | 0.00342   
+pop of  1 H 3s        0.01160 | 0.00224   
+pop of  1 H 2px       0.00001 | 0.00001   
+pop of  1 H 2py       0.00001 | 0.00001   
+pop of  1 H 2pz       0.00598 | 0.00342   
+In total            16.00000 | 15.00000  
+ ** Mulliken atomic charges   ( Nelec_alpha | Nelec_beta ) **
+charge of  0Zn =      0.53256  (    15.05876     14.40868 )
+charge of  1H =     -0.53256  (     0.94124      0.59132 )
+Dipole moment(X, Y, Z, Debye): -0.00000,  0.00000, -0.67714
+
+******** <class 'pyscf.adc.uadc.UADC'> ********
+max_memory 4000 MB (current use 288 MB)
+******** ADC Orbital Information ********
+Number of Frozen Occupied Alpha Orbitals: 0
+Number of Frozen Occupied Beta Orbitals: 0
+Number of Frozen Virtual Alpha Orbitals: 0
+Number of Frozen Virtual Beta Orbitals: 0
+Number of Active Occupied Alpha Orbitals: 16
+Number of Active Occupied Beta Orbitals: 15
+Number of Active Virtual Alpha Orbitals: 38
+Number of Active Virtual Beta Orbitals: 39
+*****************************************
+Reference correlation energy (doubles): -0.67787163
+MP2 correlation energy of reference state (a.u.) = -0.67787163
+
+******** <class 'pyscf.adc.uadc_ee.UADCEE'> ********
+max_space = 200
+max_cycle = 50
+conv_tol = 1e-08
+tol_residual = 1e-05
+max_memory 4000 MB (current use 508 MB)
+
+*************************************************************
+                   ADC calculation summary
+*************************************************************
+adc(2) root 0  |  Energy (Eh) =   0.1083915661  |  Energy (eV) =   2.94948475  |  Osc. strength = 0.05238024  |  S^2 = 0.75328433  |  conv = True
+adc(2) root 1  |  Energy (Eh) =   0.1083915661  |  Energy (eV) =   2.94948475  |  Osc. strength = 0.05238019  |  S^2 = 0.75328434  |  conv = True
+adc(2) root 2  |  Energy (Eh) =   0.1742387987  |  Energy (eV) =   4.74127921  |  Osc. strength = 0.02766420  |  S^2 = 0.79881764  |  conv = True
+adc(2) root 3  |  Energy (Eh) =   0.2260147521  |  Energy (eV) =   6.15017467  |  Osc. strength = 0.00251048  |  S^2 = 2.88440738  |  conv = True
+adc(2) root 4  |  Energy (Eh) =   0.2260147522  |  Energy (eV) =   6.15017467  |  Osc. strength = 0.00251046  |  S^2 = 2.88440886  |  conv = True
+adc(2) root 5  |  Energy (Eh) =   0.2338904159  |  Energy (eV) =   6.36448239  |  Osc. strength = 0.23871454  |  S^2 = 0.77371907  |  conv = True
+adc(2) root 6  |  Energy (Eh) =   0.2502417323  |  Energy (eV) =   6.80942438  |  Osc. strength = 0.00140397  |  S^2 = 0.75954292  |  conv = True
+adc(2) root 7  |  Energy (Eh) =   0.2502417324  |  Energy (eV) =   6.80942438  |  Osc. strength = 0.00140398  |  S^2 = 0.75954273  |  conv = True
+adc(2) root 8  |  Energy (Eh) =   0.2672107529  |  Energy (eV) =   7.27117495  |  Osc. strength = 0.26263963  |  S^2 = 0.77383365  |  conv = True
+adc(2) root 9  |  Energy (Eh) =   0.2728717249  |  Energy (eV) =   7.42521784  |  Osc. strength = 0.33948713  |  S^2 = 0.80431806  |  conv = True
+
+Import ADC in PYSCF...
+e_corr_MPn=-0.6778716342587628
+scf_energy=-1791.5211001974712
+E_ref_abs=-1792.19897183173
+Importing uadc_ee...
+Collect necessary information for SOC
+employ make_rdm1s_ee
+
+*****make_rdm1s_ee*****
+Condsider Ref state in rdm...
+Take MPn E_ref as ground state energy 
+self.E=[-1792.19897183 -1792.09058027 -1792.09058027 -1792.02473303 -1791.97295708 -1791.97295708 -1791.96508142 -1791.9487301  -1791.9487301  -1791.93176108 -1791.92610011]
+S_old_total=
+[0.50782239 0.50164082 0.50164082 0.52411798 1.27042576 1.27042618 0.51179003 0.50476013 0.50476004 0.51184666 0.52679991]
+Transform rdm_bb in mo_a basis
+
+*****rotate_rdm1s_to_ms*****
+degeneracy_atol =1e-05
+deg_list=[1, 2, 1, 2, 1, 2, 1, 1]
+Ms_old_total=
+[[ 0.5 -0.   0.   0.   0.   0.   0.  -0.   0.   0.  -0. ]
+ [-0.   0.5  0.   0.   0.   0.   0.   0.   0.  -0.  -0. ]
+ [ 0.   0.   0.5 -0.   0.   0.  -0.  -0.  -0.   0.   0. ]
+ [-0.   0.  -0.   0.5 -0.  -0.   0.   0.  -0.  -0.  -0. ]
+ [ 0.   0.   0.  -0.   0.5  0.   0.   0.   0.  -0.  -0. ]
+ [ 0.   0.   0.  -0.   0.   0.5 -0.  -0.  -0.  -0.   0. ]
+ [ 0.   0.  -0.   0.   0.  -0.   0.5 -0.  -0.  -0.  -0. ]
+ [-0.  -0.  -0.   0.   0.  -0.  -0.   0.5  0.  -0.  -0. ]
+ [ 0.   0.  -0.  -0.   0.   0.  -0.   0.   0.5  0.  -0. ]
+ [ 0.  -0.   0.  -0.  -0.  -0.   0.  -0.   0.   0.5  0. ]
+ [-0.  -0.   0.  -0.  -0.   0.  -0.  -0.  -0.   0.   0.5]]
+sz_en_tot=
+[0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+Sz_evec_total=
+[[ 1.          0.          0.          0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.209951   -0.97771191  0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.         -0.97771191 -0.209951    0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          1.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.         -0.93074453  0.3656701   0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.3656701   0.93074453  0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          1.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.         -0.99686627  0.07910529  0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.07910529  0.99686627  0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.          0.          1.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.          0.          0.          1.        ]]
+Make sure S_total:
+[[ 0.50782239  0.          0.          0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.50164082  0.          0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.50164082  0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.52411798  0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          1.27042582  0.00000014  0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.00000014  1.27042612  0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.51179003  0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.50476013 -0.00000001  0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.         -0.00000001  0.50476004  0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.          0.          0.51184666  0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.          0.          0.          0.          0.52679991]]
+Warning: S_total is not diagonal
+Make sure E:
+[[-1792.19897183     0.             0.             0.             0.             0.             0.             0.             0.             0.             0.        ]
+ [    0.         -1792.09058027     0.             0.             0.             0.             0.             0.             0.             0.             0.        ]
+ [    0.             0.         -1792.09058027     0.             0.             0.             0.             0.             0.             0.             0.        ]
+ [    0.             0.             0.         -1792.02473303     0.             0.             0.             0.             0.             0.             0.        ]
+ [    0.             0.             0.             0.         -1791.97295708     0.             0.             0.             0.             0.             0.        ]
+ [    0.             0.             0.             0.             0.         -1791.97295708     0.             0.             0.             0.             0.        ]
+ [    0.             0.             0.             0.             0.             0.         -1791.96508142     0.             0.             0.             0.        ]
+ [    0.             0.             0.             0.             0.             0.             0.         -1791.9487301      0.             0.             0.        ]
+ [    0.             0.             0.             0.             0.             0.             0.             0.         -1791.9487301      0.             0.        ]
+ [    0.             0.             0.             0.             0.             0.             0.             0.             0.         -1791.93176108     0.        ]
+ [    0.             0.             0.             0.             0.             0.             0.             0.             0.             0.         -1791.92610011]]
+Energy is same after rotation
+
+*****get_sf_ref*****
+Make sure MS=
+[[ 0.5 -0.   0.   0.   0.   0.   0.   0.   0.   0.  -0. ]
+ [-0.   0.5  0.   0.  -0.  -0.   0.  -0.   0.  -0.  -0. ]
+ [ 0.   0.   0.5 -0.   0.  -0.  -0.  -0.   0.   0.   0. ]
+ [-0.   0.  -0.   0.5 -0.  -0.   0.  -0.  -0.  -0.  -0. ]
+ [ 0.   0.   0.  -0.   0.5  0.  -0.   0.  -0.   0.   0. ]
+ [ 0.  -0.  -0.  -0.  -0.   0.5 -0.  -0.  -0.  -0.  -0. ]
+ [ 0.   0.  -0.   0.  -0.  -0.   0.5  0.  -0.  -0.  -0. ]
+ [ 0.  -0.  -0.  -0.   0.   0.   0.   0.5 -0.   0.   0. ]
+ [ 0.   0.  -0.  -0.  -0.   0.  -0.   0.   0.5  0.  -0. ]
+ [ 0.  -0.   0.  -0.   0.  -0.   0.   0.   0.   0.5  0. ]
+ [-0.  -0.   0.  -0.   0.  -0.  -0.   0.  -0.   0.   0.5]]
+Ms is diagonal
+Choice ms_ref as positive minimum
+ms_ref=0.5
+Discard unreasonable spin state ...
+odds electrons...
+roots_old=11
+roots_ref=11
+S_ref=[0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+ms_ref=0.5
+E_ref=[-1792.19897183173, -1792.090580265602, -1792.090580265612, -1792.0247330330096, -1791.9729570795928, -1791.972957079581, -1791.9650814158042, -1791.9487300993903, -1791.948730099379, -1791.9317610788548, -1791.9261001068496]
+set up xmol, contr_coeff
+max_memory_soc =4000
+ 
+Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+Calculating Wigner 1-RDM...
+> CPU time for total bp calculation      5.00 sec, wall time      4.90 sec
+
+Summary of SOC results for BP
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)             E(a.u.)         E(eV)         E(nm)       E(cm-1)        Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1        -1792.198980907531 -1792.19898091  -48768.2187              -393342210.6641               
+    2        1        -1792.198980907530 -1792.19898091  -48768.2187      -0.0254 -393342210.6641               
+    3        1        -1792.091243224217 -1792.09124322  -48765.2870      -0.0254 -393318564.9757               
+    4        1        -1792.091243224217 -1792.09124322  -48765.2870      -0.0254 -393318564.9757               
+    5        1        -1792.089912687065 -1792.08991269  -48765.2508      -0.0254 -393318272.9566               
+    6        1        -1792.089912687064 -1792.08991269  -48765.2508      -0.0254 -393318272.9566               
+    7        1        -1792.024806575700 -1792.02480658  -48763.4792      -0.0254 -393303983.8168               
+    8        1        -1792.024806575700 -1792.02480658  -48763.4792      -0.0254 -393303983.8168               
+    9        1        -1791.973157994226 -1791.97315799  -48762.0737      -0.0254 -393292648.2634               
+   10        1        -1791.973157994224 -1791.97315799  -48762.0737      -0.0254 -393292648.2634               
+   11        1        -1791.973028000745 -1791.97302800  -48762.0702      -0.0254 -393292619.7332               
+   12        1        -1791.973028000743 -1791.97302800  -48762.0702      -0.0254 -393292619.7332               
+   13        1        -1791.972892648649 -1791.97289265  -48762.0665      -0.0254 -393292590.0268               
+   14        1        -1791.972892648649 -1791.97289265  -48762.0665      -0.0254 -393292590.0268               
+   15        1        -1791.972752674596 -1791.97275267  -48762.0627      -0.0254 -393292559.3060               
+   16        1        -1791.972752674596 -1791.97275267  -48762.0627      -0.0254 -393292559.3060               
+   17        1        -1791.965337747333 -1791.96533775  -48761.8609      -0.0254 -393290931.9176               
+   18        1        -1791.965337747332 -1791.96533775  -48761.8609      -0.0254 -393290931.9176               
+   19        1        -1791.950948342774 -1791.95094834  -48761.4694      -0.0254 -393287773.8084               
+   20        1        -1791.950948342772 -1791.95094834  -48761.4694      -0.0254 -393287773.8084               
+   21        1        -1791.946602004077 -1791.94660200  -48761.3511      -0.0254 -393286819.8973               
+   22        1        -1791.946602004076 -1791.94660200  -48761.3511      -0.0254 -393286819.8973               
+   23        1        -1791.931375097001 -1791.93137510  -48760.9368      -0.0254 -393283477.9775               
+   24        1        -1791.931375097000 -1791.93137510  -48760.9368      -0.0254 -393283477.9775               
+   25        1        -1791.926058610667 -1791.92605861  -48760.7921      -0.0254 -393282311.1436               
+   26        1        -1791.926058610667 -1791.92605861  -48760.7921      -0.0254 -393282311.1436               
+----------------------------------------------------------------------------------------------------------------
+
+Summary of SOC results for BP
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1        -1792.198980907531     0.00000000       0.0000                      0.0000               
+    2        1        -1792.198980907530     0.00000000       0.0000                      0.0000               
+    3        1        -1792.091243224217     0.10773768       2.9317     422.9101     23645.6883               
+    4        1        -1792.091243224217     0.10773768       2.9317     422.9101     23645.6883               
+    5        1        -1792.089912687065     0.10906822       2.9679     417.7509     23937.7075               
+    6        1        -1792.089912687064     0.10906822       2.9679     417.7509     23937.7075               
+    7        1        -1792.024806575700     0.17417433       4.7395     261.5963     38226.8473               
+    8        1        -1792.024806575700     0.17417433       4.7395     261.5963     38226.8473               
+    9        1        -1791.973157994226     0.22582291       6.1450     201.7659     49562.4007               
+   10        1        -1791.973157994224     0.22582291       6.1450     201.7659     49562.4007               
+   11        1        -1791.973028000745     0.22595291       6.1485     201.6498     49590.9309               
+   12        1        -1791.973028000743     0.22595291       6.1485     201.6498     49590.9309               
+   13        1        -1791.972892648649     0.22608826       6.1522     201.5291     49620.6373               
+   14        1        -1791.972892648649     0.22608826       6.1522     201.5291     49620.6373               
+   15        1        -1791.972752674596     0.22622823       6.1560     201.4044     49651.3580               
+   16        1        -1791.972752674596     0.22622823       6.1560     201.4044     49651.3580               
+   17        1        -1791.965337747333     0.23364316       6.3578     195.0126     51278.7465               
+   18        1        -1791.965337747332     0.23364316       6.3578     195.0126     51278.7465               
+   19        1        -1791.950948342774     0.24803256       6.7493     183.6991     54436.8557               
+   20        1        -1791.950948342772     0.24803256       6.7493     183.6991     54436.8557               
+   21        1        -1791.946602004077     0.25237890       6.8676     180.5355     55390.7668               
+   22        1        -1791.946602004076     0.25237890       6.8676     180.5355     55390.7668               
+   23        1        -1791.931375097001     0.26760581       7.2819     170.2629     58732.6866               
+   24        1        -1791.931375097000     0.26760581       7.2819     170.2629     58732.6866               
+   25        1        -1791.926058610667     0.27292230       7.4266     166.9462     59899.5205               
+   26        1        -1791.926058610667     0.27292230       7.4266     166.9462     59899.5205               
+----------------------------------------------------------------------------------------------------------------
+Calculating magnetic dipole moment...
+Coordinate system origin (charge, Bohr) = [0.         0.         0.09722946]
+
+Target State index = 1
+Micro state index: 1 to 2
+Calculating g-tensor for multiplicity = 2
+
+Magnetic g-factors (ge = 2.002319):
+      1.985173,       1.986004,       2.002212
+     -0.017146,      -0.016315,      -0.000107 (g-shift)
+       -17.146,        -16.315,         -0.107 (g-shift, ppt)

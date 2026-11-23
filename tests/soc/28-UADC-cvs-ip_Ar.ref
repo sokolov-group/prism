@@ -1,0 +1,367 @@
+#INFO: **** input file is /home/chiang.272/prism/tests/soc/28-UADC-cvs-ip_Ar.py ****
+import unittest
+import numpy as np
+import math
+import pyscf.gto
+import pyscf.scf
+import pyscf.mcscf
+from pyscf import mcpdft
+from pyscf import adc
+from pyscf import scf
+from pyscf.adc import uadc_ea
+import prism.interface_soc
+
+
+np.set_printoptions(suppress=True)
+
+mol = pyscf.gto.Mole()
+mol.atom = [
+            ['Ar', (0.0, 0.0, 0.0)]]
+mol.basis = 'def2-tzvpd'
+mol.symmetry = False
+mol.spin = 0
+mol.verbose = 4
+mol.charge = 0
+mol.build()
+
+
+mf = scf.UHF(mol).x2c()
+mf.conv_tol = 1e-12
+mf.kernel()
+
+myadc = adc.ADC(mf)
+#myadc.conv_tol = 1e-12
+#myadc.tol_residual = 1e-6
+myadc.method_type = "ip"
+myadc.ncvs = 5
+E,U,P,X = myadc.kernel(nroots=12)
+
+interface = prism.interface_soc.PYSCF_ADC(mf,myadc,E,U,P,X)
+interface.soc = 'BP'
+en_soc, properties = interface.kernel()
+exit()
+
+class KnownValues(unittest.TestCase):
+
+    def test_pyscf(self):
+        self.assertAlmostEqual(E[0],   9.1418971175, 6)
+        self.assertAlmostEqual(E[1],   9.1418971175, 6)
+        self.assertAlmostEqual(E[2],   9.1418971175, 6)
+        self.assertAlmostEqual(E[3],   9.1418971175, 6)
+        self.assertAlmostEqual(E[4],   9.1418971175, 6)
+        self.assertAlmostEqual(E[5],   9.1418971175, 6)
+        self.assertAlmostEqual(E[6],  10.2966486727, 6)
+        self.assertAlmostEqual(E[7],  10.2966486727, 6)
+        self.assertAlmostEqual(E[8],  10.2966486727, 6)
+        self.assertAlmostEqual(E[9],  10.2966486727, 6)
+        self.assertAlmostEqual(E[10], 10.2966486727, 6)
+        self.assertAlmostEqual(E[11], 10.2966486727, 6)
+
+
+        
+
+    def test_prism(self):
+
+        en_soc, properties = interface.kernel()
+
+        self.assertAlmostEqual(en_soc[0],    9.116761530375   , 5)
+        self.assertAlmostEqual(en_soc[1],    9.116761530375   , 5)
+        self.assertAlmostEqual(en_soc[2],    9.117054822137   , 5)
+        self.assertAlmostEqual(en_soc[3],    9.117054822137   , 5)
+        self.assertAlmostEqual(en_soc[4],    9.191874972369   , 5)
+        self.assertAlmostEqual(en_soc[5],    9.191874972369   , 5)
+        self.assertAlmostEqual(en_soc[6],   10.296187108960   , 5)
+        self.assertAlmostEqual(en_soc[7],   10.296187108960   , 5)
+        self.assertAlmostEqual(en_soc[8],   10.296462751988   , 5)
+        self.assertAlmostEqual(en_soc[9],   10.296462751988   , 5)
+        self.assertAlmostEqual(en_soc[10],  10.296648348210   , 5)
+        self.assertAlmostEqual(en_soc[11],  10.296648348210   , 5)
+        self.assertAlmostEqual(en_soc[12],  10.296649196132   , 5)
+        self.assertAlmostEqual(en_soc[13],  10.296649196132   , 5)
+        self.assertAlmostEqual(en_soc[14],  10.296834552709   , 5)
+        self.assertAlmostEqual(en_soc[15],  10.296834552709   , 5)
+        self.assertAlmostEqual(en_soc[16],  10.297110105783   , 5)
+        self.assertAlmostEqual(en_soc[17],  10.297110105783   , 5)
+
+
+
+
+        
+
+
+if __name__ == "__main__":
+    print("ADC-ea test")
+    unittest.main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='asccbc-nc206140.asc.ohio-state.edu', release='4.18.0-553.159.1.el8_10.x86_64', version='#1 SMP Mon Aug 31 12:19:33 EDT 2026', machine='x86_64')  Threads 24
+Python 3.9.25 (main, Nov  3 2025, 22:33:05) 
+[GCC 11.2.0]
+numpy 2.0.1  scipy 1.13.1  h5py 3.14.0
+Date: Wed Oct  7 15:53:34 2026
+PySCF version 2.12.1
+PySCF path  /home/chiang.272/miniconda3/envs/pyscf_2_12/lib/python3.9/site-packages/pyscf
+
+[ENV] PYSCF_EXT_PATH /home/chiang.272:/home/chiang.272/sqa_plus:/home/chiang.272/pyscf
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 1
+[INPUT] num. electrons = 18
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 Ar     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr   0.0
+
+nuclear repulsion = 0
+number of shells = 16
+number of NR pGTOs = 72
+number of NR cGTOs = 46
+basis = def2-tzvpd
+ecp = {}
+CPU time:         3.26
+
+
+******** <class 'pyscf.x2c.sfx2c1e.sfX2C1eUHF'> ********
+method = sfX2C1eUHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-12
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /scratch/local/tmp4yx__n3e
+max_memory 4000 MB (current use 131 MB)
+number electrons alpha = 9  beta = 9
+
+
+******** <class 'pyscf.x2c.sfx2c1e.SpinFreeX2CHelper'> ********
+approx = 1e
+xuncontract = 1
+Set gradient conv threshold to 1e-06
+init E= -528.360113279883
+  alpha nocc = 9  HOMO = -0.561670515841333  LUMO = 0.113858713208945
+  beta  nocc = 9  HOMO = -0.561670515841333  LUMO = 0.113858713208945
+cycle= 1 E= -528.398193689349  delta_E= -0.0381  |g|= 0.056  |ddm|= 0.171
+  alpha nocc = 9  HOMO = -0.597575665960163  LUMO = 0.11285588260177
+  beta  nocc = 9  HOMO = -0.597575665960163  LUMO = 0.11285588260177
+cycle= 2 E= -528.398602970677  delta_E= -0.000409  |g|= 0.0159  |ddm|= 0.0363
+  alpha nocc = 9  HOMO = -0.590736377357169  LUMO = 0.11306927118839
+  beta  nocc = 9  HOMO = -0.590736377357169  LUMO = 0.11306927118839
+cycle= 3 E= -528.398638292789  delta_E= -3.53e-05  |g|= 0.000712  |ddm|= 0.00784
+  alpha nocc = 9  HOMO = -0.591160402607402  LUMO = 0.113052516802849
+  beta  nocc = 9  HOMO = -0.591160402607402  LUMO = 0.113052516802849
+cycle= 4 E= -528.39863839566  delta_E= -1.03e-07  |g|= 4.25e-05  |ddm|= 0.000549
+  alpha nocc = 9  HOMO = -0.591192377238374  LUMO = 0.113050566881129
+  beta  nocc = 9  HOMO = -0.591192377238374  LUMO = 0.113050566881129
+cycle= 5 E= -528.398638397167  delta_E= -1.51e-09  |g|= 3.09e-06  |ddm|= 8.37e-05
+  alpha nocc = 9  HOMO = -0.591192626917112  LUMO = 0.113050445877791
+  beta  nocc = 9  HOMO = -0.591192626917112  LUMO = 0.113050445877791
+cycle= 6 E= -528.398638397182  delta_E= -1.43e-11  |g|= 3.82e-07  |ddm|= 8.09e-06
+  alpha nocc = 9  HOMO = -0.591192917426044  LUMO = 0.113050425099101
+  beta  nocc = 9  HOMO = -0.591192917426044  LUMO = 0.113050425099101
+cycle= 7 E= -528.398638397182  delta_E= -3.41e-13  |g|= 3.92e-08  |ddm|= 8.81e-07
+  alpha nocc = 9  HOMO = -0.591192890265067  LUMO = 0.113050425380365
+  beta  nocc = 9  HOMO = -0.591192890265067  LUMO = 0.113050425380365
+Extra cycle  E= -528.398638397182  delta_E=    0  |g|= 1.19e-08  |ddm|= 4.75e-08
+converged SCF energy = -528.398638397182  <S^2> = -1.7763568e-15  2S+1 = 1
+
+******** <class 'pyscf.adc.uadc.UADC'> ********
+max_memory 4000 MB (current use 207 MB)
+******** ADC Orbital Information ********
+Number of Frozen Occupied Alpha Orbitals: 0
+Number of Frozen Occupied Beta Orbitals: 0
+Number of Frozen Virtual Alpha Orbitals: 0
+Number of Frozen Virtual Beta Orbitals: 0
+Number of Active Occupied Alpha Orbitals: 9
+Number of Active Occupied Beta Orbitals: 9
+Number of Active Virtual Alpha Orbitals: 37
+Number of Active Virtual Beta Orbitals: 37
+*****************************************
+Reference correlation energy (doubles): -0.30468255
+MP2 correlation energy of reference state (a.u.) = -0.30468255
+
+******** <class 'pyscf.adc.uadc_ip_cvs.UADCIPCVS'> ********
+max_space = 200
+max_cycle = 50
+conv_tol = 1e-08
+tol_residual = 1e-05
+max_memory 4000 MB (current use 346 MB)
+
+*************************************************************
+                   ADC calculation summary
+*************************************************************
+adc(2) root 0  |  Energy (Eh) =   9.1418971175  |  Energy (eV) = 248.76369142  |  Spec. factor = 0.84809924  |  conv = True
+adc(2) root 1  |  Energy (Eh) =   9.1418971175  |  Energy (eV) = 248.76369142  |  Spec. factor = 0.84809924  |  conv = True
+adc(2) root 2  |  Energy (Eh) =   9.1418971175  |  Energy (eV) = 248.76369142  |  Spec. factor = 0.84809924  |  conv = True
+adc(2) root 3  |  Energy (Eh) =   9.1418971175  |  Energy (eV) = 248.76369142  |  Spec. factor = 0.84809924  |  conv = True
+adc(2) root 4  |  Energy (Eh) =   9.1418971175  |  Energy (eV) = 248.76369142  |  Spec. factor = 0.84809924  |  conv = True
+adc(2) root 5  |  Energy (Eh) =   9.1418971175  |  Energy (eV) = 248.76369142  |  Spec. factor = 0.84809924  |  conv = True
+adc(2) root 6  |  Energy (Eh) =  10.2966486727  |  Energy (eV) = 280.18608174  |  Spec. factor = 0.00000000  |  conv = True
+adc(2) root 7  |  Energy (Eh) =  10.2966486727  |  Energy (eV) = 280.18608174  |  Spec. factor = 0.00000000  |  conv = True
+adc(2) root 8  |  Energy (Eh) =  10.2966486727  |  Energy (eV) = 280.18608174  |  Spec. factor = 0.00000003  |  conv = True
+adc(2) root 9  |  Energy (Eh) =  10.2966486727  |  Energy (eV) = 280.18608174  |  Spec. factor = 0.00000003  |  conv = True
+adc(2) root 10  |  Energy (Eh) =  10.2966486727  |  Energy (eV) = 280.18608174  |  Spec. factor = 0.00000002  |  conv = True
+adc(2) root 11  |  Energy (Eh) =  10.2966486727  |  Energy (eV) = 280.18608174  |  Spec. factor = 0.00000002  |  conv = True
+
+Import ADC in PYSCF...
+e_corr_MPn=-0.30468254769330755
+scf_energy=-528.3986383971819
+E_ref_abs=-528.7033209448753
+Importing uadc_ip_cvs instead of uadc_ip...
+Collect necessary information for SOC
+employ make_rdm1s_general
+
+*****make_rdm1s_general*****
+Transform rdm_bb in mo_a basis
+Use P to find S quantum number
+P_thresh=1e-06
+S_old_total=
+[0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5]
+
+*****rotate_rdm1s_to_ms*****
+degeneracy_atol =1e-05
+deg_list=[6, 6]
+Ms_old_total=
+[[-0.39716243  0.30374647 -0.00018569 -0.00022623  0.00001516 -0.00002469  0.         -0.         -0.         -0.          0.          0.        ]
+ [ 0.30374647  0.39716205 -0.0006175   0.00000703 -0.00000053 -0.00007544  0.         -0.         -0.         -0.         -0.          0.        ]
+ [-0.00018569 -0.0006175  -0.48965535 -0.10117916 -0.00000567  0.00000466  0.         -0.          0.          0.          0.         -0.        ]
+ [-0.00022623  0.00000703 -0.10117916  0.48965572  0.00000209 -0.00004802 -0.          0.         -0.          0.          0.         -0.        ]
+ [ 0.00001516 -0.00000053 -0.00000567  0.00000209  0.49698982  0.05478245  0.         -0.          0.          0.         -0.         -0.        ]
+ [-0.00002469 -0.00007544  0.00000466 -0.00004802  0.05478245 -0.49698981  0.          0.         -0.         -0.         -0.          0.        ]
+ [ 0.          0.          0.         -0.          0.          0.         -0.47153262  0.1662996   0.00021008  0.00072213 -0.00089455  0.00025864]
+ [-0.         -0.         -0.          0.         -0.          0.          0.1662996   0.47153319  0.00066296 -0.00021804  0.00025499  0.00058566]
+ [-0.         -0.          0.         -0.          0.         -0.          0.00021008  0.00066296 -0.48205112  0.13262095  0.00607329 -0.00101572]
+ [-0.          0.          0.          0.          0.         -0.          0.00072213 -0.00021804  0.13262095  0.48208964 -0.00080856  0.00020163]
+ [ 0.         -0.          0.          0.         -0.         -0.         -0.00089455  0.00025499  0.00607329 -0.00080856  0.47226805 -0.16408683]
+ [ 0.          0.         -0.         -0.         -0.          0.          0.00025864  0.00058566 -0.00101572  0.00020163 -0.16408683 -0.47230714]]
+sz_en_tot=
+[-0.5 -0.5 -0.5  0.5  0.5  0.5 -0.5 -0.5 -0.5  0.5  0.5  0.5]
+Sz_evec_total=
+[[ 0.00817825  0.01619802 -0.94701276  0.16893565  0.19609811  0.1893247   0.          0.          0.          0.          0.          0.        ]
+ [-0.00345238 -0.00539707  0.32061955  0.49937871  0.57868669  0.55937883  0.          0.          0.          0.          0.          0.        ]
+ [-0.99476602  0.0044768  -0.00871015 -0.06434497  0.07565449 -0.02192654  0.          0.          0.          0.          0.          0.        ]
+ [-0.10169952  0.00050999 -0.00110842  0.62598377 -0.74389858  0.21074853  0.          0.          0.          0.          0.          0.        ]
+ [-0.00024449 -0.05485676 -0.0009244   0.57018298  0.25952946 -0.77751248  0.          0.          0.          0.          0.          0.        ]
+ [ 0.00434795  0.99833808  0.01708739  0.03125791  0.01424813 -0.04277991  0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.8516878  -0.49614157 -0.00201153 -0.00063861 -0.16670675  0.02599678]
+ [ 0.          0.          0.          0.          0.          0.         -0.14614055  0.08431365  0.00097981  0.00180397 -0.97457512  0.14742206]
+ [ 0.          0.          0.          0.          0.          0.          0.49864005  0.8563853   0.00366524  0.00687147  0.01935871  0.13238921]
+ [ 0.          0.          0.          0.          0.          0.         -0.06799679 -0.11526758 -0.00042785  0.00444622  0.14844635  0.97981302]
+ [ 0.          0.          0.          0.          0.          0.         -0.00228424 -0.00504941 -0.16643689  0.9860214   0.00074479 -0.00541246]
+ [ 0.          0.          0.          0.          0.          0.          0.00038591  0.00518152 -0.98604267 -0.16640659 -0.0007465   0.001074  ]]
+Make sure S_total:
+[[ 0.5 -0.  -0.  -0.   0.   0.   0.   0.   0.   0.   0.   0. ]
+ [-0.   0.5  0.   0.  -0.   0.   0.   0.   0.   0.   0.   0. ]
+ [-0.   0.   0.5 -0.   0.   0.   0.   0.   0.   0.   0.   0. ]
+ [-0.   0.  -0.   0.5 -0.   0.   0.   0.   0.   0.   0.   0. ]
+ [ 0.  -0.   0.  -0.   0.5 -0.   0.   0.   0.   0.   0.   0. ]
+ [ 0.   0.   0.   0.  -0.   0.5  0.   0.   0.   0.   0.   0. ]
+ [ 0.   0.   0.   0.   0.   0.   1.5  0.   0.  -0.  -0.   0. ]
+ [ 0.   0.   0.   0.   0.   0.   0.   1.5  0.  -0.   0.   0. ]
+ [ 0.   0.   0.   0.   0.   0.   0.   0.   1.5  0.   0.   0. ]
+ [ 0.   0.   0.   0.   0.   0.  -0.  -0.   0.   1.5  0.  -0. ]
+ [ 0.   0.   0.   0.   0.   0.  -0.   0.   0.   0.   1.5  0. ]
+ [ 0.   0.   0.   0.   0.   0.   0.   0.   0.  -0.   0.   1.5]]
+S_total is diagonal
+Make sure E:
+[[ 9.14189712  0.          0.         -0.          0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          9.14189712  0.          0.         -0.         -0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          9.14189712 -0.          0.          0.          0.          0.          0.          0.          0.          0.        ]
+ [-0.          0.         -0.          9.14189712  0.         -0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.         -0.          0.          0.          9.14189712 -0.          0.          0.          0.          0.          0.          0.        ]
+ [ 0.         -0.          0.         -0.         -0.          9.14189712  0.          0.          0.          0.          0.          0.        ]
+ [ 0.          0.          0.          0.          0.          0.         10.29664867  0.          0.         -0.          0.         -0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.         10.29664867 -0.         -0.         -0.         -0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.         -0.         10.29664867  0.          0.         -0.        ]
+ [ 0.          0.          0.          0.          0.          0.         -0.         -0.          0.         10.29664867  0.         -0.        ]
+ [ 0.          0.          0.          0.          0.          0.          0.         -0.          0.          0.         10.29664867  0.        ]
+ [ 0.          0.          0.          0.          0.          0.         -0.         -0.         -0.         -0.          0.         10.29664867]]
+Energy is same after rotation
+
+*****get_sf_ref*****
+Make sure MS=
+[[-0.5  0.   0.   0.  -0.   0.  -0.  -0.   0.  -0.  -0.  -0. ]
+ [ 0.  -0.5 -0.   0.  -0.   0.  -0.  -0.  -0.  -0.  -0.  -0. ]
+ [-0.  -0.  -0.5  0.   0.   0.  -0.  -0.   0.  -0.  -0.   0. ]
+ [ 0.   0.   0.   0.5  0.   0.   0.  -0.  -0.  -0.  -0.  -0. ]
+ [-0.  -0.   0.   0.   0.5  0.   0.  -0.  -0.   0.  -0.   0. ]
+ [ 0.   0.  -0.   0.   0.   0.5 -0.  -0.  -0.   0.   0.  -0. ]
+ [-0.  -0.  -0.   0.   0.  -0.  -0.5 -0.   0.   0.  -0.   0. ]
+ [-0.  -0.   0.  -0.  -0.  -0.  -0.  -0.5 -0.  -0.   0.  -0. ]
+ [ 0.  -0.   0.  -0.  -0.  -0.  -0.  -0.  -0.5  0.   0.   0. ]
+ [-0.  -0.  -0.  -0.  -0.  -0.  -0.  -0.   0.   0.5  0.  -0. ]
+ [-0.  -0.  -0.  -0.  -0.   0.   0.   0.  -0.   0.   0.5 -0. ]
+ [-0.  -0.   0.  -0.   0.  -0.   0.  -0.   0.   0.  -0.   0.5]]
+Ms is diagonal
+Choice ms_ref as positive minimum
+ms_ref=0.5
+Discard unreasonable spin state ...
+odds electrons...
+roots_old=12
+roots_ref=6
+S_ref=[0.5, 0.5, 0.5, 1.5, 1.5, 1.5]
+ms_ref=0.5
+E_ref=[9.141897117502763, 9.141897117497775, 9.14189711750705, 10.296648672693456, 10.296648672691333, 10.296648672692791]
+set up xmol, contr_coeff
+max_memory_soc =4000
+ 
+Performing state-interaction spin–orbit coupling calculation within spin-free framework...
+Calculating Wigner 1-RDM...
+> CPU time for total BP calculation      1.41 sec, wall time      1.31 sec
+
+Summary of SOC results for BP
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)             E(a.u.)         E(eV)         E(nm)       E(cm-1)        Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1            9.116761530460     9.11676153     248.0797                2000897.8761               
+    2        1            9.116761530460     9.11676153     248.0797       4.9978   2000897.8761               
+    3        1            9.117054822045     9.11705482     248.0877       4.9976   2000962.2462               
+    4        1            9.117054822045     9.11705482     248.0877       4.9976   2000962.2462               
+    5        1            9.191874972369     9.19187497     250.1237       4.9569   2017383.3711               
+    6        1            9.191874972369     9.19187497     250.1237       4.9569   2017383.3711               
+    7        1           10.296187840513    10.29618784     280.1735       4.4253   2259752.0307               
+    8        1           10.296187840513    10.29618784     280.1735       4.4253   2259752.0307               
+    9        1           10.296463218025    10.29646322     280.1810       4.4251   2259812.4691               
+   10        1           10.296463218025    10.29646322     280.1810       4.4251   2259812.4691               
+   11        1           10.296648347970    10.29664835     280.1861       4.4251   2259853.1004               
+   12        1           10.296648347970    10.29664835     280.1861       4.4251   2259853.1004               
+   13        1           10.296649196647    10.29664920     280.1861       4.4251   2259853.2867               
+   14        1           10.296649196647    10.29664920     280.1861       4.4251   2259853.2867               
+   15        1           10.296834086349    10.29683409     280.1911       4.4250   2259893.8653               
+   16        1           10.296834086349    10.29683409     280.1911       4.4250   2259893.8653               
+   17        1           10.297109374286    10.29710937     280.1986       4.4249   2259954.2840               
+   18        1           10.297109374286    10.29710937     280.1986       4.4249   2259954.2840               
+----------------------------------------------------------------------------------------------------------------
+
+Summary of SOC results for BP
+------------------------------------------------------------------------------------------------------------------
+  State    Degen.        E(total)            dE(a.u.)        dE(eV)      dE(nm)       dE(cm-1)      Osc Str.  
+------------------------------------------------------------------------------------------------------------------
+    1        1            9.116761530460     0.00000000       0.0000                      0.0000               
+    2        1            9.116761530460     0.00000000       0.0000                      0.0000               
+    3        1            9.117054822045     0.00029329       0.0080  155351.7211        64.3701               
+    4        1            9.117054822045     0.00029329       0.0080  155351.7211        64.3701               
+    5        1            9.191874972369     0.07511344       2.0439     606.5939     16485.4950               
+    6        1            9.191874972369     0.07511344       2.0439     606.5939     16485.4950               
+    7        1           10.296187840513     1.17942631      32.0938      38.6318    258854.1546               
+    8        1           10.296187840513     1.17942631      32.0938      38.6318    258854.1546               
+    9        1           10.296463218025     1.17970169      32.1013      38.6228    258914.5930               
+   10        1           10.296463218025     1.17970169      32.1013      38.6228    258914.5930               
+   11        1           10.296648347970     1.17988682      32.1064      38.6167    258955.2243               
+   12        1           10.296648347970     1.17988682      32.1064      38.6167    258955.2243               
+   13        1           10.296649196647     1.17988767      32.1064      38.6167    258955.4106               
+   14        1           10.296649196647     1.17988767      32.1064      38.6167    258955.4106               
+   15        1           10.296834086349     1.18007256      32.1114      38.6106    258995.9892               
+   16        1           10.296834086349     1.18007256      32.1114      38.6106    258995.9892               
+   17        1           10.297109374286     1.18034784      32.1189      38.6016    259056.4079               
+   18        1           10.297109374286     1.18034784      32.1189      38.6016    259056.4079               
+----------------------------------------------------------------------------------------------------------------
