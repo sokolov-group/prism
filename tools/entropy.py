@@ -27,7 +27,7 @@ def _entropy(rho):
     return -np.sum(w * np.log(w))
 
 def _occupations(strings, norb):
-    return (np.asarray(strings, dtype=np.int64)[:, None] >> np.arange(norb)) & 1
+    return (np.asarray(strings, dtype = np.int64)[:, None] >> np.arange(norb)) & 1
 
 def orbital_entropies(ci, norb, nelec, weights = None):
     '''

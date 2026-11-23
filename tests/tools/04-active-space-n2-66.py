@@ -82,7 +82,8 @@ class KnownValues(unittest.TestCase):
         ncas, nelecas, mo = active_space.select(interface, (4, 4), 'apc')
         ncas_ref, nelecas_ref, mo_ref = apc.APC(mf, (4, 4), verbose = 0).kernel()
         self.assertEqual((ncas, nelecas), (ncas_ref, nelecas_ref))
-        self.assertAlmostEqual(casci_energy(ncas, nelecas, mo), casci_energy(ncas_ref, nelecas_ref, mo_ref), 8)
+        e_ref = casci_energy(ncas_ref, nelecas_ref, mo_ref)
+        self.assertAlmostEqual(casci_energy(ncas, nelecas, mo), e_ref, 8)
 
     def test_nevpt2(self):
 

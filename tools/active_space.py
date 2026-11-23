@@ -31,13 +31,43 @@ from prism.tools import entropy
 CRITERIA = ('noon', 'entropy', 'mi', 'apc')
 
 def get_ncsf(nelec, norb):
-    '''Number of CSFs at the lowest Sz (Eq. 2 of the reference above).'''
+    '''Number of CSFs of an active space at the lowest Sz (Eq. 2 of the reference above).
+
+    Args:
+        nelec : int
+            Number of active electrons.
+        norb : int
+            Number of active orbitals.
+
+    Returns:
+        Number of CSFs (int).
+
+    Examples:
+
+    >>> get_ncsf(8, 8)
+    1764
+    '''
     na = (nelec + 1) // 2
     nb = nelec // 2
     return comb(norb, na) * comb(norb, nb) - comb(norb, na + 1) * (comb(norb, nb - 1) if nb > 0 else 0)
 
 def _occupations(noons, nelec, two_s):
-    '''Occupations 2, 1 and 0 assigned by descending natural occupation.'''
+    '''Integer occupations assigned by descending natural occupation.
+
+    The (nelec - two_s) // 2 orbitals with the largest occupations get 2, the
+    next two_s get 1 and the rest get 0.
+
+    Args:
+        noons : 1D array
+            Natural orbital occupation numbers.
+        nelec : int
+            Total number of electrons.
+        two_s : int
+            Number of unpaired electrons (2S).
+
+    Returns:
+        1D array of occupations (2, 1 or 0).
+    '''
     nb = (nelec - two_s) // 2
     order = np.argsort(-noons, kind = 'stable')
     occ = np.zeros(len(noons))
@@ -46,13 +76,37 @@ def _occupations(noons, nelec, two_s):
     return occ
 
 def _natural_orbitals(rdm1, mo):
-    '''Natural occupations (descending), rotation and natural orbitals.'''
+    '''Natural orbitals of a 1-RDM.
+
+    Args:
+        rdm1 : 2D array
+            1-RDM in the basis of mo.
+        mo : 2D array
+            Orbital coefficients (AO x MO).
+
+    Returns:
+        A tuple (noons, u, no): the natural occupations in descending order,
+        the rotation from mo to the natural orbitals, and the natural
+        orbitals mo @ u.
+    '''
     noons, u = np.linalg.eigh(0.5 * (rdm1 + rdm1.T))
     idx = np.argsort(-noons)
     return noons[idx], u[:, idx], mo @ u[:, idx]
 
 def _rank_reference(interface, criterion):
-    '''Ranks the natural orbitals of the reference active space.'''
+    '''Ranks the natural orbitals of the reference active space.
+
+    Args:
+        interface : PRISM interface
+            Interface with a CASCI/CASSCF reference.
+        criterion : str
+            'noon', 'entropy' or 'mi'.
+
+    Returns:
+        A tuple (mo, noons, importance, candidates): the orbitals with the
+        active block rotated to natural orbitals, the occupation and importance
+        of every orbital, and the indices of the active orbitals.
+    '''
     ci, weights = entropy.reference_wfn(interface)
     cis = ci if isinstance(ci, list) else [ci]
     weights = weights if weights is not None else [1.0]
@@ -84,13 +138,34 @@ def _rank_reference(interface, criterion):
     return mo, noons, importance, np.arange(ncore, ncore + ncas)
 
 def _rank_apc(interface):
-    '''Ranks the SCF orbitals by approximate pair coefficient entropies.'''
+    '''Ranks the SCF orbitals by approximate pair coefficient (APC) entropies.
+
+    Args:
+        interface : PRISM interface
+
+    Returns:
+        A tuple (mo, noons, importance, candidates) as in _rank_reference.
+        All SCF orbitals are candidates.
+    '''
     mf = interface.mf
     importance = apc.APC(mf, verbose = interface.verbose)._calc_apc_entropies(mf)
     return mf.mo_coeff, np.asarray(mf.mo_occ, dtype = float), importance, np.arange(mf.mo_coeff.shape[1])
 
 def _rank_correlated(method, criterion, state):
-    '''Ranks the natural orbitals of a correlated 1-RDM.'''
+    '''Ranks the natural orbitals of a correlated 1-RDM.
+
+    Args:
+        method : NEVPT or QDNEVPT object
+            Run with rdm_order = 2.
+        criterion : str
+            Must be 'noon'.
+        state : int
+            State of the 1-RDM, numbered from 1.
+
+    Returns:
+        A tuple (mo, noons, importance, candidates) as in _rank_reference.
+        All orbitals are candidates.
+    '''
     if criterion != 'noon':
         raise ValueError("Correlated methods provide a 1-RDM only; use criterion = 'noon'.")
     if getattr(method, 'rdm_order', 2) != 2:
@@ -102,21 +177,39 @@ def _rank_correlated(method, criterion, state):
     return mo, noons, importance, np.arange(mo.shape[1])
 
 def select(obj, max_size, criterion = 'noon', state = 1):
-    '''
-    Selects an active space with the ranked-orbital approach.
+    '''Selects an active space with the ranked-orbital approach.
 
-    obj is a PRISM interface (ranks the natural orbitals of the reference active
-    space) or a NEVPT/QDNEVPT object after kernel() (ranks the natural orbitals of
-    its correlated 1-RDM for the given state, numbered from 1).
+    All candidate orbitals start in the active space. The least important
+    orbital is dropped until the active space is no larger than max_size.
 
-    criterion is 'noon' (min(n, 2 - n)), 'entropy' (s1), 'mi' (sum_j I(i,j)) or
-    'apc' (approximate pair coefficient entropies of the SCF orbitals).
-    max_size is (nelecas, ncas) or a maximum number of orbitals.
+    Args:
+        obj : PRISM interface, or NEVPT/QDNEVPT object after kernel()
+            An interface ranks the natural orbitals of its reference active
+            space ('apc' ranks the SCF orbitals). A NEVPT/QDNEVPT object ranks
+            the natural orbitals of its correlated 1-RDM.
+        max_size : tuple or int
+            (nelecas, ncas) of the largest allowed active space, compared by
+            number of CSFs, or the largest number of active orbitals.
 
-    Returns ncas, nelecas and orbitals ordered core | active | external.
+    Kwargs:
+        criterion : str
+            Orbital importance: 'noon' (min(n, 2 - n)), 'entropy' (s1),
+            'mi' (sum_j I(i,j)) or 'apc' (APC entropies). Default is 'noon'.
+        state : int
+            State of the correlated 1-RDM, numbered from 1. Default is 1.
+
+    Returns:
+        A tuple (ncas, nelecas, mo): the number of active orbitals, the active
+        electrons (nalpha, nbeta), and the orbitals ordered core | active | external.
+
+    Examples:
+
+    >>> interface = prism.interface.PYSCF(mf, mc)
+    >>> ncas, nelecas, mo = active_space.select(interface, (8, 8), 'entropy')
+    >>> mc = pyscf.mcscf.CASSCF(mf, ncas, nelecas).run(mo)
     '''
     if criterion not in CRITERIA:
-        raise ValueError("criterion must be one of %s." % str(CRITERIA))
+        raise ValueError(f"Invalid criterion: {criterion}. Allowed criteria are {CRITERIA}.")
 
     if hasattr(obj, 'interface'):
         interface = obj.interface
