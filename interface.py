@@ -349,6 +349,8 @@ class PYSCF:
 
         from pyscf.fci.direct_spin1 import trans_rdm1s
         self.trans_rdm1s = trans_rdm1s
+        from pyscf.fci.addons import transform_ci_for_orbital_rotation
+        self.transform_ci_for_orbital_rotation = transform_ci_for_orbital_rotation
         # If set to a list, can be used to select certain CASCI states during MR-ADC computations
         self.select_casci = None
 

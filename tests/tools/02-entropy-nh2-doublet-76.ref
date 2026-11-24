@@ -1,0 +1,83 @@
+converged SCF energy = -54.7749910014405
+SCF energy: -54.774991
+
+
+WARN: Mulitple states found in CASCI solver. First state is used to compute the Fock matrix and natural orbitals in active space.
+
+CASCI state   0  E = -54.8234038054936  E(CI) = -15.9277044577510  S^2 = 0.7500000
+CASCI state   1  E = -54.7945459364432  E(CI) = -15.8988465887007  S^2 = 0.7500000
+CASCI energies: -54.823404 -54.794546
+
+Orbital entropy test
+
+Orbital occupations n and entropies s1 (CASSCF active orbitals)
+  Orbital           State 1           State 2
+                 n       s1        n       s1
+        2   1.9805 0.103091   1.9834 0.087834
+        3   1.9732 0.111997   1.9735 0.107792
+        4   1.9884 0.062446   1.0001 0.055556
+        5   1.0000 0.033246   1.9957 0.015428
+        6   0.0383 0.152202   0.0301 0.121053
+        7   0.0196 0.093921   0.0173 0.084412
+
+Largest mutual information, I(i,j) = (s1_i + s1_j - s2_ij) / 2
+  State 1
+  Orbital  Orbital          I
+        3        7   0.050555
+        2        6   0.049202
+        3        6   0.040278
+        4        6   0.025851
+        6        7   0.023667
+        2        3   0.013602
+        2        7   0.011976
+        2        4   0.011581
+        5        6   0.009698
+        3        4   0.009321
+  State 2
+  Orbital  Orbital          I
+        3        7   0.046955
+        3        6   0.040372
+        2        6   0.034437
+        6        7   0.021717
+        2        3   0.019598
+        2        7   0.018367
+        2        4   0.016165
+        4        6   0.016053
+        5        6   0.010626
+        3        4   0.006011
+
+Orbital occupations n and entropies s1 (natural orbitals of state 1)
+  Orbital           State 1           State 2
+                 n       s1        n       s1
+        2   1.9961 0.024679   1.2800 0.606772
+        3   1.9734 0.118969   1.7040 0.645998
+        4   1.9732 0.111972   1.9735 0.107841
+        5   1.0000 0.033246   1.9957 0.015428
+        6   0.0377 0.148930   0.0295 0.117852
+        7   0.0196 0.093867   0.0173 0.084424
+
+Largest mutual information, I(i,j) = (s1_i + s1_j - s2_ij) / 2
+  State 1
+  Orbital  Orbital          I
+        3        6   0.070486
+        4        7   0.050516
+        4        6   0.040707
+        3        4   0.024718
+        6        7   0.024239
+        3        7   0.018691
+        5        6   0.009425
+        2        6   0.007020
+        3        5   0.006372
+        2        7   0.005647
+  State 2
+  Orbital  Orbital          I
+        2        3   0.572144
+        4        7   0.046985
+        4        6   0.040573
+        3        6   0.035114
+        6        7   0.022104
+        3        4   0.013557
+        3        7   0.011740
+        5        6   0.010541
+        2        6   0.005480
+        2        7   0.003644
